@@ -1,0 +1,93 @@
+# Compiled class file
+*.class
+**/bin/**
+/build
+# local config file
+.env
+
+# Log file
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+# *.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+.DS_Store
+
+**/.dm
+
+*.log
+/.metadata/
+
+/RemoteSystemsTempFiles
+
+# Gradle build directories and caches etc
+.gradle/
+gradleBuild/
+gradleBuild-*/
+
+# Junit reports created by gradle
+
+# Some temporary files - not sure what creates these
+shared-resource/tmp
+
+# IntelliJ IDEA
+*.ipr
+*.iml
+*.iws
+.idea/gradle.xml
+.idea/workspace.xml
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/libraries-with-intellij-classes.xml
+out/
+
+# Sensitive or high-churn files
+.idea/**/dataSources/
+.idea/**/dataSources.ids
+.idea/**/dataSources.local.xml
+.idea/**/sqlDataSources.xml
+.idea/**/dynamic.xml
+.idea/**/uiDesigner.xml
+.idea/**/dbnavigator.xml
+
+# Eclipse
+.settings
+.project
+.classpath
+
+node_modules
+
+ccms-unit-test.log*
+cypress/screenshots/
+cypress/videos/
+test-results.xml
+
+# Ignore git-crypt symmetric key
+*.key
+
+# This is a seperate repository
+# we check it out here so that the Dockerfile can access it
+# https://github.com/ministryofjustice/laa-ccms-opa-policy-models
+HubTdsWebService/OPARulebases/
+
+test-results/
+
+.idea/sonarlint/
+
+laa-saml-mock/
+
+.idea
