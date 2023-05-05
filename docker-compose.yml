@@ -1,0 +1,66 @@
+# This compose file starts weblogic servers instead of Tomcat,
+# to match the 6dg production environments.
+#
+# Usage:
+#     docker-compose -f docker-compose-weblogic.yml -p weblogic up
+version: "3.2"
+
+services:
+
+  db:
+    image: 902837325998.dkr.ecr.eu-west-2.amazonaws.com/laa-ccms-pui-oracle-database:latest
+    ports:
+      - 1521:1521
+    environment:
+      - DB_SID=CCMSPUI
+      - DB_PASSWD=Password123!
+    volumes:
+      - db_data:/ORCL
+
+  liquibase:
+    build:
+      context: https://github.com/ministryofjustice/docker-liquibase.git
+    volumes:
+      - ./sql:/migrations
+      - ./waitfor:/waitfor
+    depends_on:
+      - db
+    entrypoint: /bin/bash
+    command: [ "./waitfor/wait_for.sh"]
+
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "4566:4566"
+      - "4571:4571"
+    environment:
+      - LOCALSTACK_SERVICES=s3
+      - DATA_DIR=/tmp/localstack/data
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "${TEMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+  identity-provider:
+    build:
+      context: ./laa-saml-mock/mujina-idp
+    # Make it run on 8081 and use our user database
+    command: java -Djava.security.egd=file:///dev/urandom -Dserver.port=8081 -jar app.jar --server.port=8081 --spring.config.location=config/idp-application.yml
+    ports:
+      - 8081:8081
+    environment:
+      #   IDP_SERVICE_HOST: localhost
+      IDP_SERVICE_PORT: 8081
+    volumes:
+      - ./idp-config:/config:ro
+
+  clam-av:
+    image: mkodockx/docker-clamav:alpine
+    restart: unless-stopped
+    volumes:
+      - clam:/var/lib/clamav
+    ports:
+      - 3310:3310
+volumes:
+  db_data:
+  clam:
