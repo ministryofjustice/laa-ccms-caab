@@ -16,20 +16,32 @@ configurations {
 
 repositories {
 	mavenCentral()
+
+	//Latest version of saml requires this
+	maven { url "https://build.shibboleth.net/nexus/content/repositories/releases/" }
 }
 
 dependencies {
+
+	//Starters
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	//implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
+	//SAML security
+	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+	implementation 'org.springframework.security:spring-security-saml2-service-provider'
+	implementation "org.opensaml:opensaml-core:4.1.1"
+	implementation "org.opensaml:opensaml-saml-api:4.1.1"
+	implementation "org.opensaml:opensaml-saml-impl:4.1.1"
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
 }
 
 tasks.named('test') {

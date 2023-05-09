@@ -1,0 +1,30 @@
+idp:
+  base_url: http://${IDP_SERVICE_HOST}:${IDP_SERVICE_PORT}
+
+samlUserStore:
+  samlUsers:
+    - username: MARILYN@DESORANDCO.CO.UK
+      password: test password
+      samlAttributes:
+        LAA_ACCOUNTS: 12345
+        LAA_APP_ROLES: CCR_CCRAdministrator,CCR_CCRDirector,CCLF_BillManager,CCLF_NCTCaseworker,CCLF_BillAuthoriser
+    - username: ABRA-S
+      password: <IDP_PASSWORD_2>
+      samlAttributes:
+        LAA_ACCOUNTS: 12345
+        LAA_APP_ROLES: CCR_CCRGradeA1,CCLF_SeniorBillAuthoriser
+    - username: laauser
+      password: <IDP_PASSWORD_3>
+      samlAttributes:
+        LAA_ACCOUNTS: 12345
+        LAA_APP_ROLES: CCR_CCRGradeA1
+    - username: MARILYN@DESORANDCO.CO.UK
+      password: test password
+      samlAttributes:
+        LAA_ACCOUNTS: 0N003X:0N290J:0N757R:2M981Y:2M982Z:2N414U
+        LAA_APP_ROLES: EFORMS,EFORMS_eFormsReviewer,PUI_XXCCMS_BILL_PREPARATION,PUI,PUI_XXCCMS_CASE_MANAGEMENT,PUI_XXCCMS_BILL_SUPERVISOR2,CCMS_Apply,PUI_XXCCMS_CASE_MGT_SUPERVISOR,EFORMS_eFormsAuthor
+    - username: JULIEL@DUNCANLEWIS.COM
+      password: testpassword
+      samlAttributes:
+        LAA_ACCOUNTS: 12345
+        LAA_APP_ROLES: CCR_CCRAdministrator,CCR_CCRDirector,CCLF_BillManager,CCLF_NCTCaseworker,CCLF_BillAuthoriser
