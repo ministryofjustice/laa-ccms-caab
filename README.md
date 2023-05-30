@@ -21,3 +21,8 @@ mvn clean package from within the IDE
 ```
 docker-compose up --build identity-provider
 ```
+
+## GDS templates
+
+These have been committed to the repo, but if you need these updated you can update the [templates](./templates.sh) script and rerun it.
+Update the version when necessary.
