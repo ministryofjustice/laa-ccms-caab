@@ -1,4 +1,4 @@
-package uk.gov.laa.caab.advice;
+package uk.gov.laa.ccms.caab.advice;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.saml2.provider.service.authentication.Saml2AuthenticatedPrincipal;

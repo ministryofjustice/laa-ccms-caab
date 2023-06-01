@@ -1,4 +1,4 @@
-package uk.gov.laa.caab.config;
+package uk.gov.laa.ccms.caab.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

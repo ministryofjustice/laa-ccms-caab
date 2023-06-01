@@ -30,12 +30,15 @@ dependencies {
 	//implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
+	implementation 'org.springframework.boot:spring-boot-devtools'
+
 	//SAML security
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 	implementation 'org.springframework.security:spring-security-saml2-service-provider'
 	implementation "org.opensaml:opensaml-core:4.1.1"
 	implementation "org.opensaml:opensaml-saml-api:4.1.1"
 	implementation "org.opensaml:opensaml-saml-impl:4.1.1"
+
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
