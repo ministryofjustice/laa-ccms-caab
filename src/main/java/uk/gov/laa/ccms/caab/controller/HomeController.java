@@ -1,4 +1,4 @@
-package uk.gov.laa.caab.controller;
+package uk.gov.laa.ccms.caab.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -9,6 +9,8 @@ public class HomeController {
 
     @GetMapping("/")
     public String home(Model model){
+        model.addAttribute("providerName", "DESOR & CO");
         return "home";
     }
+
 }

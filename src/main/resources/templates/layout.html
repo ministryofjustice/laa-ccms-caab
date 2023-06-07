@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html th:fragment="layout" lang="en" class="govuk-template">
+
+<head th:replace="~{partials/head :: head}"></head>
+
+<body class="govuk-template__body">
+<script>
+    document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');
+</script>
+
+<a href="#main-content" class="govuk-skip-link" data-module="govuk-skip-link">Skip to main content</a>
+
+<header th:replace="~{partials/header :: header}"></header>
+
+<div class="govuk-width-container">
+    <div th:replace="~{partials/phase-banner :: phase-banner}"></div>
+
+    <main class="govuk-main-wrapper" id="main-content" role="main">
+        <th:block th:replace="${mainContent}">Default Main Content</th:block>
+    </main>
+</div>
+
+<footer th:replace="~{partials/footer :: footer}"></footer>
+<script src="/govuk-frontend/all.js"></script>
+</body>
+
+</html>

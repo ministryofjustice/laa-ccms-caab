@@ -1,21 +1,63 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org"
-      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
-<head>
-    <title>Spring Boot and SAML</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-</head>
-<body>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'home'})}" xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <title>Homepage</title>
+    </head>
+    <body>
+        <div id="main-content">
+            <h1 class="govuk-heading-l">
+                Client and Cost Management System
+                <span class="govuk-caption-l">Civil legal aid applications, amendments and billing.</span>
+            </h1>
 
-<h1>Welcome</h1>
-<p>You are successfully logged in as <span sec:authentication="name"></span></p>
-<p>Your authorities are <span sec:authentication="authorities"></span>.</p>
 
-<h2>All Your Attributes</h2>
-<div th:each="userAttribute : ${userAttributes}">
-    <p th:text="${userAttribute.key}"></p>
-    <p th:text="${userAttribute.value}"></p>
-</div>
+            <a class="govuk-button" data-module="govuk-button" href="/">
+                New Application
+            </a>
 
-</body>
+            <!--  Notifications  -->
+            <h2 class="govuk-heading-m">
+                Your Actions and Notifications
+            </h2>
+
+            <div class="govuk-body">
+                You currently have:
+            </div>
+
+            <div th:if="${notificationCount != null}">
+                <ul>
+                    <li class="arrow">
+                        <a class="govuk-body" th:text="${notificationCount.getOutstandingActionCount() > 0 ? notificationCount.getOutstandingActionCount() + ' Outstanding Actions (' + (notificationCount.getOverdueActionCount() > 0 ? notificationCount.getOverdueActionCount() + ' overdue)' : 'none overdue)') : 'No Outstanding Actions'}" href="/"></a>
+                    </li>
+                    <li class="arrow">
+                        <a class="govuk-body" th:text="${'View Notifications (' + (notificationCount.getNotificationCount() > 0 ? notificationCount.getNotificationCount() + ' outstanding)' : 'none outstanding)')}" href="/"></a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="govuk-body" th:unless="${notificationCount != null}">
+                Action and notification information currently not available
+            </div>
+
+            <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+
+            <h2 class="govuk-heading-m">
+                Support
+            </h2>
+
+            <p class="govuk-body"><strong>Case enquiries:</strong> 0300 200 2020 (Monday to Friday, 9:00 - 17:00) <br/>
+                Alternatively you can 'Submit Case Query' within a case.</p>
+
+            <p class="govuk-body"><strong>Technical Support:</strong> 0300 200 2020 (Monday to Friday, 9:00 - 17:00)<br />
+                Email: <a href="mailto:online-support@justice.gov.uk">online-support@justice.gov.uk</a>
+            </p>
+
+            <p class="govuk-body">For non case related queries please create a general request.</p>
+
+            <a class="govuk-button govuk-button--secondary" data-module="govuk-button" href="/">
+                Create General Request
+            </a>
+
+        </div>
+    </body>
 </html>
