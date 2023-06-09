@@ -1,0 +1,5 @@
+
+laa:
+  ccms:
+    data-api:
+      url: http://localhost:8009

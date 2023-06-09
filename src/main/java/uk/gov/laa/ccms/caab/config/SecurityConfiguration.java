@@ -28,20 +28,19 @@ public class SecurityConfiguration {
         OpenSaml4AuthenticationProvider authenticationProvider = new OpenSaml4AuthenticationProvider();
         authenticationProvider.setResponseAuthenticationConverter(groupsConverter());
 
-        http.authorizeHttpRequests(authorize -> authorize
-                .anyRequest().authenticated())
-            .saml2Login(saml2 -> saml2
-                .authenticationManager(new ProviderManager(authenticationProvider)))
-            .saml2Logout(withDefaults());
-
-        return http.build();
+        return http
+                .authorizeHttpRequests(authorize -> authorize
+                        .anyRequest().authenticated())
+                .saml2Login(saml2 -> saml2
+                        .authenticationManager(new ProviderManager(authenticationProvider)))
+                .saml2Logout(withDefaults())
+                .build();
     }
 
+
     private Converter<ResponseToken, Saml2Authentication> groupsConverter() {
-
         Converter<ResponseToken, Saml2Authentication> delegate =
-            OpenSaml4AuthenticationProvider.createDefaultResponseAuthenticationConverter();
-
+                OpenSaml4AuthenticationProvider.createDefaultResponseAuthenticationConverter();
         return (responseToken) -> {
             Saml2Authentication authentication = delegate.convert(responseToken);
             Saml2AuthenticatedPrincipal principal = (Saml2AuthenticatedPrincipal) authentication.getPrincipal();

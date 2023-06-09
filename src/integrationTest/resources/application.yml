@@ -27,5 +27,5 @@ laa:
   ccms:
     data-api:
       hostname: localhost
-      port: 8009
+      port: 8123
       url: http://${laa.ccms.data-api.hostname}:${laa.ccms.data-api.port}
