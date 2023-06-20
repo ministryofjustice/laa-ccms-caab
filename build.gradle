@@ -2,16 +2,32 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.1.0'
 	id 'io.spring.dependency-management' version '1.1.0'
+	id 'jacoco'
+	id 'net.researchgate.release' version '3.0.2'
 }
 
 group = 'uk.gov.laa'
-version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '17'
+
+release {
+	tagTemplate = '$name-$version'
+}
+
+sourceSets {
+	integrationTest {
+		java {
+			compileClasspath += main.output + test.output
+			runtimeClasspath += main.output + test.output
+		}
+	}
+}
 
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
 	}
+	integrationTestImplementation.extendsFrom(testImplementation)
+	integrationTestRuntimeOnly.extendsFrom(testRuntimeOnly)
 }
 
 repositories {
@@ -19,15 +35,24 @@ repositories {
 
 	//Latest version of saml requires this
 	maven { url "https://build.shibboleth.net/nexus/content/repositories/releases/" }
+
+	maven {
+		url 'https://maven.pkg.github.com/ministryofjustice/laa-ccms-data-api'
+		credentials {
+			username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+			password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+		}
+	}
 }
 
 dependencies {
+	implementation 'uk.gov.laa.ccms.data:data-api:0.0.1-0e21acf-SNAPSHOT'
 
 	//Starters
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
-	//implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
 	implementation 'org.springframework.boot:spring-boot-devtools'
@@ -44,10 +69,55 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.mockito:mockito-core:3.12.4'
+	testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
 	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'io.projectreactor:reactor-test:3.4.8'
+
+	integrationTestImplementation "com.github.tomakehurst:wiremock:3.0.0-beta-8"
+
 }
 
-tasks.named('test') {
+test {
 	useJUnitPlatform()
+}
+
+task integrationTest(type: Test) {
+	useJUnitPlatform()
+	description = "Run integration tests"
+	group = "verification"
+	testClassesDirs = sourceSets.integrationTest.output.classesDirs
+	classpath = sourceSets.integrationTest.runtimeClasspath
+}
+
+jacocoTestReport {
+
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, exclude: ['**/CaabApplication.class', '**/SecurityConfiguration.class'])
+		}))
+	}
+
+	dependsOn tasks['test']
+}
+
+jacocoTestCoverageVerification {
+
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, exclude: ['**/CaabApplication.class', '**/SecurityConfiguration.class'])
+		}))
+	}
+
+
+	violationRules {
+		rule {
+			limit {
+				minimum = 0.80  // You can define your required coverage ratio here.
+			}
+		}
+	}
+
+	dependsOn tasks['test']
 }
 

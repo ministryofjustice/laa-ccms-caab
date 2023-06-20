@@ -4,7 +4,7 @@
         <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" sec:authentication="name"></span>
         <span th:if="${pageCategory == 'home'}">
             On Behalf of:
-            <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="${providerName}"></span>
+            <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="${user.provider.name}"></span>
         </span>
         <a href="/" class="govuk-!-text-align-right">
             Logout
