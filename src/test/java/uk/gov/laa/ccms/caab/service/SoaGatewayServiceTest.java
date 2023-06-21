@@ -41,6 +41,7 @@ class SoaGatewayServiceTest {
     void getNotificationsSummary_returnData() {
 
         String loginId = "user1";
+        String userType = "userType";
         String expectedUri = "/users/{loginId}/notifications/summary";
 
         NotificationSummary mockSummary = new NotificationSummary()
@@ -51,11 +52,11 @@ class SoaGatewayServiceTest {
         when(soaGatewayWebClientMock.get()).thenReturn(requestHeadersUriMock);
         when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
         when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.header("SoaGateway-User-Role", "EXTERNAL")).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
         when(responseMock.bodyToMono(NotificationSummary.class)).thenReturn(Mono.just(mockSummary));
 
-        Mono<NotificationSummary> summaryMono = soaGatewayService.getNotificationsSummary(loginId);
+        Mono<NotificationSummary> summaryMono = soaGatewayService.getNotificationsSummary(loginId, userType);
 
         StepVerifier.create(summaryMono)
                 .expectNextMatches(summary ->
@@ -68,18 +69,19 @@ class SoaGatewayServiceTest {
     @Test
     void getNotificationsSummary_notFound() {
         String loginId = "user1";
+        String userType = "userType";
         String expectedUri = "/users/{loginId}/notifications/summary";
 
         when(soaGatewayWebClientMock.get()).thenReturn(requestHeadersUriMock);
         when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
         when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.header("SoaGateway-User-Role", "EXTERNAL")).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
         when(responseMock.bodyToMono(NotificationSummary.class)).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
         when(soaGatewayServiceErrorHandler.handleNotificationSummaryError(eq(loginId), any(WebClientResponseException.class))).thenReturn(Mono.empty());
 
-        Mono<NotificationSummary> summaryMono = soaGatewayService.getNotificationsSummary(loginId);
+        Mono<NotificationSummary> summaryMono = soaGatewayService.getNotificationsSummary(loginId, userType);
 
         StepVerifier.create(summaryMono)
                 .verifyComplete();

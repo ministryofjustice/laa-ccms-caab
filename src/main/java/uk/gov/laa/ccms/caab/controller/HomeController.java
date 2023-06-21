@@ -25,7 +25,7 @@ public class HomeController {
 
         model.addAttribute("user", user);
 
-        NotificationSummary notificationSummary = soaGatewayService.getNotificationsSummary(user.getLoginId()).block();
+        NotificationSummary notificationSummary = soaGatewayService.getNotificationsSummary(user.getLoginId(), user.getUserType()).block();
 
         model.addAttribute("notificationCounts", notificationSummary);
 

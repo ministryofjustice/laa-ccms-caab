@@ -10,8 +10,6 @@ import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 @Component
 public class SoaGatewayServiceErrorHandler {
 
-    public static String NOTIFICATION_COUNT_ERROR_MESSAGE = "Failed to retrieve Notification count for loginId: %s";
-
     public Mono<NotificationSummary> handleNotificationSummaryError(String loginId, Throwable e) {
         log.error("Failed to retrieve Notification count for loginId: {}", loginId, e);
         return Mono.justOrEmpty(null);

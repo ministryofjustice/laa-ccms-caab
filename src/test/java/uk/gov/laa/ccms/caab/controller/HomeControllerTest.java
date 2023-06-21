@@ -63,7 +63,7 @@ public class HomeControllerTest {
     when(dataService.getUser(userResponse.getLoginId())).thenReturn(Mono.just(userResponse));
 
     // Mock the SOA Gateway service to return the notification summary
-    when(soaGatewayService.getNotificationsSummary(userResponse.getLoginId())).thenReturn(Mono.just(notificationSummary));
+    when(soaGatewayService.getNotificationsSummary(userResponse.getLoginId(), userResponse.getUserType())).thenReturn(Mono.just(notificationSummary));
 
     this.mockMvc.perform(get("/").flashAttr("user", userResponse))
         .andDo(print())
