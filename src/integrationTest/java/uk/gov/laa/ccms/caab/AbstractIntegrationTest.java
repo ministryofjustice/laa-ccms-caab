@@ -27,6 +27,7 @@ public abstract class AbstractIntegrationTest {
     @DynamicPropertySource
     public static void properties(DynamicPropertyRegistry registry) {
         registry.add("laa.ccms.data-api.port", wiremock::getPort);
+        registry.add("laa.ccms.soa-gateway-api.port", wiremock::getPort);
     }
 
 }

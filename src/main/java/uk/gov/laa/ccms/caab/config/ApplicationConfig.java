@@ -10,12 +10,19 @@ public class ApplicationConfig {
 
     private final String dataApiUrl;
 
-    public ApplicationConfig(@Value("${laa.ccms.data-api.url}") String dataApiUrl) {
+    private final String soaGatewayApiUrl;
+
+    public ApplicationConfig(@Value("${laa.ccms.data-api.url}") String dataApiUrl,
+                             @Value("${laa.ccms.soa-gateway-api.url}") String soaGatewayApiUrl) {
         this.dataApiUrl = dataApiUrl;
+        this.soaGatewayApiUrl = soaGatewayApiUrl;
     }
 
-    @Bean
+    @Bean("dataWebClient")
     WebClient dataWebClient(){
         return WebClient.create(dataApiUrl);
     }
+
+    @Bean("soaGatewayWebClient")
+    WebClient soaGatewayWebClient() {return WebClient.create(soaGatewayApiUrl);}
 }
