@@ -48,7 +48,7 @@ public class HomeControllerTest {
   }
 
   @Test
-  public void testHomeRetrievesUserDetails() throws Exception {
+  public void testHomeRetrievesUserDetailsAndNotifications() throws Exception {
     final UserResponse userResponse = new UserResponse()
         .userId(1)
         .userType("testUserType")
@@ -70,9 +70,96 @@ public class HomeControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("home"))
         .andExpect(model().attribute("user", userResponse))
-        .andExpect(model().attributeExists("notificationCounts"))
-        .andExpect(model().attribute("notificationCounts", notificationSummary));
+        .andExpect(model().attribute("showNotifications", true))
+        .andExpect(model().attribute("actionsMsg", "2 Outstanding Actions (3 overdue)"))
+        .andExpect(model().attribute("notificationsMsg", "View Notifications (1 outstanding)"));
+
+    verify(dataService).getUser(userResponse.getLoginId());
+  }
+
+  @Test
+  public void testHomeHandlesZeroOverdueNotifications() throws Exception {
+    final UserResponse userResponse = new UserResponse()
+        .userId(1)
+        .userType("testUserType")
+        .loginId("testLoginId");
+
+    // Create a sample notification summary
+    final NotificationSummary notificationSummary = new NotificationSummary()
+        .notifications(0)
+        .standardActions(2)
+        .overdueActions(0);
+
+    when(dataService.getUser(userResponse.getLoginId())).thenReturn(Mono.just(userResponse));
+
+    // Mock the SOA Gateway service to return the notification summary
+    when(soaGatewayService.getNotificationsSummary(userResponse.getLoginId(), userResponse.getUserType())).thenReturn(Mono.just(notificationSummary));
+
+    this.mockMvc.perform(get("/").flashAttr("user", userResponse))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("home"))
+        .andExpect(model().attribute("user", userResponse))
+        .andExpect(model().attribute("showNotifications", true))
+        .andExpect(model().attribute("actionsMsg", "2 Outstanding Actions (none overdue)"))
+        .andExpect(model().attribute("notificationsMsg", "View Notifications (none outstanding)"));
+
+    verify(dataService).getUser(userResponse.getLoginId());
+  }
+
+  @Test
+  public void testHomeHandlesNoActions() throws Exception {
+    final UserResponse userResponse = new UserResponse()
+        .userId(1)
+        .userType("testUserType")
+        .loginId("testLoginId");
+
+    // Create a sample notification summary
+    final NotificationSummary notificationSummary = new NotificationSummary()
+        .notifications(0)
+        .standardActions(0)
+        .overdueActions(5);
+
+    when(dataService.getUser(userResponse.getLoginId())).thenReturn(Mono.just(userResponse));
+
+    // Mock the SOA Gateway service to return the notification summary
+    when(soaGatewayService.getNotificationsSummary(userResponse.getLoginId(), userResponse.getUserType())).thenReturn(Mono.just(notificationSummary));
+
+    this.mockMvc.perform(get("/").flashAttr("user", userResponse))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("home"))
+        .andExpect(model().attribute("user", userResponse))
+        .andExpect(model().attribute("showNotifications", true))
+        .andExpect(model().attribute("actionsMsg", HomeController.NO_OUTSTANDING_ACTIONS))
+        .andExpect(model().attribute("notificationsMsg", "View Notifications (none outstanding)"));
+
+    verify(dataService).getUser(userResponse.getLoginId());
+  }
+
+  @Test
+  public void testHomeHandlesNullNotifications() throws Exception {
+    final UserResponse userResponse = new UserResponse()
+        .userId(1)
+        .userType("testUserType")
+        .loginId("testLoginId");
+
+    when(dataService.getUser(userResponse.getLoginId())).thenReturn(Mono.just(userResponse));
+
+    // Mock the SOA Gateway service to return the notification summary
+    when(soaGatewayService.getNotificationsSummary(userResponse.getLoginId(), userResponse.getUserType())).thenReturn(Mono.empty());
+
+    this.mockMvc.perform(get("/").flashAttr("user", userResponse))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("home"))
+        .andExpect(model().attribute("user", userResponse))
+        .andExpect(model().attribute("showNotifications", false))
+        .andExpect(model().attributeDoesNotExist("actionsMsg"))
+        .andExpect(model().attributeDoesNotExist("notificationsMsg"));
 
     verify(dataService).getUser(userResponse.getLoginId());
   }
 }
+
+

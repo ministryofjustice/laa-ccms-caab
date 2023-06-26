@@ -13,6 +13,7 @@ import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 @RequiredArgsConstructor
 public class HomeController {
 
+    public static final String NO_OUTSTANDING_ACTIONS = "No Outstanding Actions";
     private final DataService dataService;
 
     private final SoaGatewayService soaGatewayService;
@@ -25,9 +26,44 @@ public class HomeController {
 
         model.addAttribute("user", user);
 
-        NotificationSummary notificationSummary = soaGatewayService.getNotificationsSummary(user.getLoginId(), user.getUserType()).block();
+        // Retrieve a summary of the User's Notifications & Actions from the SOA Gateway
+        NotificationSummary notificationSummary = soaGatewayService.getNotificationsSummary(
+            user.getLoginId(), user.getUserType()).block();
 
-        model.addAttribute("notificationCounts", notificationSummary);
+        boolean showNotifications = notificationSummary != null;
+        model.addAttribute("showNotifications", showNotifications);
+
+        if ( showNotifications ) {
+            /*
+             * Format the display message for Overdue Actions.
+             * 'x overdue', or 'none overdue'
+             */
+            final String overdueActionsMsg = String.format("%s overdue",
+                notificationSummary.getOverdueActions() > 0 ?
+                    notificationSummary.getOverdueActions().toString() : "none");
+
+            /*
+             * Format the overall display message for Actions.
+             * 'x Outstanding Actions (x overdue)', or
+             * 'No Outstanding Actions'
+             */
+            final String actionsMsg = notificationSummary.getStandardActions() > 0 ?
+                String.format("%s Outstanding Actions (%s)",
+                    notificationSummary.getStandardActions(),
+                    overdueActionsMsg) : NO_OUTSTANDING_ACTIONS;
+
+            /*
+             * Format the display message for Notifications.
+             * 'View Notifications (x outstanding)' or,
+             * 'View Notifications (none outstanding)'
+             */
+            final String notificationsMsg = String.format("View Notifications (%s outstanding)",
+                notificationSummary.getNotifications() > 0 ?
+                    notificationSummary.getNotifications().toString() : "none");
+
+            model.addAttribute("actionsMsg", actionsMsg);
+            model.addAttribute("notificationsMsg", notificationsMsg);
+        }
 
         return "home";
     }
