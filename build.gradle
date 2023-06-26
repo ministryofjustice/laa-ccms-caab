@@ -74,7 +74,7 @@ dependencies {
 	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'io.projectreactor:reactor-test:3.4.8'
 
-	integrationTestImplementation "com.github.tomakehurst:wiremock:3.0.0-beta-8"
+	integrationTestImplementation "com.github.tomakehurst:wiremock:3.0.0-beta-10"
 
 }
 
