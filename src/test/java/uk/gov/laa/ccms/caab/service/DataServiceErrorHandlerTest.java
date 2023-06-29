@@ -23,9 +23,6 @@ public class DataServiceErrorHandlerTest {
     @InjectMocks
     private DataServiceErrorHandler dataServiceErrorHandler;
 
-    @Mock
-    private Logger loggerMock;
-
     @BeforeEach
     public void setUp() {
         dataServiceErrorHandler = new DataServiceErrorHandler();

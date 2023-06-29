@@ -19,14 +19,4 @@ public abstract class AbstractIntegrationTest {
     @MockBean
     private SecurityConfiguration securityConfiguration;
 
-    @RegisterExtension
-    protected static WireMockExtension wiremock = WireMockExtension.newInstance()
-            .options(wireMockConfig().dynamicPort())
-            .build();
-
-    @DynamicPropertySource
-    public static void properties(DynamicPropertyRegistry registry) {
-        registry.add("laa.ccms.data-api.port", wiremock::getPort);
-    }
-
 }

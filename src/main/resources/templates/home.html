@@ -20,22 +20,21 @@
                 Your Actions and Notifications
             </h2>
 
-            <div class="govuk-body">
-                You currently have:
-            </div>
-
-            <div th:if="${notificationCount != null}">
-                <ul>
-                    <li class="arrow">
-                        <a class="govuk-body" th:text="${notificationCount.getOutstandingActionCount() > 0 ? notificationCount.getOutstandingActionCount() + ' Outstanding Actions (' + (notificationCount.getOverdueActionCount() > 0 ? notificationCount.getOverdueActionCount() + ' overdue)' : 'none overdue)') : 'No Outstanding Actions'}" href="/"></a>
+            <div th:if="${showNotifications}">
+                <div class="govuk-body">
+                    You currently have:
+                </div>
+                <ul class="govuk-list">
+                    <li>
+                        <a th:text="${actionsMsg}" href="/"></a>
                     </li>
-                    <li class="arrow">
-                        <a class="govuk-body" th:text="${'View Notifications (' + (notificationCount.getNotificationCount() > 0 ? notificationCount.getNotificationCount() + ' outstanding)' : 'none outstanding)')}" href="/"></a>
+                    <li>
+                        <a th:text="${notificationsMsg}" href="/"></a>
                     </li>
                 </ul>
             </div>
 
-            <div class="govuk-body" th:unless="${notificationCount != null}">
+            <div class="govuk-body" th:unless="${showNotifications}">
                 Action and notification information currently not available
             </div>
 

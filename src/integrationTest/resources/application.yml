@@ -29,3 +29,7 @@ laa:
       hostname: localhost
       port: 8123
       url: http://${laa.ccms.data-api.hostname}:${laa.ccms.data-api.port}
+    soa-gateway-api:
+      hostname: localhost
+      port: 8124
+      url: http://${laa.ccms.soa-gateway-api.hostname}:${laa.ccms.soa-gateway-api.port}
