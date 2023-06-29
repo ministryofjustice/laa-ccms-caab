@@ -5,7 +5,7 @@ import org.springframework.security.saml2.provider.service.authentication.Saml2A
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import uk.gov.laa.ccms.data.model.UserResponse;
+import uk.gov.laa.ccms.data.model.UserDetails;
 
 @ControllerAdvice
 public class SamlPrincipalControllerAdvice {
@@ -15,7 +15,7 @@ public class SamlPrincipalControllerAdvice {
 
         if (principal != null) {
 
-            UserResponse user = new UserResponse();
+            UserDetails user = new UserDetails();
             user.setLoginId(principal.getName());
 
             model.addAttribute("user", user);

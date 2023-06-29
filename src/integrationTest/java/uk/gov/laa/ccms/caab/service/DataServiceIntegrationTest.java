@@ -1,5 +1,12 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
+import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static uk.gov.laa.ccms.caab.service.DataServiceErrorHandler.USER_ERROR_MESSAGE;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import org.junit.jupiter.api.Test;
@@ -10,13 +17,8 @@ import org.springframework.test.context.DynamicPropertySource;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
-import uk.gov.laa.ccms.data.model.ProviderResponse;
-import uk.gov.laa.ccms.data.model.UserResponse;
-
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static uk.gov.laa.ccms.caab.service.DataServiceErrorHandler.USER_ERROR_MESSAGE;
+import uk.gov.laa.ccms.data.model.ProviderDetails;
+import uk.gov.laa.ccms.data.model.UserDetails;
 
 public class DataServiceIntegrationTest extends AbstractIntegrationTest {
 
@@ -37,17 +39,17 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     public void testGetUser_returnData() throws Exception{
-        UserResponse expectedUserResponse = buildUserResponse();
-        String userJson = objectMapper.writeValueAsString(expectedUserResponse);
+        UserDetails expectedUserDetails = buildUserDetails();
+        String userJson = objectMapper.writeValueAsString(expectedUserDetails);
 
-        wiremock.stubFor(get(String.format("/users/%s", expectedUserResponse.getLoginId()))
+        wiremock.stubFor(get(String.format("/users/%s", expectedUserDetails.getLoginId()))
             .willReturn(okJson(userJson)));
 
-        Mono<UserResponse> userResponseMono = dataService.getUser(expectedUserResponse.getLoginId());
+        Mono<UserDetails> userDetailsMono = dataService.getUser(expectedUserDetails.getLoginId());
 
-        UserResponse userResponse = userResponseMono.block();
+        UserDetails userDetails = userDetailsMono.block();
 
-        assertEquals(userJson, objectMapper.writeValueAsString(userResponse));
+        assertEquals(userJson, objectMapper.writeValueAsString(userDetails));
     }
 
     @Test
@@ -58,21 +60,21 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
         wiremock.stubFor(get(String.format("/users/%s", loginId))
             .willReturn(notFound()));
 
-        Mono<UserResponse> userResponseMono = dataService.getUser(loginId);
+        Mono<UserDetails> userDetailsMono = dataService.getUser(loginId);
 
-        StepVerifier.create(userResponseMono)
+        StepVerifier.create(userDetailsMono)
                 .expectErrorMatches(throwable -> throwable instanceof DataServiceException &&
                         throwable.getMessage().equals(expectedMessage)
                 ).verify();
      }
 
-    private UserResponse buildUserResponse() {
-        return new UserResponse()
+    private UserDetails buildUserDetails() {
+        return new UserDetails()
             .userId(1)
             .userType("testUserType")
             .loginId("user1")
             .addFirmsItem(
-                new ProviderResponse()
+                new ProviderDetails()
                     .id(1)
                     .name("testProvider"))
             .addFunctionsItem("testFunction");

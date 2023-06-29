@@ -10,7 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import uk.gov.laa.ccms.data.model.UserResponse;
+import uk.gov.laa.ccms.data.model.UserDetails;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -42,17 +42,17 @@ public class DataServiceTest {
         String loginId = "user1";
         String expectedUri = "/users/{loginId}";
 
-        UserResponse mockUser = new UserResponse();
+        UserDetails mockUser = new UserDetails();
         mockUser.setLoginId(loginId);
 
         when(webClientMock.get()).thenReturn(requestHeadersUriMock);
         when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(UserResponse.class)).thenReturn(Mono.just(mockUser));
+        when(responseMock.bodyToMono(UserDetails.class)).thenReturn(Mono.just(mockUser));
 
-        Mono<UserResponse> userResponseMono = dataService.getUser(loginId);
+        Mono<UserDetails> userDetailsMono = dataService.getUser(loginId);
 
-        StepVerifier.create(userResponseMono)
+        StepVerifier.create(userDetailsMono)
                 .expectNextMatches(user -> user.getLoginId().equals(loginId))
                 .verifyComplete();
     }
@@ -65,13 +65,13 @@ public class DataServiceTest {
         when(webClientMock.get()).thenReturn(requestHeadersUriMock);
         when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(UserResponse.class)).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+        when(responseMock.bodyToMono(UserDetails.class)).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
         when(dataServiceErrorHandler.handleUserError(eq(loginId), any(WebClientResponseException.class))).thenReturn(Mono.empty());
 
-        Mono<UserResponse> userResponseMono = dataService.getUser(loginId);
+        Mono<UserDetails> userDetailsMono = dataService.getUser(loginId);
 
-        StepVerifier.create(userResponseMono)
+        StepVerifier.create(userDetailsMono)
                 .verifyComplete();
     }
 
