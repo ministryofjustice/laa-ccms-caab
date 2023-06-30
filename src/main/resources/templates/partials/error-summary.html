@@ -1,0 +1,14 @@
+<div th:fragment="error-summary" class="govuk-error-summary" data-module="govuk-error-summary" th:if="${#fields.hasAnyErrors()}">
+  <div role="alert">
+    <h2 class="govuk-error-summary__title">
+      This page contains one or more errors or warnings
+    </h2>
+    <div class="govuk-error-summary__body">
+      <ul class="govuk-list govuk-error-summary__list">
+        <li th:each="error : ${#fields.detailedErrors()}">
+          <a th:href="${'#' + error.fieldName}" th:text="${error.message}" />
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
