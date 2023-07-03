@@ -18,8 +18,9 @@ public class CreateApplicationController {
     private final DataService dataService;
 
     @GetMapping("/application/office")
-    public String selectOffice(ApplicationDetails applicationDetails, Model model){
+    public String selectOffice(Model model){
         UserDetails user = initialiseUser(model);
+        model.addAttribute("applicationDetails", new ApplicationDetails());
         model.addAttribute("offices", user.getProvider().getOffices());
 
         return "/application/select-office";
