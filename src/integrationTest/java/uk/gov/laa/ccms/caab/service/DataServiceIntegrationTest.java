@@ -17,6 +17,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
+import uk.gov.laa.ccms.data.model.OfficeDetails;
 import uk.gov.laa.ccms.data.model.ProviderDetails;
 import uk.gov.laa.ccms.data.model.UserDetails;
 
@@ -77,6 +78,11 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
                 new ProviderDetails()
                     .id(1)
                     .name("testProvider"))
+            .provider(new ProviderDetails()
+                .id(2)
+                .addOfficesItem(new OfficeDetails()
+                    .id(1)
+                    .name("Office 1")))
             .addFunctionsItem("testFunction");
     }
 
