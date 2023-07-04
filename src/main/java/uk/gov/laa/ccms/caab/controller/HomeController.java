@@ -6,7 +6,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
-import uk.gov.laa.ccms.data.model.UserResponse;
+import uk.gov.laa.ccms.data.model.UserDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
 @Controller
@@ -21,7 +21,7 @@ public class HomeController {
     @GetMapping("/")
     public String home(Model model){
 
-        UserResponse user = (UserResponse) model.getAttribute("user");
+        UserDetails user = (UserDetails) model.getAttribute("user");
         user = dataService.getUser(user.getLoginId()).block();
 
         model.addAttribute("user", user);

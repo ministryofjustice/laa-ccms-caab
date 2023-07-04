@@ -7,11 +7,7 @@ import org.mockito.Mock;
 import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import uk.gov.laa.ccms.data.model.UserResponse;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.verify;
 
 class SoaGatewayServiceErrorHandlerTest {
 
