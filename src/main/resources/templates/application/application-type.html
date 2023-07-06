@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>LAA CCMS - Start New Application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a href="/" class="govuk-back-link">Cancel and return to Home</a>
+    </div>
+    <div id="main-content">
+        <span class="govuk-caption-l">About your application</span>
+        <h1 class="govuk-heading-l">
+            Application type
+        </h1>
+        <form action="#" th:action="@{/application/application-type}" th:object="${applicationDetails}" method="post">
+            <div th:replace="~{partials/error-summary :: error-summary}"></div>
+            <div class="govuk-inset-text">
+                Please select the relevant details.
+            </div>
+            <div class="govuk-grid-row">
+                <div class="govuk-grid-column-two-thirds">
+                    <div class="govuk-form-group">
+                        <fieldset class="govuk-fieldset">
+                            <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                                <h2 class="govuk-fieldset__heading">
+                                    What is your application type?
+                                </h2>
+                            </legend>
+                            <span th:if="${#fields.hasErrors('applicationTypeId')}" th:errors="*{applicationTypeId}" class="govuk-error-message"></span>
+                            <select class="govuk-select" data-module="govuk-select" th:field="*{applicationTypeId}" th:errorclass="govuk-select--error" id="applicationTypeId" name="applicationTypeId" >
+                                <option value="">Please Select</option>
+                                <option th:each="type : ${applicationTypes}" th:value="${type.code}" th:text="${type.description}"></option>
+                            </select>
+                        </fieldset>
+                    </div>
+                    <button class="govuk-button" data-module="govuk-button">
+                        Continue
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>
