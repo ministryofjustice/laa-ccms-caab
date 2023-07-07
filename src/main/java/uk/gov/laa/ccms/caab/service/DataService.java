@@ -22,8 +22,8 @@ public class DataService {
 
     private final DataServiceErrorHandler dataServiceErrorHandler;
 
-    private static final List<String> EXCLUDED_APPLICATION_TYPE_CODES = Arrays.asList("DP", "ECF", "SUBDP");
-    private static final String COMMON_VALUE_APPLICATION_TYPE = "XXCCMS_APP_AMEND_TYPES";
+    public static final List<String> EXCLUDED_APPLICATION_TYPE_CODES = Arrays.asList("DP", "ECF", "SUBDP");
+    public static final String COMMON_VALUE_APPLICATION_TYPE = "XXCCMS_APP_AMEND_TYPES";
 
     public DataService(@Qualifier("dataWebClient") WebClient dataWebClient,
         DataServiceErrorHandler dataServiceErrorHandler) {
