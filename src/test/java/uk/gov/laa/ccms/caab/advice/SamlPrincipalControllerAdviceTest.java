@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.advice;
 
 import jakarta.servlet.http.HttpSession;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -22,28 +23,75 @@ class SamlPrincipalControllerAdviceTest {
     @Mock
     private HttpSession session;
 
-    @Test
-    public void addSamlPrincipalToModelTest() {
-        // Arrange
-        Saml2AuthenticatedPrincipal principal = mock(Saml2AuthenticatedPrincipal.class);
-        Model model = mock(Model.class);
-        SamlPrincipalControllerAdvice advice = new SamlPrincipalControllerAdvice(dataService);
-        UserDetails userDetails = new UserDetails();
+    @Mock
+    private Model model;
+
+    private SamlPrincipalControllerAdvice advice;
+    private Saml2AuthenticatedPrincipal principal;
+    private UserDetails userDetails;
+
+    @BeforeEach
+    public void setUp() {
+        principal = mock(Saml2AuthenticatedPrincipal.class);
+        advice = new SamlPrincipalControllerAdvice(dataService);
+        userDetails = new UserDetails();
         userDetails.setLoginId("test");
         when(dataService.getUser(any())).thenReturn(Mono.just(userDetails));
         when(principal.getName()).thenReturn("test");
-
-        // Act
-        advice.addSamlPrincipalToModel(principal, model, session);
-
-        // Assert
-        verify(model).addAttribute(eq("user"), any());
-        verify(model).addAttribute(eq("userAttributes"), any());
-        verifyNoMoreInteractions(model);
-
-        if (principal != null) {
-            verify(principal).getName();
-        }
     }
 
+    @Test
+    public void addSamlPrincipalToModelTest_WhenPrincipalNotNullAndSessionContainsUser() {
+        when(session.getAttribute("user")).thenReturn(userDetails);
+
+        advice.addSamlPrincipalToModel(principal, model, session);
+
+        verify(model).addAttribute("user", userDetails);
+        verify(model).addAttribute("userAttributes", principal.getAttributes());
+        verify(session).setAttribute("user", userDetails);
+        verifyNoMoreInteractions(model);
+    }
+
+    @Test
+    public void addSamlPrincipalToModelTest_WhenPrincipalNotNullAndSessionContainsUserWithDifferentLoginId() {
+        UserDetails sessionUser = new UserDetails();
+        sessionUser.setLoginId("different");
+        when(session.getAttribute("user")).thenReturn(sessionUser);
+
+        advice.addSamlPrincipalToModel(principal, model, session);
+
+        verify(dataService).getUser(any());
+        verify(model).addAttribute("user", userDetails);
+        verify(model).addAttribute("userAttributes", principal.getAttributes());
+        verify(session).setAttribute("user", userDetails);
+        verifyNoMoreInteractions(model);
+    }
+
+    @Test
+    public void addSamlPrincipalToModelTest_WhenPrincipalNotNullAndSessionDoesNotContainUser() {
+        when(session.getAttribute("user")).thenReturn(null);
+
+        advice.addSamlPrincipalToModel(principal, model, session);
+
+        verify(dataService).getUser(any());
+        verify(model).addAttribute("user", userDetails);
+        verify(model).addAttribute("userAttributes", principal.getAttributes());
+        verify(session).setAttribute("user", userDetails);
+        verifyNoMoreInteractions(model);
+    }
+
+    @Test
+    public void addSamlPrincipalToModelTest_WhenPrincipalIsNull() {
+        advice.addSamlPrincipalToModel(null, model, session);
+
+        verifyNoInteractions(dataService);
+        verifyNoInteractions(model);
+        verifyNoInteractions(session);
+    }
 }
+
+
+
+
+
+

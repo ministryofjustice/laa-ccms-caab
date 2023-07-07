@@ -1,15 +1,11 @@
 package uk.gov.laa.ccms.caab.controller;
 
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +19,14 @@ import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.data.model.UserDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
+
+import java.util.stream.Stream;
+
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -47,50 +51,30 @@ public class HomeControllerTest {
     mockMvc = standaloneSetup(homeController).build();
   }
 
-  @Test
-  public void testHomeRetrievesUserDetailsAndNotifications() throws Exception {
-    final UserDetails userDetails = new UserDetails()
-        .userId(1)
-        .userType("testUserType")
-        .loginId("testLoginId");
-
-    // Create a sample notification summary
-    final NotificationSummary notificationSummary = new NotificationSummary()
-            .notifications(1)
-            .standardActions(2)
-            .overdueActions(3);
-
-    when(dataService.getUser(userDetails.getLoginId())).thenReturn(Mono.just(userDetails));
-
-    // Mock the SOA Gateway service to return the notification summary
-    when(soaGatewayService.getNotificationsSummary(userDetails.getLoginId(), userDetails.getUserType())).thenReturn(Mono.just(notificationSummary));
-
-    this.mockMvc.perform(get("/").flashAttr("user", userDetails))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("home"))
-        .andExpect(model().attribute("user", userDetails))
-        .andExpect(model().attribute("showNotifications", true))
-        .andExpect(model().attribute("actionsMsg", "2 Outstanding Actions (3 overdue)"))
-        .andExpect(model().attribute("notificationsMsg", "View Notifications (1 outstanding)"));
-
-    verify(dataService).getUser(userDetails.getLoginId());
+  private static Stream<Arguments> userDetailsAndNotificationParameters() {
+    return Stream.of(
+            Arguments.of(1, 2, 3, true, "2 Outstanding Actions (3 overdue)", "View Notifications (1 outstanding)"),
+            Arguments.of(0, 2, 0, true, "2 Outstanding Actions (none overdue)", "View Notifications (none outstanding)"),
+            Arguments.of(0, 0, 5, true, HomeController.NO_OUTSTANDING_ACTIONS, "View Notifications (none outstanding)")
+    );
   }
 
-  @Test
-  public void testHomeHandlesZeroOverdueNotifications() throws Exception {
-    final UserDetails userDetails = new UserDetails()
-        .userId(1)
-        .userType("testUserType")
-        .loginId("testLoginId");
+  private static final UserDetails userDetails = new UserDetails()
+          .userId(1)
+          .userType("testUserType")
+          .loginId("testLoginId");
+
+  @ParameterizedTest
+  @MethodSource("userDetailsAndNotificationParameters")
+  public void testHomeRetrievesUserDetailsAndNotifications(int notifications, int standardActions, int overdueActions,
+                                                           boolean expectedShowNotifications, String expectedActionMsg,
+                                                           String expectedNotificationMsg) throws Exception {
 
     // Create a sample notification summary
     final NotificationSummary notificationSummary = new NotificationSummary()
-        .notifications(0)
-        .standardActions(2)
-        .overdueActions(0);
-
-    when(dataService.getUser(userDetails.getLoginId())).thenReturn(Mono.just(userDetails));
+            .notifications(notifications)
+            .standardActions(standardActions)
+            .overdueActions(overdueActions);
 
     // Mock the SOA Gateway service to return the notification summary
     when(soaGatewayService.getNotificationsSummary(userDetails.getLoginId(), userDetails.getUserType())).thenReturn(Mono.just(notificationSummary));
@@ -100,51 +84,14 @@ public class HomeControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("home"))
         .andExpect(model().attribute("user", userDetails))
-        .andExpect(model().attribute("showNotifications", true))
-        .andExpect(model().attribute("actionsMsg", "2 Outstanding Actions (none overdue)"))
-        .andExpect(model().attribute("notificationsMsg", "View Notifications (none outstanding)"));
+        .andExpect(model().attribute("showNotifications", expectedShowNotifications))
+        .andExpect(model().attribute("actionsMsg", expectedActionMsg))
+        .andExpect(model().attribute("notificationsMsg", expectedNotificationMsg));
 
-    verify(dataService).getUser(userDetails.getLoginId());
-  }
-
-  @Test
-  public void testHomeHandlesNoActions() throws Exception {
-    final UserDetails userDetails = new UserDetails()
-        .userId(1)
-        .userType("testUserType")
-        .loginId("testLoginId");
-
-    // Create a sample notification summary
-    final NotificationSummary notificationSummary = new NotificationSummary()
-        .notifications(0)
-        .standardActions(0)
-        .overdueActions(5);
-
-    when(dataService.getUser(userDetails.getLoginId())).thenReturn(Mono.just(userDetails));
-
-    // Mock the SOA Gateway service to return the notification summary
-    when(soaGatewayService.getNotificationsSummary(userDetails.getLoginId(), userDetails.getUserType())).thenReturn(Mono.just(notificationSummary));
-
-    this.mockMvc.perform(get("/").flashAttr("user", userDetails))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("home"))
-        .andExpect(model().attribute("user", userDetails))
-        .andExpect(model().attribute("showNotifications", true))
-        .andExpect(model().attribute("actionsMsg", HomeController.NO_OUTSTANDING_ACTIONS))
-        .andExpect(model().attribute("notificationsMsg", "View Notifications (none outstanding)"));
-
-    verify(dataService).getUser(userDetails.getLoginId());
   }
 
   @Test
   public void testHomeHandlesNullNotifications() throws Exception {
-    final UserDetails userDetails = new UserDetails()
-        .userId(1)
-        .userType("testUserType")
-        .loginId("testLoginId");
-
-    when(dataService.getUser(userDetails.getLoginId())).thenReturn(Mono.just(userDetails));
 
     // Mock the SOA Gateway service to return the notification summary
     when(soaGatewayService.getNotificationsSummary(userDetails.getLoginId(), userDetails.getUserType())).thenReturn(Mono.empty());
@@ -157,8 +104,6 @@ public class HomeControllerTest {
         .andExpect(model().attribute("showNotifications", false))
         .andExpect(model().attributeDoesNotExist("actionsMsg"))
         .andExpect(model().attributeDoesNotExist("notificationsMsg"));
-
-    verify(dataService).getUser(userDetails.getLoginId());
   }
 }
 

@@ -31,15 +31,15 @@ public class SoaGatewayService {
                 .onErrorResume(e -> soaGatewayServiceErrorHandler.handleNotificationSummaryError(loginId, e));
     }
 
-    public Mono<Object> getContractDetails(String loginId, String userType){
-        return soaGatewayWebClient
-                .get()
-                .uri("/users/{loginId}/notifications/summary", loginId)
-                .header("SoaGateway-User-Login-Id", loginId)
-                .header("SoaGateway-User-Role", userType)
-                .retrieve()
-                .bodyToMono(Object.class)
-                .onErrorResume(e -> soaGatewayServiceErrorHandler.handleNotificationSummaryError(loginId, e));
-    }
+//    public Mono<Object> getContractDetails(String loginId, String userType){
+//        return soaGatewayWebClient
+//                .get()
+//                .uri("/users/{loginId}/notifications/summary", loginId)
+//                .header("SoaGateway-User-Login-Id", loginId)
+//                .header("SoaGateway-User-Role", userType)
+//                .retrieve()
+//                .bodyToMono(Object.class)
+//                .onErrorResume(e -> soaGatewayServiceErrorHandler.handleNotificationSummaryError(loginId, e));
+//    }
 
 }

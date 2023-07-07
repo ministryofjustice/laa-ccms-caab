@@ -3,7 +3,7 @@ package uk.gov.laa.ccms.caab.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.data.model.CommonValueListDetails;
+import uk.gov.laa.ccms.data.model.CommonLookupValueListDetails;
 import uk.gov.laa.ccms.data.model.UserDetails;
 
 @Slf4j
@@ -11,7 +11,7 @@ import uk.gov.laa.ccms.data.model.UserDetails;
 public class DataServiceErrorHandler {
 
     public static String USER_ERROR_MESSAGE = "Failed to retrieve User with loginId: %s";
-    public static String COMMON_VALUES_ERROR_MESSAGE = "Failed to retrieve Common Values";
+    public static String COMMON_VALUES_ERROR_MESSAGE = "Failed to retrieve Common Values: (type: %s, code: %s, sort: %s)";
 
     public Mono<UserDetails> handleUserError(String loginId, Throwable e) {
         log.error("Failed to retrieve User with loginId: {}", loginId, e);
@@ -19,9 +19,9 @@ public class DataServiceErrorHandler {
                 String.format(USER_ERROR_MESSAGE, loginId), e));
     }
 
-    public Mono<CommonValueListDetails> handleCommonValuesError(Throwable e) {
-        log.error(COMMON_VALUES_ERROR_MESSAGE, e);
+    public Mono<CommonLookupValueListDetails> handleCommonValuesError(String type, String code, String sort, Throwable e) {
+        log.error("Failed to retrieve Common Values - (type: {}, code: {}, sort: {})", type, code, sort, e);
         return Mono.error(new DataServiceException(
-                COMMON_VALUES_ERROR_MESSAGE, e));
+                String.format(COMMON_VALUES_ERROR_MESSAGE, type, code, sort), e));
     }
 }

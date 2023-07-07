@@ -10,11 +10,9 @@ import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
-import uk.gov.laa.ccms.data.model.CommonValueDetails;
-import uk.gov.laa.ccms.data.model.CommonValueListDetails;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetails;
 import uk.gov.laa.ccms.data.model.UserDetails;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -57,7 +55,7 @@ public class CreateApplicationController {
         model.addAttribute("applicationDetails", new ApplicationDetails());
         model.addAttribute("categoriesOfLaw", user.getProvider().getOffices());
 
-        return "/application/category-of-law";
+        return "/application/select-category-of-law";
     }
 
     @PostMapping("/application/category-of-law")
@@ -67,7 +65,7 @@ public class CreateApplicationController {
         if (bindingResult.hasErrors()) {
             UserDetails user = (UserDetails) model.getAttribute("user");
             model.addAttribute("categoriesOfLaw", user.getProvider().getOffices());
-            return "/application/category-of-law";
+            return "/application/select-category-of-law";
         }
 
         return "redirect:/application/application-type";
@@ -75,12 +73,12 @@ public class CreateApplicationController {
 
     @GetMapping("/application/application-type")
     public String applicationType(Model model){
-        CommonValueListDetails applicationTypes = dataService.getCommonValues("XXCCMS_APP_AMEND_TYPES", null, "description").block();
+        List<CommonLookupValueDetails> applicationTypes = dataService.getApplicationTypes();
 
         model.addAttribute("applicationDetails", new ApplicationDetails());
-        model.addAttribute("applicationTypes", applicationTypes.getContent());
+        model.addAttribute("applicationTypes", applicationTypes);
 
-        return "/application/application-type";
+        return "select-application-type";
     }
 
     @PostMapping("/application/application-type")
@@ -88,9 +86,9 @@ public class CreateApplicationController {
         applicationValidator.validateApplicationType(applicationDetails, bindingResult);
 
         if (bindingResult.hasErrors()) {
-            CommonValueListDetails applicationTypes = dataService.getCommonValues("XXCCMS_APP_AMEND_TYPES", null, "description").block();
-            model.addAttribute("applicationTypes", applicationTypes.getContent());
-            return "/application/application-type";
+            List<CommonLookupValueDetails> applicationTypes = dataService.getApplicationTypes();
+            model.addAttribute("applicationTypes", applicationTypes);
+            return "select-application-type";
         }
 
         return "redirect:/application/delegate-functions";
