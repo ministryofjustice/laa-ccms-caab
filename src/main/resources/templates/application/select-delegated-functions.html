@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>LAA CCMS - Start New Application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a href="/" class="govuk-back-link">Cancel and return to Home</a>
+    </div>
+    <div id="main-content">
+        <span class="govuk-caption-l">About your application</span>
+        <h1 class="govuk-heading-l">
+            Delegate functions
+        </h1>
+        <form action="#" th:action="@{/application/delegated-function}" th:object="${applicationDetails}" method="post">
+            <div th:replace="~{partials/error-summary :: error-summary}"></div>
+            <div class="govuk-inset-text">
+                If you have exercised delegated functions in a special children act matter, please select 'no' to use of delegated functions here. You will be asked to confirm the details of the exercise of the delegated functions in the merits assessment.
+            </div>
+            <div class="govuk-grid-row">
+                <div class="govuk-grid-column-two-thirds">
+                    <div class="govuk-form-group">
+                        <fieldset class="govuk-fieldset">
+                            <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                                <h2 class="govuk-fieldset__heading">
+                                    Are delegated functions used?
+                                </h2>
+                                <div id="delegated-functions-hint" class="govuk-hint">
+                                    In a matter which is not a special children act
+                                </div>
+                            </legend>
+                            <span th:if="${#fields.hasErrors('delegatedFunctionsOption')}" th:errors="*{delegatedFunctionsOption}" class="govuk-error-message"></span>
+                            <select class="govuk-select" data-module="govuk-select" th:field="*{delegatedFunctionsOption}" th:errorclass="govuk-select--error" id="delegatedFunctionsOption" name="delegatedFunctionsOption" >
+                                <option value="">Please Select</option>
+                                <option value="Y">Yes</option>
+                                <option value="N">No</option>
+                            </select>
+
+                        </fieldset>
+                    </div>
+                    <div class="govuk-form-group">
+                        <fieldset class="govuk-fieldset" role="group" aria-describedby="delegated-function-used-hint">
+                            <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                                <h1 class="govuk-fieldset__heading">
+                                    When was the delegated function used? (optional)
+                                </h1>
+                            </legend>
+                            <div id="delegated-function-used-hint" class="govuk-hint">
+                                For example, 27 3 2007
+                            </div>
+                            <div class="govuk-date-input" id="delegated-function-used">
+                                <div class="govuk-date-input__item">
+                                    <div class="govuk-form-group">
+                                        <label class="govuk-label govuk-date-input__label" for="delegated-function-used-day">
+                                            Day
+                                        </label>
+                                        <input class="govuk-input govuk-date-input__input govuk-input--width-2" id="delegated-function-used-day" name="delegated-function-used-day" type="text" inputmode="numeric">
+                                    </div>
+                                </div>
+                                <div class="govuk-date-input__item">
+                                    <div class="govuk-form-group">
+                                        <label class="govuk-label govuk-date-input__label" for="delegated-function-used-month">
+                                            Month
+                                        </label>
+                                        <input class="govuk-input govuk-date-input__input govuk-input--width-2" id="delegated-function-used-month" name="delegated-function-used-month" type="text" inputmode="numeric">
+                                    </div>
+                                </div>
+                                <div class="govuk-date-input__item">
+                                    <div class="govuk-form-group">
+                                        <label class="govuk-label govuk-date-input__label" for="delegated-function-used-year">
+                                            Year
+                                        </label>
+                                        <input class="govuk-input govuk-date-input__input govuk-input--width-4" id="delegated-function-used-year" name="delegated-function-used-year" type="text" inputmode="numeric">
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+                    <button class="govuk-button" data-module="govuk-button">
+                        Continue
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

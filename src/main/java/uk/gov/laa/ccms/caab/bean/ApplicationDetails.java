@@ -13,12 +13,14 @@ public class ApplicationDetails {
     /**
      * The id of the Category of Law related to this Application
      */
-    private Integer categoryOfLawId;
+    private String categoryOfLawId;
 
     /**
      * The id of the Category of Law related to this Application
      */
-    private Integer applicationTypeId;
+    private String applicationTypeId;
+
+    private String delegatedFunctionsOption;
 
 
 }

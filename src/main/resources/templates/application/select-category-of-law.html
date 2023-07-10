@@ -15,9 +15,14 @@
         </h1>
         <form action="#" th:action="@{/application/category-of-law}" th:object="${applicationDetails}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <div class="govuk-inset-text">
+            <div class="govuk-inset-text" th:if="${exceptionalFunding}">
                 Please select the relevant Category of Law or click
-                <a href="/TODO">Exceptional Funding </a>
+                <a href="/application/category-of-law">revert to standard application</a>
+                if you do not wish to apply for exceptional case funding.
+            </div>
+            <div class="govuk-inset-text" th:unless="${exceptionalFunding}">
+                Please select the relevant Category of Law or click
+                <a href="/application/category-of-law?exceptional_funding=true">Exceptional Funding</a>
                 if you wish to apply for exceptional case funding.
             </div>
             <div class="govuk-grid-row">
@@ -32,7 +37,7 @@
                             <span th:if="${#fields.hasErrors('categoryOfLawId')}" th:errors="*{categoryOfLawId}" class="govuk-error-message"></span>
                             <select class="govuk-select" data-module="govuk-select" th:field="*{categoryOfLawId}" th:errorclass="govuk-select--error" id="categoryOfLawId" name="categoryOfLawId" >
                                 <option value="">Please Select</option>
-                                <option th:each="category : ${categoriesOfLaw}" th:value="${category.id}" th:text="${category.name}"></option>
+                                <option th:each="category : ${categoriesOfLaw}" th:value="${category.code}" th:text="${category.description}"></option>
                             </select>
                         </fieldset>
                     </div>

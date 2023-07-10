@@ -9,7 +9,6 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetails;
 import uk.gov.laa.ccms.data.model.CommonLookupValueListDetails;
 import uk.gov.laa.ccms.data.model.UserDetails;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +23,7 @@ public class DataService {
 
     public static final List<String> EXCLUDED_APPLICATION_TYPE_CODES = Arrays.asList("DP", "ECF", "SUBDP");
     public static final String COMMON_VALUE_APPLICATION_TYPE = "XXCCMS_APP_AMEND_TYPES";
+    public static final String COMMON_VALUE_CATEGORY_OF_LAW = "XXCCMS_CATEGORY_OF_LAW";
 
     public DataService(@Qualifier("dataWebClient") WebClient dataWebClient,
         DataServiceErrorHandler dataServiceErrorHandler) {
@@ -66,6 +66,23 @@ public class DataService {
                 .collect(Collectors.toList());
 
         return applicationTypes;
+    }
+
+    public List<CommonLookupValueDetails> getCategoriesOfLaw(List<String> codes) {
+        CommonLookupValueListDetails allCategoriesOfLaw = getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW, null, null).block();
+        List<CommonLookupValueDetails> categoriesOfLaw = allCategoriesOfLaw.getContent().stream()
+                    .filter(category -> codes.contains(category.getCode()))
+                    .collect(Collectors.toList());
+
+        return categoriesOfLaw;
+    }
+
+    public List<CommonLookupValueDetails> getAllCategoriesOfLaw() {
+        CommonLookupValueListDetails allCategoriesOfLaw = getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW, null, null).block();
+        List<CommonLookupValueDetails> categoriesOfLaw = allCategoriesOfLaw.getContent().stream()
+                .collect(Collectors.toList());
+
+        return categoriesOfLaw;
     }
 
 }

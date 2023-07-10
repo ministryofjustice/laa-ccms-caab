@@ -28,6 +28,11 @@ public class ApplicationDetailsValidator implements Validator{
                 "required.applicationTypeId", "Please select an application type.");
     }
 
+    public void validateDelegatedFunction(Object target, Errors errors){
+        ValidationUtils.rejectIfEmpty(errors, "delegatedFunctionOption",
+                "required.delegatedFunctionOption", "Please complete 'Are delegated functions used'.");
+    }
+
     @Override
     public void validate(Object target, Errors errors) {
         validateSelectOffice(target, errors);
