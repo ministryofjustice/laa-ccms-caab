@@ -2,8 +2,10 @@ package uk.gov.laa.ccms.caab.bean;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 @Data
-public class ApplicationDetails {
+public class ApplicationDetails implements Serializable {
 
     /**
      * The id of the Office related to this Application
@@ -21,6 +23,9 @@ public class ApplicationDetails {
     private String applicationTypeId;
 
     private String delegatedFunctionsOption;
+    private String delegatedFunctionUsedDay;
+    private String delegatedFunctionUsedMonth;
+    private String delegatedFunctionUsedYear;
 
 
 }
