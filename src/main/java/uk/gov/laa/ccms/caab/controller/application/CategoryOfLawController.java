@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -16,9 +17,7 @@ import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetails;
-
-import java.util.Arrays;
-import java.util.List;
+import uk.gov.laa.ccms.data.model.UserDetails;
 
 @Controller
 @RequiredArgsConstructor
@@ -34,35 +33,42 @@ public class CategoryOfLawController {
     @GetMapping("/application/category-of-law")
     public String categoryOfLaw(@RequestParam(value = "exceptional_funding", defaultValue = "false") boolean exceptionalFunding,
                                 @ModelAttribute("applicationDetails") ApplicationDetails applicationDetails,
+                                @ModelAttribute("user") UserDetails userDetails,
                                 Model model) {
         log.info("GET /application/category-of-law: " + applicationDetails.toString());
-        return getCategoryOfLaw(exceptionalFunding, applicationDetails, model);
+        return getCategoryOfLaw(exceptionalFunding, applicationDetails, userDetails, model);
     }
 
     @PostMapping("/application/category-of-law")
     public String categoryOfLaw(@RequestParam(value = "exceptional_funding", defaultValue = "false") boolean exceptionalFunding,
                                 @ModelAttribute("applicationDetails") ApplicationDetails applicationDetails,
+                                @ModelAttribute("user") UserDetails userDetails,
                                 BindingResult bindingResult,
                                 RedirectAttributes model) {
         log.info("POST /application/category-of-law: " + applicationDetails.toString());
         applicationValidator.validateCategoryOfLaw(applicationDetails, bindingResult);
 
         if (bindingResult.hasErrors()) {
-            return getCategoryOfLaw(exceptionalFunding, applicationDetails, model);
+            return getCategoryOfLaw(exceptionalFunding, applicationDetails, userDetails, model);
         }
 
         model.addFlashAttribute("applicationDetails", applicationDetails);
         return "redirect:/application/application-type";
     }
 
-    private String getCategoryOfLaw(boolean exceptionalFunding, ApplicationDetails applicationDetails, Model model) {
+    private String getCategoryOfLaw(boolean exceptionalFunding, ApplicationDetails applicationDetails,
+        UserDetails user, Model model) {
 
         List<CommonLookupValueDetails> categoriesOfLaw;
         if (exceptionalFunding){
             categoriesOfLaw = dataService.getAllCategoriesOfLaw();
         } else {
-            //TODO Amend this as its a dummy list, need the soa call here
-            List<String> categoryOfLawCodes = Arrays.asList("MAT", "MED", "MSC", "PCW");
+            List<String> categoryOfLawCodes = soaGatewayService.getCategoryOfLawCodes(
+                user.getProvider().getId(),
+                applicationDetails.getOfficeId(),
+                user.getLoginId(),
+                user.getUserType(),
+                Boolean.TRUE);
             categoriesOfLaw = dataService.getCategoriesOfLaw(categoryOfLawCodes);
         }
 
