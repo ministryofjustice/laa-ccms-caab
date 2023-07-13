@@ -88,7 +88,7 @@ public class SoaGatewayServiceIntegrationTest extends AbstractIntegrationTest {
 
     private ContractDetails buildContractDetails() {
         return new ContractDetails()
-            .addContractItem(new ContractDetail()
+            .addContractsItem(new ContractDetail()
                 .categoryofLaw("CAT1")
                 .subCategory("SUBCAT1")
                 .createNewMatters(true)

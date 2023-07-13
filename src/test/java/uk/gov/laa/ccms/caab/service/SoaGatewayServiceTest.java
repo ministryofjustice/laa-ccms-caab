@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -102,9 +103,9 @@ class SoaGatewayServiceTest {
         String expectedUri = "/contract-details?providerFirmId={providerFirmId}&officeId={officeId}";
 
         ContractDetails contractDetails = new ContractDetails()
-            .addContractItem(
+            .addContractsItem(
                 createContractDetail("CAT1", true, true))
-            .addContractItem(
+            .addContractsItem(
                 createContractDetail("CAT2", true, true));
 
         when(soaGatewayWebClientMock.get()).thenReturn(requestHeadersUriMock);
@@ -138,9 +139,9 @@ class SoaGatewayServiceTest {
         String expectedUri = "/contract-details?providerFirmId={providerFirmId}&officeId={officeId}";
 
         ContractDetails contractDetails = new ContractDetails()
-            .addContractItem(
+            .addContractsItem(
                 createContractDetail(cat1, newMatters1, remAuth1))
-            .addContractItem(
+            .addContractsItem(
                 createContractDetail(cat2, newMatters2, remAuth2));
 
         when(soaGatewayWebClientMock.get()).thenReturn(requestHeadersUriMock);
@@ -155,6 +156,29 @@ class SoaGatewayServiceTest {
         assertNotNull(response);
         assertEquals(1, response.size());
         assertEquals(cat2, response.get(0));
+    }
+
+    @Test
+    void getCategoryOfLawCodes_handlesError() {
+        Integer providerFirmId = 123;
+        Integer officeId = 345;
+        String loginId = "user1";
+        String userType = "userType";
+        String expectedUri = "/contract-details?providerFirmId={providerFirmId}&officeId={officeId}";
+
+        when(soaGatewayWebClientMock.get()).thenReturn(requestHeadersUriMock);
+        when(requestHeadersUriMock.uri(expectedUri, providerFirmId, officeId)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+
+        when(responseMock.bodyToMono(ContractDetails.class)).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+
+        when(soaGatewayServiceErrorHandler.handleContractDetailsError(eq(providerFirmId), eq(officeId), any(WebClientResponseException.class))).thenReturn(Mono.empty());
+
+        soaGatewayService.getCategoryOfLawCodes(providerFirmId, officeId, loginId, userType, Boolean.TRUE);
+
+        verify(soaGatewayServiceErrorHandler).handleContractDetailsError(eq(providerFirmId), eq(officeId), any(WebClientResponseException.class));
     }
 
     private static ContractDetail createContractDetail(String cat, Boolean createNewMatters, Boolean remainderAuth) {

@@ -48,7 +48,7 @@ public class SoaGatewayService {
 
         // Process and filter the response
         return Optional.ofNullable(contractDetails)
-            .map(cd -> filterCategoriesOfLaw(cd.getContract(), initialApplication))
+            .map(cd -> filterCategoriesOfLaw(cd.getContracts(), initialApplication))
             .orElse(Collections.emptyList());
     }
 

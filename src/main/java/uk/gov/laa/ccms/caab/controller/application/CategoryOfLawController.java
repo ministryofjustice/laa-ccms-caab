@@ -11,7 +11,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
@@ -22,6 +23,7 @@ import uk.gov.laa.ccms.data.model.UserDetails;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
+@SessionAttributes("applicationDetails")
 public class CategoryOfLawController {
 
     private final ApplicationDetailsValidator applicationValidator;
@@ -33,7 +35,7 @@ public class CategoryOfLawController {
     @GetMapping("/application/category-of-law")
     public String categoryOfLaw(@RequestParam(value = "exceptional_funding", defaultValue = "false") boolean exceptionalFunding,
                                 @ModelAttribute("applicationDetails") ApplicationDetails applicationDetails,
-                                @ModelAttribute("user") UserDetails userDetails,
+                                @SessionAttribute("user") UserDetails userDetails,
                                 Model model) {
         log.info("GET /application/category-of-law: " + applicationDetails.toString());
         return getCategoryOfLaw(exceptionalFunding, applicationDetails, userDetails, model);
@@ -42,9 +44,9 @@ public class CategoryOfLawController {
     @PostMapping("/application/category-of-law")
     public String categoryOfLaw(@RequestParam(value = "exceptional_funding", defaultValue = "false") boolean exceptionalFunding,
                                 @ModelAttribute("applicationDetails") ApplicationDetails applicationDetails,
-                                @ModelAttribute("user") UserDetails userDetails,
+                                @SessionAttribute("user") UserDetails userDetails,
                                 BindingResult bindingResult,
-                                RedirectAttributes model) {
+                                Model model) {
         log.info("POST /application/category-of-law: " + applicationDetails.toString());
         applicationValidator.validateCategoryOfLaw(applicationDetails, bindingResult);
 
@@ -52,7 +54,6 @@ public class CategoryOfLawController {
             return getCategoryOfLaw(exceptionalFunding, applicationDetails, userDetails, model);
         }
 
-        model.addFlashAttribute("applicationDetails", applicationDetails);
         return "redirect:/application/application-type";
     }
 
@@ -72,7 +73,6 @@ public class CategoryOfLawController {
             categoriesOfLaw = dataService.getCategoriesOfLaw(categoryOfLawCodes);
         }
 
-        model.addAttribute("applicationDetails", applicationDetails);
         model.addAttribute("categoriesOfLaw", categoriesOfLaw);
         model.addAttribute("exceptionalFunding", exceptionalFunding);
 
