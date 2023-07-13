@@ -25,6 +25,10 @@ public class DataService {
     public static final String COMMON_VALUE_APPLICATION_TYPE = "XXCCMS_APP_AMEND_TYPES";
     public static final String COMMON_VALUE_CATEGORY_OF_LAW = "XXCCMS_CATEGORY_OF_LAW";
 
+    public static final String COMMON_VALUE_GENDER = "HZ_GENDER";
+    public static final String COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE = "XXCCMS_UNIQUE_ID_TYPE";
+
+
     public DataService(@Qualifier("dataWebClient") WebClient dataWebClient,
         DataServiceErrorHandler dataServiceErrorHandler) {
         this.dataWebClient = dataWebClient;
@@ -67,6 +71,24 @@ public class DataService {
 
         return applicationTypes;
     }
+
+    public List<CommonLookupValueDetails> getGenders() {
+        CommonLookupValueListDetails commonLookupValues = getCommonValues(COMMON_VALUE_GENDER, null, null).block();
+        List<CommonLookupValueDetails> genders = commonLookupValues.getContent().stream()
+                .collect(Collectors.toList());
+
+        return genders;
+    }
+
+    public List<CommonLookupValueDetails> getUniqueIdentifierTypes() {
+        CommonLookupValueListDetails commonLookupValues = getCommonValues(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE, null, null).block();
+        List<CommonLookupValueDetails> uniqueIdentifierTypes = commonLookupValues.getContent().stream()
+                .collect(Collectors.toList());
+
+        return uniqueIdentifierTypes;
+    }
+
+
 
     public List<CommonLookupValueDetails> getCategoriesOfLaw(List<String> codes) {
         CommonLookupValueListDetails allCategoriesOfLaw = getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW, null, null).block();

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>LAA CCMS - Start New Application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a href="/" class="govuk-back-link">Cancel and return to Home</a>
+    </div>
+    <div id="main-content">
+        <span class="govuk-caption-l">About your application</span>
+        <h1 class="govuk-heading-l">
+            Client search
+        </h1>
+        <form action="#" th:action="@{/application/client-search}" th:object="${clientSearchDetails}" method="post">
+            <div th:replace="~{partials/error-summary :: error-summary}"></div>
+            <div class="govuk-inset-text">
+                To find a client registered within the LAA system, please enter any or all of the details for that
+                client in the fields below. The more details entered, the better the match. If your search returns more
+                than 100 results, you will be asked to refine your search instead of displaying all the results. This is
+                to ensure that you use the correct client record in your new application.
+            </div>
+            <div class="govuk-grid-row">
+                <div class="govuk-grid-column-two-thirds">
+                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('forename')} ? 'govuk-form-group--error' : ''">
+                        <label class="govuk-label" for="forename">
+                           First name
+                        </label>
+                        <input class="govuk-input govuk-input--width-20" id="forename" name="forename" type="text">
+                    </div>
+                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('surname')} ? 'govuk-form-group--error' : ''">
+                        <label class="govuk-label" for="surname">
+                            Surname at birth
+                        </label>
+                        <input class="govuk-input govuk-input--width-20" id="surname" name="surname" type="text">
+                    </div>
+                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('dobDay')} ? 'govuk-form-group--error' : ''">
+                        <fieldset class="govuk-fieldset" role="group" aria-describedby="dob-hint dob-error">
+                            <legend class="govuk-fieldset__legend">
+                                Date of birth
+                            </legend>
+                            <div id="dob-hint" class="govuk-hint">
+                                For example, 27 3 2007
+                            </div>
+                            <p id="delegated-function-used-error" class="govuk-error-message">
+                                <span th:if="${#fields.hasErrors('dobDay')}">
+                                    <span class="govuk-visually-hidden">Error:</span> The day must be a numeric value.
+                                    <br/>
+                                </span>
+                                <span th:if="${#fields.hasErrors('dobMonth')}">
+                                    <span class="govuk-visually-hidden">Error:</span> The month must be a numeric value.
+                                    <br/>
+                                </span>
+                                <span th:if="${#fields.hasErrors('dobYear')}">
+                                    <span class="govuk-visually-hidden">Error:</span> The year must be a numeric value.
+                                </span>
+                            </p>
+                            <div class="govuk-date-input" id="delegated-function-used">
+                                <div class="govuk-date-input__item">
+                                    <div class="govuk-form-group">
+                                        <label class="govuk-label govuk-date-input__label" for="dob-day">
+                                            Day
+                                        </label>
+                                        <input th:classappend="${#fields.hasErrors('dobDay')} ? 'govuk-input--error' : ''"
+                                               class="govuk-input govuk-date-input__input govuk-input--width-2"
+                                               id="dob-day"
+                                               name="dob-day"
+                                               type="text"
+                                               inputmode="numeric"
+                                               maxlength="2"
+                                               th:value="${clientSearchDetails.dobDay}">
+                                    </div>
+                                </div>
+                                <div class="govuk-date-input__item">
+                                    <div class="govuk-form-group">
+                                        <label class="govuk-label govuk-date-input__label" for="dob-month">
+                                            Month
+                                        </label>
+                                        <input th:classappend="${#fields.hasErrors('dobMonth')} ? 'govuk-input--error' : ''"
+                                               class="govuk-input govuk-date-input__input govuk-input--width-2"
+                                               id="dob-month"
+                                               name="dob-month"
+                                               type="text"
+                                               inputmode="numeric"
+                                               maxlength="2"
+                                               th:value="${clientSearchDetails.dobMonth}">
+                                    </div>
+                                </div>
+                                <div class="govuk-date-input__item">
+                                    <div class="govuk-form-group">
+                                        <label class="govuk-label govuk-date-input__label" for="dob-year">
+                                            Year
+                                        </label>
+                                        <input th:classappend="${#fields.hasErrors('dobYear')} ? 'govuk-input--error' : ''"
+                                               class="govuk-input govuk-date-input__input govuk-input--width-4"
+                                               id="dob-year"
+                                               name="dob-year"
+                                               type="text"
+                                               inputmode="numeric"
+                                               maxlength="4"
+                                               th:value="${clientSearchDetails.dobYear}">
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+                    <div class="govuk-form-group">
+                        <fieldset class="govuk-fieldset">
+                            <label class="govuk-label" for="gender">
+                                Gender (optional)
+                            </label>
+                            <select class="govuk-select" data-module="govuk-select" th:field="*{gender}" th:errorclass="govuk-select--error" id="gender" name="gender" >
+                                <option value="">Please Select</option>
+                                <option th:each="gender : ${genders}" th:value="${gender.code}" th:text="${gender.description}"></option>
+                            </select>
+                        </fieldset>
+                    </div>
+                    <div class="govuk-form-group">
+                        <fieldset class="govuk-fieldset">
+                            <label class="govuk-label" for="uniqueIdentifierType">
+                                Unique identifier type (optional)
+                            </label>
+                            <select class="govuk-select" data-module="govuk-select" th:field="*{uniqueIdentifierType}" th:errorclass="govuk-select--error" id="uniqueIdentifierType" name="uniqueIdentifierType" >
+                                <option value="">Please Select</option>
+                                <option th:each="type : ${uniqueIdentifierTypes}" th:value="${type.code}" th:text="${type.description}"></option>
+                            </select>
+                        </fieldset>
+                    </div>
+                    <div class="govuk-form-group">
+                        <label class="govuk-label" for="uniqueIdentifierValue">
+                            Unique identifier value (optional)
+                        </label>
+                        <input class="govuk-input govuk-input--width-20" id="uniqueIdentifierValue" name="uniqueIdentifierValue" type="text">
+                    </div>
+                    <div class="govuk-form-group">
+                        <details class="govuk-details" data-module="govuk-details">
+                            <summary class="govuk-details__summary">
+                                <span class="govuk-details__summary-text">
+                                  Help with unique identifier
+                                </span>
+                            </summary>
+                            <div class="govuk-details__text">
+                                Please select an option to use as your unique identifier. It is recommended that you use
+                                your client's National Insurance Number but if this is not available please select
+                                otherwise.<br><br>
+                                If the client's unique identifier is unknown, please leave the fields blank.
+                            </div>
+                        </details>
+                    </div>
+                    <button class="govuk-button" data-module="govuk-button">
+                        Search
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>
