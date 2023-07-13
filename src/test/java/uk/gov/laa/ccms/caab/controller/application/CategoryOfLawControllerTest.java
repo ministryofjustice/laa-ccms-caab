@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
@@ -127,6 +128,7 @@ public class CategoryOfLawControllerTest {
             .andExpect(model().attribute("categoriesOfLaw", categoriesOfLaw))
             .andExpect(model().attributeExists("applicationDetails"));
 
+        assertTrue(applicationDetails.isExceptionalFunding());
         verifyNoInteractions(soaGatewayService);
         verify(dataService).getAllCategoriesOfLaw();
     }
@@ -184,6 +186,25 @@ public class CategoryOfLawControllerTest {
                 .sessionAttr("user", user))
             .andDo(print())
             .andExpect(redirectedUrl("/application/application-type"));
+
+        verifyNoInteractions(soaGatewayService);
+        verifyNoInteractions(dataService);
+    }
+
+    @Test
+    public void testPostCategoryOfLaw_HandlesExceptionalFunding() throws Exception {
+        final UserDetails user = buildUser();
+
+        final ApplicationDetails applicationDetails = new ApplicationDetails();
+        applicationDetails.setOfficeId(345);
+        applicationDetails.setCategoryOfLawId("CAT1");
+        applicationDetails.setExceptionalFunding(true);
+
+        this.mockMvc.perform(post("/application/category-of-law")
+                .flashAttr("applicationDetails", applicationDetails)
+                .sessionAttr("user", user))
+            .andDo(print())
+            .andExpect(redirectedUrl("/application/client-search"));
 
         verifyNoInteractions(soaGatewayService);
         verifyNoInteractions(dataService);

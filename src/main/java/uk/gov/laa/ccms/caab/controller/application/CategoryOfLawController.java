@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
+
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,30 +40,41 @@ public class CategoryOfLawController {
                                 @SessionAttribute("user") UserDetails userDetails,
                                 Model model) {
         log.info("GET /application/category-of-law: " + applicationDetails.toString());
-        return getCategoryOfLaw(exceptionalFunding, applicationDetails, userDetails, model);
+
+        applicationDetails.setExceptionalFunding(exceptionalFunding);
+
+        initialiseCategoriesOfLaw(applicationDetails, userDetails, model);
+
+        return "/application/select-category-of-law";
     }
 
     @PostMapping("/application/category-of-law")
-    public String categoryOfLaw(@RequestParam(value = "exceptional_funding", defaultValue = "false") boolean exceptionalFunding,
-                                @ModelAttribute("applicationDetails") ApplicationDetails applicationDetails,
+    public String categoryOfLaw(@ModelAttribute("applicationDetails") ApplicationDetails applicationDetails,
                                 @SessionAttribute("user") UserDetails userDetails,
                                 BindingResult bindingResult,
                                 Model model) {
         log.info("POST /application/category-of-law: " + applicationDetails.toString());
         applicationValidator.validateCategoryOfLaw(applicationDetails, bindingResult);
 
+        String viewName = "redirect:/application/application-type";
         if (bindingResult.hasErrors()) {
-            return getCategoryOfLaw(exceptionalFunding, applicationDetails, userDetails, model);
+            initialiseCategoriesOfLaw(applicationDetails, userDetails, model);
+            viewName = "/application/select-category-of-law";
+        } else if (applicationDetails.isExceptionalFunding()) {
+            // Exception Funding has been selected, so initialise the ApplicationType to ECF
+            // and bypass the ApplicationType screen.
+            applicationDetails.setApplicationTypeId(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
+            viewName = "redirect:/application/client-search";
         }
 
-        return "redirect:/application/application-type";
+        return viewName;
     }
 
-    private String getCategoryOfLaw(boolean exceptionalFunding, ApplicationDetails applicationDetails,
+    private void initialiseCategoriesOfLaw(ApplicationDetails applicationDetails,
         UserDetails user, Model model) {
 
         List<CommonLookupValueDetails> categoriesOfLaw;
-        if (exceptionalFunding){
+        if (applicationDetails.isExceptionalFunding()){
             categoriesOfLaw = dataService.getAllCategoriesOfLaw();
         } else {
             List<String> categoryOfLawCodes = soaGatewayService.getCategoryOfLawCodes(
@@ -74,8 +87,5 @@ public class CategoryOfLawController {
         }
 
         model.addAttribute("categoriesOfLaw", categoriesOfLaw);
-        model.addAttribute("exceptionalFunding", exceptionalFunding);
-
-        return "/application/select-category-of-law";
     }
 }

@@ -70,6 +70,20 @@ public class ApplicationTypeControllerTest {
     }
 
     @Test
+    public void testGetApplicationTypeHandlesExceptionalFunding() throws Exception {
+        final ApplicationDetails applicationDetails = new ApplicationDetails();
+        applicationDetails.setApplicationTypeId("test");
+        applicationDetails.setExceptionalFunding(true);
+
+        this.mockMvc.perform(get("/application/application-type")
+                .flashAttr("applicationDetails", applicationDetails))
+            .andDo(print())
+            .andExpect(redirectedUrl("/application/client-search"));
+
+        verifyNoInteractions(dataService);
+    }
+
+    @Test
     public void testPostApplicationTypeHandlesValidationError() throws Exception {
         final ApplicationDetails applicationDetails = new ApplicationDetails();
 

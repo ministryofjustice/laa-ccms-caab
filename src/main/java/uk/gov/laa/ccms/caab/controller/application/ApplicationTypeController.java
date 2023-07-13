@@ -32,6 +32,11 @@ public class ApplicationTypeController {
                                   Model model){
         log.info("GET /application/application-type: " + applicationDetails.toString());
 
+        if (applicationDetails.isExceptionalFunding()) {
+            log.warn("ApplicationTypeController hit despite exceptionalFunding being true. Redirecting to client-search");
+            return "redirect:/application/client-search";
+        }
+
         List<CommonLookupValueDetails> applicationTypes = dataService.getApplicationTypes();
         model.addAttribute("applicationTypes", applicationTypes);
 
