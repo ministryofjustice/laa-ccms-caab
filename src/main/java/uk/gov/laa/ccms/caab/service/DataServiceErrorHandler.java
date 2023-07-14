@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
