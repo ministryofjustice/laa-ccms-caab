@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.*;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -50,6 +50,8 @@ public class DataServiceTest {
 
     @Mock
     private DataServiceErrorHandler dataServiceErrorHandler;
+
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
     @Test
     void getUser_returnData() {
@@ -205,19 +207,49 @@ public class DataServiceTest {
     @Test
     void getAllCategoriesOfLaw_returnsData() {
         String type = COMMON_VALUE_CATEGORY_OF_LAW;
+        CommonLookupDetail commonValues = prepareCommonValueTestData(type);
+
+        List<CommonLookupValueDetail> response = dataService.getAllCategoriesOfLaw();
+
+        expectCommonValueTestOutcome(type, commonValues, response);
+    }
+
+    @Test
+    void getGenders_returnsData() {
+        String type = COMMON_VALUE_GENDER;
+        CommonLookupDetail commonValues = prepareCommonValueTestData(type);
+
+        List<CommonLookupValueDetail> response = dataService.getGenders();
+
+        expectCommonValueTestOutcome(type, commonValues, response);
+    }
+
+    @Test
+    void getUniqueIdentifierTypes_returnsData() {
+        String type = COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
+
+        CommonLookupDetail commonValues = prepareCommonValueTestData(type);
+
+        List<CommonLookupValueDetail> response = dataService.getUniqueIdentifierTypes();
+
+        expectCommonValueTestOutcome(type, commonValues, response);
+    }
+
+    private CommonLookupDetail prepareCommonValueTestData(String type){
         CommonLookupDetail commonValues = new CommonLookupDetail();
         commonValues.addContentItem(new CommonLookupValueDetail().code("CAT1").type(type));
         commonValues.addContentItem(new CommonLookupValueDetail().code("CAT2").type(type));
-
-        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
         when(webClientMock.get()).thenReturn(requestHeadersUriMock);
         when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
         when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
 
-        List<CommonLookupValueDetail> response = dataService.getAllCategoriesOfLaw();
+        return commonValues;
+    }
 
+    private void expectCommonValueTestOutcome(String type, CommonLookupDetail commonValues,
+                                              List<CommonLookupValueDetail> response){
         Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
         URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
@@ -228,5 +260,7 @@ public class DataServiceTest {
         assertEquals(commonValues.getContent().get(0), response.get(0));
         assertEquals(commonValues.getContent().get(1), response.get(1));
     }
+
+
 
 }
