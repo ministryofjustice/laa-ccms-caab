@@ -38,7 +38,7 @@ public class ApplicationDetails implements Serializable {
     /**
      * The option for delegated functions.
      */
-    private String delegatedFunctionsOption;
+    private boolean delegatedFunctions = false;
 
     /**
      * The day when delegated function was used.

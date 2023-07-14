@@ -31,13 +31,9 @@ public class ApplicationDetailsValidator implements Validator{
     }
 
     public void validateDelegatedFunction(Object target, Errors errors) {
-        ValidationUtils.rejectIfEmpty(errors, "delegatedFunctionsOption",
-                "required.delegatedFunctionsOption", "Please complete 'Are delegated functions used'.");
-
         ApplicationDetails applicationDetails = (ApplicationDetails) target;
-        String delegatedFunctionsOption = applicationDetails.getDelegatedFunctionsOption();
 
-        if ("Y".equals(delegatedFunctionsOption)) {
+        if (applicationDetails.isDelegatedFunctions()) {
             String delegatedFunctionUsedDay = applicationDetails.getDelegatedFunctionUsedDay();
             String delegatedFunctionUsedMonth = applicationDetails.getDelegatedFunctionUsedMonth();
             String delegatedFunctionUsedYear = applicationDetails.getDelegatedFunctionUsedYear();

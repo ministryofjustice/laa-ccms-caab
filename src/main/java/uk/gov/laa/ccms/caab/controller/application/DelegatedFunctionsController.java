@@ -31,8 +31,7 @@ public class DelegatedFunctionsController {
 
     @PostMapping("/application/delegated-functions")
     public String delegatedFunction(@ModelAttribute("applicationDetails") ApplicationDetails applicationDetails,
-                                    BindingResult bindingResult,
-                                    Model model) {
+                                    BindingResult bindingResult) {
         log.info("POST /application/delegated-functions: " + applicationDetails.toString());
         applicationValidator.validateDelegatedFunction(applicationDetails, bindingResult);
 
@@ -42,11 +41,11 @@ public class DelegatedFunctionsController {
 
         String applicationTypeId;
         if (APP_TYPE_SUBSTANTIVE.equals(applicationDetails.getApplicationTypeCategory())) {
-            applicationTypeId = applicationDetails.getDelegatedFunctionsOption().equals("Y")
+            applicationTypeId = applicationDetails.isDelegatedFunctions()
                     ? APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS
                     : APP_TYPE_SUBSTANTIVE;
         } else {
-            applicationTypeId = applicationDetails.getDelegatedFunctionsOption().equals("Y")
+            applicationTypeId = applicationDetails.isDelegatedFunctions()
                     ? APP_TYPE_EMERGENCY_DEVOLVED_POWERS
                     : APP_TYPE_EMERGENCY;
         }
