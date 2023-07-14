@@ -41,7 +41,7 @@ public class DelegatedFunctionsController {
         }
 
         String applicationTypeId;
-        if (applicationDetails.getApplicationTypeCategory().equals(APP_TYPE_SUBSTANTIVE)) {
+        if (APP_TYPE_SUBSTANTIVE.equals(applicationDetails.getApplicationTypeCategory())) {
             applicationTypeId = applicationDetails.getDelegatedFunctionsOption().equals("Y")
                     ? APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS
                     : APP_TYPE_SUBSTANTIVE;
