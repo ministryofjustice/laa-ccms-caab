@@ -59,11 +59,11 @@ public class CategoryOfLawControllerTest {
     @Autowired
     private WebApplicationContext webApplicationContext;
 
-    private UserDetails user;
+    private UserDetail user;
 
     private ApplicationDetails applicationDetails;
 
-    private List<CommonLookupValueDetails> categoriesOfLaw;
+    private List<CommonLookupValueDetail> categoriesOfLaw;
 
     @BeforeEach
     public void setup() {
@@ -75,8 +75,8 @@ public class CategoryOfLawControllerTest {
         applicationDetails.setOfficeId(345);
 
         categoriesOfLaw = new ArrayList<>();
-        categoriesOfLaw.add(new CommonLookupValueDetails().code("CAT1").description("Category 1"));
-        categoriesOfLaw.add(new CommonLookupValueDetails().code("CAT2").description("Category 2"));
+        categoriesOfLaw.add(new CommonLookupValueDetail().code("CAT1").description("Category 1"));
+        categoriesOfLaw.add(new CommonLookupValueDetail().code("CAT2").description("Category 2"));
     }
 
     @Test

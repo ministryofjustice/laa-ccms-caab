@@ -46,7 +46,7 @@ public class OfficeControllerTest {
     @Autowired
     private WebApplicationContext webApplicationContext;
 
-    private UserDetails user;
+    private UserDetail user;
 
     @BeforeEach
     public void setup() {
@@ -100,18 +100,18 @@ public class OfficeControllerTest {
                 .andExpect(model().attribute("offices", user.getProvider().getOffices()));
     }
 
-    private UserDetails buildUser() {
-        return new UserDetails()
+    private UserDetail buildUser() {
+        return new UserDetail()
             .userId(1)
             .userType("testUserType")
             .loginId("testLoginId")
             .provider(buildProvider());
     }
-    private ProviderDetails buildProvider() {
-        return new ProviderDetails()
+    private ProviderDetail buildProvider() {
+        return new ProviderDetail()
             .id(123)
             .addOfficesItem(
-                new OfficeDetails()
+                new OfficeDetail()
                     .id(1)
                     .name("Office 1"));
     }
