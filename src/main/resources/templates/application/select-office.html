@@ -1,45 +1,37 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
     <head>
-        <title>LAA CCMS - Start New Application</title>
+        <title>LAA CCMS - Start new application</title>
     </head>
     <body>
       <div class="govuk-width-container">
+      <div id="breadcrumbs">
+          <a href="/" class="govuk-back-link">Cancel and return to Home</a>
+      </div>
         <div id="main-content">
-            <a href="" class="govuk-back-link">Cancel and return to Home</a>
+            <span class="govuk-caption-l">About your application</span>
             <h1 class="govuk-heading-l">
-                Start New Application
+                Select office
             </h1>
             <form action="#" th:action="@{/application/office}" th:object="${applicationDetails}" method="post">
               <div th:replace="~{partials/error-summary :: error-summary}"></div>
-  <!--            <h2 class="govuk-heading-m">-->
-  <!--                Select Office-->
-  <!--            </h2>-->
               <div class="govuk-inset-text">
                   Please select the office where the application will be held. Alternatively, click
-                  <a href="">Copy Case </a>
+                  <a href="/TODO">Copy Case </a>
                   to start a new application from an existing one.
               </div>
-  <!--            <div class="govuk-!-display-block">-->
-  <!--              <img src="/static/assets/images/icon_required.png" th:src="@{/assets/images/icon_required.png}" alt="Required" width="12" height="12" />-->
-  <!--                indicates required field-->
-  <!--            </div>-->
               <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
                     <div class="govuk-form-group">
                       <fieldset class="govuk-fieldset">
-                        <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
-                          <h1 class="govuk-fieldset__heading">
+                        <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                          <h2 class="govuk-fieldset__heading">
                             Which office will hold this application?
-                          </h1>
+                          </h2>
                         </legend>
-    <!--                    <span>-->
-    <!--                      <img src="/static/assets/images/icon_required.png" th:src="@{/assets/images/icon_required.png}" alt="Required" width="12" height="12" />-->
-    <!--                    </span>-->
-    <!--                    <label class="govuk-label" for="office">Choose Office</label>-->
                         <span th:if="${#fields.hasErrors('officeId')}" th:errors="*{officeId}" class="govuk-error-message"></span>
                         <select class="govuk-select" data-module="govuk-select" th:field="*{officeId}" th:errorclass="govuk-select--error" id="officeId" name="officeId" >
-                            <option value="">Please Select</option>
+                            <option value="">Please select</option>
                             <option th:each="office : ${offices}" th:value="${office.id}" th:text="${office.name}"></option>
                         </select>
                       </fieldset>

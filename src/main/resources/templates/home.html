@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'home'})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'home'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
     <head>
         <title>Homepage</title>
-    </head>
+    </head>breadcrumbs=~{::#breadcrumb
     <body>
+        <div id="breadcrumbs"></div>
         <div id="main-content">
             <h1 class="govuk-heading-l">
                 Client and Cost Management System

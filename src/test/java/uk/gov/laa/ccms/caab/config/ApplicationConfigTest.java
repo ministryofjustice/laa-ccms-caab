@@ -29,7 +29,6 @@ class ApplicationConfigTest {
 
     @Test
     void dataWebClientBeanExists() {
-
         assertNotNull(dataWebClient, "dataWebClient bean should not be null");
         assertNotNull(soaGatewayWebClient, "soaGatewayWebClient bean should not be null");
     }

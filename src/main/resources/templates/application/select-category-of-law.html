@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>LAA CCMS - Start new application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a href="/" class="govuk-back-link">Cancel and return to Home</a>
+    </div>
+    <div id="main-content">
+        <span class="govuk-caption-l">About your application</span>
+        <h1 class="govuk-heading-l">
+            Category of Law
+        </h1>
+        <form action="#" th:action="@{/application/category-of-law}" th:object="${applicationDetails}" method="post">
+            <div th:replace="~{partials/error-summary :: error-summary}"></div>
+            <div class="govuk-inset-text" th:if="${applicationDetails.exceptionalFunding}">
+                Please select the relevant Category of Law or click
+                <a href="/application/category-of-law">revert to standard application</a>
+                if you do not wish to apply for exceptional case funding.
+            </div>
+            <div class="govuk-inset-text" th:unless="${applicationDetails.exceptionalFunding}">
+                Please select the relevant Category of Law or click
+                <a href="/application/category-of-law?exceptional_funding=true">Exceptional Funding</a>
+                if you wish to apply for exceptional case funding.
+            </div>
+            <div class="govuk-grid-row">
+                <div class="govuk-grid-column-two-thirds">
+                    <div class="govuk-form-group">
+                        <fieldset class="govuk-fieldset">
+                            <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                                <h2 class="govuk-fieldset__heading">
+                                    Which Category Of Law applies to this application?
+                                </h2>
+                            </legend>
+                            <span th:if="${#fields.hasErrors('categoryOfLawId')}" th:errors="*{categoryOfLawId}" class="govuk-error-message"></span>
+                            <select class="govuk-select" data-module="govuk-select" th:field="*{categoryOfLawId}" th:errorclass="govuk-select--error" id="categoryOfLawId" name="categoryOfLawId" >
+                                <option value="">Please Select</option>
+                                <option th:each="category : ${categoriesOfLaw}" th:value="${category.code}" th:text="${category.description}"></option>
+                            </select>
+                        </fieldset>
+                    </div>
+                    <button class="govuk-button" data-module="govuk-button">
+                        Continue
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>
