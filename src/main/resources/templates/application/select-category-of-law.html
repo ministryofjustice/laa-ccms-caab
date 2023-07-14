@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>LAA CCMS - Start New Application</title>
+    <title>LAA CCMS - Start new application</title>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -31,7 +31,7 @@
                         <fieldset class="govuk-fieldset">
                             <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
                                 <h2 class="govuk-fieldset__heading">
-                                    Which category of law applies to this application?
+                                    Which Category Of Law applies to this application?
                                 </h2>
                             </legend>
                             <span th:if="${#fields.hasErrors('categoryOfLawId')}" th:errors="*{categoryOfLawId}" class="govuk-error-message"></span>
