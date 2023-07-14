@@ -49,12 +49,12 @@ public class DelegatedFunctionsController {
         }
 
         String applicationTypeId;
-        if (applicationDetails.getApplicationTypeCategory().equals(APP_TYPE_SUBSTANTIVE)) {
-            applicationTypeId = applicationDetails.getDelegatedFunctionsOption().equals("Y")
+        if (APP_TYPE_SUBSTANTIVE.equals(applicationDetails.getApplicationTypeCategory())) {
+            applicationTypeId = applicationDetails.isDelegatedFunctions()
                     ? APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS
                     : APP_TYPE_SUBSTANTIVE;
         } else {
-            applicationTypeId = applicationDetails.getDelegatedFunctionsOption().equals("Y")
+            applicationTypeId = applicationDetails.isDelegatedFunctions()
                     ? APP_TYPE_EMERGENCY_DEVOLVED_POWERS
                     : APP_TYPE_EMERGENCY;
         }

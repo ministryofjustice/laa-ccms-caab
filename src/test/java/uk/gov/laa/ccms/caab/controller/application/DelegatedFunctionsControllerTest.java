@@ -68,26 +68,27 @@ public class DelegatedFunctionsControllerTest {
 
         doAnswer(invocation -> {
             Errors errors = (Errors) invocation.getArguments()[1];
-            errors.rejectValue("delegatedFunctionsOption", "required.delegatedFunctionsOption", "Please complete 'Are delegated functions used'.");
+
+            errors.rejectValue("delegatedFunctionUsedDay", "invalid.numeric",
+                    "Please enter a numeric value for the day.");
             return null;
         }).when(applicationDetailsValidator).validateDelegatedFunction(any(), any());
-
         this.mockMvc.perform(post("/application/delegated-functions")
-                    .flashAttr("applicationDetails", applicationDetails))
+                        .flashAttr("applicationDetails", applicationDetails))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(view().name("/application/select-delegated-functions"));
     }
 
     @ParameterizedTest
-    @CsvSource({"SUB, Y, SUBDP",
-                "SUB, N, SUB",
-                "EMER, Y, DP",
-                "EMER, N, EMER"})
-    public void testPostDelegatedFunctionsIsSuccessful(String category, String delegatedFunctionsOption,
+    @CsvSource({"SUB, true, SUBDP",
+                "SUB, false, SUB",
+                "EMER, true, DP",
+                "EMER, false, EMER"})
+    public void testPostDelegatedFunctionsIsSuccessful(String category, boolean delegatedFunctions,
                                                        String expectedApplicationType) throws Exception {
         applicationDetails.setApplicationTypeCategory(category);
-        applicationDetails.setDelegatedFunctionsOption(delegatedFunctionsOption);
+        applicationDetails.setDelegatedFunctions(delegatedFunctions);
 
         this.mockMvc.perform(post("/application/delegated-functions")
                         .flashAttr("applicationDetails", applicationDetails))
