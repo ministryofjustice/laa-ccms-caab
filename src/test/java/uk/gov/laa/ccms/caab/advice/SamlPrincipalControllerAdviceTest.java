@@ -10,7 +10,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.ui.Model;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.data.model.UserDetails;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 import static org.mockito.Mockito.*;
 
@@ -28,13 +28,13 @@ class SamlPrincipalControllerAdviceTest {
 
     private SamlPrincipalControllerAdvice advice;
     private Saml2AuthenticatedPrincipal principal;
-    private UserDetails userDetails;
+    private UserDetail userDetails;
 
     @BeforeEach
     public void setUp() {
         principal = mock(Saml2AuthenticatedPrincipal.class);
         advice = new SamlPrincipalControllerAdvice(dataService);
-        userDetails = new UserDetails();
+        userDetails = new UserDetail();
         userDetails.setLoginId("test");
         when(dataService.getUser(any())).thenReturn(Mono.just(userDetails));
         when(principal.getName()).thenReturn("test");
@@ -54,7 +54,7 @@ class SamlPrincipalControllerAdviceTest {
 
     @Test
     public void addSamlPrincipalToModelTest_WhenPrincipalNotNullAndSessionContainsUserWithDifferentLoginId() {
-        UserDetails sessionUser = new UserDetails();
+        UserDetail sessionUser = new UserDetail();
         sessionUser.setLoginId("different");
         when(session.getAttribute("user")).thenReturn(sessionUser);
 

@@ -15,7 +15,7 @@ import org.springframework.web.context.WebApplicationContext;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetails;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,8 +53,8 @@ public class ApplicationTypeControllerTest {
 
     @Test
     public void testGetApplicationTypeAddsApplicationTypesToModel() throws Exception {
-        final List<CommonLookupValueDetails> applicationTypes = new ArrayList<>();
-        applicationTypes.add(new CommonLookupValueDetails().type("Type 1").code("Code 1"));
+        final List<CommonLookupValueDetail> applicationTypes = new ArrayList<>();
+        applicationTypes.add(new CommonLookupValueDetail().type("Type 1").code("Code 1"));
 
         when(dataService.getApplicationTypes()).thenReturn(applicationTypes);
 
@@ -70,6 +70,20 @@ public class ApplicationTypeControllerTest {
     }
 
     @Test
+    public void testGetApplicationTypeHandlesExceptionalFunding() throws Exception {
+        final ApplicationDetails applicationDetails = new ApplicationDetails();
+        applicationDetails.setApplicationTypeId("test");
+        applicationDetails.setExceptionalFunding(true);
+
+        this.mockMvc.perform(get("/application/application-type")
+                .flashAttr("applicationDetails", applicationDetails))
+            .andDo(print())
+            .andExpect(redirectedUrl("/application/client-search"));
+
+        verifyNoInteractions(dataService);
+    }
+
+    @Test
     public void testPostApplicationTypeHandlesValidationError() throws Exception {
         final ApplicationDetails applicationDetails = new ApplicationDetails();
 
@@ -77,7 +91,7 @@ public class ApplicationTypeControllerTest {
             Errors errors = (Errors) invocation.getArguments()[1];
             errors.rejectValue("applicationTypeId", "required.applicationTypeId", "Please select an application type.");
             return null;
-        }).when(applicationDetailsValidator).validateApplicationType(any(), any());
+        }).when(applicationDetailsValidator).validateApplicationTypeCategory(any(), any());
 
         this.mockMvc.perform(post("/application/application-type")
                         .flashAttr("applicationDetails", applicationDetails))

@@ -15,9 +15,9 @@ import org.springframework.web.context.WebApplicationContext;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.data.model.OfficeDetails;
-import uk.gov.laa.ccms.data.model.ProviderDetails;
-import uk.gov.laa.ccms.data.model.UserDetails;
+import uk.gov.laa.ccms.data.model.OfficeDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -53,14 +53,14 @@ public class OfficeControllerTest {
 
     @Test
     public void testGetOfficeAddsOfficesToModel() throws Exception {
-        final UserDetails userDetails = new UserDetails()
+        final UserDetail userDetails = new UserDetail()
                 .userId(1)
                 .userType("testUserType")
                 .loginId("testLoginId")
                 .provider(
-                        new ProviderDetails()
+                        new ProviderDetail()
                                 .addOfficesItem(
-                                        new uk.gov.laa.ccms.data.model.OfficeDetails()
+                                        new uk.gov.laa.ccms.data.model.OfficeDetail()
                                                 .id(1)
                                                 .name("Office 1")));
 
@@ -76,14 +76,14 @@ public class OfficeControllerTest {
 
     @Test
     public void testPostOfficeIsSuccessful() throws Exception {
-        final UserDetails userDetails = new UserDetails()
+        final UserDetail userDetails = new UserDetail()
                 .userId(1)
                 .userType("testUserType")
                 .loginId("testLoginId")
                 .provider(
-                        new ProviderDetails()
+                        new ProviderDetail()
                                 .addOfficesItem(
-                                        new uk.gov.laa.ccms.data.model.OfficeDetails()
+                                        new uk.gov.laa.ccms.data.model.OfficeDetail()
                                                 .id(1)
                                                 .name("Office 1")));
 
@@ -101,14 +101,14 @@ public class OfficeControllerTest {
 
     @Test
     public void testPostOfficeHandlesValidationError() throws Exception {
-        final UserDetails userDetails = new UserDetails()
+        final UserDetail userDetails = new UserDetail()
                 .userId(1)
                 .userType("testUserType")
                 .loginId("testLoginId")
                 .provider(
-                        new ProviderDetails()
+                        new ProviderDetail()
                                 .addOfficesItem(
-                                        new OfficeDetails()
+                                        new OfficeDetail()
                                                 .id(1)
                                                 .name("Office 1")));
 

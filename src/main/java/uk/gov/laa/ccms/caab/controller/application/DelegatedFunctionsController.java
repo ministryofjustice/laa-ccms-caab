@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.*;
+
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -45,6 +47,18 @@ public class DelegatedFunctionsController {
         if (bindingResult.hasErrors()) {
             return "/application/select-delegated-functions";
         }
+
+        String applicationTypeId;
+        if (applicationDetails.getApplicationTypeCategory().equals(APP_TYPE_SUBSTANTIVE)) {
+            applicationTypeId = applicationDetails.getDelegatedFunctionsOption().equals("Y")
+                    ? APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS
+                    : APP_TYPE_SUBSTANTIVE;
+        } else {
+            applicationTypeId = applicationDetails.getDelegatedFunctionsOption().equals("Y")
+                    ? APP_TYPE_EMERGENCY_DEVOLVED_POWERS
+                    : APP_TYPE_EMERGENCY;
+        }
+        applicationDetails.setApplicationTypeId(applicationTypeId);
 
         return "redirect:/application/client-search";
     }

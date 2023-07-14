@@ -5,10 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ClientSearchDetails;
 import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetails;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 import java.util.List;
 
@@ -31,10 +34,10 @@ public class ClientSearchController {
 
         model.addAttribute("clientSearchDetails", getClientSearchDetails());
 
-        List<CommonLookupValueDetails> genders = dataService.getGenders();
+        List<CommonLookupValueDetail> genders = dataService.getGenders();
         model.addAttribute("genders", genders);
 
-        List<CommonLookupValueDetails> uniqueIdentifierTypes = dataService.getUniqueIdentifierTypes();
+        List<CommonLookupValueDetail> uniqueIdentifierTypes = dataService.getUniqueIdentifierTypes();
         model.addAttribute("uniqueIdentifierTypes", uniqueIdentifierTypes);
 
         return "/application/client-search";

@@ -17,8 +17,8 @@
         </h1>
         <form action="#" th:action="@{/application/delegated-functions}" th:object="${applicationDetails}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <div class="govuk-inset-text">
-                If you have exercised delegated functions in a special children act matter, please select 'no' to use of
+            <div class="govuk-body-l">
+                If you have exercised delegated functions in a Special Children Act matter, please select 'no' to use of
                 delegated functions here. You will be asked to confirm the details of the exercise of the delegated
                 functions in the merits assessment.
             </div>
@@ -31,7 +31,7 @@
                                     Are delegated functions used?
                                 </h2>
                                 <div id="delegated-functions-hint" class="govuk-hint">
-                                    In a matter which is not a special children act
+                                    In a matter which is not a Special Children Act
                                 </div>
                             </legend>
                             <span th:if="${#fields.hasErrors('delegatedFunctionsOption')}" th:errors="*{delegatedFunctionsOption}" class="govuk-error-message"></span>

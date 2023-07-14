@@ -3,8 +3,8 @@ package uk.gov.laa.ccms.caab.service;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static uk.gov.laa.ccms.caab.service.DataService.COMMON_VALUE_APPLICATION_TYPE;
-import static uk.gov.laa.ccms.caab.service.DataService.EXCLUDED_APPLICATION_TYPE_CODES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.service.DataServiceErrorHandler.USER_ERROR_MESSAGE;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,15 +42,15 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     public void testGetUser_returnData() throws Exception{
-        UserDetails expectedUserDetails = buildUserDetails();
-        String userJson = objectMapper.writeValueAsString(expectedUserDetails);
+        UserDetail expectedUserDetail = buildUserDetail();
+        String userJson = objectMapper.writeValueAsString(expectedUserDetail);
 
-        wiremock.stubFor(get(String.format("/users/%s", expectedUserDetails.getLoginId()))
+        wiremock.stubFor(get(String.format("/users/%s", expectedUserDetail.getLoginId()))
             .willReturn(okJson(userJson)));
 
-        Mono<UserDetails> userDetailsMono = dataService.getUser(expectedUserDetails.getLoginId());
+        Mono<UserDetail> userDetailsMono = dataService.getUser(expectedUserDetail.getLoginId());
 
-        UserDetails userDetails = userDetailsMono.block();
+        UserDetail userDetails = userDetailsMono.block();
 
         assertEquals(userJson, objectMapper.writeValueAsString(userDetails));
     }
@@ -63,7 +63,7 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
         wiremock.stubFor(get(String.format("/users/%s", loginId))
             .willReturn(notFound()));
 
-        Mono<UserDetails> userDetailsMono = dataService.getUser(loginId);
+        Mono<UserDetail> userDetailsMono = dataService.getUser(loginId);
 
         StepVerifier.create(userDetailsMono)
                 .expectErrorMatches(throwable -> throwable instanceof DataServiceException &&
@@ -73,7 +73,7 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     public void testGetCommonValues_returnData() throws Exception {
-        CommonLookupValueListDetails expectedCommonValues = buildCommonLookupValueListDetails();
+        CommonLookupDetail expectedCommonValues = buildCommonLookupDetail();
         String commonValuesJson = objectMapper.writeValueAsString(expectedCommonValues);
 
         String type = "testType";
@@ -86,58 +86,58 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
                 .withQueryParam("sort", equalTo(sort))
                 .willReturn(okJson(commonValuesJson)));
 
-        Mono<CommonLookupValueListDetails> commonValuesMono = dataService.getCommonValues(type, code, sort);
+        Mono<CommonLookupDetail> commonValuesMono = dataService.getCommonValues(type, code, sort);
 
-        CommonLookupValueListDetails commonValues = commonValuesMono.block();
+        CommonLookupDetail commonValues = commonValuesMono.block();
 
         assertEquals(commonValuesJson, objectMapper.writeValueAsString(commonValues));
     }
 
     @Test
     public void testGetApplicationTypes() throws Exception {
-        CommonLookupValueListDetails allApplicationTypes = buildCommonLookupValueListDetails();
+        CommonLookupDetail allApplicationTypes = buildCommonLookupDetail();
         String applicationTypesJson = objectMapper.writeValueAsString(allApplicationTypes);
 
         wiremock.stubFor(get(urlPathEqualTo("/common-lookup-values"))
                 .withQueryParam("type", equalTo(COMMON_VALUE_APPLICATION_TYPE))
                 .willReturn(okJson(applicationTypesJson)));
 
-        List<CommonLookupValueDetails> applicationTypes = dataService.getApplicationTypes();
+        List<CommonLookupValueDetail> applicationTypes = dataService.getApplicationTypes();
 
-        List<CommonLookupValueDetails> expectedApplicationTypes = allApplicationTypes.getContent().stream()
+        List<CommonLookupValueDetail> expectedApplicationTypes = allApplicationTypes.getContent().stream()
                 .filter(applicationType -> !EXCLUDED_APPLICATION_TYPE_CODES.contains(applicationType.getCode().toUpperCase()))
                 .collect(Collectors.toList());
 
         assertEquals(expectedApplicationTypes, applicationTypes);
     }
 
-    private CommonLookupValueListDetails buildCommonLookupValueListDetails() {
-        CommonLookupValueListDetails commonLookupValueListDetails = new CommonLookupValueListDetails();
+    private CommonLookupDetail buildCommonLookupDetail() {
+        CommonLookupDetail commonLookupValueListDetails = new CommonLookupDetail();
         commonLookupValueListDetails.setContent(new ArrayList<>());
 
         // Add details not in the excluded list
-        commonLookupValueListDetails.getContent().add(new CommonLookupValueDetails().code("CODE1").description("Description 1"));
-        commonLookupValueListDetails.getContent().add(new CommonLookupValueDetails().code("CODE2").description("Description 2"));
+        commonLookupValueListDetails.getContent().add(new CommonLookupValueDetail().code("CODE1").description("Description 1"));
+        commonLookupValueListDetails.getContent().add(new CommonLookupValueDetail().code("CODE2").description("Description 2"));
 
         // Add details in the excluded list
-        commonLookupValueListDetails.getContent().add(new CommonLookupValueDetails().code("DP").description("Description DP"));
-        commonLookupValueListDetails.getContent().add(new CommonLookupValueDetails().code("ECF").description("Description ECF"));
+        commonLookupValueListDetails.getContent().add(new CommonLookupValueDetail().code("DP").description("Description DP"));
+        commonLookupValueListDetails.getContent().add(new CommonLookupValueDetail().code("ECF").description("Description ECF"));
 
         return commonLookupValueListDetails;
     }
 
-    private UserDetails buildUserDetails() {
-        return new UserDetails()
+    private UserDetail buildUserDetail() {
+        return new UserDetail()
             .userId(1)
             .userType("testUserType")
             .loginId("user1")
             .addFirmsItem(
-                new ProviderDetails()
+                new ProviderDetail()
                     .id(1)
                     .name("testProvider"))
-            .provider(new ProviderDetails()
+            .provider(new ProviderDetail()
                 .id(2)
-                .addOfficesItem(new OfficeDetails()
+                .addOfficesItem(new OfficeDetail()
                     .id(1)
                     .name("Office 1")))
             .addFunctionsItem("testFunction");

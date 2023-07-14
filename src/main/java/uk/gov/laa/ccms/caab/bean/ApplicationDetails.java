@@ -18,9 +18,16 @@ public class ApplicationDetails implements Serializable {
     private String categoryOfLawId;
 
     /**
+     * Flag to indicate that Exceptional Funding has been requested for this Application
+     */
+    private boolean exceptionalFunding;
+
+    /**
      * The id of the Category of Law related to this Application
      */
     private String applicationTypeId;
+
+    private String applicationTypeCategory;
 
     private String delegatedFunctionsOption;
     private String delegatedFunctionUsedDay;

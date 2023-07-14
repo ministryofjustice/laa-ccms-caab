@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetails;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 import java.util.List;
 
@@ -32,7 +32,12 @@ public class ApplicationTypeController {
                                   Model model){
         log.info("GET /application/application-type: " + applicationDetails.toString());
 
-        List<CommonLookupValueDetails> applicationTypes = dataService.getApplicationTypes();
+        if (applicationDetails.isExceptionalFunding()) {
+            log.warn("ApplicationTypeController hit despite exceptionalFunding being true. Redirecting to client-search");
+            return "redirect:/application/client-search";
+        }
+
+        List<CommonLookupValueDetail> applicationTypes = dataService.getApplicationTypes();
         model.addAttribute("applicationTypes", applicationTypes);
 
         return "/application/select-application-type";
@@ -43,10 +48,10 @@ public class ApplicationTypeController {
                                   BindingResult bindingResult,
                                   Model model) {
         log.info("POST /application/application-type: " + applicationDetails.toString());
-        applicationValidator.validateApplicationType(applicationDetails, bindingResult);
+        applicationValidator.validateApplicationTypeCategory(applicationDetails, bindingResult);
 
         if (bindingResult.hasErrors()) {
-            List<CommonLookupValueDetails> applicationTypes = dataService.getApplicationTypes();
+            List<CommonLookupValueDetail> applicationTypes = dataService.getApplicationTypes();
             model.addAttribute("applicationTypes", applicationTypes);
             return "/application/select-application-type";
         }

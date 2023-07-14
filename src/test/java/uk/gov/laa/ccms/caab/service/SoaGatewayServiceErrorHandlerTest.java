@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
 class SoaGatewayServiceErrorHandlerTest {
@@ -32,6 +33,19 @@ class SoaGatewayServiceErrorHandlerTest {
         StepVerifier.create(result)
                 .expectNextCount(0)
                 .verifyComplete();
+    }
+
+    @Test
+    public void testHandleContractDetailsError() {
+        Integer providerFirmId = 123;
+        Integer officeId = 4567;
+        Throwable throwable = new RuntimeException("Error");
+
+        Mono<ContractDetails> result = soaGatewayServiceErrorHandler.handleContractDetailsError(providerFirmId, officeId, throwable);
+
+        StepVerifier.create(result)
+            .expectNextCount(0)
+            .verifyComplete();
     }
 
 }
