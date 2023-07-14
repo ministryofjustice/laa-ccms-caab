@@ -25,9 +25,9 @@ public class ApplicationDetailsValidator implements Validator{
                 "required.categoryOfLawId", "Please select a category of law.");
     }
 
-    public void validateApplicationType(Object target, Errors errors){
-        ValidationUtils.rejectIfEmpty(errors, "applicationTypeId",
-                "required.applicationTypeId", "Please select an application type.");
+    public void validateApplicationTypeCategory(Object target, Errors errors){
+        ValidationUtils.rejectIfEmpty(errors, "applicationTypeCategory",
+                "required.applicationTypeCategory", "Please select an application type.");
     }
 
     public void validateDelegatedFunction(Object target, Errors errors) {
@@ -63,6 +63,6 @@ public class ApplicationDetailsValidator implements Validator{
     public void validate(Object target, Errors errors) {
         validateSelectOffice(target, errors);
         validateCategoryOfLaw(target, errors);
-        validateApplicationType(target, errors);
+        validateApplicationTypeCategory(target, errors);
     }
 }

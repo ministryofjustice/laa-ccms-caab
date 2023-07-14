@@ -17,7 +17,7 @@ import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
-import uk.gov.laa.ccms.data.model.UserDetails;
+import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
 import java.util.stream.Stream;
@@ -59,14 +59,14 @@ public class HomeControllerTest {
     );
   }
 
-  private static final UserDetails userDetails = new UserDetails()
+  private static final UserDetail userDetails = new UserDetail()
           .userId(1)
           .userType("testUserType")
           .loginId("testLoginId");
 
   @ParameterizedTest
   @MethodSource("userDetailsAndNotificationParameters")
-  public void testHomeRetrievesUserDetailsAndNotifications(int notifications, int standardActions, int overdueActions,
+  public void testHomeRetrievesUserDetailAndNotifications(int notifications, int standardActions, int overdueActions,
                                                            boolean expectedShowNotifications, String expectedActionMsg,
                                                            String expectedNotificationMsg) throws Exception {
 

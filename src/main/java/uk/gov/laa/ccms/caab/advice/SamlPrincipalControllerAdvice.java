@@ -3,12 +3,13 @@ package uk.gov.laa.ccms.caab.advice;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.saml2.provider.service.authentication.Saml2AuthenticatedPrincipal;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.data.model.UserDetails;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ControllerAdvice
 @RequiredArgsConstructor
@@ -21,11 +22,11 @@ public class SamlPrincipalControllerAdvice {
 
         if (principal != null) {
 
-            UserDetails user = new UserDetails();
+            UserDetail user = new UserDetail();
             user.setLoginId(principal.getName());
 
             if (session.getAttribute("user") != null){
-                user = (UserDetails) session.getAttribute("user");
+                user = (UserDetail) session.getAttribute("user");
 
                 if (!user.getLoginId().equals(principal.getName())){
                     user = dataService.getUser(user.getLoginId()).block();

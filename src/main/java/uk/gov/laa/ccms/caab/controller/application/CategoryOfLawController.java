@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
 
+import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +20,8 @@ import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetails;
-import uk.gov.laa.ccms.data.model.UserDetails;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 @Controller
 @RequiredArgsConstructor
@@ -37,7 +38,7 @@ public class CategoryOfLawController {
     @GetMapping("/application/category-of-law")
     public String categoryOfLaw(@RequestParam(value = "exceptional_funding", defaultValue = "false") boolean exceptionalFunding,
                                 @ModelAttribute("applicationDetails") ApplicationDetails applicationDetails,
-                                @SessionAttribute("user") UserDetails userDetails,
+                                @SessionAttribute("user") UserDetail userDetails,
                                 Model model) {
         log.info("GET /application/category-of-law: " + applicationDetails.toString());
 
@@ -50,7 +51,7 @@ public class CategoryOfLawController {
 
     @PostMapping("/application/category-of-law")
     public String categoryOfLaw(@ModelAttribute("applicationDetails") ApplicationDetails applicationDetails,
-                                @SessionAttribute("user") UserDetails userDetails,
+                                @SessionAttribute("user") UserDetail userDetails,
                                 BindingResult bindingResult,
                                 Model model) {
         log.info("POST /application/category-of-law: " + applicationDetails.toString());
@@ -71,9 +72,9 @@ public class CategoryOfLawController {
     }
 
     private void initialiseCategoriesOfLaw(ApplicationDetails applicationDetails,
-        UserDetails user, Model model) {
+        UserDetail user, Model model) {
 
-        List<CommonLookupValueDetails> categoriesOfLaw;
+        List<CommonLookupValueDetail> categoriesOfLaw;
         if (applicationDetails.isExceptionalFunding()){
             categoriesOfLaw = dataService.getAllCategoriesOfLaw();
         } else {

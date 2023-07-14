@@ -55,11 +55,11 @@ public class ApplicationDetailsValidatorTest {
     }
 
     @Test
-    public void validate_ValidatesApplicationTypeId() {
+    public void validate_ValidatesApplicationTypeCategory() {
         validator.validate(applicationDetails, errors);
         assertTrue(errors.hasErrors());
-        assertNotNull(errors.getFieldError("applicationTypeId"));
-        assertEquals("required.applicationTypeId", errors.getFieldError("applicationTypeId").getCode());
+        assertNotNull(errors.getFieldError("applicationTypeCategory"));
+        assertEquals("required.applicationTypeCategory", errors.getFieldError("applicationTypeCategory").getCode());
     }
 
     @Test

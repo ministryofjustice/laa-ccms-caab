@@ -15,7 +15,7 @@
             </h1>
             <form action="#" th:action="@{/application/office}" th:object="${applicationDetails}" method="post">
               <div th:replace="~{partials/error-summary :: error-summary}"></div>
-              <div class="govuk-inset-text">
+              <div class="govuk-body-l">
                   Please select the office where the application will be held. Alternatively, click
                   <a href="/TODO">Copy Case </a>
                   to start a new application from an existing one.

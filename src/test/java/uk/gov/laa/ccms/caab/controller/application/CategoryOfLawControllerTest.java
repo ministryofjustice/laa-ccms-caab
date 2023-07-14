@@ -33,10 +33,10 @@ import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetails;
-import uk.gov.laa.ccms.data.model.OfficeDetails;
-import uk.gov.laa.ccms.data.model.ProviderDetails;
-import uk.gov.laa.ccms.data.model.UserDetails;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.OfficeDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -66,7 +66,7 @@ public class CategoryOfLawControllerTest {
 
     @Test
     public void testGetCategoryOfLawAddsCategoriesOfLawToModel() throws Exception {
-        final UserDetails user = buildUser();
+        final UserDetail user = buildUser();
 
         final ApplicationDetails applicationDetails = new ApplicationDetails();
         applicationDetails.setOfficeId(345);
@@ -82,9 +82,9 @@ public class CategoryOfLawControllerTest {
             user.getUserType(),
             Boolean.TRUE)).thenReturn(categoryOfLawCodes);
 
-        final List<CommonLookupValueDetails> categoriesOfLaw = new ArrayList<>();
-        categoriesOfLaw.add(new CommonLookupValueDetails().code("CAT1").description("Category 1"));
-        categoriesOfLaw.add(new CommonLookupValueDetails().code("CAT2").description("Category 2"));
+        final List<CommonLookupValueDetail> categoriesOfLaw = new ArrayList<>();
+        categoriesOfLaw.add(new CommonLookupValueDetail().code("CAT1").description("Category 1"));
+        categoriesOfLaw.add(new CommonLookupValueDetail().code("CAT2").description("Category 2"));
 
         when(dataService.getCategoriesOfLaw(categoryOfLawCodes)).thenReturn(categoriesOfLaw);
 
@@ -108,14 +108,14 @@ public class CategoryOfLawControllerTest {
 
     @Test
     public void testGetCategoryOfLaw_ExceptionFundingReturnsAllCodes() throws Exception {
-        final UserDetails user = buildUser();
+        final UserDetail user = buildUser();
 
         final ApplicationDetails applicationDetails = new ApplicationDetails();
         applicationDetails.setOfficeId(345);
 
-        final List<CommonLookupValueDetails> categoriesOfLaw = new ArrayList<>();
-        categoriesOfLaw.add(new CommonLookupValueDetails().code("CAT1").description("Category 1"));
-        categoriesOfLaw.add(new CommonLookupValueDetails().code("CAT2").description("Category 2"));
+        final List<CommonLookupValueDetail> categoriesOfLaw = new ArrayList<>();
+        categoriesOfLaw.add(new CommonLookupValueDetail().code("CAT1").description("Category 1"));
+        categoriesOfLaw.add(new CommonLookupValueDetail().code("CAT2").description("Category 2"));
 
         when(dataService.getAllCategoriesOfLaw()).thenReturn(categoriesOfLaw);
 
@@ -136,7 +136,7 @@ public class CategoryOfLawControllerTest {
 
     @Test
     public void testPostCategoryOfLawHandlesValidationError() throws Exception {
-        final UserDetails user = buildUser();
+        final UserDetail user = buildUser();
 
         final ApplicationDetails applicationDetails = new ApplicationDetails();
         applicationDetails.setOfficeId(345);
@@ -152,9 +152,9 @@ public class CategoryOfLawControllerTest {
             user.getUserType(),
             Boolean.TRUE)).thenReturn(categoryOfLawCodes);
 
-        final List<CommonLookupValueDetails> categoriesOfLaw = new ArrayList<>();
-        categoriesOfLaw.add(new CommonLookupValueDetails().code("CAT1").description("Category 1"));
-        categoriesOfLaw.add(new CommonLookupValueDetails().code("CAT2").description("Category 2"));
+        final List<CommonLookupValueDetail> categoriesOfLaw = new ArrayList<>();
+        categoriesOfLaw.add(new CommonLookupValueDetail().code("CAT1").description("Category 1"));
+        categoriesOfLaw.add(new CommonLookupValueDetail().code("CAT2").description("Category 2"));
 
         when(dataService.getCategoriesOfLaw(categoryOfLawCodes)).thenReturn(categoriesOfLaw);
 
@@ -175,7 +175,7 @@ public class CategoryOfLawControllerTest {
 
     @Test
     public void testPostCategoryOfLawIsSuccessful() throws Exception {
-        final UserDetails user = buildUser();
+        final UserDetail user = buildUser();
 
         final ApplicationDetails applicationDetails = new ApplicationDetails();
         applicationDetails.setOfficeId(345);
@@ -193,7 +193,7 @@ public class CategoryOfLawControllerTest {
 
     @Test
     public void testPostCategoryOfLaw_HandlesExceptionalFunding() throws Exception {
-        final UserDetails user = buildUser();
+        final UserDetail user = buildUser();
 
         final ApplicationDetails applicationDetails = new ApplicationDetails();
         applicationDetails.setOfficeId(345);
@@ -210,18 +210,18 @@ public class CategoryOfLawControllerTest {
         verifyNoInteractions(dataService);
     }
 
-    private UserDetails buildUser() {
-        return new UserDetails()
+    private UserDetail buildUser() {
+        return new UserDetail()
             .userId(1)
             .userType("testUserType")
             .loginId("testLoginId")
             .provider(buildProvider());
     }
-    private ProviderDetails buildProvider() {
-        return new ProviderDetails()
+    private ProviderDetail buildProvider() {
+        return new ProviderDetail()
             .id(123)
             .addOfficesItem(
-                new OfficeDetails()
+                new OfficeDetail()
                     .id(1)
                     .name("Office 1"));
     }

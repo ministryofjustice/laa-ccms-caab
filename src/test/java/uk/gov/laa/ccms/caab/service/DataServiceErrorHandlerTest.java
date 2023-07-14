@@ -6,10 +6,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.userdetails.UserDetails;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import uk.gov.laa.ccms.data.model.CommonLookupValueListDetails;
-import uk.gov.laa.ccms.data.model.UserDetails;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
 public class DataServiceErrorHandlerTest {
@@ -26,7 +27,7 @@ public class DataServiceErrorHandlerTest {
     public void testHandleUserError() {
         Throwable throwable = new RuntimeException("Error");
 
-        Mono<UserDetails> result = dataServiceErrorHandler.handleUserError("testLoginId", throwable);
+        Mono<UserDetail> result = dataServiceErrorHandler.handleUserError("testLoginId", throwable);
 
         StepVerifier.create(result)
                 .verifyErrorMatches(e -> e instanceof DataServiceException
@@ -38,7 +39,7 @@ public class DataServiceErrorHandlerTest {
     public void testHandleCommonValuesError() {
         Throwable throwable = new RuntimeException("Error");
 
-        Mono<CommonLookupValueListDetails> result = dataServiceErrorHandler.handleCommonValuesError("testType", "testCode", "testSort", throwable);
+        Mono<CommonLookupDetail> result = dataServiceErrorHandler.handleCommonValuesError("testType", "testCode", "testSort", throwable);
 
         StepVerifier.create(result)
                 .verifyErrorMatches(e -> e instanceof DataServiceException

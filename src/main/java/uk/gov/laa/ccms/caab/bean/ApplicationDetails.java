@@ -27,6 +27,8 @@ public class ApplicationDetails implements Serializable {
      */
     private String applicationTypeId;
 
+    private String applicationTypeCategory;
+
     private String delegatedFunctionsOption;
     private String delegatedFunctionUsedDay;
     private String delegatedFunctionUsedMonth;
