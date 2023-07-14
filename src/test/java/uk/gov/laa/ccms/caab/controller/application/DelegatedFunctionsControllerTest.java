@@ -39,27 +39,26 @@ public class DelegatedFunctionsControllerTest {
     @Autowired
     private WebApplicationContext webApplicationContext;
 
+    private ApplicationDetails applicationDetails;
+
     @BeforeEach
     public void setup() {
         mockMvc = standaloneSetup(delegatedFunctionsController).build();
+        applicationDetails = new ApplicationDetails();
     }
 
     @Test
     public void testGetDelegatedFunctions() throws Exception {
-
         this.mockMvc.perform(get("/application/delegated-functions")
                         .sessionAttr("applicationDetails", new ApplicationDetails()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(view().name("/application/select-delegated-functions"))
                 .andExpect(model().attribute("applicationDetails", new ApplicationDetails()));
-
     }
 
     @Test
     public void testPostDelegatedFunctionsHandlesValidationError() throws Exception {
-        final ApplicationDetails applicationDetails = new ApplicationDetails();
-
         doAnswer(invocation -> {
             Errors errors = (Errors) invocation.getArguments()[1];
             errors.rejectValue("delegatedFunctionsOption", "required.delegatedFunctionsOption", "Please complete 'Are delegated functions used'.");
@@ -75,8 +74,6 @@ public class DelegatedFunctionsControllerTest {
 
     @Test
     public void testPostDelegatedFunctionsIsSuccessful() throws Exception {
-        final ApplicationDetails applicationDetails = new ApplicationDetails();
-
         this.mockMvc.perform(post("/application/delegated-functions")
                         .flashAttr("applicationDetails", applicationDetails))
                 .andDo(print())

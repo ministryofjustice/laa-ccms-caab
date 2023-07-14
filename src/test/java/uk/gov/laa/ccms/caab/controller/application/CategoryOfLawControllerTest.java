@@ -59,18 +59,28 @@ public class CategoryOfLawControllerTest {
     @Autowired
     private WebApplicationContext webApplicationContext;
 
+    private UserDetails user;
+
+    private ApplicationDetails applicationDetails;
+
+    private List<CommonLookupValueDetails> categoriesOfLaw;
+
     @BeforeEach
     public void setup() {
         mockMvc = standaloneSetup(categoryOfLawController).build();
+
+        this.user = buildUser();
+
+        applicationDetails = new ApplicationDetails();
+        applicationDetails.setOfficeId(345);
+
+        categoriesOfLaw = new ArrayList<>();
+        categoriesOfLaw.add(new CommonLookupValueDetails().code("CAT1").description("Category 1"));
+        categoriesOfLaw.add(new CommonLookupValueDetails().code("CAT2").description("Category 2"));
     }
 
     @Test
     public void testGetCategoryOfLawAddsCategoriesOfLawToModel() throws Exception {
-        final UserDetails user = buildUser();
-
-        final ApplicationDetails applicationDetails = new ApplicationDetails();
-        applicationDetails.setOfficeId(345);
-
         final List<String> categoryOfLawCodes = new ArrayList<>();
         categoryOfLawCodes.add("CAT1");
         categoryOfLawCodes.add("CAT2");
@@ -81,10 +91,6 @@ public class CategoryOfLawControllerTest {
             user.getLoginId(),
             user.getUserType(),
             Boolean.TRUE)).thenReturn(categoryOfLawCodes);
-
-        final List<CommonLookupValueDetails> categoriesOfLaw = new ArrayList<>();
-        categoriesOfLaw.add(new CommonLookupValueDetails().code("CAT1").description("Category 1"));
-        categoriesOfLaw.add(new CommonLookupValueDetails().code("CAT2").description("Category 2"));
 
         when(dataService.getCategoriesOfLaw(categoryOfLawCodes)).thenReturn(categoriesOfLaw);
 
@@ -108,15 +114,6 @@ public class CategoryOfLawControllerTest {
 
     @Test
     public void testGetCategoryOfLaw_ExceptionFundingReturnsAllCodes() throws Exception {
-        final UserDetails user = buildUser();
-
-        final ApplicationDetails applicationDetails = new ApplicationDetails();
-        applicationDetails.setOfficeId(345);
-
-        final List<CommonLookupValueDetails> categoriesOfLaw = new ArrayList<>();
-        categoriesOfLaw.add(new CommonLookupValueDetails().code("CAT1").description("Category 1"));
-        categoriesOfLaw.add(new CommonLookupValueDetails().code("CAT2").description("Category 2"));
-
         when(dataService.getAllCategoriesOfLaw()).thenReturn(categoriesOfLaw);
 
         this.mockMvc.perform(get("/application/category-of-law?exceptional_funding=true")
@@ -136,11 +133,6 @@ public class CategoryOfLawControllerTest {
 
     @Test
     public void testPostCategoryOfLawHandlesValidationError() throws Exception {
-        final UserDetails user = buildUser();
-
-        final ApplicationDetails applicationDetails = new ApplicationDetails();
-        applicationDetails.setOfficeId(345);
-
         final List<String> categoryOfLawCodes = new ArrayList<>();
         categoryOfLawCodes.add("CAT1");
         categoryOfLawCodes.add("CAT2");
@@ -151,10 +143,6 @@ public class CategoryOfLawControllerTest {
             user.getLoginId(),
             user.getUserType(),
             Boolean.TRUE)).thenReturn(categoryOfLawCodes);
-
-        final List<CommonLookupValueDetails> categoriesOfLaw = new ArrayList<>();
-        categoriesOfLaw.add(new CommonLookupValueDetails().code("CAT1").description("Category 1"));
-        categoriesOfLaw.add(new CommonLookupValueDetails().code("CAT2").description("Category 2"));
 
         when(dataService.getCategoriesOfLaw(categoryOfLawCodes)).thenReturn(categoriesOfLaw);
 
@@ -175,10 +163,6 @@ public class CategoryOfLawControllerTest {
 
     @Test
     public void testPostCategoryOfLawIsSuccessful() throws Exception {
-        final UserDetails user = buildUser();
-
-        final ApplicationDetails applicationDetails = new ApplicationDetails();
-        applicationDetails.setOfficeId(345);
         applicationDetails.setCategoryOfLawId("CAT1");
 
         this.mockMvc.perform(post("/application/category-of-law")
@@ -193,10 +177,6 @@ public class CategoryOfLawControllerTest {
 
     @Test
     public void testPostCategoryOfLaw_HandlesExceptionalFunding() throws Exception {
-        final UserDetails user = buildUser();
-
-        final ApplicationDetails applicationDetails = new ApplicationDetails();
-        applicationDetails.setOfficeId(345);
         applicationDetails.setCategoryOfLawId("CAT1");
         applicationDetails.setExceptionalFunding(true);
 

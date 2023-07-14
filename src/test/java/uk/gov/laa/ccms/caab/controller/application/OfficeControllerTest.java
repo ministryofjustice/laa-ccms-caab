@@ -46,52 +46,33 @@ public class OfficeControllerTest {
     @Autowired
     private WebApplicationContext webApplicationContext;
 
+    private UserDetails user;
+
     @BeforeEach
     public void setup() {
         mockMvc = standaloneSetup(officeController).build();
+        this.user = buildUser();
     }
 
     @Test
     public void testGetOfficeAddsOfficesToModel() throws Exception {
-        final UserDetails userDetails = new UserDetails()
-                .userId(1)
-                .userType("testUserType")
-                .loginId("testLoginId")
-                .provider(
-                        new ProviderDetails()
-                                .addOfficesItem(
-                                        new uk.gov.laa.ccms.data.model.OfficeDetails()
-                                                .id(1)
-                                                .name("Office 1")));
-
-        this.mockMvc.perform(get("/application/office").flashAttr("user", userDetails))
+        this.mockMvc.perform(get("/application/office").flashAttr("user", user))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(view().name("/application/select-office"))
-                .andExpect(model().attribute("user", userDetails))
-                .andExpect(model().attribute("offices", userDetails.getProvider().getOffices()))
+                .andExpect(model().attribute("user", user))
+                .andExpect(model().attribute("offices", user.getProvider().getOffices()))
                 .andExpect(model().attributeExists("applicationDetails"));
 
     }
 
     @Test
     public void testPostOfficeIsSuccessful() throws Exception {
-        final UserDetails userDetails = new UserDetails()
-                .userId(1)
-                .userType("testUserType")
-                .loginId("testLoginId")
-                .provider(
-                        new ProviderDetails()
-                                .addOfficesItem(
-                                        new uk.gov.laa.ccms.data.model.OfficeDetails()
-                                                .id(1)
-                                                .name("Office 1")));
-
         final ApplicationDetails applicationDetails = new ApplicationDetails();
         applicationDetails.setOfficeId(1);
 
         this.mockMvc.perform(post("/application/office")
-                        .flashAttr("user", userDetails)
+                        .flashAttr("user", user)
                         .flashAttr("applicationDetails", applicationDetails))
                 .andDo(print())
                 .andExpect(redirectedUrl("/application/category-of-law"));
@@ -101,17 +82,6 @@ public class OfficeControllerTest {
 
     @Test
     public void testPostOfficeHandlesValidationError() throws Exception {
-        final UserDetails userDetails = new UserDetails()
-                .userId(1)
-                .userType("testUserType")
-                .loginId("testLoginId")
-                .provider(
-                        new ProviderDetails()
-                                .addOfficesItem(
-                                        new OfficeDetails()
-                                                .id(1)
-                                                .name("Office 1")));
-
         final ApplicationDetails applicationDetails = new ApplicationDetails();
 
         doAnswer(invocation -> {
@@ -122,12 +92,28 @@ public class OfficeControllerTest {
 
 
         this.mockMvc.perform(post("/application/office")
-                        .flashAttr("user", userDetails)
+                        .flashAttr("user", user)
                         .flashAttr("applicationDetails", applicationDetails))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(view().name("/application/select-office"))
-                .andExpect(model().attribute("offices", userDetails.getProvider().getOffices()));
+                .andExpect(model().attribute("offices", user.getProvider().getOffices()));
+    }
+
+    private UserDetails buildUser() {
+        return new UserDetails()
+            .userId(1)
+            .userType("testUserType")
+            .loginId("testLoginId")
+            .provider(buildProvider());
+    }
+    private ProviderDetails buildProvider() {
+        return new ProviderDetails()
+            .id(123)
+            .addOfficesItem(
+                new OfficeDetails()
+                    .id(1)
+                    .name("Office 1"));
     }
 
 
