@@ -1,0 +1,37 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:msg="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIM" xmlns:header="http://legalservices.gov.uk/Enterprise/Common/1.0/Header" xmlns:common="http://legalservices.gov.uk/Enterprise/Common/1.0/Common"
+  xmlns:case="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIO">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <NotificationCntInqRS xmlns:msg="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIM"
+      xmlns:oracle-xsl-mapper="http://www.oracle.com/xsl/mapper/schemas"
+      xmlns="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIM">
+      <header:HeaderRS xmlns:header="http://legalservices.gov.uk/Enterprise/Common/1.0/Header">
+        <header:RequestDetails>
+          <header:Language>ENG</header:Language>
+          <header:Source>PUI</header:Source>
+          <header:Target>Oracle EBusiness</header:Target>
+          <header:TransactionRequestID>202306191622202900101198673</header:TransactionRequestID>
+          <header:UserLoginID>MARILYN@DESORANDCO.CO.UK</header:UserLoginID>
+          <header:UserRole>EXTERNAL</header:UserRole>
+        </header:RequestDetails>
+        <header:Status>
+          <header:Status>Success</header:Status>
+          <header:StatusFreeText>GetNotificationCount completed successfully.</header:StatusFreeText>
+        </header:Status>
+        <header:TransactionID>202306191622202900101198673</header:TransactionID>
+      </header:HeaderRS>
+      <msg:NotificationCntLists>
+        <msg:NotificationsCnt>
+          <case:NotificationCount xmlns:case="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIO">5</case:NotificationCount>
+          <case:OverdueActionCount xmlns:case="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIO">1</case:OverdueActionCount>
+          <case:StandardActionCount xmlns:case="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIO">2</case:StandardActionCount>
+        </msg:NotificationsCnt>
+      </msg:NotificationCntLists>
+      <msg:RecordCount>
+        <common:MaxRecordsToFetch xmlns:common="http://legalservices.gov.uk/Enterprise/Common/1.0/Common">100</common:MaxRecordsToFetch>
+        <common:RecordsFetched xmlns:common="http://legalservices.gov.uk/Enterprise/Common/1.0/Common">0</common:RecordsFetched>
+        <common:RetriveDataOnMaxCount xmlns:common="http://legalservices.gov.uk/Enterprise/Common/1.0/Common">false</common:RetriveDataOnMaxCount>
+      </msg:RecordCount>
+    </NotificationCntInqRS>
+  </soapenv:Body>
+</soapenv:Envelope>
