@@ -25,10 +25,6 @@ public class DelegatedFunctionsController {
     public String delegatedFunction(@ModelAttribute("applicationDetails") ApplicationDetails applicationDetails){
         log.info("GET /application/delegated-functions: " + applicationDetails.toString());
 
-        if (applicationDetails.getDelegatedFunctionsOption() == null){
-            applicationDetails.setDelegatedFunctionsOption("N");
-        }
-
         return "/application/select-delegated-functions";
     }
 
@@ -38,7 +34,7 @@ public class DelegatedFunctionsController {
         log.info("POST /application/delegated-functions: " + applicationDetails.toString());
         applicationValidator.validateDelegatedFunction(applicationDetails, bindingResult);
 
-        if (applicationDetails.getDelegatedFunctionsOption().equals("N")){
+        if (!applicationDetails.isDelegatedFunctions()){
             applicationDetails.setDelegatedFunctionUsedDay(null);
             applicationDetails.setDelegatedFunctionUsedMonth(null);
             applicationDetails.setDelegatedFunctionUsedYear(null);

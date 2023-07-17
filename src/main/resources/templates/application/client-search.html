@@ -15,12 +15,12 @@
         </h1>
         <form action="#" th:action="@{/application/client-search}" th:object="${clientSearchDetails}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <div class="govuk-inset-text">
+            <p class="govuk-body-l">
                 To find a client registered within the LAA system, please enter any or all of the details for that
                 client in the fields below. The more details entered, the better the match. If your search returns more
                 than 100 results, you will be asked to refine your search instead of displaying all the results. This is
                 to ensure that you use the correct client record in your new application.
-            </div>
+            </p>
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
                     <div class="govuk-form-group" th:classappend="${#fields.hasErrors('forename')} ? 'govuk-form-group--error' : ''">

@@ -64,7 +64,6 @@ public class DelegatedFunctionsControllerTest {
 
     @Test
     public void testPostDelegatedFunctionsHandlesValidationError() throws Exception {
-        applicationDetails.setDelegatedFunctionsOption("");
 
         doAnswer(invocation -> {
             Errors errors = (Errors) invocation.getArguments()[1];
