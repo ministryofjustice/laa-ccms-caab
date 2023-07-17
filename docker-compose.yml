@@ -61,6 +61,15 @@ services:
       - clam:/var/lib/clamav
     ports:
       - 3310:3310
+
+  wiremock:
+    image: wiremock/wiremock:2.35.0
+    ports:
+      - "8051:8080"
+    volumes:
+      - ./wiremock:/home/wiremock
+
 volumes:
   db_data:
   clam:
+  wiremock:
