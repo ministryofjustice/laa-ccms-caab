@@ -1,0 +1,53 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:msg="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIM" xmlns:header="http://legalservices.gov.uk/Enterprise/Common/1.0/Header" xmlns:common="http://legalservices.gov.uk/Enterprise/Common/1.0/Common"
+  xmlns:case="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIO">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <ContractDetailsRS xmlns:msg="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIM" xmlns:oracle-xsl-mapper="http://www.oracle.com/xsl/mapper/schemas" xmlns="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIM">
+  <header:HeaderRS xmlns:header="http://legalservices.gov.uk/Enterprise/Common/1.0/Header">
+    <header:TransactionID>202306191622202900101191111</header:TransactionID>
+    <header:RequestDetails>
+      <header:TransactionRequestID>202306191622202900101191111</header:TransactionRequestID>
+      <header:UserLoginID>PENNY.WALL@SWITALSKIS.COM</header:UserLoginID>
+      <header:UserRole>EXTERNAL</header:UserRole>
+    </header:RequestDetails>
+    <header:Status>
+      <header:Status>Success</header:Status>
+    </header:Status>
+  </header:HeaderRS>
+  <msg:ContractDetails>
+    <msg:ContractDetail>
+      <refdata:CategoryofLaw xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">MAT</refdata:CategoryofLaw>
+      <refdata:SubCategory xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">Not Applicable</refdata:SubCategory>
+      <refdata:AuthorisationType xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">Schedule</refdata:AuthorisationType>
+      <refdata:CreateNewMatters xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">true</refdata:CreateNewMatters>
+      <refdata:ContractualDevolvedPowers xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">Yes - Excluding JR Proceedings</refdata:ContractualDevolvedPowers>
+      <refdata:RemainderAuthorisation xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">true</refdata:RemainderAuthorisation>
+    </msg:ContractDetail>
+    <msg:ContractDetail>
+      <refdata:CategoryofLaw xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">MED</refdata:CategoryofLaw>
+      <refdata:SubCategory xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">Not Applicable</refdata:SubCategory>
+      <refdata:AuthorisationType xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">Schedule</refdata:AuthorisationType>
+      <refdata:CreateNewMatters xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">true</refdata:CreateNewMatters>
+      <refdata:ContractualDevolvedPowers xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">Yes - Excluding JR Proceedings</refdata:ContractualDevolvedPowers>
+      <refdata:RemainderAuthorisation xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">true</refdata:RemainderAuthorisation>
+    </msg:ContractDetail>
+    <msg:ContractDetail>
+      <refdata:CategoryofLaw xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">MSC</refdata:CategoryofLaw>
+      <refdata:SubCategory xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">Not Applicable</refdata:SubCategory>
+      <refdata:AuthorisationType xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">Schedule</refdata:AuthorisationType>
+      <refdata:CreateNewMatters xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">true</refdata:CreateNewMatters>
+      <refdata:ContractualDevolvedPowers xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">Yes - Excluding JR Proceedings</refdata:ContractualDevolvedPowers>
+      <refdata:RemainderAuthorisation xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">true</refdata:RemainderAuthorisation>
+    </msg:ContractDetail>
+    <msg:ContractDetail>
+      <refdata:CategoryofLaw xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">PCW</refdata:CategoryofLaw>
+      <refdata:SubCategory xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">Not Applicable</refdata:SubCategory>
+      <refdata:AuthorisationType xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">Schedule</refdata:AuthorisationType>
+      <refdata:CreateNewMatters xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">true</refdata:CreateNewMatters>
+      <refdata:ContractualDevolvedPowers xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">No</refdata:ContractualDevolvedPowers>
+      <refdata:RemainderAuthorisation xmlns:refdata="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIO">true</refdata:RemainderAuthorisation>
+    </msg:ContractDetail>
+  </msg:ContractDetails>
+</ContractDetailsRS>
+  </soapenv:Body>
+</soapenv:Envelope>

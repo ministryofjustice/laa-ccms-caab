@@ -1,0 +1,21 @@
+{
+  "request": {
+    "method": "ANY",
+    "urlPath": "/soa-infra/services/default/NotificationServices/NotificationServices_ep",
+    "bodyPatterns": [
+      {
+        "matchesXPath": {
+          "expression": "//SearchCriteria/UserID/text()",
+          "contains": "MARILYN@DESORANDCO.CO.UK"
+        }
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "bodyFileName": "NotificationCntInqRS_MARILYN.xml",
+    "headers": {
+      "Content-Type": "text/xml"
+    }
+  }
+}
