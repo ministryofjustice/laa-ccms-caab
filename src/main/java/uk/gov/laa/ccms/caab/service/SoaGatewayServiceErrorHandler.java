@@ -21,4 +21,13 @@ public class SoaGatewayServiceErrorHandler {
             providerFirmId, officeId, e);
         return Mono.empty();
     }
+
+    public Mono<ContractDetails> handleClientDetailsError(
+            Integer providerFirmId, Integer officeId, Throwable e) {
+        log.error("Failed to retrieve ContractDetails for providerFirmId: {}, officeId: {}",
+                providerFirmId, officeId, e);
+        return Mono.empty();
+    }
+
+
 }

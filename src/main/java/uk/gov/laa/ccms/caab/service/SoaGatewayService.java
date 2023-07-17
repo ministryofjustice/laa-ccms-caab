@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.CoreSubscriber;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
@@ -85,6 +86,16 @@ public class SoaGatewayService {
             .map(ContractDetail::getCategoryofLaw)
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
+    }
+
+    private Mono<ContractDetails> getClient(String firstName, String surname, String dob, String homeOfficeReference,
+                                            String nationalInsuranceNumber, String caseReferenceNumber, String loginId, String userType){
+        return new Mono<ContractDetails>() {
+            @Override
+            public void subscribe(CoreSubscriber<? super ContractDetails> actual) {
+
+            }
+        };
     }
 
 }

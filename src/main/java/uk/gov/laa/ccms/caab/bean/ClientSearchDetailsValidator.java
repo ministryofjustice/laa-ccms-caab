@@ -27,11 +27,35 @@ public class ClientSearchDetailsValidator implements Validator{
 
     public void validateDateOfBirth(Object target, Errors errors){
         ValidationUtils.rejectIfEmpty(errors, "dobDay",
-                "required.dob-day", "Please complete 'Date of birth'.");
+                "required.dob-day", "Please complete 'Date of birth' with a day.");
         ValidationUtils.rejectIfEmpty(errors, "dobMonth",
-                "required.dob-month", "Please complete 'Date of birth'.");
+                "required.dob-month", "Please complete 'Date of birth' with a month.");
         ValidationUtils.rejectIfEmpty(errors, "dobYear",
-                "required.dob-year", "Please complete 'Date of birth'.");
+                "required.dob-year", "Please complete 'Date of birth' with a year.");
+
+        ClientSearchDetails clientSearchDetails = (ClientSearchDetails) target;
+
+        if (!clientSearchDetails.getDobDay().isBlank()){
+            if (!clientSearchDetails.getDobDay().matches(NUMERIC_PATTERN)) {
+                errors.rejectValue("dobDay", "invalid.numeric",
+                        "Please enter a numeric value for the day.");
+            }
+        }
+
+        if (!clientSearchDetails.getDobMonth().isBlank()){
+            if (!clientSearchDetails.getDobMonth().matches(NUMERIC_PATTERN)) {
+                errors.rejectValue("dobMonth", "invalid.numeric",
+                        "Please enter a numeric value for the month.");
+            }
+        }
+
+        if (!clientSearchDetails.getDobYear().isBlank()){
+            if (!clientSearchDetails.getDobYear().matches(NUMERIC_PATTERN)) {
+                errors.rejectValue("dobYear", "invalid.numeric",
+                        "Please enter a numeric value for the year.");
+            }
+        }
+
     }
 
     @Override

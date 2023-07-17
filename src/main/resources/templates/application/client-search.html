@@ -27,15 +27,17 @@
                         <label class="govuk-label" for="forename">
                            First name
                         </label>
-                        <input class="govuk-input govuk-input--width-20" id="forename" name="forename" type="text">
+                        <input class="govuk-input govuk-input--width-20" id="forename" name="forename" type="text"
+                               th:value="${clientSearchDetails.forename}">
                     </div>
                     <div class="govuk-form-group" th:classappend="${#fields.hasErrors('surname')} ? 'govuk-form-group--error' : ''">
                         <label class="govuk-label" for="surname">
                             Surname at birth
                         </label>
-                        <input class="govuk-input govuk-input--width-20" id="surname" name="surname" type="text">
+                        <input class="govuk-input govuk-input--width-20" id="surname" name="surname" type="text"
+                               th:value="${clientSearchDetails.surname}">
                     </div>
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('dobDay')} ? 'govuk-form-group--error' : ''">
+                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('dobDay') || #fields.hasErrors('dobMonth') || #fields.hasErrors('dobYear')} ? 'govuk-form-group--error' : ''">
                         <fieldset class="govuk-fieldset" role="group" aria-describedby="dob-hint dob-error">
                             <legend class="govuk-fieldset__legend">
                                 Date of birth
@@ -43,20 +45,14 @@
                             <div id="dob-hint" class="govuk-hint">
                                 For example, 27 3 2007
                             </div>
-                            <p id="delegated-function-used-error" class="govuk-error-message">
-                                <span th:if="${#fields.hasErrors('dobDay')}">
-                                    <span class="govuk-visually-hidden">Error:</span> The day must be a numeric value.
-                                    <br/>
-                                </span>
-                                <span th:if="${#fields.hasErrors('dobMonth')}">
-                                    <span class="govuk-visually-hidden">Error:</span> The month must be a numeric value.
-                                    <br/>
-                                </span>
-                                <span th:if="${#fields.hasErrors('dobYear')}">
-                                    <span class="govuk-visually-hidden">Error:</span> The year must be a numeric value.
+                            <p id="dob-error" class="govuk-error-message">
+                                <span th:each="error : ${#fields.detailedErrors()}">
+                                    <span th:inline="text" th:if="${error.fieldName == 'dobDay' || error.fieldName == 'dobMonth' || error.fieldName == 'dobYear'}">
+                                        <span th:utext="${error.message + '<br>'}"></span>
+                                    </span>
                                 </span>
                             </p>
-                            <div class="govuk-date-input" id="delegated-function-used">
+                            <div class="govuk-date-input" id="dob">
                                 <div class="govuk-date-input__item">
                                     <div class="govuk-form-group">
                                         <label class="govuk-label govuk-date-input__label" for="dob-day">
@@ -65,7 +61,7 @@
                                         <input th:classappend="${#fields.hasErrors('dobDay')} ? 'govuk-input--error' : ''"
                                                class="govuk-input govuk-date-input__input govuk-input--width-2"
                                                id="dob-day"
-                                               name="dob-day"
+                                               name="dobDay"
                                                type="text"
                                                inputmode="numeric"
                                                maxlength="2"
@@ -80,7 +76,7 @@
                                         <input th:classappend="${#fields.hasErrors('dobMonth')} ? 'govuk-input--error' : ''"
                                                class="govuk-input govuk-date-input__input govuk-input--width-2"
                                                id="dob-month"
-                                               name="dob-month"
+                                               name="dobMonth"
                                                type="text"
                                                inputmode="numeric"
                                                maxlength="2"
@@ -95,7 +91,7 @@
                                         <input th:classappend="${#fields.hasErrors('dobYear')} ? 'govuk-input--error' : ''"
                                                class="govuk-input govuk-date-input__input govuk-input--width-4"
                                                id="dob-year"
-                                               name="dob-year"
+                                               name="dobYear"
                                                type="text"
                                                inputmode="numeric"
                                                maxlength="4"
@@ -131,7 +127,8 @@
                         <label class="govuk-label" for="uniqueIdentifierValue">
                             Unique identifier value (optional)
                         </label>
-                        <input class="govuk-input govuk-input--width-20" id="uniqueIdentifierValue" name="uniqueIdentifierValue" type="text">
+                        <input class="govuk-input govuk-input--width-20" id="uniqueIdentifierValue" name="uniqueIdentifierValue" type="text"
+                               th:value="${clientSearchDetails.uniqueIdentifierValue}">
                     </div>
                     <div class="govuk-form-group">
                         <details class="govuk-details" data-module="govuk-details">
