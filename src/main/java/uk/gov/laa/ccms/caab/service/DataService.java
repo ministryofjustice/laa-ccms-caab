@@ -5,14 +5,17 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetails;
-import uk.gov.laa.ccms.data.model.CommonLookupValueListDetails;
-import uk.gov.laa.ccms.data.model.UserDetails;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLICATION_TYPE_CODES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
 
 @Service
 @Slf4j
@@ -21,27 +24,23 @@ public class DataService {
 
     private final DataServiceErrorHandler dataServiceErrorHandler;
 
-    public static final List<String> EXCLUDED_APPLICATION_TYPE_CODES = Arrays.asList("DP", "ECF", "SUBDP");
-    public static final String COMMON_VALUE_APPLICATION_TYPE = "XXCCMS_APP_AMEND_TYPES";
-    public static final String COMMON_VALUE_CATEGORY_OF_LAW = "XXCCMS_CATEGORY_OF_LAW";
-
     public DataService(@Qualifier("dataWebClient") WebClient dataWebClient,
         DataServiceErrorHandler dataServiceErrorHandler) {
         this.dataWebClient = dataWebClient;
         this.dataServiceErrorHandler = dataServiceErrorHandler;
     }
 
-    public Mono<UserDetails> getUser(String loginId){
+    public Mono<UserDetail> getUser(String loginId){
 
         return dataWebClient
                 .get()
                 .uri("/users/{loginId}", loginId)
                 .retrieve()
-                .bodyToMono(UserDetails.class)
+                .bodyToMono(UserDetail.class)
                 .onErrorResume(e -> dataServiceErrorHandler.handleUserError(loginId, e));
     }
 
-    public Mono<CommonLookupValueListDetails> getCommonValues(String type, String code, String sort) {
+    public Mono<CommonLookupDetail> getCommonValues(String type, String code, String sort) {
 
         return dataWebClient
                 .get()
@@ -51,14 +50,14 @@ public class DataService {
                         .queryParamIfPresent("sort", Optional.ofNullable(sort))
                         .build())
                 .retrieve()
-                .bodyToMono(CommonLookupValueListDetails.class)
+                .bodyToMono(CommonLookupDetail.class)
                 .onErrorResume(e -> dataServiceErrorHandler.handleCommonValuesError(type, code, sort, e));
     }
 
-    public List<CommonLookupValueDetails> getApplicationTypes() {
-        CommonLookupValueListDetails allApplicationTypes = getCommonValues(COMMON_VALUE_APPLICATION_TYPE, null, null).block();
+    public List<CommonLookupValueDetail> getApplicationTypes() {
+        CommonLookupDetail commonLookupDetail = getCommonValues(COMMON_VALUE_APPLICATION_TYPE, null, null).block();
 
-        List<CommonLookupValueDetails> applicationTypes = allApplicationTypes.getContent().stream()
+        List<CommonLookupValueDetail> applicationTypes = commonLookupDetail.getContent().stream()
                 .filter(applicationType -> {
                     String code = applicationType.getCode().toUpperCase();
                     return !EXCLUDED_APPLICATION_TYPE_CODES.contains(code);
@@ -68,18 +67,18 @@ public class DataService {
         return applicationTypes;
     }
 
-    public List<CommonLookupValueDetails> getCategoriesOfLaw(List<String> codes) {
-        CommonLookupValueListDetails allCategoriesOfLaw = getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW, null, null).block();
-        List<CommonLookupValueDetails> categoriesOfLaw = allCategoriesOfLaw.getContent().stream()
+    public List<CommonLookupValueDetail> getCategoriesOfLaw(List<String> codes) {
+        CommonLookupDetail commonLookupDetail = getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW, null, null).block();
+        List<CommonLookupValueDetail> categoriesOfLaw = commonLookupDetail.getContent().stream()
                     .filter(category -> codes.contains(category.getCode()))
                     .collect(Collectors.toList());
 
         return categoriesOfLaw;
     }
 
-    public List<CommonLookupValueDetails> getAllCategoriesOfLaw() {
-        CommonLookupValueListDetails allCategoriesOfLaw = getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW, null, null).block();
-        List<CommonLookupValueDetails> categoriesOfLaw = allCategoriesOfLaw.getContent().stream()
+    public List<CommonLookupValueDetail> getAllCategoriesOfLaw() {
+        CommonLookupDetail commonLookupDetail = getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW, null, null).block();
+        List<CommonLookupValueDetail> categoriesOfLaw = commonLookupDetail.getContent().stream()
                 .collect(Collectors.toList());
 
         return categoriesOfLaw;

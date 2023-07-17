@@ -5,7 +5,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
-import uk.gov.laa.ccms.data.model.UserDetails;
+import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
 @Controller
@@ -19,7 +19,7 @@ public class HomeController {
     @GetMapping("/")
     public String home(Model model){
 
-        UserDetails user = (UserDetails) model.getAttribute("user");
+        UserDetail user = (UserDetail) model.getAttribute("user");
 
         // Retrieve a summary of the User's Notifications & Actions from the SOA Gateway
         NotificationSummary notificationSummary = soaGatewayService.getNotificationsSummary(

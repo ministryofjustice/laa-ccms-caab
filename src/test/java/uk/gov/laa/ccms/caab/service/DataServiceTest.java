@@ -15,9 +15,9 @@ import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetails;
-import uk.gov.laa.ccms.data.model.CommonLookupValueListDetails;
-import uk.gov.laa.ccms.data.model.UserDetails;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static uk.gov.laa.ccms.caab.service.DataService.COMMON_VALUE_CATEGORY_OF_LAW;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -57,15 +57,15 @@ public class DataServiceTest {
         String loginId = "user1";
         String expectedUri = "/users/{loginId}";
 
-        UserDetails mockUser = new UserDetails();
+        UserDetail mockUser = new UserDetail();
         mockUser.setLoginId(loginId);
 
         when(webClientMock.get()).thenReturn(requestHeadersUriMock);
         when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(UserDetails.class)).thenReturn(Mono.just(mockUser));
+        when(responseMock.bodyToMono(UserDetail.class)).thenReturn(Mono.just(mockUser));
 
-        Mono<UserDetails> userDetailsMono = dataService.getUser(loginId);
+        Mono<UserDetail> userDetailsMono = dataService.getUser(loginId);
 
         StepVerifier.create(userDetailsMono)
                 .expectNextMatches(user -> user.getLoginId().equals(loginId))
@@ -80,11 +80,11 @@ public class DataServiceTest {
         when(webClientMock.get()).thenReturn(requestHeadersUriMock);
         when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(UserDetails.class)).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+        when(responseMock.bodyToMono(UserDetail.class)).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
         when(dataServiceErrorHandler.handleUserError(eq(loginId), any(WebClientResponseException.class))).thenReturn(Mono.empty());
 
-        Mono<UserDetails> userDetailsMono = dataService.getUser(loginId);
+        Mono<UserDetail> userDetailsMono = dataService.getUser(loginId);
 
         StepVerifier.create(userDetailsMono)
                 .verifyComplete();
@@ -95,16 +95,16 @@ public class DataServiceTest {
         String type = "type1";
         String code = "code1";
         String sort = "sort1";
-        CommonLookupValueListDetails commonValues = new CommonLookupValueListDetails();
+        CommonLookupDetail commonValues = new CommonLookupDetail();
 
         ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
         when(webClientMock.get()).thenReturn(requestHeadersUriMock);
         when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(CommonLookupValueListDetails.class)).thenReturn(Mono.just(commonValues));
+        when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
 
-        Mono<CommonLookupValueListDetails> commonValuesMono = dataService.getCommonValues(type, code, sort);
+        Mono<CommonLookupDetail> commonValuesMono = dataService.getCommonValues(type, code, sort);
 
         StepVerifier.create(commonValuesMono)
                 .expectNext(commonValues)
@@ -128,11 +128,11 @@ public class DataServiceTest {
         when(webClientMock.get()).thenReturn(requestHeadersUriMock);
         when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(CommonLookupValueListDetails.class)).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+        when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
         when(dataServiceErrorHandler.handleCommonValuesError(eq(type), eq(code), eq(sort), any(WebClientResponseException.class))).thenReturn(Mono.empty());
 
-        Mono<CommonLookupValueListDetails> commonValuesMono = dataService.getCommonValues(type, code, sort);
+        Mono<CommonLookupDetail> commonValuesMono = dataService.getCommonValues(type, code, sort);
 
         StepVerifier.create(commonValuesMono)
                 .verifyComplete();
@@ -151,9 +151,9 @@ public class DataServiceTest {
                 "test1, 1",
                 "test2, 1"})
     void getApplicationTypes_checkType(String code, int expectedSize) {
-        CommonLookupValueListDetails commonValues = new CommonLookupValueListDetails();
-        List<CommonLookupValueDetails> content = new ArrayList<>();
-        CommonLookupValueDetails commonValueDetails = new CommonLookupValueDetails();
+        CommonLookupDetail commonValues = new CommonLookupDetail();
+        List<CommonLookupValueDetail> content = new ArrayList<>();
+        CommonLookupValueDetail commonValueDetails = new CommonLookupValueDetail();
         commonValueDetails.setCode(code);
         content.add(commonValueDetails);
         commonValues.setContent(content);
@@ -163,9 +163,9 @@ public class DataServiceTest {
         when(webClientMock.get()).thenReturn(requestHeadersUriMock);
         when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(CommonLookupValueListDetails.class)).thenReturn(Mono.just(commonValues));
+        when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
 
-        List<CommonLookupValueDetails> applicationTypes = dataService.getApplicationTypes();
+        List<CommonLookupValueDetail> applicationTypes = dataService.getApplicationTypes();
         assertEquals(expectedSize, applicationTypes.size());
 
         Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
@@ -176,21 +176,21 @@ public class DataServiceTest {
     @Test
     void getCategoriesOfLaw_returnsData() {
         String type = COMMON_VALUE_CATEGORY_OF_LAW;
-        CommonLookupValueListDetails commonValues = new CommonLookupValueListDetails();
-        commonValues.addContentItem(new CommonLookupValueDetails().code("CAT1").type(type));
-        commonValues.addContentItem(new CommonLookupValueDetails().code("CAT2").type(type));
+        CommonLookupDetail commonValues = new CommonLookupDetail();
+        commonValues.addContentItem(new CommonLookupValueDetail().code("CAT1").type(type));
+        commonValues.addContentItem(new CommonLookupValueDetail().code("CAT2").type(type));
 
         ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
         when(webClientMock.get()).thenReturn(requestHeadersUriMock);
         when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(CommonLookupValueListDetails.class)).thenReturn(Mono.just(commonValues));
+        when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
 
         final List<String> catCodes = new ArrayList<>();
         catCodes.add("CAT1");
 
-        List<CommonLookupValueDetails> response = dataService.getCategoriesOfLaw(catCodes);
+        List<CommonLookupValueDetail> response = dataService.getCategoriesOfLaw(catCodes);
 
         Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
         URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
@@ -205,18 +205,18 @@ public class DataServiceTest {
     @Test
     void getAllCategoriesOfLaw_returnsData() {
         String type = COMMON_VALUE_CATEGORY_OF_LAW;
-        CommonLookupValueListDetails commonValues = new CommonLookupValueListDetails();
-        commonValues.addContentItem(new CommonLookupValueDetails().code("CAT1").type(type));
-        commonValues.addContentItem(new CommonLookupValueDetails().code("CAT2").type(type));
+        CommonLookupDetail commonValues = new CommonLookupDetail();
+        commonValues.addContentItem(new CommonLookupValueDetail().code("CAT1").type(type));
+        commonValues.addContentItem(new CommonLookupValueDetail().code("CAT2").type(type));
 
         ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
         when(webClientMock.get()).thenReturn(requestHeadersUriMock);
         when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(CommonLookupValueListDetails.class)).thenReturn(Mono.just(commonValues));
+        when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
 
-        List<CommonLookupValueDetails> response = dataService.getAllCategoriesOfLaw();
+        List<CommonLookupValueDetail> response = dataService.getAllCategoriesOfLaw();
 
         Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
         URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());

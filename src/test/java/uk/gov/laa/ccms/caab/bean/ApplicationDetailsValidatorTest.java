@@ -55,24 +55,16 @@ public class ApplicationDetailsValidatorTest {
     }
 
     @Test
-    public void validate_ValidatesApplicationTypeId() {
+    public void validate_ValidatesApplicationTypeCategory() {
         validator.validate(applicationDetails, errors);
         assertTrue(errors.hasErrors());
-        assertNotNull(errors.getFieldError("applicationTypeId"));
-        assertEquals("required.applicationTypeId", errors.getFieldError("applicationTypeId").getCode());
+        assertNotNull(errors.getFieldError("applicationTypeCategory"));
+        assertEquals("required.applicationTypeCategory", errors.getFieldError("applicationTypeCategory").getCode());
     }
 
     @Test
-    public void validate_ValidatesDelegatedFunction() {
-        validator.validateDelegatedFunction(applicationDetails, errors);
-        assertTrue(errors.hasErrors());
-        assertNotNull(errors.getFieldError("delegatedFunctionsOption"));
-        assertEquals("required.delegatedFunctionsOption", errors.getFieldError("delegatedFunctionsOption").getCode());
-    }
-
-    @Test
-    public void validate_ValidatesDelegatedFunction_WhenDelegatedFunctionsOptionIsNo() {
-        applicationDetails.setDelegatedFunctionsOption("N");
+    public void validate_ValidatesDelegatedFunction_WhenDelegatedFunctionsIsNo() {
+        applicationDetails.setDelegatedFunctions(false);
         validator.validateDelegatedFunction(applicationDetails, errors);
         assertFalse(errors.hasErrors());
     }
@@ -81,8 +73,8 @@ public class ApplicationDetailsValidatorTest {
     @CsvSource({"ab, 1, 2000, delegatedFunctionUsedDay",
                 "1, ab, 2000, delegatedFunctionUsedMonth",
                 "1, 1, abcd, delegatedFunctionUsedYear"})
-    public void validate_ValidatesDelegatedFunction_WhenDelegatedFunctionsOptionIsYesAndInvalidDate(String day, String month, String year, String field) {
-        applicationDetails.setDelegatedFunctionsOption("Y");
+    public void validate_ValidatesDelegatedFunction_WhenDelegatedFunctionsIsYesAndInvalidDate(String day, String month, String year, String field) {
+        applicationDetails.setDelegatedFunctions(true);
         applicationDetails.setDelegatedFunctionUsedDay(day);
         applicationDetails.setDelegatedFunctionUsedMonth(month);
         applicationDetails.setDelegatedFunctionUsedYear(year);

@@ -15,9 +15,9 @@ import org.springframework.web.context.WebApplicationContext;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.data.model.OfficeDetails;
-import uk.gov.laa.ccms.data.model.ProviderDetails;
-import uk.gov.laa.ccms.data.model.UserDetails;
+import uk.gov.laa.ccms.data.model.OfficeDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -46,7 +46,7 @@ public class OfficeControllerTest {
     @Autowired
     private WebApplicationContext webApplicationContext;
 
-    private UserDetails user;
+    private UserDetail user;
 
     @BeforeEach
     public void setup() {
@@ -100,18 +100,18 @@ public class OfficeControllerTest {
                 .andExpect(model().attribute("offices", user.getProvider().getOffices()));
     }
 
-    private UserDetails buildUser() {
-        return new UserDetails()
+    private UserDetail buildUser() {
+        return new UserDetail()
             .userId(1)
             .userType("testUserType")
             .loginId("testLoginId")
             .provider(buildProvider());
     }
-    private ProviderDetails buildProvider() {
-        return new ProviderDetails()
+    private ProviderDetail buildProvider() {
+        return new ProviderDetail()
             .id(123)
             .addOfficesItem(
-                new OfficeDetails()
+                new OfficeDetail()
                     .id(1)
                     .name("Office 1"));
     }
