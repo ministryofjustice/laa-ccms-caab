@@ -1,0 +1,21 @@
+{
+  "request": {
+    "method": "ANY",
+    "urlPath": "/soa-infra/services/default/GetReferenceData/ContractDetailsService_ep",
+    "bodyPatterns": [
+      {
+        "matchesXPath": {
+          "expression": "//SearchCriteria/FirmID/text()",
+          "contains": "22381"
+        }
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "bodyFileName": "ContractDetailsInqRS_MARILYN.xml",
+    "headers": {
+      "Content-Type": "text/xml"
+    }
+  }
+}
