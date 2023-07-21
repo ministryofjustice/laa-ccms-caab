@@ -11,9 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.CoreSubscriber;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
-import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
+import uk.gov.laa.ccms.caab.bean.ClientSearchDetails;
+import uk.gov.laa.ccms.soa.gateway.model.*;
+
+import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.*;
 
 @Service
 @Slf4j
@@ -57,9 +58,10 @@ public class SoaGatewayService {
         String loginId, String userType){
         return soaGatewayWebClient
                 .get()
-                .uri("/contract-details?providerFirmId={providerFirmId}&officeId={officeId}",
-                    providerFirmId,
-                    officeId)
+                .uri(builder -> builder.path("/contract-details")
+                        .queryParam("providerFirmId", providerFirmId)
+                        .queryParam("officeId", officeId)
+                        .build())
                 .header("SoaGateway-User-Login-Id", loginId)
                 .header("SoaGateway-User-Role", userType)
                 .retrieve()
@@ -88,14 +90,24 @@ public class SoaGatewayService {
             .collect(Collectors.toList());
     }
 
-    private Mono<ContractDetails> getClient(String firstName, String surname, String dob, String homeOfficeReference,
-                                            String nationalInsuranceNumber, String caseReferenceNumber, String loginId, String userType){
-        return new Mono<ContractDetails>() {
-            @Override
-            public void subscribe(CoreSubscriber<? super ContractDetails> actual) {
+    public Mono<ClientDetails> getClients(ClientSearchDetails clientSearchDetails, String loginId,
+                                          String userType){
+        return soaGatewayWebClient
+                .get()
+                .uri(builder -> builder.path("/clients")
+                        .queryParamIfPresent("first-name", Optional.ofNullable(clientSearchDetails.getForename()))
+                        .queryParamIfPresent("surname", Optional.ofNullable(clientSearchDetails.getSurname()))
+                        .queryParamIfPresent("date-of-birth", Optional.ofNullable(clientSearchDetails.getDateOfBirth()))
+                        .queryParamIfPresent("home-office-reference", Optional.ofNullable(clientSearchDetails.getUniqueIdentifier(UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE)))
+                        .queryParamIfPresent("national-insurance_number", Optional.ofNullable(clientSearchDetails.getUniqueIdentifier(UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER)))
+                        .queryParamIfPresent("client-reference-number", Optional.ofNullable(clientSearchDetails.getUniqueIdentifier(UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER)))
+                        .build())
+                .header("SoaGateway-User-Login-Id", loginId)
+                .header("SoaGateway-User-Role", userType)
+                .retrieve()
+                .bodyToMono(ClientDetails.class)
+                .onErrorResume(e -> soaGatewayServiceErrorHandler.handleClientDetailsError(clientSearchDetails,e));
 
-            }
-        };
     }
 
 }

@@ -1,0 +1,15 @@
+{
+  "priority": 2,
+  "request": {
+    "method": "ANY",
+    "urlPath": "/soa-infra/services/default/ClientServices/ClientServices_ep",
+    "bodyPatterns": []
+  },
+  "response": {
+    "status": 200,
+    "bodyFileName": "ClientInqRS_NoResults.xml",
+    "headers": {
+      "Content-Type": "text/xml"
+    }
+  }
+}

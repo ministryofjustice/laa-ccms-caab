@@ -5,14 +5,18 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
 
+import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.*;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.*;
+
 @Component
 public class ClientSearchDetailsValidator implements Validator{
 
-    private static final String NUMERIC_PATTERN = "[0-9]+";
+    private static final String GENERIC_UNIQUE_IDENTIFIER_ERROR = "Your input for 'Unique Identifier Value' " +
+            "is in an incorrect format. Please amend your entry.";
 
     @Override
     public boolean supports(Class<?> clazz) {
-        return ApplicationDetails.class.isAssignableFrom(clazz);
+        return ClientSearchDetails.class.isAssignableFrom(clazz);
     }
 
     public void validateForename(Object target, Errors errors){
@@ -58,10 +62,46 @@ public class ClientSearchDetailsValidator implements Validator{
 
     }
 
+    public void validateUniqueIdentifierType(Object target, Errors errors){
+        ClientSearchDetails clientSearchDetails = (ClientSearchDetails) target;
+
+        if (clientSearchDetails.getUniqueIdentifierType() != null){
+            if (clientSearchDetails.getUniqueIdentifierType() == UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER) {
+                if (!clientSearchDetails.getUniqueIdentifierValue().matches(NATIONAL_INSURANCE_NUMBER_PATTERN)) {
+                    errors.rejectValue("uniqueIdentifierValue", "invalid.uniqueIdentifierValue",
+                            "Your input for 'Unique Identifier Value' is not in the correct format. " +
+                                        "The format for 'Unique Identifier Value' is AANNNNNNA, where A is a letter " +
+                                        " and N is a number. Please amend your entry.");
+                }
+            }
+        }
+
+        if (clientSearchDetails.getUniqueIdentifierType() != null){
+            if (clientSearchDetails.getUniqueIdentifierType() == UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE) {
+                if (!clientSearchDetails.getUniqueIdentifierValue().matches(HOME_OFFICE_NUMBER_PATTERN)) {
+                    errors.rejectValue("uniqueIdentifierValue", "invalid.uniqueIdentifierValue",
+                            GENERIC_UNIQUE_IDENTIFIER_ERROR);
+                }
+            }
+        }
+
+        if (clientSearchDetails.getUniqueIdentifierType() != null){
+            if (clientSearchDetails.getUniqueIdentifierType() == UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER) {
+                if (!clientSearchDetails.getUniqueIdentifierValue().matches(CASE_REFERENCE_NUMBER_PATTERN) ||
+                        clientSearchDetails.getUniqueIdentifierValue().matches(CASE_REFERENCE_NUMBER_NEGATIVE_PATTERN)) {
+                    errors.rejectValue("uniqueIdentifierValue", "invalid.uniqueIdentifierValue",
+                            GENERIC_UNIQUE_IDENTIFIER_ERROR);
+                }
+            }
+        }
+
+    }
+
     @Override
     public void validate(Object target, Errors errors) {
         validateForename(target,errors);
         validateSurnameAtBirth(target,errors);
         validateDateOfBirth(target,errors);
+        validateUniqueIdentifierType(target, errors);
     }
 }

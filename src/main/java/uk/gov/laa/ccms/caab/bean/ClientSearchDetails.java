@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.bean;
 
 
 import lombok.Data;
+import uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants;
 
 import java.io.Serializable;
 
@@ -44,10 +45,26 @@ public class ClientSearchDetails implements Serializable {
     /**
      * The type of unique identifier for the client.
      */
-    String uniqueIdentifierType;
+    Integer uniqueIdentifierType;
 
     /**
      * The value of the unique identifier for the client.
      */
     String uniqueIdentifierValue;
+
+    public String getDateOfBirth(){
+        if (dobYear == null || dobMonth == null || dobDay == null) {
+            return null;
+        }
+        return dobYear + "-" + dobMonth + "-" + dobDay;
+    }
+
+
+    public String getUniqueIdentifier(Integer matchingType){
+        if(this.uniqueIdentifierType != null && this.uniqueIdentifierType == matchingType){
+            return uniqueIdentifierValue;
+        } else{
+            return null;
+        }
+    }
 }

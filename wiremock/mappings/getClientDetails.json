@@ -1,0 +1,22 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "ANY",
+    "urlPath": "/soa-infra/services/default/ClientServices/ClientServices_ep",
+    "bodyPatterns": [
+      {
+        "matchesXPath": {
+          "expression": "//SearchCriteria/FirstName/text()",
+          "contains": "John"
+        }
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "bodyFileName": "ClientInqRS.xml",
+    "headers": {
+      "Content-Type": "text/xml"
+    }
+  }
+}

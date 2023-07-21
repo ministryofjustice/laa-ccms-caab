@@ -27,6 +27,7 @@
                         <label class="govuk-label" for="forename">
                            First name
                         </label>
+                        <span th:if="${#fields.hasErrors('forename')}" th:errors="*{forename}" class="govuk-error-message"></span>
                         <input class="govuk-input govuk-input--width-20" id="forename" name="forename" type="text"
                                th:value="${clientSearchDetails.forename}">
                     </div>
@@ -34,6 +35,7 @@
                         <label class="govuk-label" for="surname">
                             Surname at birth
                         </label>
+                        <span th:if="${#fields.hasErrors('surname')}" th:errors="*{surname}" class="govuk-error-message"></span>
                         <input class="govuk-input govuk-input--width-20" id="surname" name="surname" type="text"
                                th:value="${clientSearchDetails.surname}">
                     </div>
@@ -55,12 +57,12 @@
                             <div class="govuk-date-input" id="dob">
                                 <div class="govuk-date-input__item">
                                     <div class="govuk-form-group">
-                                        <label class="govuk-label govuk-date-input__label" for="dob-day">
+                                        <label class="govuk-label govuk-date-input__label" for="dobDay">
                                             Day
                                         </label>
                                         <input th:classappend="${#fields.hasErrors('dobDay')} ? 'govuk-input--error' : ''"
                                                class="govuk-input govuk-date-input__input govuk-input--width-2"
-                                               id="dob-day"
+                                               id="dobDay"
                                                name="dobDay"
                                                type="text"
                                                inputmode="numeric"
@@ -70,12 +72,12 @@
                                 </div>
                                 <div class="govuk-date-input__item">
                                     <div class="govuk-form-group">
-                                        <label class="govuk-label govuk-date-input__label" for="dob-month">
+                                        <label class="govuk-label govuk-date-input__label" for="dobMonth">
                                             Month
                                         </label>
                                         <input th:classappend="${#fields.hasErrors('dobMonth')} ? 'govuk-input--error' : ''"
                                                class="govuk-input govuk-date-input__input govuk-input--width-2"
-                                               id="dob-month"
+                                               id="dobMonth"
                                                name="dobMonth"
                                                type="text"
                                                inputmode="numeric"
@@ -85,12 +87,12 @@
                                 </div>
                                 <div class="govuk-date-input__item">
                                     <div class="govuk-form-group">
-                                        <label class="govuk-label govuk-date-input__label" for="dob-year">
+                                        <label class="govuk-label govuk-date-input__label" for="dobYear">
                                             Year
                                         </label>
                                         <input th:classappend="${#fields.hasErrors('dobYear')} ? 'govuk-input--error' : ''"
                                                class="govuk-input govuk-date-input__input govuk-input--width-4"
-                                               id="dob-year"
+                                               id="dobYear"
                                                name="dobYear"
                                                type="text"
                                                inputmode="numeric"
@@ -123,10 +125,11 @@
                             </select>
                         </fieldset>
                     </div>
-                    <div class="govuk-form-group">
+                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('uniqueIdentifierValue')} ? 'govuk-form-group--error' : ''">
                         <label class="govuk-label" for="uniqueIdentifierValue">
                             Unique identifier value (optional)
                         </label>
+                        <span th:if="${#fields.hasErrors('uniqueIdentifierValue')}" th:errors="*{uniqueIdentifierValue}" class="govuk-error-message"></span>
                         <input class="govuk-input govuk-input--width-20" id="uniqueIdentifierValue" name="uniqueIdentifierValue" type="text"
                                th:value="${clientSearchDetails.uniqueIdentifierValue}">
                     </div>

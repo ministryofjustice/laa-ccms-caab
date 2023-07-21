@@ -55,7 +55,7 @@ repositories {
 
 dependencies {
 	implementation 'uk.gov.laa.ccms.data:data-api:0.0.1-d3875ae-SNAPSHOT'
-	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.1-db71562-SNAPSHOT'
+	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.1-aaddeaa-SNAPSHOT'
 
 	//Starters
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'

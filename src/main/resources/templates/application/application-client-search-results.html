@@ -32,13 +32,15 @@
             </tr>
             </thead>
             <tbody class="govuk-table__body">
-            <tr class="govuk-table__row">
-                <td class="govuk-table__cell">test</td>
-                <td class="govuk-table__cell">test</td>
-                <td class="govuk-table__cell">test</td>
-                <td class="govuk-table__cell">test</td>
-                <td class="govuk-table__cell">test</td>
-                <td class="govuk-table__cell"><a href="/application/client-confirm">Use this record</a></td>
+            <tr class="govuk-table__row" th:each="client : ${clientSearchResults.clients}">
+                <td class="govuk-table__cell" th:text="${client.firstName}"></td>
+                <td class="govuk-table__cell" th:text="${client.surname}"></td>
+                <td class="govuk-table__cell" th:text="${client.surnameAtBirth}"></td>
+                <td class="govuk-table__cell" th:text="${client.postalCode}"></td>
+                <td class="govuk-table__cell" th:text="${client.clientReferenceNumber}"></td>
+                <td class="govuk-table__cell">
+                    <a href="/application/client-confirm" class="govuk-link">Use this record</a>
+                </td>
             </tr>
             </tbody>
         </table>
