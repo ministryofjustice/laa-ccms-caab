@@ -56,7 +56,8 @@ public class OfficeControllerTest {
 
     @Test
     public void testGetOfficeAddsOfficesToModel() throws Exception {
-        this.mockMvc.perform(get("/application/office").flashAttr("user", user))
+        this.mockMvc.perform(get("/application/office")
+                .flashAttr("user", user))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(view().name("/application/select-office"))

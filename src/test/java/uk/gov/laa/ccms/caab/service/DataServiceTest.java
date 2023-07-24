@@ -17,6 +17,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 import java.net.URI;
@@ -227,6 +228,31 @@ public class DataServiceTest {
         assertEquals(2, response.size());
         assertEquals(commonValues.getContent().get(0), response.get(0));
         assertEquals(commonValues.getContent().get(1), response.get(1));
+    }
+
+    @Test
+    void getFeeEarners_returnsData() {
+        Integer providerId = 123;
+        FeeEarnerDetail feeEarnerDetail = new FeeEarnerDetail();
+
+        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+        when(responseMock.bodyToMono(FeeEarnerDetail.class)).thenReturn(Mono.just(feeEarnerDetail));
+
+        Mono<FeeEarnerDetail> feeEarnerDetailMono = dataService.getFeeEarners(providerId);
+
+        StepVerifier.create(feeEarnerDetailMono)
+            .expectNext(feeEarnerDetail)
+            .verifyComplete();
+
+        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+        // Assert the URI
+        assertEquals(String.format("/fee-earners?provider-id=%s", providerId), actualUri.toString());
     }
 
 }
