@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>LAA CCMS - Start New Application</title>
+    <title>LAA CCMS - Start new application</title>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -15,17 +15,8 @@
         <p class="govuk-body">Please confirm you have selected the correct client record before you proceed as this will
             create your new application</p>
         <!-- Add the form element -->
-        <form action="#" th:action="@{/application/client/confirmed}" th:object="${clientInformation}" method="post">
-            <input type="hidden" th:field="${clientInformation.firstName}" />
-            <input type="hidden" th:field="${clientInformation.surname}" />
-            <input type="hidden" th:field="${clientInformation.surnameAtBirth}" />
-            <input type="hidden" th:field="${clientInformation.fullName}" />
-            <input type="hidden" th:field="${clientInformation.dateOfBirth}" />
-            <input type="hidden" th:field="${clientInformation.gender}" />
-            <input type="hidden" th:field="${clientInformation.postalCode}" />
-            <input type="hidden" th:field="${clientInformation.caseReferenceNumber}" />
-            <input type="hidden" th:field="${clientInformation.homeOfficeReference}" />
-            <input type="hidden" th:field="${clientInformation.nationalInsuranceNumber}" />
+        <form action="#" th:action="@{/application/client/confirmed}" method="post">
+            <input type="hidden" name="confirmedClientId" th:value="${confirmedClientId}" />
             <table class="govuk-table">
                 <caption class="govuk-table__caption govuk-table__caption--m">Client search results</caption>
                 <thead class="govuk-table__head">

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>LAA CCMS - Start New Application</title>
+    <title>LAA CCMS - Start new application</title>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -60,7 +60,7 @@
                                         <label class="govuk-label govuk-date-input__label" for="dobDay">
                                             Day
                                         </label>
-                                        <input th:classappend="${#fields.hasErrors('dobDay')} ? 'govuk-input--error' : ''"
+                                        <input th:errorclass="govuk-input--error"
                                                class="govuk-input govuk-date-input__input govuk-input--width-2"
                                                id="dobDay"
                                                name="dobDay"
@@ -75,7 +75,7 @@
                                         <label class="govuk-label govuk-date-input__label" for="dobMonth">
                                             Month
                                         </label>
-                                        <input th:classappend="${#fields.hasErrors('dobMonth')} ? 'govuk-input--error' : ''"
+                                        <input th:errorclass="govuk-input--error"
                                                class="govuk-input govuk-date-input__input govuk-input--width-2"
                                                id="dobMonth"
                                                name="dobMonth"
@@ -90,7 +90,7 @@
                                         <label class="govuk-label govuk-date-input__label" for="dobYear">
                                             Year
                                         </label>
-                                        <input th:classappend="${#fields.hasErrors('dobYear')} ? 'govuk-input--error' : ''"
+                                        <input th:errorclass="govuk-input--error"
                                                class="govuk-input govuk-date-input__input govuk-input--width-4"
                                                id="dobYear"
                                                name="dobYear"

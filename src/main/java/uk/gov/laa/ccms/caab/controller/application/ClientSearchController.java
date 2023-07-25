@@ -18,36 +18,39 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 
 import java.util.List;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
+
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(value = {"applicationDetails", "clientSearchCriteria"})
+@SessionAttributes(value = {APPLICATION_DETAILS, CLIENT_SEARCH_CRITERIA})
 public class ClientSearchController {
 
     private final DataService dataService;
 
     private final ClientSearchCriteriaValidator clientSearchCriteriaValidator;
 
-    @ModelAttribute("clientSearchCriteria")
+    @ModelAttribute(CLIENT_SEARCH_CRITERIA)
     public ClientSearchCriteria getClientSearchDetails() {
         return new ClientSearchCriteria();
     }
 
     @GetMapping("/application/client-search")
-    public String clientSearch(@ModelAttribute("applicationDetails") ApplicationDetails applicationDetails,
-                               @ModelAttribute("clientSearchCriteria") ClientSearchCriteria clientSearchCriteria,
+    public String clientSearch(@ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
+                               @ModelAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
                                Model model) {
-        log.info("GET /application/client-search: " + clientSearchCriteria.toString());
+        log.info("GET /application/client-search: {}", clientSearchCriteria);
 
         populateDropdowns(model);
         return "/application/application-client-search";
     }
 
     @PostMapping("/application/client-search")
-    public String clientSearch(@ModelAttribute("clientSearchCriteria") ClientSearchCriteria clientSearchCriteria,
+    public String clientSearch(@ModelAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
                                BindingResult bindingResult,
                                Model model) {
-        log.info("POST /application/client-search: " + clientSearchCriteria.toString());
+        log.info("POST /application/client-search: {}", clientSearchCriteria);
 
         clientSearchCriteriaValidator.validate(clientSearchCriteria, bindingResult);
 

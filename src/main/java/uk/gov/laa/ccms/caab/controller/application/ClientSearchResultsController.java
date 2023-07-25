@@ -11,10 +11,12 @@ import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.*;
+
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(value = {"applicationDetails", "clientSearchCriteria", "clientSearchResults"})
+@SessionAttributes(value = {APPLICATION_DETAILS, CLIENT_SEARCH_CRITERIA, CLIENT_SEARCH_RESULTS})
 public class ClientSearchResultsController {
 
     private final SoaGatewayService soaGatewayService;
@@ -22,8 +24,8 @@ public class ClientSearchResultsController {
     @GetMapping("/application/client-search/results")
     public String clientSearchResults(@RequestParam(value = "page", defaultValue = "0") int page,
                                       @RequestParam(value = "size", defaultValue = "10") int size,
-                                      @ModelAttribute("clientSearchCriteria") ClientSearchCriteria clientSearchCriteria,
-                                      @SessionAttribute("user") UserDetail user,
+                                      @ModelAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
+                                      @SessionAttribute(USER_DETAILS) UserDetail user,
                                       HttpServletRequest request,
                                       Model model) {
         log.info("GET /application/client-search/results");
@@ -37,7 +39,7 @@ public class ClientSearchResultsController {
             }
             String currentUrl = request.getRequestURL().toString();
             model.addAttribute("currentUrl", currentUrl);
-            model.addAttribute("clientSearchResults", clientSearchResults);
+            model.addAttribute(CLIENT_SEARCH_RESULTS, clientSearchResults);
             return "/application/application-client-search-results";
         } else {
             return "/application/application-client-search-no-results";
@@ -45,10 +47,10 @@ public class ClientSearchResultsController {
     }
 
     @PostMapping("/application/client-search/results")
-    public String clientSearch(@ModelAttribute("clientSearchResults") ClientDetails clientSearchResults) {
+    public String clientSearch(@ModelAttribute(CLIENT_SEARCH_RESULTS) ClientDetails clientSearchResults) {
         log.info("POST /application/client-search/results");
 
-        return "redirect:/application/client-search/results";
+        return "redirect:/application/TODO";
     }
 }
 

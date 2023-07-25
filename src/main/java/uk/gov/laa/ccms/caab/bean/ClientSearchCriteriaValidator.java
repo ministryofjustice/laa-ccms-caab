@@ -65,37 +65,27 @@ public class ClientSearchCriteriaValidator implements Validator{
     public void validateUniqueIdentifierType(Object target, Errors errors){
         ClientSearchCriteria clientSearchCriteria = (ClientSearchCriteria) target;
 
-        if (clientSearchCriteria.getUniqueIdentifierType() != null){
-            if (clientSearchCriteria.getUniqueIdentifierType() == UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER) {
-                if (!clientSearchCriteria.getUniqueIdentifierValue().matches(NATIONAL_INSURANCE_NUMBER_PATTERN)) {
-                    errors.rejectValue("uniqueIdentifierValue", "invalid.uniqueIdentifierValue",
-                            "Your input for 'Unique Identifier Value' is not in the correct format. " +
-                                        "The format for 'Unique Identifier Value' is AANNNNNNA, where A is a letter " +
-                                        " and N is a number. Please amend your entry.");
-                }
+        if (clientSearchCriteria.getUniqueIdentifierType() != null) {
+            if ((clientSearchCriteria.getUniqueIdentifierType() == UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER) &&
+                    (!clientSearchCriteria.getUniqueIdentifierValue().matches(NATIONAL_INSURANCE_NUMBER_PATTERN))) {
+                errors.rejectValue("uniqueIdentifierValue", "invalid.uniqueIdentifierValue",
+                        "Your input for 'Unique Identifier Value' is not in the correct format. " +
+                                "The format for 'Unique Identifier Value' is AANNNNNNA, where A is a letter " +
+                                " and N is a number. Please amend your entry.");
+            } else if ((clientSearchCriteria.getUniqueIdentifierType() == UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE) &&
+                    (!clientSearchCriteria.getUniqueIdentifierValue().matches(HOME_OFFICE_NUMBER_PATTERN))) {
+                errors.rejectValue("uniqueIdentifierValue", "invalid.uniqueIdentifierValue",
+                        GENERIC_UNIQUE_IDENTIFIER_ERROR);
+            } else if ((clientSearchCriteria.getUniqueIdentifierType() == UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER) &&
+                    (!clientSearchCriteria.getUniqueIdentifierValue().matches(CASE_REFERENCE_NUMBER_PATTERN) ||
+                            clientSearchCriteria.getUniqueIdentifierValue().matches(CASE_REFERENCE_NUMBER_NEGATIVE_PATTERN))) {
+                errors.rejectValue("uniqueIdentifierValue", "invalid.uniqueIdentifierValue",
+                        GENERIC_UNIQUE_IDENTIFIER_ERROR);
             }
         }
-
-        if (clientSearchCriteria.getUniqueIdentifierType() != null){
-            if (clientSearchCriteria.getUniqueIdentifierType() == UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE) {
-                if (!clientSearchCriteria.getUniqueIdentifierValue().matches(HOME_OFFICE_NUMBER_PATTERN)) {
-                    errors.rejectValue("uniqueIdentifierValue", "invalid.uniqueIdentifierValue",
-                            GENERIC_UNIQUE_IDENTIFIER_ERROR);
-                }
-            }
-        }
-
-        if (clientSearchCriteria.getUniqueIdentifierType() != null){
-            if (clientSearchCriteria.getUniqueIdentifierType() == UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER) {
-                if (!clientSearchCriteria.getUniqueIdentifierValue().matches(CASE_REFERENCE_NUMBER_PATTERN) ||
-                        clientSearchCriteria.getUniqueIdentifierValue().matches(CASE_REFERENCE_NUMBER_NEGATIVE_PATTERN)) {
-                    errors.rejectValue("uniqueIdentifierValue", "invalid.uniqueIdentifierValue",
-                            GENERIC_UNIQUE_IDENTIFIER_ERROR);
-                }
-            }
-        }
-
     }
+
+
 
     @Override
     public void validate(Object target, Errors errors) {

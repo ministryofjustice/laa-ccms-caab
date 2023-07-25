@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.bean;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -52,10 +53,16 @@ public class ClientSearchCriteria implements Serializable {
     String uniqueIdentifierValue;
 
     public String getDateOfBirth(){
-        if (dobYear == null || dobMonth == null || dobDay == null) {
+        try {
+            int year = Integer.parseInt(dobYear);
+            int month = Integer.parseInt(dobMonth);
+            int day = Integer.parseInt(dobDay);
+
+            return String.format("%d-%02d-%02d", year, month, day);
+        } catch (NumberFormatException e) {
+            // Handle the exception if any of the dobYear, dobMonth, or dobDay is not a valid integer
             return null;
         }
-        return dobYear + "-" + dobMonth + "-" + dobDay;
     }
 
 

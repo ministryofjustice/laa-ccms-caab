@@ -16,11 +16,13 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 import java.util.List;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+
 
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes("applicationDetails")
+@SessionAttributes(APPLICATION_DETAILS)
 public class ApplicationTypeController {
 
     private final ApplicationDetailsValidator applicationValidator;
@@ -28,9 +30,9 @@ public class ApplicationTypeController {
     private final DataService dataService;
 
     @GetMapping("/application/application-type")
-    public String applicationType(@ModelAttribute("applicationDetails") ApplicationDetails applicationDetails,
+    public String applicationType(@ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
                                   Model model){
-        log.info("GET /application/application-type: " + applicationDetails.toString());
+        log.info("GET /application/application-type: {}", applicationDetails);
 
         if (applicationDetails.isExceptionalFunding()) {
             log.warn("ApplicationTypeController hit despite exceptionalFunding being true. Redirecting to client-search");
@@ -44,10 +46,10 @@ public class ApplicationTypeController {
     }
 
     @PostMapping("/application/application-type")
-    public String applicationType(@ModelAttribute("applicationDetails") ApplicationDetails applicationDetails,
+    public String applicationType(@ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
                                   BindingResult bindingResult,
                                   Model model) {
-        log.info("POST /application/application-type: " + applicationDetails.toString());
+        log.info("POST /application/application-type: {}", applicationDetails);
         applicationValidator.validateApplicationTypeCategory(applicationDetails, bindingResult);
 
         if (bindingResult.hasErrors()) {

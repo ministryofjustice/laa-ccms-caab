@@ -2,6 +2,8 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,7 +28,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes("applicationDetails")
+@SessionAttributes(APPLICATION_DETAILS)
 public class CategoryOfLawController {
 
     private final ApplicationDetailsValidator applicationValidator;
@@ -37,10 +39,10 @@ public class CategoryOfLawController {
 
     @GetMapping("/application/category-of-law")
     public String categoryOfLaw(@RequestParam(value = "exceptional_funding", defaultValue = "false") boolean exceptionalFunding,
-                                @ModelAttribute("applicationDetails") ApplicationDetails applicationDetails,
-                                @SessionAttribute("user") UserDetail userDetails,
+                                @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
+                                @SessionAttribute(USER_DETAILS) UserDetail userDetails,
                                 Model model) {
-        log.info("GET /application/category-of-law: " + applicationDetails.toString());
+        log.info("GET /application/category-of-law: {}", applicationDetails);
 
         applicationDetails.setExceptionalFunding(exceptionalFunding);
 
@@ -50,11 +52,11 @@ public class CategoryOfLawController {
     }
 
     @PostMapping("/application/category-of-law")
-    public String categoryOfLaw(@ModelAttribute("applicationDetails") ApplicationDetails applicationDetails,
-                                @SessionAttribute("user") UserDetail userDetails,
+    public String categoryOfLaw(@ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
+                                @SessionAttribute(USER_DETAILS) UserDetail userDetails,
                                 BindingResult bindingResult,
                                 Model model) {
-        log.info("POST /application/category-of-law: " + applicationDetails.toString());
+        log.info("POST /application/category-of-law: {}", applicationDetails);
         applicationValidator.validateCategoryOfLaw(applicationDetails, bindingResult);
 
         String viewName = "redirect:/application/application-type";

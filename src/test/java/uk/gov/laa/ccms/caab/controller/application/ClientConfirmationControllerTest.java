@@ -12,6 +12,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
+import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
@@ -63,11 +64,11 @@ public class ClientConfirmationControllerTest {
 
     @Test
     public void testClientConfirmed() throws Exception {
-        ClientDetail clientDetail = new ClientDetail();
+        ApplicationDetails applicationDetails = new ApplicationDetails();
 
         this.mockMvc.perform(post("/application/client/confirmed")
                         .sessionAttr("user", user)
-                        .sessionAttr("clientInformation", clientDetail))
+                        .sessionAttr("applicationDetails", applicationDetails))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("TODO"));
     }

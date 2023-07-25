@@ -8,6 +8,8 @@ import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+
 @Controller
 @RequiredArgsConstructor
 public class HomeController {
@@ -19,7 +21,7 @@ public class HomeController {
     @GetMapping("/")
     public String home(Model model){
 
-        UserDetail user = (UserDetail) model.getAttribute("user");
+        UserDetail user = (UserDetail) model.getAttribute(USER_DETAILS);
 
         // Retrieve a summary of the User's Notifications & Actions from the SOA Gateway
         NotificationSummary notificationSummary = soaGatewayService.getNotificationsSummary(
