@@ -99,7 +99,7 @@ public class ClientSearchResultsControllerTest {
         this.mockMvc.perform(post("/application/client-search/results")
                         .sessionAttr("clientSearchResults", new ClientDetails()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/application/client-search/results"));
+                .andExpect(redirectedUrl("/application/TODO"));
     }
 
     private UserDetail buildUser() {

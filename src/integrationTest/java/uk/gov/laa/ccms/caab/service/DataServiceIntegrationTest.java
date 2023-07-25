@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.service;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.service.DataServiceErrorHandler.USER_ERROR_MESSAGE;
@@ -111,6 +112,23 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
         assertEquals(expectedApplicationTypes, applicationTypes);
     }
 
+    @Test
+    public void testGetFeeEarners() throws Exception {
+        FeeEarnerDetail feeEarners = buildFeeEarnerDetail();
+        String feeEarnersJson = objectMapper.writeValueAsString(feeEarners);
+
+        wiremock.stubFor(get(urlPathEqualTo("/fee-earners"))
+            .withQueryParam("provider-id", equalTo("1"))
+            .willReturn(okJson(feeEarnersJson)));
+
+        FeeEarnerDetail result = dataService.getFeeEarners(1).block();
+
+        assertNotNull(result);
+        assertEquals(feeEarnersJson, objectMapper.writeValueAsString(result));
+    }
+
+
+
     private CommonLookupDetail buildCommonLookupDetail() {
         CommonLookupDetail commonLookupValueListDetails = new CommonLookupDetail();
         commonLookupValueListDetails.setContent(new ArrayList<>());
@@ -141,6 +159,12 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
                     .id(1)
                     .name("Office 1")))
             .addFunctionsItem("testFunction");
+    }
+
+    private FeeEarnerDetail buildFeeEarnerDetail() {
+        return new FeeEarnerDetail()
+            .addContentItem(new ContactDetail().id(1).name("feeEarner1"))
+            .addContentItem(new ContactDetail().id(2).name("feeEarner2"));
     }
 
 }

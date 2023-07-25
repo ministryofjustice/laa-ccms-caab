@@ -18,7 +18,10 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -50,13 +53,13 @@ public class ClientConfirmationControllerTest {
 
     @Test
     public void testClientConfirm() throws Exception {
-        ClientDetails clientDetails = new ClientDetails();
-        clientDetails.setContent(new ArrayList<>());
-        clientDetails.getContent().add(new ClientDetail()); // Add as many ClientDetail instances as needed
+        ClientDetails clientSearchResults = new ClientDetails();
+        clientSearchResults.setContent(new ArrayList<>());
+        clientSearchResults.getContent().add(new ClientDetail());
 
         this.mockMvc.perform(get("/application/client/{id}/confirm", 0)
                         .sessionAttr("user", user)
-                        .sessionAttr("clientSearchResults", clientDetails))
+                        .sessionAttr("clientSearchResults", clientSearchResults))
                 .andExpect(status().isOk())
                 .andExpect(model().attributeExists("clientInformation"))
                 .andExpect(view().name("/application/application-client-confirmation"));
@@ -65,10 +68,17 @@ public class ClientConfirmationControllerTest {
     @Test
     public void testClientConfirmed() throws Exception {
         ApplicationDetails applicationDetails = new ApplicationDetails();
+        ClientDetails clientSearchResults = new ClientDetails();
+        clientSearchResults.setContent(new ArrayList<>());
+        clientSearchResults.getContent().add(new ClientDetail());
+
+        int confirmedClientId = 0; // The confirmedClientId value from the form
 
         this.mockMvc.perform(post("/application/client/confirmed")
+                        .param("confirmedClientId", String.valueOf(confirmedClientId)) // Pass the confirmedClientId as a form parameter
                         .sessionAttr("user", user)
-                        .sessionAttr("applicationDetails", applicationDetails))
+                        .sessionAttr("applicationDetails", applicationDetails)
+                        .sessionAttr("clientSearchResults", clientSearchResults)) // Use the correct attribute name for clientSearchResults
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("TODO"));
     }
