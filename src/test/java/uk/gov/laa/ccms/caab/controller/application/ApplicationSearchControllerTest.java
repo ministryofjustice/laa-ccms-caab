@@ -1,9 +1,12 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -20,8 +23,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.ApplicationSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
@@ -35,6 +40,9 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class ApplicationSearchControllerTest {
     @Mock
     private DataService dataService;
+
+    @Mock
+    private ApplicationSearchCriteriaValidator validator;
 
     @InjectMocks
     private ApplicationSearchController applicationSearchController;
@@ -54,7 +62,7 @@ public class ApplicationSearchControllerTest {
         final UserDetail user = buildUser();
 
         final FeeEarnerDetail feeEarnerDetail = new FeeEarnerDetail().addContentItem(
-            new ContactDetail().id(123).name("Fiona Urner"));
+            new ContactDetail().id(123).name("A Fee Earner"));
 
         when(dataService.getFeeEarners(user.getProvider().getId())).thenReturn(Mono.just(feeEarnerDetail));
 
@@ -65,6 +73,33 @@ public class ApplicationSearchControllerTest {
                 .andExpect(view().name("/application/application-search"))
                 .andExpect(model().attribute("feeEarners", feeEarnerDetail.getContent()))
                 .andExpect(model().attribute("offices", user.getProvider().getOffices()));
+
+        verify(dataService, times(1)).getFeeEarners(user.getProvider().getId());
+    }
+
+    @Test
+    public void testPostApplicationSearchHandlesValidationFailure() throws Exception {
+        final UserDetail user = buildUser();
+
+        final FeeEarnerDetail feeEarnerDetail = new FeeEarnerDetail().addContentItem(
+            new ContactDetail().id(123).name("A Fee Earner"));
+
+        doAnswer(invocation -> {
+            Errors errors = (Errors) invocation.getArguments()[1];
+            errors.rejectValue(null, "required.atLeastOneSearchCriteria",
+                "You must provide at least one search criteria below. Please amend your entry.");
+            return null;
+        }).when(validator).validate(any(), any());
+
+        when(dataService.getFeeEarners(user.getProvider().getId())).thenReturn(Mono.just(feeEarnerDetail));
+
+        this.mockMvc.perform(post("/application/search")
+                .sessionAttr("user", user))
+            .andDo(print())
+            .andExpect(status().isOk())
+            .andExpect(view().name("/application/application-search"))
+            .andExpect(model().attribute("feeEarners", feeEarnerDetail.getContent()))
+            .andExpect(model().attribute("offices", user.getProvider().getOffices()));
 
         verify(dataService, times(1)).getFeeEarners(user.getProvider().getId());
     }
