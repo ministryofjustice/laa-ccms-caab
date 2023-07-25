@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
-import jakarta.validation.Valid;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,22 +10,17 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
-import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
-import uk.gov.laa.ccms.caab.bean.ClientSearchDetails;
-import uk.gov.laa.ccms.caab.bean.ClientSearchDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.ClientSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -45,7 +39,7 @@ public class ClientSearchControllerTest {
     private SoaGatewayService soaGatewayService;
 
     @Mock
-    private ClientSearchDetailsValidator clientSearchDetailsValidator;
+    private ClientSearchCriteriaValidator clientSearchCriteriaValidator;
 
     @InjectMocks
     private ClientSearchController clientSearchController;
@@ -62,16 +56,16 @@ public class ClientSearchControllerTest {
 
     @Test
     public void testGetClientSearchDetails() {
-        ClientSearchController clientSearchController = new ClientSearchController(dataService, soaGatewayService, clientSearchDetailsValidator);
-        ClientSearchDetails clientSearchDetails = clientSearchController.getClientSearchDetails();
-        assertNotNull(clientSearchDetails);
+        ClientSearchController clientSearchController = new ClientSearchController(dataService, clientSearchCriteriaValidator);
+        ClientSearchCriteria clientSearchCriteria = clientSearchController.getClientSearchDetails();
+        assertNotNull(clientSearchCriteria);
     }
 
     @Test
     public void testClientSearch_Get() throws Exception {
         this.mockMvc.perform(get("/application/client-search")
                         .flashAttr("applicationDetails", new ApplicationDetails())
-                        .sessionAttr("clientSearchDetails", new ClientSearchDetails()))
+                        .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("/application/application-client-search"));
 
@@ -81,7 +75,7 @@ public class ClientSearchControllerTest {
 
     @Test
     public void testClientSearch_Post_WithErrors() throws Exception {
-        final ClientSearchDetails clientSearchDetails = new ClientSearchDetails();
+        final ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
 
         doAnswer(invocation -> {
             Errors errors = (Errors) invocation.getArguments()[1];
@@ -89,9 +83,9 @@ public class ClientSearchControllerTest {
             errors.rejectValue("forename", "required.forename",
                     "Please complete 'First name'.");
             return null;
-        }).when(clientSearchDetailsValidator).validate(any(), any());
+        }).when(clientSearchCriteriaValidator).validate(any(), any());
         this.mockMvc.perform(post("/application/client-search")
-                        .flashAttr("clientSearchDetails", clientSearchDetails)
+                        .flashAttr("clientSearchCriteria", clientSearchCriteria)
                         .sessionAttr("user", user))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -103,43 +97,13 @@ public class ClientSearchControllerTest {
 
     @Test
     public void testClientSearch_Post_Successful() throws Exception {
-        ClientSearchDetails clientSearchDetails = buildClientSearchDetails();
-
-        ClientDetail client = new ClientDetail();
-        List<ClientDetail> clients = new ArrayList<>();
-        clients.add(client);
-        ClientDetails mockClientDetails = new ClientDetails();
-        mockClientDetails.setClients(clients);
-
-        when(soaGatewayService.getClients(clientSearchDetails, user.getLoginId(), user.getUserType()))
-                .thenReturn(Mono.just(mockClientDetails));
+        ClientSearchCriteria clientSearchCriteria = buildClientSearchDetails();
 
         this.mockMvc.perform(post("/application/client-search")
-                        .flashAttr("clientSearchDetails", clientSearchDetails)
+                        .flashAttr("clientSearchCriteria", clientSearchCriteria)
                         .sessionAttr("user", user))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/application/client-search/results"))
-                .andExpect(flash().attributeExists("clientSearchResults"));
-
-        verify(soaGatewayService).getClients(clientSearchDetails, user.getLoginId(), user.getUserType());
-    }
-
-    @Test
-    public void testClientSearch_Post_NoResults() throws Exception {
-        ClientSearchDetails clientSearchDetails = buildClientSearchDetails();
-
-        when(clientSearchDetailsValidator.supports(ClientSearchDetails.class)).thenReturn(true);
-
-        when(soaGatewayService.getClients(clientSearchDetails, user.getLoginId(), user.getUserType()))
-                .thenReturn(Mono.just(new ClientDetails())); // Empty client search results
-
-        this.mockMvc.perform(post("/application/client-search")
-                        .flashAttr("clientSearchDetails", clientSearchDetails)
-                        .sessionAttr("user", user))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/application/client-search/no-results"));
-
-        verify(soaGatewayService).getClients(clientSearchDetails, user.getLoginId(), user.getUserType());
+                .andExpect(redirectedUrl("/application/client-search/results"));
     }
 
     private UserDetail buildUser() {
@@ -149,13 +113,13 @@ public class ClientSearchControllerTest {
                 .loginId("testLoginId");
     }
 
-    private ClientSearchDetails buildClientSearchDetails() {
-        ClientSearchDetails clientSearchDetails = new ClientSearchDetails();
-        clientSearchDetails.setForename("Test");
-        clientSearchDetails.setSurname("User");
-        clientSearchDetails.setDobDay("01");
-        clientSearchDetails.setDobMonth("01");
-        clientSearchDetails.setDobYear("2000");
-        return clientSearchDetails;
+    private ClientSearchCriteria buildClientSearchDetails() {
+        ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
+        clientSearchCriteria.setForename("Test");
+        clientSearchCriteria.setSurname("User");
+        clientSearchCriteria.setDobDay("01");
+        clientSearchCriteria.setDobMonth("01");
+        clientSearchCriteria.setDobYear("2000");
+        return clientSearchCriteria;
     }
 }

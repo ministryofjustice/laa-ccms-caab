@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.bean;
 
 
 import lombok.Data;
-import uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants;
 
 import java.io.Serializable;
 
@@ -10,7 +9,7 @@ import java.io.Serializable;
  * Represents the details used for client search.
  */
 @Data
-public class ClientSearchDetails implements Serializable {
+public class ClientSearchCriteria implements Serializable {
 
     /**
      * The forename of the client.

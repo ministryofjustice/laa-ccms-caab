@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>LAA CCMS - Start New Application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs" style="padding-top: 40px;">
+    </div>
+    <div id="main-content">
+        <span class="govuk-caption-l">About your application</span>
+        <h1 class="govuk-heading-l">
+            Client confirmation
+        </h1>
+        <p class="govuk-body">Please confirm you have selected the correct client record before you proceed as this will
+            create your new application</p>
+        <!-- Add the form element -->
+        <form action="#" th:action="@{/application/client/confirmed}" th:object="${clientInformation}" method="post">
+            <input type="hidden" th:field="${clientInformation.firstName}" />
+            <input type="hidden" th:field="${clientInformation.surname}" />
+            <input type="hidden" th:field="${clientInformation.surnameAtBirth}" />
+            <input type="hidden" th:field="${clientInformation.fullName}" />
+            <input type="hidden" th:field="${clientInformation.dateOfBirth}" />
+            <input type="hidden" th:field="${clientInformation.gender}" />
+            <input type="hidden" th:field="${clientInformation.postalCode}" />
+            <input type="hidden" th:field="${clientInformation.caseReferenceNumber}" />
+            <input type="hidden" th:field="${clientInformation.homeOfficeReference}" />
+            <input type="hidden" th:field="${clientInformation.nationalInsuranceNumber}" />
+            <table class="govuk-table">
+                <caption class="govuk-table__caption govuk-table__caption--m">Client search results</caption>
+                <thead class="govuk-table__head">
+                <tr class="govuk-table__row">
+                    <th scope="col" class="govuk-table__header">First name</th>
+                    <th scope="col" class="govuk-table__header">Surname</th>
+                    <th scope="col" class="govuk-table__header">Surname at birth</th>
+                    <th scope="col" class="govuk-table__header">Postcode (district)</th>
+                </tr>
+                </thead>
+                <tbody class="govuk-table__body">
+                <tr class="govuk-table__row">
+                    <td class="govuk-table__cell" th:text="${clientInformation.firstName}"></td>
+                    <td class="govuk-table__cell" th:text="${clientInformation.surname}"></td>
+                    <td class="govuk-table__cell" th:text="${clientInformation.surnameAtBirth}"></td>
+                    <td class="govuk-table__cell" th:text="${clientInformation.postalCode}"></td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="govuk-button-group">
+                <!-- Change the anchor tag to a button -->
+                <button type="submit" class="govuk-button" data-module="govuk-button">
+                    Confirm
+                </button>
+                <a class="govuk-button govuk-button--secondary" data-module="govuk-button" href="/application/client-search/results">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -1,8 +1,11 @@
 package uk.gov.laa.ccms.caab.constants;
 
+import lombok.Data;
+
 import java.util.Arrays;
 import java.util.List;
 
+@Data
 public class ApplicationConstants {
 
   /*

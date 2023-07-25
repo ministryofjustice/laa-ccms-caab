@@ -1,13 +1,18 @@
 {
-  "priority": 99,
+  "priority": 4,
   "request": {
     "method": "ANY",
     "urlPath": "/soa-infra/services/default/ClientServices/ClientServices_ep",
-    "bodyPatterns": []
+    "bodyPatterns": [{
+      "matchesXPath": {
+        "expression": "//SearchCriteria/FirstName/text()",
+        "contains": "Pages"
+      }
+    }]
   },
   "response": {
     "status": 200,
-    "bodyFileName": "ClientInqRS_NoResults.xml",
+    "bodyFileName": "ClientInqRS_Pages.xml",
     "headers": {
       "Content-Type": "text/xml"
     }

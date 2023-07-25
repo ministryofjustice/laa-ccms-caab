@@ -7,7 +7,7 @@
       {
         "matchesXPath": {
           "expression": "//SearchCriteria/FirstName/text()",
-          "contains": "John"
+          "contains": "One"
         }
       }
     ]

@@ -8,8 +8,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
-import uk.gov.laa.ccms.caab.bean.ClientSearchDetails;
-import uk.gov.laa.ccms.caab.bean.ClientSearchDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.ClientSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -21,55 +21,42 @@ import java.util.List;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(value = {"applicationDetails", "clientSearchDetails"})
+@SessionAttributes(value = {"applicationDetails", "clientSearchCriteria"})
 public class ClientSearchController {
 
     private final DataService dataService;
 
-    private final SoaGatewayService soaGatewayService;
+    private final ClientSearchCriteriaValidator clientSearchCriteriaValidator;
 
-    private final ClientSearchDetailsValidator clientSearchDetailsValidator;
-
-    @ModelAttribute("clientSearchDetails")
-    public ClientSearchDetails getClientSearchDetails() {
-        return new ClientSearchDetails();
+    @ModelAttribute("clientSearchCriteria")
+    public ClientSearchCriteria getClientSearchDetails() {
+        return new ClientSearchCriteria();
     }
 
     @GetMapping("/application/client-search")
     public String clientSearch(@ModelAttribute("applicationDetails") ApplicationDetails applicationDetails,
-                               @ModelAttribute("clientSearchDetails") ClientSearchDetails clientSearchDetails,
+                               @ModelAttribute("clientSearchCriteria") ClientSearchCriteria clientSearchCriteria,
                                Model model) {
-        log.info("GET /application/client-search: " + clientSearchDetails.toString());
+        log.info("GET /application/client-search: " + clientSearchCriteria.toString());
 
         populateDropdowns(model);
         return "/application/application-client-search";
     }
 
     @PostMapping("/application/client-search")
-    public String clientSearch(@ModelAttribute("clientSearchDetails") ClientSearchDetails clientSearchDetails,
-                               @SessionAttribute("user") UserDetail user,
+    public String clientSearch(@ModelAttribute("clientSearchCriteria") ClientSearchCriteria clientSearchCriteria,
                                BindingResult bindingResult,
-                               RedirectAttributes redirectAttributes,
                                Model model) {
-        log.info("POST /application/client-search: " + clientSearchDetails.toString());
+        log.info("POST /application/client-search: " + clientSearchCriteria.toString());
 
-        clientSearchDetailsValidator.validate(clientSearchDetails, bindingResult);
+        clientSearchCriteriaValidator.validate(clientSearchCriteria, bindingResult);
 
         if (bindingResult.hasErrors()) {
             populateDropdowns(model);
             return "/application/application-client-search";
         }
 
-        ClientDetails clientSearchResults = soaGatewayService.getClients(clientSearchDetails, user.getLoginId(),
-                user.getUserType()).block();
-
-        if (clientSearchResults != null && clientSearchResults.getClients() != null){
-            redirectAttributes.addFlashAttribute("clientSearchResults", clientSearchResults);
-            return "redirect:/application/client-search/results";
-        } else {
-            return "redirect:/application/client-search/no-results";
-        }
-
+        return "redirect:/application/client-search/results";
     }
 
     private void populateDropdowns(Model model){

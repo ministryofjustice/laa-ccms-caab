@@ -13,7 +13,7 @@
         <h1 class="govuk-heading-l">
             Client search
         </h1>
-        <form action="#" th:action="@{/application/client-search}" th:object="${clientSearchDetails}" method="post">
+        <form action="#" th:action="@{/application/client-search}" th:object="${clientSearchCriteria}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <p class="govuk-body-l">
                 To find a client registered within the LAA system, please enter any or all of the details for that
@@ -29,7 +29,7 @@
                         </label>
                         <span th:if="${#fields.hasErrors('forename')}" th:errors="*{forename}" class="govuk-error-message"></span>
                         <input class="govuk-input govuk-input--width-20" id="forename" name="forename" type="text"
-                               th:value="${clientSearchDetails.forename}">
+                               th:value="${clientSearchCriteria.forename}">
                     </div>
                     <div class="govuk-form-group" th:classappend="${#fields.hasErrors('surname')} ? 'govuk-form-group--error' : ''">
                         <label class="govuk-label" for="surname">
@@ -37,7 +37,7 @@
                         </label>
                         <span th:if="${#fields.hasErrors('surname')}" th:errors="*{surname}" class="govuk-error-message"></span>
                         <input class="govuk-input govuk-input--width-20" id="surname" name="surname" type="text"
-                               th:value="${clientSearchDetails.surname}">
+                               th:value="${clientSearchCriteria.surname}">
                     </div>
                     <div class="govuk-form-group" th:classappend="${#fields.hasErrors('dobDay') || #fields.hasErrors('dobMonth') || #fields.hasErrors('dobYear')} ? 'govuk-form-group--error' : ''">
                         <fieldset class="govuk-fieldset" role="group" aria-describedby="dob-hint dob-error">
@@ -67,7 +67,7 @@
                                                type="text"
                                                inputmode="numeric"
                                                maxlength="2"
-                                               th:value="${clientSearchDetails.dobDay}">
+                                               th:value="${clientSearchCriteria.dobDay}">
                                     </div>
                                 </div>
                                 <div class="govuk-date-input__item">
@@ -82,7 +82,7 @@
                                                type="text"
                                                inputmode="numeric"
                                                maxlength="2"
-                                               th:value="${clientSearchDetails.dobMonth}">
+                                               th:value="${clientSearchCriteria.dobMonth}">
                                     </div>
                                 </div>
                                 <div class="govuk-date-input__item">
@@ -97,7 +97,7 @@
                                                type="text"
                                                inputmode="numeric"
                                                maxlength="4"
-                                               th:value="${clientSearchDetails.dobYear}">
+                                               th:value="${clientSearchCriteria.dobYear}">
                                     </div>
                                 </div>
                             </div>
@@ -131,7 +131,7 @@
                         </label>
                         <span th:if="${#fields.hasErrors('uniqueIdentifierValue')}" th:errors="*{uniqueIdentifierValue}" class="govuk-error-message"></span>
                         <input class="govuk-input govuk-input--width-20" id="uniqueIdentifierValue" name="uniqueIdentifierValue" type="text"
-                               th:value="${clientSearchDetails.uniqueIdentifierValue}">
+                               th:value="${clientSearchCriteria.uniqueIdentifierValue}">
                     </div>
                     <div class="govuk-form-group">
                         <details class="govuk-details" data-module="govuk-details">

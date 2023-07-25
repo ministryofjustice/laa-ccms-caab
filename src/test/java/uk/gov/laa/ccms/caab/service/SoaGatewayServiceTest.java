@@ -26,7 +26,7 @@ import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import uk.gov.laa.ccms.caab.bean.ClientSearchDetails;
+import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
@@ -209,16 +209,19 @@ class SoaGatewayServiceTest {
 
     @Test
     void getClients_ReturnsClientDetails_Successful() {
-        String expectedUri = "/clients?first-name=John&surname=Doe";
+        String expectedUri = "/clients?first-name=John&surname=Doe&page=0&size=10";
 
-        ClientSearchDetails clientSearchDetails = new ClientSearchDetails();
+        ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
         String loginId = "user1";
         String userType = "userType";
         String firstName = "John";
         String lastName = "Doe";
 
-        clientSearchDetails.setForename(firstName);
-        clientSearchDetails.setSurname(lastName);
+        int page = 0;
+        int size = 10;
+
+        clientSearchCriteria.setForename(firstName);
+        clientSearchCriteria.setSurname(lastName);
 
         ClientDetails mockClientDetails = new ClientDetails();
 
@@ -231,7 +234,7 @@ class SoaGatewayServiceTest {
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
         when(responseMock.bodyToMono(ClientDetails.class)).thenReturn(Mono.just(mockClientDetails));
 
-        Mono<ClientDetails> clientDetailsMono = soaGatewayService.getClients(clientSearchDetails, loginId, userType);
+        Mono<ClientDetails> clientDetailsMono = soaGatewayService.getClients(clientSearchCriteria, loginId, userType, page, size);
 
         StepVerifier.create(clientDetailsMono)
                 .expectNextMatches(clientDetails -> clientDetails == mockClientDetails)

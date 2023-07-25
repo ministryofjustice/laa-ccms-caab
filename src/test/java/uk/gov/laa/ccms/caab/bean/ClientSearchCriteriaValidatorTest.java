@@ -14,34 +14,34 @@ import static org.junit.jupiter.api.Assertions.*;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.*;
 
 @ExtendWith(SpringExtension.class)
-public class ClientSearchDetailsValidatorTest {
+public class ClientSearchCriteriaValidatorTest {
 
     @InjectMocks
-    private ClientSearchDetailsValidator validator;
-    private ClientSearchDetails clientSearchDetails;
+    private ClientSearchCriteriaValidator validator;
+    private ClientSearchCriteria clientSearchCriteria;
     private Errors errors;
 
     @BeforeEach
     public void setUp() {
-        clientSearchDetails = new ClientSearchDetails();
-        errors = new BeanPropertyBindingResult(clientSearchDetails, "clientSearchDetails");
+        clientSearchCriteria = new ClientSearchCriteria();
+        errors = new BeanPropertyBindingResult(clientSearchCriteria, "clientSearchCriteria");
     }
 
     @Test
     public void supports_ReturnsTrueForClientSearchDetailsClass() {
-        assertTrue(validator.supports(ClientSearchDetails.class));
+        assertTrue(validator.supports(ClientSearchCriteria.class));
     }
 
     @Test
     public void testValidateForename_Valid() {
-        clientSearchDetails.setForename("John");
-        validator.validateForename(clientSearchDetails, errors);
+        clientSearchCriteria.setForename("John");
+        validator.validateForename(clientSearchCriteria, errors);
         assertFalse(errors.hasErrors());
     }
 
     @Test
     public void testValidateForename_Invalid() {
-        validator.validateForename(clientSearchDetails, errors);
+        validator.validateForename(clientSearchCriteria, errors);
         assertTrue(errors.hasErrors());
         assertNotNull(errors.getFieldError("forename"));
         assertEquals("required.forename", errors.getFieldError("forename").getCode());
@@ -49,14 +49,14 @@ public class ClientSearchDetailsValidatorTest {
 
     @Test
     public void testValidateSurnameAtBirth_Valid() {
-        clientSearchDetails.setSurname("Doe");
-        validator.validateSurnameAtBirth(clientSearchDetails, errors);
+        clientSearchCriteria.setSurname("Doe");
+        validator.validateSurnameAtBirth(clientSearchCriteria, errors);
         assertFalse(errors.hasErrors());
     }
 
     @Test
     public void testValidateSurnameAtBirth_Invalid() {
-        validator.validateSurnameAtBirth(clientSearchDetails, errors);
+        validator.validateSurnameAtBirth(clientSearchCriteria, errors);
         assertTrue(errors.hasErrors());
         assertNotNull(errors.getFieldError("surname"));
         assertEquals("required.surname", errors.getFieldError("surname").getCode());
@@ -64,19 +64,19 @@ public class ClientSearchDetailsValidatorTest {
 
     @Test
     public void testValidateDateOfBirth_Valid() {
-        clientSearchDetails.setDobDay("01");
-        clientSearchDetails.setDobMonth("12");
-        clientSearchDetails.setDobYear("1990");
-        validator.validateDateOfBirth(clientSearchDetails, errors);
+        clientSearchCriteria.setDobDay("01");
+        clientSearchCriteria.setDobMonth("12");
+        clientSearchCriteria.setDobYear("1990");
+        validator.validateDateOfBirth(clientSearchCriteria, errors);
         assertFalse(errors.hasErrors());
     }
 
     @Test
     public void testValidateDateOfBirth_Invalid() {
-        clientSearchDetails.setDobDay("");
-        clientSearchDetails.setDobMonth("");
-        clientSearchDetails.setDobYear("");
-        validator.validateDateOfBirth(clientSearchDetails, errors);
+        clientSearchCriteria.setDobDay("");
+        clientSearchCriteria.setDobMonth("");
+        clientSearchCriteria.setDobYear("");
+        validator.validateDateOfBirth(clientSearchCriteria, errors);
         assertTrue(errors.hasErrors());
         assertNotNull(errors.getFieldError("dobDay"));
         assertEquals("required.dob-day", errors.getFieldError("dobDay").getCode());
@@ -93,10 +93,10 @@ public class ClientSearchDetailsValidatorTest {
             "1, 12, abcd, dobYear"
     })
     public void testValidateDateOfBirth_InvalidNumeric(String dobDay, String dobMonth, String dobYear, String field) {
-        clientSearchDetails.setDobDay(dobDay);
-        clientSearchDetails.setDobMonth(dobMonth);
-        clientSearchDetails.setDobYear(dobYear);
-        validator.validateDateOfBirth(clientSearchDetails, errors);
+        clientSearchCriteria.setDobDay(dobDay);
+        clientSearchCriteria.setDobMonth(dobMonth);
+        clientSearchCriteria.setDobYear(dobYear);
+        validator.validateDateOfBirth(clientSearchCriteria, errors);
         assertTrue(errors.hasErrors());
         assertNotNull(errors.getFieldError(field));
         assertEquals("invalid.numeric", errors.getFieldError(field).getCode());
@@ -107,17 +107,17 @@ public class ClientSearchDetailsValidatorTest {
                 "2, TEST",
                 "3, TEST"})
     public void testValidateUniqueIdentifierType_Valid(Integer uniqueIdentifierType, String uniqueIdentifierValue) {
-        clientSearchDetails.setUniqueIdentifierType(uniqueIdentifierType);
-        clientSearchDetails.setUniqueIdentifierValue(uniqueIdentifierValue);
-        validator.validateUniqueIdentifierType(clientSearchDetails, errors);
+        clientSearchCriteria.setUniqueIdentifierType(uniqueIdentifierType);
+        clientSearchCriteria.setUniqueIdentifierValue(uniqueIdentifierValue);
+        validator.validateUniqueIdentifierType(clientSearchCriteria, errors);
         assertFalse(errors.hasErrors());
     }
 
     @Test
     public void testValidateUniqueIdentifierType_InvalidNationalInsuranceNumber() {
-        clientSearchDetails.setUniqueIdentifierType(UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER);
-        clientSearchDetails.setUniqueIdentifierValue("ABC123");
-        validator.validateUniqueIdentifierType(clientSearchDetails, errors);
+        clientSearchCriteria.setUniqueIdentifierType(UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER);
+        clientSearchCriteria.setUniqueIdentifierValue("ABC123");
+        validator.validateUniqueIdentifierType(clientSearchCriteria, errors);
         assertTrue(errors.hasErrors());
         assertNotNull(errors.getFieldError("uniqueIdentifierValue"));
         assertEquals("invalid.uniqueIdentifierValue", errors.getFieldError("uniqueIdentifierValue").getCode());
@@ -126,9 +126,9 @@ public class ClientSearchDetailsValidatorTest {
     @ParameterizedTest
     @CsvSource({"----"})
     public void testValidateUniqueIdentifierType_InvalidHomeOfficeReference(String uniqueIdentifierValue) {
-        clientSearchDetails.setUniqueIdentifierType(UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE);
-        clientSearchDetails.setUniqueIdentifierValue(uniqueIdentifierValue);
-        validator.validateUniqueIdentifierType(clientSearchDetails, errors);
+        clientSearchCriteria.setUniqueIdentifierType(UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE);
+        clientSearchCriteria.setUniqueIdentifierValue(uniqueIdentifierValue);
+        validator.validateUniqueIdentifierType(clientSearchCriteria, errors);
         assertTrue(errors.hasErrors());
         assertNotNull(errors.getFieldError("uniqueIdentifierValue"));
         assertEquals("invalid.uniqueIdentifierValue", errors.getFieldError("uniqueIdentifierValue").getCode());
@@ -138,9 +138,9 @@ public class ClientSearchDetailsValidatorTest {
     @CsvSource({"TEST  TEST",
                 "----"})
     public void testValidateUniqueIdentifierType_InvalidCaseReferenceNumber(String uniqueIdentifierValue) {
-        clientSearchDetails.setUniqueIdentifierType(UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER);
-        clientSearchDetails.setUniqueIdentifierValue(uniqueIdentifierValue);
-        validator.validateUniqueIdentifierType(clientSearchDetails, errors);
+        clientSearchCriteria.setUniqueIdentifierType(UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER);
+        clientSearchCriteria.setUniqueIdentifierValue(uniqueIdentifierValue);
+        validator.validateUniqueIdentifierType(clientSearchCriteria, errors);
         assertTrue(errors.hasErrors());
         assertNotNull(errors.getFieldError("uniqueIdentifierValue"));
         assertEquals("invalid.uniqueIdentifierValue", errors.getFieldError("uniqueIdentifierValue").getCode());
@@ -148,14 +148,14 @@ public class ClientSearchDetailsValidatorTest {
 
     @Test
     public void testValidate_Valid() {
-        clientSearchDetails.setForename("John");
-        clientSearchDetails.setSurname("Doe");
-        clientSearchDetails.setDobDay("01");
-        clientSearchDetails.setDobMonth("12");
-        clientSearchDetails.setDobYear("1990");
-        clientSearchDetails.setUniqueIdentifierType(1);
-        clientSearchDetails.setUniqueIdentifierValue("AB123456C");
-        validator.validate(clientSearchDetails, errors);
+        clientSearchCriteria.setForename("John");
+        clientSearchCriteria.setSurname("Doe");
+        clientSearchCriteria.setDobDay("01");
+        clientSearchCriteria.setDobMonth("12");
+        clientSearchCriteria.setDobYear("1990");
+        clientSearchCriteria.setUniqueIdentifierType(1);
+        clientSearchCriteria.setUniqueIdentifierValue("AB123456C");
+        validator.validate(clientSearchCriteria, errors);
         assertFalse(errors.hasErrors());
     }
 
@@ -170,13 +170,13 @@ public class ClientSearchDetailsValidatorTest {
     })
     public void testValidate_Invalid(String forename, String surname, String dobDay,
                                      String dobMonth, String dobYear, int expectedErrorCount) {
-        clientSearchDetails.setForename(forename);
-        clientSearchDetails.setSurname(surname);
-        clientSearchDetails.setDobDay(dobDay);
-        clientSearchDetails.setDobMonth(dobMonth);
-        clientSearchDetails.setDobYear(dobYear);
+        clientSearchCriteria.setForename(forename);
+        clientSearchCriteria.setSurname(surname);
+        clientSearchCriteria.setDobDay(dobDay);
+        clientSearchCriteria.setDobMonth(dobMonth);
+        clientSearchCriteria.setDobYear(dobYear);
 
-        validator.validate(clientSearchDetails, errors);
+        validator.validate(clientSearchCriteria, errors);
 
         assertTrue(errors.hasErrors());
         assertEquals(expectedErrorCount, errors.getErrorCount());

@@ -7,11 +7,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.CoreSubscriber;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ClientSearchDetails;
+import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.*;
 
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.*;
@@ -90,23 +90,25 @@ public class SoaGatewayService {
             .collect(Collectors.toList());
     }
 
-    public Mono<ClientDetails> getClients(ClientSearchDetails clientSearchDetails, String loginId,
-                                          String userType){
+    public Mono<ClientDetails> getClients(ClientSearchCriteria clientSearchCriteria, String loginId,
+                                          String userType, Integer page, Integer size){
         return soaGatewayWebClient
                 .get()
                 .uri(builder -> builder.path("/clients")
-                        .queryParamIfPresent("first-name", Optional.ofNullable(clientSearchDetails.getForename()))
-                        .queryParamIfPresent("surname", Optional.ofNullable(clientSearchDetails.getSurname()))
-                        .queryParamIfPresent("date-of-birth", Optional.ofNullable(clientSearchDetails.getDateOfBirth()))
-                        .queryParamIfPresent("home-office-reference", Optional.ofNullable(clientSearchDetails.getUniqueIdentifier(UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE)))
-                        .queryParamIfPresent("national-insurance_number", Optional.ofNullable(clientSearchDetails.getUniqueIdentifier(UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER)))
-                        .queryParamIfPresent("client-reference-number", Optional.ofNullable(clientSearchDetails.getUniqueIdentifier(UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER)))
+                        .queryParamIfPresent("first-name", Optional.ofNullable(clientSearchCriteria.getForename()))
+                        .queryParamIfPresent("surname", Optional.ofNullable(clientSearchCriteria.getSurname()))
+                        .queryParamIfPresent("date-of-birth", Optional.ofNullable(clientSearchCriteria.getDateOfBirth()))
+                        .queryParamIfPresent("home-office-reference", Optional.ofNullable(clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE)))
+                        .queryParamIfPresent("national-insurance_number", Optional.ofNullable(clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER)))
+                        .queryParamIfPresent("case-reference-number", Optional.ofNullable(clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER)))
+                        .queryParamIfPresent("page", Optional.ofNullable(page))
+                        .queryParamIfPresent("size", Optional.ofNullable(size))
                         .build())
                 .header("SoaGateway-User-Login-Id", loginId)
                 .header("SoaGateway-User-Role", userType)
                 .retrieve()
                 .bodyToMono(ClientDetails.class)
-                .onErrorResume(e -> soaGatewayServiceErrorHandler.handleClientDetailsError(clientSearchDetails,e));
+                .onErrorResume(e -> soaGatewayServiceErrorHandler.handleClientDetailsError(clientSearchCriteria,e));
 
     }
 

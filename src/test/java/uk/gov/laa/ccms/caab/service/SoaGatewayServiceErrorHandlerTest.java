@@ -7,7 +7,7 @@ import org.mockito.Mock;
 import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import uk.gov.laa.ccms.caab.bean.ClientSearchDetails;
+import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
@@ -54,18 +54,18 @@ class SoaGatewayServiceErrorHandlerTest {
 
     @Test
     public void testHandleClientDetailsError() {
-        ClientSearchDetails clientSearchDetails = new ClientSearchDetails();
-        clientSearchDetails.setForename("John");
-        clientSearchDetails.setSurname("Doe");
-        clientSearchDetails.setDobYear("1990");
-        clientSearchDetails.setDobMonth("02");
-        clientSearchDetails.setDobDay("01");
-        clientSearchDetails.setUniqueIdentifierType(1);
-        clientSearchDetails.setUniqueIdentifierValue("ABC123");
+        ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
+        clientSearchCriteria.setForename("John");
+        clientSearchCriteria.setSurname("Doe");
+        clientSearchCriteria.setDobYear("1990");
+        clientSearchCriteria.setDobMonth("02");
+        clientSearchCriteria.setDobDay("01");
+        clientSearchCriteria.setUniqueIdentifierType(1);
+        clientSearchCriteria.setUniqueIdentifierValue("ABC123");
 
         Throwable throwable = new RuntimeException("Error");
 
-        Mono<ClientDetails> result = soaGatewayServiceErrorHandler.handleClientDetailsError(clientSearchDetails, throwable);
+        Mono<ClientDetails> result = soaGatewayServiceErrorHandler.handleClientDetailsError(clientSearchCriteria, throwable);
 
         StepVerifier.create(result)
                 .expectNextCount(0)

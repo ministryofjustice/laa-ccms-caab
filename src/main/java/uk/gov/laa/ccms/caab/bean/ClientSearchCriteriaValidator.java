@@ -9,14 +9,14 @@ import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.*;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.*;
 
 @Component
-public class ClientSearchDetailsValidator implements Validator{
+public class ClientSearchCriteriaValidator implements Validator{
 
     private static final String GENERIC_UNIQUE_IDENTIFIER_ERROR = "Your input for 'Unique Identifier Value' " +
             "is in an incorrect format. Please amend your entry.";
 
     @Override
     public boolean supports(Class<?> clazz) {
-        return ClientSearchDetails.class.isAssignableFrom(clazz);
+        return ClientSearchCriteria.class.isAssignableFrom(clazz);
     }
 
     public void validateForename(Object target, Errors errors){
@@ -37,24 +37,24 @@ public class ClientSearchDetailsValidator implements Validator{
         ValidationUtils.rejectIfEmpty(errors, "dobYear",
                 "required.dob-year", "Please complete 'Date of birth' with a year.");
 
-        ClientSearchDetails clientSearchDetails = (ClientSearchDetails) target;
+        ClientSearchCriteria clientSearchCriteria = (ClientSearchCriteria) target;
 
-        if (!clientSearchDetails.getDobDay().isBlank()){
-            if (!clientSearchDetails.getDobDay().matches(NUMERIC_PATTERN)) {
+        if (!clientSearchCriteria.getDobDay().isBlank()){
+            if (!clientSearchCriteria.getDobDay().matches(NUMERIC_PATTERN)) {
                 errors.rejectValue("dobDay", "invalid.numeric",
                         "Please enter a numeric value for the day.");
             }
         }
 
-        if (!clientSearchDetails.getDobMonth().isBlank()){
-            if (!clientSearchDetails.getDobMonth().matches(NUMERIC_PATTERN)) {
+        if (!clientSearchCriteria.getDobMonth().isBlank()){
+            if (!clientSearchCriteria.getDobMonth().matches(NUMERIC_PATTERN)) {
                 errors.rejectValue("dobMonth", "invalid.numeric",
                         "Please enter a numeric value for the month.");
             }
         }
 
-        if (!clientSearchDetails.getDobYear().isBlank()){
-            if (!clientSearchDetails.getDobYear().matches(NUMERIC_PATTERN)) {
+        if (!clientSearchCriteria.getDobYear().isBlank()){
+            if (!clientSearchCriteria.getDobYear().matches(NUMERIC_PATTERN)) {
                 errors.rejectValue("dobYear", "invalid.numeric",
                         "Please enter a numeric value for the year.");
             }
@@ -63,11 +63,11 @@ public class ClientSearchDetailsValidator implements Validator{
     }
 
     public void validateUniqueIdentifierType(Object target, Errors errors){
-        ClientSearchDetails clientSearchDetails = (ClientSearchDetails) target;
+        ClientSearchCriteria clientSearchCriteria = (ClientSearchCriteria) target;
 
-        if (clientSearchDetails.getUniqueIdentifierType() != null){
-            if (clientSearchDetails.getUniqueIdentifierType() == UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER) {
-                if (!clientSearchDetails.getUniqueIdentifierValue().matches(NATIONAL_INSURANCE_NUMBER_PATTERN)) {
+        if (clientSearchCriteria.getUniqueIdentifierType() != null){
+            if (clientSearchCriteria.getUniqueIdentifierType() == UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER) {
+                if (!clientSearchCriteria.getUniqueIdentifierValue().matches(NATIONAL_INSURANCE_NUMBER_PATTERN)) {
                     errors.rejectValue("uniqueIdentifierValue", "invalid.uniqueIdentifierValue",
                             "Your input for 'Unique Identifier Value' is not in the correct format. " +
                                         "The format for 'Unique Identifier Value' is AANNNNNNA, where A is a letter " +
@@ -76,19 +76,19 @@ public class ClientSearchDetailsValidator implements Validator{
             }
         }
 
-        if (clientSearchDetails.getUniqueIdentifierType() != null){
-            if (clientSearchDetails.getUniqueIdentifierType() == UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE) {
-                if (!clientSearchDetails.getUniqueIdentifierValue().matches(HOME_OFFICE_NUMBER_PATTERN)) {
+        if (clientSearchCriteria.getUniqueIdentifierType() != null){
+            if (clientSearchCriteria.getUniqueIdentifierType() == UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE) {
+                if (!clientSearchCriteria.getUniqueIdentifierValue().matches(HOME_OFFICE_NUMBER_PATTERN)) {
                     errors.rejectValue("uniqueIdentifierValue", "invalid.uniqueIdentifierValue",
                             GENERIC_UNIQUE_IDENTIFIER_ERROR);
                 }
             }
         }
 
-        if (clientSearchDetails.getUniqueIdentifierType() != null){
-            if (clientSearchDetails.getUniqueIdentifierType() == UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER) {
-                if (!clientSearchDetails.getUniqueIdentifierValue().matches(CASE_REFERENCE_NUMBER_PATTERN) ||
-                        clientSearchDetails.getUniqueIdentifierValue().matches(CASE_REFERENCE_NUMBER_NEGATIVE_PATTERN)) {
+        if (clientSearchCriteria.getUniqueIdentifierType() != null){
+            if (clientSearchCriteria.getUniqueIdentifierType() == UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER) {
+                if (!clientSearchCriteria.getUniqueIdentifierValue().matches(CASE_REFERENCE_NUMBER_PATTERN) ||
+                        clientSearchCriteria.getUniqueIdentifierValue().matches(CASE_REFERENCE_NUMBER_NEGATIVE_PATTERN)) {
                     errors.rejectValue("uniqueIdentifierValue", "invalid.uniqueIdentifierValue",
                             GENERIC_UNIQUE_IDENTIFIER_ERROR);
                 }

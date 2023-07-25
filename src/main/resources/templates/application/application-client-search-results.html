@@ -32,26 +32,30 @@
             </tr>
             </thead>
             <tbody class="govuk-table__body">
-            <tr class="govuk-table__row" th:each="client : ${clientSearchResults.clients}">
+            <tr class="govuk-table__row" th:each="client , rowStat : ${clientSearchResults.content}">
                 <td class="govuk-table__cell" th:text="${client.firstName}"></td>
                 <td class="govuk-table__cell" th:text="${client.surname}"></td>
                 <td class="govuk-table__cell" th:text="${client.surnameAtBirth}"></td>
                 <td class="govuk-table__cell" th:text="${client.postalCode}"></td>
-                <td class="govuk-table__cell" th:text="${client.clientReferenceNumber}"></td>
+                <td class="govuk-table__cell" th:text="${client.caseReferenceNumber}"></td>
                 <td class="govuk-table__cell">
-                    <a href="/application/client-confirm" class="govuk-link">Use this record</a>
+                    <a th:href="@{/application/client/{id}/confirm(id=${rowStat.index})}" class="govuk-link">Use this record</a>
                 </td>
             </tr>
             </tbody>
         </table>
-        <h2 class="govuk-heading-m">
-            Register new client
-        </h2>
-        <p class="govuk-body">If your search has not returned the client you were looking for, you can register a new
-            client by clicking the 'Register new client' button.</p>
-        <a class="govuk-button" data-module="govuk-button" href="/application/client-register">
-            Register new client
-        </a>
+        <nav th:replace="~{partials/pagination :: pagination(page=${clientSearchResults})}"></nav>
+        <form method="post" action="/application/client-search/results">
+            <input type="hidden" name="action" value="register">
+            <h2 class="govuk-heading-m">
+                Register new client
+            </h2>
+            <p class="govuk-body">If your search has not returned the client you were looking for, you can register a new
+                client by clicking the 'Register new client' button.</p>
+            <button type="submit" class="govuk-button" data-module="govuk-button">
+                Register new client
+            </button>
+        </form>
     </div>
 </div>
 </body>
