@@ -1,7 +1,7 @@
 FROM openjdk:17
 USER root
 VOLUME /tmp
-ls -l home
+RUN ls -l home
 COPY build/libs/laa-ccms-caab-0.0.1-SNAPSHOT.jar laa-ccms-caab.jar
 EXPOSE 8080
 
