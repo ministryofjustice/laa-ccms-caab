@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.bean;
 
 import lombok.Data;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 import java.io.Serializable;
 
@@ -54,5 +55,10 @@ public class ApplicationDetails implements Serializable {
      * The year when delegated function was used.
      */
     private String delegatedFunctionUsedYear;
+
+    /**
+     * The client used within the application.
+     */
+    private ClientDetail client;
 }
 

@@ -1,13 +1,5 @@
 package uk.gov.laa.ccms.caab.service;
 
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLICATION_TYPE_CODES;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -17,6 +9,14 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLICATION_TYPE_CODES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.*;
 
 @Service
 @Slf4j
@@ -67,6 +67,20 @@ public class DataService {
                 return !EXCLUDED_APPLICATION_TYPE_CODES.contains(code);
             })
             .collect(Collectors.toList());
+    }
+
+    public List<CommonLookupValueDetail> getGenders() {
+        CommonLookupDetail commonLookupValues = getCommonValues(COMMON_VALUE_GENDER, null, null).block();
+        return Optional.ofNullable(commonLookupValues)
+                .map(CommonLookupDetail::getContent)
+                .orElse(Collections.emptyList());
+    }
+
+    public List<CommonLookupValueDetail> getUniqueIdentifierTypes() {
+        CommonLookupDetail commonLookupValues = getCommonValues(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE, null, null).block();
+        return Optional.ofNullable(commonLookupValues)
+                .map(CommonLookupDetail::getContent)
+                .orElse(Collections.emptyList());
     }
 
     public List<CommonLookupValueDetail> getCategoriesOfLaw(List<String> codes) {

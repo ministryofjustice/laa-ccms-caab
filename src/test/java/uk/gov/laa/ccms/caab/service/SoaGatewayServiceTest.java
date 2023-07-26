@@ -7,19 +7,27 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.net.URI;
 import java.util.List;
+import java.util.function.Function;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.util.UriBuilder;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
@@ -100,7 +108,6 @@ class SoaGatewayServiceTest {
         Integer officeId = 345;
         String loginId = "user1";
         String userType = "userType";
-        String expectedUri = "/contract-details?providerFirmId={providerFirmId}&officeId={officeId}";
 
         ContractDetails contractDetails = new ContractDetails()
             .addContractsItem(
@@ -108,8 +115,10 @@ class SoaGatewayServiceTest {
             .addContractsItem(
                 createContractDetail("CAT2", true, true));
 
+        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
         when(soaGatewayWebClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri(expectedUri, providerFirmId, officeId)).thenReturn(requestHeadersMock);
+        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
         when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(requestHeadersMock);
         when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
@@ -117,10 +126,15 @@ class SoaGatewayServiceTest {
 
         List<String> response = soaGatewayService.getCategoryOfLawCodes(providerFirmId, officeId, loginId, userType, Boolean.TRUE);
 
+        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
         assertNotNull(response);
         assertEquals(2, response.size());
         assertEquals("CAT1", response.get(0));
         assertEquals("CAT2", response.get(1));
+
+        assertEquals("/contract-details?providerFirmId=123&officeId=345", actualUri.toString());
     }
 
     @ParameterizedTest
@@ -136,7 +150,6 @@ class SoaGatewayServiceTest {
         Integer officeId = 345;
         String loginId = "user1";
         String userType = "userType";
-        String expectedUri = "/contract-details?providerFirmId={providerFirmId}&officeId={officeId}";
 
         ContractDetails contractDetails = new ContractDetails()
             .addContractsItem(
@@ -144,8 +157,10 @@ class SoaGatewayServiceTest {
             .addContractsItem(
                 createContractDetail(cat2, newMatters2, remAuth2));
 
+        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
         when(soaGatewayWebClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri(expectedUri, providerFirmId, officeId)).thenReturn(requestHeadersMock);
+        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
         when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(requestHeadersMock);
         when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
@@ -153,9 +168,14 @@ class SoaGatewayServiceTest {
 
         List<String> response = soaGatewayService.getCategoryOfLawCodes(providerFirmId, officeId, loginId, userType, initialApp);
 
+        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
         assertNotNull(response);
         assertEquals(1, response.size());
         assertEquals(cat2, response.get(0));
+
+        assertEquals("/contract-details?providerFirmId=123&officeId=345", actualUri.toString());
     }
 
     @Test
@@ -164,10 +184,11 @@ class SoaGatewayServiceTest {
         Integer officeId = 345;
         String loginId = "user1";
         String userType = "userType";
-        String expectedUri = "/contract-details?providerFirmId={providerFirmId}&officeId={officeId}";
+
+        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
         when(soaGatewayWebClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri(expectedUri, providerFirmId, officeId)).thenReturn(requestHeadersMock);
+        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
         when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(requestHeadersMock);
         when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
@@ -179,6 +200,57 @@ class SoaGatewayServiceTest {
         soaGatewayService.getCategoryOfLawCodes(providerFirmId, officeId, loginId, userType, Boolean.TRUE);
 
         verify(soaGatewayServiceErrorHandler).handleContractDetailsError(eq(providerFirmId), eq(officeId), any(WebClientResponseException.class));
+
+        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+        assertEquals("/contract-details?providerFirmId=123&officeId=345", actualUri.toString());
+    }
+
+    @Test
+    void getClients_ReturnsClientDetails_Successful() {
+        String expectedUri = "/clients?first-name=John&surname=Doe&page=0&size=10";
+
+        ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
+        String loginId = "user1";
+        String userType = "userType";
+        String firstName = "John";
+        String lastName = "Doe";
+
+        int page = 0;
+        int size = 10;
+
+        clientSearchCriteria.setForename(firstName);
+        clientSearchCriteria.setSurname(lastName);
+
+        ClientDetails mockClientDetails = new ClientDetails();
+
+        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+        when(soaGatewayWebClientMock.get()).thenReturn(requestHeadersUriMock);
+        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+        when(responseMock.bodyToMono(ClientDetails.class)).thenReturn(Mono.just(mockClientDetails));
+
+        Mono<ClientDetails> clientDetailsMono = soaGatewayService.getClients(clientSearchCriteria, loginId, userType, page, size);
+
+        StepVerifier.create(clientDetailsMono)
+                .expectNextMatches(clientDetails -> clientDetails == mockClientDetails)
+                .verifyComplete();
+
+        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+        verify(soaGatewayWebClientMock).get();
+        verify(requestHeadersUriMock).uri(uriCaptor.capture());
+        verify(requestHeadersMock).header("SoaGateway-User-Login-Id", loginId);
+        verify(requestHeadersMock).header("SoaGateway-User-Role", userType);
+        verify(requestHeadersMock).retrieve();
+        verify(responseMock).bodyToMono(ClientDetails.class);
+
+        assertEquals(expectedUri, actualUri.toString());
     }
 
     private static ContractDetail createContractDetail(String cat, Boolean createNewMatters, Boolean remainderAuth) {

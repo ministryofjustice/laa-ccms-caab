@@ -33,9 +33,6 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 @WebAppConfiguration
 public class HomeControllerTest {
   @Mock
-  private DataService dataService;
-
-  @Mock
   private SoaGatewayService soaGatewayService;
 
   @InjectMocks

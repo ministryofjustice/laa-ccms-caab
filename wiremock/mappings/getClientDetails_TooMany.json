@@ -1,0 +1,20 @@
+{
+  "priority": 2,
+  "request": {
+    "method": "ANY",
+    "urlPath": "/soa-infra/services/default/ClientServices/ClientServices_ep",
+    "bodyPatterns": [{
+      "matchesXPath": {
+        "expression": "//SearchCriteria/FirstName/text()",
+        "contains": "Many"
+      }
+    }]
+  },
+  "response": {
+    "status": 200,
+    "bodyFileName": "ClientInqRS_Many.xml",
+    "headers": {
+      "Content-Type": "text/xml"
+    }
+  }
+}

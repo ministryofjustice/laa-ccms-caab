@@ -5,10 +5,10 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
 
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NUMERIC_PATTERN;
+
 @Component
 public class ApplicationDetailsValidator implements Validator{
-
-    private static final String NUMERIC_PATTERN = "[0-9]+";
 
     @Override
     public boolean supports(Class<?> clazz) {

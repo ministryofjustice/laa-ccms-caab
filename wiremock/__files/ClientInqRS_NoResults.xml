@@ -1,0 +1,28 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:msg="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIM"
+                  xmlns:header="http://legalservices.gov.uk/Enterprise/Common/1.0/Header"
+                  xmlns:common="http://legalservices.gov.uk/Enterprise/Common/1.0/Common">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <ClientInqRS xmlns:msg="http://legalservices.gov.uk/CCMS/ClientManagement/Client/1.0/ClientBIM" xmlns="http://legalservices.gov.uk/CCMS/ClientManagement/Client/1.0/ClientBIM">
+            <header:HeaderRS xmlns:header="http://legalservices.gov.uk/Enterprise/Common/1.0/Header">
+                <header:TransactionID>202307181445172120046953692</header:TransactionID>
+                <header:RequestDetails>
+                    <header:TransactionRequestID>202307181445172120046953692</header:TransactionRequestID>
+                    <header:Language>ENG</header:Language>
+                    <header:UserLoginID>PENNY.WALL@SWITALSKIS.COM</header:UserLoginID>
+                    <header:UserRole>EXTERNAL</header:UserRole>
+                </header:RequestDetails>
+                <header:Status>
+                    <header:Status>Success</header:Status>
+                    <header:StatusFreeText>End of Get Party details process.</header:StatusFreeText>
+                </header:Status>
+            </header:HeaderRS>
+            <msg:RecordCount>
+                <common:MaxRecordsToFetch xmlns:common="http://legalservices.gov.uk/Enterprise/Common/1.0/Common">200</common:MaxRecordsToFetch>
+                <common:RecordsFetched xmlns:common="http://legalservices.gov.uk/Enterprise/Common/1.0/Common">0</common:RecordsFetched>
+                <common:RetriveDataOnMaxCount xmlns:common="http://legalservices.gov.uk/Enterprise/Common/1.0/Common">false</common:RetriveDataOnMaxCount>
+            </msg:RecordCount>
+        </ClientInqRS>
+    </soapenv:Body>
+</soapenv:Envelope>

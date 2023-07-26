@@ -55,15 +55,16 @@ public class DelegatedFunctionsControllerTest {
     @Test
     public void testGetDelegatedFunctions() throws Exception {
         this.mockMvc.perform(get("/application/delegated-functions")
-                        .sessionAttr("applicationDetails", new ApplicationDetails()))
+                        .sessionAttr("applicationDetails", applicationDetails))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(view().name("/application/select-delegated-functions"))
-                .andExpect(model().attribute("applicationDetails", new ApplicationDetails()));
+                .andExpect(model().attribute("applicationDetails", applicationDetails));
     }
 
     @Test
     public void testPostDelegatedFunctionsHandlesValidationError() throws Exception {
+
         doAnswer(invocation -> {
             Errors errors = (Errors) invocation.getArguments()[1];
 

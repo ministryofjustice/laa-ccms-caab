@@ -7,8 +7,12 @@ import org.mockito.Mock;
 import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
+
+import static org.mockito.Mockito.verify;
 
 class SoaGatewayServiceErrorHandlerTest {
 
@@ -46,6 +50,26 @@ class SoaGatewayServiceErrorHandlerTest {
         StepVerifier.create(result)
             .expectNextCount(0)
             .verifyComplete();
+    }
+
+    @Test
+    public void testHandleClientDetailsError() {
+        ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
+        clientSearchCriteria.setForename("John");
+        clientSearchCriteria.setSurname("Doe");
+        clientSearchCriteria.setDobYear("1990");
+        clientSearchCriteria.setDobMonth("02");
+        clientSearchCriteria.setDobDay("01");
+        clientSearchCriteria.setUniqueIdentifierType(1);
+        clientSearchCriteria.setUniqueIdentifierValue("ABC123");
+
+        Throwable throwable = new RuntimeException("Error");
+
+        Mono<ClientDetails> result = soaGatewayServiceErrorHandler.handleClientDetailsError(clientSearchCriteria, throwable);
+
+        StepVerifier.create(result)
+                .expectNextCount(0)
+                .verifyComplete();
     }
 
 }
