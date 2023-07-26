@@ -8,9 +8,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -102,6 +100,26 @@ public class ApplicationSearchControllerTest {
             .andExpect(model().attribute("offices", user.getProvider().getOffices()));
 
         verify(dataService, times(1)).getFeeEarners(user.getProvider().getId());
+    }
+
+    @Test
+    public void testPostApplicationSearchHandlesValidationSuccess() throws Exception {
+        final UserDetail user = buildUser();
+        final FeeEarnerDetail feeEarnerDetail = new FeeEarnerDetail().addContentItem(
+                new ContactDetail().id(123).name("A Fee Earner"));
+
+        // Set up the dataService to return feeEarnerDetail when getFeeEarners is called
+        when(dataService.getFeeEarners(user.getProvider().getId())).thenReturn(Mono.just(feeEarnerDetail));
+
+        // Call the POST request with valid search criteria
+        this.mockMvc.perform(post("/application/search")
+                        .sessionAttr("user", user)
+                        .param("searchCriteriaField", "someValue")) // Add any valid search criteria here
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/application/application-search-results"));
+
+        // Verify that the validator was called once
+        verify(validator, times(1)).validate(any(), any());
     }
 
     private UserDetail buildUser() {

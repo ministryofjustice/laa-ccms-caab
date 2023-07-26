@@ -17,9 +17,11 @@
             Please return to amend your search criteria and try again or register a new client by clicking the 'Register
             new client' button.
         </p>
-        <a class="govuk-button" data-module="govuk-button" href="/application/client-register">
-            Register new client
-        </a>
+        <form action="#" th:action="@{/application/client-search/results}" method="post">
+            <button class="govuk-button" data-module="govuk-button">
+                Register new client
+            </button>
+        </form>
     </div>
 </div>
 </body>

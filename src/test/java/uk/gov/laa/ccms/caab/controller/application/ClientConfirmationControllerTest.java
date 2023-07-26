@@ -80,7 +80,7 @@ public class ClientConfirmationControllerTest {
                         .sessionAttr("applicationDetails", applicationDetails)
                         .sessionAttr("clientSearchResults", clientSearchResults)) // Use the correct attribute name for clientSearchResults
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("TODO"));
+                .andExpect(redirectedUrl("/application/agreement"));
     }
 
     private UserDetail buildUser() {

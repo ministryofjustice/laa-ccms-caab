@@ -7,7 +7,7 @@
   },
   "response": {
     "status": 200,
-    "bodyFileName": "ClientInqRS_NoResults.xml",
+    "bodyFileName": "ClientInqRS_Pages.xml",
     "headers": {
       "Content-Type": "text/xml"
     }

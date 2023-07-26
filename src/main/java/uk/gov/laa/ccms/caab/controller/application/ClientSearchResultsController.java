@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -47,10 +48,13 @@ public class ClientSearchResultsController {
     }
 
     @PostMapping("/application/client-search/results")
-    public String clientSearch(@ModelAttribute(CLIENT_SEARCH_RESULTS) ClientDetails clientSearchResults) {
+    public String clientSearch(@ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
+                               @ModelAttribute(CLIENT_SEARCH_RESULTS) ClientDetails clientSearchResults) {
         log.info("POST /application/client-search/results");
+        applicationDetails.setClient(null);
+        applicationDetails.setAgreementAccepted(false);
 
-        return "redirect:/application/TODO";
+        return "redirect:/application/agreement";
     }
 }
 

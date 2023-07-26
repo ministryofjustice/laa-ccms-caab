@@ -84,5 +84,30 @@ public class ApplicationDetailsValidatorTest {
         assertEquals("invalid.numeric", errors.getFieldError(field).getCode());
     }
 
+    @Test
+    public void validate_ValidatesAgreementAcceptance_NotAccepted() {
+        // Arrange
+        applicationDetails.setAgreementAccepted(false); // Set agreement acceptance to false
+        validator.validateAgreementAcceptance(applicationDetails, errors);
+
+        // Assert
+        assertTrue(errors.hasErrors());
+        assertNotNull(errors.getFieldError("agreementAccepted"));
+        assertEquals("agreement.not.accepted", errors.getFieldError("agreementAccepted").getCode());
+        assertEquals("Please complete 'I confirm my client (or their representative) has read and agreed to the Privacy Notice'.",
+                errors.getFieldError("agreementAccepted").getDefaultMessage());
+    }
+
+    @Test
+    public void validate_ValidatesAgreementAcceptance_Accepted() {
+        // Arrange
+        applicationDetails.setAgreementAccepted(true); // Set agreement acceptance to true
+        validator.validateAgreementAcceptance(applicationDetails, errors);
+
+        // Assert
+        assertFalse(errors.hasErrors());
+    }
+
+
 
 }

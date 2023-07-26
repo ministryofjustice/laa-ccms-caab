@@ -60,5 +60,10 @@ public class ApplicationDetails implements Serializable {
      * The client used within the application.
      */
     private ClientDetail client;
+
+    /**
+     * The option for privacy notice agreement
+     */
+    private boolean agreementAccepted = false;
 }
 
