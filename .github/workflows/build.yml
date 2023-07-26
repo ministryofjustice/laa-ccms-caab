@@ -42,3 +42,28 @@ jobs:
         uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629
         with:
           arguments: integrationTest
+
+  ecr:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # for requesting jwt
+      contents: read  # for actions/checkout
+    steps:
+      # Checkout github repo
+      - uses: actions/checkout@v3
+      # Assume role in cloud platform
+      - uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.ECR_REGION }}
+      # Login to container repo
+      - uses: aws-actions/amazon-ecr-login@v1
+        id: login-ecr
+      # Build and push docker image to container repo
+      - run: |
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
