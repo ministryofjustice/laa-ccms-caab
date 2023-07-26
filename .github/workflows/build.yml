@@ -42,12 +42,12 @@ jobs:
         uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629
         with:
           arguments: integrationTest
-      - name: Build jar
-        uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629
+
+      - name: upload jarfile
+        uses: actions/upload-artifact@v3
         with:
-          arguments: jar
-      - name: list stuff
-        run: ls -la
+          name: caab-jar
+          path: build/libs/laa-ccms-caab-0.0.1-SNAPSHOT.jar
 
   ecr:
     needs: build-test-publish
@@ -56,6 +56,11 @@ jobs:
       id-token: write # for requesting jwt
       contents: read  # for actions/checkout
     steps:
+      - name: download jar
+        uses: actions/download-artifact@v3
+        with:
+          name: caab-jar
+          path: build/libs/laa-ccms-caab-0.0.1-SNAPSHOT.jar
       # Checkout github repo
       - uses: actions/checkout@v3
       # Assume role in cloud platform
