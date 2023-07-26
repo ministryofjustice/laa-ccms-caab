@@ -44,6 +44,6 @@ public class ClientConfirmationController {
         applicationDetails.setClient(confirmedClient);
         log.info("Application details: {}", applicationDetails);
 
-        return "redirect:TODO";
+        return "redirect:/application/agreement";
     }
 }

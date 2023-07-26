@@ -9,12 +9,12 @@
         <a href="/" class="govuk-back-link">Cancel and return to Home</a>
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l">About your application</span>
-        <h1 class="govuk-heading-l">
-            Application type
-        </h1>
         <form action="#" th:action="@{/application/application-type}" th:object="${applicationDetails}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
+            <span class="govuk-caption-l">About your application</span>
+            <h1 class="govuk-heading-l">
+                Application type
+            </h1>
             <div class="govuk-body-l">
                 Please select the relevant details.
             </div>
