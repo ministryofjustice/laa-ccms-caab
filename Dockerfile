@@ -1,6 +1,6 @@
 FROM openjdk:17
 
-COPY build/libs/laa-ccms-caab-0.0.1-SNAPSHOT.jar laa-ccms-caab.jar
+COPY ./build/libs/laa-ccms-caab-0.0.1-SNAPSHOT.jar laa-ccms-caab.jar
 EXPOSE 8080
 
 ENV TZ=Europe/London
