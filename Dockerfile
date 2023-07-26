@@ -1,4 +1,5 @@
 FROM openjdk:17
+RUN ls -l
 RUN ls -l build
 COPY ./build/libs/laa-ccms-caab-0.0.1-SNAPSHOT.jar laa-ccms-caab.jar
 EXPOSE 8080
