@@ -46,6 +46,8 @@ jobs:
         uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629
         with:
           arguments: jar
+      - name: list stuff
+        run: ls -la
 
   ecr:
     needs: build-test-publish
