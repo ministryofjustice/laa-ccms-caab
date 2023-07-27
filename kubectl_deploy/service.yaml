@@ -11,6 +11,6 @@ spec:
       protocol: TCP
       targetPort: 8080
   selector:
-    app: laa-ccms-civil
+    app: laa-ccms-civil-dev
 
 
