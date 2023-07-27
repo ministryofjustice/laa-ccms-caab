@@ -3,14 +3,14 @@ kind: Service
 metadata:
   name: laa-ccms-civil-service
   labels:
-    app: laa-ccms-civil-dev
+    app: laa-ccms-civil
 spec:
   ports:
     - port: 5000
       name: http
       protocol: TCP
-      targetPort: 8443
+      targetPort: 8080
   selector:
-    app: laa-ccms-civil-dev
+    app: laa-ccms-civil
 
 

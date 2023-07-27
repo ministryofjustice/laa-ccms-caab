@@ -6,11 +6,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: laa-ccms-civil-dev
+      app: laa-ccms-civil
   template:
     metadata:
       labels:
-        app: laa-ccms-civil-dev
+        app: laa-ccms-civil
     spec:
       containers:
         - name: laa-ccms-civil
