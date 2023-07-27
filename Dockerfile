@@ -1,6 +1,6 @@
 FROM eclipse-temurin:17
 VOLUME /tmp
-COPY build/libs/laa-ccms-caab-0.0.1-SNAPSHOT.jar laa-ccms-caab.jar
+COPY laa-ccms-caab-0.0.1-SNAPSHOT.jar laa-ccms-caab.jar
 EXPOSE 8080
 RUN addgroup --system --gid 800 customgroup \
     && adduser --system --uid 800 --ingroup customgroup --shell /bin/sh customuser
