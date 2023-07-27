@@ -5,7 +5,7 @@ metadata:
   namespace: laa-ccms-civil
   annotations:
     kubernetes.io/ingress.class: nginx
-    external-dns.alpha.kubernetes.io/set-identifier: laa-ccms-ebs-azure-ad-laa-ccms-ebs-azure-ad-dev-green
+    external-dns.alpha.kubernetes.io/set-identifier: laa-ccms-civil-laa-ccms-civil-green
     external-dns.alpha.kubernetes.io/aws-weight: "100"
     nginx.ingress.kubernetes.io/access-log-path: "/var/log/nginx/access.log"
     nginx.ingress.kubernetes.io/backend-protocol: https
