@@ -6,7 +6,7 @@ RUN addgroup --system --gid 800 customgroup \
 RUN chown customuser:customgroup laa-ccms-caab.jar
 USER 800
 
-RUN ls -l
+RUN ls -l laa-ccms-caab.jar
 ENV TZ=Europe/London
 ENV JAVA_TOOL_OPTIONS="-XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0"
 CMD java -jar laa-ccms-caab.jar
