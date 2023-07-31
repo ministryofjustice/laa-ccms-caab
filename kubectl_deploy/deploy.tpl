@@ -7,10 +7,14 @@ spec:
   selector:
     matchLabels:
       app: laa-ccms-civil-dev
+      tier: frontend
+      track: stable
   template:
     metadata:
       labels:
         app: laa-ccms-civil-dev
+        tier: frontend
+        track: stable
     spec:
       containers:
         - name: laa-ccms-civil

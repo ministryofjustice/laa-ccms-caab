@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: laa-ccms-civil-service
   labels:
-    app: laa-ccms-civil
+    app: laa-ccms-civil-dev
 spec:
   ports:
     - port: 5000
@@ -12,5 +12,6 @@ spec:
       targetPort: 8080
   selector:
     app: laa-ccms-civil-dev
+    type: LoadBalancer
 
 
