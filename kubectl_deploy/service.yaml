@@ -2,16 +2,23 @@ apiVersion: v1
 kind: Service
 metadata:
   name: laa-ccms-civil-service
-  labels:
-    app: laa-ccms-civil-dev
 spec:
+  type: LoadBalancer
   ports:
     - port: 5000
-      name: http
+      name: laa-ccms-civil
       protocol: TCP
       targetPort: 8080
+    - port: 3000
+      name: laa-ccms-civil-soa-gateway-api
+      protocol: TCP
+      targetPort: 8007
+    - port: 4000
+      name: laa-ccms-civil-caab-data-api
+      protocol: TCP
+      targetPort: 8009
   selector:
-    app: laa-ccms-civil-dev
-    type: LoadBalancer
+    app: laa-ccms-civil
+
 
 

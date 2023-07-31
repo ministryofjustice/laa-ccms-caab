@@ -33,6 +33,12 @@ jobs:
         with:
           arguments: build
 
+      - name: upload jarfile
+        uses: actions/upload-artifact@v3
+        with:
+          name: caab-jar
+          path: build/libs/laa-ccms-caab-0.0.1-SNAPSHOT.jar
+
       - name: Test
         uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629
         with:
@@ -42,11 +48,7 @@ jobs:
         uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629
         with:
           arguments: integrationTest
-      - name: upload jarfile
-        uses: actions/upload-artifact@v3
-        with:
-          name: caab-jar
-          path: build/libs/laa-ccms-caab-0.0.1-SNAPSHOT.jar
+
 
   ecr:
     needs: build-test-publish
@@ -62,8 +64,6 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: caab-jar
-      - name: display structure of downloaded files
-        run: ls -R
       - uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}
