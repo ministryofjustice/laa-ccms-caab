@@ -3,7 +3,6 @@ kind: Service
 metadata:
   name: laa-ccms-civil-service
 spec:
-  type: LoadBalancer
   ports:
     - port: 5000
       name: laa-ccms-civil
