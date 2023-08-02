@@ -16,6 +16,10 @@ spec:
       name: laa-ccms-civil-caab-data-api
       protocol: TCP
       targetPort: 8009
+    - port: 6000
+      name: laa-ccms-civil-caab-saml-mock
+      protocol: TCP
+      targetPort: 8080
   selector:
     app: laa-ccms-civil
 
