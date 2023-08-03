@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.userdetails.UserDetails;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -46,6 +46,18 @@ public class DataServiceErrorHandlerTest {
                 .verifyErrorMatches(e -> e instanceof DataServiceException
                         && e.getMessage().equals("Failed to retrieve Common Values: (type: testType, code: testCode, sort: testSort)")
                         && e.getCause() == throwable);
+    }
+
+    @Test
+    public void testHandleCaseStatusValuesError() {
+        Throwable throwable = new RuntimeException("Error");
+
+        Mono<CaseStatusLookupDetail> result = dataServiceErrorHandler.handleCaseStatusValuesError(true, throwable);
+
+        StepVerifier.create(result)
+            .verifyErrorMatches(e -> e instanceof DataServiceException
+                && e.getMessage().equals("Failed to retrieve Case Status Values: (copyAllowed: true)")
+                && e.getCause() == throwable);
     }
 
     @Test

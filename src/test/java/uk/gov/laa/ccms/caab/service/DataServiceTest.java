@@ -15,6 +15,7 @@ import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
@@ -118,7 +119,7 @@ public class DataServiceTest {
         URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
         // Assert the URI
-        assertEquals("/common-lookup-values?type=type1&code=code1&sort=sort1", actualUri.toString());
+        assertEquals("/lookup/common?type=type1&code=code1&sort=sort1", actualUri.toString());
     }
 
     @Test
@@ -145,7 +146,31 @@ public class DataServiceTest {
         URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
         // Assert the URI
-        assertEquals("/common-lookup-values?type=type1&code=code1&sort=sort1", actualUri.toString());
+        assertEquals("/lookup/common?type=type1&code=code1&sort=sort1", actualUri.toString());
+    }
+
+    @Test
+    void getCaseStatusValuesCopyAllowed_returnsData() {
+        CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail();
+
+        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+        when(responseMock.bodyToMono(CaseStatusLookupDetail.class)).thenReturn(Mono.just(caseStatusLookupDetail));
+
+        Mono<CaseStatusLookupDetail> lookupDetailMono = dataService.getCaseStatusValues(true);
+
+        StepVerifier.create(lookupDetailMono)
+            .expectNext(caseStatusLookupDetail)
+            .verifyComplete();
+
+        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+        // Assert the URI
+        assertEquals("/lookup/case-status?copy-allowed=true", actualUri.toString());
     }
 
     @ParameterizedTest
@@ -174,7 +199,7 @@ public class DataServiceTest {
 
         Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
         URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
-        assertEquals("/common-lookup-values?type=XXCCMS_APP_AMEND_TYPES", actualUri.toString());
+        assertEquals("/lookup/common?type=XXCCMS_APP_AMEND_TYPES", actualUri.toString());
     }
 
     @Test
@@ -200,7 +225,7 @@ public class DataServiceTest {
         URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
         // Assert the URI
-        assertEquals(String.format("/common-lookup-values?type=%s", type), actualUri.toString());
+        assertEquals(String.format("/lookup/common?type=%s", type), actualUri.toString());
         assertNotNull(response);
         assertEquals(1, response.size());
         assertEquals(commonValues.getContent().get(0), response.get(0));
@@ -256,7 +281,7 @@ public class DataServiceTest {
         URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
         // Assert the URI
-        assertEquals(String.format("/common-lookup-values?type=%s", type), actualUri.toString());
+        assertEquals(String.format("/lookup/common?type=%s", type), actualUri.toString());
         assertNotNull(response);
         assertEquals(2, response.size());
         assertEquals(commonValues.getContent().get(0), response.get(0));

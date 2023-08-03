@@ -1,15 +1,22 @@
 package uk.gov.laa.ccms.caab.service;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
+import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLICATION_TYPE_CODES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
 import static uk.gov.laa.ccms.caab.service.DataServiceErrorHandler.USER_ERROR_MESSAGE;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +25,15 @@ import org.springframework.test.context.DynamicPropertySource;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
-import uk.gov.laa.ccms.data.model.*;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
+import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.ContactDetail;
+import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
+import uk.gov.laa.ccms.data.model.OfficeDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 public class DataServiceIntegrationTest extends AbstractIntegrationTest {
 
@@ -81,7 +92,7 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
         String code = "testCode";
         String sort = "testSort";
 
-        wiremock.stubFor(get(urlPathMatching("/common-lookup-values.*"))
+        wiremock.stubFor(get(urlPathMatching("/lookup/common.*"))
                 .withQueryParam("type", equalTo(type))
                 .withQueryParam("code", equalTo(code))
                 .withQueryParam("sort", equalTo(sort))
@@ -95,11 +106,28 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    public void testGetCaseStatusValues_returnData() throws Exception {
+        String caseStatusValuesJson = objectMapper.writeValueAsString(buildCaseStatusLookupDetail());
+
+        Boolean copyAllowed = true;
+
+        wiremock.stubFor(get(urlPathMatching("/lookup/case-status.*"))
+            .withQueryParam("copy-allowed", equalTo(copyAllowed.toString()))
+            .willReturn(okJson(caseStatusValuesJson)));
+
+        Mono<CaseStatusLookupDetail> lookupDetailMono = dataService.getCaseStatusValues(copyAllowed);
+
+        CaseStatusLookupDetail response = lookupDetailMono.block();
+
+        assertEquals(caseStatusValuesJson, objectMapper.writeValueAsString(response));
+    }
+
+    @Test
     public void testGetApplicationTypes() throws Exception {
         CommonLookupDetail allApplicationTypes = buildCommonLookupDetail();
         String applicationTypesJson = objectMapper.writeValueAsString(allApplicationTypes);
 
-        wiremock.stubFor(get(urlPathEqualTo("/common-lookup-values"))
+        wiremock.stubFor(get(urlPathEqualTo("/lookup/common"))
                 .withQueryParam("type", equalTo(COMMON_VALUE_APPLICATION_TYPE))
                 .willReturn(okJson(applicationTypesJson)));
 
@@ -127,21 +155,21 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
         assertEquals(feeEarnersJson, objectMapper.writeValueAsString(result));
     }
 
-
+    private CaseStatusLookupDetail buildCaseStatusLookupDetail() {
+        return new CaseStatusLookupDetail()
+            .addContentItem(
+                new CaseStatusLookupValueDetail().code("CODE1").description("Description 1").copyAllowed(Boolean.FALSE))
+            .addContentItem(
+                new CaseStatusLookupValueDetail().code("CODE2").description("Description 2").copyAllowed(Boolean.TRUE));
+    }
 
     private CommonLookupDetail buildCommonLookupDetail() {
-        CommonLookupDetail commonLookupValueListDetails = new CommonLookupDetail();
-        commonLookupValueListDetails.setContent(new ArrayList<>());
-
-        // Add details not in the excluded list
-        commonLookupValueListDetails.getContent().add(new CommonLookupValueDetail().code("CODE1").description("Description 1"));
-        commonLookupValueListDetails.getContent().add(new CommonLookupValueDetail().code("CODE2").description("Description 2"));
-
-        // Add details in the excluded list
-        commonLookupValueListDetails.getContent().add(new CommonLookupValueDetail().code("DP").description("Description DP"));
-        commonLookupValueListDetails.getContent().add(new CommonLookupValueDetail().code("ECF").description("Description ECF"));
-
-        return commonLookupValueListDetails;
+        return new CommonLookupDetail()
+            .addContentItem(new CommonLookupValueDetail().code("CODE1").description("Description 1"))
+            .addContentItem(new CommonLookupValueDetail().code("CODE2").description("Description 2"))
+            // Add details in the excluded list
+            .addContentItem(new CommonLookupValueDetail().code("DP").description("Description DP"))
+            .addContentItem(new CommonLookupValueDetail().code("ECF").description("Description ECF"));
     }
 
     private UserDetail buildUserDetail() {
