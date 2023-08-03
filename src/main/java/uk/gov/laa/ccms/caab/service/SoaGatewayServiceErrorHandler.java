@@ -4,9 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
-import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
+import uk.gov.laa.ccms.soa.gateway.model.*;
 
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.*;
 
@@ -34,6 +32,17 @@ public class SoaGatewayServiceErrorHandler {
                 clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE),
                 clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER),
                 clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER), e);
+        return Mono.empty();
+    }
+
+    public Mono<ClientDetail> handleClientDetailError(
+            String clientReferenceNumber, Throwable e) {
+        log.error("Failed to retrieve ClientDetail for clientReferenceNumber: {}",clientReferenceNumber, e);
+        return Mono.empty();
+    }
+
+    public Mono<CaseReferenceSummary> handleCaseReferenceError(Throwable e) {
+        log.error("Failed to retrieve CaseReferenceSummary", e);
         return Mono.empty();
     }
 

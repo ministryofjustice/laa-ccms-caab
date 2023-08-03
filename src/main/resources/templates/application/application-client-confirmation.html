@@ -16,7 +16,7 @@
             create your new application</p>
         <!-- Add the form element -->
         <form action="#" th:action="@{/application/client/confirmed}" method="post">
-            <input type="hidden" name="confirmedClientId" th:value="${confirmedClientId}" />
+            <input type="hidden" name="confirmedClientReference" th:value="${clientReferenceNumber}" />
             <table class="govuk-table">
                 <caption class="govuk-table__caption govuk-table__caption--m">Client search results</caption>
                 <thead class="govuk-table__head">
@@ -29,10 +29,10 @@
                 </thead>
                 <tbody class="govuk-table__body">
                 <tr class="govuk-table__row">
-                    <td class="govuk-table__cell" th:text="${clientInformation.firstName}"></td>
-                    <td class="govuk-table__cell" th:text="${clientInformation.surname}"></td>
-                    <td class="govuk-table__cell" th:text="${clientInformation.surnameAtBirth}"></td>
-                    <td class="govuk-table__cell" th:text="${clientInformation.postalCode}"></td>
+                    <td class="govuk-table__cell" th:text="${clientInformation.details.name.firstName}"></td>
+                    <td class="govuk-table__cell" th:text="${clientInformation.details.name.surname}"></td>
+                    <td class="govuk-table__cell" th:text="${clientInformation.details.name.surnameAtBirth}"></td>
+                    <td class="govuk-table__cell" th:text="${clientInformation.details.address.postalCode?.substring(0, 4)}"></td>
                 </tr>
                 </tbody>
             </table>

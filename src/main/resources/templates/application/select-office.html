@@ -14,7 +14,8 @@
                 Select office
             </h1>
             <form action="#" th:action="@{/application/office}" th:object="${applicationDetails}" method="post">
-              <div th:replace="~{partials/error-summary :: error-summary}"></div>
+                <input type="hidden" th:field="*{officeDisplayValue}" id="officeDisplayValue" name="officeDisplayValue" />
+                <div th:replace="~{partials/error-summary :: error-summary}"></div>
               <div class="govuk-body-l">
                   Please select the office where the application will be held. Alternatively, click
                   <a href="/application/search">Copy Case </a>
@@ -30,7 +31,7 @@
                           </h2>
                         </legend>
                         <span th:if="${#fields.hasErrors('officeId')}" th:errors="*{officeId}" class="govuk-error-message"></span>
-                        <select class="govuk-select" data-module="govuk-select" th:field="*{officeId}" th:errorclass="govuk-select--error" id="officeId" name="officeId" >
+                        <select class="govuk-select" data-module="govuk-select" th:field="*{officeId}" th:errorclass="govuk-select--error" id="officeId" name="officeId" onchange="updateHiddenField('officeId', 'officeDisplayValue')">
                             <option value="">Please select</option>
                             <option th:each="office : ${offices}" th:value="${office.id}" th:text="${office.name}"></option>
                         </select>
@@ -42,6 +43,7 @@
                 </div>
               </div>
             </form>
+            <script src="/assets/js/updateHiddenField.js"></script>
         </div>
       </div>
     </body>

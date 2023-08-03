@@ -54,6 +54,29 @@ public class SoaGatewayService {
             .orElse(Collections.emptyList());
     }
 
+    public String getContractualDevolvedPowers(Integer providerFirmId, Integer officeId,
+                                               String loginId, String userType, String categoryOfLaw) {
+
+        ContractDetails contractDetails = this.getContractDetails(
+                providerFirmId,
+                officeId,
+                loginId,
+                userType).block();
+
+        //Check if contracts are not null before proceeding
+        if (contractDetails != null && contractDetails.getContracts() != null) {
+
+            return contractDetails.getContracts().stream()
+                    .filter(contract -> categoryOfLaw.equals(contract.getCategoryofLaw()))
+                    .map(ContractDetail::getContractualDevolvedPowers)
+                    .findFirst()
+                    .orElse(null);  // returns null if no match is found
+
+        } else {
+            return null;
+        }
+    }
+
     private Mono<ContractDetails> getContractDetails(Integer providerFirmId, Integer officeId,
         String loginId, String userType){
         return soaGatewayWebClient
@@ -91,7 +114,7 @@ public class SoaGatewayService {
     }
 
     public Mono<ClientDetails> getClients(ClientSearchCriteria clientSearchCriteria, String loginId,
-                                          String userType, Integer page, Integer size){
+                                           String userType, Integer page, Integer size){
         return soaGatewayWebClient
                 .get()
                 .uri(builder -> builder.path("/clients")
@@ -109,6 +132,32 @@ public class SoaGatewayService {
                 .retrieve()
                 .bodyToMono(ClientDetails.class)
                 .onErrorResume(e -> soaGatewayServiceErrorHandler.handleClientDetailsError(clientSearchCriteria,e));
+
+    }
+
+    public Mono<ClientDetail> getClient(String clientReferenceNumber, String loginId,
+                                          String userType){
+        return soaGatewayWebClient
+                .get()
+                .uri("/clients/{clientReferenceNumber}", clientReferenceNumber)
+                .header("SoaGateway-User-Login-Id", loginId)
+                .header("SoaGateway-User-Role", userType)
+                .retrieve()
+                .bodyToMono(ClientDetail.class)
+                .onErrorResume(e -> soaGatewayServiceErrorHandler.handleClientDetailError(clientReferenceNumber,e));
+
+    }
+
+    public Mono<CaseReferenceSummary> getCaseReference(String loginId,
+                                        String userType){
+        return soaGatewayWebClient
+                .get()
+                .uri("/case-reference")
+                .header("SoaGateway-User-Login-Id", loginId)
+                .header("SoaGateway-User-Role", userType)
+                .retrieve()
+                .bodyToMono(CaseReferenceSummary.class)
+                .onErrorResume(e -> soaGatewayServiceErrorHandler.handleCaseReferenceError(e));
 
     }
 

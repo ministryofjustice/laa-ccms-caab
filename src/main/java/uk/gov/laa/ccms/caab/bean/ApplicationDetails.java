@@ -4,6 +4,9 @@ import lombok.Data;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 import java.io.Serializable;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Represents the details of an application.
@@ -17,9 +20,19 @@ public class ApplicationDetails implements Serializable {
     private Integer officeId;
 
     /**
+     * The display value of the office related to this application.
+     */
+    private String officeDisplayValue;
+
+    /**
      * The ID of the category of law related to this application.
      */
     private String categoryOfLawId;
+
+    /**
+     * The display value of the category of law related to this application.
+     */
+    private String categoryOfLawDisplayValue;
 
     /**
      * Flag indicating whether exceptional funding has been requested for this application.
@@ -30,6 +43,11 @@ public class ApplicationDetails implements Serializable {
      * The ID of the application type related to this application.
      */
     private String applicationTypeId;
+
+    /**
+     * The ID of the application type display value related to this application.
+     */
+    private String applicationTypeDisplayValue;
 
     /**
      * The category of the application type.
@@ -60,5 +78,11 @@ public class ApplicationDetails implements Serializable {
      * The client used within the application.
      */
     private ClientDetail client;
+
+    public Date getDelegatedFunctionDate() throws ParseException {
+        String dateString = this.delegatedFunctionUsedDay + "-" + this.delegatedFunctionUsedMonth + "-" + this.delegatedFunctionUsedYear;
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+        return sdf.parse(dateString);
+    }
 }
 
