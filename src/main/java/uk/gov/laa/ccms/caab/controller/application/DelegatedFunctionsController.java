@@ -45,17 +45,7 @@ public class DelegatedFunctionsController {
             return "/application/select-delegated-functions";
         }
 
-        String applicationTypeId;
-        if (APP_TYPE_SUBSTANTIVE.equals(applicationDetails.getApplicationTypeCategory())) {
-            applicationTypeId = applicationDetails.isDelegatedFunctions()
-                    ? APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS
-                    : APP_TYPE_SUBSTANTIVE;
-        } else {
-            applicationTypeId = applicationDetails.isDelegatedFunctions()
-                    ? APP_TYPE_EMERGENCY_DEVOLVED_POWERS
-                    : APP_TYPE_EMERGENCY;
-        }
-        applicationDetails.setApplicationTypeId(applicationTypeId);
+        applicationDetails.setApplicationTypeAndDisplayValues();
 
         return "redirect:/application/client-search";
     }

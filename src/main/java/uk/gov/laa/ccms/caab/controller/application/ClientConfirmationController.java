@@ -78,15 +78,16 @@ public class ClientConfirmationController {
                     .surname(clientInformation.getDetails().getName().getSurname())
                     .reference(clientInformation.getClientReferenceNumber());
 
-            IntDisplayValue office = new IntDisplayValue()
-                    .id(applicationDetails.getOfficeId())
-                    .displayValue(applicationDetails.getOfficeDisplayValue());
-
             StringDisplayValue categoryOfLaw = new StringDisplayValue()
                     .id(applicationDetails.getCategoryOfLawId())
                     .displayValue(applicationDetails.getCategoryOfLawDisplayValue());
 
             ApplicationDetail application = new ApplicationDetail(caseReference, provider, categoryOfLaw, client);
+
+            IntDisplayValue office = new IntDisplayValue()
+                    .id(applicationDetails.getOfficeId())
+                    .displayValue(applicationDetails.getOfficeDisplayValue());
+            application.setOffice(office);
 
             //get devolved powers
             String contractualDevolvedPower = soaGatewayService.getContractualDevolvedPowers(user.getProvider().getId(),
@@ -98,8 +99,8 @@ public class ClientConfirmationController {
             //Delegated functions/devolved powers
             ApplicationDetailDevolvedPowers devolvedPowers = new ApplicationDetailDevolvedPowers();
             devolvedPowers.setContractFlag(contractualDevolvedPower);
+            devolvedPowers.setUsed(applicationDetails.isDelegatedFunctions());
             if (applicationDetails.isDelegatedFunctions()){
-                devolvedPowers.setUsed(true);
                 devolvedPowers.setDateUsed(applicationDetails.getDelegatedFunctionDate());
             }
             application.setDevolvedPowers(devolvedPowers);
@@ -113,6 +114,7 @@ public class ClientConfirmationController {
             //TODO LAR SCOPE flag
             //TODO - SELECT DEFAULT_LAR_SCOPE_FLAG FROM XXCCMS_APP_AMEND_TYPES_V WHERE APP_TYPE_CODE = ?
             //TODO - DATA API CALL - CCLS-1733
+            application.setLarScopeFlag("Y");
 
             //Status
             StringDisplayValue status = new StringDisplayValue()
@@ -120,19 +122,9 @@ public class ClientConfirmationController {
                     .displayValue(STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY);
             application.setStatus(status);
 
-            //default cost limitation
-            ApplicationDetailCosts costs = new ApplicationDetailCosts();
-            costs.grantedCostLimitation(new BigDecimal(0));
-
-            //correspondence address
-            application.setCorrespondenceAddress(new ApplicationDetailCorrespondenceAddress());
-
-            //cost - costStructure
-            application.setCosts(new ApplicationDetailCosts());
-
             caabApiService.createApplication(user.getLoginId(), application).block();
 
-            log.info("Application details to submit: {}", applicationDetails);
+            log.info("Application details to submit: {}", application);
         }
 
         return "redirect:TODO";

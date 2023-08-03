@@ -8,11 +8,13 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.*;
+
 /**
  * Represents the details of an application.
  */
 @Data
-public class ApplicationDetails implements Serializable {
+public class ApplicationDetails {
 
     /**
      * The ID of the office related to this application.
@@ -83,6 +85,21 @@ public class ApplicationDetails implements Serializable {
         String dateString = this.delegatedFunctionUsedDay + "-" + this.delegatedFunctionUsedMonth + "-" + this.delegatedFunctionUsedYear;
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
         return sdf.parse(dateString);
+    }
+
+    public void setApplicationTypeAndDisplayValues() {
+        boolean isDelegatedFunctions = this.isDelegatedFunctions();
+
+        if (APP_TYPE_SUBSTANTIVE.equals(this.applicationTypeCategory)) {
+            this.applicationTypeId = isDelegatedFunctions ? APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS : APP_TYPE_SUBSTANTIVE;
+            this.applicationTypeDisplayValue = isDelegatedFunctions ? APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS_DISPLAY : APP_TYPE_SUBSTANTIVE_DISPLAY;
+        } else if (APP_TYPE_EMERGENCY.equals(this.applicationTypeCategory)){
+            this.applicationTypeId = isDelegatedFunctions ? APP_TYPE_EMERGENCY_DEVOLVED_POWERS : APP_TYPE_EMERGENCY;
+            this.applicationTypeDisplayValue = isDelegatedFunctions ? APP_TYPE_EMERGENCY_DEVOLVED_POWERS_DISPLAY : APP_TYPE_EMERGENCY_DISPLAY;
+        } else {
+            this.applicationTypeId = APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
+            this.applicationTypeDisplayValue = APP_TYPE_EXCEPTIONAL_CASE_FUNDING_DISPLAY;
+        }
     }
 }
 

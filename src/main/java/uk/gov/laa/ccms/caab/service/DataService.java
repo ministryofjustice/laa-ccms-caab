@@ -45,7 +45,7 @@ public class DataService {
 
         return dataWebClient
                 .get()
-                .uri(builder -> builder.path("/common-lookup-values")
+                .uri(builder -> builder.path("/lookup/common")
                         .queryParamIfPresent("type", Optional.ofNullable(type))
                         .queryParamIfPresent("code", Optional.ofNullable(code))
                         .queryParamIfPresent("sort", Optional.ofNullable(sort))

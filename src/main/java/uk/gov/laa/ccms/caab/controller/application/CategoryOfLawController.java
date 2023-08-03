@@ -61,7 +61,8 @@ public class CategoryOfLawController {
         } else if (applicationDetails.isExceptionalFunding()) {
             // Exception Funding has been selected, so initialise the ApplicationType to ECF
             // and bypass the ApplicationType screen.
-            applicationDetails.setApplicationTypeId(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
+            applicationDetails.setApplicationTypeCategory(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
+            applicationDetails.setApplicationTypeAndDisplayValues();
             viewName = "redirect:/application/client-search";
         }
 
