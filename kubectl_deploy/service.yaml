@@ -8,18 +8,6 @@ spec:
       name: laa-ccms-civil
       protocol: TCP
       targetPort: 8080
-    - port: 3000
-      name: laa-ccms-civil-soa-gateway-api
-      protocol: TCP
-      targetPort: 8007
-    - port: 4000
-      name: laa-ccms-civil-caab-data-api
-      protocol: TCP
-      targetPort: 8009
-    - port: 6000
-      name: laa-ccms-civil-caab-saml-mock
-      protocol: TCP
-      targetPort: 8080
   selector:
     app: laa-ccms-civil
 
