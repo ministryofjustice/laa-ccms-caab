@@ -3,7 +3,6 @@ package uk.gov.laa.ccms.caab.bean;
 import lombok.Data;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
-import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;

@@ -1,7 +1,8 @@
 package uk.gov.laa.ccms.caab.bean;
 
-import java.io.Serializable;
 import lombok.Data;
+
+import java.io.Serializable;
 
 /**
  * Represents the criteria to search for an application.

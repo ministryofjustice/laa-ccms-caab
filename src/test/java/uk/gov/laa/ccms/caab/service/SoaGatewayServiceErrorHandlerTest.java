@@ -12,8 +12,6 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
-import static org.mockito.Mockito.verify;
-
 class SoaGatewayServiceErrorHandlerTest {
 
     @InjectMocks
