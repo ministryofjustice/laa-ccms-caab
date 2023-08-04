@@ -25,10 +25,10 @@ spring:
     cache: false
     mode: HTML
     encoding: UTF-8
-    prefix: file:src/main/resources/templates/
+    prefix: file:templates/
   web:
     resources:
-      static-locations: file:src/main/resources/static/
+      static-locations: file:static/
       cache:
         period: 0
 
