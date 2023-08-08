@@ -1,17 +1,26 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
+import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
-
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.*;
 
 @Controller
 @RequiredArgsConstructor
@@ -20,6 +29,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.*;
 public class ClientSearchResultsController {
 
     private final SoaGatewayService soaGatewayService;
+
+    private final SearchConstants searchConstants;
 
     @GetMapping("/application/client-search/results")
     public String clientSearchResults(@RequestParam(value = "page", defaultValue = "0") int page,
@@ -34,7 +45,7 @@ public class ClientSearchResultsController {
                 user.getUserType(), page, size).block();
 
         if (clientSearchResults != null && clientSearchResults.getContent() != null && clientSearchResults.getTotalElements() > 0){
-            if (clientSearchResults.getTotalElements() > 200){
+            if (clientSearchResults.getTotalElements() > searchConstants.getMaxSearchResultsClients()){
                 return "/application/application-client-search-many-results";
             }
             String currentUrl = request.getRequestURL().toString();

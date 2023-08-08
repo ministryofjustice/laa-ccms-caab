@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
+import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
@@ -54,6 +55,15 @@ public class DataService {
                 .retrieve()
                 .bodyToMono(CommonLookupDetail.class)
                 .onErrorResume(e -> dataServiceErrorHandler.handleCommonValuesError(type, code, sort, e));
+    }
+
+    public CaseStatusLookupValueDetail getCopyCaseStatus() {
+        CaseStatusLookupDetail caseStatusLookupDetail = this.getCaseStatusValues(Boolean.TRUE).block();
+
+        return Optional.ofNullable(caseStatusLookupDetail)
+            .map(CaseStatusLookupDetail::getContent)
+            .orElse(Collections.emptyList())
+            .stream().findFirst().orElse(null);
     }
 
     public Mono<CaseStatusLookupDetail> getCaseStatusValues(Boolean copyAllowed) {

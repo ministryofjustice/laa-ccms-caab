@@ -17,6 +17,10 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
+import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
+import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
+import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
+import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
@@ -79,6 +83,43 @@ public class SoaGatewayServiceIntegrationTest extends AbstractIntegrationTest {
         assertEquals("CAT1", response.get(0));
     }
 
+    @Test
+    public void testGetCases_returnData() throws Exception {
+        String loginId = "user1";
+        String userType = "userType";
+        int page = 0;
+        int size = 20;
+        CopyCaseSearchCriteria searchCriteria = buildCopyCaseSearchCriteria();
+        CaseDetails caseDetails = buildCaseDetails();
+        String caseDetailsJson = objectMapper.writeValueAsString(caseDetails);
+
+        wiremock.stubFor(get(String.format("/cases?case-reference-number=%s&" +
+            "provider-case-reference=%s&" +
+            "case-status=%s&" +
+            "fee-earner-id=%s&" +
+            "office-id=%s&" +
+            "client-surname=%s&" +
+            "page=%s&" +
+            "size=%s",
+            searchCriteria.getCaseReference(),
+            searchCriteria.getProviderCaseReference(),
+            searchCriteria.getActualStatus(),
+            searchCriteria.getFeeEarnerId(),
+            searchCriteria.getOfficeId(),
+            searchCriteria.getClientSurname(),
+            page,
+            size))
+            .withHeader("SoaGateway-User-Login-Id", equalTo(loginId))
+            .withHeader("SoaGateway-User-Role", equalTo(userType))
+            .willReturn(okJson(caseDetailsJson)));
+
+        CaseDetails response = soaGatewayService.getCases(searchCriteria, loginId, userType, page, size).block();
+
+        assertNotNull(response);
+        assertEquals(1, response.getContent().size());
+        assertEquals(caseDetailsJson, objectMapper.writeValueAsString(response));
+    }
+
     private NotificationSummary buildNotificationSummary() {
         return new NotificationSummary()
                 .notifications(10)
@@ -95,5 +136,27 @@ public class SoaGatewayServiceIntegrationTest extends AbstractIntegrationTest {
                 .remainderAuthorisation(true)
                 .contractualDevolvedPowers("CATDEVPOW")
                 .authorisationType("AUTHTYPE1"));
+    }
+
+    private CaseDetails buildCaseDetails() {
+        return new CaseDetails()
+            .addContentItem(new CaseSummary()
+                .caseReferenceNumber("caseref1")
+                .providerCaseReferenceNumber("provcaseref")
+                .caseStatusDisplay("app")
+                .client(new BaseClient().firstName("firstname").surname("thesurname"))
+                .feeEarnerName("feeEarner")
+                .categoryOfLaw("CAT1"));
+    }
+
+    private CopyCaseSearchCriteria buildCopyCaseSearchCriteria() {
+        CopyCaseSearchCriteria searchCriteria =  new CopyCaseSearchCriteria();
+        searchCriteria.setCaseReference("123");
+        searchCriteria.setProviderCaseReference("456");
+        searchCriteria.setActualStatus("caseStat");
+        searchCriteria.setFeeEarnerId(678);
+        searchCriteria.setOfficeId(345);
+        searchCriteria.setClientSurname("clientSurname");
+        return searchCriteria;
     }
 }

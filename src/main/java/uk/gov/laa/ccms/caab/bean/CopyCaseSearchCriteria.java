@@ -7,7 +7,7 @@ import lombok.Data;
  * Represents the criteria to search for an application.
  */
 @Data
-public class ApplicationSearchCriteria implements Serializable {
+public class CopyCaseSearchCriteria implements Serializable {
 
     /**
      * The LAA Application/Case Reference
@@ -21,7 +21,7 @@ public class ApplicationSearchCriteria implements Serializable {
     /**
      * The provider case reference.
      */
-    private String providerReference;
+    private String providerCaseReference;
 
     /**
      * The id of the related Fee Earner.

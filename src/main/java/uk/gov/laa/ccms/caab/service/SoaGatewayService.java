@@ -7,10 +7,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.*;
 
@@ -109,6 +109,31 @@ public class SoaGatewayService {
                 .retrieve()
                 .bodyToMono(ClientDetails.class)
                 .onErrorResume(e -> soaGatewayServiceErrorHandler.handleClientDetailsError(clientSearchCriteria,e));
+
+    }
+
+    public Mono<CaseDetails> getCases(CopyCaseSearchCriteria copyCaseSearchCriteria, String loginId,
+        String userType, Integer page, Integer size){
+        return soaGatewayWebClient
+            .get()
+            .uri(builder -> builder.path("/cases")
+                .queryParamIfPresent("case-reference-number", Optional.ofNullable(
+                    copyCaseSearchCriteria.getCaseReference()))
+                .queryParamIfPresent("provider-case-reference", Optional.ofNullable(
+                    copyCaseSearchCriteria.getProviderCaseReference()))
+                .queryParamIfPresent("case-status", Optional.ofNullable(copyCaseSearchCriteria.getActualStatus()))
+                .queryParamIfPresent("fee-earner-id", Optional.ofNullable(copyCaseSearchCriteria.getFeeEarnerId()))
+                .queryParamIfPresent("office-id", Optional.ofNullable(copyCaseSearchCriteria.getOfficeId()))
+                .queryParamIfPresent("client-surname", Optional.ofNullable(copyCaseSearchCriteria.getClientSurname()))
+                .queryParamIfPresent("page", Optional.ofNullable(page))
+                .queryParamIfPresent("size", Optional.ofNullable(size))
+                .build())
+            .header("SoaGateway-User-Login-Id", loginId)
+            .header("SoaGateway-User-Role", userType)
+            .retrieve()
+            .bodyToMono(CaseDetails.class)
+            .onErrorResume(e -> soaGatewayServiceErrorHandler.handleCaseDetailsError(
+                copyCaseSearchCriteria,e));
 
     }
 
