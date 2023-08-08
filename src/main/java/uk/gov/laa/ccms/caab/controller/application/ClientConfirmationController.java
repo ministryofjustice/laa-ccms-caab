@@ -67,13 +67,14 @@ public class ClientConfirmationController {
             CaseReferenceSummary caseReferenceSummary = soaGatewayService.getCaseReference(user.getLoginId(),
                     user.getUserType()).block();
 
+
             //get the case reference
-            String caseReference = caseReferenceSummary.getCaseReferenceNumber();
-            if (caseReference == null) {
+
+            if (caseReferenceSummary.getCaseReferenceNumber() == null) {
                 throw new RuntimeException("No case reference number was created, unable to continue");
             } else {
-                ApplicationDetailProvider provider = new ApplicationDetailProvider()
-                        .id(user.getProvider().getId().toString())
+                String caseReference = caseReferenceSummary.getCaseReferenceNumber();
+                ApplicationDetailProvider provider = new ApplicationDetailProvider(user.getProvider().getId().toString())
                         .displayValue(user.getProvider().getName());
 
                 ApplicationDetailClient client = new ApplicationDetailClient()
@@ -116,8 +117,12 @@ public class ClientConfirmationController {
 
                 //call data api for amendment types - LAR SCOPE Flag
                 AmendmentTypeLookupDetail amendmentTypes = dataService.getAmendmentTypes(applicationDetails.getApplicationTypeId(), null).block();
-                AmendmentTypeLookupValueDetail amendmentType = amendmentTypes.getContent().get(0);
-                application.setLarScopeFlag(amendmentType.getDefaultLarScopeFlag());
+                if (amendmentTypes.getContent() != null){
+                    AmendmentTypeLookupValueDetail amendmentType = amendmentTypes.getContent().get(0);
+                    application.setLarScopeFlag(amendmentType.getDefaultLarScopeFlag());
+                } else {
+                    throw new RuntimeException("No amendment type available, unable to continue");
+                }
 
                 //Status
                 StringDisplayValue status = new StringDisplayValue()
@@ -130,9 +135,9 @@ public class ClientConfirmationController {
                 log.info("Application details to submit: {}", application);
             }
 
-
+            return "redirect:TODO";
         }
 
-        return "redirect:TODO";
+        throw new RuntimeException("Client information does not match");
     }
 }

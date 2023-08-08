@@ -114,7 +114,7 @@ public class DataService {
         return dataWebClient
                 .get()
                 .uri(builder -> builder.path("/lookup/common")
-                        .queryParamIfPresent("'application-type'", Optional.ofNullable(applicationType))
+                        .queryParamIfPresent("application-type", Optional.ofNullable(applicationType))
                         .queryParamIfPresent("sort", Optional.ofNullable(sort))
                         .build())
                 .retrieve()

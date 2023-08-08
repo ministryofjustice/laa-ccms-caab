@@ -10,7 +10,8 @@ import reactor.core.publisher.Mono;
 public class CaabApiServiceErrorHandler {
 
     public Mono<Void> handleCreateApplicationError(Throwable e) {
-        log.error("Failed to create application", e);
-        return Mono.empty();
+        final String msg = "Failed to create application";
+        log.error(msg, e);
+        return Mono.error(new CaabApiServiceException(msg, e));
     }
 }

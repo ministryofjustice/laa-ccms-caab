@@ -15,10 +15,7 @@ import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
-import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
-import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.data.model.*;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -117,7 +114,7 @@ public class DataServiceTest {
         URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
         // Assert the URI
-        assertEquals("/common-lookup-values?type=type1&code=code1&sort=sort1", actualUri.toString());
+        assertEquals("/lookup/common?type=type1&code=code1&sort=sort1", actualUri.toString());
     }
 
     @Test
@@ -144,7 +141,7 @@ public class DataServiceTest {
         URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
         // Assert the URI
-        assertEquals("/common-lookup-values?type=type1&code=code1&sort=sort1", actualUri.toString());
+        assertEquals("/lookup/common?type=type1&code=code1&sort=sort1", actualUri.toString());
     }
 
     @ParameterizedTest
@@ -173,7 +170,7 @@ public class DataServiceTest {
 
         Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
         URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
-        assertEquals("/common-lookup-values?type=XXCCMS_APP_AMEND_TYPES", actualUri.toString());
+        assertEquals("/lookup/common?type=XXCCMS_APP_AMEND_TYPES", actualUri.toString());
     }
 
     @Test
@@ -199,7 +196,7 @@ public class DataServiceTest {
         URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
         // Assert the URI
-        assertEquals(String.format("/common-lookup-values?type=%s", type), actualUri.toString());
+        assertEquals(String.format("/lookup/common?type=%s", type), actualUri.toString());
         assertNotNull(response);
         assertEquals(1, response.size());
         assertEquals(commonValues.getContent().get(0), response.get(0));
@@ -255,7 +252,7 @@ public class DataServiceTest {
         URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
         // Assert the URI
-        assertEquals(String.format("/common-lookup-values?type=%s", type), actualUri.toString());
+        assertEquals(String.format("/lookup/common?type=%s", type), actualUri.toString());
         assertNotNull(response);
         assertEquals(2, response.size());
         assertEquals(commonValues.getContent().get(0), response.get(0));
@@ -286,5 +283,54 @@ public class DataServiceTest {
         // Assert the URI
         assertEquals(String.format("/fee-earners?provider-id=%s", providerId), actualUri.toString());
     }
+
+    @Test
+    void getAmendmentTypes_returnsData() {
+        String applicationType = "appType1";
+        String sort = "sort1";
+        AmendmentTypeLookupDetail amendmentTypeLookupDetail = new AmendmentTypeLookupDetail();
+
+        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+        when(responseMock.bodyToMono(AmendmentTypeLookupDetail.class)).thenReturn(Mono.just(amendmentTypeLookupDetail));
+
+        Mono<AmendmentTypeLookupDetail> amendmentTypesMono = dataService.getAmendmentTypes(applicationType, sort);
+
+        StepVerifier.create(amendmentTypesMono)
+                .expectNext(amendmentTypeLookupDetail)
+                .verifyComplete();
+
+        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+        // Assert the URI
+        assertEquals("/lookup/common?application-type=appType1&sort=sort1", actualUri.toString());
+    }
+
+    @Test
+    void getAmendmentTypes_notFound() {
+        String applicationType = "appType1";
+        String sort = "sort1";
+
+        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+        when(responseMock.bodyToMono(AmendmentTypeLookupDetail.class)).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+
+        when(dataServiceErrorHandler.handleAmendmentTypeLookupError(eq(applicationType), eq(sort), any(WebClientResponseException.class))).thenReturn(Mono.empty());
+
+        Mono<AmendmentTypeLookupDetail> amendmentTypesMono = dataService.getAmendmentTypes(applicationType, sort);
+
+        StepVerifier.create(amendmentTypesMono)
+                .verifyComplete();
+
+        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+        // Assert the URI
+        assertEquals("/lookup/common?application-type=appType1&sort=sort1", actualUri.toString());
+    }
+
 
 }

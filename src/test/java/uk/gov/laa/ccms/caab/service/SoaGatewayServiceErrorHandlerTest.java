@@ -8,9 +8,7 @@ import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
-import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
+import uk.gov.laa.ccms.soa.gateway.model.*;
 
 class SoaGatewayServiceErrorHandlerTest {
 
@@ -64,6 +62,29 @@ class SoaGatewayServiceErrorHandlerTest {
         Throwable throwable = new RuntimeException("Error");
 
         Mono<ClientDetails> result = soaGatewayServiceErrorHandler.handleClientDetailsError(clientSearchCriteria, throwable);
+
+        StepVerifier.create(result)
+                .expectNextCount(0)
+                .verifyComplete();
+    }
+
+    @Test
+    public void testHandleClientDetailError() {
+        String clientReferenceNumber = "testClientRefNumber";
+        Throwable throwable = new RuntimeException("Error");
+
+        Mono<ClientDetail> result = soaGatewayServiceErrorHandler.handleClientDetailError(clientReferenceNumber, throwable);
+
+        StepVerifier.create(result)
+                .expectNextCount(0)
+                .verifyComplete();
+    }
+
+    @Test
+    public void testHandleCaseReferenceError() {
+        Throwable throwable = new RuntimeException("Error");
+
+        Mono<CaseReferenceSummary> result = soaGatewayServiceErrorHandler.handleCaseReferenceError(throwable);
 
         StepVerifier.create(result)
                 .expectNextCount(0)

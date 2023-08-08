@@ -81,7 +81,7 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
         String code = "testCode";
         String sort = "testSort";
 
-        wiremock.stubFor(get(urlPathMatching("/common-lookup-values.*"))
+        wiremock.stubFor(get(urlPathMatching("/lookup/common.*"))
                 .withQueryParam("type", equalTo(type))
                 .withQueryParam("code", equalTo(code))
                 .withQueryParam("sort", equalTo(sort))
@@ -99,7 +99,7 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
         CommonLookupDetail allApplicationTypes = buildCommonLookupDetail();
         String applicationTypesJson = objectMapper.writeValueAsString(allApplicationTypes);
 
-        wiremock.stubFor(get(urlPathEqualTo("/common-lookup-values"))
+        wiremock.stubFor(get(urlPathEqualTo("/lookup/common"))
                 .withQueryParam("type", equalTo(COMMON_VALUE_APPLICATION_TYPE))
                 .willReturn(okJson(applicationTypesJson)));
 

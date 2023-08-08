@@ -16,17 +16,13 @@ import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
-import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
+import uk.gov.laa.ccms.soa.gateway.model.*;
 
 import java.net.URI;
 import java.util.List;
 import java.util.function.Function;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -253,6 +249,90 @@ class SoaGatewayServiceTest {
         assertEquals(expectedUri, actualUri.toString());
     }
 
+    @Test
+    void getContractualDevolvedPowers_returnsCorrectPowers() {
+        Integer providerFirmId = 123;
+        Integer officeId = 345;
+        String loginId = "user1";
+        String userType = "userType";
+        String categoryOfLaw = "CAT1";
+        String expectedPowers = "CATDEVPOW";
+
+        ContractDetails contractDetails = new ContractDetails()
+                .addContractsItem(createContractDetail(categoryOfLaw, true, true))
+                .addContractsItem(createContractDetail("CAT2", true, true));
+
+        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+        when(soaGatewayWebClientMock.get()).thenReturn(requestHeadersUriMock);
+        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+        when(responseMock.bodyToMono(ContractDetails.class)).thenReturn(Mono.just(contractDetails));
+
+        String powers = soaGatewayService.getContractualDevolvedPowers(providerFirmId, officeId, loginId, userType, categoryOfLaw);
+
+        assertEquals(expectedPowers, powers);
+
+        // Validate the URI used in the WebClient call
+        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+        assertEquals("/contract-details?providerFirmId=123&officeId=345", actualUri.toString());
+    }
+
+    @Test
+    void getContractualDevolvedPowers_noMatchingCategory_returnsNull() {
+        Integer providerFirmId = 123;
+        Integer officeId = 345;
+        String loginId = "user1";
+        String userType = "userType";
+        String categoryOfLaw = "CAT3"; // This category doesn't exist in the test data
+
+        ContractDetails contractDetails = new ContractDetails()
+                .addContractsItem(createContractDetail("CAT1", true, true))
+                .addContractsItem(createContractDetail("CAT2", true, true));
+
+        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+        when(soaGatewayWebClientMock.get()).thenReturn(requestHeadersUriMock);
+        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+        when(responseMock.bodyToMono(ContractDetails.class)).thenReturn(Mono.just(contractDetails));
+
+        String powers = soaGatewayService.getContractualDevolvedPowers(providerFirmId, officeId, loginId, userType, categoryOfLaw);
+
+        assertEquals(null, powers);
+    }
+
+    @Test
+    void getContractualDevolvedPowers_handlesError() {
+        Integer providerFirmId = 123;
+        Integer officeId = 345;
+        String loginId = "user1";
+        String userType = "userType";
+        String categoryOfLaw = "CAT1";
+
+        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+        when(soaGatewayWebClientMock.get()).thenReturn(requestHeadersUriMock);
+        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+        when(responseMock.bodyToMono(ContractDetails.class)).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+
+        when(soaGatewayServiceErrorHandler.handleContractDetailsError(eq(providerFirmId), eq(officeId), any(WebClientResponseException.class))).thenReturn(Mono.empty());
+
+        String powers = soaGatewayService.getContractualDevolvedPowers(providerFirmId, officeId, loginId, userType, categoryOfLaw);
+
+        assertNull(powers);
+
+        verify(soaGatewayServiceErrorHandler).handleContractDetailsError(eq(providerFirmId), eq(officeId), any(WebClientResponseException.class));
+    }
+
     private static ContractDetail createContractDetail(String cat, Boolean createNewMatters, Boolean remainderAuth) {
         return new ContractDetail()
             .categoryofLaw(cat)
@@ -261,5 +341,93 @@ class SoaGatewayServiceTest {
             .remainderAuthorisation(remainderAuth)
             .contractualDevolvedPowers("CATDEVPOW")
             .authorisationType("AUTHTYPE1");
+    }
+
+    @Test
+    void getClient_returnsClientDetails_Successful() {
+        String clientReferenceNumber = "CLIENT123";
+        String loginId = "user1";
+        String userType = "userType";
+        String expectedUri = "/clients/{clientReferenceNumber}";
+
+        ClientDetail mockClientDetail = new ClientDetail();
+
+        when(soaGatewayWebClientMock.get()).thenReturn(requestHeadersUriMock);
+        when(requestHeadersUriMock.uri(expectedUri, clientReferenceNumber)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+        when(responseMock.bodyToMono(ClientDetail.class)).thenReturn(Mono.just(mockClientDetail));
+
+        Mono<ClientDetail> clientDetailMono = soaGatewayService.getClient(clientReferenceNumber, loginId, userType);
+
+        StepVerifier.create(clientDetailMono)
+                .expectNextMatches(clientDetail -> clientDetail == mockClientDetail)
+                .verifyComplete();
+    }
+
+    @Test
+    void getClient_handlesError() {
+        String clientReferenceNumber = "CLIENT123";
+        String loginId = "user1";
+        String userType = "userType";
+        String expectedUri = "/clients/{clientReferenceNumber}";
+
+        when(soaGatewayWebClientMock.get()).thenReturn(requestHeadersUriMock);
+        when(requestHeadersUriMock.uri(expectedUri, clientReferenceNumber)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+        when(responseMock.bodyToMono(ClientDetail.class)).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+
+        when(soaGatewayServiceErrorHandler.handleClientDetailError(eq(clientReferenceNumber), any(WebClientResponseException.class))).thenReturn(Mono.empty());
+
+        Mono<ClientDetail> clientDetailMono = soaGatewayService.getClient(clientReferenceNumber, loginId, userType);
+
+        StepVerifier.create(clientDetailMono)
+                .verifyComplete();
+    }
+
+    @Test
+    void getCaseReference_returnsCaseReferenceSummary_Successful() {
+        String loginId = "user1";
+        String userType = "userType";
+        String expectedUri = "/case-reference";
+
+        CaseReferenceSummary mockCaseReferenceSummary = new CaseReferenceSummary();
+
+        when(soaGatewayWebClientMock.get()).thenReturn(requestHeadersUriMock);
+        when(requestHeadersUriMock.uri(expectedUri)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+        when(responseMock.bodyToMono(CaseReferenceSummary.class)).thenReturn(Mono.just(mockCaseReferenceSummary));
+
+        Mono<CaseReferenceSummary> caseReferenceSummaryMono = soaGatewayService.getCaseReference(loginId, userType);
+
+        StepVerifier.create(caseReferenceSummaryMono)
+                .expectNextMatches(summary -> summary == mockCaseReferenceSummary)
+                .verifyComplete();
+    }
+
+    @Test
+    void getCaseReference_handlesError() {
+        String loginId = "user1";
+        String userType = "userType";
+        String expectedUri = "/case-reference";
+
+        when(soaGatewayWebClientMock.get()).thenReturn(requestHeadersUriMock);
+        when(requestHeadersUriMock.uri(expectedUri)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+        when(responseMock.bodyToMono(CaseReferenceSummary.class)).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+
+        when(soaGatewayServiceErrorHandler.handleCaseReferenceError(any(WebClientResponseException.class))).thenReturn(Mono.empty());
+
+        Mono<CaseReferenceSummary> caseReferenceSummaryMono = soaGatewayService.getCaseReference(loginId, userType);
+
+        StepVerifier.create(caseReferenceSummaryMono)
+                .verifyComplete();
     }
 }
