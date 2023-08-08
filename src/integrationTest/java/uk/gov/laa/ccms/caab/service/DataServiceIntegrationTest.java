@@ -21,7 +21,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLICATION_TYPE_CODES;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.*;
 import static uk.gov.laa.ccms.caab.service.DataServiceErrorHandler.USER_ERROR_MESSAGE;
 
 public class DataServiceIntegrationTest extends AbstractIntegrationTest {
@@ -127,7 +127,101 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
         assertEquals(feeEarnersJson, objectMapper.writeValueAsString(result));
     }
 
+    @Test
+    public void testGetGenders_returnData() throws Exception {
+        CommonLookupDetail expectedCommonLookupDetail = buildCommonLookupDetail();
+        String commonLookupJson = objectMapper.writeValueAsString(expectedCommonLookupDetail);
 
+        wiremock.stubFor(get(urlPathEqualTo("/lookup/common"))
+                .withQueryParam("type", equalTo(COMMON_VALUE_GENDER))
+                .willReturn(okJson(commonLookupJson)));
+
+        List<CommonLookupValueDetail> genders = dataService.getGenders();
+
+        assertEquals(expectedCommonLookupDetail.getContent(), genders);
+    }
+
+    @Test
+    public void testGetUniqueIdentifierTypes_returnData() throws Exception {
+        CommonLookupDetail expectedCommonLookupDetail = buildCommonLookupDetail();
+        String commonLookupJson = objectMapper.writeValueAsString(expectedCommonLookupDetail);
+
+        wiremock.stubFor(get(urlPathEqualTo("/lookup/common"))
+                .withQueryParam("type", equalTo(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE))
+                .willReturn(okJson(commonLookupJson)));
+
+        List<CommonLookupValueDetail> uniqueIdentifierTypes = dataService.getUniqueIdentifierTypes();
+
+        assertEquals(expectedCommonLookupDetail.getContent(), uniqueIdentifierTypes);
+    }
+
+    @Test
+    public void testGetCategoriesOfLaw_returnFilteredData() throws Exception {
+        CommonLookupDetail expectedCommonLookupDetail = buildCommonLookupDetail();
+        String commonLookupJson = objectMapper.writeValueAsString(expectedCommonLookupDetail);
+        List<String> codes = List.of("CODE1");
+
+        wiremock.stubFor(get(urlPathEqualTo("/lookup/common"))
+                .withQueryParam("type", equalTo(COMMON_VALUE_CATEGORY_OF_LAW))
+                .willReturn(okJson(commonLookupJson)));
+
+        List<CommonLookupValueDetail> categoriesOfLaw = dataService.getCategoriesOfLaw(codes);
+
+        assertEquals(expectedCommonLookupDetail.getContent().stream().filter(c -> codes.contains(c.getCode())).collect(Collectors.toList()), categoriesOfLaw);
+    }
+
+    @Test
+    public void testGetAllCategoriesOfLaw_returnData() throws Exception {
+        CommonLookupDetail expectedCommonLookupDetail = buildCommonLookupDetail();
+        String commonLookupJson = objectMapper.writeValueAsString(expectedCommonLookupDetail);
+
+        wiremock.stubFor(get(urlPathEqualTo("/lookup/common"))
+                .withQueryParam("type", equalTo(COMMON_VALUE_CATEGORY_OF_LAW))
+                .willReturn(okJson(commonLookupJson)));
+
+        List<CommonLookupValueDetail> allCategoriesOfLaw = dataService.getAllCategoriesOfLaw();
+
+        assertEquals(expectedCommonLookupDetail.getContent(), allCategoriesOfLaw);
+    }
+
+    @Test
+    public void testGetAmendmentTypes_returnData() throws Exception {
+        AmendmentTypeLookupDetail expectedAmendmentTypes = buildAmendmentTypeLookupDetail();
+        String amendmentTypesJson = objectMapper.writeValueAsString(expectedAmendmentTypes);
+        String applicationType = "testApplicationType";
+        String sort = "testSort";
+
+        wiremock.stubFor(get(urlPathMatching("/lookup/common.*"))
+                .withQueryParam("application-type", equalTo(applicationType))
+                .withQueryParam("sort", equalTo(sort))
+                .willReturn(okJson(amendmentTypesJson)));
+
+        Mono<AmendmentTypeLookupDetail> amendmentTypesMono = dataService.getAmendmentTypes(applicationType, sort);
+
+        AmendmentTypeLookupDetail amendmentTypes = amendmentTypesMono.block();
+
+        assertEquals(amendmentTypesJson, objectMapper.writeValueAsString(amendmentTypes));
+    }
+
+    // You may need to build the AmendmentTypeLookupDetail for the test
+    private AmendmentTypeLookupDetail buildAmendmentTypeLookupDetail() {
+        AmendmentTypeLookupDetail detail = new AmendmentTypeLookupDetail();
+        detail.setContent(new ArrayList<>());
+
+        detail.getContent().add(new AmendmentTypeLookupValueDetail()
+                .applicationTypeCode("DP")
+                .applicationTypeDescription("Del. Functions")
+                .costLimitCap("1350.00")
+                .devolvedPowersIndicator("Y")
+                .defaultLarScopeFlag("Y"));
+
+        detail.getContent().add(new AmendmentTypeLookupValueDetail()
+                .applicationTypeCode("ECF")
+                .applicationTypeDescription("ECF")
+                .defaultLarScopeFlag("Y"));
+
+        return detail;
+    }
 
     private CommonLookupDetail buildCommonLookupDetail() {
         CommonLookupDetail commonLookupValueListDetails = new CommonLookupDetail();

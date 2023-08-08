@@ -5,3 +5,5 @@ laa:
       url: http://localhost:8009
     soa-gateway-api:
       url: http://localhost:8008
+    caab-api:
+      url: http://localhost:8007
