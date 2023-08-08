@@ -189,14 +189,12 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
         AmendmentTypeLookupDetail expectedAmendmentTypes = buildAmendmentTypeLookupDetail();
         String amendmentTypesJson = objectMapper.writeValueAsString(expectedAmendmentTypes);
         String applicationType = "testApplicationType";
-        String sort = "testSort";
 
-        wiremock.stubFor(get(urlPathMatching("/lookup/common.*"))
+        wiremock.stubFor(get(urlPathEqualTo("/lookup/amendment-types"))
                 .withQueryParam("application-type", equalTo(applicationType))
-                .withQueryParam("sort", equalTo(sort))
                 .willReturn(okJson(amendmentTypesJson)));
 
-        Mono<AmendmentTypeLookupDetail> amendmentTypesMono = dataService.getAmendmentTypes(applicationType, sort);
+        Mono<AmendmentTypeLookupDetail> amendmentTypesMono = dataService.getAmendmentTypes(applicationType);
 
         AmendmentTypeLookupDetail amendmentTypes = amendmentTypesMono.block();
 

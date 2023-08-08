@@ -110,16 +110,15 @@ public class DataService {
             .onErrorResume(e -> dataServiceErrorHandler.handleFeeEarnersError(providerId, e));
     }
 
-    public Mono<AmendmentTypeLookupDetail> getAmendmentTypes(String applicationType, String sort) {
+    public Mono<AmendmentTypeLookupDetail> getAmendmentTypes(String applicationType) {
         return dataWebClient
                 .get()
-                .uri(builder -> builder.path("/lookup/common")
+                .uri(builder -> builder.path("/lookup/amendment-types")
                         .queryParamIfPresent("application-type", Optional.ofNullable(applicationType))
-                        .queryParamIfPresent("sort", Optional.ofNullable(sort))
                         .build())
                 .retrieve()
                 .bodyToMono(AmendmentTypeLookupDetail.class)
-                .onErrorResume(e -> dataServiceErrorHandler.handleAmendmentTypeLookupError(applicationType, sort, e));
+                .onErrorResume(e -> dataServiceErrorHandler.handleAmendmentTypeLookupError(applicationType, e));
     }
 
 }

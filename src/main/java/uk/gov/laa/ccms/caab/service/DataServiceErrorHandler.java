@@ -44,8 +44,8 @@ public class DataServiceErrorHandler {
         return Mono.error(new DataServiceException(msg, e));
     }
 
-    public Mono<AmendmentTypeLookupDetail> handleAmendmentTypeLookupError(String applicationType, String sort, Throwable e) {
-        final String msg = String.format(AMENDMENT_TYPE_ERROR_MESSAGE, applicationType, sort);
+    public Mono<AmendmentTypeLookupDetail> handleAmendmentTypeLookupError(String applicationType, Throwable e) {
+        final String msg = String.format(AMENDMENT_TYPE_ERROR_MESSAGE, applicationType);
         log.error(msg, e);
         return Mono.error(new DataServiceException(msg, e));
     }

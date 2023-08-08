@@ -106,7 +106,7 @@ public class ClientConfirmationControllerTest {
         AmendmentTypeLookupValueDetail amendmentType = new AmendmentTypeLookupValueDetail();
         amendmentType.setDefaultLarScopeFlag("Y");
         amendmentTypes.getContent().add(amendmentType);
-        when(dataService.getAmendmentTypes(any(), any())).thenReturn(Mono.just(amendmentTypes));
+        when(dataService.getAmendmentTypes(any())).thenReturn(Mono.just(amendmentTypes));
         when(caabApiService.createApplication(any(), any())).thenReturn(Mono.empty());
 
         this.mockMvc.perform(post("/application/client/confirmed")

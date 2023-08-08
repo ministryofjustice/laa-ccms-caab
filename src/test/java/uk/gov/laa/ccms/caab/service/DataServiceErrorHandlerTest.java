@@ -52,9 +52,8 @@ public class DataServiceErrorHandlerTest {
     public void testHandleAmendmentTypeLookupError() {
         Throwable throwable = new RuntimeException("Error");
         String applicationType = "testApplicationType";
-        String sort = "testSort";
 
-        Mono<AmendmentTypeLookupDetail> result = dataServiceErrorHandler.handleAmendmentTypeLookupError(applicationType, sort, throwable);
+        Mono<AmendmentTypeLookupDetail> result = dataServiceErrorHandler.handleAmendmentTypeLookupError(applicationType, throwable);
 
         final String expectedMessage = String.format("Failed to retrieve Amendment Types: (applicationType: %s)", applicationType);
 

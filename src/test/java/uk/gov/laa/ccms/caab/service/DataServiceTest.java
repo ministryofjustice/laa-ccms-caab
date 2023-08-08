@@ -287,7 +287,6 @@ public class DataServiceTest {
     @Test
     void getAmendmentTypes_returnsData() {
         String applicationType = "appType1";
-        String sort = "sort1";
         AmendmentTypeLookupDetail amendmentTypeLookupDetail = new AmendmentTypeLookupDetail();
 
         when(webClientMock.get()).thenReturn(requestHeadersUriMock);
@@ -295,7 +294,7 @@ public class DataServiceTest {
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
         when(responseMock.bodyToMono(AmendmentTypeLookupDetail.class)).thenReturn(Mono.just(amendmentTypeLookupDetail));
 
-        Mono<AmendmentTypeLookupDetail> amendmentTypesMono = dataService.getAmendmentTypes(applicationType, sort);
+        Mono<AmendmentTypeLookupDetail> amendmentTypesMono = dataService.getAmendmentTypes(applicationType);
 
         StepVerifier.create(amendmentTypesMono)
                 .expectNext(amendmentTypeLookupDetail)
@@ -305,22 +304,21 @@ public class DataServiceTest {
         URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
         // Assert the URI
-        assertEquals("/lookup/common?application-type=appType1&sort=sort1", actualUri.toString());
+        assertEquals("/lookup/amendment-types?application-type=appType1", actualUri.toString());
     }
 
     @Test
     void getAmendmentTypes_notFound() {
         String applicationType = "appType1";
-        String sort = "sort1";
 
         when(webClientMock.get()).thenReturn(requestHeadersUriMock);
         when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
         when(responseMock.bodyToMono(AmendmentTypeLookupDetail.class)).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-        when(dataServiceErrorHandler.handleAmendmentTypeLookupError(eq(applicationType), eq(sort), any(WebClientResponseException.class))).thenReturn(Mono.empty());
+        when(dataServiceErrorHandler.handleAmendmentTypeLookupError(eq(applicationType), any(WebClientResponseException.class))).thenReturn(Mono.empty());
 
-        Mono<AmendmentTypeLookupDetail> amendmentTypesMono = dataService.getAmendmentTypes(applicationType, sort);
+        Mono<AmendmentTypeLookupDetail> amendmentTypesMono = dataService.getAmendmentTypes(applicationType);
 
         StepVerifier.create(amendmentTypesMono)
                 .verifyComplete();
@@ -329,7 +327,7 @@ public class DataServiceTest {
         URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
         // Assert the URI
-        assertEquals("/lookup/common?application-type=appType1&sort=sort1", actualUri.toString());
+        assertEquals("/lookup/amendment-types?application-type=appType1", actualUri.toString());
     }
 
 
