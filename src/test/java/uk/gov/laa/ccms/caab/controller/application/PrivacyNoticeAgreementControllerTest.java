@@ -96,7 +96,7 @@ public class PrivacyNoticeAgreementControllerTest {
         doAnswer(invocation -> {
             Errors errors = (Errors) invocation.getArguments()[1];
             errors.rejectValue(null, "agreement.not.accepted",
-                    "You must provide at least one search criteria below. Please amend your entry.");
+                    "Please complete 'I confirm my client (or their representative) has read and agreed to the Privacy Notice'.");
             return null;
         }).when(applicationValidator).validateAgreementAcceptance(any(), any());
 

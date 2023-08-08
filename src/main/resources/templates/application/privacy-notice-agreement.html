@@ -52,7 +52,7 @@
                 <span th:if="${#fields.hasErrors('agreementAccepted')}" th:errors="*{agreementAccepted}" class="govuk-error-message"></span>
                 <div class="govuk-radios govuk-radios--inline" data-module="govuk-radios">
                     <div class="govuk-radios__item">
-                        <input class="govuk-radios__input" th:errorclass="govuk-select--error" id="agreementAccepted" name="agreementAccepted"type="radio" value="true" th:checked="${applicationDetails.delegatedFunctions}">
+                        <input class="govuk-radios__input" th:errorclass="govuk-select--error" id="agreementAccepted" name="agreementAccepted"type="radio" value="true" th:checked="${applicationDetails.agreementAccepted}">
                         <label class="govuk-label govuk-radios__label" for="agreementAccepted">
                             I confirm my client (or their representative) has read and agreed to the Privacy Notice
                         </label>
