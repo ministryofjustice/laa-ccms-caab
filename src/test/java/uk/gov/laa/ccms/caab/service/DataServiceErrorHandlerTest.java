@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.userdetails.UserDetails;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -45,6 +45,22 @@ public class DataServiceErrorHandlerTest {
         StepVerifier.create(result)
                 .verifyErrorMatches(e -> e instanceof DataServiceException
                         && e.getMessage().equals("Failed to retrieve Common Values: (type: testType, code: testCode, sort: testSort)")
+                        && e.getCause() == throwable);
+    }
+
+    @Test
+    public void testHandleAmendmentTypeLookupError() {
+        Throwable throwable = new RuntimeException("Error");
+        String applicationType = "testApplicationType";
+        String sort = "testSort";
+
+        Mono<AmendmentTypeLookupDetail> result = dataServiceErrorHandler.handleAmendmentTypeLookupError(applicationType, sort, throwable);
+
+        final String expectedMessage = String.format("Failed to retrieve Amendment Types: (applicationType: %s)", applicationType);
+
+        StepVerifier.create(result)
+                .verifyErrorMatches(e -> e instanceof DataServiceException
+                        && e.getMessage().equals(expectedMessage)
                         && e.getCause() == throwable);
     }
 

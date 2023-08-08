@@ -10,3 +10,17 @@ spring:
               credentials:
                 private-key: ${SAML_PRIVATE_KEY}
                 certificate: ${SAML_CERTIFICATE}
+
+  thymeleaf: # Thymeleaf
+    cache: false
+    mode: HTML
+    encoding: UTF-8
+    prefix: file:src/main/resources/templates/
+  web:
+    resources:
+      static-locations: file:src/main/resources/static/
+      cache:
+        period: 0
+
+server:
+  port: 8080

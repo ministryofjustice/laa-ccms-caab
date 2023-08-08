@@ -7,13 +7,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+
 @ExtendWith(MockitoExtension.class)
-class SoaGatewayServiceExceptionTest {
+public class CaabApiServiceExceptionTest {
 
     @Test
     public void testConstructorWithMessage() {
         String expectedMessage = "Test Exception";
-        SoaGatewayServiceException exception = new SoaGatewayServiceException(expectedMessage);
+        CaabApiServiceException exception = new CaabApiServiceException(expectedMessage);
 
         assertEquals(expectedMessage, exception.getMessage());
         assertNull(exception.getCause());
@@ -23,10 +24,9 @@ class SoaGatewayServiceExceptionTest {
     public void testConstructorWithMessageAndCause() {
         String expectedMessage = "Test Exception";
         Exception cause = new Exception("Cause Exception");
-        SoaGatewayServiceException exception = new SoaGatewayServiceException(expectedMessage, cause);
+        CaabApiServiceException exception = new CaabApiServiceException(expectedMessage, cause);
 
         assertEquals(expectedMessage, exception.getMessage());
         assertEquals(cause, exception.getCause());
     }
-
 }

@@ -1,8 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -18,6 +15,10 @@ import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 
 @Controller

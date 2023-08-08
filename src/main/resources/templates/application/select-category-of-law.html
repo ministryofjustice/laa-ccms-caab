@@ -10,6 +10,7 @@
     </div>
     <div id="main-content">
         <form action="#" th:action="@{/application/category-of-law}" th:object="${applicationDetails}" method="post">
+            <input type="hidden" th:field="*{categoryOfLawDisplayValue}" id="categoryOfLawDisplayValue" name="categoryOfLawDisplayValue" />
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l">About your application</span>
             <h1 class="govuk-heading-l">
@@ -35,7 +36,7 @@
                                 </h2>
                             </legend>
                             <span th:if="${#fields.hasErrors('categoryOfLawId')}" th:errors="*{categoryOfLawId}" class="govuk-error-message"></span>
-                            <select class="govuk-select" data-module="govuk-select" th:field="*{categoryOfLawId}" th:errorclass="govuk-select--error" id="categoryOfLawId" name="categoryOfLawId" >
+                            <select class="govuk-select" data-module="govuk-select" th:field="*{categoryOfLawId}" th:errorclass="govuk-select--error" id="categoryOfLawId" name="categoryOfLawId" onchange="updateHiddenField('categoryOfLawId', 'categoryOfLawDisplayValue')">
                                 <option value="">Please Select</option>
                                 <option th:each="category : ${categoriesOfLaw}" th:value="${category.code}" th:text="${category.description}"></option>
                             </select>
@@ -47,6 +48,7 @@
                 </div>
             </div>
         </form>
+        <script src="/assets/js/updateHiddenField.js"></script>
     </div>
 </div>
 </body>

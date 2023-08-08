@@ -12,10 +12,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.servlet.FlashMap;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 
