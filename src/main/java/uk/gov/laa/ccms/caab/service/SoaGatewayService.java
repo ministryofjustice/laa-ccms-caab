@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.annotation.Contract;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -63,19 +64,13 @@ public class SoaGatewayService {
                 loginId,
                 userType).block();
 
-        //Check if contracts are not null before proceeding
-        if (contractDetails != null && contractDetails.getContracts() != null) {
-
-            return contractDetails.getContracts().stream()
-                    .filter(contract -> categoryOfLaw.equals(contract.getCategoryofLaw()))
-                    .map(ContractDetail::getContractualDevolvedPowers)
-                    .findFirst()
-                    .orElse(null);  // returns null if no match is found
-
-        } else {
-            return null;
-        }
+        // Process and filter the contracts to get devolved powers
+        return Optional.ofNullable(contractDetails)
+                .map(cd -> filterContractualDevolvedPowers(cd.getContracts(), categoryOfLaw))
+                .orElse(null);
     }
+
+
 
     private Mono<ContractDetails> getContractDetails(Integer providerFirmId, Integer officeId,
         String loginId, String userType){
@@ -111,6 +106,21 @@ public class SoaGatewayService {
             .map(ContractDetail::getCategoryofLaw)
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
+    }
+
+    /**
+     * Get a String for the contractual devolved powers.
+     * @param contractDetails The List of contract details to process
+     * @param categoryOfLaw the category of law to filter out
+     * @return String of the first contractual devolved power.
+     */
+    private String filterContractualDevolvedPowers(List<ContractDetail> contractDetails, String categoryOfLaw) {
+        return contractDetails != null ? contractDetails.stream()
+                .filter(contract -> categoryOfLaw.equals(contract.getCategoryofLaw()))
+                .map(ContractDetail::getContractualDevolvedPowers)
+                .findFirst()
+                .orElse(null)
+                : null;
     }
 
     public Mono<ClientDetails> getClients(ClientSearchCriteria clientSearchCriteria, String loginId,
