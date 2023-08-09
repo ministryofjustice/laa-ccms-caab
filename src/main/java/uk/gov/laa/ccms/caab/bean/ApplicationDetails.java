@@ -12,6 +12,11 @@ import java.io.Serializable;
 public class ApplicationDetails implements Serializable {
 
     /**
+     * The caseReferenceNumber selected for a Copy Case.
+     */
+    private String copyCaseReferenceNumber;
+
+    /**
      * The ID of the office related to this application.
      */
     private Integer officeId;

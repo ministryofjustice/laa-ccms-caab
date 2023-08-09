@@ -1,18 +1,21 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
+import jakarta.servlet.ServletException;
 import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,13 +29,16 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
+import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -67,7 +73,7 @@ public class CopyCaseSearchResultsControllerTest {
     }
 
     @Test
-    public void testControllerHandlesNoCopyCaseStatus() throws Exception {
+    public void testGetCopyCaseSearchResults_NoCopyCaseStatus() throws Exception {
         CaseDetails caseDetails = new CaseDetails();
         caseDetails.setTotalElements(0);
 
@@ -86,7 +92,7 @@ public class CopyCaseSearchResultsControllerTest {
     }
 
     @Test
-    public void testCopyCaseSearchResults_NoResults() throws Exception {
+    public void testGetCopyCaseSearchResults_NoResults() throws Exception {
         CaseDetails caseDetails = new CaseDetails();
         caseDetails.setTotalElements(0);
 
@@ -107,7 +113,7 @@ public class CopyCaseSearchResultsControllerTest {
     }
 
     @Test
-    public void testCopyCaseSearchResults_WithTooManyResults() throws Exception {
+    public void testGetCopyCaseSearchResults_WithTooManyResults() throws Exception {
         CaseDetails caseDetails = new CaseDetails();
         caseDetails.setContent(new ArrayList<>());
         caseDetails.setTotalElements(300);
@@ -122,7 +128,7 @@ public class CopyCaseSearchResultsControllerTest {
     }
 
     @Test
-    public void testCopyCaseSearchResults_WithResults() throws Exception {
+    public void testGetCopyCaseSearchResults_WithResults() throws Exception {
         CaseDetails caseDetails = new CaseDetails();
         caseDetails.setContent(new ArrayList<>());
         caseDetails.setTotalElements(100);
@@ -137,11 +143,36 @@ public class CopyCaseSearchResultsControllerTest {
     }
 
     @Test
-    public void testCopyCaseSearch_Post() throws Exception {
-        this.mockMvc.perform(post("/application/copy-case-search/results")
-                        .sessionAttr("copyCaseSearchResults", new CaseDetails()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/application/TODO"));
+    public void testSelectCopyCaseReferenceNumber_InvalidCaseRef() {
+        Exception exception = assertThrows(ServletException.class, () ->
+            this.mockMvc.perform(get("/application/copy-case-search/{caseRef}/select", "123")
+                    .sessionAttr("copyCaseSearchResults", new CaseDetails())
+                    .sessionAttr("applicationDetails", new ApplicationDetails())));
+
+        assertInstanceOf(CaabApplicationException.class, exception.getCause());
+
+        String expectedMessage = "Invalid copyCaseReferenceNumber supplied";
+        String actualMessage = exception.getMessage();
+
+        assertTrue(actualMessage.contains(expectedMessage));
+    }
+
+    @Test
+    public void testSelectCopyCaseReferenceNumber_ValidCaseRef() throws Exception {
+        CaseDetails caseDetails = new CaseDetails();
+        caseDetails.addContentItem(new CaseSummary().caseReferenceNumber("123"));
+        caseDetails.setTotalElements(1);
+
+        when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(Mono.just(caseDetails));
+
+        ApplicationDetails applicationDetails = new ApplicationDetails();
+        this.mockMvc.perform(get("/application/copy-case-search/{caseRef}/select", "123")
+                .sessionAttr("copyCaseSearchResults", caseDetails)
+                .sessionAttr("applicationDetails", applicationDetails))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/client-search"));
+
+        assertEquals("123", applicationDetails.getCopyCaseReferenceNumber());
     }
 
     private UserDetail buildUser() {

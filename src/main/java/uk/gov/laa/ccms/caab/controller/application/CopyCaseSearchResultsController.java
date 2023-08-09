@@ -6,6 +6,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.COPY_CASE_SEARCH_R
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Collections;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -16,8 +18,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
@@ -68,10 +72,26 @@ public class CopyCaseSearchResultsController {
     }
 
     @GetMapping("/application/copy-case-search/{case-reference-number}/select")
-    public String copyCaseSearchResults(@PathVariable("case-reference-number") String caseReferenceNumber) {
-        log.info("GET /application/copy-case-search/{}/select", caseReferenceNumber);
+    public String selectCopyCaseReferenceNumber(
+        @PathVariable("case-reference-number") String copyCaseReferenceNumber,
+        @SessionAttribute(COPY_CASE_SEARCH_RESULTS) CaseDetails caseDetails,
+        @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails) {
+        log.info("GET /application/copy-case-search/{}/select", copyCaseReferenceNumber);
 
-        return "redirect:/application/TODO";
+        // Validate that the supplied caseRef is one from the search results in the session
+        boolean validCaseRef = Optional.ofNullable(caseDetails.getContent())
+            .orElse(Collections.emptyList())
+            .stream().anyMatch(caseSummary -> caseSummary.getCaseReferenceNumber().equals(copyCaseReferenceNumber));
+
+        if (!validCaseRef) {
+            log.error("Invalid copyCaseReferenceNumber {} supplied", copyCaseReferenceNumber);
+            throw new CaabApplicationException("Invalid copyCaseReferenceNumber supplied");
+        }
+
+        // Store the selected caseReferenceNumber in the ApplicationDetails.
+        // This will be used at the point the Application is created.
+        applicationDetails.setCopyCaseReferenceNumber(copyCaseReferenceNumber);
+        return "redirect:/application/client-search";
     }
 }
 
