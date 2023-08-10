@@ -40,14 +40,14 @@ public class CopyCaseSearchResultsController {
 
     private final SearchConstants searchConstants;
 
-    @GetMapping("/application/copy-case-search/results")
+    @GetMapping("/application/copy-case/results")
     public String copyCaseSearchResults(@RequestParam(value = "page", defaultValue = "0") int page,
                                       @RequestParam(value = "size", defaultValue = "10") int size,
                                       @ModelAttribute(COPY_CASE_SEARCH_CRITERIA) CopyCaseSearchCriteria copyCaseSearchCriteria,
                                       @SessionAttribute(USER_DETAILS) UserDetail user,
                                       HttpServletRequest request,
                                       Model model) {
-        log.info("GET /application/copy-case-search/results");
+        log.info("GET /application/copy-case/results");
 
         // Get the Copy Case Status
         CaseStatusLookupValueDetail copyCaseStatus = dataService.getCopyCaseStatus();
@@ -71,12 +71,12 @@ public class CopyCaseSearchResultsController {
         }
     }
 
-    @GetMapping("/application/copy-case-search/{case-reference-number}/select")
+    @GetMapping("/application/copy-case/{case-reference-number}/confirm")
     public String selectCopyCaseReferenceNumber(
         @PathVariable("case-reference-number") String copyCaseReferenceNumber,
         @SessionAttribute(COPY_CASE_SEARCH_RESULTS) CaseDetails caseDetails,
         @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails) {
-        log.info("GET /application/copy-case-search/{}/select", copyCaseReferenceNumber);
+        log.info("GET /application/copy-case/{}/confirm", copyCaseReferenceNumber);
 
         // Validate that the supplied caseRef is one from the search results in the session
         boolean validCaseRef = Optional.ofNullable(caseDetails.getContent())

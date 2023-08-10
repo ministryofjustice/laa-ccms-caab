@@ -70,7 +70,7 @@ public class CopyCaseSearchControllerTest {
 
         when(dataService.getFeeEarners(user.getProvider().getId())).thenReturn(Mono.just(feeEarnerDetail));
 
-        this.mockMvc.perform(get("/application/copy-case-search")
+        this.mockMvc.perform(get("/application/copy-case/search")
                 .sessionAttr("user", user))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -97,7 +97,7 @@ public class CopyCaseSearchControllerTest {
 
         when(dataService.getFeeEarners(user.getProvider().getId())).thenReturn(Mono.just(feeEarnerDetail));
 
-        this.mockMvc.perform(post("/application/copy-case-search")
+        this.mockMvc.perform(post("/application/copy-case/search")
                 .sessionAttr("user", user))
             .andDo(print())
             .andExpect(status().isOk())
@@ -112,12 +112,12 @@ public class CopyCaseSearchControllerTest {
     public void testPostCopyCaseSearch_RedirectsToResults() throws Exception {
         final UserDetail user = buildUser();
 
-        this.mockMvc.perform(post("/application/copy-case-search")
+        this.mockMvc.perform(post("/application/copy-case/search")
                 .sessionAttr("user", user)
                 .flashAttr(COPY_CASE_SEARCH_CRITERIA, new CopyCaseSearchCriteria()))
             .andDo(print())
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/copy-case-search/results"));
+            .andExpect(redirectedUrl("/application/copy-case/results"));
 
         verify(dataService, never()).getFeeEarners(user.getProvider().getId());
     }

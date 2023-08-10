@@ -80,7 +80,7 @@ public class CopyCaseSearchResultsControllerTest {
         when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(Mono.just(caseDetails));
 
         CopyCaseSearchCriteria copyCaseSearchCriteria = new CopyCaseSearchCriteria();
-        this.mockMvc.perform(get("/application/copy-case-search/results")
+        this.mockMvc.perform(get("/application/copy-case/results")
                 .sessionAttr("user", user)
                 .sessionAttr("copyCaseSearchCriteria", copyCaseSearchCriteria))
             .andExpect(status().isOk())
@@ -101,7 +101,7 @@ public class CopyCaseSearchResultsControllerTest {
         when(dataService.getCopyCaseStatus()).thenReturn(new CaseStatusLookupValueDetail().code(COPY_STATUS_CODE));
 
         CopyCaseSearchCriteria copyCaseSearchCriteria = new CopyCaseSearchCriteria();
-        this.mockMvc.perform(get("/application/copy-case-search/results")
+        this.mockMvc.perform(get("/application/copy-case/results")
                         .sessionAttr("user", user)
                         .sessionAttr("copyCaseSearchCriteria", copyCaseSearchCriteria))
                 .andExpect(status().isOk())
@@ -120,7 +120,7 @@ public class CopyCaseSearchResultsControllerTest {
 
         when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(Mono.just(caseDetails));
 
-        this.mockMvc.perform(get("/application/copy-case-search/results")
+        this.mockMvc.perform(get("/application/copy-case/results")
                         .sessionAttr("user", user)
                         .sessionAttr("copyCaseSearchCriteria", new CopyCaseSearchCriteria()))
                 .andExpect(status().isOk())
@@ -135,7 +135,7 @@ public class CopyCaseSearchResultsControllerTest {
 
         when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(Mono.just(caseDetails));
 
-        this.mockMvc.perform(get("/application/copy-case-search/results")
+        this.mockMvc.perform(get("/application/copy-case/results")
                         .sessionAttr("user", user)
                         .sessionAttr("copyCaseSearchCriteria", new CopyCaseSearchCriteria()))
                 .andExpect(status().isOk())
@@ -145,7 +145,7 @@ public class CopyCaseSearchResultsControllerTest {
     @Test
     public void testSelectCopyCaseReferenceNumber_InvalidCaseRef() {
         Exception exception = assertThrows(ServletException.class, () ->
-            this.mockMvc.perform(get("/application/copy-case-search/{caseRef}/select", "123")
+            this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm", "123")
                     .sessionAttr("copyCaseSearchResults", new CaseDetails())
                     .sessionAttr("applicationDetails", new ApplicationDetails())));
 
@@ -166,7 +166,7 @@ public class CopyCaseSearchResultsControllerTest {
         when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(Mono.just(caseDetails));
 
         ApplicationDetails applicationDetails = new ApplicationDetails();
-        this.mockMvc.perform(get("/application/copy-case-search/{caseRef}/select", "123")
+        this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm", "123")
                 .sessionAttr("copyCaseSearchResults", caseDetails)
                 .sessionAttr("applicationDetails", applicationDetails))
             .andExpect(status().is3xxRedirection())

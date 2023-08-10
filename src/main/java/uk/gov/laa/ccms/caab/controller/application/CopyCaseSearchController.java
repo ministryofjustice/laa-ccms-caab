@@ -40,12 +40,12 @@ public class CopyCaseSearchController {
         return new CopyCaseSearchCriteria();
     }
 
-    @GetMapping("/application/copy-case-search")
+    @GetMapping("/application/copy-case/search")
     public String copyCaseSearch(
         @ModelAttribute(COPY_CASE_SEARCH_CRITERIA) CopyCaseSearchCriteria searchCriteria,
         @SessionAttribute(USER_DETAILS) UserDetail userDetails,
         Model model){
-        log.info("GET /application/application-copy-case-search");
+        log.info("GET /application/copy-case/search");
 
         model.addAttribute("feeEarners",
             getFeeEarners(userDetails.getProvider().getId()));
@@ -55,13 +55,13 @@ public class CopyCaseSearchController {
         return "/application/application-copy-case-search";
     }
 
-    @PostMapping("/application/copy-case-search")
+    @PostMapping("/application/copy-case/search")
     public String copyCaseSearch(
         @ModelAttribute(COPY_CASE_SEARCH_CRITERIA) CopyCaseSearchCriteria searchCriteria,
         @SessionAttribute(USER_DETAILS) UserDetail userDetails,
         BindingResult bindingResult,
         Model model){
-        log.info("POST /application/application-copy-case-search: criteria={}", searchCriteria.toString());
+        log.info("POST /application/copy-case/search: criteria={}", searchCriteria.toString());
 
         searchCriteriaValidator.validate(searchCriteria, bindingResult);
         if(bindingResult.hasErrors()) {
@@ -71,7 +71,7 @@ public class CopyCaseSearchController {
                 userDetails.getProvider().getOffices());
             return "/application/application-copy-case-search";
         }
-        return "redirect:/application/copy-case-search/results";
+        return "redirect:/application/copy-case/results";
     }
 
     private List<ContactDetail> getFeeEarners(Integer providerId) {
