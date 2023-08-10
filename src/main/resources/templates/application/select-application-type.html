@@ -27,7 +27,7 @@
                                     What is your application type?
                                 </h2>
                             </legend>
-                            <span th:if="${#fields.hasErrors('applicationTypeId')}" th:errors="*{applicationTypeCategory}" class="govuk-error-message"></span>
+                            <span th:if="${#fields.hasErrors('applicationTypeCategory')}" th:errors="*{applicationTypeCategory}" class="govuk-error-message"></span>
                             <select class="govuk-select" data-module="govuk-select" th:field="*{applicationTypeCategory}" th:errorclass="govuk-select--error" id="applicationTypeCategory" name="applicationTypeCategory" >
                                 <option value="">Please Select</option>
                                 <option th:each="type : ${applicationTypes}" th:value="${type.code}" th:text="${type.description}"></option>

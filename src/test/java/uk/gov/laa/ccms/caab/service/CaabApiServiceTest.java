@@ -42,7 +42,7 @@ public class CaabApiServiceTest {
     @Test
     void createApplication_success() {
         String loginId = "user1";
-        ApplicationDetail application = new ApplicationDetail(); // Populate as needed
+        ApplicationDetail application = new ApplicationDetail(null, null, null, null); // Populate as needed
         String expectedUri = "/applications";
 
         when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);

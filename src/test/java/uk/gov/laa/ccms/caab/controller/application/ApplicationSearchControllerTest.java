@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.ApplicationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ApplicationSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.data.model.*;
@@ -98,21 +99,16 @@ public class ApplicationSearchControllerTest {
     @Test
     public void testPostApplicationSearchHandlesValidationSuccess() throws Exception {
         final UserDetail user = buildUser();
-        final FeeEarnerDetail feeEarnerDetail = new FeeEarnerDetail().addContentItem(
-                new ContactDetail().id(123).name("A Fee Earner"));
+        final ApplicationSearchCriteria applicationSearchCriteria = new ApplicationSearchCriteria();
 
-        // Set up the dataService to return feeEarnerDetail when getFeeEarners is called
-        when(dataService.getFeeEarners(user.getProvider().getId())).thenReturn(Mono.just(feeEarnerDetail));
-
-        // Call the POST request with valid search criteria
         this.mockMvc.perform(post("/application/search")
                         .sessionAttr("user", user)
-                        .param("searchCriteriaField", "someValue")) // Add any valid search criteria here
+                        .flashAttr("applicationSearchCriteria", applicationSearchCriteria))
+                .andDo(print())
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/application/application-search-results"));
 
-        // Verify that the validator was called once
-        verify(validator, times(1)).validate(any(), any());
+        verify(dataService, times(0)).getFeeEarners(user.getProvider().getId());
     }
 
     private UserDetail buildUser() {
