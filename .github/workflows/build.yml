@@ -5,7 +5,7 @@
 # This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
 
-name: Java CI with Gradle
+name: Civil Applications And Billing Pipeline
 
 on:
   push:
@@ -17,7 +17,7 @@ permissions:
   packages: write
 
 jobs:
-  build-test-publish:
+  build-test:
 
     runs-on: ubuntu-latest
 
@@ -51,7 +51,7 @@ jobs:
 
 
   ecr:
-    needs: build-test-publish
+    needs: build-test
     runs-on: ubuntu-latest
     permissions:
       id-token: write # for requesting jwt
@@ -79,6 +79,10 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: ${{ vars.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
+      - name: delete artifact
+        uses: geekyeggo/delete-artifact@v2
+        with:
+          name: caab-jar
 
   deploy-dev:
     runs-on: ubuntu-latest
