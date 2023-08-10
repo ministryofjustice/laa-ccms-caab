@@ -22,7 +22,7 @@ spec:
         - laa-ccms-caab-ui.apps.live.cloud-platform.service.justice.gov.uk
   rules:
     - host: laa-ccms-caab-ui.apps.live.cloud-platform.service.justice.gov.uk
-    - http:
+      http:
         paths:
           - path: /
             pathType: ImplementationSpecific
