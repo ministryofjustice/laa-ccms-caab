@@ -18,6 +18,8 @@ import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
+import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
@@ -371,7 +373,7 @@ class SoaGatewayServiceTest {
 
         String powers = soaGatewayService.getContractualDevolvedPowers(providerFirmId, officeId, loginId, userType, categoryOfLaw);
 
-        assertEquals(null, powers);
+        assertNull(powers);
     }
 
     @Test
