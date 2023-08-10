@@ -1,7 +1,9 @@
 package uk.gov.laa.ccms.caab.model;
 
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
+@Data
 @RequiredArgsConstructor
 public class ClientResultRowDisplay {
 
@@ -10,48 +12,6 @@ public class ClientResultRowDisplay {
     private String surnameAtBirth;
     private String postalCode;
     private String clientReferenceNumber;
-
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getSurname() {
-        return surname;
-    }
-
-    public void setSurname(String surname) {
-        this.surname = surname;
-    }
-
-    public String getSurnameAtBirth() {
-        return surnameAtBirth;
-    }
-
-    public void setSurnameAtBirth(String surnameAtBirth) {
-        this.surnameAtBirth = surnameAtBirth;
-    }
-
-    public String getPostalCode() {
-        return postalCode;
-    }
-
-    public void setPostalCode(String postalCode) {
-        this.postalCode = postalCode;
-    }
-
-    public String getClientReferenceNumber() {
-        return clientReferenceNumber;
-    }
-
-    public void setClientReferenceNumber(String clientReferenceNumber) {
-        this.clientReferenceNumber = clientReferenceNumber;
-    }
-
 
     public String getPostCodeDistrict() {
         String postCodeDistrict = null;
