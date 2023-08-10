@@ -32,14 +32,14 @@
             </tr>
             </thead>
             <tbody class="govuk-table__body">
-            <tr class="govuk-table__row" th:each="client , rowStat : ${clientSearchResults.content}">
+            <tr class="govuk-table__row" th:each="client : ${clientSearchResults.content}">
                 <td class="govuk-table__cell" th:text="${client.firstName}"></td>
                 <td class="govuk-table__cell" th:text="${client.surname}"></td>
                 <td class="govuk-table__cell" th:text="${client.surnameAtBirth}"></td>
-                <td class="govuk-table__cell" th:text="${client.postalCode}"></td>
-                <td class="govuk-table__cell" th:text="${client.caseReferenceNumber}"></td>
+                <td class="govuk-table__cell" th:text="${client.getPostCodeDistrict()}"></td>
+                <td class="govuk-table__cell" th:text="${client.clientReferenceNumber}"></td>
                 <td class="govuk-table__cell">
-                    <a th:href="@{/application/client/{id}/confirm(id=${rowStat.index})}" class="govuk-link">Use this record</a>
+                    <a th:href="@{/application/client/{id}/confirm(id=${client.clientReferenceNumber})}" class="govuk-link">Use this record</a>
                 </td>
             </tr>
             </tbody>

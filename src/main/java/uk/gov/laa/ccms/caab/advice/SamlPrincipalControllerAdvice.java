@@ -3,7 +3,6 @@ package uk.gov.laa.ccms.caab.advice;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.saml2.provider.service.authentication.Saml2AuthenticatedPrincipal;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;

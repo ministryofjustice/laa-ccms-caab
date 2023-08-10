@@ -5,10 +5,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
-import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
-import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.data.model.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -45,7 +42,7 @@ public class DataService {
 
         return dataWebClient
                 .get()
-                .uri(builder -> builder.path("/common-lookup-values")
+                .uri(builder -> builder.path("/lookup/common")
                         .queryParamIfPresent("type", Optional.ofNullable(type))
                         .queryParamIfPresent("code", Optional.ofNullable(code))
                         .queryParamIfPresent("sort", Optional.ofNullable(sort))
@@ -111,6 +108,17 @@ public class DataService {
             .retrieve()
             .bodyToMono(FeeEarnerDetail.class)
             .onErrorResume(e -> dataServiceErrorHandler.handleFeeEarnersError(providerId, e));
+    }
+
+    public Mono<AmendmentTypeLookupDetail> getAmendmentTypes(String applicationType) {
+        return dataWebClient
+                .get()
+                .uri(builder -> builder.path("/lookup/amendment-types")
+                        .queryParamIfPresent("application-type", Optional.ofNullable(applicationType))
+                        .build())
+                .retrieve()
+                .bodyToMono(AmendmentTypeLookupDetail.class)
+                .onErrorResume(e -> dataServiceErrorHandler.handleAmendmentTypeLookupError(applicationType, e));
     }
 
 }

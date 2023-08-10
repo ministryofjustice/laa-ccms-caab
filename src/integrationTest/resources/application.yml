@@ -33,3 +33,7 @@ laa:
       hostname: localhost
       port: 8124
       url: http://${laa.ccms.soa-gateway-api.hostname}:${laa.ccms.soa-gateway-api.port}
+    caab-api:
+      hostname: localhost
+      port: 8125
+      url: http://${laa.ccms.caab-api.hostname}:${laa.ccms.caab-api.port}

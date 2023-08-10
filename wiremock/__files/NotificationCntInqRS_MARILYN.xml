@@ -2,9 +2,8 @@
   xmlns:case="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIO">
   <soapenv:Header/>
   <soapenv:Body>
-    <NotificationCntInqRS xmlns:msg="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIM"
-      xmlns:oracle-xsl-mapper="http://www.oracle.com/xsl/mapper/schemas"
-      xmlns="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIM">
+      <NotificationCntInqRS xmlns:msg="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIM"
+                            xmlns="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIM">
       <header:HeaderRS xmlns:header="http://legalservices.gov.uk/Enterprise/Common/1.0/Header">
         <header:RequestDetails>
           <header:Language>ENG</header:Language>

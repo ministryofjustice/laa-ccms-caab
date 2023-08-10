@@ -72,7 +72,7 @@ public class ApplicationTypeControllerTest {
     @Test
     public void testGetApplicationTypeHandlesExceptionalFunding() throws Exception {
         final ApplicationDetails applicationDetails = new ApplicationDetails();
-        applicationDetails.setApplicationTypeId("test");
+        applicationDetails.setApplicationTypeCategory("ECF");
         applicationDetails.setExceptionalFunding(true);
 
         this.mockMvc.perform(get("/application/application-type")
@@ -89,7 +89,7 @@ public class ApplicationTypeControllerTest {
 
         doAnswer(invocation -> {
             Errors errors = (Errors) invocation.getArguments()[1];
-            errors.rejectValue("applicationTypeId", "required.applicationTypeId", "Please select an application type.");
+            errors.rejectValue("applicationTypeCategory", "required.applicationTypeCategory", "Please select an application type.");
             return null;
         }).when(applicationDetailsValidator).validateApplicationTypeCategory(any(), any());
 
@@ -103,7 +103,7 @@ public class ApplicationTypeControllerTest {
     @Test
     public void testPostApplicationTypeIsSuccessful() throws Exception {
         final ApplicationDetails applicationDetails = new ApplicationDetails();
-        applicationDetails.setApplicationTypeId("test");
+        applicationDetails.setApplicationTypeCategory("ECF");
 
         this.mockMvc.perform(post("/application/application-type")
                         .flashAttr("applicationDetails", applicationDetails))

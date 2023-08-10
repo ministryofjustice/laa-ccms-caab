@@ -1,29 +1,24 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
-
-import java.util.Arrays;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.SessionAttribute;
-import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.bind.annotation.*;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+
+import java.util.List;
+
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 @Controller
 @RequiredArgsConstructor
@@ -66,7 +61,7 @@ public class CategoryOfLawController {
         } else if (applicationDetails.isExceptionalFunding()) {
             // Exception Funding has been selected, so initialise the ApplicationType to ECF
             // and bypass the ApplicationType screen.
-            applicationDetails.setApplicationTypeId(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
+            applicationDetails.setApplicationTypeCategory(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
             viewName = "redirect:/application/client-search";
         }
 

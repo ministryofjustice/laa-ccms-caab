@@ -1,18 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
-import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,13 +13,18 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.ApplicationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ApplicationSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.data.model.ContactDetail;
-import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
-import uk.gov.laa.ccms.data.model.OfficeDetail;
-import uk.gov.laa.ccms.data.model.ProviderDetail;
-import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.data.model.*;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -102,6 +94,21 @@ public class ApplicationSearchControllerTest {
             .andExpect(model().attribute("offices", user.getProvider().getOffices()));
 
         verify(dataService, times(1)).getFeeEarners(user.getProvider().getId());
+    }
+
+    @Test
+    public void testPostApplicationSearchHandlesValidationSuccess() throws Exception {
+        final UserDetail user = buildUser();
+        final ApplicationSearchCriteria applicationSearchCriteria = new ApplicationSearchCriteria();
+
+        this.mockMvc.perform(post("/application/search")
+                        .sessionAttr("user", user)
+                        .flashAttr("applicationSearchCriteria", applicationSearchCriteria))
+                .andDo(print())
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/application/application-search-results"));
+
+        verify(dataService, times(0)).getFeeEarners(user.getProvider().getId());
     }
 
     private UserDetail buildUser() {
