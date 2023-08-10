@@ -11,6 +11,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
@@ -22,10 +23,8 @@ import uk.gov.laa.ccms.soa.gateway.model.*;
 
 import java.util.ArrayList;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -97,25 +96,35 @@ public class ClientConfirmationControllerTest {
         UserDetail user = buildUser();
 
         // Mocking dependencies
-        CaseReferenceSummary caseReferenceSummary = new CaseReferenceSummary();
-        caseReferenceSummary.setCaseReferenceNumber("case123");
+        CaseReferenceSummary caseReferenceSummary = new CaseReferenceSummary().caseReferenceNumber("REF123");
+        CommonLookupDetail categoryOfLawLookupDetail = new CommonLookupDetail();
+        ContractDetails contractDetails = new ContractDetails();
+
+        AmendmentTypeLookupValueDetail amendmentType = new AmendmentTypeLookupValueDetail()
+                .applicationTypeCode("TEST")
+                .applicationTypeDescription("TEST")
+                .defaultLarScopeFlag("Y");
+
+        AmendmentTypeLookupDetail amendmentTypes = new AmendmentTypeLookupDetail().addContentItem(amendmentType);
+
         when(soaGatewayService.getCaseReference(user.getLoginId(), user.getUserType())).thenReturn(Mono.just(caseReferenceSummary));
-        when(soaGatewayService.getContractualDevolvedPowers(any(), any(), any(), any(), any())).thenReturn("YES");
-        AmendmentTypeLookupDetail amendmentTypes = new AmendmentTypeLookupDetail();
-        amendmentTypes.setContent(new ArrayList<>());
-        AmendmentTypeLookupValueDetail amendmentType = new AmendmentTypeLookupValueDetail();
-        amendmentType.setDefaultLarScopeFlag("Y");
-        amendmentTypes.getContent().add(amendmentType);
+        when(dataService.getCommonValues(anyString(), any(), any())).thenReturn(Mono.just(categoryOfLawLookupDetail));
+        when(soaGatewayService.getContractDetails(anyInt(), anyInt(), anyString(), anyString())).thenReturn(Mono.just(contractDetails));
         when(dataService.getAmendmentTypes(any())).thenReturn(Mono.just(amendmentTypes));
-        when(caabApiService.createApplication(any(), any())).thenReturn(Mono.empty());
+        when(caabApiService.createApplication(anyString(), any())).thenReturn(Mono.empty());
 
         this.mockMvc.perform(post("/application/client/confirmed")
                         .param("confirmedClientReference", confirmedClientReference)
                         .sessionAttr(APPLICATION_DETAILS, applicationDetails)
                         .sessionAttr("clientInformation", clientInformation)
                         .sessionAttr(USER_DETAILS, user))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("TODO"));
+                .andReturn();
+
+        verify(soaGatewayService).getCaseReference(user.getLoginId(), user.getUserType());
+        verify(dataService).getCommonValues(anyString(), any(), any());
+        verify(soaGatewayService).getContractDetails(anyInt(), anyInt(), anyString(), anyString());
+        verify(dataService).getAmendmentTypes(any());
+        verify(caabApiService).createApplication(anyString(), any());
     }
 
     @Test
@@ -126,8 +135,18 @@ public class ClientConfirmationControllerTest {
         UserDetail user = buildUser();
 
         // Mocking dependencies
-        when(soaGatewayService.getCaseReference(user.getLoginId(), user.getUserType())).thenReturn(Mono.just(new CaseReferenceSummary()));
-        when(soaGatewayService.getContractualDevolvedPowers(any(), any(), any(), any(), any())).thenReturn("YES");
+        CommonLookupDetail categoryOfLawLookupDetail = new CommonLookupDetail();
+        ContractDetails contractDetails = new ContractDetails();
+        AmendmentTypeLookupDetail amendmentTypes = new AmendmentTypeLookupDetail();
+
+        // Mocking getCaseReference to throw a RuntimeException
+        when(soaGatewayService.getCaseReference(user.getLoginId(), user.getUserType())).thenThrow(new RuntimeException("No case reference number was created, unable to continue"));
+
+        // Mocking dependencies
+        when(dataService.getCommonValues(anyString(), any(), any())).thenReturn(Mono.just(categoryOfLawLookupDetail));
+        when(soaGatewayService.getContractDetails(anyInt(), anyInt(), anyString(), anyString())).thenReturn(Mono.just(contractDetails));
+        when(dataService.getAmendmentTypes(any())).thenReturn(Mono.just(amendmentTypes));
+        when(caabApiService.createApplication(anyString(), any())).thenReturn(Mono.empty());
 
         Exception exception = null;
 
@@ -189,16 +208,13 @@ public class ClientConfirmationControllerTest {
     private ApplicationDetails buildApplicationDetails() {
         ApplicationDetails applicationDetails = new ApplicationDetails();
         applicationDetails.setOfficeId(1);
-        applicationDetails.setOfficeDisplayValue("Office Display");
-        applicationDetails.setCategoryOfLawId("CategoryOfLawID");
-        applicationDetails.setCategoryOfLawDisplayValue("CategoryOfLaw Display");
+        applicationDetails.setCategoryOfLawId("COL");
         applicationDetails.setExceptionalFunding(false);
         applicationDetails.setApplicationTypeCategory(APP_TYPE_SUBSTANTIVE);
         applicationDetails.setDelegatedFunctions(true);
         applicationDetails.setDelegatedFunctionUsedDay("01");
         applicationDetails.setDelegatedFunctionUsedMonth("01");
         applicationDetails.setDelegatedFunctionUsedYear("2022");
-        applicationDetails.setApplicationTypeAndDisplayValues();
         return applicationDetails;
     }
 

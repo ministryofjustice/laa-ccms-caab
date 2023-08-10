@@ -57,7 +57,7 @@ repositories {
 dependencies {
 	implementation 'uk.gov.laa.ccms.data:data-api:0.0.1-0e8610d-SNAPSHOT'
 	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.1-2b33df1-SNAPSHOT'
-	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.1-48c4962-SNAPSHOT'
+	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.1-39bfdde-SNAPSHOT'
 
 	//Starters
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
@@ -68,6 +68,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
 	implementation 'org.springframework.boot:spring-boot-devtools'
+
+	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
 	//SAML security
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'

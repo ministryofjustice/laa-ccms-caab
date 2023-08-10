@@ -72,7 +72,7 @@ public class SoaGatewayService {
 
 
 
-    private Mono<ContractDetails> getContractDetails(Integer providerFirmId, Integer officeId,
+    public Mono<ContractDetails> getContractDetails(Integer providerFirmId, Integer officeId,
         String loginId, String userType){
         return soaGatewayWebClient
                 .get()
@@ -114,7 +114,7 @@ public class SoaGatewayService {
      * @param categoryOfLaw the category of law to filter out
      * @return String of the first contractual devolved power.
      */
-    private String filterContractualDevolvedPowers(List<ContractDetail> contractDetails, String categoryOfLaw) {
+    public String filterContractualDevolvedPowers(List<ContractDetail> contractDetails, String categoryOfLaw) {
         return contractDetails != null ? contractDetails.stream()
                 .filter(contract -> categoryOfLaw.equals(contract.getCategoryofLaw()))
                 .map(ContractDetail::getContractualDevolvedPowers)

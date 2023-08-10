@@ -6,22 +6,28 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple4;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.*;
 import uk.gov.laa.ccms.caab.service.CaabApiService;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
-import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
-import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
-import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.caab.util.ApplicationBuilder;
+import uk.gov.laa.ccms.data.model.*;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
 import java.util.Optional;
 
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.*;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING_DISPLAY;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -55,85 +61,55 @@ public class ClientConfirmationController {
 
 
     @PostMapping("/application/client/confirmed")
-    public String clientConfirmed(String confirmedClientReference,
-                                  @SessionAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
-                                  @SessionAttribute("clientInformation") ClientDetail clientInformation,
-                                  @SessionAttribute(USER_DETAILS) UserDetail user) throws ParseException {
+    public Mono<String> clientConfirmed(String confirmedClientReference,
+                                        @SessionAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
+                                        @SessionAttribute("clientInformation") ClientDetail clientInformation,
+                                        @SessionAttribute(USER_DETAILS) UserDetail user) {
         log.info("POST /application/client/confirmed: {}", applicationDetails);
 
         if (!confirmedClientReference.equals(clientInformation.getClientReferenceNumber())) {
             throw new RuntimeException("Client information does not match");
         }
 
-        applicationDetails.setClient(clientInformation);
+        //need to do this first in order to get amendment types
+        ApplicationDetail baseApplication = new ApplicationBuilder()
+                .applicationType(applicationDetails.getApplicationTypeCategory(), applicationDetails.isDelegatedFunctions())
+                .build();
 
-        //get case reference Number
-        CaseReferenceSummary caseReferenceSummary = soaGatewayService.getCaseReference(user.getLoginId(),
-                user.getUserType()).block();
+        // get case reference Number, category of law value, contractual devolved powers, amendment types
+        Mono<Tuple4<CaseReferenceSummary, CommonLookupDetail, ContractDetails, AmendmentTypeLookupDetail>> combinedResult =
+                Mono.zip(soaGatewayService.getCaseReference(user.getLoginId(), user.getUserType()),
+                        dataService.getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW, null, null),
+                        soaGatewayService.getContractDetails(user.getProvider().getId(), applicationDetails.getOfficeId(), user.getLoginId(), user.getUserType()),
+                        dataService.getAmendmentTypes(baseApplication.getApplicationType().getId()));
 
-        //get the case reference
-        String caseReference = Optional.ofNullable(caseReferenceSummary.getCaseReferenceNumber())
-                .orElseThrow(() -> new RuntimeException("No case reference number was created, unable to continue"));
+        return combinedResult.flatMap(tuple -> {
+            CaseReferenceSummary caseReferenceSummary = tuple.getT1();
+            CommonLookupDetail categoryOfLawLookupDetail = tuple.getT2();
+            ContractDetails contractDetails = tuple.getT3();
+            AmendmentTypeLookupDetail amendmentTypes = tuple.getT4();
 
-        ApplicationDetailProvider provider = new ApplicationDetailProvider(user.getProvider().getId().toString())
-                .displayValue(user.getProvider().getName());
+            try {
+                ApplicationDetail application = new ApplicationBuilder(baseApplication)
+                        .caseReference(caseReferenceSummary)
+                        .provider(user)
+                        .client(clientInformation)
+                        .categoryOfLaw(applicationDetails.getCategoryOfLawId(), categoryOfLawLookupDetail)
+                        .office(applicationDetails.getOfficeId(), user.getProvider().getOffices())
+                        .devolvedPowers(contractDetails.getContracts(), applicationDetails)
+                        .larScopeFlag(amendmentTypes)
+                        .status()
+                        .build();
 
-        ApplicationDetailClient client = new ApplicationDetailClient()
-                .firstName(clientInformation.getDetails().getName().getFirstName())
-                .surname(clientInformation.getDetails().getName().getSurname())
-                .reference(clientInformation.getClientReferenceNumber());
+                // Create the application and block until it's done
+                return caabApiService.createApplication(user.getLoginId(), application)
+                        .doOnNext(createdApplication -> log.info("Application details submitted: {}", createdApplication))
+                        .thenReturn("redirect:TODO");
 
-        StringDisplayValue categoryOfLaw = new StringDisplayValue()
-                .id(applicationDetails.getCategoryOfLawId())
-                .displayValue(applicationDetails.getCategoryOfLawDisplayValue());
-
-        ApplicationDetail application = new ApplicationDetail(caseReference, provider, categoryOfLaw, client);
-
-        IntDisplayValue office = new IntDisplayValue()
-                .id(applicationDetails.getOfficeId())
-                .displayValue(applicationDetails.getOfficeDisplayValue());
-        application.setOffice(office);
-
-        //get devolved powers
-        String contractualDevolvedPower = soaGatewayService.getContractualDevolvedPowers(user.getProvider().getId(),
-                applicationDetails.getOfficeId(),
-                user.getLoginId(),
-                user.getUserType(),
-                application.getCategoryOfLaw().getId());
-
-        //Delegated functions/devolved powers
-        ApplicationDetailDevolvedPowers devolvedPowers = new ApplicationDetailDevolvedPowers();
-        devolvedPowers.setContractFlag(contractualDevolvedPower);
-        devolvedPowers.setUsed(applicationDetails.isDelegatedFunctions());
-        if (applicationDetails.isDelegatedFunctions()){
-            devolvedPowers.setDateUsed(applicationDetails.getDelegatedFunctionDate());
-        }
-        application.setDevolvedPowers(devolvedPowers);
-
-        //Application type
-        StringDisplayValue applicationType = new StringDisplayValue()
-                .id(applicationDetails.getApplicationTypeId())
-                .displayValue(applicationDetails.getApplicationTypeDisplayValue());
-        application.setApplicationType(applicationType);
-
-        //call data api for amendment types - LAR SCOPE Flag
-        AmendmentTypeLookupDetail amendmentTypes = dataService.getAmendmentTypes(applicationDetails.getApplicationTypeId()).block();
-        if (amendmentTypes.getContent() == null || amendmentTypes.getContent().isEmpty())
-            throw new RuntimeException("No amendment type available, unable to continue");
-        AmendmentTypeLookupValueDetail amendmentType = amendmentTypes.getContent().get(0);
-        application.setLarScopeFlag(amendmentType.getDefaultLarScopeFlag());
-
-        //Status
-        StringDisplayValue status = new StringDisplayValue()
-                .id(STATUS_UNSUBMITTED_ACTUAL_VALUE)
-                .displayValue(STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY);
-        application.setStatus(status);
-
-        caabApiService.createApplication(user.getLoginId(), application).block();
-
-        log.info("Application details to submit: {}", application);
-
-
-        return "redirect:TODO";
+            } catch (ParseException e) {
+                return Mono.error(new RuntimeException(e));
+            }
+        });
     }
+
 }

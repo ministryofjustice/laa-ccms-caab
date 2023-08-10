@@ -44,8 +44,6 @@ public class DelegatedFunctionsController {
             return "/application/select-delegated-functions";
         }
 
-        applicationDetails.setApplicationTypeAndDisplayValues();
-
         return "redirect:/application/client-search";
     }
 

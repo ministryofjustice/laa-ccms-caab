@@ -92,8 +92,6 @@ public class DelegatedFunctionsControllerTest {
                 .andDo(print())
                 .andExpect(redirectedUrl("/application/client-search"))
                 .andReturn();
-
-        assertEquals(expectedApplicationType, applicationDetails.getApplicationTypeId());
     }
 
 
