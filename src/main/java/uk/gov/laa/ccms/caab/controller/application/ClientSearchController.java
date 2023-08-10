@@ -40,6 +40,8 @@ public class ClientSearchController {
                                @ModelAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
                                Model model) {
         log.info("GET /application/client/search: {}", clientSearchCriteria);
+        applicationDetails.setApplicationCreated(false);
+        applicationDetails.setAgreementAccepted(false);
 
         populateDropdowns(model);
         return "/application/application-client-search";
