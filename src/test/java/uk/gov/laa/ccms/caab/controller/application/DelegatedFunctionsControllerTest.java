@@ -90,7 +90,7 @@ public class DelegatedFunctionsControllerTest {
         this.mockMvc.perform(post("/application/delegated-functions")
                         .flashAttr("applicationDetails", applicationDetails))
                 .andDo(print())
-                .andExpect(redirectedUrl("/application/client-search"))
+                .andExpect(redirectedUrl("/application/client/search"))
                 .andReturn();
     }
 

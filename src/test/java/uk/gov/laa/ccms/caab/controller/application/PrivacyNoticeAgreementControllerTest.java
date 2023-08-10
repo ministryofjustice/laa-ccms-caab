@@ -61,7 +61,7 @@ public class PrivacyNoticeAgreementControllerTest {
     @Test
     public void testPostPrivacyNoticeAgreement_ValidationSuccess_NewClient() throws Exception {
         ApplicationDetails applicationDetails = new ApplicationDetails();
-        applicationDetails.setClient(null);
+        applicationDetails.setApplicationCreated(false);
         applicationDetails.setAgreementAccepted(true);
 
         this.mockMvc.perform(post("/application/agreement")
@@ -75,9 +75,8 @@ public class PrivacyNoticeAgreementControllerTest {
     @Test
     public void testPostPrivacyNoticeAgreement_ValidationSuccess_ExistingClient() throws Exception {
         ApplicationDetails applicationDetails = new ApplicationDetails();
-        applicationDetails.setClient(new ClientDetail());
+        applicationDetails.setApplicationCreated(true);
         applicationDetails.setAgreementAccepted(true);
-
 
         this.mockMvc.perform(post("/application/agreement")
                         .sessionAttr(SessionConstants.APPLICATION_DETAILS, applicationDetails))
@@ -90,7 +89,6 @@ public class PrivacyNoticeAgreementControllerTest {
     @Test
     public void testPostPrivacyNoticeAgreement_ValidationError() throws Exception {
         ApplicationDetails applicationDetails = new ApplicationDetails();
-        applicationDetails.setClient(null);
         applicationDetails.setAgreementAccepted(false);
 
         doAnswer(invocation -> {

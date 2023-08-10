@@ -65,5 +65,15 @@ public class ApplicationDetails {
      */
     private String delegatedFunctionUsedYear;
 
+    /**
+     * The option for privacy notice agreement
+     */
+    private boolean agreementAccepted = false;
+
+    /**
+     * The boolean to control the routing after the privacy notice agreement
+     */
+    private boolean applicationCreated = false;
+
 }
 

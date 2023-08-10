@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a href="/application/client-search" class="govuk-back-link">Return to client search</a>
+        <a href="/application/client/search" class="govuk-back-link">Return to client search</a>
     </div>
     <div id="main-content">
         <span class="govuk-caption-l">About your application</span>
@@ -45,7 +45,7 @@
             </tbody>
         </table>
         <nav th:replace="~{partials/pagination :: pagination(page=${clientSearchResults})}"></nav>
-        <form action="#" th:action="@{/application/client-search/results}" method="post">
+        <form action="#" th:action="@{/application/client/results}" method="post">
             <h2 class="govuk-heading-m">
                 Register new client
             </h2>

@@ -63,7 +63,7 @@ public class ClientSearchResultsControllerTest {
 
         when(soaGatewayService.getClients(any(), any(), any(), any(), any())).thenReturn(Mono.just(clientDetails));
 
-        this.mockMvc.perform(get("/application/client-search/results")
+        this.mockMvc.perform(get("/application/client/results")
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
@@ -78,7 +78,7 @@ public class ClientSearchResultsControllerTest {
 
         when(soaGatewayService.getClients(any(), any(), any(), any(), any())).thenReturn(Mono.just(clientDetails));
 
-        this.mockMvc.perform(get("/application/client-search/results")
+        this.mockMvc.perform(get("/application/client/results")
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
@@ -93,7 +93,7 @@ public class ClientSearchResultsControllerTest {
 
         when(soaGatewayService.getClients(any(), any(), any(), any(), any())).thenReturn(Mono.just(clientDetails));
 
-        this.mockMvc.perform(get("/application/client-search/results")
+        this.mockMvc.perform(get("/application/client/results")
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
@@ -102,7 +102,7 @@ public class ClientSearchResultsControllerTest {
 
     @Test
     public void testClientSearch_Post() throws Exception {
-        this.mockMvc.perform(post("/application/client-search/results")
+        this.mockMvc.perform(post("/application/client/results")
                         .sessionAttr("clientSearchResults", new ClientResultsDisplay()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/application/agreement"));
@@ -112,7 +112,7 @@ public class ClientSearchResultsControllerTest {
     public void testClientSearchResults_NullResults() throws Exception {
         when(soaGatewayService.getClients(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
 
-        this.mockMvc.perform(get("/application/client-search/results")
+        this.mockMvc.perform(get("/application/client/results")
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
@@ -126,7 +126,7 @@ public class ClientSearchResultsControllerTest {
 
         when(soaGatewayService.getClients(any(), any(), any(), any(), any())).thenReturn(Mono.just(clientDetails));
 
-        this.mockMvc.perform(get("/application/client-search/results")
+        this.mockMvc.perform(get("/application/client/results")
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())

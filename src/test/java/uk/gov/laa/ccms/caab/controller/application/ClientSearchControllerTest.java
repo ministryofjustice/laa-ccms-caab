@@ -63,7 +63,7 @@ public class ClientSearchControllerTest {
 
     @Test
     public void testClientSearch_Get() throws Exception {
-        this.mockMvc.perform(get("/application/client-search")
+        this.mockMvc.perform(get("/application/client/search")
                         .flashAttr("applicationDetails", new ApplicationDetails())
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
@@ -84,7 +84,7 @@ public class ClientSearchControllerTest {
                     "Please complete 'First name'.");
             return null;
         }).when(clientSearchCriteriaValidator).validate(any(), any());
-        this.mockMvc.perform(post("/application/client-search")
+        this.mockMvc.perform(post("/application/client/search")
                         .flashAttr("clientSearchCriteria", clientSearchCriteria)
                         .sessionAttr("user", user))
                 .andDo(print())
@@ -99,11 +99,11 @@ public class ClientSearchControllerTest {
     public void testClientSearch_Post_Successful() throws Exception {
         ClientSearchCriteria clientSearchCriteria = buildClientSearchDetails();
 
-        this.mockMvc.perform(post("/application/client-search")
+        this.mockMvc.perform(post("/application/client/search")
                         .flashAttr("clientSearchCriteria", clientSearchCriteria)
                         .sessionAttr("user", user))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/application/client-search/results"));
+                .andExpect(redirectedUrl("/application/client/results"));
     }
 
     private UserDetail buildUser() {

@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -103,7 +104,10 @@ public class ClientConfirmationController {
 
                 // Create the application and block until it's done
                 return caabApiService.createApplication(user.getLoginId(), application)
-                        .doOnNext(createdApplication -> log.info("Application details submitted: {}", createdApplication))
+                        .doOnNext(createdApplication -> {
+                            log.info("Application details submitted: {}", createdApplication);
+                            applicationDetails.setApplicationCreated(true);
+                        })
                         .thenReturn("redirect:/application/agreement");
 
             } catch (ParseException e) {

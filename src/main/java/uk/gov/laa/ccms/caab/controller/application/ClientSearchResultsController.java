@@ -26,14 +26,14 @@ public class ClientSearchResultsController {
 
     private final ClientResultDisplayMapper clientResultDisplayMapper;
 
-    @GetMapping("/application/client-search/results")
+    @GetMapping("/application/client/results")
     public String clientSearchResults(@RequestParam(value = "page", defaultValue = "0") int page,
                                       @RequestParam(value = "size", defaultValue = "10") int size,
                                       @ModelAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
                                       @SessionAttribute(USER_DETAILS) UserDetail user,
                                       HttpServletRequest request,
                                       Model model) {
-        log.info("GET /application/client-search/results");
+        log.info("GET /application/client/results");
 
         ClientDetails clientSearchResults = soaGatewayService.getClients(clientSearchCriteria, user.getLoginId(),
                 user.getUserType(), page, size).block();
@@ -53,11 +53,14 @@ public class ClientSearchResultsController {
         }
     }
 
-    @PostMapping("/application/client-search/results")
-    public String clientSearch(@ModelAttribute(CLIENT_SEARCH_RESULTS) ClientResultsDisplay clientSearchResults) {
-        log.info("POST /application/client-search/results");
-        applicationDetails.setClient(null);
-        applicationDetails.setAgreementAccepted(false);
+    @PostMapping("/application/client/results")
+    public String clientSearch(@ModelAttribute(CLIENT_SEARCH_RESULTS) ClientResultsDisplay clientSearchResults,
+                                @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails) {
+        log.info("POST /application/client/results");
+
+        //a post only occurs when register new client has been clicked
+        //if so we want to amend application created to false, so they get redirected correctly after the privacy notice
+        applicationDetails.setApplicationCreated(false);
 
         return "redirect:/application/agreement";
     }

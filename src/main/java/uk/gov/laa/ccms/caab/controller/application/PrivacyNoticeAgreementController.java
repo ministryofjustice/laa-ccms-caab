@@ -37,7 +37,7 @@ public class PrivacyNoticeAgreementController {
         if (bindingResult.hasErrors()) {
             return "application/privacy-notice-agreement";
         }else {
-            if (applicationDetails.getClient() != null){
+            if (applicationDetails.isApplicationCreated()){
                 //using an existing client
                 return "redirect:/application/summary";
             } else {
