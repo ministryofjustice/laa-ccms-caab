@@ -1,15 +1,17 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: laa-ccms-civil-service
+  name: laa-ccms-civil-caab-ui-service
+  namespace: laa-ccms-civil
+  labels:
+    app.kubernetes.io/name: caab-ui
 spec:
   ports:
-    - port: 5000
-      name: laa-ccms-civil
-      protocol: TCP
+    - protocol: TCP
+      port: 5000
       targetPort: 8080
   selector:
-    app: laa-ccms-civil-dev
+    app.kubernetes.io/name: caab-ui
 
 
 
