@@ -7,6 +7,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
+import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
+import uk.gov.laa.ccms.caab.model.ClientResultsDisplay;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
@@ -20,6 +22,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.*;
 public class ClientSearchResultsController {
 
     private final SoaGatewayService soaGatewayService;
+
+    private final ClientResultDisplayMapper clientResultDisplayMapper;
 
     @GetMapping("/application/client-search/results")
     public String clientSearchResults(@RequestParam(value = "page", defaultValue = "0") int page,
@@ -39,7 +43,9 @@ public class ClientSearchResultsController {
             }
             String currentUrl = request.getRequestURL().toString();
             model.addAttribute("currentUrl", currentUrl);
-            model.addAttribute(CLIENT_SEARCH_RESULTS, clientSearchResults);
+
+            model.addAttribute(CLIENT_SEARCH_RESULTS, clientResultDisplayMapper.toClientResultsDisplay(clientSearchResults));
+
             return "/application/application-client-search-results";
         } else {
             return "/application/application-client-search-no-results";
@@ -47,7 +53,7 @@ public class ClientSearchResultsController {
     }
 
     @PostMapping("/application/client-search/results")
-    public String clientSearch(@ModelAttribute(CLIENT_SEARCH_RESULTS) ClientDetails clientSearchResults) {
+    public String clientSearch(@ModelAttribute(CLIENT_SEARCH_RESULTS) ClientResultsDisplay clientSearchResults) {
         log.info("POST /application/client-search/results");
 
         return "redirect:/application/TODO";

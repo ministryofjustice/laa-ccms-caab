@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -9,24 +10,21 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple4;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
-import uk.gov.laa.ccms.caab.model.*;
+import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.service.CaabApiService;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.caab.util.ApplicationBuilder;
-import uk.gov.laa.ccms.data.model.*;
+import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Optional;
 
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.*;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING_DISPLAY;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -44,17 +42,20 @@ public class ClientConfirmationController {
 
     private final DataService dataService;
 
+    private final ClientResultDisplayMapper clientResultDisplayMapper;
+
     @GetMapping("/application/client/{client-reference-number}/confirm")
     public String clientConfirm(@PathVariable("client-reference-number") String clientReferenceNumber,
                                 @SessionAttribute(USER_DETAILS) UserDetail user,
-                                Model model) {
+                                Model model, HttpSession session) {
         log.info("GET /application/client/{}/confirm", clientReferenceNumber);
 
         ClientDetail clientInformation = soaGatewayService.getClient(clientReferenceNumber, user.getLoginId(),
                 user.getUserType()).block();
 
-        model.addAttribute("clientInformation", clientInformation);
+        session.setAttribute("clientInformation", clientInformation);
         model.addAttribute("clientReferenceNumber", clientReferenceNumber);
+        model.addAttribute("client", clientResultDisplayMapper.toClientResultRowDisplay(clientInformation));
 
         return "/application/application-client-confirmation";
     }

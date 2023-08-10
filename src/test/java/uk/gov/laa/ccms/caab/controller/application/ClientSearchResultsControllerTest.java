@@ -13,6 +13,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
+import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
+import uk.gov.laa.ccms.caab.model.ClientResultsDisplay;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
@@ -33,6 +35,9 @@ public class ClientSearchResultsControllerTest {
 
     @Mock
     private SoaGatewayService soaGatewayService;
+
+    @Mock
+    private ClientResultDisplayMapper clientResultDisplayMapper;
 
     @InjectMocks
     private ClientSearchResultsController clientSearchResultsController;
@@ -97,7 +102,7 @@ public class ClientSearchResultsControllerTest {
     @Test
     public void testClientSearch_Post() throws Exception {
         this.mockMvc.perform(post("/application/client-search/results")
-                        .sessionAttr("clientSearchResults", new ClientDetails()))
+                        .sessionAttr("clientSearchResults", new ClientResultsDisplay()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/application/TODO"));
     }

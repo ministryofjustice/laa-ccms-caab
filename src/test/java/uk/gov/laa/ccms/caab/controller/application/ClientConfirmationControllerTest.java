@@ -11,17 +11,15 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
 import uk.gov.laa.ccms.caab.service.CaabApiService;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.data.model.*;
 import uk.gov.laa.ccms.soa.gateway.model.*;
-
-import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -53,6 +51,9 @@ public class ClientConfirmationControllerTest {
     @Mock
     private CaabApiService caabApiService;
 
+    @Mock
+    private ClientResultDisplayMapper clientResultDisplayMapper;
+
     @InjectMocks
     private ClientConfirmationController clientConfirmationController;
 
@@ -80,11 +81,11 @@ public class ClientConfirmationControllerTest {
         when(soaGatewayService.getClient(clientReferenceNumber, user.getLoginId(), user.getUserType())).thenReturn(Mono.just(clientInformation));
 
         this.mockMvc.perform(get("/application/client/" + clientReferenceNumber + "/confirm")
-                        .sessionAttr("user", user))
+                        .sessionAttr(USER_DETAILS, user)) // using the constant USER_DETAILS for the session attribute name
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(view().name("/application/application-client-confirmation"))
-                .andExpect(model().attribute("clientInformation", clientInformation))
+                .andExpect(request().sessionAttribute("clientInformation", clientInformation))
                 .andExpect(model().attribute("clientReferenceNumber", clientReferenceNumber));
     }
 
