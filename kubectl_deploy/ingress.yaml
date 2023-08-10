@@ -20,8 +20,8 @@ spec:
   tls:
     - hosts:
         - laa-ccms-caab-ui.apps.live.cloud-platform.service.justice.gov.uk
-        - laa-ccms-civil.laa-ccms-caab-ui.apps.live.cloud-platform.service.justice.gov.uk
   rules:
+    - host: laa-ccms-caab-ui.apps.live.cloud-platform.service.justice.gov.uk
     - http:
         paths:
           - path: /
