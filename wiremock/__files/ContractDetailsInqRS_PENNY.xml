@@ -1,8 +1,9 @@
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:msg="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIM" xmlns:header="http://legalservices.gov.uk/Enterprise/Common/1.0/Header" xmlns:common="http://legalservices.gov.uk/Enterprise/Common/1.0/Common"
-  xmlns:case="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIO">
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:msg="http://legalservices.gov.uk/CCMS/CaseManagement/Case/1.0/CaseBIM" xmlns:header="http://legalservices.gov.uk/Enterprise/Common/1.0/Header"
+>
   <soapenv:Header/>
   <soapenv:Body>
-    <ContractDetailsRS xmlns:msg="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIM" xmlns:oracle-xsl-mapper="http://www.oracle.com/xsl/mapper/schemas" xmlns="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIM">
+      <ContractDetailsRS xmlns:msg="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIM"
+                         xmlns="http://legalservices.gov.uk/CCMS/Common/ReferenceData/1.0/ReferenceDataBIM">
   <header:HeaderRS xmlns:header="http://legalservices.gov.uk/Enterprise/Common/1.0/Header">
     <header:TransactionID>202306191622202900101191111</header:TransactionID>
     <header:RequestDetails>

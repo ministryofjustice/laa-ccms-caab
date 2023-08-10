@@ -3,13 +3,17 @@ package uk.gov.laa.ccms.caab.bean;
 import lombok.Data;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
-import java.io.Serializable;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.*;
 
 /**
  * Represents the details of an application.
  */
 @Data
-public class ApplicationDetails implements Serializable {
+public class ApplicationDetails {
 
     /**
      * The caseReferenceNumber selected for a Copy Case.
@@ -30,11 +34,6 @@ public class ApplicationDetails implements Serializable {
      * Flag indicating whether exceptional funding has been requested for this application.
      */
     private boolean exceptionalFunding;
-
-    /**
-     * The ID of the application type related to this application.
-     */
-    private String applicationTypeId;
 
     /**
      * The category of the application type.
@@ -61,9 +60,5 @@ public class ApplicationDetails implements Serializable {
      */
     private String delegatedFunctionUsedYear;
 
-    /**
-     * The client used within the application.
-     */
-    private ClientDetail client;
 }
 

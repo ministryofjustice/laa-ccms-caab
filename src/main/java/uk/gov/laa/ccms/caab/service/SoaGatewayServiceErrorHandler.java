@@ -57,5 +57,16 @@ public class SoaGatewayServiceErrorHandler {
         return Mono.empty();
     }
 
+    public Mono<ClientDetail> handleClientDetailError(
+            String clientReferenceNumber, Throwable e) {
+        log.error("Failed to retrieve ClientDetail for clientReferenceNumber: {}",clientReferenceNumber, e);
+        return Mono.empty();
+    }
+
+    public Mono<CaseReferenceSummary> handleCaseReferenceError(Throwable e) {
+        log.error("Failed to retrieve CaseReferenceSummary", e);
+        return Mono.empty();
+    }
+
 
 }

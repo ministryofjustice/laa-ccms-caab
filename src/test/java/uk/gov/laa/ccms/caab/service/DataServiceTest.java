@@ -33,7 +33,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.*;
 
 
@@ -353,5 +352,52 @@ public class DataServiceTest {
         // Assert the URI
         assertEquals(String.format("/fee-earners?provider-id=%s", providerId), actualUri.toString());
     }
+
+    @Test
+    void getAmendmentTypes_returnsData() {
+        String applicationType = "appType1";
+        AmendmentTypeLookupDetail amendmentTypeLookupDetail = new AmendmentTypeLookupDetail();
+
+        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+        when(responseMock.bodyToMono(AmendmentTypeLookupDetail.class)).thenReturn(Mono.just(amendmentTypeLookupDetail));
+
+        Mono<AmendmentTypeLookupDetail> amendmentTypesMono = dataService.getAmendmentTypes(applicationType);
+
+        StepVerifier.create(amendmentTypesMono)
+                .expectNext(amendmentTypeLookupDetail)
+                .verifyComplete();
+
+        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+        // Assert the URI
+        assertEquals("/lookup/amendment-types?application-type=appType1", actualUri.toString());
+    }
+
+    @Test
+    void getAmendmentTypes_notFound() {
+        String applicationType = "appType1";
+
+        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+        when(responseMock.bodyToMono(AmendmentTypeLookupDetail.class)).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+
+        when(dataServiceErrorHandler.handleAmendmentTypeLookupError(eq(applicationType), any(WebClientResponseException.class))).thenReturn(Mono.empty());
+
+        Mono<AmendmentTypeLookupDetail> amendmentTypesMono = dataService.getAmendmentTypes(applicationType);
+
+        StepVerifier.create(amendmentTypesMono)
+                .verifyComplete();
+
+        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+        // Assert the URI
+        assertEquals("/lookup/amendment-types?application-type=appType1", actualUri.toString());
+    }
+
 
 }

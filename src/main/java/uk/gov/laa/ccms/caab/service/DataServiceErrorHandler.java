@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
+import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -32,6 +33,11 @@ public class DataServiceErrorHandler {
      */
     public static String FEE_EARNERS_ERROR_MESSAGE = "Failed to retrieve Fee Earners: (providerId: %s)";
 
+    /**
+     * The error message for Amendment Type-related errors
+     */
+    public static String AMENDMENT_TYPE_ERROR_MESSAGE = "Failed to retrieve Amendment Types: (applicationType: %s)";
+
     public Mono<UserDetail> handleUserError(String loginId, Throwable e) {
         final String msg = String.format(USER_ERROR_MESSAGE, loginId);
         log.error(msg, e);
@@ -40,6 +46,12 @@ public class DataServiceErrorHandler {
 
     public Mono<CommonLookupDetail> handleCommonValuesError(String type, String code, String sort, Throwable e) {
         final String msg = String.format(COMMON_VALUES_ERROR_MESSAGE, type, code, sort);
+        log.error(msg, e);
+        return Mono.error(new DataServiceException(msg, e));
+    }
+
+    public Mono<AmendmentTypeLookupDetail> handleAmendmentTypeLookupError(String applicationType, Throwable e) {
+        final String msg = String.format(AMENDMENT_TYPE_ERROR_MESSAGE, applicationType);
         log.error(msg, e);
         return Mono.error(new DataServiceException(msg, e));
     }

@@ -35,7 +35,7 @@
                                 </h2>
                             </legend>
                             <span th:if="${#fields.hasErrors('categoryOfLawId')}" th:errors="*{categoryOfLawId}" class="govuk-error-message"></span>
-                            <select class="govuk-select" data-module="govuk-select" th:field="*{categoryOfLawId}" th:errorclass="govuk-select--error" id="categoryOfLawId" name="categoryOfLawId" >
+                            <select class="govuk-select" data-module="govuk-select" th:field="*{categoryOfLawId}" th:errorclass="govuk-select--error" id="categoryOfLawId" name="categoryOfLawId">
                                 <option value="">Please Select</option>
                                 <option th:each="category : ${categoriesOfLaw}" th:value="${category.code}" th:text="${category.description}"></option>
                             </select>

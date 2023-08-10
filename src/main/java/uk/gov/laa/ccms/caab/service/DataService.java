@@ -136,5 +136,16 @@ public class DataService {
             .onErrorResume(e -> dataServiceErrorHandler.handleFeeEarnersError(providerId, e));
     }
 
+    public Mono<AmendmentTypeLookupDetail> getAmendmentTypes(String applicationType) {
+        return dataWebClient
+                .get()
+                .uri(builder -> builder.path("/lookup/amendment-types")
+                        .queryParamIfPresent("application-type", Optional.ofNullable(applicationType))
+                        .build())
+                .retrieve()
+                .bodyToMono(AmendmentTypeLookupDetail.class)
+                .onErrorResume(e -> dataServiceErrorHandler.handleAmendmentTypeLookupError(applicationType, e));
+    }
+
 }
 
