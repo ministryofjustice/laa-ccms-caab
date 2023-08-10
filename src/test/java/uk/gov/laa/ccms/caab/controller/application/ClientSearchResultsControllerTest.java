@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
+import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ClientResultsDisplay;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
@@ -39,6 +40,9 @@ public class ClientSearchResultsControllerTest {
     @Mock
     private ClientResultDisplayMapper clientResultDisplayMapper;
 
+    @Mock
+    private SearchConstants searchConstants;
+
     @InjectMocks
     private ClientSearchResultsController clientSearchResultsController;
 
@@ -53,6 +57,8 @@ public class ClientSearchResultsControllerTest {
     public void setup() {
         mockMvc = standaloneSetup(clientSearchResultsController).build();
         this.user = buildUser();
+
+        when(searchConstants.getMaxSearchResultsClients()).thenReturn(200);
     }
 
     @Test

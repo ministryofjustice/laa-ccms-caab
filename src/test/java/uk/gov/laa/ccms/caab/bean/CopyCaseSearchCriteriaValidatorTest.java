@@ -11,24 +11,24 @@ import org.springframework.validation.Errors;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
-public class ApplicationSearchCriteriaValidatorTest {
+public class CopyCaseSearchCriteriaValidatorTest {
 
     @InjectMocks
-    private ApplicationSearchCriteriaValidator validator;
+    private CopyCaseSearchCriteriaValidator validator;
 
-    private ApplicationSearchCriteria searchCriteria;
+    private CopyCaseSearchCriteria searchCriteria;
 
     private Errors errors;
 
     @BeforeEach
     public void setUp() {
-        searchCriteria = new ApplicationSearchCriteria(); // Assuming that the default constructor sets all fields to null.
+        searchCriteria = new CopyCaseSearchCriteria(); // Assuming that the default constructor sets all fields to null.
         errors = new BeanPropertyBindingResult(searchCriteria, "applicationSearchCriteria");
     }
 
     @Test
     public void supports_ReturnsTrueForSupportedClass() {
-        assertTrue(validator.supports(ApplicationSearchCriteria.class));
+        assertTrue(validator.supports(CopyCaseSearchCriteria.class));
     }
 
     @Test
@@ -67,7 +67,7 @@ public class ApplicationSearchCriteriaValidatorTest {
 
     @Test
     public void validate_validatesSearchCriteriaProviderRef() {
-        searchCriteria.setProviderReference("provref");
+        searchCriteria.setProviderCaseReference("provref");
         validator.validate(searchCriteria, errors);
         assertFalse(errors.hasErrors());
     }

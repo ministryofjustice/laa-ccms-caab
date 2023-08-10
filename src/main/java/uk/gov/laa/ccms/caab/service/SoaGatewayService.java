@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.*;
 
@@ -146,15 +147,40 @@ public class SoaGatewayService {
     }
 
     public Mono<ClientDetail> getClient(String clientReferenceNumber, String loginId,
-                                          String userType){
+        String userType){
         return soaGatewayWebClient
-                .get()
-                .uri("/clients/{clientReferenceNumber}", clientReferenceNumber)
-                .header("SoaGateway-User-Login-Id", loginId)
-                .header("SoaGateway-User-Role", userType)
-                .retrieve()
-                .bodyToMono(ClientDetail.class)
-                .onErrorResume(e -> soaGatewayServiceErrorHandler.handleClientDetailError(clientReferenceNumber,e));
+            .get()
+            .uri("/clients/{clientReferenceNumber}", clientReferenceNumber)
+            .header("SoaGateway-User-Login-Id", loginId)
+            .header("SoaGateway-User-Role", userType)
+            .retrieve()
+            .bodyToMono(ClientDetail.class)
+            .onErrorResume(e -> soaGatewayServiceErrorHandler.handleClientDetailError(clientReferenceNumber,e));
+
+    }
+
+    public Mono<CaseDetails> getCases(CopyCaseSearchCriteria copyCaseSearchCriteria, String loginId,
+        String userType, Integer page, Integer size){
+        return soaGatewayWebClient
+            .get()
+            .uri(builder -> builder.path("/cases")
+                .queryParamIfPresent("case-reference-number", Optional.ofNullable(
+                    copyCaseSearchCriteria.getCaseReference()))
+                .queryParamIfPresent("provider-case-reference", Optional.ofNullable(
+                    copyCaseSearchCriteria.getProviderCaseReference()))
+                .queryParamIfPresent("case-status", Optional.ofNullable(copyCaseSearchCriteria.getActualStatus()))
+                .queryParamIfPresent("fee-earner-id", Optional.ofNullable(copyCaseSearchCriteria.getFeeEarnerId()))
+                .queryParamIfPresent("office-id", Optional.ofNullable(copyCaseSearchCriteria.getOfficeId()))
+                .queryParamIfPresent("client-surname", Optional.ofNullable(copyCaseSearchCriteria.getClientSurname()))
+                .queryParamIfPresent("page", Optional.ofNullable(page))
+                .queryParamIfPresent("size", Optional.ofNullable(size))
+                .build())
+            .header("SoaGateway-User-Login-Id", loginId)
+            .header("SoaGateway-User-Role", userType)
+            .retrieve()
+            .bodyToMono(CaseDetails.class)
+            .onErrorResume(e -> soaGatewayServiceErrorHandler.handleCaseDetailsError(
+                copyCaseSearchCriteria,e));
 
     }
 

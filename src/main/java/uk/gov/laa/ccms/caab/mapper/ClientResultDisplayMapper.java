@@ -19,8 +19,6 @@ public interface ClientResultDisplayMapper {
     @Mapping(target = "clientReferenceNumber", ignore = true)
     ClientResultRowDisplay toClientResultRowDisplay(ClientDetail clientDetail);
 
-
-    @Mapping(target = "clientReferenceNumber", source = "caseReferenceNumber")
     ClientResultRowDisplay toClientResultRowDisplay(ClientSummary clientDetail);
 
     ClientResultsDisplay toClientResultsDisplay(ClientDetails clientDetails);

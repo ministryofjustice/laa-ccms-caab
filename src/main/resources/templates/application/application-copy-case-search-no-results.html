@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>LAA CCMS - Start new application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a href="/application/copy-case-search" class="govuk-back-link">Return to Case and Application Search</a>
+    </div>
+    <div id="main-content">
+        <span class="govuk-caption-l">Copy an existing case</span>
+        <h1 class="govuk-heading-l">
+            Application search - no results
+        </h1>
+        <p class="govuk-body-l">
+            Your search has returned 0 results.
+        </p>
+        <p class="govuk-body-l">
+            Please return to amend your search criteria and try again or start a new application by clicking the <span class="govuk-!-font-weight-bold">'New application'</span> button.
+        </p>
+        <a class="govuk-button" data-module="govuk-button" href="/application/office">
+            New application
+        </a>
+    </div>
+</div>
+</body>
+</html>
