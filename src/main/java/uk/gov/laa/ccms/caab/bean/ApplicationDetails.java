@@ -24,7 +24,7 @@ public class ApplicationDetails {
      * The ID of the office related to this application.
      */
     private Integer officeId;
-
+    
     /**
      * The ID of the category of law related to this application.
      */
@@ -59,6 +59,16 @@ public class ApplicationDetails {
      * The year when delegated function was used.
      */
     private String delegatedFunctionUsedYear;
+
+    /**
+     * The option for privacy notice agreement
+     */
+    private boolean agreementAccepted = false;
+
+    /**
+     * The boolean to control the routing after the privacy notice agreement
+     */
+    private boolean applicationCreated = false;
 
 }
 

@@ -35,21 +35,23 @@ public class ClientSearchController {
         return new ClientSearchCriteria();
     }
 
-    @GetMapping("/application/client-search")
+    @GetMapping("/application/client/search")
     public String clientSearch(@ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
                                @ModelAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
                                Model model) {
-        log.info("GET /application/client-search: {}", clientSearchCriteria);
+        log.info("GET /application/client/search: {}", clientSearchCriteria);
+        applicationDetails.setApplicationCreated(false);
+        applicationDetails.setAgreementAccepted(false);
 
         populateDropdowns(model);
         return "/application/application-client-search";
     }
 
-    @PostMapping("/application/client-search")
+    @PostMapping("/application/client/search")
     public String clientSearch(@ModelAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
                                BindingResult bindingResult,
                                Model model) {
-        log.info("POST /application/client-search: {}", clientSearchCriteria);
+        log.info("POST /application/client/search: {}", clientSearchCriteria);
 
         clientSearchCriteriaValidator.validate(clientSearchCriteria, bindingResult);
 
@@ -58,7 +60,7 @@ public class ClientSearchController {
             return "/application/application-client-search";
         }
 
-        return "redirect:/application/client-search/results";
+        return "redirect:/application/client/results";
     }
 
     private void populateDropdowns(Model model){

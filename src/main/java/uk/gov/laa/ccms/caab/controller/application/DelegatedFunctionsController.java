@@ -44,7 +44,7 @@ public class DelegatedFunctionsController {
             return "/application/select-delegated-functions";
         }
 
-        return "redirect:/application/client-search";
+        return "redirect:/application/client/search";
     }
 
 }

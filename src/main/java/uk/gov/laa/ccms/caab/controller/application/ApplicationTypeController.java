@@ -36,7 +36,7 @@ public class ApplicationTypeController {
 
         if (applicationDetails.isExceptionalFunding()) {
             log.warn("ApplicationTypeController hit despite exceptionalFunding being true. Redirecting to client-search");
-            return "redirect:/application/client-search";
+            return "redirect:/application/client/search";
         }
 
         List<CommonLookupValueDetail> applicationTypes = dataService.getApplicationTypes();

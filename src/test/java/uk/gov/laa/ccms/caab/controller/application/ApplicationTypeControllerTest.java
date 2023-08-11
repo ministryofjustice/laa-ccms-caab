@@ -78,7 +78,7 @@ public class ApplicationTypeControllerTest {
         this.mockMvc.perform(get("/application/application-type")
                 .flashAttr("applicationDetails", applicationDetails))
             .andDo(print())
-            .andExpect(redirectedUrl("/application/client-search"));
+            .andExpect(redirectedUrl("/application/client/search"));
 
         verifyNoInteractions(dataService);
     }

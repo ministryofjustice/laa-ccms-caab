@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ClientResultsDisplay;
@@ -36,21 +37,21 @@ public class ClientSearchResultsController {
 
     private final SearchConstants searchConstants;
 
-    @GetMapping("/application/client-search/results")
+    @GetMapping("/application/client/results")
     public String clientSearchResults(@RequestParam(value = "page", defaultValue = "0") int page,
                                       @RequestParam(value = "size", defaultValue = "10") int size,
                                       @ModelAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
                                       @SessionAttribute(USER_DETAILS) UserDetail user,
                                       HttpServletRequest request,
                                       Model model) {
-        log.info("GET /application/client-search/results");
+        log.info("GET /application/client/results");
 
         ClientDetails clientSearchResults = soaGatewayService.getClients(clientSearchCriteria, user.getLoginId(),
                 user.getUserType(), page, size).block();
 
         if (clientSearchResults != null && clientSearchResults.getContent() != null && clientSearchResults.getTotalElements() > 0){
             if (clientSearchResults.getTotalElements() > searchConstants.getMaxSearchResultsClients()){
-                return "/application/application-client-search-many-results";
+                return "/application/application-client-search-too-many-results";
             }
             String currentUrl = request.getRequestURL().toString();
             model.addAttribute("currentUrl", currentUrl);
@@ -63,11 +64,16 @@ public class ClientSearchResultsController {
         }
     }
 
-    @PostMapping("/application/client-search/results")
-    public String clientSearch(@ModelAttribute(CLIENT_SEARCH_RESULTS) ClientResultsDisplay clientSearchResults) {
-        log.info("POST /application/client-search/results");
+    @PostMapping("/application/client/results")
+    public String clientSearch(@ModelAttribute(CLIENT_SEARCH_RESULTS) ClientResultsDisplay clientSearchResults,
+                                @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails) {
+        log.info("POST /application/client/results");
 
-        return "redirect:/application/TODO";
+        //a post only occurs when register new client has been clicked
+        //if so we want to amend application created to false, so they get redirected correctly after the privacy notice
+        applicationDetails.setApplicationCreated(false);
+
+        return "redirect:/application/agreement";
     }
 }
 

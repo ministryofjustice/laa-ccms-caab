@@ -104,8 +104,11 @@ public class ClientConfirmationController {
 
                 // Create the application and block until it's done
                 return caabApiService.createApplication(user.getLoginId(), application)
-                        .doOnNext(createdApplication -> log.info("Application details submitted: {}", createdApplication))
-                        .thenReturn("redirect:TODO");
+                        .doOnNext(createdApplication -> {
+                            log.info("Application details submitted: {}", createdApplication);
+                            applicationDetails.setApplicationCreated(true);
+                        })
+                        .thenReturn("redirect:/application/agreement");
 
             } catch (ParseException e) {
                 return Mono.error(new RuntimeException(e));

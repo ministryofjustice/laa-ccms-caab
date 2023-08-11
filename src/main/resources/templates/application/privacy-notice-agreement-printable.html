@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html th:fragment="layout" lang="en" class="govuk-template">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="blue">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="shortcut icon" sizes="16x16 32x32 48x48" href="/assets/images/favicon.ico" type="image/x-icon">
+    <link rel="mask-icon" href="/assets/images/govuk-mask-icon.svg" color="blue">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/govuk-apple-touch-icon-180x180.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/assets/images/govuk-apple-touch-icon-167x167.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/assets/images/govuk-apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" href="/assets/images/govuk-apple-touch-icon.png">
+    <link href="/govuk-frontend/all.css" rel="stylesheet">
+    <meta property="og:image" content="&lt;YOUR-DOMAIN&gt;/images/govuk-opengraph-image.png">
+    <title>LAA CCMS - Privacy Notice Agreement</title>
+</head>
+
+<body class="govuk-template__body">
+<script>
+    document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');
+</script>
+<div class="govuk-width-container">
+    <main class="govuk-main-wrapper" id="main-content" role="main">
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <h2 class="govuk-heading-l govuk-!-text-align-centre">
+                    Legal Aid Agency<br>Privacy Notice
+                </h2>
+            </div>
+            <div th:replace="~{application/partials/privacy-notice :: content}"></div>
+        </div>
+    </main>
+</div>
+<script src="/govuk-frontend/all.js"></script>
+<script>
+    window.onload = function() {
+        window.print();
+    };
+</script>
+</body>
+</html>

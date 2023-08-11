@@ -15,6 +15,10 @@
         </h1>
         <form action="#" th:action="@{/application/copy-case-search}" th:object="${copyCaseSearchCriteria}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
+            <span class="govuk-caption-l">Copy an existing case</span>
+            <h1 class="govuk-heading-l">
+                Application search
+            </h1>
             <div class="govuk-body-l">
                 Please enter as many details as you have available in the provided search fields in
                 order to find your required case or application. At least one of the search criteria

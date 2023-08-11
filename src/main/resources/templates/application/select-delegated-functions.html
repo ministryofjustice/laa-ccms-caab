@@ -11,12 +11,12 @@
         <a href="/" class="govuk-back-link">Cancel and return to Home</a>
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l">About your application</span>
-        <h1 class="govuk-heading-l">
-            Delegate functions
-        </h1>
         <form action="#" th:action="@{/application/delegated-functions}" th:object="${applicationDetails}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
+            <span class="govuk-caption-l">About your application</span>
+            <h1 class="govuk-heading-l">
+                Delegate functions
+            </h1>
             <div class="govuk-body-l">
                 If you have exercised delegated functions in a Special Children Act matter, please select 'no' to use of
                 delegated functions here. You will be asked to confirm the details of the exercise of the delegated

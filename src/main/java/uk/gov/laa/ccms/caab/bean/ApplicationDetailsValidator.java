@@ -55,6 +55,15 @@ public class ApplicationDetailsValidator implements Validator{
         }
     }
 
+    public void validateAgreementAcceptance(Object target, Errors errors) {
+        ApplicationDetails applicationDetails = (ApplicationDetails) target;
+
+        if (!applicationDetails.isAgreementAccepted()) {
+            errors.rejectValue("agreementAccepted", "agreement.not.accepted",
+                    "Please complete 'I confirm my client (or their representative) has read and agreed to the Privacy Notice'.");
+        }
+    }
+
     @Override
     public void validate(Object target, Errors errors) {
         validateSelectOffice(target, errors);

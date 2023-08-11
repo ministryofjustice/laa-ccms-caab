@@ -12,6 +12,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
@@ -68,7 +69,7 @@ public class ClientSearchResultsControllerTest {
 
         when(soaGatewayService.getClients(any(), any(), any(), any(), any())).thenReturn(Mono.just(clientDetails));
 
-        this.mockMvc.perform(get("/application/client-search/results")
+        this.mockMvc.perform(get("/application/client/results")
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
@@ -83,11 +84,11 @@ public class ClientSearchResultsControllerTest {
 
         when(soaGatewayService.getClients(any(), any(), any(), any(), any())).thenReturn(Mono.just(clientDetails));
 
-        this.mockMvc.perform(get("/application/client-search/results")
+        this.mockMvc.perform(get("/application/client/results")
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-client-search-many-results"));
+                .andExpect(view().name("/application/application-client-search-too-many-results"));
     }
 
     @Test
@@ -98,7 +99,7 @@ public class ClientSearchResultsControllerTest {
 
         when(soaGatewayService.getClients(any(), any(), any(), any(), any())).thenReturn(Mono.just(clientDetails));
 
-        this.mockMvc.perform(get("/application/client-search/results")
+        this.mockMvc.perform(get("/application/client/results")
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
@@ -107,10 +108,36 @@ public class ClientSearchResultsControllerTest {
 
     @Test
     public void testClientSearch_Post() throws Exception {
-        this.mockMvc.perform(post("/application/client-search/results")
+        this.mockMvc.perform(post("/application/client/results")
+                        .sessionAttr("applicationDetails", new ApplicationDetails())
                         .sessionAttr("clientSearchResults", new ClientResultsDisplay()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/application/TODO"));
+                .andExpect(redirectedUrl("/application/agreement"));
+    }
+
+    @Test
+    public void testClientSearchResults_NullResults() throws Exception {
+        when(soaGatewayService.getClients(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
+
+        this.mockMvc.perform(get("/application/client/results")
+                        .sessionAttr("user", user)
+                        .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("/application/application-client-search-no-results"));
+    }
+    @Test
+    public void testClientSearchResults_ZeroTotalElements() throws Exception {
+        ClientDetails clientDetails = new ClientDetails();
+        clientDetails.setContent(new ArrayList<>());
+        clientDetails.setTotalElements(0);
+
+        when(soaGatewayService.getClients(any(), any(), any(), any(), any())).thenReturn(Mono.just(clientDetails));
+
+        this.mockMvc.perform(get("/application/client/results")
+                        .sessionAttr("user", user)
+                        .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("/application/application-client-search-no-results"));
     }
 
     private UserDetail buildUser() {
