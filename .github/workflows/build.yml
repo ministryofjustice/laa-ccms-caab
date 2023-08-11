@@ -18,8 +18,8 @@ permissions:
 
 jobs:
   build-test:
-
     runs-on: ubuntu-latest
+    environment: development
 
     steps:
       - uses: actions/checkout@v3
@@ -53,6 +53,7 @@ jobs:
   ecr:
     needs: build-test
     runs-on: ubuntu-latest
+    environment: development
     permissions:
       id-token: write # for requesting jwt
       contents: read  # for actions/checkout
@@ -86,6 +87,7 @@ jobs:
 
   deploy-dev:
     runs-on: ubuntu-latest
+    environment: development
     needs: ecr
     env:
       KUBE_NAMESPACE: ${{ secrets.KUBE_NAMESPACE_DEV }}
