@@ -91,7 +91,7 @@ public class CopyCaseSearchResultsController {
         // Store the selected caseReferenceNumber in the ApplicationDetails.
         // This will be used at the point the Application is created.
         applicationDetails.setCopyCaseReferenceNumber(copyCaseReferenceNumber);
-        return "redirect:/application/client-search";
+        return "redirect:/application/client/search";
     }
 }
 

@@ -170,7 +170,7 @@ public class CopyCaseSearchResultsControllerTest {
                 .sessionAttr("copyCaseSearchResults", caseDetails)
                 .sessionAttr("applicationDetails", applicationDetails))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/client-search"));
+            .andExpect(redirectedUrl("/application/client/search"));
 
         assertEquals("123", applicationDetails.getCopyCaseReferenceNumber());
     }

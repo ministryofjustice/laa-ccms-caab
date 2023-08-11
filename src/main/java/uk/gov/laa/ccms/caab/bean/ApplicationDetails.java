@@ -24,21 +24,11 @@ public class ApplicationDetails {
      * The ID of the office related to this application.
      */
     private Integer officeId;
-
-    /**
-     * The display value of the office related to this application.
-     */
-    private String officeDisplayValue;
-
+    
     /**
      * The ID of the category of law related to this application.
      */
     private String categoryOfLawId;
-
-    /**
-     * The display value of the category of law related to this application.
-     */
-    private String categoryOfLawDisplayValue;
 
     /**
      * Flag indicating whether exceptional funding has been requested for this application.

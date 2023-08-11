@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ClientResultsDisplay;
@@ -34,6 +35,8 @@ public class ClientSearchResultsController {
 
     private final ClientResultDisplayMapper clientResultDisplayMapper;
 
+    private final SearchConstants searchConstants;
+
     @GetMapping("/application/client/results")
     public String clientSearchResults(@RequestParam(value = "page", defaultValue = "0") int page,
                                       @RequestParam(value = "size", defaultValue = "10") int size,
@@ -48,7 +51,7 @@ public class ClientSearchResultsController {
 
         if (clientSearchResults != null && clientSearchResults.getContent() != null && clientSearchResults.getTotalElements() > 0){
             if (clientSearchResults.getTotalElements() > searchConstants.getMaxSearchResultsClients()){
-                return "/application/application-client-search-many-results";
+                return "/application/application-client-search-too-many-results";
             }
             String currentUrl = request.getRequestURL().toString();
             model.addAttribute("currentUrl", currentUrl);

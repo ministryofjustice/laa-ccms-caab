@@ -88,7 +88,7 @@ public class ClientSearchResultsControllerTest {
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-client-search-many-results"));
+                .andExpect(view().name("/application/application-client-search-too-many-results"));
     }
 
     @Test
