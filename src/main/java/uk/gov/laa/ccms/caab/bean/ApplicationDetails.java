@@ -16,6 +16,11 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.*;
 public class ApplicationDetails {
 
     /**
+     * The caseReferenceNumber selected for a Copy Case.
+     */
+    private String copyCaseReferenceNumber;
+
+    /**
      * The ID of the office related to this application.
      */
     private Integer officeId;

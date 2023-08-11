@@ -1,24 +1,21 @@
 package uk.gov.laa.ccms.caab.mapper;
 
-import org.junit.jupiter.api.BeforeEach;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mapstruct.factory.Mappers;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import uk.gov.laa.ccms.caab.model.ClientResultRowDisplay;
-import uk.gov.laa.ccms.soa.gateway.model.*;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
+import uk.gov.laa.ccms.soa.gateway.model.ClientNameDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientSummary;
 
 @ExtendWith(SpringExtension.class)
 public class ClientResultDisplayMapperTest {
 
-    private ClientResultDisplayMapper mapper;
-
-    @BeforeEach
-    public void setUp() {
-        mapper = Mappers.getMapper(ClientResultDisplayMapper.class);
-    }
+    private final ClientResultDisplayMapper mapper = new ClientResultDisplayMapperImpl();
 
     @Test
     public void testToClientResultRowDisplay_FromClientDetail() {
@@ -27,7 +24,7 @@ public class ClientResultDisplayMapperTest {
                 .surname("Doe")
                 .surnameAtBirth("Smith");
 
-        ClientAddressDetail address = new ClientAddressDetail();
+        AddressDetail address = new AddressDetail();
         address.setPostalCode("12345");
         ClientDetail clientDetail = new ClientDetail();
 
@@ -48,11 +45,11 @@ public class ClientResultDisplayMapperTest {
     @Test
     public void testToClientResultRowDisplay_FromClientSummary() {
         ClientSummary clientSummary = new ClientSummary();
-        clientSummary.setCaseReferenceNumber("case123");
+        clientSummary.setClientReferenceNumber("client123");
 
         ClientResultRowDisplay result = mapper.toClientResultRowDisplay(clientSummary);
 
-        assertEquals("case123", result.getClientReferenceNumber());
+        assertEquals("client123", result.getClientReferenceNumber());
     }
 
 }

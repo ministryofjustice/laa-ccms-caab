@@ -6,11 +6,11 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
 @Component
-public class ApplicationSearchCriteriaValidator implements Validator{
+public class CopyCaseSearchCriteriaValidator implements Validator{
 
     @Override
     public boolean supports(Class<?> clazz) {
-        return ApplicationSearchCriteria.class.isAssignableFrom(clazz);
+        return CopyCaseSearchCriteria.class.isAssignableFrom(clazz);
     }
 
     @Override
@@ -19,11 +19,11 @@ public class ApplicationSearchCriteriaValidator implements Validator{
     }
 
     public void validateAtLeastOneSearchCriteria(Object target, Errors errors) {
-        ApplicationSearchCriteria searchCriteria = (ApplicationSearchCriteria) target;
+        CopyCaseSearchCriteria searchCriteria = (CopyCaseSearchCriteria) target;
 
         if (StringUtils.isBlank(searchCriteria.getCaseReference()) &&
             StringUtils.isBlank(searchCriteria.getClientSurname()) &&
-            StringUtils.isBlank(searchCriteria.getProviderReference()) &&
+            StringUtils.isBlank(searchCriteria.getProviderCaseReference()) &&
             searchCriteria.getFeeEarnerId() == null &&
             searchCriteria.getOfficeId() == null
             // Old PUI also checks actualStatus, but I don't think this would be intialised until after validation.

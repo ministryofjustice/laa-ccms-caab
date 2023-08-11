@@ -3,8 +3,14 @@ package uk.gov.laa.ccms.caab.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
-import uk.gov.laa.ccms.soa.gateway.model.*;
+import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
+import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
+import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
+import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.*;
 
@@ -32,6 +38,24 @@ public class SoaGatewayServiceErrorHandler {
                 clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE),
                 clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER),
                 clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER), e);
+        return Mono.empty();
+    }
+
+    public Mono<CaseDetails> handleCaseDetailsError(
+        CopyCaseSearchCriteria copyCaseSearchCriteria, Throwable e) {
+        log.error("Failed to retrieve CaseDetails for "
+                + "caseReferenceNumber: {}, "
+                + "providerCaseReference: {}, "
+                + "caseStatus: {}, "
+                + "feeEarnerId: {}, "
+                + "officeId: {}, "
+                + "clientSurname: {}",
+            copyCaseSearchCriteria.getCaseReference(),
+            copyCaseSearchCriteria.getProviderCaseReference(),
+            copyCaseSearchCriteria.getActualStatus(),
+            copyCaseSearchCriteria.getFeeEarnerId(),
+            copyCaseSearchCriteria.getOfficeId(),
+            copyCaseSearchCriteria.getClientSurname(), e);
         return Mono.empty();
     }
 

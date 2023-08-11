@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
@@ -21,6 +22,11 @@ public class DataServiceErrorHandler {
      * The error message for Common Values-related errors
      */
     public static String COMMON_VALUES_ERROR_MESSAGE = "Failed to retrieve Common Values: (type: %s, code: %s, sort: %s)";
+
+    /**
+     * The error message for Case Status Values-related errors
+     */
+    public static String CASE_STATUS_VALUES_ERROR_MESSAGE = "Failed to retrieve Case Status Values: (copyAllowed: %s)";
 
     /**
      * The error message for Fee Earners-related errors
@@ -46,6 +52,12 @@ public class DataServiceErrorHandler {
 
     public Mono<AmendmentTypeLookupDetail> handleAmendmentTypeLookupError(String applicationType, Throwable e) {
         final String msg = String.format(AMENDMENT_TYPE_ERROR_MESSAGE, applicationType);
+        log.error(msg, e);
+        return Mono.error(new DataServiceException(msg, e));
+    }
+
+    public Mono<CaseStatusLookupDetail> handleCaseStatusValuesError(Boolean copyAllowed, Throwable e) {
+        final String msg = String.format(CASE_STATUS_VALUES_ERROR_MESSAGE, copyAllowed);
         log.error(msg, e);
         return Mono.error(new DataServiceException(msg, e));
     }

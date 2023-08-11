@@ -9,7 +9,11 @@
         <a href="/" class="govuk-back-link">Return to Home</a>
     </div>
     <div id="main-content">
-        <form action="#" th:action="@{/application/search}" th:object="${applicationSearchCriteria}" method="post">
+        <span class="govuk-caption-l">Copy an existing case</span>
+        <h1 class="govuk-heading-l">
+            Application search
+        </h1>
+        <form action="#" th:action="@{/application/copy-case-search}" th:object="${copyCaseSearchCriteria}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l">Copy an existing case</span>
             <h1 class="govuk-heading-l">
@@ -47,16 +51,16 @@
                                th:field="*{clientSurname}">
                     </div>
                     <div class="govuk-form-group">
-                        <label class="govuk-label" for="providerReference">
-                            Provider reference
+                        <label class="govuk-label" for="providerCaseReference">
+                            Provider case reference
                         </label>
                         <input th:errorclass="govuk-input--error"
                                class="govuk-input govuk-input--width-20"
-                               id="providerReference"
-                               name="providerReference"
+                               id="providerCaseReference"
+                               name="providerCaseReference"
                                type="text"
                                data-module="govuk-input"
-                               th:field="*{providerReference}">
+                               th:field="*{providerCaseReference}">
                     </div>
                     <div class="govuk-form-group">
                         <fieldset class="govuk-fieldset">

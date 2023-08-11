@@ -1,3 +1,13 @@
+search:
+  max-results:
+    page: 20
+#    notification-count: 500
+#    notifications: 500
+    clients: 200
+    cases: 300
+#    statement-of-accounts: 400
+#    organisations: 500
+
 spring:
   security:
     saml2:

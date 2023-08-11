@@ -5,7 +5,13 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.data.model.*;
+import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
+import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +56,27 @@ public class DataService {
                 .retrieve()
                 .bodyToMono(CommonLookupDetail.class)
                 .onErrorResume(e -> dataServiceErrorHandler.handleCommonValuesError(type, code, sort, e));
+    }
+
+    public CaseStatusLookupValueDetail getCopyCaseStatus() {
+        CaseStatusLookupDetail caseStatusLookupDetail = this.getCaseStatusValues(Boolean.TRUE).block();
+
+        return Optional.ofNullable(caseStatusLookupDetail)
+            .map(CaseStatusLookupDetail::getContent)
+            .orElse(Collections.emptyList())
+            .stream().findFirst().orElse(null);
+    }
+
+    public Mono<CaseStatusLookupDetail> getCaseStatusValues(Boolean copyAllowed) {
+
+        return dataWebClient
+            .get()
+            .uri(builder -> builder.path("/lookup/case-status")
+                .queryParamIfPresent("copy-allowed", Optional.ofNullable(copyAllowed))
+                .build())
+            .retrieve()
+            .bodyToMono(CaseStatusLookupDetail.class)
+            .onErrorResume(e -> dataServiceErrorHandler.handleCaseStatusValuesError(copyAllowed, e));
     }
 
     public List<CommonLookupValueDetail> getApplicationTypes() {

@@ -1,5 +1,12 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.COPY_CASE_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -9,49 +16,52 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
-import uk.gov.laa.ccms.caab.bean.ApplicationSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.ApplicationSearchCriteriaValidator;
+import org.springframework.web.bind.annotation.SessionAttributes;
+import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
 
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-public class ApplicationSearchController {
+@SessionAttributes(value = {APPLICATION_DETAILS, COPY_CASE_SEARCH_CRITERIA})
+public class CopyCaseSearchController {
 
-    private final ApplicationSearchCriteriaValidator searchCriteriaValidator;
+    private final CopyCaseSearchCriteriaValidator searchCriteriaValidator;
 
     private final DataService dataService;
 
-    @GetMapping("/application/search")
-    public String applicationSearch(
-        @ModelAttribute("applicationSearchCriteria") ApplicationSearchCriteria searchCriteria,
-        @SessionAttribute("user") UserDetail userDetails,
+    @ModelAttribute(COPY_CASE_SEARCH_CRITERIA)
+    public CopyCaseSearchCriteria getClientSearchDetails() {
+        return new CopyCaseSearchCriteria();
+    }
+
+    @GetMapping("/application/copy-case/search")
+    public String copyCaseSearch(
+        @ModelAttribute(COPY_CASE_SEARCH_CRITERIA) CopyCaseSearchCriteria searchCriteria,
+        @SessionAttribute(USER_DETAILS) UserDetail userDetails,
         Model model){
-        log.info("GET /application/search");
+        log.info("GET /application/copy-case/search");
 
         model.addAttribute("feeEarners",
             getFeeEarners(userDetails.getProvider().getId()));
         model.addAttribute("offices",
             userDetails.getProvider().getOffices());
 
-        return "/application/application-search";
+        return "/application/application-copy-case-search";
     }
 
-    @PostMapping("/application/search")
-    public String applicationSearch(
-        @ModelAttribute("applicationSearchCriteria") ApplicationSearchCriteria searchCriteria,
-        @SessionAttribute("user") UserDetail userDetails,
+    @PostMapping("/application/copy-case/search")
+    public String copyCaseSearch(
+        @ModelAttribute(COPY_CASE_SEARCH_CRITERIA) CopyCaseSearchCriteria searchCriteria,
+        @SessionAttribute(USER_DETAILS) UserDetail userDetails,
         BindingResult bindingResult,
         Model model){
-        log.info("POST /application/search: criteria={}", searchCriteria.toString());
+        log.info("POST /application/copy-case/search: criteria={}", searchCriteria.toString());
 
         searchCriteriaValidator.validate(searchCriteria, bindingResult);
         if(bindingResult.hasErrors()) {
@@ -59,9 +69,9 @@ public class ApplicationSearchController {
                 getFeeEarners(userDetails.getProvider().getId()));
             model.addAttribute("offices",
                 userDetails.getProvider().getOffices());
-            return "/application/application-search";
+            return "/application/application-copy-case-search";
         }
-        return "redirect:/application/application-search-results";
+        return "redirect:/application/copy-case/results";
     }
 
     private List<ContactDetail> getFeeEarners(Integer providerId) {
