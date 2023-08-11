@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: caab-ui
 spec:
   ports:
-    - protocol: TCP
+    - protocol: HTTPS
       port: 5000
       targetPort: 8080
   selector:
