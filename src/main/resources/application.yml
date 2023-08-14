@@ -35,7 +35,7 @@ spring:
 laa:
   ccms:
     data-api:
-      hostname: localhost
+      hostname: laa-ccms-caab-ebs-api.live.cloud-platform.service.justice.gov.uk
       port: 8009
       url: http://${laa.ccms.data-api.hostname}:${laa.ccms.data-api.port}
     soa-gateway-api:
