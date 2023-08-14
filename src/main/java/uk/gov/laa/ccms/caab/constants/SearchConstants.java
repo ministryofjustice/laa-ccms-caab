@@ -4,6 +4,9 @@ import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+/**
+ * Component that holds constants for maximum search results in the application.
+ */
 @Component
 @Data
 public class SearchConstants {
@@ -20,3 +23,4 @@ public class SearchConstants {
   @Value("${search.max-results.cases:100}")
   private Integer maxSearchResultsCases;
 }
+
