@@ -36,8 +36,7 @@ laa:
   ccms:
     data-api:
       hostname: laa-ccms-caab-ebs-api.live.cloud-platform.service.justice.gov.uk
-      port: 4000
-      url: http://${laa.ccms.data-api.hostname}:${laa.ccms.data-api.port}
+      url: http://${laa.ccms.data-api.hostname}
     soa-gateway-api:
       hostname: laa-ccms-civil-soa-gateway-api-dev
       port: 8007
