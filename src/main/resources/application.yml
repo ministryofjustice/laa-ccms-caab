@@ -38,9 +38,8 @@ laa:
       hostname: laa-ccms-caab-ebs-api.live.cloud-platform.service.justice.gov.uk
       url: https://${laa.ccms.data-api.hostname}
     soa-gateway-api:
-      hostname: laa-ccms-civil-soa-gateway-api-dev
-      port: 8007
-      url: http://${laa.ccms.soa-gateway-api.hostname}:${laa.ccms.soa-gateway-api.port}
+      hostname: laa-ccms-caab-soa-api.live.cloud-platform.service.justice.gov.uk
+      url: http://${laa.ccms.soa-gateway-api.hostname}
 
 server:
   port: 8080
