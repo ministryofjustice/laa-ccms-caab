@@ -4,6 +4,11 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.3'
 	id 'jacoco'
 	id 'net.researchgate.release' version '3.0.2'
+	id 'checkstyle'
+}
+
+ext {
+	checkstyleVersion = '10.12.2'
 }
 
 group = 'uk.gov.laa'
@@ -133,5 +138,12 @@ jacocoTestCoverageVerification {
 	}
 
 	dependsOn tasks['test']
+}
+
+checkstyle {
+	maxWarnings = 0
+	toolVersion = "${checkstyleVersion}"
+	sourceSets = [sourceSets.main]
+	showViolations = true
 }
 

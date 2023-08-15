@@ -1,8 +1,7 @@
 package uk.gov.laa.ccms.caab.bean;
 
-import lombok.Data;
-
 import java.io.Serializable;
+import lombok.Data;
 
 /**
  * Represents the criteria to search for an application.
@@ -10,33 +9,33 @@ import java.io.Serializable;
 @Data
 public class CopyCaseSearchCriteria implements Serializable {
 
-    /**
-     * The LAA Application/Case Reference
-     */
-    private String caseReference;
-    /**
-     * The client surname
-     */
-    private String clientSurname;
+  /**
+   * The LAA Application/Case Reference.
+   */
+  private String caseReference;
+  /**
+   * The client surname.
+   */
+  private String clientSurname;
 
-    /**
-     * The provider case reference.
-     */
-    private String providerCaseReference;
+  /**
+   * The provider case reference.
+   */
+  private String providerCaseReference;
 
-    /**
-     * The id of the related Fee Earner.
-     */
-    private Integer feeEarnerId;
+  /**
+   * The id of the related Fee Earner.
+   */
+  private Integer feeEarnerId;
 
-    /**
-     * The id of the related Office.
-     */
-    private Integer officeId;
+  /**
+   * The id of the related Office.
+   */
+  private Integer officeId;
 
-    /**
-     * The actual status value for the Application
-     */
-    private String actualStatus;
+  /**
+   * The actual status value for the Application.
+   */
+  private String actualStatus;
 }
 

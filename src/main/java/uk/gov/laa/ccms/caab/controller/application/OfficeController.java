@@ -1,5 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -13,45 +16,69 @@ import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
-
+/**
+ * Controller to manage office-related functionalities in the application process.
+ */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
 @SessionAttributes(APPLICATION_DETAILS)
 public class OfficeController {
 
-    private final ApplicationDetailsValidator applicationValidator;
+  private final ApplicationDetailsValidator applicationValidator;
 
-    @ModelAttribute(APPLICATION_DETAILS)
-    public ApplicationDetails getApplicationDetails() {
-        return new ApplicationDetails();
+  /**
+   * Creates a new instance of {@link ApplicationDetails}.
+   *
+   * @return A new instance of {@link ApplicationDetails}.
+   */
+  @ModelAttribute(APPLICATION_DETAILS)
+  public ApplicationDetails getApplicationDetails() {
+    return new ApplicationDetails();
+  }
+
+  /**
+   * Displays the office selection page.
+   *
+   * @param user Current user details.
+   * @param model Model to pass attributes to the view.
+   * @return Path to the view.
+   */
+  @GetMapping("/application/office")
+  public String selectOffice(
+          @ModelAttribute(USER_DETAILS) UserDetail user,
+          Model model) {
+    model.addAttribute(APPLICATION_DETAILS, getApplicationDetails());
+    model.addAttribute("offices", user.getProvider().getOffices());
+    return "/application/select-office";
+  }
+
+  /**
+   * Handles the selection of an office.
+   *
+   * @param user Current user details.
+   * @param applicationDetails Application details form data.
+   * @param bindingResult Validation result.
+   * @param model Model to pass attributes to the view.
+   * @return Redirect path or current page based on validation.
+   */
+  @PostMapping("/application/office")
+  public String selectOffice(
+          @ModelAttribute(USER_DETAILS) UserDetail user,
+          @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
+          BindingResult bindingResult,
+          Model model) {
+
+    log.info("POST /application/office: {}", applicationDetails);
+    applicationValidator.validateSelectOffice(applicationDetails, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      model.addAttribute("offices", user.getProvider().getOffices());
+      return "/application/select-office";
     }
 
-    @GetMapping("/application/office")
-    public String selectOffice(@ModelAttribute(USER_DETAILS) UserDetail user, Model model){
-        model.addAttribute(APPLICATION_DETAILS, getApplicationDetails());
-        model.addAttribute("offices", user.getProvider().getOffices());
-        return "/application/select-office";
-    }
-
-    @PostMapping("/application/office")
-    public String selectOffice(@ModelAttribute(USER_DETAILS) UserDetail user,
-                               @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
-                               BindingResult bindingResult,
-                               Model model) {
-
-        log.info("POST /application/office: {}", applicationDetails);
-        applicationValidator.validateSelectOffice(applicationDetails, bindingResult);
-
-        if (bindingResult.hasErrors()) {
-            model.addAttribute("offices", user.getProvider().getOffices());
-            return "/application/select-office";
-        }
-
-        return "redirect:/application/category-of-law";
-    }
+    return "redirect:/application/category-of-law";
+  }
 }
 
 
