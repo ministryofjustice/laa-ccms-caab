@@ -243,5 +243,21 @@ public class DataService {
                     .handleAmendmentTypeLookupError(applicationType, e));
   }
 
+  /**
+   * Retrieves country lookup details.
+   *
+   * @return A Mono containing the CommonLookupDetail or an error handler if an error occurs.
+   */
+  public Mono<CommonLookupDetail> getCountries() {
+    return dataWebClient
+            .get()
+            .uri(builder -> builder.path("/lookup/countries")
+                    .queryParam("size", 1000)
+                    .build())
+            .retrieve()
+            .bodyToMono(CommonLookupDetail.class)
+            .onErrorResume(dataServiceErrorHandler::handleCountryLookupError);
+  }
+
 }
 

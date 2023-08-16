@@ -53,7 +53,7 @@ public class ApplicationTypeController {
     List<CommonLookupValueDetail> applicationTypes = dataService.getApplicationTypes();
     model.addAttribute("applicationTypes", applicationTypes);
 
-    return "/application/select-application-type";
+    return "application/select-application-type";
   }
 
   /**
@@ -75,7 +75,7 @@ public class ApplicationTypeController {
     if (bindingResult.hasErrors()) {
       List<CommonLookupValueDetail> applicationTypes = dataService.getApplicationTypes();
       model.addAttribute("applicationTypes", applicationTypes);
-      return "/application/select-application-type";
+      return "application/select-application-type";
     }
 
     return "redirect:/application/delegated-functions";

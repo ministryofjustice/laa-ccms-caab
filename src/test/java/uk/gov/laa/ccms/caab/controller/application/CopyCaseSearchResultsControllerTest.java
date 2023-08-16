@@ -45,140 +45,146 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 @WebAppConfiguration
 public class CopyCaseSearchResultsControllerTest {
 
-    @Mock
-    private SoaGatewayService soaGatewayService;
+  @Mock
+  private SoaGatewayService soaGatewayService;
+  
+  @Mock
+  private DataService dataService;
 
-    @Mock
-    private DataService dataService;
+  @Mock
+  private SearchConstants searchConstants;
 
-    @Mock
-    private SearchConstants searchConstants;
+  @InjectMocks
+  private CopyCaseSearchResultsController copyCaseSearchResultsController;
 
-    @InjectMocks
-    private CopyCaseSearchResultsController copyCaseSearchResultsController;
+  private MockMvc mockMvc;
 
-    private MockMvc mockMvc;
+  private UserDetail user;
 
-    private UserDetail user;
+  @Autowired
+  private WebApplicationContext webApplicationContext;
 
-    @Autowired
-    private WebApplicationContext webApplicationContext;
+  @BeforeEach
+  public void setup() {
+    mockMvc = standaloneSetup(copyCaseSearchResultsController).build();
+    this.user = buildUser();
 
-    @BeforeEach
-    public void setup() {
-        mockMvc = standaloneSetup(copyCaseSearchResultsController).build();
-        this.user = buildUser();
+    when(searchConstants.getMaxSearchResultsCases()).thenReturn(200);
+  }
 
-        when(searchConstants.getMaxSearchResultsCases()).thenReturn(200);
-    }
+  @Test
+  public void testGetCopyCaseSearchResults_NoCopyCaseStatus() throws Exception {
+    CaseDetails caseDetails = new CaseDetails();
+    caseDetails.setTotalElements(0);
 
-    @Test
-    public void testGetCopyCaseSearchResults_NoCopyCaseStatus() throws Exception {
-        CaseDetails caseDetails = new CaseDetails();
-        caseDetails.setTotalElements(0);
+    when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(
+        Mono.just(caseDetails));
 
-        when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(Mono.just(caseDetails));
+    CopyCaseSearchCriteria copyCaseSearchCriteria = new CopyCaseSearchCriteria();
+    this.mockMvc.perform(get("/application/copy-case/results")
+            .sessionAttr("user", user)
+            .sessionAttr("copyCaseSearchCriteria", copyCaseSearchCriteria))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-copy-case-search-no-results"));
 
-        CopyCaseSearchCriteria copyCaseSearchCriteria = new CopyCaseSearchCriteria();
-        this.mockMvc.perform(get("/application/copy-case/results")
-                .sessionAttr("user", user)
-                .sessionAttr("copyCaseSearchCriteria", copyCaseSearchCriteria))
-            .andExpect(status().isOk())
-            .andExpect(view().name("/application/application-copy-case-search-no-results"));
+    verify(dataService).getCopyCaseStatus();
+    verify(soaGatewayService).getCases(eq(copyCaseSearchCriteria), any(), any(), any(), any());
+    assertNull(copyCaseSearchCriteria.getActualStatus());
+  }
 
-        verify(dataService).getCopyCaseStatus();
-        verify(soaGatewayService).getCases(eq(copyCaseSearchCriteria), any(), any(), any(), any());
-        assertNull(copyCaseSearchCriteria.getActualStatus());
-    }
+  @Test
+  public void testGetCopyCaseSearchResults_NoResults() throws Exception {
+    CaseDetails caseDetails = new CaseDetails();
+    caseDetails.setTotalElements(0);
 
-    @Test
-    public void testGetCopyCaseSearchResults_NoResults() throws Exception {
-        CaseDetails caseDetails = new CaseDetails();
-        caseDetails.setTotalElements(0);
+    when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(
+        Mono.just(caseDetails));
+    String COPY_STATUS_CODE = "APP";
+    when(dataService.getCopyCaseStatus()).thenReturn(
+        new CaseStatusLookupValueDetail().code(COPY_STATUS_CODE));
 
-        when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(Mono.just(caseDetails));
-        String COPY_STATUS_CODE = "APP";
-        when(dataService.getCopyCaseStatus()).thenReturn(new CaseStatusLookupValueDetail().code(COPY_STATUS_CODE));
+    CopyCaseSearchCriteria copyCaseSearchCriteria = new CopyCaseSearchCriteria();
+    this.mockMvc.perform(get("/application/copy-case/results")
+            .sessionAttr("user", user)
+            .sessionAttr("copyCaseSearchCriteria", copyCaseSearchCriteria))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-copy-case-search-no-results"));
 
-        CopyCaseSearchCriteria copyCaseSearchCriteria = new CopyCaseSearchCriteria();
-        this.mockMvc.perform(get("/application/copy-case/results")
-                        .sessionAttr("user", user)
-                        .sessionAttr("copyCaseSearchCriteria", copyCaseSearchCriteria))
-                .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-copy-case-search-no-results"));
+    verify(dataService).getCopyCaseStatus();
+    verify(soaGatewayService).getCases(eq(copyCaseSearchCriteria), any(), any(), any(), any());
+    assertEquals(COPY_STATUS_CODE, copyCaseSearchCriteria.getActualStatus());
+  }
 
-        verify(dataService).getCopyCaseStatus();
-        verify(soaGatewayService).getCases(eq(copyCaseSearchCriteria), any(), any(), any(), any());
-        assertEquals(COPY_STATUS_CODE, copyCaseSearchCriteria.getActualStatus());
-    }
+  @Test
+  public void testGetCopyCaseSearchResults_WithTooManyResults() throws Exception {
+    CaseDetails caseDetails = new CaseDetails();
+    caseDetails.setContent(new ArrayList<>());
+    caseDetails.setTotalElements(300);
 
-    @Test
-    public void testGetCopyCaseSearchResults_WithTooManyResults() throws Exception {
-        CaseDetails caseDetails = new CaseDetails();
-        caseDetails.setContent(new ArrayList<>());
-        caseDetails.setTotalElements(300);
+    when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(
+        Mono.just(caseDetails));
 
-        when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(Mono.just(caseDetails));
+    this.mockMvc.perform(get("/application/copy-case/results")
+            .sessionAttr("user", user)
+            .sessionAttr("copyCaseSearchCriteria", new CopyCaseSearchCriteria()))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-copy-case-search-too-many-results"));
+  }
 
-        this.mockMvc.perform(get("/application/copy-case/results")
-                        .sessionAttr("user", user)
-                        .sessionAttr("copyCaseSearchCriteria", new CopyCaseSearchCriteria()))
-                .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-copy-case-search-too-many-results"));
-    }
+  @Test
+  public void testGetCopyCaseSearchResults_WithResults() throws Exception {
+    CaseDetails caseDetails = new CaseDetails();
+    caseDetails.setContent(new ArrayList<>());
+    caseDetails.setTotalElements(100);
 
-    @Test
-    public void testGetCopyCaseSearchResults_WithResults() throws Exception {
-        CaseDetails caseDetails = new CaseDetails();
-        caseDetails.setContent(new ArrayList<>());
-        caseDetails.setTotalElements(100);
+    when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(
+        Mono.just(caseDetails));
 
-        when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(Mono.just(caseDetails));
+    this.mockMvc.perform(get("/application/copy-case/results")
+            .sessionAttr("user", user)
+            .sessionAttr("copyCaseSearchCriteria", new CopyCaseSearchCriteria()))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-copy-case-search-results"));
+  }
 
-        this.mockMvc.perform(get("/application/copy-case/results")
-                        .sessionAttr("user", user)
-                        .sessionAttr("copyCaseSearchCriteria", new CopyCaseSearchCriteria()))
-                .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-copy-case-search-results"));
-    }
-
-    @Test
-    public void testSelectCopyCaseReferenceNumber_InvalidCaseRef() {
-        Exception exception = assertThrows(ServletException.class, () ->
-            this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm", "123")
-                    .sessionAttr("copyCaseSearchResults", new CaseDetails())
-                    .sessionAttr("applicationDetails", new ApplicationDetails())));
-
-        assertInstanceOf(CaabApplicationException.class, exception.getCause());
-
-        String expectedMessage = "Invalid copyCaseReferenceNumber supplied";
-        String actualMessage = exception.getMessage();
-
-        assertTrue(actualMessage.contains(expectedMessage));
-    }
-
-    @Test
-    public void testSelectCopyCaseReferenceNumber_ValidCaseRef() throws Exception {
-        CaseDetails caseDetails = new CaseDetails();
-        caseDetails.addContentItem(new CaseSummary().caseReferenceNumber("123"));
-        caseDetails.setTotalElements(1);
-
-        when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(Mono.just(caseDetails));
-
-        ApplicationDetails applicationDetails = new ApplicationDetails();
+  @Test
+  public void testSelectCopyCaseReferenceNumber_InvalidCaseRef() {
+    Exception exception = assertThrows(ServletException.class, () ->
         this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm", "123")
-                .sessionAttr("copyCaseSearchResults", caseDetails)
-                .sessionAttr("applicationDetails", applicationDetails))
-            .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/client/search"));
+            .sessionAttr("copyCaseSearchResults", new CaseDetails())
+            .sessionAttr("applicationDetails", new ApplicationDetails())));
 
-        assertEquals("123", applicationDetails.getCopyCaseReferenceNumber());
-    }
+    assertInstanceOf(CaabApplicationException.class, exception.getCause());
 
-    private UserDetail buildUser() {
-        return new UserDetail()
-                .userId(1)
-                .userType("testUserType")
-                .loginId("testLoginId");
-    }
+    String expectedMessage = "Invalid copyCaseReferenceNumber supplied";
+    String actualMessage = exception.getMessage();
+
+    assertTrue(actualMessage.contains(expectedMessage));
+  }
+
+  @Test
+  public void testSelectCopyCaseReferenceNumber_ValidCaseRef() throws Exception {
+    CaseDetails caseDetails = new CaseDetails();
+    caseDetails.addContentItem(new CaseSummary().caseReferenceNumber("123"));
+    caseDetails.setTotalElements(1);
+
+    when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(
+        Mono.just(caseDetails));
+
+    ApplicationDetails applicationDetails = new ApplicationDetails();
+    this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm", "123")
+            .sessionAttr("copyCaseSearchResults", caseDetails)
+            .sessionAttr("applicationDetails", applicationDetails))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/search"));
+
+    assertEquals("123", applicationDetails.getCopyCaseReferenceNumber());
+  }
+
+  private UserDetail buildUser() {
+    return new UserDetail()
+        .userId(1)
+        .userType("testUserType")
+        .loginId("testLoginId");
+  }
 }

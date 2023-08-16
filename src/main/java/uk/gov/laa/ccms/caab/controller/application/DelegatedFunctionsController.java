@@ -35,7 +35,7 @@ public class DelegatedFunctionsController {
           @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails) {
     log.info("GET /application/delegated-functions: {}", applicationDetails);
 
-    return "/application/select-delegated-functions";
+    return "application/select-delegated-functions";
   }
 
   /**
@@ -60,7 +60,7 @@ public class DelegatedFunctionsController {
     }
 
     if (bindingResult.hasErrors()) {
-      return "/application/select-delegated-functions";
+      return "application/select-delegated-functions";
     }
 
     return "redirect:/application/client/search";

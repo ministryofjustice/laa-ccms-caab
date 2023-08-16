@@ -61,7 +61,7 @@ public class CategoryOfLawController {
 
     initialiseCategoriesOfLaw(applicationDetails, userDetails, model);
 
-    return "/application/select-category-of-law";
+    return "application/select-category-of-law";
   }
 
 
@@ -86,7 +86,7 @@ public class CategoryOfLawController {
     String viewName = "redirect:/application/application-type";
     if (bindingResult.hasErrors()) {
       initialiseCategoriesOfLaw(applicationDetails, userDetails, model);
-      viewName = "/application/select-category-of-law";
+      viewName = "application/select-category-of-law";
     } else if (applicationDetails.isExceptionalFunding()) {
       // Exception Funding has been selected, so initialise the ApplicationType to ECF
       // and bypass the ApplicationType screen.

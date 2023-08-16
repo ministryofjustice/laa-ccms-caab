@@ -15,41 +15,42 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientSummary;
 @ExtendWith(SpringExtension.class)
 public class ClientResultDisplayMapperTest {
 
-    private final ClientResultDisplayMapper mapper = new ClientResultDisplayMapperImpl();
+  private final ClientResultDisplayMapper mapper = new ClientResultDisplayMapperImpl();
+  
 
-    @Test
-    public void testToClientResultRowDisplay_FromClientDetail() {
-        ClientNameDetail name = new ClientNameDetail()
-                .firstName("John")
-                .surname("Doe")
-                .surnameAtBirth("Smith");
+  @Test
+  public void testToClientResultRowDisplay_FromClientDetail() {
+    ClientNameDetail name = new ClientNameDetail()
+        .firstName("John")
+        .surname("Doe")
+        .surnameAtBirth("Smith");
 
-        AddressDetail address = new AddressDetail();
-        address.setPostalCode("12345");
-        ClientDetail clientDetail = new ClientDetail();
+    AddressDetail address = new AddressDetail();
+    address.setPostalCode("12345");
+    ClientDetail clientDetail = new ClientDetail();
 
-        ClientDetailDetails details = new ClientDetailDetails();
-        details.setName(name);
-        details.setAddress(address);
+    ClientDetailDetails details = new ClientDetailDetails();
+    details.setName(name);
+    details.setAddress(address);
 
-        clientDetail.setDetails(details);
+    clientDetail.setDetails(details);
 
-        ClientResultRowDisplay result = mapper.toClientResultRowDisplay(clientDetail);
+    ClientResultRowDisplay result = mapper.toClientResultRowDisplay(clientDetail);
 
-        assertEquals("John", result.getFirstName());
-        assertEquals("Doe", result.getSurname());
-        assertEquals("Smith", result.getSurnameAtBirth());
-        assertEquals("12345", result.getPostalCode());
-    }
+    assertEquals("John", result.getFirstName());
+    assertEquals("Doe", result.getSurname());
+    assertEquals("Smith", result.getSurnameAtBirth());
+    assertEquals("12345", result.getPostalCode());
+  }
 
-    @Test
-    public void testToClientResultRowDisplay_FromClientSummary() {
-        ClientSummary clientSummary = new ClientSummary();
-        clientSummary.setClientReferenceNumber("client123");
+  @Test
+  public void testToClientResultRowDisplay_FromClientSummary() {
+    ClientSummary clientSummary = new ClientSummary();
+    clientSummary.setClientReferenceNumber("client123");
 
-        ClientResultRowDisplay result = mapper.toClientResultRowDisplay(clientSummary);
+    ClientResultRowDisplay result = mapper.toClientResultRowDisplay(clientSummary);
 
-        assertEquals("client123", result.getClientReferenceNumber());
-    }
+    assertEquals("client123", result.getClientReferenceNumber());
+  }
 
 }

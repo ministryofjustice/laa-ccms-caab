@@ -60,7 +60,7 @@ public class ClientSearchController {
     applicationDetails.setAgreementAccepted(false);
 
     populateDropdowns(model);
-    return "/application/application-client-search";
+    return "application/application-client-search";
   }
 
   /**
@@ -82,7 +82,7 @@ public class ClientSearchController {
 
     if (bindingResult.hasErrors()) {
       populateDropdowns(model);
-      return "/application/application-client-search";
+      return "application/application-client-search";
     }
 
     return "redirect:/application/client/results";

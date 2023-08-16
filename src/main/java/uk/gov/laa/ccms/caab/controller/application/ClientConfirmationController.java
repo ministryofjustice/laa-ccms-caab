@@ -75,7 +75,7 @@ public class ClientConfirmationController {
     model.addAttribute("client", clientResultDisplayMapper
             .toClientResultRowDisplay(clientInformation));
 
-    return "/application/application-client-confirmation";
+    return "application/application-client-confirmation";
   }
 
 

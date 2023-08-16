@@ -1,5 +1,14 @@
 package uk.gov.laa.ccms.caab.controller;
 
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,14 +28,6 @@ import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
-import java.util.stream.Stream;
-
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
-
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
@@ -36,7 +37,7 @@ public class HomeControllerTest {
 
   @InjectMocks
   private HomeController homeController;
-
+  
   private MockMvc mockMvc;
 
   @Autowired
@@ -49,31 +50,38 @@ public class HomeControllerTest {
 
   private static Stream<Arguments> userDetailsAndNotificationParameters() {
     return Stream.of(
-            Arguments.of(1, 2, 3, true, "2 Outstanding Actions (3 overdue)", "View Notifications (1 outstanding)"),
-            Arguments.of(0, 2, 0, true, "2 Outstanding Actions (none overdue)", "View Notifications (none outstanding)"),
-            Arguments.of(0, 0, 5, true, HomeController.NO_OUTSTANDING_ACTIONS, "View Notifications (none outstanding)")
+        Arguments.of(1, 2, 3, true, "2 Outstanding Actions (3 overdue)",
+            "View Notifications (1 outstanding)"),
+        Arguments.of(0, 2, 0, true, "2 Outstanding Actions (none overdue)",
+            "View Notifications (none outstanding)"),
+        Arguments.of(0, 0, 5, true, HomeController.NO_OUTSTANDING_ACTIONS,
+            "View Notifications (none outstanding)")
     );
   }
 
   private static final UserDetail userDetails = new UserDetail()
-          .userId(1)
-          .userType("testUserType")
-          .loginId("testLoginId");
+      .userId(1)
+      .userType("testUserType")
+      .loginId("testLoginId");
 
   @ParameterizedTest
   @MethodSource("userDetailsAndNotificationParameters")
-  public void testHomeRetrievesUserDetailAndNotifications(int notifications, int standardActions, int overdueActions,
-                                                           boolean expectedShowNotifications, String expectedActionMsg,
-                                                           String expectedNotificationMsg) throws Exception {
+  public void testHomeRetrievesUserDetailAndNotifications(int notifications, int standardActions,
+                                                          int overdueActions,
+                                                          boolean expectedShowNotifications,
+                                                          String expectedActionMsg,
+                                                          String expectedNotificationMsg)
+      throws Exception {
 
     // Create a sample notification summary
     final NotificationSummary notificationSummary = new NotificationSummary()
-            .notifications(notifications)
-            .standardActions(standardActions)
-            .overdueActions(overdueActions);
+        .notifications(notifications)
+        .standardActions(standardActions)
+        .overdueActions(overdueActions);
 
     // Mock the SOA Gateway service to return the notification summary
-    when(soaGatewayService.getNotificationsSummary(userDetails.getLoginId(), userDetails.getUserType())).thenReturn(Mono.just(notificationSummary));
+    when(soaGatewayService.getNotificationsSummary(userDetails.getLoginId(),
+        userDetails.getUserType())).thenReturn(Mono.just(notificationSummary));
 
     this.mockMvc.perform(get("/").flashAttr("user", userDetails))
         .andDo(print())
@@ -90,7 +98,8 @@ public class HomeControllerTest {
   public void testHomeHandlesNullNotifications() throws Exception {
 
     // Mock the SOA Gateway service to return the notification summary
-    when(soaGatewayService.getNotificationsSummary(userDetails.getLoginId(), userDetails.getUserType())).thenReturn(Mono.empty());
+    when(soaGatewayService.getNotificationsSummary(userDetails.getLoginId(),
+        userDetails.getUserType())).thenReturn(Mono.empty());
 
     this.mockMvc.perform(get("/").flashAttr("user", userDetails))
         .andDo(print())
