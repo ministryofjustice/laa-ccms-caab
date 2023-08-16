@@ -60,7 +60,7 @@ public class OfficeControllerTest {
                 .flashAttr("user", user))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/select-office"))
+                .andExpect(view().name("application/select-office"))
                 .andExpect(model().attribute("user", user))
                 .andExpect(model().attribute("offices", user.getProvider().getOffices()))
                 .andExpect(model().attributeExists("applicationDetails"));
@@ -97,7 +97,7 @@ public class OfficeControllerTest {
                         .flashAttr("applicationDetails", applicationDetails))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/select-office"))
+                .andExpect(view().name("application/select-office"))
                 .andExpect(model().attribute("offices", user.getProvider().getOffices()));
     }
 
