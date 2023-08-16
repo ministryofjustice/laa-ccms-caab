@@ -77,7 +77,7 @@ public class OfficeController {
       return "application/select-office";
     }
 
-    return "redirect:/application/category-of-law";
+    return "redirect:application/category-of-law";
   }
 }
 

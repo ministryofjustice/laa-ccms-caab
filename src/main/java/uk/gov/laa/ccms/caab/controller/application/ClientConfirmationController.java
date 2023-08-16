@@ -75,7 +75,7 @@ public class ClientConfirmationController {
     model.addAttribute("client", clientResultDisplayMapper
             .toClientResultRowDisplay(clientInformation));
 
-    return "/application/application-client-confirmation";
+    return "application/application-client-confirmation";
   }
 
 
@@ -149,7 +149,7 @@ public class ClientConfirmationController {
                   log.info("Application details submitted: {}", createdApplication);
                   applicationDetails.setApplicationCreated(true);
                 })
-                .thenReturn("redirect:/application/agreement");
+                .thenReturn("redirect:application/agreement");
 
       } catch (ParseException e) {
         return Mono.error(new RuntimeException(e));

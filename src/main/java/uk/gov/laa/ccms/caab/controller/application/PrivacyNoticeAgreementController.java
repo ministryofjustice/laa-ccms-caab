@@ -56,10 +56,10 @@ public class PrivacyNoticeAgreementController {
     } else {
       if (applicationDetails.isApplicationCreated()) {
         //using an existing client
-        return "redirect:/application/summary";
+        return "redirect:application/summary";
       } else {
         //registering a new client
-        return "redirect:/application/client/basic-details";
+        return "redirect:application/client/basic-details";
       }
     }
   }

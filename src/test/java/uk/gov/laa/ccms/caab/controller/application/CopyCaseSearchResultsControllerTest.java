@@ -84,7 +84,7 @@ public class CopyCaseSearchResultsControllerTest {
                 .sessionAttr("user", user)
                 .sessionAttr("copyCaseSearchCriteria", copyCaseSearchCriteria))
             .andExpect(status().isOk())
-            .andExpect(view().name("/application/application-copy-case-search-no-results"));
+            .andExpect(view().name("application/application-copy-case-search-no-results"));
 
         verify(dataService).getCopyCaseStatus();
         verify(soaGatewayService).getCases(eq(copyCaseSearchCriteria), any(), any(), any(), any());
@@ -105,7 +105,7 @@ public class CopyCaseSearchResultsControllerTest {
                         .sessionAttr("user", user)
                         .sessionAttr("copyCaseSearchCriteria", copyCaseSearchCriteria))
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-copy-case-search-no-results"));
+                .andExpect(view().name("application/application-copy-case-search-no-results"));
 
         verify(dataService).getCopyCaseStatus();
         verify(soaGatewayService).getCases(eq(copyCaseSearchCriteria), any(), any(), any(), any());
@@ -124,7 +124,7 @@ public class CopyCaseSearchResultsControllerTest {
                         .sessionAttr("user", user)
                         .sessionAttr("copyCaseSearchCriteria", new CopyCaseSearchCriteria()))
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-copy-case-search-too-many-results"));
+                .andExpect(view().name("application/application-copy-case-search-too-many-results"));
     }
 
     @Test
@@ -139,7 +139,7 @@ public class CopyCaseSearchResultsControllerTest {
                         .sessionAttr("user", user)
                         .sessionAttr("copyCaseSearchCriteria", new CopyCaseSearchCriteria()))
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-copy-case-search-results"));
+                .andExpect(view().name("application/application-copy-case-search-results"));
     }
 
     @Test
@@ -170,7 +170,7 @@ public class CopyCaseSearchResultsControllerTest {
                 .sessionAttr("copyCaseSearchResults", caseDetails)
                 .sessionAttr("applicationDetails", applicationDetails))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/client/search"));
+            .andExpect(redirectedUrl("application/client/search"));
 
         assertEquals("123", applicationDetails.getCopyCaseReferenceNumber());
     }

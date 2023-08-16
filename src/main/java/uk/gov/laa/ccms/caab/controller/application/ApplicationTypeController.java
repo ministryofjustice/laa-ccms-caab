@@ -47,13 +47,13 @@ public class ApplicationTypeController {
     if (applicationDetails.isExceptionalFunding()) {
       log.warn("ApplicationTypeController hit despite exceptionalFunding being true. "
               + "Redirecting to client-search");
-      return "redirect:/application/client/search";
+      return "redirect:application/client/search";
     }
 
     List<CommonLookupValueDetail> applicationTypes = dataService.getApplicationTypes();
     model.addAttribute("applicationTypes", applicationTypes);
 
-    return "/application/select-application-type";
+    return "application/select-application-type";
   }
 
   /**
@@ -75,9 +75,9 @@ public class ApplicationTypeController {
     if (bindingResult.hasErrors()) {
       List<CommonLookupValueDetail> applicationTypes = dataService.getApplicationTypes();
       model.addAttribute("applicationTypes", applicationTypes);
-      return "/application/select-application-type";
+      return "application/select-application-type";
     }
 
-    return "redirect:/application/delegated-functions";
+    return "redirect:application/delegated-functions";
   }
 }

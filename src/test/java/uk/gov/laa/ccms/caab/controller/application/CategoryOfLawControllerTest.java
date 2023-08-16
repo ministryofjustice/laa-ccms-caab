@@ -94,7 +94,7 @@ public class CategoryOfLawControllerTest {
                         .sessionAttr("user", user))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/select-category-of-law"))
+                .andExpect(view().name("application/select-category-of-law"))
                 .andExpect(model().attribute("categoriesOfLaw", categoriesOfLaw))
                 .andExpect(model().attributeExists("applicationDetails"));
 
@@ -116,7 +116,7 @@ public class CategoryOfLawControllerTest {
                 .sessionAttr("user", user))
             .andDo(print())
             .andExpect(status().isOk())
-            .andExpect(view().name("/application/select-category-of-law"))
+            .andExpect(view().name("application/select-category-of-law"))
             .andExpect(model().attribute("categoriesOfLaw", categoriesOfLaw))
             .andExpect(model().attributeExists("applicationDetails"));
 
@@ -152,7 +152,7 @@ public class CategoryOfLawControllerTest {
                         .sessionAttr("user", user))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/select-category-of-law"))
+                .andExpect(view().name("application/select-category-of-law"))
                 .andExpect(model().attribute("categoriesOfLaw", categoriesOfLaw));
     }
 
@@ -164,7 +164,7 @@ public class CategoryOfLawControllerTest {
                 .flashAttr("applicationDetails", applicationDetails)
                 .sessionAttr("user", user))
             .andDo(print())
-            .andExpect(redirectedUrl("/application/application-type"));
+            .andExpect(redirectedUrl("application/application-type"));
 
         verifyNoInteractions(soaGatewayService);
         verifyNoInteractions(dataService);
@@ -179,7 +179,7 @@ public class CategoryOfLawControllerTest {
                 .flashAttr("applicationDetails", applicationDetails)
                 .sessionAttr("user", user))
             .andDo(print())
-            .andExpect(redirectedUrl("/application/client/search"));
+            .andExpect(redirectedUrl("application/client/search"));
 
         verifyNoInteractions(soaGatewayService);
         verifyNoInteractions(dataService);

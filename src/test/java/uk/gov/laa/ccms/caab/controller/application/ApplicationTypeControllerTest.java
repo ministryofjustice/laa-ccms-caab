@@ -62,7 +62,7 @@ public class ApplicationTypeControllerTest {
                     .sessionAttr("applicationDetails", new ApplicationDetails()))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/select-application-type"))
+                .andExpect(view().name("application/select-application-type"))
                 .andExpect(model().attribute("applicationDetails", new ApplicationDetails()))
                 .andExpect(model().attribute("applicationTypes", applicationTypes));
 
@@ -78,7 +78,7 @@ public class ApplicationTypeControllerTest {
         this.mockMvc.perform(get("/application/application-type")
                 .flashAttr("applicationDetails", applicationDetails))
             .andDo(print())
-            .andExpect(redirectedUrl("/application/client/search"));
+            .andExpect(redirectedUrl("application/client/search"));
 
         verifyNoInteractions(dataService);
     }
@@ -97,7 +97,7 @@ public class ApplicationTypeControllerTest {
                         .flashAttr("applicationDetails", applicationDetails))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/select-application-type"));
+                .andExpect(view().name("application/select-application-type"));
     }
 
     @Test
@@ -108,7 +108,7 @@ public class ApplicationTypeControllerTest {
         this.mockMvc.perform(post("/application/application-type")
                         .flashAttr("applicationDetails", applicationDetails))
                 .andDo(print())
-                .andExpect(redirectedUrl("/application/delegated-functions"));
+                .andExpect(redirectedUrl("application/delegated-functions"));
 
         verifyNoInteractions(dataService);
     }

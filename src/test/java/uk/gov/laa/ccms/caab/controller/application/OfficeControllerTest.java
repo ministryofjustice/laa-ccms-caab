@@ -76,7 +76,7 @@ public class OfficeControllerTest {
                         .flashAttr("user", user)
                         .flashAttr("applicationDetails", applicationDetails))
                 .andDo(print())
-                .andExpect(redirectedUrl("/application/category-of-law"));
+                .andExpect(redirectedUrl("application/category-of-law"));
 
         verifyNoInteractions(dataService);
     }

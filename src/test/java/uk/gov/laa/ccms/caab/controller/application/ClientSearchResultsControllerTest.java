@@ -73,7 +73,7 @@ public class ClientSearchResultsControllerTest {
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-client-search-no-results"));
+                .andExpect(view().name("application/application-client-search-no-results"));
     }
 
     @Test
@@ -88,7 +88,7 @@ public class ClientSearchResultsControllerTest {
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-client-search-too-many-results"));
+                .andExpect(view().name("application/application-client-search-too-many-results"));
     }
 
     @Test
@@ -103,7 +103,7 @@ public class ClientSearchResultsControllerTest {
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-client-search-results"));
+                .andExpect(view().name("application/application-client-search-results"));
     }
 
     @Test
@@ -112,7 +112,7 @@ public class ClientSearchResultsControllerTest {
                         .sessionAttr("applicationDetails", new ApplicationDetails())
                         .sessionAttr("clientSearchResults", new ClientResultsDisplay()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/application/agreement"));
+                .andExpect(redirectedUrl("application/agreement"));
     }
 
     @Test
@@ -123,7 +123,7 @@ public class ClientSearchResultsControllerTest {
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-client-search-no-results"));
+                .andExpect(view().name("application/application-client-search-no-results"));
     }
     @Test
     public void testClientSearchResults_ZeroTotalElements() throws Exception {
@@ -137,7 +137,7 @@ public class ClientSearchResultsControllerTest {
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-client-search-no-results"));
+                .andExpect(view().name("application/application-client-search-no-results"));
     }
 
     private UserDetail buildUser() {

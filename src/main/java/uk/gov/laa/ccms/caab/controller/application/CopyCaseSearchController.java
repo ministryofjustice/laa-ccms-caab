@@ -69,7 +69,7 @@ public class CopyCaseSearchController {
     model.addAttribute("offices",
             userDetails.getProvider().getOffices());
 
-    return "/application/application-copy-case-search";
+    return "application/application-copy-case-search";
   }
 
   /**
@@ -95,9 +95,9 @@ public class CopyCaseSearchController {
               getFeeEarners(userDetails.getProvider().getId()));
       model.addAttribute("offices",
               userDetails.getProvider().getOffices());
-      return "/application/application-copy-case-search";
+      return "application/application-copy-case-search";
     }
-    return "redirect:/application/copy-case/results";
+    return "redirect:application/copy-case/results";
   }
 
   /**

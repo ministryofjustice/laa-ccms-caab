@@ -25,11 +25,11 @@ spring:
     cache: false
     mode: HTML
     encoding: UTF-8
-    prefix: classpath:/templates
+    prefix: classpath:/templates/
     suffix: .html
   web:
     resources:
-      static-locations: classpath:/static
+      static-locations: classpath:/static/
       cache:
         period: 0
 

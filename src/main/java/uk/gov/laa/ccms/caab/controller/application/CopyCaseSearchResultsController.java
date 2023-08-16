@@ -82,14 +82,14 @@ public class CopyCaseSearchResultsController {
     if (caseSearchResults != null && caseSearchResults.getContent() != null
             && caseSearchResults.getTotalElements() > 0) {
       if (caseSearchResults.getTotalElements() > searchConstants.getMaxSearchResultsCases()) {
-        return "/application/application-copy-case-search-too-many-results";
+        return "application/application-copy-case-search-too-many-results";
       }
       String currentUrl = request.getRequestURL().toString();
       model.addAttribute("currentUrl", currentUrl);
       model.addAttribute(COPY_CASE_SEARCH_RESULTS, caseSearchResults);
-      return "/application/application-copy-case-search-results";
+      return "application/application-copy-case-search-results";
     } else {
-      return "/application/application-copy-case-search-no-results";
+      return "application/application-copy-case-search-no-results";
     }
   }
 
@@ -122,7 +122,7 @@ public class CopyCaseSearchResultsController {
     // Store the selected caseReferenceNumber in the ApplicationDetails.
     // This will be used at the point the Application is created.
     applicationDetails.setCopyCaseReferenceNumber(copyCaseReferenceNumber);
-    return "redirect:/application/client/search";
+    return "redirect:application/client/search";
   }
 }
 
