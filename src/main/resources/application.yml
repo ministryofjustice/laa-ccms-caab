@@ -35,10 +35,10 @@ spring:
 laa:
   ccms:
     data-api:
-      hostname: laa-ccms-caab-ebs-api.live.cloud-platform.service.justice.gov.uk
+      hostname: ${CAAB_DATA_API_HOSTNAME}
       url: https://${laa.ccms.data-api.hostname}
     soa-gateway-api:
-      hostname: laa-ccms-caab-soa-api.live.cloud-platform.service.justice.gov.uk
+      hostname: ${CAAB_SOA_API_HOSTNAME}
       url: https://${laa.ccms.soa-gateway-api.hostname}
 
 server:

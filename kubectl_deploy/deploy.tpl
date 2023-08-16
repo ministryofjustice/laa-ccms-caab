@@ -36,8 +36,13 @@ spec:
               secretKeyRef:
                 name: saml-metadata-uri
                 key: saml-certificate
-          - name: CAAB_DATA_API_HOST
+          - name: CAAB_DATA_API_HOSTNAME
             valueFrom:
               secretKeyRef:
                 name: saml-metadata-uri
-                key: caab-data-api-host
+                key: caab-data-api-hostname
+          - name: CAAB_SOA_API_HOSTNAME
+            valueFrom:
+              secretKeyRef:
+                name: saml-metadata-uri
+                key: caab-soa-gateway-api-hostname
