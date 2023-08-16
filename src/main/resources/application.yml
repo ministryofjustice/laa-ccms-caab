@@ -40,6 +40,9 @@ laa:
     soa-gateway-api:
       hostname: ${CAAB_SOA_API_HOSTNAME}
       url: https://${laa.ccms.soa-gateway-api.hostname}
+    caab-api:
+        hostname: ${CAAB_API_HOSTNAME}
+        url: http://${laa.ccms.caab-api.hostname}
 
 server:
   port: 8080

@@ -46,3 +46,9 @@ spec:
               secretKeyRef:
                 name: saml-metadata-uri
                 key: caab-soa-gateway-api-hostname
+          - name: CAAB_API_HOSTNAME
+            valueFrom:
+              secretKeyRef:
+                name: saml-metadata-uri
+                key: caab-api-hostname
+
