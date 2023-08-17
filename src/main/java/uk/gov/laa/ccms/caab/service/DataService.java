@@ -63,7 +63,7 @@ public class DataService {
   }
 
   /**
-   * Retrieves common lookup values based on they type.
+   * Retrieves common lookup values based on the type.
    *
    * @param type The type of the common lookup values.
    * @return A Mono containing the CommonLookupDetail or an error handler if an error occurs.
