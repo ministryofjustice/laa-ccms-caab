@@ -104,7 +104,7 @@ public class ClientSearchResultsController {
     // redirected correctly after the privacy notice
     applicationDetails.setApplicationCreated(false);
 
-    return "redirect:application/agreement";
+    return "redirect:/application/agreement";
   }
 }
 

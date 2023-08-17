@@ -164,7 +164,7 @@ public class CategoryOfLawControllerTest {
                 .flashAttr("applicationDetails", applicationDetails)
                 .sessionAttr("user", user))
             .andDo(print())
-            .andExpect(redirectedUrl("application/application-type"));
+            .andExpect(redirectedUrl("/application/application-type"));
 
         verifyNoInteractions(soaGatewayService);
         verifyNoInteractions(dataService);
@@ -179,7 +179,7 @@ public class CategoryOfLawControllerTest {
                 .flashAttr("applicationDetails", applicationDetails)
                 .sessionAttr("user", user))
             .andDo(print())
-            .andExpect(redirectedUrl("application/client/search"));
+            .andExpect(redirectedUrl("/application/client/search"));
 
         verifyNoInteractions(soaGatewayService);
         verifyNoInteractions(dataService);

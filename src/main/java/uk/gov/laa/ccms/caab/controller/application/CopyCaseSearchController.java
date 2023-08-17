@@ -97,7 +97,7 @@ public class CopyCaseSearchController {
               userDetails.getProvider().getOffices());
       return "application/application-copy-case-search";
     }
-    return "redirect:application/copy-case/results";
+    return "redirect:/application/copy-case/results";
   }
 
   /**

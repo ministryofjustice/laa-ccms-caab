@@ -112,7 +112,7 @@ public class ClientSearchResultsControllerTest {
                         .sessionAttr("applicationDetails", new ApplicationDetails())
                         .sessionAttr("clientSearchResults", new ClientResultsDisplay()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("application/agreement"));
+                .andExpect(redirectedUrl("/application/agreement"));
     }
 
     @Test

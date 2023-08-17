@@ -103,7 +103,7 @@ public class ClientSearchControllerTest {
                         .flashAttr("clientSearchCriteria", clientSearchCriteria)
                         .sessionAttr("user", user))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("application/client/results"));
+                .andExpect(redirectedUrl("/application/client/results"));
     }
 
     private UserDetail buildUser() {

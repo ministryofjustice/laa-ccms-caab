@@ -85,7 +85,7 @@ public class ClientSearchController {
       return "application/application-client-search";
     }
 
-    return "redirect:application/client/results";
+    return "redirect:/application/client/results";
   }
 
   /**

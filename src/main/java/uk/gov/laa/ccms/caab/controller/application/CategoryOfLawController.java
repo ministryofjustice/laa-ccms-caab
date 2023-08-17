@@ -83,7 +83,7 @@ public class CategoryOfLawController {
     log.info("POST /application/category-of-law: {}", applicationDetails);
     applicationValidator.validateCategoryOfLaw(applicationDetails, bindingResult);
 
-    String viewName = "redirect:application/application-type";
+    String viewName = "redirect:/application/application-type";
     if (bindingResult.hasErrors()) {
       initialiseCategoriesOfLaw(applicationDetails, userDetails, model);
       viewName = "application/select-category-of-law";
@@ -91,7 +91,7 @@ public class CategoryOfLawController {
       // Exception Funding has been selected, so initialise the ApplicationType to ECF
       // and bypass the ApplicationType screen.
       applicationDetails.setApplicationTypeCategory(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
-      viewName = "redirect:application/client/search";
+      viewName = "redirect:/application/client/search";
     }
 
     return viewName;

@@ -117,7 +117,7 @@ public class CopyCaseSearchControllerTest {
                 .flashAttr(COPY_CASE_SEARCH_CRITERIA, new CopyCaseSearchCriteria()))
             .andDo(print())
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("application/copy-case/results"));
+            .andExpect(redirectedUrl("/application/copy-case/results"));
 
         verify(dataService, never()).getFeeEarners(user.getProvider().getId());
     }

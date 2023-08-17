@@ -78,7 +78,7 @@ public class ApplicationTypeControllerTest {
         this.mockMvc.perform(get("/application/application-type")
                 .flashAttr("applicationDetails", applicationDetails))
             .andDo(print())
-            .andExpect(redirectedUrl("application/client/search"));
+            .andExpect(redirectedUrl("/application/client/search"));
 
         verifyNoInteractions(dataService);
     }
@@ -108,7 +108,7 @@ public class ApplicationTypeControllerTest {
         this.mockMvc.perform(post("/application/application-type")
                         .flashAttr("applicationDetails", applicationDetails))
                 .andDo(print())
-                .andExpect(redirectedUrl("application/delegated-functions"));
+                .andExpect(redirectedUrl("/application/delegated-functions"));
 
         verifyNoInteractions(dataService);
     }
