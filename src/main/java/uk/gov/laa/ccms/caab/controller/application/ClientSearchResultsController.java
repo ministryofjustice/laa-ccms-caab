@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -33,7 +34,8 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 @SessionAttributes(value = {
     APPLICATION_DETAILS,
     CLIENT_SEARCH_CRITERIA,
-    CLIENT_SEARCH_RESULTS})
+    CLIENT_SEARCH_RESULTS,
+    CLIENT_DETAILS})
 public class ClientSearchResultsController {
 
   private final SoaGatewayService soaGatewayService;
@@ -41,6 +43,11 @@ public class ClientSearchResultsController {
   private final ClientResultDisplayMapper clientResultDisplayMapper;
 
   private final SearchConstants searchConstants;
+
+//  @ModelAttribute(CLIENT_DETAILS)
+//  public uk.gov.laa.ccms.caab.bean.ClientDetails getClientDetails() {
+//    return new uk.gov.laa.ccms.caab.bean.ClientDetails();
+//  }
 
   /**
    * Displays the search results for clients based on specified criteria.
@@ -95,12 +102,16 @@ public class ClientSearchResultsController {
    */
   @PostMapping("/application/client/results")
   public String clientSearch(
-          @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails) {
+      @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
+      Model model) {
     log.info("POST /application/client/results");
 
     // a post only occurs when register new client has been clicked ,if so we want to amend
     // application created to false, so they get redirected correctly after the privacy notice
     applicationDetails.setApplicationCreated(false);
+
+    //always make a new client Details session object when clicking the register new client button
+    model.addAttribute(CLIENT_DETAILS, new uk.gov.laa.ccms.caab.bean.ClientDetails());
 
     return "redirect:/application/agreement";
   }

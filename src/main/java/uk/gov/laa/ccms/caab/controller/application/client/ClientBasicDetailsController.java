@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.ClientDetailsValidator;
@@ -36,17 +37,15 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
+@SessionAttributes({
+    CLIENT_DETAILS
+})
 @SuppressWarnings({"unchecked"})
 public class ClientBasicDetailsController {
 
   private final DataService dataService;
 
   private final ClientDetailsValidator clientDetailsValidator;
-
-  @ModelAttribute(CLIENT_DETAILS)
-  public ClientDetails getClientDetails() {
-    return new ClientDetails();
-  }
 
   /**
    * Handles the GET request for client basic details page.
