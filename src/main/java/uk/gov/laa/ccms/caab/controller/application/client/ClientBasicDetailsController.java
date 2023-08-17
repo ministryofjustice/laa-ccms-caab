@@ -158,9 +158,7 @@ public class ClientBasicDetailsController {
   private void populateDropdowns(Model model) {
     // Asynchronously fetch titles
     Mono<List<CommonLookupValueDetail>> titlesMono = dataService.getCommonValues(
-                    COMMON_VALUE_CONTACT_TITLE,
-                    null,
-                    null)
+                    COMMON_VALUE_CONTACT_TITLE)
             .map(commonLookupDetail -> Optional.ofNullable(commonLookupDetail)
                     .map(CommonLookupDetail::getContent)
                     .orElse(Collections.emptyList()));
@@ -181,18 +179,14 @@ public class ClientBasicDetailsController {
             });
 
     Mono<List<CommonLookupValueDetail>> gendersMono = dataService.getCommonValues(
-            COMMON_VALUE_GENDER,
-            null,
-            null)
+            COMMON_VALUE_GENDER)
             .map(commonLookupDetail -> Optional.ofNullable(commonLookupDetail)
                     .map(CommonLookupDetail::getContent)
                     .orElse(Collections.emptyList()));
 
     // Asynchronously fetch marital statuses
     Mono<List<CommonLookupValueDetail>> maritalStatusMono = dataService.getCommonValues(
-                    COMMON_VALUE_MARITAL_STATUS,
-                    null,
-                    null)
+                    COMMON_VALUE_MARITAL_STATUS)
             .map(commonLookupDetail -> Optional.ofNullable(commonLookupDetail)
                     .map(CommonLookupDetail::getContent)
                     .orElse(Collections.emptyList()));

@@ -63,11 +63,21 @@ public class DataService {
   }
 
   /**
-   * Retrieves common lookup values based on the type, code, and sort criteria.
+   * Retrieves common lookup values based on they type.
    *
    * @param type The type of the common lookup values.
-   * @param code The code of the common lookup values.
-   * @param sort The sort criteria for the common lookup values.
+   * @return A Mono containing the CommonLookupDetail or an error handler if an error occurs.
+   */
+  public Mono<CommonLookupDetail> getCommonValues(String type) {
+    return getCommonValues(type, null, null);
+  }
+
+  /**
+   * Retrieves common lookup values based on the type, code, and sort criteria.
+   *
+   * @param type The type of the common lookup values. Can be null.
+   * @param code The code of the common lookup values. Can be null.
+   * @param sort The sort criteria for the common lookup values. Can be null.
    * @return A Mono containing the CommonLookupDetail or an error handler if an error occurs.
    */
   public Mono<CommonLookupDetail> getCommonValues(String type, String code, String sort) {

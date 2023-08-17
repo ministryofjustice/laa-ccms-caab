@@ -82,13 +82,13 @@ public class ClientBasicDetailsControllerTest {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
     ClientDetails clientDetails = new ClientDetails();
 
-    when(dataService.getCommonValues(eq(COMMON_VALUE_CONTACT_TITLE), any(), any())).thenReturn(
+    when(dataService.getCommonValues(eq(COMMON_VALUE_CONTACT_TITLE))).thenReturn(
         Mono.just(titleLookupDetail));
     when(dataService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
-    when(dataService.getCommonValues(eq(COMMON_VALUE_GENDER), any(), any())).thenReturn(
+    when(dataService.getCommonValues(eq(COMMON_VALUE_GENDER))).thenReturn(
         Mono.just(genderLookupDetail));
-    when(dataService.getCommonValues(eq(COMMON_VALUE_MARITAL_STATUS), any(), any())).thenReturn(
+    when(dataService.getCommonValues(eq(COMMON_VALUE_MARITAL_STATUS))).thenReturn(
         Mono.just(maritalStatusLookupDetail));
 
     this.mockMvc.perform(get("/application/client/details/basic")
@@ -107,13 +107,13 @@ public class ClientBasicDetailsControllerTest {
   void testClientDetailsBasicGetWithPopulatedFields() throws Exception {
     ClientSearchCriteria clientSearchCriteria = buildClientSearchCriteria();
 
-    when(dataService.getCommonValues(eq(COMMON_VALUE_CONTACT_TITLE), any(), any())).thenReturn(
+    when(dataService.getCommonValues(eq(COMMON_VALUE_CONTACT_TITLE))).thenReturn(
         Mono.just(titleLookupDetail));
     when(dataService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
-    when(dataService.getCommonValues(eq(COMMON_VALUE_GENDER), any(), any())).thenReturn(
+    when(dataService.getCommonValues(eq(COMMON_VALUE_GENDER))).thenReturn(
         Mono.just(genderLookupDetail));
-    when(dataService.getCommonValues(eq(COMMON_VALUE_MARITAL_STATUS), any(), any())).thenReturn(
+    when(dataService.getCommonValues(eq(COMMON_VALUE_MARITAL_STATUS))).thenReturn(
         Mono.just(maritalStatusLookupDetail));
 
     mockMvc.perform(get("/application/client/details/basic")
@@ -138,13 +138,13 @@ public class ClientBasicDetailsControllerTest {
     countryLookupDetail.addContentItem(
         new CommonLookupValueDetail().code("UK").description("United Kingdom"));
 
-    when(dataService.getCommonValues(eq(COMMON_VALUE_CONTACT_TITLE), any(), any())).thenReturn(
+    when(dataService.getCommonValues(eq(COMMON_VALUE_CONTACT_TITLE))).thenReturn(
         Mono.just(titleLookupDetail));
     when(dataService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
-    when(dataService.getCommonValues(eq(COMMON_VALUE_GENDER), any(), any())).thenReturn(
+    when(dataService.getCommonValues(eq(COMMON_VALUE_GENDER))).thenReturn(
         Mono.just(genderLookupDetail));
-    when(dataService.getCommonValues(eq(COMMON_VALUE_MARITAL_STATUS), any(), any())).thenReturn(
+    when(dataService.getCommonValues(eq(COMMON_VALUE_MARITAL_STATUS))).thenReturn(
         Mono.just(maritalStatusLookupDetail));
 
     this.mockMvc.perform(get("/application/client/details/basic")
@@ -184,13 +184,13 @@ public class ClientBasicDetailsControllerTest {
       return null;
     }).when(clientDetailsValidator).validate(any(), any());
 
-    when(dataService.getCommonValues(eq(COMMON_VALUE_CONTACT_TITLE), any(), any())).thenReturn(
+    when(dataService.getCommonValues(eq(COMMON_VALUE_CONTACT_TITLE))).thenReturn(
         Mono.just(titleLookupDetail));
     when(dataService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
-    when(dataService.getCommonValues(eq(COMMON_VALUE_GENDER), any(), any())).thenReturn(
+    when(dataService.getCommonValues(eq(COMMON_VALUE_GENDER))).thenReturn(
         Mono.just(genderLookupDetail));
-    when(dataService.getCommonValues(eq(COMMON_VALUE_MARITAL_STATUS), any(), any())).thenReturn(
+    when(dataService.getCommonValues(eq(COMMON_VALUE_MARITAL_STATUS))).thenReturn(
         Mono.just(maritalStatusLookupDetail));
 
     mockMvc.perform(post("/application/client/details/basic")
