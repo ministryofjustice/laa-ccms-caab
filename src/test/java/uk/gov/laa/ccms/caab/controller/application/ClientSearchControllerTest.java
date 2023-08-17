@@ -67,7 +67,7 @@ public class ClientSearchControllerTest {
                         .flashAttr("applicationDetails", new ApplicationDetails())
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-client-search"));
+                .andExpect(view().name("application/application-client-search"));
 
         verify(dataService).getGenders();
         verify(dataService).getUniqueIdentifierTypes();
@@ -89,7 +89,7 @@ public class ClientSearchControllerTest {
                         .sessionAttr("user", user))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-client-search"));
+                .andExpect(view().name("application/application-client-search"));
 
         verify(dataService).getGenders();
         verify(dataService).getUniqueIdentifierTypes();

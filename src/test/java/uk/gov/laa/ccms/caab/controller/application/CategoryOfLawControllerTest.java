@@ -94,7 +94,7 @@ public class CategoryOfLawControllerTest {
                         .sessionAttr("user", user))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/select-category-of-law"))
+                .andExpect(view().name("application/select-category-of-law"))
                 .andExpect(model().attribute("categoriesOfLaw", categoriesOfLaw))
                 .andExpect(model().attributeExists("applicationDetails"));
 
@@ -116,7 +116,7 @@ public class CategoryOfLawControllerTest {
                 .sessionAttr("user", user))
             .andDo(print())
             .andExpect(status().isOk())
-            .andExpect(view().name("/application/select-category-of-law"))
+            .andExpect(view().name("application/select-category-of-law"))
             .andExpect(model().attribute("categoriesOfLaw", categoriesOfLaw))
             .andExpect(model().attributeExists("applicationDetails"));
 
@@ -152,7 +152,7 @@ public class CategoryOfLawControllerTest {
                         .sessionAttr("user", user))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/select-category-of-law"))
+                .andExpect(view().name("application/select-category-of-law"))
                 .andExpect(model().attribute("categoriesOfLaw", categoriesOfLaw));
     }
 

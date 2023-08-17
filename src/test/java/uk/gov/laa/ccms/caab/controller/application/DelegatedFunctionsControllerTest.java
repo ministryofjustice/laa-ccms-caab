@@ -56,7 +56,7 @@ public class DelegatedFunctionsControllerTest {
                         .sessionAttr("applicationDetails", applicationDetails))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/select-delegated-functions"))
+                .andExpect(view().name("application/select-delegated-functions"))
                 .andExpect(model().attribute("applicationDetails", applicationDetails));
     }
 
@@ -74,7 +74,7 @@ public class DelegatedFunctionsControllerTest {
                         .flashAttr("applicationDetails", applicationDetails))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/select-delegated-functions"));
+                .andExpect(view().name("application/select-delegated-functions"));
     }
 
     @ParameterizedTest

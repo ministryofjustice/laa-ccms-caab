@@ -73,7 +73,7 @@ public class ClientSearchResultsControllerTest {
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-client-search-no-results"));
+                .andExpect(view().name("application/application-client-search-no-results"));
     }
 
     @Test
@@ -88,7 +88,7 @@ public class ClientSearchResultsControllerTest {
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-client-search-too-many-results"));
+                .andExpect(view().name("application/application-client-search-too-many-results"));
     }
 
     @Test
@@ -103,7 +103,7 @@ public class ClientSearchResultsControllerTest {
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-client-search-results"));
+                .andExpect(view().name("application/application-client-search-results"));
     }
 
     @Test
@@ -123,7 +123,7 @@ public class ClientSearchResultsControllerTest {
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-client-search-no-results"));
+                .andExpect(view().name("application/application-client-search-no-results"));
     }
     @Test
     public void testClientSearchResults_ZeroTotalElements() throws Exception {
@@ -137,7 +137,7 @@ public class ClientSearchResultsControllerTest {
                         .sessionAttr("user", user)
                         .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-client-search-no-results"));
+                .andExpect(view().name("application/application-client-search-no-results"));
     }
 
     private UserDetail buildUser() {

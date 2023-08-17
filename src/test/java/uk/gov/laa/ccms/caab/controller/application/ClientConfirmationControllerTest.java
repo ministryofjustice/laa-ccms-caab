@@ -84,7 +84,7 @@ public class ClientConfirmationControllerTest {
                         .sessionAttr(USER_DETAILS, user)) // using the constant USER_DETAILS for the session attribute name
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-client-confirmation"))
+                .andExpect(view().name("application/application-client-confirmation"))
                 .andExpect(request().sessionAttribute("clientInformation", clientInformation))
                 .andExpect(model().attribute("clientReferenceNumber", clientReferenceNumber));
     }

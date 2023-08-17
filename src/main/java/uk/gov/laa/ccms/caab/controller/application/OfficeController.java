@@ -50,7 +50,7 @@ public class OfficeController {
           Model model) {
     model.addAttribute(APPLICATION_DETAILS, getApplicationDetails());
     model.addAttribute("offices", user.getProvider().getOffices());
-    return "/application/select-office";
+    return "application/select-office";
   }
 
   /**
@@ -74,7 +74,7 @@ public class OfficeController {
 
     if (bindingResult.hasErrors()) {
       model.addAttribute("offices", user.getProvider().getOffices());
-      return "/application/select-office";
+      return "application/select-office";
     }
 
     return "redirect:/application/category-of-law";

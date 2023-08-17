@@ -71,7 +71,7 @@ public class ClientSearchResultsController {
     if (clientSearchResults != null && clientSearchResults.getContent() != null
             && clientSearchResults.getTotalElements() > 0) {
       if (clientSearchResults.getTotalElements() > searchConstants.getMaxSearchResultsClients()) {
-        return "/application/application-client-search-too-many-results";
+        return "application/application-client-search-too-many-results";
       }
       String currentUrl = request.getRequestURL().toString();
       model.addAttribute("currentUrl", currentUrl);
@@ -80,9 +80,9 @@ public class ClientSearchResultsController {
               CLIENT_SEARCH_RESULTS,
               clientResultDisplayMapper.toClientResultsDisplay(clientSearchResults));
 
-      return "/application/application-client-search-results";
+      return "application/application-client-search-results";
     } else {
-      return "/application/application-client-search-no-results";
+      return "application/application-client-search-no-results";
     }
   }
 

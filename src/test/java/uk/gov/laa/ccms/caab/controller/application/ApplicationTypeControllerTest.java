@@ -62,7 +62,7 @@ public class ApplicationTypeControllerTest {
                     .sessionAttr("applicationDetails", new ApplicationDetails()))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/select-application-type"))
+                .andExpect(view().name("application/select-application-type"))
                 .andExpect(model().attribute("applicationDetails", new ApplicationDetails()))
                 .andExpect(model().attribute("applicationTypes", applicationTypes));
 
@@ -97,7 +97,7 @@ public class ApplicationTypeControllerTest {
                         .flashAttr("applicationDetails", applicationDetails))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/select-application-type"));
+                .andExpect(view().name("application/select-application-type"));
     }
 
     @Test

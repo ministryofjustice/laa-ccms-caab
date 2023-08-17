@@ -74,7 +74,7 @@ public class CopyCaseSearchControllerTest {
                 .sessionAttr("user", user))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(view().name("/application/application-copy-case-search"))
+                .andExpect(view().name("application/application-copy-case-search"))
                 .andExpect(model().attribute("feeEarners", feeEarnerDetail.getContent()))
                 .andExpect(model().attribute("offices", user.getProvider().getOffices()));
 
@@ -101,7 +101,7 @@ public class CopyCaseSearchControllerTest {
                 .sessionAttr("user", user))
             .andDo(print())
             .andExpect(status().isOk())
-            .andExpect(view().name("/application/application-copy-case-search"))
+            .andExpect(view().name("application/application-copy-case-search"))
             .andExpect(model().attribute("feeEarners", feeEarnerDetail.getContent()))
             .andExpect(model().attribute("offices", user.getProvider().getOffices()));
 
