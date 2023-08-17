@@ -11,23 +11,23 @@ import reactor.test.StepVerifier;
 @ExtendWith(MockitoExtension.class)
 class CaabApiServiceErrorHandlerTest {
 
-    @InjectMocks
-    private CaabApiServiceErrorHandler caabApiServiceErrorHandler;
+  @InjectMocks
+  private CaabApiServiceErrorHandler caabApiServiceErrorHandler;
 
-    @BeforeEach
-    public void setUp() {
-        caabApiServiceErrorHandler = new CaabApiServiceErrorHandler();
-    }
+  @BeforeEach
+  public void setUp() {
+    caabApiServiceErrorHandler = new CaabApiServiceErrorHandler();
+  }
 
-    @Test
-    public void testHandleCreateApplicationError() {
-        Throwable throwable = new RuntimeException("Error");
+  @Test
+  public void testHandleCreateApplicationError() {
+    Throwable throwable = new RuntimeException("Error");
 
-        Mono<Void> result = caabApiServiceErrorHandler.handleCreateApplicationError(throwable);
+    Mono<Void> result = caabApiServiceErrorHandler.handleCreateApplicationError(throwable);
 
-        StepVerifier.create(result)
-                .verifyErrorMatches(e -> e instanceof CaabApiServiceException
-                        && e.getMessage().equals("Failed to create application")
-                        && e.getCause() == throwable);
-    }
+    StepVerifier.create(result)
+        .verifyErrorMatches(e -> e instanceof CaabApiServiceException
+            && e.getMessage().equals("Failed to create application")
+            && e.getCause() == throwable);
+  }
 }

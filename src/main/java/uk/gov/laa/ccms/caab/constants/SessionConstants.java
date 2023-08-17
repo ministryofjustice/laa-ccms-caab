@@ -45,5 +45,11 @@ public class SessionConstants {
    */
   public static final String CLIENT_SEARCH_RESULTS = "clientSearchResults";
 
+  /**
+   * Session attribute used to keep track of client details during the creation of a new
+   * application.
+   */
+  public static final String CLIENT_DETAILS = "clientDetails";
+
 
 }

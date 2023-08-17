@@ -26,4 +26,14 @@ public class CommonValueConstants {
    * Type used to retrieve the unique identifier values through getCommonValues in DataService.
    */
   public static final String COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE = "XXCCMS_UNIQUE_ID_TYPE";
+
+  /**
+   * Type used to retrieve the title values for contact details.
+   */
+  public static final String COMMON_VALUE_CONTACT_TITLE = "CONTACT_TITLE";
+
+  /**
+   * Type used to retrieve the marital values for contact details.
+   */
+  public static final String COMMON_VALUE_MARITAL_STATUS = "MARITAL_STATUS";
 }

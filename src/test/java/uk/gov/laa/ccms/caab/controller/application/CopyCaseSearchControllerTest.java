@@ -42,99 +42,102 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ContextConfiguration
 @WebAppConfiguration
 public class CopyCaseSearchControllerTest {
-    @Mock
-    private DataService dataService;
+  @Mock
+  private DataService dataService;
 
-    @Mock
-    private CopyCaseSearchCriteriaValidator validator;
+  @Mock
+  private CopyCaseSearchCriteriaValidator validator;
 
-    @InjectMocks
-    private CopyCaseSearchController copyCaseSearchController;
+  @InjectMocks
+  private CopyCaseSearchController copyCaseSearchController;
 
-    private MockMvc mockMvc;
+  private MockMvc mockMvc;
 
-    @Autowired
-    private WebApplicationContext webApplicationContext;
+  @Autowired
+  private WebApplicationContext webApplicationContext;
 
-    @BeforeEach
-    public void setup() {
-        mockMvc = standaloneSetup(copyCaseSearchController).build();
-    }
+  @BeforeEach
+  public void setup() {
+    mockMvc = standaloneSetup(copyCaseSearchController).build();
+  }
 
-    @Test
-    public void testGetCopyCaseSearchAddsFeeEarnersToModel() throws Exception {
-        final UserDetail user = buildUser();
+  @Test
+  public void testGetCopyCaseSearchAddsFeeEarnersToModel() throws Exception {
+    final UserDetail user = buildUser();
 
-        final FeeEarnerDetail feeEarnerDetail = new FeeEarnerDetail().addContentItem(
-            new ContactDetail().id(123).name("A Fee Earner"));
+    final FeeEarnerDetail feeEarnerDetail = new FeeEarnerDetail().addContentItem(
+        new ContactDetail().id(123).name("A Fee Earner"));
 
-        when(dataService.getFeeEarners(user.getProvider().getId())).thenReturn(Mono.just(feeEarnerDetail));
+    when(dataService.getFeeEarners(user.getProvider().getId())).thenReturn(
+        Mono.just(feeEarnerDetail));
 
-        this.mockMvc.perform(get("/application/copy-case/search")
-                .sessionAttr("user", user))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(view().name("application/application-copy-case-search"))
-                .andExpect(model().attribute("feeEarners", feeEarnerDetail.getContent()))
-                .andExpect(model().attribute("offices", user.getProvider().getOffices()));
+    this.mockMvc.perform(get("/application/copy-case/search")
+            .sessionAttr("user", user))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-copy-case-search"))
+        .andExpect(model().attribute("feeEarners", feeEarnerDetail.getContent()))
+        .andExpect(model().attribute("offices", user.getProvider().getOffices()));
 
-        verify(dataService, times(1)).getFeeEarners(user.getProvider().getId());
-    }
+    verify(dataService, times(1)).getFeeEarners(user.getProvider().getId());
+  }
 
-    @Test
-    public void testPostCopyCaseSearchHandlesValidationFailure() throws Exception {
-        final UserDetail user = buildUser();
+  @Test
+  public void testPostCopyCaseSearchHandlesValidationFailure() throws Exception {
+    final UserDetail user = buildUser();
 
-        final FeeEarnerDetail feeEarnerDetail = new FeeEarnerDetail().addContentItem(
-            new ContactDetail().id(123).name("A Fee Earner"));
+    final FeeEarnerDetail feeEarnerDetail = new FeeEarnerDetail().addContentItem(
+        new ContactDetail().id(123).name("A Fee Earner"));
 
-        doAnswer(invocation -> {
-            Errors errors = (Errors) invocation.getArguments()[1];
-            errors.rejectValue(null, "required.atLeastOneSearchCriteria",
-                "You must provide at least one search criteria below. Please amend your entry.");
-            return null;
-        }).when(validator).validate(any(), any());
+    doAnswer(invocation -> {
+      Errors errors = (Errors) invocation.getArguments()[1];
+      errors.rejectValue(null, "required.atLeastOneSearchCriteria",
+          "You must provide at least one search criteria below. Please amend your entry.");
+      return null;
+    }).when(validator).validate(any(), any());
 
-        when(dataService.getFeeEarners(user.getProvider().getId())).thenReturn(Mono.just(feeEarnerDetail));
+    when(dataService.getFeeEarners(user.getProvider().getId())).thenReturn(
+        Mono.just(feeEarnerDetail));
 
-        this.mockMvc.perform(post("/application/copy-case/search")
-                .sessionAttr("user", user))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(view().name("application/application-copy-case-search"))
-            .andExpect(model().attribute("feeEarners", feeEarnerDetail.getContent()))
-            .andExpect(model().attribute("offices", user.getProvider().getOffices()));
+    this.mockMvc.perform(post("/application/copy-case/search")
+            .sessionAttr("user", user))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-copy-case-search"))
+        .andExpect(model().attribute("feeEarners", feeEarnerDetail.getContent()))
+        .andExpect(model().attribute("offices", user.getProvider().getOffices()));
 
-        verify(dataService, times(1)).getFeeEarners(user.getProvider().getId());
-    }
+    verify(dataService, times(1)).getFeeEarners(user.getProvider().getId());
+  }
 
-    @Test
-    public void testPostCopyCaseSearch_RedirectsToResults() throws Exception {
-        final UserDetail user = buildUser();
+  @Test
+  public void testPostCopyCaseSearch_RedirectsToResults() throws Exception {
+    final UserDetail user = buildUser();
 
-        this.mockMvc.perform(post("/application/copy-case/search")
-                .sessionAttr("user", user)
-                .flashAttr(COPY_CASE_SEARCH_CRITERIA, new CopyCaseSearchCriteria()))
-            .andDo(print())
-            .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/copy-case/results"));
+    this.mockMvc.perform(post("/application/copy-case/search")
+            .sessionAttr("user", user)
+            .flashAttr(COPY_CASE_SEARCH_CRITERIA, new CopyCaseSearchCriteria()))
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/copy-case/results"));
 
-        verify(dataService, never()).getFeeEarners(user.getProvider().getId());
-    }
+    verify(dataService, never()).getFeeEarners(user.getProvider().getId());
+  }
 
-    private UserDetail buildUser() {
-        return new UserDetail()
-            .userId(1)
-            .userType("testUserType")
-            .loginId("testLoginId")
-            .provider(buildProvider());
-    }
-    private ProviderDetail buildProvider() {
-        return new ProviderDetail()
-            .id(123)
-            .addOfficesItem(
-                new OfficeDetail()
-                    .id(1)
-                    .name("Office 1"));
-    }
+  private UserDetail buildUser() {
+    return new UserDetail()
+        .userId(1)
+        .userType("testUserType")
+        .loginId("testLoginId")
+        .provider(buildProvider());
+  }
+
+  private ProviderDetail buildProvider() {
+    return new ProviderDetail()
+        .id(123)
+        .addOfficesItem(
+            new OfficeDetail()
+                .id(1)
+                .name("Office 1"));
+  }
 }

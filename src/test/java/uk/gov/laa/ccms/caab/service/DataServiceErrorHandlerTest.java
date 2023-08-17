@@ -8,84 +8,102 @@ import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
 public class DataServiceErrorHandlerTest {
+  @InjectMocks
+  private DataServiceErrorHandler dataServiceErrorHandler;
 
-    @InjectMocks
-    private DataServiceErrorHandler dataServiceErrorHandler;
+  @BeforeEach
+  public void setUp() {
+    dataServiceErrorHandler = new DataServiceErrorHandler();
+  }
 
-    @BeforeEach
-    public void setUp() {
-        dataServiceErrorHandler = new DataServiceErrorHandler();
-    }
+  @Test
+  public void testHandleUserError() {
+    Throwable throwable = new RuntimeException("Error");
 
-    @Test
-    public void testHandleUserError() {
-        Throwable throwable = new RuntimeException("Error");
+    Mono<UserDetail> result = dataServiceErrorHandler.handleUserError("testLoginId", throwable);
 
-        Mono<UserDetail> result = dataServiceErrorHandler.handleUserError("testLoginId", throwable);
+    StepVerifier.create(result)
+        .verifyErrorMatches(e -> e instanceof DataServiceException
+            && e.getMessage().equals("Failed to retrieve User with loginId: testLoginId")
+            && e.getCause() == throwable);
+  }
 
-        StepVerifier.create(result)
-                .verifyErrorMatches(e -> e instanceof DataServiceException
-                        && e.getMessage().equals("Failed to retrieve User with loginId: testLoginId")
-                        && e.getCause() == throwable);
-    }
+  @Test
+  public void testHandleCommonValuesError() {
+    Throwable throwable = new RuntimeException("Error");
 
-    @Test
-    public void testHandleCommonValuesError() {
-        Throwable throwable = new RuntimeException("Error");
+    Mono<CommonLookupDetail> result =
+        dataServiceErrorHandler.handleCommonValuesError("testType", "testCode", "testSort",
+            throwable);
 
-        Mono<CommonLookupDetail> result = dataServiceErrorHandler.handleCommonValuesError("testType", "testCode", "testSort", throwable);
+    StepVerifier.create(result)
+        .verifyErrorMatches(e -> e instanceof DataServiceException
+            && e.getMessage().equals(
+            "Failed to retrieve Common Values: (type: testType, code: testCode, sort: testSort)")
+            && e.getCause() == throwable);
+  }
 
-        StepVerifier.create(result)
-                .verifyErrorMatches(e -> e instanceof DataServiceException
-                        && e.getMessage().equals("Failed to retrieve Common Values: (type: testType, code: testCode, sort: testSort)")
-                        && e.getCause() == throwable);
-    }
+  @Test
+  public void testHandleCountryLookupError() {
+    Throwable throwable = new RuntimeException("Error");
 
-    @Test
-    public void testHandleCaseStatusValuesError() {
-        Throwable throwable = new RuntimeException("Error");
+    Mono<CommonLookupDetail> result = dataServiceErrorHandler.handleCountryLookupError(throwable);
 
-        Mono<CaseStatusLookupDetail> result = dataServiceErrorHandler.handleCaseStatusValuesError(true, throwable);
+    StepVerifier.create(result)
+        .verifyErrorMatches(e -> e instanceof DataServiceException
+            && e.getMessage().equals("Failed to retrieve Countries")
+            && e.getCause() == throwable);
+  }
 
-        StepVerifier.create(result)
-            .verifyErrorMatches(e -> e instanceof DataServiceException
-                && e.getMessage().equals("Failed to retrieve Case Status Values: (copyAllowed: true)")
-                && e.getCause() == throwable);
-    }
+  @Test
+  public void testHandleCaseStatusValuesError() {
+    Throwable throwable = new RuntimeException("Error");
 
-    @Test
-    public void testHandleAmendmentTypeLookupError() {
-        Throwable throwable = new RuntimeException("Error");
-        String applicationType = "testApplicationType";
+    Mono<CaseStatusLookupDetail> result =
+        dataServiceErrorHandler.handleCaseStatusValuesError(true, throwable);
 
-        Mono<AmendmentTypeLookupDetail> result = dataServiceErrorHandler.handleAmendmentTypeLookupError(applicationType, throwable);
+    StepVerifier.create(result)
+        .verifyErrorMatches(e -> e instanceof DataServiceException
+            && e.getMessage().equals("Failed to retrieve Case Status Values: (copyAllowed: true)")
+            && e.getCause() == throwable);
+  }
 
-        final String expectedMessage = String.format("Failed to retrieve Amendment Types: (applicationType: %s)", applicationType);
+  @Test
+  public void testHandleAmendmentTypeLookupError() {
+    Throwable throwable = new RuntimeException("Error");
+    String applicationType = "testApplicationType";
 
-        StepVerifier.create(result)
-                .verifyErrorMatches(e -> e instanceof DataServiceException
-                        && e.getMessage().equals(expectedMessage)
-                        && e.getCause() == throwable);
-    }
+    Mono<AmendmentTypeLookupDetail> result =
+        dataServiceErrorHandler.handleAmendmentTypeLookupError(applicationType, throwable);
 
-    @Test
-    public void testHandleFeeEarnersError() {
-        Throwable throwable = new RuntimeException("Error");
-        Integer providerId = 1234;
+    final String expectedMessage =
+        String.format("Failed to retrieve Amendment Types: (applicationType: %s)", applicationType);
 
-        Mono<FeeEarnerDetail> result = dataServiceErrorHandler.handleFeeEarnersError(providerId, throwable);
+    StepVerifier.create(result)
+        .verifyErrorMatches(e -> e instanceof DataServiceException
+            && e.getMessage().equals(expectedMessage)
+            && e.getCause() == throwable);
+  }
 
-        StepVerifier.create(result)
-                .verifyErrorMatches(e -> e instanceof DataServiceException
-                        && e.getMessage().equals("Failed to retrieve Fee Earners: (providerId: 1234)")
-                        && e.getCause() == throwable);
-    }
+  @Test
+  public void testHandleFeeEarnersError() {
+    Throwable throwable = new RuntimeException("Error");
+    Integer providerId = 1234;
+
+    Mono<FeeEarnerDetail> result =
+        dataServiceErrorHandler.handleFeeEarnersError(providerId, throwable);
+
+    StepVerifier.create(result)
+        .verifyErrorMatches(e -> e instanceof DataServiceException
+            && e.getMessage().equals("Failed to retrieve Fee Earners: (providerId: 1234)")
+            && e.getCause() == throwable);
+  }
 }

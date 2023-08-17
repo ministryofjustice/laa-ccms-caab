@@ -47,6 +47,12 @@ public class DataServiceErrorHandler {
           "Failed to retrieve Amendment Types: (applicationType: %s)";
 
   /**
+   * The error message for Country errors.
+   */
+  public static String COUNTRY_ERROR_MESSAGE =
+          "Failed to retrieve Countries";
+
+  /**
    * Handles errors related to user data retrieval.
    *
    * @param loginId the ID used during login
@@ -89,6 +95,19 @@ public class DataServiceErrorHandler {
           String applicationType,
           Throwable e) {
     final String msg = String.format(AMENDMENT_TYPE_ERROR_MESSAGE, applicationType);
+    log.error(msg, e);
+    return Mono.error(new DataServiceException(msg, e));
+  }
+
+  /**
+   * Handles errors related to country lookup data retrieval.
+   *
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<CommonLookupDetail> handleCountryLookupError(
+          Throwable e) {
+    final String msg = String.format(COUNTRY_ERROR_MESSAGE);
     log.error(msg, e);
     return Mono.error(new DataServiceException(msg, e));
   }

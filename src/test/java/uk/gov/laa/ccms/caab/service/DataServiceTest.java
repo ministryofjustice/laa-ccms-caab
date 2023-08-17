@@ -1,5 +1,19 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -18,387 +32,431 @@ import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.*;
 
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class DataServiceTest {
 
-    @Mock
-    private WebClient webClientMock;
-    @Mock
-    private WebClient.RequestHeadersSpec requestHeadersMock;
-    @Mock
-    private WebClient.RequestHeadersUriSpec requestHeadersUriMock;
-    @Mock
-    private WebClient.ResponseSpec responseMock;
+  @Mock
+  private WebClient webClientMock;
+  @Mock
+  private WebClient.RequestHeadersSpec requestHeadersMock;
+  @Mock
+  private WebClient.RequestHeadersUriSpec requestHeadersUriMock;
+  @Mock
+  private WebClient.ResponseSpec responseMock;
 
-    @InjectMocks
-    private DataService dataService;
+  @InjectMocks
+  private DataService dataService;
 
-    @Mock
-    private DataServiceErrorHandler dataServiceErrorHandler;
+  @Mock
+  private DataServiceErrorHandler dataServiceErrorHandler;
+
+  ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+  @Test
+  void getUser_returnData() {
+
+    String loginId = "user1";
+    String expectedUri = "/users/{loginId}";
+
+    UserDetail mockUser = new UserDetail();
+    mockUser.setLoginId(loginId);
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(UserDetail.class)).thenReturn(Mono.just(mockUser));
+
+    Mono<UserDetail> userDetailsMono = dataService.getUser(loginId);
+
+    StepVerifier.create(userDetailsMono)
+        .expectNextMatches(user -> user.getLoginId().equals(loginId))
+        .verifyComplete();
+  }
+
+  @Test
+  void getUser_notFound() {
+    String loginId = "user1";
+    String expectedUri = "/users/{loginId}";
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(UserDetail.class)).thenReturn(Mono.error(
+        new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+
+    when(dataServiceErrorHandler.handleUserError(eq(loginId),
+        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+
+    Mono<UserDetail> userDetailsMono = dataService.getUser(loginId);
+
+    StepVerifier.create(userDetailsMono)
+        .verifyComplete();
+  }
+
+  @Test
+  void getCommonValues_returnsData() {
+    String type = "type1";
+    String code = "code1";
+    String sort = "sort1";
+    CommonLookupDetail commonValues = new CommonLookupDetail();
 
     ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
-    @Test
-    void getUser_returnData() {
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
 
-        String loginId = "user1";
-        String expectedUri = "/users/{loginId}";
+    Mono<CommonLookupDetail> commonValuesMono = dataService.getCommonValues(type, code, sort);
 
-        UserDetail mockUser = new UserDetail();
-        mockUser.setLoginId(loginId);
+    StepVerifier.create(commonValuesMono)
+        .expectNext(commonValues)
+        .verifyComplete();
 
-        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(UserDetail.class)).thenReturn(Mono.just(mockUser));
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
-        Mono<UserDetail> userDetailsMono = dataService.getUser(loginId);
+    // Assert the URI
+    assertEquals("/lookup/common?type=type1&code=code1&sort=sort1", actualUri.toString());
+  }
 
-        StepVerifier.create(userDetailsMono)
-                .expectNextMatches(user -> user.getLoginId().equals(loginId))
-                .verifyComplete();
-    }
+  @Test
+  void getCommonValues_notFound() {
+    String type = "type1";
+    String code = "code1";
+    String sort = "sort1";
 
-    @Test
-    void getUser_notFound() {
-        String loginId = "user1";
-        String expectedUri = "/users/{loginId}";
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
-        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(UserDetail.class)).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.error(
+        new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-        when(dataServiceErrorHandler.handleUserError(eq(loginId), any(WebClientResponseException.class))).thenReturn(Mono.empty());
+    when(dataServiceErrorHandler.handleCommonValuesError(eq(type), eq(code), eq(sort),
+        any(WebClientResponseException.class))).thenReturn(Mono.empty());
 
-        Mono<UserDetail> userDetailsMono = dataService.getUser(loginId);
+    Mono<CommonLookupDetail> commonValuesMono = dataService.getCommonValues(type, code, sort);
 
-        StepVerifier.create(userDetailsMono)
-                .verifyComplete();
-    }
+    StepVerifier.create(commonValuesMono)
+        .verifyComplete();
 
-    @Test
-    void getCommonValues_returnsData() {
-        String type = "type1";
-        String code = "code1";
-        String sort = "sort1";
-        CommonLookupDetail commonValues = new CommonLookupDetail();
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
-        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+    // Assert the URI
+    assertEquals("/lookup/common?type=type1&code=code1&sort=sort1", actualUri.toString());
+  }
 
-        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
+  @Test
+  void getCaseStatusValuesCopyAllowed_returnsData() {
+    CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail();
 
-        Mono<CommonLookupDetail> commonValuesMono = dataService.getCommonValues(type, code, sort);
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
-        StepVerifier.create(commonValuesMono)
-                .expectNext(commonValues)
-                .verifyComplete();
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CaseStatusLookupDetail.class)).thenReturn(
+        Mono.just(caseStatusLookupDetail));
 
-        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+    Mono<CaseStatusLookupDetail> lookupDetailMono = dataService.getCaseStatusValues(true);
 
-        // Assert the URI
-        assertEquals("/lookup/common?type=type1&code=code1&sort=sort1", actualUri.toString());
-    }
+    StepVerifier.create(lookupDetailMono)
+        .expectNext(caseStatusLookupDetail)
+        .verifyComplete();
 
-    @Test
-    void getCommonValues_notFound() {
-        String type = "type1";
-        String code = "code1";
-        String sort = "sort1";
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
-        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+    // Assert the URI
+    assertEquals("/lookup/case-status?copy-allowed=true", actualUri.toString());
+  }
 
-        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+  @Test
+  void getCopyCaseStatus_returnsData() {
+    CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail();
+    caseStatusLookupDetail.addContentItem(new CaseStatusLookupValueDetail());
 
-        when(dataServiceErrorHandler.handleCommonValuesError(eq(type), eq(code), eq(sort), any(WebClientResponseException.class))).thenReturn(Mono.empty());
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
-        Mono<CommonLookupDetail> commonValuesMono = dataService.getCommonValues(type, code, sort);
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CaseStatusLookupDetail.class)).thenReturn(
+        Mono.just(caseStatusLookupDetail));
 
-        StepVerifier.create(commonValuesMono)
-                .verifyComplete();
+    CaseStatusLookupValueDetail lookupValue = dataService.getCopyCaseStatus();
 
-        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+    assertNotNull(lookupValue);
+    assertEquals(caseStatusLookupDetail.getContent().get(0), lookupValue);
 
-        // Assert the URI
-        assertEquals("/lookup/common?type=type1&code=code1&sort=sort1", actualUri.toString());
-    }
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
-    @Test
-    void getCaseStatusValuesCopyAllowed_returnsData() {
-        CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail();
+    // Assert the URI
+    assertEquals("/lookup/case-status?copy-allowed=true", actualUri.toString());
+  }
 
-        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+  @Test
+  void getCopyCaseStatus_handlesNullResponse() {
 
-        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(CaseStatusLookupDetail.class)).thenReturn(Mono.just(caseStatusLookupDetail));
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
-        Mono<CaseStatusLookupDetail> lookupDetailMono = dataService.getCaseStatusValues(true);
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CaseStatusLookupDetail.class)).thenReturn(Mono.empty());
 
-        StepVerifier.create(lookupDetailMono)
-            .expectNext(caseStatusLookupDetail)
-            .verifyComplete();
+    CaseStatusLookupValueDetail lookupValue = dataService.getCopyCaseStatus();
 
-        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+    assertNull(lookupValue);
+  }
 
-        // Assert the URI
-        assertEquals("/lookup/case-status?copy-allowed=true", actualUri.toString());
-    }
+  @ParameterizedTest
+  @CsvSource({"DP, 0",
+      "ECF, 0",
+      "SUBDP, 0",
+      "test1, 1",
+      "test2, 1"})
+  void getApplicationTypes_checkType(String code, int expectedSize) {
+    CommonLookupDetail commonValues = new CommonLookupDetail();
+    List<CommonLookupValueDetail> content = new ArrayList<>();
+    CommonLookupValueDetail commonValueDetails = new CommonLookupValueDetail();
+    commonValueDetails.setCode(code);
+    content.add(commonValueDetails);
+    commonValues.setContent(content);
+
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
+
+    List<CommonLookupValueDetail> applicationTypes = dataService.getApplicationTypes();
+    assertEquals(expectedSize, applicationTypes.size());
+
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+    assertEquals("/lookup/common?type=XXCCMS_APP_AMEND_TYPES", actualUri.toString());
+  }
+
+  @Test
+  void getCategoriesOfLaw_returnsData() {
+    String type = COMMON_VALUE_CATEGORY_OF_LAW;
+    CommonLookupDetail commonValues = new CommonLookupDetail();
+    commonValues.addContentItem(new CommonLookupValueDetail().code("CAT1").type(type));
+    commonValues.addContentItem(new CommonLookupValueDetail().code("CAT2").type(type));
+
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
+
+    final List<String> catCodes = new ArrayList<>();
+    catCodes.add("CAT1");
+
+    List<CommonLookupValueDetail> response = dataService.getCategoriesOfLaw(catCodes);
+
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    // Assert the URI
+    assertEquals(String.format("/lookup/common?type=%s", type), actualUri.toString());
+    assertNotNull(response);
+    assertEquals(1, response.size());
+    assertEquals(commonValues.getContent().get(0), response.get(0));
+  }
+
+  @Test
+  void getAllCategoriesOfLaw_returnsData() {
+    String type = COMMON_VALUE_CATEGORY_OF_LAW;
+    CommonLookupDetail commonValues = prepareCommonValueTestData(type);
+
+    List<CommonLookupValueDetail> response = dataService.getAllCategoriesOfLaw();
+
+    expectCommonValueTestOutcome(type, commonValues, response);
+  }
+
+  @Test
+  void getGenders_returnsData() {
+    String type = COMMON_VALUE_GENDER;
+    CommonLookupDetail commonValues = prepareCommonValueTestData(type);
+
+    List<CommonLookupValueDetail> response = dataService.getGenders();
+
+    expectCommonValueTestOutcome(type, commonValues, response);
+  }
+
+  @Test
+  void getUniqueIdentifierTypes_returnsData() {
+    String type = COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
+
+    CommonLookupDetail commonValues = prepareCommonValueTestData(type);
+
+    List<CommonLookupValueDetail> response = dataService.getUniqueIdentifierTypes();
+
+    expectCommonValueTestOutcome(type, commonValues, response);
+  }
 
-    @Test
-    void getCopyCaseStatus_returnsData() {
-        CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail();
-        caseStatusLookupDetail.addContentItem(new CaseStatusLookupValueDetail());
+  private CommonLookupDetail prepareCommonValueTestData(String type) {
+    CommonLookupDetail commonValues = new CommonLookupDetail();
+    commonValues.addContentItem(new CommonLookupValueDetail().code("CAT1").type(type));
+    commonValues.addContentItem(new CommonLookupValueDetail().code("CAT2").type(type));
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
+
+    return commonValues;
+  }
+
+  private void expectCommonValueTestOutcome(String type, CommonLookupDetail commonValues,
+                                            List<CommonLookupValueDetail> response) {
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    // Assert the URI
+    assertEquals(String.format("/lookup/common?type=%s", type), actualUri.toString());
+    assertNotNull(response);
+    assertEquals(2, response.size());
+    assertEquals(commonValues.getContent().get(0), response.get(0));
+    assertEquals(commonValues.getContent().get(1), response.get(1));
+  }
 
-        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+  @Test
+  void getFeeEarners_returnsData() {
+    Integer providerId = 123;
+    FeeEarnerDetail feeEarnerDetail = new FeeEarnerDetail();
+
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(FeeEarnerDetail.class)).thenReturn(Mono.just(feeEarnerDetail));
+
+    Mono<FeeEarnerDetail> feeEarnerDetailMono = dataService.getFeeEarners(providerId);
 
-        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(CaseStatusLookupDetail.class)).thenReturn(Mono.just(caseStatusLookupDetail));
+    StepVerifier.create(feeEarnerDetailMono)
+        .expectNext(feeEarnerDetail)
+        .verifyComplete();
 
-        CaseStatusLookupValueDetail lookupValue = dataService.getCopyCaseStatus();
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
-        assertNotNull(lookupValue);
-        assertEquals(caseStatusLookupDetail.getContent().get(0), lookupValue);
+    // Assert the URI
+    assertEquals(String.format("/fee-earners?provider-id=%s", providerId), actualUri.toString());
+  }
 
-        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+  @Test
+  void getAmendmentTypes_returnsData() {
+    String applicationType = "appType1";
+    AmendmentTypeLookupDetail amendmentTypeLookupDetail = new AmendmentTypeLookupDetail();
 
-        // Assert the URI
-        assertEquals("/lookup/case-status?copy-allowed=true", actualUri.toString());
-    }
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(AmendmentTypeLookupDetail.class)).thenReturn(
+        Mono.just(amendmentTypeLookupDetail));
 
-    @Test
-    void getCopyCaseStatus_handlesNullResponse() {
+    Mono<AmendmentTypeLookupDetail> amendmentTypesMono =
+        dataService.getAmendmentTypes(applicationType);
 
-        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+    StepVerifier.create(amendmentTypesMono)
+        .expectNext(amendmentTypeLookupDetail)
+        .verifyComplete();
 
-        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(CaseStatusLookupDetail.class)).thenReturn(Mono.empty());
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
-        CaseStatusLookupValueDetail lookupValue = dataService.getCopyCaseStatus();
+    // Assert the URI
+    assertEquals("/lookup/amendment-types?application-type=appType1", actualUri.toString());
+  }
 
-        assertNull(lookupValue);
-    }
+  @Test
+  void getAmendmentTypes_notFound() {
+    String applicationType = "appType1";
 
-    @ParameterizedTest
-    @CsvSource({"DP, 0",
-                "ECF, 0",
-                "SUBDP, 0",
-                "test1, 1",
-                "test2, 1"})
-    void getApplicationTypes_checkType(String code, int expectedSize) {
-        CommonLookupDetail commonValues = new CommonLookupDetail();
-        List<CommonLookupValueDetail> content = new ArrayList<>();
-        CommonLookupValueDetail commonValueDetails = new CommonLookupValueDetail();
-        commonValueDetails.setCode(code);
-        content.add(commonValueDetails);
-        commonValues.setContent(content);
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(AmendmentTypeLookupDetail.class)).thenReturn(Mono.error(
+        new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+    when(dataServiceErrorHandler.handleAmendmentTypeLookupError(eq(applicationType),
+        any(WebClientResponseException.class))).thenReturn(Mono.empty());
 
-        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
+    Mono<AmendmentTypeLookupDetail> amendmentTypesMono =
+        dataService.getAmendmentTypes(applicationType);
 
-        List<CommonLookupValueDetail> applicationTypes = dataService.getApplicationTypes();
-        assertEquals(expectedSize, applicationTypes.size());
+    StepVerifier.create(amendmentTypesMono)
+        .verifyComplete();
 
-        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
-        assertEquals("/lookup/common?type=XXCCMS_APP_AMEND_TYPES", actualUri.toString());
-    }
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
-    @Test
-    void getCategoriesOfLaw_returnsData() {
-        String type = COMMON_VALUE_CATEGORY_OF_LAW;
-        CommonLookupDetail commonValues = new CommonLookupDetail();
-        commonValues.addContentItem(new CommonLookupValueDetail().code("CAT1").type(type));
-        commonValues.addContentItem(new CommonLookupValueDetail().code("CAT2").type(type));
+    // Assert the URI
+    assertEquals("/lookup/amendment-types?application-type=appType1", actualUri.toString());
+  }
 
-        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+  @Test
+  void getCountries_returnsData() {
+    CommonLookupDetail commonValues = new CommonLookupDetail();
+    // Set up your mock commonValues
 
-        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
 
-        final List<String> catCodes = new ArrayList<>();
-        catCodes.add("CAT1");
+    Mono<CommonLookupDetail> countriesMono = dataService.getCountries();
 
-        List<CommonLookupValueDetail> response = dataService.getCategoriesOfLaw(catCodes);
+    StepVerifier.create(countriesMono)
+        .expectNext(commonValues)
+        .verifyComplete();
 
-        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
-        // Assert the URI
-        assertEquals(String.format("/lookup/common?type=%s", type), actualUri.toString());
-        assertNotNull(response);
-        assertEquals(1, response.size());
-        assertEquals(commonValues.getContent().get(0), response.get(0));
-    }
+    // Assert the URI
+    assertEquals("/lookup/countries?size=1000", actualUri.toString());
+  }
 
-    @Test
-    void getAllCategoriesOfLaw_returnsData() {
-        String type = COMMON_VALUE_CATEGORY_OF_LAW;
-        CommonLookupDetail commonValues = prepareCommonValueTestData(type);
+  @Test
+  void getCountries_notFound() {
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.error(
+        new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-        List<CommonLookupValueDetail> response = dataService.getAllCategoriesOfLaw();
+    when(dataServiceErrorHandler.handleCountryLookupError(any(WebClientResponseException.class)))
+        .thenReturn(Mono.empty());
 
-        expectCommonValueTestOutcome(type, commonValues, response);
-    }
+    Mono<CommonLookupDetail> countriesMono = dataService.getCountries();
 
-    @Test
-    void getGenders_returnsData() {
-        String type = COMMON_VALUE_GENDER;
-        CommonLookupDetail commonValues = prepareCommonValueTestData(type);
+    StepVerifier.create(countriesMono)
+        .verifyComplete();
 
-        List<CommonLookupValueDetail> response = dataService.getGenders();
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
-        expectCommonValueTestOutcome(type, commonValues, response);
-    }
-
-    @Test
-    void getUniqueIdentifierTypes_returnsData() {
-        String type = COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
-
-        CommonLookupDetail commonValues = prepareCommonValueTestData(type);
-
-        List<CommonLookupValueDetail> response = dataService.getUniqueIdentifierTypes();
-
-        expectCommonValueTestOutcome(type, commonValues, response);
-    }
-
-    private CommonLookupDetail prepareCommonValueTestData(String type){
-        CommonLookupDetail commonValues = new CommonLookupDetail();
-        commonValues.addContentItem(new CommonLookupValueDetail().code("CAT1").type(type));
-        commonValues.addContentItem(new CommonLookupValueDetail().code("CAT2").type(type));
-
-        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
-
-        return commonValues;
-    }
-
-    private void expectCommonValueTestOutcome(String type, CommonLookupDetail commonValues,
-                                              List<CommonLookupValueDetail> response){
-        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
-
-        // Assert the URI
-        assertEquals(String.format("/lookup/common?type=%s", type), actualUri.toString());
-        assertNotNull(response);
-        assertEquals(2, response.size());
-        assertEquals(commonValues.getContent().get(0), response.get(0));
-        assertEquals(commonValues.getContent().get(1), response.get(1));
-    }
-
-    @Test
-    void getFeeEarners_returnsData() {
-        Integer providerId = 123;
-        FeeEarnerDetail feeEarnerDetail = new FeeEarnerDetail();
-
-        ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
-
-        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(FeeEarnerDetail.class)).thenReturn(Mono.just(feeEarnerDetail));
-
-        Mono<FeeEarnerDetail> feeEarnerDetailMono = dataService.getFeeEarners(providerId);
-
-        StepVerifier.create(feeEarnerDetailMono)
-            .expectNext(feeEarnerDetail)
-            .verifyComplete();
-
-        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
-
-        // Assert the URI
-        assertEquals(String.format("/fee-earners?provider-id=%s", providerId), actualUri.toString());
-    }
-
-    @Test
-    void getAmendmentTypes_returnsData() {
-        String applicationType = "appType1";
-        AmendmentTypeLookupDetail amendmentTypeLookupDetail = new AmendmentTypeLookupDetail();
-
-        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(AmendmentTypeLookupDetail.class)).thenReturn(Mono.just(amendmentTypeLookupDetail));
-
-        Mono<AmendmentTypeLookupDetail> amendmentTypesMono = dataService.getAmendmentTypes(applicationType);
-
-        StepVerifier.create(amendmentTypesMono)
-                .expectNext(amendmentTypeLookupDetail)
-                .verifyComplete();
-
-        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
-
-        // Assert the URI
-        assertEquals("/lookup/amendment-types?application-type=appType1", actualUri.toString());
-    }
-
-    @Test
-    void getAmendmentTypes_notFound() {
-        String applicationType = "appType1";
-
-        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(AmendmentTypeLookupDetail.class)).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
-
-        when(dataServiceErrorHandler.handleAmendmentTypeLookupError(eq(applicationType), any(WebClientResponseException.class))).thenReturn(Mono.empty());
-
-        Mono<AmendmentTypeLookupDetail> amendmentTypesMono = dataService.getAmendmentTypes(applicationType);
-
-        StepVerifier.create(amendmentTypesMono)
-                .verifyComplete();
-
-        Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-        URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
-
-        // Assert the URI
-        assertEquals("/lookup/amendment-types?application-type=appType1", actualUri.toString());
-    }
+    // Assert the URI
+    assertEquals("/lookup/countries?size=1000", actualUri.toString());
+  }
 
 
 }

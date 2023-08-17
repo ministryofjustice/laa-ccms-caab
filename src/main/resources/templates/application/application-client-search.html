@@ -108,7 +108,12 @@
                             <label class="govuk-label" for="gender">
                                 Gender (optional)
                             </label>
-                            <select class="govuk-select" data-module="govuk-select" th:field="*{gender}" th:errorclass="govuk-select--error" id="gender" name="gender" >
+                            <select class="govuk-select"
+                                    data-module="govuk-select"
+                                    th:field="*{gender}"
+                                    th:errorclass="govuk-select--error"
+                                    id="gender"
+                                    name="gender" >
                                 <option value="">Please Select</option>
                                 <option th:each="gender : ${genders}" th:value="${gender.code}" th:text="${gender.description}"></option>
                             </select>

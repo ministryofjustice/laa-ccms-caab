@@ -1,5 +1,16 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,82 +28,74 @@ import org.springframework.web.context.WebApplicationContext;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
-
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
 public class DelegatedFunctionsControllerTest {
 
-    @Mock
-    private ApplicationDetailsValidator applicationDetailsValidator;
+  @Mock
+  private ApplicationDetailsValidator applicationDetailsValidator;
 
-    @InjectMocks
-    private DelegatedFunctionsController delegatedFunctionsController;
+  @InjectMocks
+  private DelegatedFunctionsController delegatedFunctionsController;
 
-    private MockMvc mockMvc;
+  private MockMvc mockMvc;
 
-    @Autowired
-    private WebApplicationContext webApplicationContext;
+  @Autowired
+  private WebApplicationContext webApplicationContext;
 
-    private ApplicationDetails applicationDetails;
+  private ApplicationDetails applicationDetails;
 
-    @BeforeEach
-    public void setup() {
-        mockMvc = standaloneSetup(delegatedFunctionsController).build();
-        applicationDetails = new ApplicationDetails();
-    }
+  @BeforeEach
+  public void setup() {
+    mockMvc = standaloneSetup(delegatedFunctionsController).build();
+    applicationDetails = new ApplicationDetails();
+  }
 
-    @Test
-    public void testGetDelegatedFunctions() throws Exception {
-        this.mockMvc.perform(get("/application/delegated-functions")
-                        .sessionAttr("applicationDetails", applicationDetails))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(view().name("application/select-delegated-functions"))
-                .andExpect(model().attribute("applicationDetails", applicationDetails));
-    }
+  @Test
+  public void testGetDelegatedFunctions() throws Exception {
+    this.mockMvc.perform(get("/application/delegated-functions")
+            .sessionAttr("applicationDetails", applicationDetails))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/select-delegated-functions"))
+        .andExpect(model().attribute("applicationDetails", applicationDetails));
+  }
 
-    @Test
-    public void testPostDelegatedFunctionsHandlesValidationError() throws Exception {
+  @Test
+  public void testPostDelegatedFunctionsHandlesValidationError() throws Exception {
 
-        doAnswer(invocation -> {
-            Errors errors = (Errors) invocation.getArguments()[1];
+    doAnswer(invocation -> {
+      Errors errors = (Errors) invocation.getArguments()[1];
 
-            errors.rejectValue("delegatedFunctionUsedDay", "invalid.numeric",
-                    "Please enter a numeric value for the day.");
-            return null;
-        }).when(applicationDetailsValidator).validateDelegatedFunction(any(), any());
-        this.mockMvc.perform(post("/application/delegated-functions")
-                        .flashAttr("applicationDetails", applicationDetails))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(view().name("application/select-delegated-functions"));
-    }
+      errors.rejectValue("delegatedFunctionUsedDay", "invalid.numeric",
+          "Please enter a numeric value for the day.");
+      return null;
+    }).when(applicationDetailsValidator).validateDelegatedFunction(any(), any());
+    this.mockMvc.perform(post("/application/delegated-functions")
+            .flashAttr("applicationDetails", applicationDetails))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/select-delegated-functions"));
+  }
 
-    @ParameterizedTest
-    @CsvSource({"SUB, true, SUBDP",
-                "SUB, false, SUB",
-                "EMER, true, DP",
-                "EMER, false, EMER"})
-    public void testPostDelegatedFunctionsIsSuccessful(String category, boolean delegatedFunctions,
-                                                       String expectedApplicationType) throws Exception {
-        applicationDetails.setApplicationTypeCategory(category);
-        applicationDetails.setDelegatedFunctions(delegatedFunctions);
+  @ParameterizedTest
+  @CsvSource({"SUB, true, SUBDP",
+      "SUB, false, SUB",
+      "EMER, true, DP",
+      "EMER, false, EMER"})
+  public void testPostDelegatedFunctionsIsSuccessful(String category, boolean delegatedFunctions,
+                                                     String expectedApplicationType)
+      throws Exception {
+    applicationDetails.setApplicationTypeCategory(category);
+    applicationDetails.setDelegatedFunctions(delegatedFunctions);
 
-        this.mockMvc.perform(post("/application/delegated-functions")
-                        .flashAttr("applicationDetails", applicationDetails))
-                .andDo(print())
-                .andExpect(redirectedUrl("/application/client/search"))
-                .andReturn();
-    }
+    this.mockMvc.perform(post("/application/delegated-functions")
+            .flashAttr("applicationDetails", applicationDetails))
+        .andDo(print())
+        .andExpect(redirectedUrl("/application/client/search"))
+        .andReturn();
+  }
 
 
 }
