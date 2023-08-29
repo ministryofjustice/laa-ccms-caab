@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>LAA CCMS - Start new application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs"></div>
+    <div id="main-content" style="padding-top: 40px;">
+        <form action="#" th:action="@{/application/client/details/cancel}" method="post">
+            <span class="govuk-caption-l">About your client</span>
+            <h1 class="govuk-heading-l">
+                Are you sure you want to cancel?
+            </h1>
+            <p class="govuk-body-l">
+                Are you sure you want to cancel the registration of this client? Please click
+                <span class="govuk-!-font-weight-bold">'Confirm'</span> to cancel the registration,
+                otherwise click <span class="govuk-!-font-weight-bold">'Back'</span>  to go back and
+                continue registering this new client.
+            </p>
+            <div class="govuk-button-group">
+                <button type="submit" class="govuk-button" data-module="govuk-button">
+                    Confirm
+                </button>
+                <a class="govuk-button govuk-button--secondary"
+                   data-module="govuk-button"
+                   href="/application/client/details/basic">
+                    Back
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

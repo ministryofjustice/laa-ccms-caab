@@ -35,34 +35,45 @@ configurations {
 	integrationTestRuntimeOnly.extendsFrom(testRuntimeOnly)
 }
 
+def gitPackageUser
+def gitPackageKey
+
+if (file('secrets.gradle').exists()) {
+	// Apply secrets from 'secrets.gradle'
+	apply from: 'secrets.gradle'
+} else {
+	// Fallback to environment variables
+	gitPackageUser = 'laa-ccms-caab-ui'
+	gitPackageKey = System.getenv('GIT_PACKAGE_KEY')
+}
 
 repositories {
 	mavenCentral()
 
-	//Latest version of saml requires this
+	// Latest version of saml requires this
 	maven { url "https://build.shibboleth.net/nexus/content/repositories/releases/" }
 
-	maven {
-		url 'https://maven.pkg.github.com/ministryofjustice/laa-ccms-data-api'
-		credentials {
-			username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-			password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+	// Define the common configuration block for GitHub repositories
+	def githubRepoConfig = { repoUrl ->
+		maven {
+			url repoUrl
+			credentials {
+				username = gitPackageUser
+				password = gitPackageKey
+			}
 		}
 	}
 
-	maven {
-		url 'https://maven.pkg.github.com/ministryofjustice/laa-ccms-soa-gateway-api'
-		credentials {
-			username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-			password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
-		}
-	}
+	// Configure repositories using the defined GitHub config
+	githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-data-api')
+	githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-caab-api')
+	githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-soa-gateway-api')
 }
 
 dependencies {
 	implementation 'uk.gov.laa.ccms.data:data-api:0.0.1-1cb3b4e-SNAPSHOT'
 	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.1-14061bb-SNAPSHOT'
-	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.1-5cfca8d-SNAPSHOT'
+	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.1-21cdef7-SNAPSHOT'
 
 	//Starters
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'

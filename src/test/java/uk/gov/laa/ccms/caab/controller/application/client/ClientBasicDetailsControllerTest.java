@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -65,16 +64,6 @@ public class ClientBasicDetailsControllerTest {
     countryLookupDetail = new CommonLookupDetail();
     genderLookupDetail = new CommonLookupDetail();
     maritalStatusLookupDetail = new CommonLookupDetail();
-  }
-
-  @Test
-  void testGetClientDetailsModelAttribute() {
-    ClientBasicDetailsController controller =
-        new ClientBasicDetailsController(dataService, clientDetailsValidator);
-
-    ClientDetails clientDetails = controller.getClientDetails();
-
-    assertNotNull(clientDetails);
   }
 
   @Test

@@ -22,6 +22,20 @@ mvn clean package from within the IDE
 docker-compose up --build identity-provider
 ```
 
+## secrets.gradle (required for gradle build)
+
+create a secrets.gradle file in the root directory:
+
+```
+project.ext.gitPackageUser = "{your name}"
+project.ext.gitPackageKey = "{your personal api token}"
+```
+
+Replace the username with your own name, and replace the key with a personal access token to read Github packages.
+
+Find more information [here](https://docs.github.com/en/enterprise-server@3.6/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) for setting up presonal access tokens.
+
+
 ## GDS templates
 
 These have been committed to the repo, but if you need these updated you can update the [templates](./templates.sh) script and rerun it.

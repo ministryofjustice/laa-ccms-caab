@@ -29,11 +29,11 @@ public class ClientDetails {
 
   private String maritalStatus;
 
-  private boolean vulnerableClient;
+  private Boolean vulnerableClient = false;
 
-  private boolean highProfileClient;
+  private Boolean highProfileClient = false;
 
-  private boolean vexatiousLitigant;
+  private Boolean vexatiousLitigant = false;
 
-  private boolean mentalIncapacity;
+  private Boolean mentalIncapacity = false;
 }

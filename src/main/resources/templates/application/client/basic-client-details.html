@@ -11,9 +11,9 @@
     <div id="main-content">
         <form action="#" th:action="@{/application/client/details/basic}" th:object="${clientDetails}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <span class="govuk-caption-l">About your application</span>
+            <span class="govuk-caption-l">About your client</span>
             <h1 class="govuk-heading-l">
-                Basic Client Details
+                Basic client details
             </h1>
             <p class="govuk-body-l">
                 Please enter the relevant basic details in the fields provided.
@@ -193,37 +193,38 @@
                     </div>
 
                     <div class="govuk-form-group">
-                        <fieldset class="govuk-fieldset" aria-describedby="client-type-hint">
+                        <fieldset class="govuk-fieldset">
                             <legend class="govuk-fieldset__legend">
                                 Which types apply to your client?
                             </legend>
-                            <div id="client-type-hint" class="govuk-hint">
-                                Select all that apply.
-                            </div>
-                            <div class="govuk-checkboxes" data-module="govuk-checkboxes">
+                            <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
                                 <div class="govuk-checkboxes__item">
-                                    <input class="govuk-checkboxes__input" id="vulnerableClient" name="vulnerableClient" type="checkbox" th:checked="*{vulnerableClient}" >
+                                    <input class="govuk-checkboxes__input" id="vulnerableClient" name="vulnerableClient" type="checkbox" th:checked="${clientDetails.vulnerableClient}" />
                                     <label class="govuk-label govuk-checkboxes__label" for="vulnerableClient">
                                         Vulnerable client
                                     </label>
+                                    <input type="hidden" name="_vulnerableClient" value="on">
                                 </div>
                                 <div class="govuk-checkboxes__item">
                                     <input class="govuk-checkboxes__input" id="highProfileClient" name="highProfileClient" type="checkbox" th:checked="${clientDetails.highProfileClient}">
                                     <label class="govuk-label govuk-checkboxes__label" for="highProfileClient">
                                         High profile client
                                     </label>
+                                    <input type="hidden" name="_highProfileClient" value="on">
                                 </div>
                                 <div class="govuk-checkboxes__item">
                                     <input class="govuk-checkboxes__input" id="vexatiousLitigant" name="vexatiousLitigant" type="checkbox" th:checked="${clientDetails.vexatiousLitigant}">
                                     <label class="govuk-label govuk-checkboxes__label" for="vexatiousLitigant">
                                         Vexatious litigant
                                     </label>
+                                    <input type="hidden" name="_vexatiousLitigant" value="on">
                                 </div>
                                 <div class="govuk-checkboxes__item">
                                     <input class="govuk-checkboxes__input" id="mentalIncapacity" name="mentalIncapacity" type="checkbox" th:checked="${clientDetails.mentalIncapacity}">
                                     <label class="govuk-label govuk-checkboxes__label" for="mentalIncapacity">
                                         Mental incapacity
                                     </label>
+                                    <input type="hidden" name="_mentalIncapacity" value="on">
                                 </div>
                             </div>
                         </fieldset>
@@ -263,7 +264,7 @@
                         </button>
                         <a class="govuk-button govuk-button--secondary"
                            data-module="govuk-button"
-                           href="/application/client/cancel">
+                           href="/application/client/details/cancel">
                             Back
                         </a>
                     </div>

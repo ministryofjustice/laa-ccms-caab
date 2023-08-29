@@ -93,3 +93,4 @@ laa-saml-mock/
 .idea
 /kubectl_deploy/deploy.yaml
 /.java-version
+secrets.gradle
