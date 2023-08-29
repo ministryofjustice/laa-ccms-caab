@@ -9,11 +9,7 @@
         <a href="/" class="govuk-back-link">Return to Home</a>
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l">Copy an existing case</span>
-        <h1 class="govuk-heading-l">
-            Application search
-        </h1>
-        <form action="#" th:action="@{/application/copy-case-search}" th:object="${copyCaseSearchCriteria}" method="post">
+        <form action="#" th:action="@{/application/copy-case/search}" th:object="${copyCaseSearchCriteria}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l">Copy an existing case</span>
             <h1 class="govuk-heading-l">

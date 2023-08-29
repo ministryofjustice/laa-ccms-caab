@@ -27,7 +27,7 @@
             </div>
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
-                    <div class="govuk-form-group">
+                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('categoryOfLawId')} ? 'govuk-form-group--error' : ''">
                         <fieldset class="govuk-fieldset">
                             <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
                                 <h2 class="govuk-fieldset__heading">

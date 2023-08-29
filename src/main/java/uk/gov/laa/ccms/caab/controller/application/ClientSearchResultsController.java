@@ -44,11 +44,6 @@ public class ClientSearchResultsController {
 
   private final SearchConstants searchConstants;
 
-//  @ModelAttribute(CLIENT_DETAILS)
-//  public uk.gov.laa.ccms.caab.bean.ClientDetails getClientDetails() {
-//    return new uk.gov.laa.ccms.caab.bean.ClientDetails();
-//  }
-
   /**
    * Displays the search results for clients based on specified criteria.
    *

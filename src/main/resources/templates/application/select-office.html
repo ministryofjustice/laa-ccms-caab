@@ -17,12 +17,12 @@
                 <div th:replace="~{partials/error-summary :: error-summary}"></div>
               <div class="govuk-body-l">
                   Please select the office where the application will be held. Alternatively, click
-                  <a href="/application/copy-case-search">Copy Case </a>
+                  <a href="/application/copy-case/search">Copy case </a>
                   to start a new application from an existing one.
               </div>
               <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
-                    <div class="govuk-form-group">
+                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('officeId')} ? 'govuk-form-group--error' : ''">
                       <fieldset class="govuk-fieldset">
                         <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
                           <h2 class="govuk-fieldset__heading">
