@@ -41,8 +41,9 @@ def gitPackageKey
 if (file('secrets.gradle').exists()) {
 	// Apply secrets from 'secrets.gradle'
 	apply from: 'secrets.gradle'
+	gitPackageUser = project.ext.gitPackageUser
+	gitPackageKey = project.ext.gitPackageKey
 } else {
-	// Fallback to environment variables
 	gitPackageUser = 'laa-ccms-caab-ui'
 	gitPackageKey = System.getenv('GIT_PACKAGE_KEY')
 }
