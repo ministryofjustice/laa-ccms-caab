@@ -1,25 +1,72 @@
-# laa-ccms-caab
+# laa-ccms-caab-ui
 
-## Set up Saml Mock
-```
-cd into laa-ccms-caab
+## How to run this application:
 
-git clone git@github.com:ministryofjustice/laa-saml-mock.git
+The laa-ccms-caab-ui requires multiple other microservcies in order to run locally and  function 
+correctly. They are:
 
-cd laa-saml-mock
+- [laa-ccms-caab-api](https://github.com/ministryofjustice/laa-ccms-caab-api)
+- [laa-ccms-caab-ebs-api](https://github.com/ministryofjustice/laa-ccms-data-api)
+- [laa-ccms-caab-soa-api](https://github.com/ministryofjustice/laa-ccms-soa-gateway-api)
+- [laa-ccms-caab-saml-mock](https://github.com/ministryofjustice/laa-ccms-caab-saml-mock)
+- [laa-ccms-caab-db](https://github.com/ministryofjustice/laa-ccms-provider-ui-database)
 
-edit settings in IDE to change deprecated api error to warning
+## Set up laa-ccms-caab-saml-mock
 
-import laa-saml-mock module using maven template
-make sure you have your ide settings for the laa-saml-mock set to java 1.8
-
-mvn clean package from within the IDE
-```
-
-## Run saml mock standalone
+This step requires maven to be installed on your machine. You can use [homebrew](https://formulae.brew.sh/formula/maven) to install it.
 
 ```
-docker-compose up --build identity-provider
+brew install maven
+```
+
+Next steps:
+
+```
+cd ..
+
+git clone git@github.com:ministryofjustice/laa-ccms-caab-saml-mock.git laa-ccms-caab-saml-mock
+cd laa-ccms-caab-saml-mock
+
+mvn -B package --file pom.xml
+
+cd ../laa-ccms-caab
+
+docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-saml-mock
+
+```
+
+### Run laa-ccms-caab-saml-mock standalone
+
+```
+docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-saml-mock
+```
+
+## Setup laa-ccms-caab-db
+
+```
+cd ..
+
+git clone git@github.com:ministryofjustice/laa-ccms-provider-ui-database.git laa-ccms-caab-db
+
+cd laa-ccms-caab
+
+docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-db laa-ccms-caab-liquibase
+```
+
+Now wait 10 mins for the db to be populated ia the liquidbase scripts.
+Have a look at the container logs to check its progress.
+
+```
+Liquibase 'updateSql' Successful
+```
+
+When you see this message you can stop the liquibase container.
+
+
+### Run laa-ccms-caab-db standalone
+
+```
+docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-db
 ```
 
 ## secrets.gradle (required for gradle build)
