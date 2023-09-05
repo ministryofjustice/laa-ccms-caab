@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_INFORMATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
@@ -39,7 +40,11 @@ import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(value = {"clientInformation"})
+@SessionAttributes(value = {
+    USER_DETAILS,
+    APPLICATION_DETAILS,
+    CLIENT_INFORMATION
+})
 public class ClientConfirmationController {
 
   private final SoaGatewayService soaGatewayService;
@@ -92,7 +97,7 @@ public class ClientConfirmationController {
   public Mono<String> clientConfirmed(
           String confirmedClientReference,
           @SessionAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
-          @SessionAttribute("clientInformation") ClientDetail clientInformation,
+          @SessionAttribute(CLIENT_INFORMATION) ClientDetail clientInformation,
           @SessionAttribute(USER_DETAILS) UserDetail user) {
     log.info("POST /application/client/confirmed: {}", applicationDetails);
 
@@ -145,11 +150,11 @@ public class ClientConfirmationController {
 
         // Create the application and block until it's done
         return caabApiService.createApplication(user.getLoginId(), application)
-                .doOnNext(createdApplication -> {
-                  log.info("Application details submitted: {}", createdApplication);
-                  applicationDetails.setApplicationCreated(true);
-                })
-                .thenReturn("redirect:/application/agreement");
+            .doOnSuccess(createdApplication -> {
+              applicationDetails.setApplicationCreated(true);
+              log.info("Application details submitted: {}", applicationDetails);
+            })
+            .thenReturn("redirect:/application/agreement");
 
       } catch (ParseException e) {
         return Mono.error(new RuntimeException(e));
