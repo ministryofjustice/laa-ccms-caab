@@ -73,7 +73,7 @@ jobs:
 
 
   ecr:
-    if: github.ref == 'main'
+#    if: github.ref == 'main'
     needs: [ build-test, define-image-tag ]
     runs-on: ubuntu-latest
     permissions:
