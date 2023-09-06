@@ -9,8 +9,6 @@ name: Civil Applications And Billing Pipeline
 
 on:
   push:
-    branches-ignore:
-      - main
 
 permissions:
   contents: read
@@ -73,7 +71,7 @@ jobs:
 
 
   ecr:
-#    if: github.ref == 'main'
+    if: github.ref == 'main'
     needs: [ build-test, define-image-tag ]
     runs-on: ubuntu-latest
     permissions:
@@ -113,21 +111,21 @@ jobs:
         with:
           name: caab-jar
 
-#  delete-artifact:
-#    if: github.ref != 'main'
-#    needs: [ build-test ]
-#    runs-on: ubuntu-latest
-#    permissions:
-#      id-token: write
-#      contents: read
-#    steps:
-#      - name: delete artifact
-#        uses: geekyeggo/delete-artifact@v2
-#        with:
-#          name: caab-jar
+  delete-artifact:
+    if: github.ref != 'main'
+    needs: [ build-test ]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: delete artifact
+        uses: geekyeggo/delete-artifact@v2
+        with:
+          name: caab-jar
 
   update-helm-chart:
-#    if: github.ref == 'main'
+    if: github.ref == 'main'
     needs: [ ecr, define-image-tag ]
     runs-on: ubuntu-latest
     environment: development
