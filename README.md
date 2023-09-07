@@ -29,8 +29,6 @@ cd laa-ccms-caab-saml-mock
 
 mvn -B package --file pom.xml
 
-cp mujina-idp/target/laa-ccms-caab-saml-mock-1.0.0.jar laa-ccms-caab-saml-mock-1.0.0.jar
-
 cd ../laa-ccms-caab
 
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-saml-mock
