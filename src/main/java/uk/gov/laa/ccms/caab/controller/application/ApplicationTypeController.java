@@ -41,7 +41,7 @@ public class ApplicationTypeController {
    * @param applicationDetails The application details from session.
    * @param model              The model for the view.
    * @return The view name for the application type selection page or a redirect if exceptional
-   * funding.
+   *     funding.
    */
   @GetMapping("/application/application-type")
   public String applicationType(
