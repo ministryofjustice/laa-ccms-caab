@@ -10,6 +10,9 @@ name: Civil Applications And Billing Pipeline
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [ closed ]
   workflow_dispatch:
 
 permissions:
