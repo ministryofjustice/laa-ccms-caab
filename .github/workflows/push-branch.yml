@@ -17,22 +17,6 @@ permissions:
   packages: write
 
 jobs:
-  define-image-tag:
-    runs-on: ubuntu-latest
-    # map a step output to job output
-    outputs:
-      tag_name: ${{ steps.extract_tag_name.outputs.tag_name }}
-    steps:
-      - name: Extract short repo name
-        shell: bash
-        run: echo "repo_name=${GITHUB_REPOSITORY#*\/laa-ccms-}-ui" >> $GITHUB_OUTPUT
-        id: extract_repo_name
-      - name: derive tag name
-        shell: bash
-        run: echo "tag_name=${{ steps.extract_repo_name.outputs.repo_name }}-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
-        id: extract_tag_name
-
-
   build-test:
     runs-on: ubuntu-latest
     environment: development
