@@ -35,15 +35,15 @@ spring:
 
 laa:
   ccms:
-    data-api:
-      hostname: ${CAAB_DATA_API_HOSTNAME}
-      url: https://${laa.ccms.data-api.hostname}
-    soa-gateway-api:
+    ebs-api:
+      hostname: ${CAAB_EBS_API_HOSTNAME}
+      url: ${laa.ccms.ebs-api.hostname}
+    soa-api:
       hostname: ${CAAB_SOA_API_HOSTNAME}
-      url: https://${laa.ccms.soa-gateway-api.hostname}
+      url: ${laa.ccms.soa-api.hostname}
     caab-api:
         hostname: ${CAAB_API_HOSTNAME}
-        url: http://${laa.ccms.caab-api.hostname}
+        url: ${laa.ccms.caab-api.hostname}
 
 server:
   port: 8080

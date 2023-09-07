@@ -15,7 +15,6 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMI
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
@@ -27,7 +26,6 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -126,15 +124,13 @@ public class ApplicationBuilder {
    * Sets the category of law.
    *
    * @param categoryOfLawId           The category of law ID.
-   * @param categoryOfLawLookupDetail The category of law lookup detail.
+   * @param categoryOfLawValues The category of law lookup values.
    * @return The builder instance.
    */
   public ApplicationBuilder categoryOfLaw(
           String categoryOfLawId,
-          CommonLookupDetail categoryOfLawLookupDetail) {
-    String categoryOfLawDisplayValue = Optional.of(categoryOfLawLookupDetail)
-            .map(CommonLookupDetail::getContent)
-            .orElse(Collections.emptyList())
+          List<CommonLookupValueDetail> categoryOfLawValues) {
+    String categoryOfLawDisplayValue = categoryOfLawValues
             .stream()
             .filter(category -> categoryOfLawId.equals(category.getCode()))
             .map(CommonLookupValueDetail::getDescription)

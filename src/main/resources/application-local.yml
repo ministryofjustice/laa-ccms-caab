@@ -35,14 +35,14 @@ spring:
 
 laa:
   ccms:
-    data-api:
+    ebs-api:
       hostname: localhost
       port: 8009
-      url: http://${laa.ccms.data-api.hostname}:${laa.ccms.data-api.port}
-    soa-gateway-api:
+      url: http://${laa.ccms.ebs-api.hostname}:${laa.ccms.ebs-api.port}
+    soa-api:
       hostname: localhost
       port: 8007
-      url: http://${laa.ccms.soa-gateway-api.hostname}:${laa.ccms.soa-gateway-api.port}
+      url: http://${laa.ccms.soa-api.hostname}:${laa.ccms.soa-api.port}
     caab-api:
       hostname: localhost
       port: 8005

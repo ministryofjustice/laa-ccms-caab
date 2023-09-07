@@ -28,7 +28,6 @@ import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.ClientDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 /**
@@ -156,18 +155,15 @@ public class ClientBasicDetailsController {
    */
   private void populateDropdowns(Model model) {
     // Asynchronously fetch titles
-    Mono<List<CommonLookupValueDetail>> titlesMono = dataService.getCommonValues(
-                    COMMON_VALUE_CONTACT_TITLE)
-            .map(commonLookupDetail -> Optional.ofNullable(commonLookupDetail)
-                    .map(CommonLookupDetail::getContent)
-                    .orElse(Collections.emptyList()));
+    Mono<List<CommonLookupValueDetail>> titlesMono =
+        dataService.getCommonValues(COMMON_VALUE_CONTACT_TITLE);
 
     // Asynchronously fetch countries
     // remove any null objects
     Mono<List<CommonLookupValueDetail>> countriesMono = dataService.getCountries()
-            .flatMap(commonLookupDetail -> {
-              if (commonLookupDetail != null && commonLookupDetail.getContent() != null) {
-                List<CommonLookupValueDetail> filteredContent = commonLookupDetail.getContent()
+            .flatMap(countries -> {
+              if (countries != null) {
+                List<CommonLookupValueDetail> filteredContent = countries
                         .stream()
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList());
@@ -177,18 +173,12 @@ public class ClientBasicDetailsController {
               }
             });
 
-    Mono<List<CommonLookupValueDetail>> gendersMono = dataService.getCommonValues(
-            COMMON_VALUE_GENDER)
-            .map(commonLookupDetail -> Optional.ofNullable(commonLookupDetail)
-                    .map(CommonLookupDetail::getContent)
-                    .orElse(Collections.emptyList()));
+    Mono<List<CommonLookupValueDetail>> gendersMono =
+        dataService.getCommonValues(COMMON_VALUE_GENDER);
 
     // Asynchronously fetch marital statuses
-    Mono<List<CommonLookupValueDetail>> maritalStatusMono = dataService.getCommonValues(
-                    COMMON_VALUE_MARITAL_STATUS)
-            .map(commonLookupDetail -> Optional.ofNullable(commonLookupDetail)
-                    .map(CommonLookupDetail::getContent)
-                    .orElse(Collections.emptyList()));
+    Mono<List<CommonLookupValueDetail>> maritalStatusMono =
+        dataService.getCommonValues(COMMON_VALUE_MARITAL_STATUS);
 
     // Zip all Monos and populate the model once all results are available
     Mono.zip(titlesMono, countriesMono, gendersMono, maritalStatusMono)

@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.service;
+package uk.gov.laa.ccms.caab.client;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -9,18 +9,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLICATION_TYPE_CODES;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
-import static uk.gov.laa.ccms.caab.service.DataServiceErrorHandler.USER_ERROR_MESSAGE;
+import static uk.gov.laa.ccms.caab.client.EbsApiClientErrorHandler.USER_ERROR_MESSAGE;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +34,7 @@ import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-public class DataServiceIntegrationTest extends AbstractIntegrationTest {
+public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
   @RegisterExtension
   protected static WireMockExtension wiremock = WireMockExtension.newInstance()
@@ -50,11 +43,11 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
 
   @DynamicPropertySource
   public static void properties(DynamicPropertyRegistry registry) {
-    registry.add("laa.ccms.data-api.port", wiremock::getPort);
+    registry.add("laa.ccms.ebs-api.port", wiremock::getPort);
   }
 
   @Autowired
-  private DataService dataService;
+  private EbsApiClient ebsApiClient;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -66,7 +59,7 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
     wiremock.stubFor(get(String.format("/users/%s", expectedUserDetail.getLoginId()))
         .willReturn(okJson(userJson)));
 
-    Mono<UserDetail> userDetailsMono = dataService.getUser(expectedUserDetail.getLoginId());
+    Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(expectedUserDetail.getLoginId());
 
     UserDetail userDetails = userDetailsMono.block();
 
@@ -81,10 +74,10 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
     wiremock.stubFor(get(String.format("/users/%s", loginId))
         .willReturn(notFound()));
 
-    Mono<UserDetail> userDetailsMono = dataService.getUser(loginId);
+    Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(loginId);
 
     StepVerifier.create(userDetailsMono)
-        .expectErrorMatches(throwable -> throwable instanceof DataServiceException
+        .expectErrorMatches(throwable -> throwable instanceof EbsApiClientException
             && throwable.getMessage().equals(expectedMessage)
         ).verify();
   }
@@ -104,7 +97,7 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
         .withQueryParam("sort", equalTo(sort))
         .willReturn(okJson(commonValuesJson)));
 
-    Mono<CommonLookupDetail> commonValuesMono = dataService.getCommonValues(type, code, sort);
+    Mono<CommonLookupDetail> commonValuesMono = ebsApiClient.getCommonValues(type, code, sort);
 
     CommonLookupDetail commonValues = commonValuesMono.block();
 
@@ -121,31 +114,11 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
         .withQueryParam("copy-allowed", equalTo(copyAllowed.toString()))
         .willReturn(okJson(caseStatusValuesJson)));
 
-    Mono<CaseStatusLookupDetail> lookupDetailMono = dataService.getCaseStatusValues(copyAllowed);
+    Mono<CaseStatusLookupDetail> lookupDetailMono = ebsApiClient.getCaseStatusValues(copyAllowed);
 
     CaseStatusLookupDetail response = lookupDetailMono.block();
 
     assertEquals(caseStatusValuesJson, objectMapper.writeValueAsString(response));
-  }
-
-  @Test
-  public void testGetApplicationTypes() throws Exception {
-    CommonLookupDetail allApplicationTypes = buildCommonLookupDetail();
-    String applicationTypesJson = objectMapper.writeValueAsString(allApplicationTypes);
-
-    wiremock.stubFor(get(urlPathEqualTo("/lookup/common"))
-        .withQueryParam("type", equalTo(COMMON_VALUE_APPLICATION_TYPE))
-        .willReturn(okJson(applicationTypesJson)));
-
-    List<CommonLookupValueDetail> applicationTypes = dataService.getApplicationTypes();
-
-    List<CommonLookupValueDetail> expectedApplicationTypes =
-        allApplicationTypes.getContent().stream()
-            .filter(applicationType -> !EXCLUDED_APPLICATION_TYPE_CODES.contains(
-                applicationType.getCode().toUpperCase()))
-            .collect(Collectors.toList());
-
-    assertEquals(expectedApplicationTypes, applicationTypes);
   }
 
   @Test
@@ -157,69 +130,10 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
         .withQueryParam("provider-id", equalTo("1"))
         .willReturn(okJson(feeEarnersJson)));
 
-    FeeEarnerDetail result = dataService.getFeeEarners(1).block();
+    FeeEarnerDetail result = ebsApiClient.getFeeEarners(1).block();
 
     assertNotNull(result);
     assertEquals(feeEarnersJson, objectMapper.writeValueAsString(result));
-  }
-
-  @Test
-  public void testGetGenders_returnData() throws Exception {
-    CommonLookupDetail expectedCommonLookupDetail = buildCommonLookupDetail();
-    String commonLookupJson = objectMapper.writeValueAsString(expectedCommonLookupDetail);
-
-    wiremock.stubFor(get(urlPathEqualTo("/lookup/common"))
-        .withQueryParam("type", equalTo(COMMON_VALUE_GENDER))
-        .willReturn(okJson(commonLookupJson)));
-
-    List<CommonLookupValueDetail> genders = dataService.getGenders();
-
-    assertEquals(expectedCommonLookupDetail.getContent(), genders);
-  }
-
-  @Test
-  public void testGetUniqueIdentifierTypes_returnData() throws Exception {
-    CommonLookupDetail expectedCommonLookupDetail = buildCommonLookupDetail();
-    String commonLookupJson = objectMapper.writeValueAsString(expectedCommonLookupDetail);
-
-    wiremock.stubFor(get(urlPathEqualTo("/lookup/common"))
-        .withQueryParam("type", equalTo(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE))
-        .willReturn(okJson(commonLookupJson)));
-
-    List<CommonLookupValueDetail> uniqueIdentifierTypes = dataService.getUniqueIdentifierTypes();
-
-    assertEquals(expectedCommonLookupDetail.getContent(), uniqueIdentifierTypes);
-  }
-
-  @Test
-  public void testGetCategoriesOfLaw_returnFilteredData() throws Exception {
-    CommonLookupDetail expectedCommonLookupDetail = buildCommonLookupDetail();
-    String commonLookupJson = objectMapper.writeValueAsString(expectedCommonLookupDetail);
-    List<String> codes = List.of("CODE1");
-
-    wiremock.stubFor(get(urlPathEqualTo("/lookup/common"))
-        .withQueryParam("type", equalTo(COMMON_VALUE_CATEGORY_OF_LAW))
-        .willReturn(okJson(commonLookupJson)));
-
-    List<CommonLookupValueDetail> categoriesOfLaw = dataService.getCategoriesOfLaw(codes);
-
-    assertEquals(
-        expectedCommonLookupDetail.getContent().stream().filter(c -> codes.contains(c.getCode()))
-            .collect(Collectors.toList()), categoriesOfLaw);
-  }
-
-  @Test
-  public void testGetAllCategoriesOfLaw_returnData() throws Exception {
-    CommonLookupDetail expectedCommonLookupDetail = buildCommonLookupDetail();
-    String commonLookupJson = objectMapper.writeValueAsString(expectedCommonLookupDetail);
-
-    wiremock.stubFor(get(urlPathEqualTo("/lookup/common"))
-        .withQueryParam("type", equalTo(COMMON_VALUE_CATEGORY_OF_LAW))
-        .willReturn(okJson(commonLookupJson)));
-
-    List<CommonLookupValueDetail> allCategoriesOfLaw = dataService.getAllCategoriesOfLaw();
-
-    assertEquals(expectedCommonLookupDetail.getContent(), allCategoriesOfLaw);
   }
 
   @Test
@@ -233,7 +147,7 @@ public class DataServiceIntegrationTest extends AbstractIntegrationTest {
         .willReturn(okJson(amendmentTypesJson)));
 
     Mono<AmendmentTypeLookupDetail> amendmentTypesMono =
-        dataService.getAmendmentTypes(applicationType);
+        ebsApiClient.getAmendmentTypes(applicationType);
 
     AmendmentTypeLookupDetail amendmentTypes = amendmentTypesMono.block();
 

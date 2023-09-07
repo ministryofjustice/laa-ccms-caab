@@ -2,10 +2,14 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -107,17 +111,21 @@ public class CategoryOfLawController {
   private void initialiseCategoriesOfLaw(ApplicationDetails applicationDetails,
                                          UserDetail user, Model model) {
 
-    List<CommonLookupValueDetail> categoriesOfLaw;
-    if (applicationDetails.isExceptionalFunding()) {
-      categoriesOfLaw = dataService.getAllCategoriesOfLaw();
-    } else {
+    List<CommonLookupValueDetail> categoriesOfLaw =
+        Optional.ofNullable(dataService.getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW).block())
+            .orElse(Collections.emptyList());
+
+    if (!applicationDetails.isExceptionalFunding()) {
       List<String> categoryOfLawCodes = soaGatewayService.getCategoryOfLawCodes(
               user.getProvider().getId(),
               applicationDetails.getOfficeId(),
               user.getLoginId(),
               user.getUserType(),
               Boolean.TRUE);
-      categoriesOfLaw = dataService.getCategoriesOfLaw(categoryOfLawCodes);
+
+      categoriesOfLaw.retainAll(categoriesOfLaw
+          .stream().filter(category -> categoryOfLawCodes.contains(category.getCode()))
+          .collect(Collectors.toList()));
     }
 
     model.addAttribute("categoriesOfLaw", categoriesOfLaw);

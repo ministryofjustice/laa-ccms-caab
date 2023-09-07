@@ -14,9 +14,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +31,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
+import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
@@ -83,7 +86,7 @@ public class CategoryOfLawControllerTest {
   public void testGetCategoryOfLawAddsCategoriesOfLawToModel() throws Exception {
     final List<String> categoryOfLawCodes = new ArrayList<>();
     categoryOfLawCodes.add("CAT1");
-    categoryOfLawCodes.add("CAT2");
+//    categoryOfLawCodes.add("CAT2");
 
     when(soaGatewayService.getCategoryOfLawCodes(
         user.getProvider().getId(),
@@ -92,7 +95,8 @@ public class CategoryOfLawControllerTest {
         user.getUserType(),
         Boolean.TRUE)).thenReturn(categoryOfLawCodes);
 
-    when(dataService.getCategoriesOfLaw(categoryOfLawCodes)).thenReturn(categoriesOfLaw);
+    when(dataService.getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW)).thenReturn(
+        Mono.just(categoriesOfLaw));
 
     this.mockMvc.perform(get("/application/category-of-law")
             .flashAttr("applicationDetails", applicationDetails)
@@ -100,7 +104,7 @@ public class CategoryOfLawControllerTest {
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/select-category-of-law"))
-        .andExpect(model().attribute("categoriesOfLaw", categoriesOfLaw))
+        .andExpect(model().attribute("categoriesOfLaw", Matchers.hasSize(1)))
         .andExpect(model().attributeExists("applicationDetails"));
 
     verify(soaGatewayService).getCategoryOfLawCodes(user.getProvider().getId(),
@@ -109,12 +113,13 @@ public class CategoryOfLawControllerTest {
         user.getUserType(),
         Boolean.TRUE);
 
-    verify(dataService).getCategoriesOfLaw(categoryOfLawCodes);
+    verify(dataService).getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW);
   }
 
   @Test
   public void testGetCategoryOfLaw_ExceptionFundingReturnsAllCodes() throws Exception {
-    when(dataService.getAllCategoriesOfLaw()).thenReturn(categoriesOfLaw);
+    when(dataService.getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW)).thenReturn(
+        Mono.just(categoriesOfLaw));
 
     this.mockMvc.perform(get("/application/category-of-law?exceptional_funding=true")
             .flashAttr("applicationDetails", applicationDetails)
@@ -127,7 +132,7 @@ public class CategoryOfLawControllerTest {
 
     assertTrue(applicationDetails.isExceptionalFunding());
     verifyNoInteractions(soaGatewayService);
-    verify(dataService).getAllCategoriesOfLaw();
+    verify(dataService).getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW);
   }
 
 
@@ -144,7 +149,8 @@ public class CategoryOfLawControllerTest {
         user.getUserType(),
         Boolean.TRUE)).thenReturn(categoryOfLawCodes);
 
-    when(dataService.getCategoriesOfLaw(categoryOfLawCodes)).thenReturn(categoriesOfLaw);
+    when(dataService.getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW)).thenReturn(
+        Mono.just(categoriesOfLaw));
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];

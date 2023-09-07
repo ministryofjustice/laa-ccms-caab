@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -11,6 +12,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +25,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
+import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteriaValidator;
@@ -66,19 +70,25 @@ public class ClientSearchControllerTest {
 
   @Test
   public void testClientSearch_Get() throws Exception {
+    when(dataService.getCommonValues(COMMON_VALUE_GENDER)).thenReturn(Mono.empty());
+    when(dataService.getCommonValues(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE)).thenReturn(Mono.empty());
+
     this.mockMvc.perform(get("/application/client/search")
             .flashAttr("applicationDetails", new ApplicationDetails())
             .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-client-search"));
 
-    verify(dataService).getGenders();
-    verify(dataService).getUniqueIdentifierTypes();
+    verify(dataService).getCommonValues(COMMON_VALUE_GENDER);
+    verify(dataService).getCommonValues(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE);
   }
 
   @Test
   public void testClientSearch_Post_WithErrors() throws Exception {
     final ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
+
+    when(dataService.getCommonValues(COMMON_VALUE_GENDER)).thenReturn(Mono.empty());
+    when(dataService.getCommonValues(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE)).thenReturn(Mono.empty());
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
@@ -94,8 +104,8 @@ public class ClientSearchControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-client-search"));
 
-    verify(dataService).getGenders();
-    verify(dataService).getUniqueIdentifierTypes();
+    verify(dataService).getCommonValues(COMMON_VALUE_GENDER);
+    verify(dataService).getCommonValues(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE);
   }
 
   @Test

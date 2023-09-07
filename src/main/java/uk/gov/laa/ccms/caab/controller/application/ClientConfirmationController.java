@@ -7,6 +7,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
 import java.text.ParseException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -26,7 +27,7 @@ import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.caab.util.ApplicationBuilder;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -110,12 +111,12 @@ public class ClientConfirmationController {
     // get case reference Number, category of law value, contractual devolved powers,
     // amendment types
     Mono<Tuple4<CaseReferenceSummary,
-            CommonLookupDetail,
+        List<CommonLookupValueDetail>,
             ContractDetails,
             AmendmentTypeLookupDetail>> combinedResult =
             Mono.zip(
                   soaGatewayService.getCaseReference(user.getLoginId(), user.getUserType()),
-                  dataService.getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW, null, null),
+                  dataService.getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW),
                   soaGatewayService.getContractDetails(
                           user.getProvider().getId(),
                           applicationDetails.getOfficeId(),
@@ -127,7 +128,7 @@ public class ClientConfirmationController {
 
     return combinedResult.flatMap(tuple -> {
       CaseReferenceSummary caseReferenceSummary = tuple.getT1();
-      CommonLookupDetail categoryOfLawLookupDetail = tuple.getT2();
+      List<CommonLookupValueDetail> categoryOfLawValues = tuple.getT2();
       ContractDetails contractDetails = tuple.getT3();
       AmendmentTypeLookupDetail amendmentTypes = tuple.getT4();
 
@@ -136,7 +137,7 @@ public class ClientConfirmationController {
                 .caseReference(caseReferenceSummary)
                 .provider(user)
                 .client(clientInformation)
-                .categoryOfLaw(applicationDetails.getCategoryOfLawId(), categoryOfLawLookupDetail)
+                .categoryOfLaw(applicationDetails.getCategoryOfLawId(), categoryOfLawValues)
                 .office(applicationDetails.getOfficeId(), user.getProvider().getOffices())
                 .devolvedPowers(contractDetails.getContracts(), applicationDetails)
                 .larScopeFlag(amendmentTypes)

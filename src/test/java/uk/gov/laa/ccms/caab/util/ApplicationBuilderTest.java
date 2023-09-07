@@ -15,7 +15,6 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBST
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +23,6 @@ import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
@@ -118,10 +116,9 @@ class ApplicationBuilderTest {
     lookupValue.setCode(categoryId);
     lookupValue.setDescription("Description");
 
-    CommonLookupDetail lookupDetail = new CommonLookupDetail();
-    lookupDetail.setContent(Collections.singletonList(lookupValue));
+    List<CommonLookupValueDetail> lookupValues = Collections.singletonList(lookupValue);
 
-    ApplicationDetail detail = builder.categoryOfLaw(categoryId, lookupDetail).build();
+    ApplicationDetail detail = builder.categoryOfLaw(categoryId, lookupValues).build();
     assertEquals(categoryId, detail.getCategoryOfLaw().getId());
     assertEquals("Description", detail.getCategoryOfLaw().getDisplayValue());
   }
@@ -132,7 +129,7 @@ class ApplicationBuilderTest {
     OfficeDetail officeDetail = new OfficeDetail();
     officeDetail.setId(officeId);
     officeDetail.setName("OfficeName");
-    List<OfficeDetail> officeDetails = Arrays.asList(officeDetail);
+    List<OfficeDetail> officeDetails = Collections.singletonList(officeDetail);
 
     ApplicationDetail detail = builder.office(officeId, officeDetails).build();
     assertEquals(officeId, detail.getOffice().getId());

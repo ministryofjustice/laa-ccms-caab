@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.service;
+package uk.gov.laa.ccms.caab.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -10,12 +10,12 @@ import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
- * ErrorHandler for the DataService, providing detailed error messages
+ * ErrorHandler for the EbsApiClient, providing detailed error messages
  * and logging for various types of data retrieval operations.
  */
 @Slf4j
 @Component
-public class DataServiceErrorHandler {
+public class EbsApiClientErrorHandler {
 
   /**
    * The error message for User-related errors.
@@ -62,7 +62,7 @@ public class DataServiceErrorHandler {
   public Mono<UserDetail> handleUserError(String loginId, Throwable e) {
     final String msg = String.format(USER_ERROR_MESSAGE, loginId);
     log.error(msg, e);
-    return Mono.error(new DataServiceException(msg, e));
+    return Mono.error(new EbsApiClientException(msg, e));
   }
 
   /**
@@ -81,7 +81,7 @@ public class DataServiceErrorHandler {
           Throwable e) {
     final String msg = String.format(COMMON_VALUES_ERROR_MESSAGE, type, code, sort);
     log.error(msg, e);
-    return Mono.error(new DataServiceException(msg, e));
+    return Mono.error(new EbsApiClientException(msg, e));
   }
 
   /**
@@ -96,7 +96,7 @@ public class DataServiceErrorHandler {
           Throwable e) {
     final String msg = String.format(AMENDMENT_TYPE_ERROR_MESSAGE, applicationType);
     log.error(msg, e);
-    return Mono.error(new DataServiceException(msg, e));
+    return Mono.error(new EbsApiClientException(msg, e));
   }
 
   /**
@@ -109,7 +109,7 @@ public class DataServiceErrorHandler {
           Throwable e) {
     final String msg = String.format(COUNTRY_ERROR_MESSAGE);
     log.error(msg, e);
-    return Mono.error(new DataServiceException(msg, e));
+    return Mono.error(new EbsApiClientException(msg, e));
   }
 
   /**
@@ -124,7 +124,7 @@ public class DataServiceErrorHandler {
           Throwable e) {
     final String msg = String.format(CASE_STATUS_VALUES_ERROR_MESSAGE, copyAllowed);
     log.error(msg, e);
-    return Mono.error(new DataServiceException(msg, e));
+    return Mono.error(new EbsApiClientException(msg, e));
   }
 
   /**
@@ -139,6 +139,6 @@ public class DataServiceErrorHandler {
           Throwable e) {
     final String msg = String.format(FEE_EARNERS_ERROR_MESSAGE, providerId);
     log.error(msg, e);
-    return Mono.error(new DataServiceException(msg, e));
+    return Mono.error(new EbsApiClientException(msg, e));
   }
 }

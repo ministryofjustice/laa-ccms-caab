@@ -14,8 +14,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
+import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
@@ -59,10 +61,11 @@ public class ApplicationTypeControllerTest {
 
   @Test
   public void testGetApplicationTypeAddsApplicationTypesToModel() throws Exception {
-    final List<CommonLookupValueDetail> applicationTypes = new ArrayList<>();
-    applicationTypes.add(new CommonLookupValueDetail().type("Type 1").code("Code 1"));
+    final List<CommonLookupValueDetail> applicationTypes = Collections.singletonList(
+        new CommonLookupValueDetail().type("Type 1").code("Code 1"));
 
-    when(dataService.getApplicationTypes()).thenReturn(applicationTypes);
+    when(dataService.getCommonValues(COMMON_VALUE_APPLICATION_TYPE)).thenReturn(
+        Mono.just(applicationTypes));
 
     this.mockMvc.perform(get("/application/application-type")
             .sessionAttr("applicationDetails", new ApplicationDetails()))
@@ -72,7 +75,7 @@ public class ApplicationTypeControllerTest {
         .andExpect(model().attribute("applicationDetails", new ApplicationDetails()))
         .andExpect(model().attribute("applicationTypes", applicationTypes));
 
-    verify(dataService, times(1)).getApplicationTypes();
+    verify(dataService, times(1)).getCommonValues(COMMON_VALUE_APPLICATION_TYPE);
   }
 
   @Test
@@ -92,6 +95,12 @@ public class ApplicationTypeControllerTest {
   @Test
   public void testPostApplicationTypeHandlesValidationError() throws Exception {
     final ApplicationDetails applicationDetails = new ApplicationDetails();
+
+    final List<CommonLookupValueDetail> applicationTypes = Collections.singletonList(
+        new CommonLookupValueDetail().type("Type 1").code("Code 1"));
+
+    when(dataService.getCommonValues(COMMON_VALUE_APPLICATION_TYPE)).thenReturn(
+        Mono.just(applicationTypes));
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];

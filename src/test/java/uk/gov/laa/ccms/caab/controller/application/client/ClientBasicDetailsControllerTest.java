@@ -20,7 +20,9 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,7 +36,6 @@ import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.ClientDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,19 +52,23 @@ public class ClientBasicDetailsControllerTest {
 
   private MockMvc mockMvc;
 
-  private CommonLookupDetail titleLookupDetail;
-  private CommonLookupDetail countryLookupDetail;
-  private CommonLookupDetail genderLookupDetail;
-  private CommonLookupDetail maritalStatusLookupDetail;
+  private List<CommonLookupValueDetail> titleLookupDetail;
+  private List<CommonLookupValueDetail> countryLookupDetail;
+  private List<CommonLookupValueDetail> genderLookupDetail;
+  private List<CommonLookupValueDetail> maritalStatusLookupDetail;
 
   @BeforeEach
   public void setup() {
     mockMvc = standaloneSetup(clientBasicDetailsController).build();
 
-    titleLookupDetail = new CommonLookupDetail();
-    countryLookupDetail = new CommonLookupDetail();
-    genderLookupDetail = new CommonLookupDetail();
-    maritalStatusLookupDetail = new CommonLookupDetail();
+    titleLookupDetail = new ArrayList<>();
+    titleLookupDetail.add(new CommonLookupValueDetail());
+    countryLookupDetail = new ArrayList<>();
+    countryLookupDetail.add(new CommonLookupValueDetail());
+    genderLookupDetail = new ArrayList<>();
+    genderLookupDetail.add(new CommonLookupValueDetail());
+    maritalStatusLookupDetail = new ArrayList<>();
+    maritalStatusLookupDetail.add(new CommonLookupValueDetail());
   }
 
   @Test
@@ -122,9 +127,9 @@ public class ClientBasicDetailsControllerTest {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
     ClientDetails clientDetails = new ClientDetails();
 
-    countryLookupDetail.addContentItem(
+    countryLookupDetail.add(
         new CommonLookupValueDetail().code("USA").description("United States"));
-    countryLookupDetail.addContentItem(
+    countryLookupDetail.add(
         new CommonLookupValueDetail().code("UK").description("United Kingdom"));
 
     when(dataService.getCommonValues(eq(COMMON_VALUE_CONTACT_TITLE))).thenReturn(

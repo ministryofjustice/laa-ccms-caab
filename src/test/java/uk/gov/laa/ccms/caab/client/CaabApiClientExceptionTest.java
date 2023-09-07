@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.service;
+package uk.gov.laa.ccms.caab.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -9,12 +9,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 
 @ExtendWith(MockitoExtension.class)
-public class DataServiceExceptionTest {
-
+public class CaabApiClientExceptionTest {
+    
   @Test
   public void testConstructorWithMessage() {
     String expectedMessage = "Test Exception";
-    DataServiceException exception = new DataServiceException(expectedMessage);
+    CaabApiClientException exception = new CaabApiClientException(expectedMessage);
 
     assertEquals(expectedMessage, exception.getMessage());
     assertNull(exception.getCause());
@@ -24,7 +24,7 @@ public class DataServiceExceptionTest {
   public void testConstructorWithMessageAndCause() {
     String expectedMessage = "Test Exception";
     Exception cause = new Exception("Cause Exception");
-    DataServiceException exception = new DataServiceException(expectedMessage, cause);
+    CaabApiClientException exception = new CaabApiClientException(expectedMessage, cause);
 
     assertEquals(expectedMessage, exception.getMessage());
     assertEquals(cause, exception.getCause());

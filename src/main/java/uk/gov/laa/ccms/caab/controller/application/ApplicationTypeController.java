@@ -1,8 +1,13 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLICATION_TYPE_CODES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -34,24 +39,23 @@ public class ApplicationTypeController {
    * Handles the GET request for application type selection page.
    *
    * @param applicationDetails The application details from session.
-   * @param model The model for the view.
+   * @param model              The model for the view.
    * @return The view name for the application type selection page or a redirect if exceptional
-   *         funding.
+   * funding.
    */
   @GetMapping("/application/application-type")
   public String applicationType(
-          @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
-          Model model) {
+      @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
+      Model model) {
     log.info("GET /application/application-type: {}", applicationDetails);
 
     if (applicationDetails.isExceptionalFunding()) {
       log.warn("ApplicationTypeController hit despite exceptionalFunding being true. "
-              + "Redirecting to client-search");
+          + "Redirecting to client-search");
       return "redirect:/application/client/search";
     }
 
-    List<CommonLookupValueDetail> applicationTypes = dataService.getApplicationTypes();
-    model.addAttribute("applicationTypes", applicationTypes);
+    model.addAttribute("applicationTypes", getFilteredApplicationTypes());
 
     return "application/select-application-type";
   }
@@ -60,24 +64,34 @@ public class ApplicationTypeController {
    * Handles the POST request for application type selection form submission.
    *
    * @param applicationDetails The application details from session.
-   * @param bindingResult The result of data binding/validation.
-   * @param model The model for the view.
+   * @param bindingResult      The result of data binding/validation.
+   * @param model              The model for the view.
    * @return A redirect string or view name based on validation result.
    */
   @PostMapping("/application/application-type")
   public String applicationType(
-          @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
-          BindingResult bindingResult,
-          Model model) {
+      @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
+      BindingResult bindingResult,
+      Model model) {
     log.info("POST /application/application-type: {}", applicationDetails);
     applicationValidator.validateApplicationTypeCategory(applicationDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {
-      List<CommonLookupValueDetail> applicationTypes = dataService.getApplicationTypes();
-      model.addAttribute("applicationTypes", applicationTypes);
+      model.addAttribute("applicationTypes", getFilteredApplicationTypes());
       return "application/select-application-type";
     }
 
     return "redirect:/application/delegated-functions";
+  }
+
+  private List<CommonLookupValueDetail> getFilteredApplicationTypes() {
+    return Optional.ofNullable(dataService.getCommonValues(COMMON_VALUE_APPLICATION_TYPE).block())
+        .orElse(Collections.emptyList())
+        .stream()
+        .filter(applicationType -> {
+          String code = applicationType.getCode().toUpperCase();
+          return !EXCLUDED_APPLICATION_TYPE_CODES.contains(code);
+        })
+        .collect(Collectors.toList());
   }
 }

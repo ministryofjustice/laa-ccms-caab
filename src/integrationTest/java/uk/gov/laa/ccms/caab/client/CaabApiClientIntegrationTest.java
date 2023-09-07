@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.service;
+package uk.gov.laa.ccms.caab.client;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
@@ -19,7 +19,7 @@ import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 
 @SpringBootTest
-public class CaabApiServiceIntegrationTest extends AbstractIntegrationTest {
+public class CaabApiClientIntegrationTest extends AbstractIntegrationTest {
 
   @RegisterExtension
   protected static WireMockExtension wiremock = WireMockExtension.newInstance()
@@ -32,7 +32,7 @@ public class CaabApiServiceIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Autowired
-  private CaabApiService caabApiService;
+  private CaabApiClient caabApiClient;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -48,7 +48,7 @@ public class CaabApiServiceIntegrationTest extends AbstractIntegrationTest {
         .withRequestBody(equalToJson(applicationDetailJson))
         .willReturn(ok()));
 
-    Mono<Void> responseMono = caabApiService.createApplication(loginId, applicationDetail);
+    Mono<Void> responseMono = caabApiClient.createApplication(loginId, applicationDetail);
     responseMono.block();
   }
 }

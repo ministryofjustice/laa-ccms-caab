@@ -21,6 +21,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAIL
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
+import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,7 +42,7 @@ import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -76,17 +78,12 @@ public class ClientConfirmationControllerTest {
 
   private MockMvc mockMvc;
 
-  private UserDetail user;
-
   @Autowired
   private WebApplicationContext webApplicationContext;
-
-  private String clientReferenceNumber = "12345";
 
   @BeforeEach
   public void setup() {
     mockMvc = standaloneSetup(clientConfirmationController).build();
-    this.user = buildUser();
   }
 
   @Test
@@ -118,7 +115,8 @@ public class ClientConfirmationControllerTest {
     // Mocking dependencies
     CaseReferenceSummary caseReferenceSummary =
         new CaseReferenceSummary().caseReferenceNumber("REF123");
-    CommonLookupDetail categoryOfLawLookupDetail = new CommonLookupDetail();
+    List<CommonLookupValueDetail> categoryOfLawValues =
+        Collections.singletonList(new CommonLookupValueDetail());
     ContractDetails contractDetails = new ContractDetails();
 
     AmendmentTypeLookupValueDetail amendmentType = new AmendmentTypeLookupValueDetail()
@@ -131,8 +129,8 @@ public class ClientConfirmationControllerTest {
 
     when(soaGatewayService.getCaseReference(user.getLoginId(), user.getUserType())).thenReturn(
         Mono.just(caseReferenceSummary));
-    when(dataService.getCommonValues(anyString(), any(), any())).thenReturn(
-        Mono.just(categoryOfLawLookupDetail));
+    when(dataService.getCommonValues(anyString())).thenReturn(
+        Mono.just(categoryOfLawValues));
     when(soaGatewayService.getContractDetails(anyInt(), anyInt(), anyString(),
         anyString())).thenReturn(Mono.just(contractDetails));
     when(dataService.getAmendmentTypes(any())).thenReturn(Mono.just(amendmentTypes));
@@ -146,21 +144,22 @@ public class ClientConfirmationControllerTest {
         .andReturn();
 
     verify(soaGatewayService).getCaseReference(user.getLoginId(), user.getUserType());
-    verify(dataService).getCommonValues(anyString(), any(), any());
+    verify(dataService).getCommonValues(anyString());
     verify(soaGatewayService).getContractDetails(anyInt(), anyInt(), anyString(), anyString());
     verify(dataService).getAmendmentTypes(any());
     verify(caabApiService).createApplication(anyString(), any());
   }
 
   @Test
-  public void testClientConfirmedNoCaseReferenceNumber() throws Exception {
+  public void testClientConfirmedNoCaseReferenceNumber() {
     String confirmedClientReference = "12345"; // Must match client reference above
     ApplicationDetails applicationDetails = buildApplicationDetails();
     ClientDetail clientInformation = buildClientInformation();
     UserDetail user = buildUser();
 
     // Mocking dependencies
-    CommonLookupDetail categoryOfLawLookupDetail = new CommonLookupDetail();
+    List<CommonLookupValueDetail> categoryOfLawValues =
+        Collections.singletonList(new CommonLookupValueDetail());
     ContractDetails contractDetails = new ContractDetails();
     AmendmentTypeLookupDetail amendmentTypes = new AmendmentTypeLookupDetail();
 
@@ -169,8 +168,8 @@ public class ClientConfirmationControllerTest {
         new RuntimeException("No case reference number was created, unable to continue"));
 
     // Mocking dependencies
-    when(dataService.getCommonValues(anyString(), any(), any())).thenReturn(
-        Mono.just(categoryOfLawLookupDetail));
+    when(dataService.getCommonValues(anyString())).thenReturn(
+        Mono.just(categoryOfLawValues));
     when(soaGatewayService.getContractDetails(anyInt(), anyInt(), anyString(),
         anyString())).thenReturn(Mono.just(contractDetails));
     when(dataService.getAmendmentTypes(any())).thenReturn(Mono.just(amendmentTypes));
@@ -195,7 +194,7 @@ public class ClientConfirmationControllerTest {
   }
 
   @Test
-  public void testClientConfirmedClientMismatch() throws Exception {
+  public void testClientConfirmedClientMismatch() {
     String wrongReference = "wrongReference";
     ApplicationDetails applicationDetails = buildApplicationDetails();
     ClientDetail clientInformation = buildClientInformation();
@@ -249,6 +248,7 @@ public class ClientConfirmationControllerTest {
   }
 
   public ClientDetail buildClientInformation() {
+    String clientReferenceNumber = "12345";
     return new ClientDetail()
         .clientReferenceNumber(clientReferenceNumber)
         .details(new ClientDetailDetails()
