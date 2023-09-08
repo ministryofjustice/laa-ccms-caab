@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.application.OfficeValidator;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -25,7 +25,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @SessionAttributes(APPLICATION_DETAILS)
 public class OfficeController {
 
-  private final ApplicationDetailsValidator applicationValidator;
+  private final OfficeValidator officeValidator;
 
   /**
    * Creates a new instance of {@link ApplicationDetails}.
@@ -70,7 +70,7 @@ public class OfficeController {
           Model model) {
 
     log.info("POST /application/office: {}", applicationDetails);
-    applicationValidator.validateSelectOffice(applicationDetails, bindingResult);
+    officeValidator.validate(applicationDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {
       model.addAttribute("offices", user.getProvider().getOffices());

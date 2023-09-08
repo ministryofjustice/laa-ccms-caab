@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.application.CategoryOfLawValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.caab.service.SoaGatewayService;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -33,7 +33,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @SessionAttributes(APPLICATION_DETAILS)
 public class CategoryOfLawController {
 
-  private final ApplicationDetailsValidator applicationValidator;
+  private final CategoryOfLawValidator categoryOfLawValidator;
 
   private final SoaGatewayService soaGatewayService;
 
@@ -81,7 +81,7 @@ public class CategoryOfLawController {
           BindingResult bindingResult,
           Model model) {
     log.info("POST /application/category-of-law: {}", applicationDetails);
-    applicationValidator.validateCategoryOfLaw(applicationDetails, bindingResult);
+    categoryOfLawValidator.validate(applicationDetails, bindingResult);
 
     String viewName = "redirect:/application/application-type";
     if (bindingResult.hasErrors()) {

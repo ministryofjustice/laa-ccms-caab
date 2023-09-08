@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationTypeValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
@@ -26,7 +26,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @SessionAttributes(APPLICATION_DETAILS)
 public class ApplicationTypeController {
 
-  private final ApplicationDetailsValidator applicationValidator;
+  private final ApplicationTypeValidator applicationTypeValidator;
 
   private final DataService dataService;
 
@@ -70,7 +70,7 @@ public class ApplicationTypeController {
           BindingResult bindingResult,
           Model model) {
     log.info("POST /application/application-type: {}", applicationDetails);
-    applicationValidator.validateApplicationTypeCategory(applicationDetails, bindingResult);
+    applicationTypeValidator.validate(applicationDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {
       List<CommonLookupValueDetail> applicationTypes = dataService.getApplicationTypes();
