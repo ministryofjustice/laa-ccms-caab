@@ -8,16 +8,34 @@
 name: Civil Applications And Billing Pipeline
 
 on:
-  push:
-    branches-ignore:
-      - main
+  pull_request:
+    branches: [ main ]
+    types: [ closed ]
 
 permissions:
   contents: read
   packages: write
 
 jobs:
+  define-image-tag:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    # map a step output to job output
+    outputs:
+      tag_name: ${{ steps.extract_tag_name.outputs.tag_name }}
+    steps:
+      - name: Extract short repo name
+        shell: bash
+        run: echo "repo_name=${GITHUB_REPOSITORY#*\/laa-ccms-}-ui" >> $GITHUB_OUTPUT
+        id: extract_repo_name
+      - name: derive tag name
+        shell: bash
+        run: echo "tag_name=${{ steps.extract_repo_name.outputs.repo_name }}-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+        id: extract_tag_name
+
+
   build-test:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     environment: development
 
@@ -55,11 +73,9 @@ jobs:
         with:
           arguments: integrationTest
 
-
   ecr:
-    needs: build-test
+    needs: [ build-test, define-image-tag ]
     runs-on: ubuntu-latest
-    environment: development
     permissions:
       id-token: write # for requesting jwt
       contents: read  # for actions/checkout
@@ -71,48 +87,54 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: caab-jar
-      - uses: aws-actions/configure-aws-credentials@v2
+
+      - name: Configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}
-          aws-region: ${{ vars.ECR_REGION }}
-      # Login to container repo
-      - uses: aws-actions/amazon-ecr-login@v1
+          role-to-assume: ${{ secrets.DEV_ECR_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.DEV_ECR_REGION }}
+
+      - name: Login ecr
+        uses: aws-actions/amazon-ecr-login@v1
         id: login-ecr
+
       # Build and push docker image to container repo
-      - run: |
-          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
-          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+      - name: Build and push image
+        run: |
+          docker build -t $REGISTRY/$REPOSITORY:${{ env.IMAGE_TAG }} .
+          docker push $REGISTRY/$REPOSITORY:${{ env.IMAGE_TAG }}
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REPOSITORY: ${{ vars.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ github.sha }}
+          REPOSITORY: ${{ vars.DEV_ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ needs.define-image-tag.outputs.tag_name }}
+          
       - name: delete artifact
         uses: geekyeggo/delete-artifact@v2
         with:
           name: caab-jar
 
-  deploy-dev:
+  update-helm-chart:
+    needs: [ ecr, define-image-tag ]
     runs-on: ubuntu-latest
     environment: development
-    needs: ecr
-    env:
-      KUBE_NAMESPACE: ${{ secrets.KUBE_NAMESPACE_DEV }}
     steps:
-      - name: Checkout
+      - name: Checkout charts repo
         uses: actions/checkout@v3
-      - name: Update image tag
+        with:
+          repository: ministryofjustice/laa-ccms-caab-helm-charts
+          ref: development
+          path: laa-ccms-caab-helm-charts
+          token: ${{ secrets.REPO_TOKEN }}
+      - name: update helm chart
         env:
-          ECR_URL: ${{ secrets.ECR_URL_DEV }}
-        run: export IMAGE_TAG=${{ github.sha }} && cat kubectl_deploy/deploy.tpl | envsubst > kubectl_deploy/deployment.yaml
-      - name: Authenticate to the cluster
-        env:
-          KUBE_CLUSTER: ${{ secrets.KUBE_CLUSTER_DEV }}
+          IMAGE_TAG: ${{ needs.define-image-tag.outputs.tag_name }}
         run: |
-          echo "${{ secrets.KUBE_CERT_DEV }}" > ca.crt
-          kubectl config set-cluster ${KUBE_CLUSTER} --certificate-authority=./ca.crt --server=https://${KUBE_CLUSTER}
-          kubectl config set-credentials deploy-user --token=${{ secrets.KUBE_TOKEN_DEV }}
-          kubectl config set-context ${KUBE_CLUSTER} --cluster=${KUBE_CLUSTER} --user=deploy-user --namespace=${{ secrets.KUBE_NAMESPACE_DEV}}
-          kubectl config use-context ${KUBE_CLUSTER}
-      - name: Apply the updated manifest
-        run: kubectl -n ${KUBE_NAMESPACE} apply -f kubectl_deploy --namespace=laa-ccms-civil
+          echo "$IMAGE_TAG"
+          cd laa-ccms-caab-helm-charts/laa-ccms-caab-service/charts/laa-ccms-caab-ui/
+          yq eval-all "( .appVersion = \"${{ env.IMAGE_TAG }}\" )" -i Chart.yaml
+          git config --global user.email "github@justice.gov.uk"
+          git config --global user.name "GitHub Actions Bot"
+          git add .
+          git commit -m "update appVersion to ${{ env.IMAGE_TAG }}"
+          git push origin
 
