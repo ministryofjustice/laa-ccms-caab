@@ -1,6 +1,6 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.1.2'
+	id 'org.springframework.boot' version '3.1.3'
 	id 'io.spring.dependency-management' version '1.1.3'
 	id 'jacoco'
 	id 'net.researchgate.release' version '3.0.2'
@@ -74,7 +74,7 @@ repositories {
 dependencies {
 	implementation 'uk.gov.laa.ccms.data:data-api:0.0.1-1cb3b4e-SNAPSHOT'
 	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.1-14061bb-SNAPSHOT'
-	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.1-21cdef7-SNAPSHOT'
+	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.1-24498ef-SNAPSHOT'
 
 	//Starters
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
@@ -100,12 +100,12 @@ dependencies {
 	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.mockito:mockito-core:5.4.0'
+	testImplementation 'org.mockito:mockito-core:5.5.0'
 	testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
 	testImplementation 'org.springframework.security:spring-security-test'
-	testImplementation 'io.projectreactor:reactor-test:3.5.8'
+	testImplementation 'io.projectreactor:reactor-test:3.5.9'
 
-	integrationTestImplementation "com.github.tomakehurst:wiremock:3.0.0-beta-10"
+	integrationTestImplementation "com.github.tomakehurst:wiremock:3.0.1"
 
 }
 
