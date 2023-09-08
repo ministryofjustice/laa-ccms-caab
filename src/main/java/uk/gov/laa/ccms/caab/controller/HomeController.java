@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import uk.gov.laa.ccms.caab.service.SoaGatewayService;
+import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
@@ -19,7 +19,7 @@ public class HomeController {
 
   public static final String NO_OUTSTANDING_ACTIONS = "No Outstanding Actions";
 
-  private final SoaGatewayService soaGatewayService;
+  private final NotificationService notificationService;
 
   /**
    * Handles requests to the home page. Retrieves and formats user notifications and actions.
@@ -33,7 +33,7 @@ public class HomeController {
     UserDetail user = (UserDetail) model.getAttribute(USER_DETAILS);
 
     // Retrieve a summary of the User's Notifications & Actions from the SOA Gateway
-    NotificationSummary notificationSummary = soaGatewayService.getNotificationsSummary(
+    NotificationSummary notificationSummary = notificationService.getNotificationsSummary(
             user.getLoginId(), user.getUserType()).block();
 
     boolean showNotifications = notificationSummary != null;

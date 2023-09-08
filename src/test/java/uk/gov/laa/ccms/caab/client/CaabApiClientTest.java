@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.service;
+package uk.gov.laa.ccms.caab.client;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -16,7 +16,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class CaabApiServiceTest {
+public class CaabApiClientTest {
     
   @Mock
   private WebClient caabApiWebClient;
@@ -34,10 +34,10 @@ public class CaabApiServiceTest {
   private WebClient.ResponseSpec responseMock;
 
   @Mock
-  private CaabApiServiceErrorHandler caabApiServiceErrorHandler;
+  private CaabApiClientErrorHandler caabApiClientErrorHandler;
 
   @InjectMocks
-  private CaabApiService caabApiService;
+  private CaabApiClient caabApiClient;
 
   @Test
   void createApplication_success() {
@@ -55,7 +55,7 @@ public class CaabApiServiceTest {
     when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.fromRunnable(() -> {
     }));
 
-    Mono<Void> result = caabApiService.createApplication(loginId, application);
+    Mono<Void> result = caabApiClient.createApplication(loginId, application);
 
     StepVerifier.create(result)
         .verifyComplete();

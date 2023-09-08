@@ -31,7 +31,7 @@ import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteriaValidator;
-import uk.gov.laa.ccms.caab.service.DataService;
+import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
@@ -43,7 +43,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @WebAppConfiguration
 public class CopyCaseSearchControllerTest {
   @Mock
-  private DataService dataService;
+  private ProviderService providerService;
 
   @Mock
   private CopyCaseSearchCriteriaValidator validator;
@@ -68,7 +68,7 @@ public class CopyCaseSearchControllerTest {
     final FeeEarnerDetail feeEarnerDetail = new FeeEarnerDetail().addContentItem(
         new ContactDetail().id(123).name("A Fee Earner"));
 
-    when(dataService.getFeeEarners(user.getProvider().getId())).thenReturn(
+    when(providerService.getFeeEarners(user.getProvider().getId())).thenReturn(
         Mono.just(feeEarnerDetail));
 
     this.mockMvc.perform(get("/application/copy-case/search")
@@ -79,7 +79,7 @@ public class CopyCaseSearchControllerTest {
         .andExpect(model().attribute("feeEarners", feeEarnerDetail.getContent()))
         .andExpect(model().attribute("offices", user.getProvider().getOffices()));
 
-    verify(dataService, times(1)).getFeeEarners(user.getProvider().getId());
+    verify(providerService, times(1)).getFeeEarners(user.getProvider().getId());
   }
 
   @Test
@@ -96,7 +96,7 @@ public class CopyCaseSearchControllerTest {
       return null;
     }).when(validator).validate(any(), any());
 
-    when(dataService.getFeeEarners(user.getProvider().getId())).thenReturn(
+    when(providerService.getFeeEarners(user.getProvider().getId())).thenReturn(
         Mono.just(feeEarnerDetail));
 
     this.mockMvc.perform(post("/application/copy-case/search")
@@ -107,7 +107,7 @@ public class CopyCaseSearchControllerTest {
         .andExpect(model().attribute("feeEarners", feeEarnerDetail.getContent()))
         .andExpect(model().attribute("offices", user.getProvider().getOffices()));
 
-    verify(dataService, times(1)).getFeeEarners(user.getProvider().getId());
+    verify(providerService, times(1)).getFeeEarners(user.getProvider().getId());
   }
 
   @Test
@@ -121,7 +121,7 @@ public class CopyCaseSearchControllerTest {
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/copy-case/results"));
 
-    verify(dataService, never()).getFeeEarners(user.getProvider().getId());
+    verify(providerService, never()).getFeeEarners(user.getProvider().getId());
   }
 
   private UserDetail buildUser() {

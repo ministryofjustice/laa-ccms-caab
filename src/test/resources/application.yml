@@ -1,9 +1,9 @@
 
 laa:
   ccms:
-    data-api:
+    ebs-api:
       url: http://localhost:8009
-    soa-gateway-api:
+    soa-api:
       url: http://localhost:8008
     caab-api:
       url: http://localhost:8007

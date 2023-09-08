@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.service;
+package uk.gov.laa.ccms.caab.client;
 
 
 import lombok.extern.slf4j.Slf4j;
@@ -6,11 +6,11 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 /**
- * Provides error-handling capabilities for the CAAB API service interactions.
+ * Provides error-handling capabilities for the CAAB API client interactions.
  */
 @Slf4j
 @Component
-public class CaabApiServiceErrorHandler {
+public class CaabApiClientErrorHandler {
 
   /**
    * Handles errors encountered during application creation.
@@ -21,6 +21,6 @@ public class CaabApiServiceErrorHandler {
   public Mono<Void> handleCreateApplicationError(Throwable e) {
     final String msg = "Failed to create application";
     log.error(msg, e);
-    return Mono.error(new CaabApiServiceException(msg, e));
+    return Mono.error(new CaabApiClientException(msg, e));
   }
 }

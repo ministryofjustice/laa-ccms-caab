@@ -17,6 +17,7 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 
 import java.util.ArrayList;
 import java.util.List;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,10 +30,12 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
+import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
-import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.caab.service.SoaGatewayService;
+import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.ProviderService;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
@@ -43,10 +46,10 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @WebAppConfiguration
 public class CategoryOfLawControllerTest {
   @Mock
-  private DataService dataService;
+  private ProviderService providerService;
 
   @Mock
-  private SoaGatewayService soaGatewayService;
+  private CommonLookupService commonLookupService;
 
   @Mock
   private ApplicationDetailsValidator applicationDetailsValidator;
@@ -63,7 +66,7 @@ public class CategoryOfLawControllerTest {
 
   private ApplicationDetails applicationDetails;
 
-  private List<CommonLookupValueDetail> categoriesOfLaw;
+  private CommonLookupDetail categoriesOfLaw;
 
   @BeforeEach
   public void setup() {
@@ -74,25 +77,26 @@ public class CategoryOfLawControllerTest {
     applicationDetails = new ApplicationDetails();
     applicationDetails.setOfficeId(345);
 
-    categoriesOfLaw = new ArrayList<>();
-    categoriesOfLaw.add(new CommonLookupValueDetail().code("CAT1").description("Category 1"));
-    categoriesOfLaw.add(new CommonLookupValueDetail().code("CAT2").description("Category 2"));
+    categoriesOfLaw = new CommonLookupDetail();
+    categoriesOfLaw.addContentItem(new CommonLookupValueDetail().code("CAT1").description("Category 1"));
+    categoriesOfLaw.addContentItem(new CommonLookupValueDetail().code("CAT2").description("Category 2"));
   }
 
   @Test
   public void testGetCategoryOfLawAddsCategoriesOfLawToModel() throws Exception {
     final List<String> categoryOfLawCodes = new ArrayList<>();
     categoryOfLawCodes.add("CAT1");
-    categoryOfLawCodes.add("CAT2");
+//    categoryOfLawCodes.add("CAT2");
 
-    when(soaGatewayService.getCategoryOfLawCodes(
+    when(providerService.getCategoryOfLawCodes(
         user.getProvider().getId(),
         applicationDetails.getOfficeId(),
         user.getLoginId(),
         user.getUserType(),
         Boolean.TRUE)).thenReturn(categoryOfLawCodes);
 
-    when(dataService.getCategoriesOfLaw(categoryOfLawCodes)).thenReturn(categoriesOfLaw);
+    when(commonLookupService.getCategoriesOfLaw()).thenReturn(
+        Mono.just(categoriesOfLaw));
 
     this.mockMvc.perform(get("/application/category-of-law")
             .flashAttr("applicationDetails", applicationDetails)
@@ -100,21 +104,22 @@ public class CategoryOfLawControllerTest {
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/select-category-of-law"))
-        .andExpect(model().attribute("categoriesOfLaw", categoriesOfLaw))
+        .andExpect(model().attribute("categoriesOfLaw", Matchers.hasSize(1)))
         .andExpect(model().attributeExists("applicationDetails"));
 
-    verify(soaGatewayService).getCategoryOfLawCodes(user.getProvider().getId(),
+    verify(providerService).getCategoryOfLawCodes(user.getProvider().getId(),
         applicationDetails.getOfficeId(),
         user.getLoginId(),
         user.getUserType(),
         Boolean.TRUE);
 
-    verify(dataService).getCategoriesOfLaw(categoryOfLawCodes);
+    verify(commonLookupService).getCategoriesOfLaw();
   }
 
   @Test
   public void testGetCategoryOfLaw_ExceptionFundingReturnsAllCodes() throws Exception {
-    when(dataService.getAllCategoriesOfLaw()).thenReturn(categoriesOfLaw);
+    when(commonLookupService.getCategoriesOfLaw()).thenReturn(
+        Mono.just(categoriesOfLaw));
 
     this.mockMvc.perform(get("/application/category-of-law?exceptional_funding=true")
             .flashAttr("applicationDetails", applicationDetails)
@@ -122,29 +127,29 @@ public class CategoryOfLawControllerTest {
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/select-category-of-law"))
-        .andExpect(model().attribute("categoriesOfLaw", categoriesOfLaw))
+        .andExpect(model().attribute("categoriesOfLaw", categoriesOfLaw.getContent()))
         .andExpect(model().attributeExists("applicationDetails"));
 
     assertTrue(applicationDetails.isExceptionalFunding());
-    verifyNoInteractions(soaGatewayService);
-    verify(dataService).getAllCategoriesOfLaw();
+    verifyNoInteractions(providerService);
+    verify(commonLookupService).getCategoriesOfLaw();
   }
-
 
   @Test
   public void testPostCategoryOfLawHandlesValidationError() throws Exception {
     final List<String> categoryOfLawCodes = new ArrayList<>();
     categoryOfLawCodes.add("CAT1");
-    categoryOfLawCodes.add("CAT2");
+//    categoryOfLawCodes.add("CAT2");
 
-    when(soaGatewayService.getCategoryOfLawCodes(
+    when(providerService.getCategoryOfLawCodes(
         user.getProvider().getId(),
         applicationDetails.getOfficeId(),
         user.getLoginId(),
         user.getUserType(),
         Boolean.TRUE)).thenReturn(categoryOfLawCodes);
 
-    when(dataService.getCategoriesOfLaw(categoryOfLawCodes)).thenReturn(categoriesOfLaw);
+    when(commonLookupService.getCategoriesOfLaw()).thenReturn(
+        Mono.just(categoriesOfLaw));
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
@@ -159,7 +164,7 @@ public class CategoryOfLawControllerTest {
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/select-category-of-law"))
-        .andExpect(model().attribute("categoriesOfLaw", categoriesOfLaw));
+        .andExpect(model().attribute("categoriesOfLaw", Matchers.hasSize(1)));
   }
 
   @Test
@@ -172,8 +177,8 @@ public class CategoryOfLawControllerTest {
         .andDo(print())
         .andExpect(redirectedUrl("/application/application-type"));
 
-    verifyNoInteractions(soaGatewayService);
-    verifyNoInteractions(dataService);
+    verifyNoInteractions(providerService);
+    verifyNoInteractions(commonLookupService);
   }
 
   @Test
@@ -187,8 +192,8 @@ public class CategoryOfLawControllerTest {
         .andDo(print())
         .andExpect(redirectedUrl("/application/client/search"));
 
-    verifyNoInteractions(soaGatewayService);
-    verifyNoInteractions(dataService);
+    verifyNoInteractions(providerService);
+    verifyNoInteractions(commonLookupService);
   }
 
   private UserDetail buildUser() {

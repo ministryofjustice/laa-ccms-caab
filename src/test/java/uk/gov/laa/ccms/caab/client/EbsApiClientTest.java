@@ -1,23 +1,14 @@
-package uk.gov.laa.ccms.caab.service;
+package uk.gov.laa.ccms.caab.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -31,16 +22,14 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
-import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class DataServiceTest {
+public class EbsApiClientTest {
 
   @Mock
   private WebClient webClientMock;
@@ -51,11 +40,13 @@ public class DataServiceTest {
   @Mock
   private WebClient.ResponseSpec responseMock;
 
-  @InjectMocks
-  private DataService dataService;
-
   @Mock
-  private DataServiceErrorHandler dataServiceErrorHandler;
+  private EbsApiClientErrorHandler ebsApiClientErrorHandler;
+
+  @InjectMocks
+  private EbsApiClient ebsApiClient;
+
+
 
   ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
@@ -73,7 +64,7 @@ public class DataServiceTest {
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(UserDetail.class)).thenReturn(Mono.just(mockUser));
 
-    Mono<UserDetail> userDetailsMono = dataService.getUser(loginId);
+    Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(loginId);
 
     StepVerifier.create(userDetailsMono)
         .expectNextMatches(user -> user.getLoginId().equals(loginId))
@@ -91,10 +82,10 @@ public class DataServiceTest {
     when(responseMock.bodyToMono(UserDetail.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-    when(dataServiceErrorHandler.handleUserError(eq(loginId),
+    when(ebsApiClientErrorHandler.handleUserError(eq(loginId),
         any(WebClientResponseException.class))).thenReturn(Mono.empty());
 
-    Mono<UserDetail> userDetailsMono = dataService.getUser(loginId);
+    Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(loginId);
 
     StepVerifier.create(userDetailsMono)
         .verifyComplete();
@@ -114,7 +105,7 @@ public class DataServiceTest {
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
 
-    Mono<CommonLookupDetail> commonValuesMono = dataService.getCommonValues(type, code, sort);
+    Mono<CommonLookupDetail> commonValuesMono = ebsApiClient.getCommonValues(type, code, sort);
 
     StepVerifier.create(commonValuesMono)
         .expectNext(commonValues)
@@ -141,10 +132,10 @@ public class DataServiceTest {
     when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-    when(dataServiceErrorHandler.handleCommonValuesError(eq(type), eq(code), eq(sort),
+    when(ebsApiClientErrorHandler.handleCommonValuesError(eq(type), eq(code), eq(sort),
         any(WebClientResponseException.class))).thenReturn(Mono.empty());
 
-    Mono<CommonLookupDetail> commonValuesMono = dataService.getCommonValues(type, code, sort);
+    Mono<CommonLookupDetail> commonValuesMono = ebsApiClient.getCommonValues(type, code, sort);
 
     StepVerifier.create(commonValuesMono)
         .verifyComplete();
@@ -168,7 +159,7 @@ public class DataServiceTest {
     when(responseMock.bodyToMono(CaseStatusLookupDetail.class)).thenReturn(
         Mono.just(caseStatusLookupDetail));
 
-    Mono<CaseStatusLookupDetail> lookupDetailMono = dataService.getCaseStatusValues(true);
+    Mono<CaseStatusLookupDetail> lookupDetailMono = ebsApiClient.getCaseStatusValues(true);
 
     StepVerifier.create(lookupDetailMono)
         .expectNext(caseStatusLookupDetail)
@@ -179,161 +170,6 @@ public class DataServiceTest {
 
     // Assert the URI
     assertEquals("/lookup/case-status?copy-allowed=true", actualUri.toString());
-  }
-
-  @Test
-  void getCopyCaseStatus_returnsData() {
-    CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail();
-    caseStatusLookupDetail.addContentItem(new CaseStatusLookupValueDetail());
-
-    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
-
-    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(CaseStatusLookupDetail.class)).thenReturn(
-        Mono.just(caseStatusLookupDetail));
-
-    CaseStatusLookupValueDetail lookupValue = dataService.getCopyCaseStatus();
-
-    assertNotNull(lookupValue);
-    assertEquals(caseStatusLookupDetail.getContent().get(0), lookupValue);
-
-    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
-
-    // Assert the URI
-    assertEquals("/lookup/case-status?copy-allowed=true", actualUri.toString());
-  }
-
-  @Test
-  void getCopyCaseStatus_handlesNullResponse() {
-
-    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
-
-    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(CaseStatusLookupDetail.class)).thenReturn(Mono.empty());
-
-    CaseStatusLookupValueDetail lookupValue = dataService.getCopyCaseStatus();
-
-    assertNull(lookupValue);
-  }
-
-  @ParameterizedTest
-  @CsvSource({"DP, 0",
-      "ECF, 0",
-      "SUBDP, 0",
-      "test1, 1",
-      "test2, 1"})
-  void getApplicationTypes_checkType(String code, int expectedSize) {
-    CommonLookupDetail commonValues = new CommonLookupDetail();
-    List<CommonLookupValueDetail> content = new ArrayList<>();
-    CommonLookupValueDetail commonValueDetails = new CommonLookupValueDetail();
-    commonValueDetails.setCode(code);
-    content.add(commonValueDetails);
-    commonValues.setContent(content);
-
-    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
-
-    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
-
-    List<CommonLookupValueDetail> applicationTypes = dataService.getApplicationTypes();
-    assertEquals(expectedSize, applicationTypes.size());
-
-    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
-    assertEquals("/lookup/common?type=XXCCMS_APP_AMEND_TYPES", actualUri.toString());
-  }
-
-  @Test
-  void getCategoriesOfLaw_returnsData() {
-    String type = COMMON_VALUE_CATEGORY_OF_LAW;
-    CommonLookupDetail commonValues = new CommonLookupDetail();
-    commonValues.addContentItem(new CommonLookupValueDetail().code("CAT1").type(type));
-    commonValues.addContentItem(new CommonLookupValueDetail().code("CAT2").type(type));
-
-    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
-
-    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
-
-    final List<String> catCodes = new ArrayList<>();
-    catCodes.add("CAT1");
-
-    List<CommonLookupValueDetail> response = dataService.getCategoriesOfLaw(catCodes);
-
-    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
-
-    // Assert the URI
-    assertEquals(String.format("/lookup/common?type=%s", type), actualUri.toString());
-    assertNotNull(response);
-    assertEquals(1, response.size());
-    assertEquals(commonValues.getContent().get(0), response.get(0));
-  }
-
-  @Test
-  void getAllCategoriesOfLaw_returnsData() {
-    String type = COMMON_VALUE_CATEGORY_OF_LAW;
-    CommonLookupDetail commonValues = prepareCommonValueTestData(type);
-
-    List<CommonLookupValueDetail> response = dataService.getAllCategoriesOfLaw();
-
-    expectCommonValueTestOutcome(type, commonValues, response);
-  }
-
-  @Test
-  void getGenders_returnsData() {
-    String type = COMMON_VALUE_GENDER;
-    CommonLookupDetail commonValues = prepareCommonValueTestData(type);
-
-    List<CommonLookupValueDetail> response = dataService.getGenders();
-
-    expectCommonValueTestOutcome(type, commonValues, response);
-  }
-
-  @Test
-  void getUniqueIdentifierTypes_returnsData() {
-    String type = COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
-
-    CommonLookupDetail commonValues = prepareCommonValueTestData(type);
-
-    List<CommonLookupValueDetail> response = dataService.getUniqueIdentifierTypes();
-
-    expectCommonValueTestOutcome(type, commonValues, response);
-  }
-
-  private CommonLookupDetail prepareCommonValueTestData(String type) {
-    CommonLookupDetail commonValues = new CommonLookupDetail();
-    commonValues.addContentItem(new CommonLookupValueDetail().code("CAT1").type(type));
-    commonValues.addContentItem(new CommonLookupValueDetail().code("CAT2").type(type));
-
-    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
-
-    return commonValues;
-  }
-
-  private void expectCommonValueTestOutcome(String type, CommonLookupDetail commonValues,
-                                            List<CommonLookupValueDetail> response) {
-    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
-
-    // Assert the URI
-    assertEquals(String.format("/lookup/common?type=%s", type), actualUri.toString());
-    assertNotNull(response);
-    assertEquals(2, response.size());
-    assertEquals(commonValues.getContent().get(0), response.get(0));
-    assertEquals(commonValues.getContent().get(1), response.get(1));
   }
 
   @Test
@@ -348,7 +184,7 @@ public class DataServiceTest {
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(FeeEarnerDetail.class)).thenReturn(Mono.just(feeEarnerDetail));
 
-    Mono<FeeEarnerDetail> feeEarnerDetailMono = dataService.getFeeEarners(providerId);
+    Mono<FeeEarnerDetail> feeEarnerDetailMono = ebsApiClient.getFeeEarners(providerId);
 
     StepVerifier.create(feeEarnerDetailMono)
         .expectNext(feeEarnerDetail)
@@ -373,7 +209,7 @@ public class DataServiceTest {
         Mono.just(amendmentTypeLookupDetail));
 
     Mono<AmendmentTypeLookupDetail> amendmentTypesMono =
-        dataService.getAmendmentTypes(applicationType);
+        ebsApiClient.getAmendmentTypes(applicationType);
 
     StepVerifier.create(amendmentTypesMono)
         .expectNext(amendmentTypeLookupDetail)
@@ -396,11 +232,11 @@ public class DataServiceTest {
     when(responseMock.bodyToMono(AmendmentTypeLookupDetail.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-    when(dataServiceErrorHandler.handleAmendmentTypeLookupError(eq(applicationType),
+    when(ebsApiClientErrorHandler.handleAmendmentTypeLookupError(eq(applicationType),
         any(WebClientResponseException.class))).thenReturn(Mono.empty());
 
     Mono<AmendmentTypeLookupDetail> amendmentTypesMono =
-        dataService.getAmendmentTypes(applicationType);
+        ebsApiClient.getAmendmentTypes(applicationType);
 
     StepVerifier.create(amendmentTypesMono)
         .verifyComplete();
@@ -422,7 +258,7 @@ public class DataServiceTest {
     when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
 
-    Mono<CommonLookupDetail> countriesMono = dataService.getCountries();
+    Mono<CommonLookupDetail> countriesMono = ebsApiClient.getCountries();
 
     StepVerifier.create(countriesMono)
         .expectNext(commonValues)
@@ -443,10 +279,10 @@ public class DataServiceTest {
     when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-    when(dataServiceErrorHandler.handleCountryLookupError(any(WebClientResponseException.class)))
+    when(ebsApiClientErrorHandler.handleCountryLookupError(any(WebClientResponseException.class)))
         .thenReturn(Mono.empty());
 
-    Mono<CommonLookupDetail> countriesMono = dataService.getCountries();
+    Mono<CommonLookupDetail> countriesMono = ebsApiClient.getCountries();
 
     StepVerifier.create(countriesMono)
         .verifyComplete();

@@ -9,8 +9,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.springframework.ui.Model;
+import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
-import uk.gov.laa.ccms.caab.service.DataServiceException;
 
 @ExtendWith(MockitoExtension.class)
 public class GlobalExceptionHandlerTest {
@@ -25,17 +25,17 @@ public class GlobalExceptionHandlerTest {
   private GlobalExceptionHandler globalExceptionHandler;
 
   @Test
-  public void testHandleDataServiceException() {
+  public void testHandleDataApiClientException() {
     final String errorMsg = "Test Exception";
-    DataServiceException e = new DataServiceException(errorMsg);
+    EbsApiClientException e = new EbsApiClientException(errorMsg);
 
-    globalExceptionHandler.handleDataServiceException(e, model);
+    globalExceptionHandler.handleDataApiClientException(e, model);
 
     verify(model).addAttribute("error", errorMsg);
   }
 
   @Test
-  public void testHandleCaabApplicationServiceException() {
+  public void testHandleCaabApplicationException() {
     final String errorMsg = "Test Exception";
     CaabApplicationException e = new CaabApplicationException(errorMsg);
 

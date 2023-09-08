@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteriaValidator;
-import uk.gov.laa.ccms.caab.service.DataService;
+import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -36,7 +36,7 @@ public class CopyCaseSearchController {
 
   private final CopyCaseSearchCriteriaValidator searchCriteriaValidator;
 
-  private final DataService dataService;
+  private final ProviderService providerService;
 
   /**
    * Provides an instance of {@link CopyCaseSearchCriteria} for use in the model.
@@ -107,7 +107,7 @@ public class CopyCaseSearchController {
    * @return List of contact details representing fee earners.
    */
   private List<ContactDetail> getFeeEarners(Integer providerId) {
-    FeeEarnerDetail feeEarners = dataService.getFeeEarners(providerId).block();
+    FeeEarnerDetail feeEarners = providerService.getFeeEarners(providerId).block();
     return Optional.ofNullable(feeEarners)
             .map(FeeEarnerDetail::getContent)
             .orElse(Collections.emptyList());

@@ -1,9 +1,10 @@
-package uk.gov.laa.ccms.caab.service;
+package uk.gov.laa.ccms.caab.client;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -16,18 +17,12 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
-class SoaGatewayServiceErrorHandlerTest {
-
-  @InjectMocks
-  private SoaGatewayServiceErrorHandler soaGatewayServiceErrorHandler;
-
+@ExtendWith(MockitoExtension.class)
+class SoaApiClientErrorHandlerTest {
   @Mock
   private Logger loggerMock;
-
-  @BeforeEach
-  public void setUp() {
-    soaGatewayServiceErrorHandler = new SoaGatewayServiceErrorHandler();
-  }
+  @InjectMocks
+  private SoaApiClientErrorHandler soaApiClientErrorHandler;
 
   @Test
   public void testHandleNotificationSummaryError() {
@@ -35,7 +30,7 @@ class SoaGatewayServiceErrorHandlerTest {
     Throwable throwable = new RuntimeException("Error");
 
     Mono<NotificationSummary> result =
-        soaGatewayServiceErrorHandler.handleNotificationSummaryError(loginId, throwable);
+        soaApiClientErrorHandler.handleNotificationSummaryError(loginId, throwable);
 
     StepVerifier.create(result)
         .expectNextCount(0)
@@ -49,7 +44,7 @@ class SoaGatewayServiceErrorHandlerTest {
     Throwable throwable = new RuntimeException("Error");
 
     Mono<ContractDetails> result =
-        soaGatewayServiceErrorHandler.handleContractDetailsError(providerFirmId, officeId,
+        soaApiClientErrorHandler.handleContractDetailsError(providerFirmId, officeId,
             throwable);
 
     StepVerifier.create(result)
@@ -71,7 +66,7 @@ class SoaGatewayServiceErrorHandlerTest {
     Throwable throwable = new RuntimeException("Error");
 
     Mono<ClientDetails> result =
-        soaGatewayServiceErrorHandler.handleClientDetailsError(clientSearchCriteria, throwable);
+        soaApiClientErrorHandler.handleClientDetailsError(clientSearchCriteria, throwable);
 
     StepVerifier.create(result)
         .expectNextCount(0)
@@ -91,7 +86,7 @@ class SoaGatewayServiceErrorHandlerTest {
     Throwable throwable = new RuntimeException("Error");
 
     Mono<CaseDetails> result =
-        soaGatewayServiceErrorHandler.handleCaseDetailsError(copyCaseSearchCriteria, throwable);
+        soaApiClientErrorHandler.handleCaseDetailsError(copyCaseSearchCriteria, throwable);
 
     StepVerifier.create(result)
         .expectNextCount(0)
@@ -104,7 +99,7 @@ class SoaGatewayServiceErrorHandlerTest {
     Throwable throwable = new RuntimeException("Error");
 
     Mono<ClientDetail> result =
-        soaGatewayServiceErrorHandler.handleClientDetailError(clientReferenceNumber, throwable);
+        soaApiClientErrorHandler.handleClientDetailError(clientReferenceNumber, throwable);
 
     StepVerifier.create(result)
         .expectNextCount(0)
@@ -116,7 +111,7 @@ class SoaGatewayServiceErrorHandlerTest {
     Throwable throwable = new RuntimeException("Error");
 
     Mono<CaseReferenceSummary> result =
-        soaGatewayServiceErrorHandler.handleCaseReferenceError(throwable);
+        soaApiClientErrorHandler.handleCaseReferenceError(throwable);
 
     StepVerifier.create(result)
         .expectNextCount(0)

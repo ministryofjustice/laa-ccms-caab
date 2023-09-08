@@ -14,22 +14,28 @@ import org.springframework.web.reactive.function.client.WebClient;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = ApplicationConfig.class)
 @TestPropertySource(properties = {
-    "laa.ccms.data-api.url=http://mockUrl",
-    "laa.ccms.soa-gateway-api.url=http://mockUrl"
+    "laa.ccms.ebs-api.url=http://mockUrl",
+    "laa.ccms.soa-api.url=http://mockUrl",
+    "laa.ccms.caab-api.url=http://mockUrl"
 })
 class ApplicationConfigTest {
 
-  @Qualifier("dataWebClient")
+  @Qualifier("ebsApiWebClient")
   @Autowired
-  private WebClient dataWebClient;
+  private WebClient ebsApiWebClient;
 
-  @Qualifier("soaGatewayWebClient")
+  @Qualifier("soaApiWebClient")
   @Autowired
-  private WebClient soaGatewayWebClient;
+  private WebClient soaApiWebClient;
+
+  @Qualifier("caabApiWebClient")
+  @Autowired
+  private WebClient caabApiWebClient;
 
   @Test
   void dataWebClientBeanExists() {
-    assertNotNull(dataWebClient, "dataWebClient bean should not be null");
-    assertNotNull(soaGatewayWebClient, "soaGatewayWebClient bean should not be null");
+    assertNotNull(ebsApiWebClient, "ebsApiWebClient bean should not be null");
+    assertNotNull(soaApiWebClient, "soaApiWebClient bean should not be null");
+    assertNotNull(caabApiWebClient, "caabApiWebClient bean should not be null");
   }
 }

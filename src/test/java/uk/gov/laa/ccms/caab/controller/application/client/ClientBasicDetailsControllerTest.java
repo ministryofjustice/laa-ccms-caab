@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.controller.application.client;
 
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -13,9 +12,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER;
@@ -33,7 +29,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.ClientDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
-import uk.gov.laa.ccms.caab.service.DataService;
+import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
@@ -41,7 +37,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 public class ClientBasicDetailsControllerTest {
 
   @Mock
-  private DataService dataService;
+  private CommonLookupService commonLookupService;
 
   @Mock
   private ClientDetailsValidator clientDetailsValidator;
@@ -61,9 +57,13 @@ public class ClientBasicDetailsControllerTest {
     mockMvc = standaloneSetup(clientBasicDetailsController).build();
 
     titleLookupDetail = new CommonLookupDetail();
+    titleLookupDetail.addContentItem(new CommonLookupValueDetail());
     countryLookupDetail = new CommonLookupDetail();
+    countryLookupDetail.addContentItem(new CommonLookupValueDetail());
     genderLookupDetail = new CommonLookupDetail();
+    genderLookupDetail.addContentItem(new CommonLookupValueDetail());
     maritalStatusLookupDetail = new CommonLookupDetail();
+    maritalStatusLookupDetail.addContentItem(new CommonLookupValueDetail());
   }
 
   @Test
@@ -71,13 +71,13 @@ public class ClientBasicDetailsControllerTest {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
     ClientDetails clientDetails = new ClientDetails();
 
-    when(dataService.getCommonValues(eq(COMMON_VALUE_CONTACT_TITLE))).thenReturn(
+    when(commonLookupService.getContactTitles()).thenReturn(
         Mono.just(titleLookupDetail));
-    when(dataService.getCountries()).thenReturn(
+    when(commonLookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
-    when(dataService.getCommonValues(eq(COMMON_VALUE_GENDER))).thenReturn(
+    when(commonLookupService.getGenders()).thenReturn(
         Mono.just(genderLookupDetail));
-    when(dataService.getCommonValues(eq(COMMON_VALUE_MARITAL_STATUS))).thenReturn(
+    when(commonLookupService.getMaritalStatuses()).thenReturn(
         Mono.just(maritalStatusLookupDetail));
 
     this.mockMvc.perform(get("/application/client/details/basic")
@@ -96,13 +96,13 @@ public class ClientBasicDetailsControllerTest {
   void testClientDetailsBasicGetWithPopulatedFields() throws Exception {
     ClientSearchCriteria clientSearchCriteria = buildClientSearchCriteria();
 
-    when(dataService.getCommonValues(eq(COMMON_VALUE_CONTACT_TITLE))).thenReturn(
+    when(commonLookupService.getContactTitles()).thenReturn(
         Mono.just(titleLookupDetail));
-    when(dataService.getCountries()).thenReturn(
+    when(commonLookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
-    when(dataService.getCommonValues(eq(COMMON_VALUE_GENDER))).thenReturn(
+    when(commonLookupService.getGenders()).thenReturn(
         Mono.just(genderLookupDetail));
-    when(dataService.getCommonValues(eq(COMMON_VALUE_MARITAL_STATUS))).thenReturn(
+    when(commonLookupService.getMaritalStatuses()).thenReturn(
         Mono.just(maritalStatusLookupDetail));
 
     mockMvc.perform(get("/application/client/details/basic")
@@ -127,13 +127,13 @@ public class ClientBasicDetailsControllerTest {
     countryLookupDetail.addContentItem(
         new CommonLookupValueDetail().code("UK").description("United Kingdom"));
 
-    when(dataService.getCommonValues(eq(COMMON_VALUE_CONTACT_TITLE))).thenReturn(
+    when(commonLookupService.getContactTitles()).thenReturn(
         Mono.just(titleLookupDetail));
-    when(dataService.getCountries()).thenReturn(
+    when(commonLookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
-    when(dataService.getCommonValues(eq(COMMON_VALUE_GENDER))).thenReturn(
+    when(commonLookupService.getGenders()).thenReturn(
         Mono.just(genderLookupDetail));
-    when(dataService.getCommonValues(eq(COMMON_VALUE_MARITAL_STATUS))).thenReturn(
+    when(commonLookupService.getMaritalStatuses()).thenReturn(
         Mono.just(maritalStatusLookupDetail));
 
     this.mockMvc.perform(get("/application/client/details/basic")
@@ -173,13 +173,13 @@ public class ClientBasicDetailsControllerTest {
       return null;
     }).when(clientDetailsValidator).validate(any(), any());
 
-    when(dataService.getCommonValues(eq(COMMON_VALUE_CONTACT_TITLE))).thenReturn(
+    when(commonLookupService.getContactTitles()).thenReturn(
         Mono.just(titleLookupDetail));
-    when(dataService.getCountries()).thenReturn(
+    when(commonLookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
-    when(dataService.getCommonValues(eq(COMMON_VALUE_GENDER))).thenReturn(
+    when(commonLookupService.getGenders()).thenReturn(
         Mono.just(genderLookupDetail));
-    when(dataService.getCommonValues(eq(COMMON_VALUE_MARITAL_STATUS))).thenReturn(
+    when(commonLookupService.getMaritalStatuses()).thenReturn(
         Mono.just(maritalStatusLookupDetail));
 
     mockMvc.perform(post("/application/client/details/basic")

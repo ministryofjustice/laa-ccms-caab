@@ -15,7 +15,6 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBST
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -114,12 +113,8 @@ class ApplicationBuilderTest {
   @Test
   void testCategoryOfLaw() {
     String categoryId = "CATEGORY1";
-    CommonLookupValueDetail lookupValue = new CommonLookupValueDetail();
-    lookupValue.setCode(categoryId);
-    lookupValue.setDescription("Description");
-
     CommonLookupDetail lookupDetail = new CommonLookupDetail();
-    lookupDetail.setContent(Collections.singletonList(lookupValue));
+    lookupDetail.addContentItem(new CommonLookupValueDetail().code(categoryId).description("Description"));
 
     ApplicationDetail detail = builder.categoryOfLaw(categoryId, lookupDetail).build();
     assertEquals(categoryId, detail.getCategoryOfLaw().getId());
@@ -132,7 +127,7 @@ class ApplicationBuilderTest {
     OfficeDetail officeDetail = new OfficeDetail();
     officeDetail.setId(officeId);
     officeDetail.setName("OfficeName");
-    List<OfficeDetail> officeDetails = Arrays.asList(officeDetail);
+    List<OfficeDetail> officeDetails = Collections.singletonList(officeDetail);
 
     ApplicationDetail detail = builder.office(officeId, officeDetails).build();
     assertEquals(officeId, detail.getOffice().getId());
