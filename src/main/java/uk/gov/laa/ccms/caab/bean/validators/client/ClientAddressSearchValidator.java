@@ -9,7 +9,7 @@ import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
  * Validator component responsible for validating {@link uk.gov.laa.ccms.caab.bean.ClientDetails} objects.
  */
 @Component
-public class ClientAddressDetailsValidator extends AbstractValidator {
+public class ClientAddressSearchValidator extends AbstractValidator {
 
   /**
    * Determines if the Validator supports the provided class.
@@ -23,8 +23,9 @@ public class ClientAddressDetailsValidator extends AbstractValidator {
     return ClientDetails.class.isAssignableFrom(clazz);
   }
 
+
   /**
-   * Validates the client address details in the {@link uk.gov.laa.ccms.caab.bean.ClientDetails}.
+   * Validates the client address search in the {@link uk.gov.laa.ccms.caab.bean.ClientDetails}.
    *
    * @param target The object to be validated.
    * @param errors The Errors object to store validation errors.
@@ -33,15 +34,9 @@ public class ClientAddressDetailsValidator extends AbstractValidator {
   public void validate(Object target, Errors errors) {
     ClientDetails clientDetails = (ClientDetails) target;
 
-    if (!clientDetails.getVulnerableClient() && !clientDetails.getNoFixedAbode()) {
-      validateRequiredField("country", "Country", errors);
-      validateRequiredField("houseNameNumber", "House name / number", errors);
-      validatePostcodeFormat(clientDetails.getCountry(), clientDetails.getPostcode(), errors);
-      validateRequiredField("addressLine1", "Address line 1", errors);
-      validateRequiredField("cityTown", "City / Town", errors);
-    } else if (clientDetails.getNoFixedAbode()) {
+    if (clientDetails.getNoFixedAbode()) {
       if(!clientDetails.getCountry().isEmpty()
-        || !clientDetails.getHouseNameNumber().isEmpty()
+          || !clientDetails.getHouseNameNumber().isEmpty()
           || !clientDetails.getPostcode().isEmpty()
           || !clientDetails.getAddressLine1().isEmpty()
           || !clientDetails.getAddressLine2().isEmpty()
@@ -53,5 +48,19 @@ public class ClientAddressDetailsValidator extends AbstractValidator {
                 + "uncheck box to amend your entry.");
       }
     }
+
+    validateRequiredField("country", "Country", errors);
+
+    if (!clientDetails.getCountry().isEmpty()){
+      if(!clientDetails.getCountry().equals("GBR")){
+        errors.rejectValue("country", "required.GBR",
+            "The address lookup system is not available for the country you have "
+                + "selected. Please enter the address manually.");
+      }
+    }
+    validateRequiredField("houseNameNumber", "House name / number", errors);
+    validatePostcodeFormat(clientDetails.getCountry(), clientDetails.getPostcode(), errors);
   }
 }
+
+

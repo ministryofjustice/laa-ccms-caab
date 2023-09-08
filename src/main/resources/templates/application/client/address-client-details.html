@@ -136,13 +136,13 @@
                             </legend>
                             <div class="govuk-radios govuk-radios--inline" data-module="govuk-radios">
                                 <div class="govuk-radios__item">
-                                    <input class="govuk-radios__input" id="noFixedAbode-yes" name="delegatedFunctions" type="radio" value="true" th:checked="${clientDetails.noFixedAbode}">
+                                    <input class="govuk-radios__input" id="noFixedAbode-yes" name="noFixedAbode" type="radio" value="true" th:checked="${clientDetails.noFixedAbode}">
                                     <label class="govuk-label govuk-radios__label" for="noFixedAbode-yes">
                                         Yes
                                     </label>
                                 </div>
                                 <div class="govuk-radios__item">
-                                    <input class="govuk-radios__input" id="noFixedAbode-no" name="delegatedFunctions" type="radio" value="false" th:checked="${!clientDetails.noFixedAbode}">
+                                    <input class="govuk-radios__input" id="noFixedAbode-no" name="noFixedAbode" type="radio" value="false" th:checked="${!clientDetails.noFixedAbode}">
                                     <label class="govuk-label govuk-radios__label" for="noFixedAbode-no">
                                         No
                                     </label>
@@ -162,6 +162,8 @@
                                 id="country"
                                 name="country">
                             <option value="">Please Select</option>
+                            <option value="GBR">UK</option>
+                            <option value="TEST">NON UK</option>
                             <!--                            <option th:each="method : ${correspondenceMethods}" th:value="${method.code}" th:text="${method.description}"></option>-->
                         </select>
                     </div>

@@ -32,4 +32,52 @@ public class ValidationPatternConstants {
    * Neagtive validation pattern for case reference numbers.
    */
   public static final String CASE_REFERENCE_NUMBER_NEGATIVE_PATTERN = "(.*)\s\s(.*)";
+
+  /**
+   * pattern for international postcodes.
+   */
+  public static final String INTERNATIONAL_POSTCODE = "^[A-Za-z0-9\\-\\(\\)\\/ ]*$";
+
+  /**
+   * pattern 1 for uk postcodes.
+   */
+  private static final String UK_POSTCODE_1 = "[A-Za-z][0-9] [0-9][A-Za-z]{2}";
+
+  /**
+   * pattern 2 for uk postcodes.
+   */
+  private static final String UK_POSTCODE_2 = "[A-Za-z][0-9]{2} [0-9][A-Za-z]{2}";
+
+  /**
+   * pattern 3 for uk postcodes.
+   */
+  private static final String UK_POSTCODE_3 = "[A-Za-z]{2}[0-9] [0-9][A-Za-z]{2}";
+
+  /**
+   * pattern 4 for uk postcodes.
+   */
+  private static final String UK_POSTCODE_4 = "[A-Za-z]{2}[0-9]{2} [0-9][A-Za-z]{2}";
+
+  /**
+   * pattern 5 for uk postcodes.
+   */
+  private static final String UK_POSTCODE_5 = "[A-Za-z][0-9][A-Za-z] [0-9][A-Za-z]{2}";
+
+  /**
+   * pattern 6 for uk postcodes.
+   */
+  private static final String UK_POSTCODE_6 = "[A-Za-z]{2}[0-9][A-Za-z] [0-9][A-Za-z]{2}";
+
+  /**
+   * pattern for all uk postcode formats.
+   */
+  public static final String UK_POSTCODE = //
+      /* ** */"^((" + UK_POSTCODE_1 + //
+      ")|(" + UK_POSTCODE_2 + //
+      ")|(" + UK_POSTCODE_3 + //
+      ")|(" + UK_POSTCODE_4 + //
+      ")|(" + UK_POSTCODE_5 + //
+      ")|(" + UK_POSTCODE_6 + "))*$";
+
+
 }

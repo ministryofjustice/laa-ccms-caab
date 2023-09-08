@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressSearchValidator;
 import uk.gov.laa.ccms.caab.service.DataService;
 
 /**
@@ -31,6 +32,8 @@ public class ClientAddressDetailsController {
   private final DataService dataService;
 
   private final ClientAddressDetailsValidator clientAddressDetailsValidator;
+
+  private final ClientAddressSearchValidator clientAddressSearchValidator;
 
 //  TODO Remove THIS
   @ModelAttribute(CLIENT_DETAILS)
@@ -70,19 +73,30 @@ public class ClientAddressDetailsController {
       Model model) {
     log.info("POST /application/client/details/address");
 
+    model.addAttribute(CLIENT_DETAILS, clientDetails);
+
     if ("find_address".equals(action)) {
-      return "redirect:/application/client/details/address/search";
+      clientAddressSearchValidator.validate(clientDetails, bindingResult);
+
+      if (bindingResult.hasErrors()) {
+        populateDropdowns(model);
+        return "application/client/address-client-details";
+      } else {
+        return "redirect:/application/client/details/address/search";
+      }
 
     } else if ("next".equals(action)) {
       clientAddressDetailsValidator.validate(clientDetails, bindingResult);
-      model.addAttribute(CLIENT_DETAILS, clientDetails);
 
       if (bindingResult.hasErrors()) {
+        populateDropdowns(model);
         return "application/client/address-client-details";
       }
     }
-
-    log.info("clientDetails: {}", clientDetails);
     return "redirect:/application/client/details/equal-opportunities-monitoring";
+  }
+
+  private void populateDropdowns(Model model) {
+
   }
 }
