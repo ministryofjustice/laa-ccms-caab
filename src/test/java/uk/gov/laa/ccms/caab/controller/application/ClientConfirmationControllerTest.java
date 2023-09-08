@@ -3,9 +3,6 @@ package uk.gov.laa.ccms.caab.controller.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -21,8 +18,6 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAIL
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
-import java.util.Collections;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,21 +32,15 @@ import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
-import uk.gov.laa.ccms.caab.service.CaabApiService;
-import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.caab.service.SoaGatewayService;
-import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
-import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailRecordHistory;
 import uk.gov.laa.ccms.soa.gateway.model.ClientNameDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -62,13 +51,10 @@ public class ClientConfirmationControllerTest {
   private HttpSession httpSession;
 
   @Mock
-  private SoaGatewayService soaGatewayService;
+  private ClientService clientService;
 
   @Mock
-  private DataService dataService;
-  
-  @Mock
-  private CaabApiService caabApiService;
+  private ApplicationService applicationService;
 
   @Mock
   private ClientResultDisplayMapper clientResultDisplayMapper;
@@ -92,7 +78,7 @@ public class ClientConfirmationControllerTest {
     UserDetail user = buildUser(); // Assuming buildUser() method creates a UserDetail object
     ClientDetail clientInformation = new ClientDetail(); // Assuming proper initialization
 
-    when(soaGatewayService.getClient(clientReferenceNumber, user.getLoginId(),
+    when(clientService.getClient(clientReferenceNumber, user.getLoginId(),
         user.getUserType())).thenReturn(Mono.just(clientInformation));
 
     this.mockMvc.perform(get("/application/client/" + clientReferenceNumber + "/confirm")
@@ -112,29 +98,7 @@ public class ClientConfirmationControllerTest {
     ClientDetail clientInformation = buildClientInformation();
     UserDetail user = buildUser();
 
-    // Mocking dependencies
-    CaseReferenceSummary caseReferenceSummary =
-        new CaseReferenceSummary().caseReferenceNumber("REF123");
-    List<CommonLookupValueDetail> categoryOfLawValues =
-        Collections.singletonList(new CommonLookupValueDetail());
-    ContractDetails contractDetails = new ContractDetails();
-
-    AmendmentTypeLookupValueDetail amendmentType = new AmendmentTypeLookupValueDetail()
-        .applicationTypeCode("TEST")
-        .applicationTypeDescription("TEST")
-        .defaultLarScopeFlag("Y");
-
-    AmendmentTypeLookupDetail amendmentTypes =
-        new AmendmentTypeLookupDetail().addContentItem(amendmentType);
-
-    when(soaGatewayService.getCaseReference(user.getLoginId(), user.getUserType())).thenReturn(
-        Mono.just(caseReferenceSummary));
-    when(dataService.getCommonValues(anyString())).thenReturn(
-        Mono.just(categoryOfLawValues));
-    when(soaGatewayService.getContractDetails(anyInt(), anyInt(), anyString(),
-        anyString())).thenReturn(Mono.just(contractDetails));
-    when(dataService.getAmendmentTypes(any())).thenReturn(Mono.just(amendmentTypes));
-    when(caabApiService.createApplication(anyString(), any())).thenReturn(Mono.empty());
+    when(applicationService.createApplication(applicationDetails, clientInformation, user)).thenReturn(Mono.empty());
 
     this.mockMvc.perform(post("/application/client/confirmed")
             .param("confirmedClientReference", confirmedClientReference)
@@ -143,54 +107,7 @@ public class ClientConfirmationControllerTest {
             .sessionAttr(USER_DETAILS, user))
         .andReturn();
 
-    verify(soaGatewayService).getCaseReference(user.getLoginId(), user.getUserType());
-    verify(dataService).getCommonValues(anyString());
-    verify(soaGatewayService).getContractDetails(anyInt(), anyInt(), anyString(), anyString());
-    verify(dataService).getAmendmentTypes(any());
-    verify(caabApiService).createApplication(anyString(), any());
-  }
-
-  @Test
-  public void testClientConfirmedNoCaseReferenceNumber() {
-    String confirmedClientReference = "12345"; // Must match client reference above
-    ApplicationDetails applicationDetails = buildApplicationDetails();
-    ClientDetail clientInformation = buildClientInformation();
-    UserDetail user = buildUser();
-
-    // Mocking dependencies
-    List<CommonLookupValueDetail> categoryOfLawValues =
-        Collections.singletonList(new CommonLookupValueDetail());
-    ContractDetails contractDetails = new ContractDetails();
-    AmendmentTypeLookupDetail amendmentTypes = new AmendmentTypeLookupDetail();
-
-    // Mocking getCaseReference to throw a RuntimeException
-    when(soaGatewayService.getCaseReference(user.getLoginId(), user.getUserType())).thenThrow(
-        new RuntimeException("No case reference number was created, unable to continue"));
-
-    // Mocking dependencies
-    when(dataService.getCommonValues(anyString())).thenReturn(
-        Mono.just(categoryOfLawValues));
-    when(soaGatewayService.getContractDetails(anyInt(), anyInt(), anyString(),
-        anyString())).thenReturn(Mono.just(contractDetails));
-    when(dataService.getAmendmentTypes(any())).thenReturn(Mono.just(amendmentTypes));
-    when(caabApiService.createApplication(anyString(), any())).thenReturn(Mono.empty());
-
-    Exception exception = null;
-
-    try {
-      this.mockMvc.perform(post("/application/client/confirmed")
-          .param("confirmedClientReference", confirmedClientReference)
-          .sessionAttr(APPLICATION_DETAILS, applicationDetails)
-          .sessionAttr("clientInformation", clientInformation)
-          .sessionAttr(USER_DETAILS, user));
-    } catch (Exception e) {
-      exception = e;
-    }
-
-    assertNotNull(exception);
-    assertTrue(exception.getCause() instanceof RuntimeException);
-    assertEquals("No case reference number was created, unable to continue",
-        exception.getCause().getMessage());
+    verify(applicationService).createApplication(applicationDetails, clientInformation, user);
   }
 
   @Test

@@ -26,6 +26,7 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -129,8 +130,9 @@ public class ApplicationBuilder {
    */
   public ApplicationBuilder categoryOfLaw(
           String categoryOfLawId,
-          List<CommonLookupValueDetail> categoryOfLawValues) {
+          CommonLookupDetail categoryOfLawValues) {
     String categoryOfLawDisplayValue = categoryOfLawValues
+            .getContent()
             .stream()
             .filter(category -> categoryOfLawId.equals(category.getCode()))
             .map(CommonLookupValueDetail::getDescription)

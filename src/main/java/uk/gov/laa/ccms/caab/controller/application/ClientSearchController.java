@@ -1,11 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 
-import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -18,8 +16,8 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteriaValidator;
-import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 
 /**
  * Controller for handling client search operations.
@@ -30,7 +28,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @SessionAttributes(value = {APPLICATION_DETAILS, CLIENT_SEARCH_CRITERIA})
 public class ClientSearchController {
 
-  private final DataService dataService;
+  private final CommonLookupService commonLookupService;
 
   private final ClientSearchCriteriaValidator clientSearchCriteriaValidator;
 
@@ -96,12 +94,14 @@ public class ClientSearchController {
    * @param model The model for the view.
    */
   private void populateDropdowns(Model model) {
-    List<CommonLookupValueDetail> genders =
-        dataService.getCommonValues(COMMON_VALUE_GENDER).block();
-    model.addAttribute("genders", genders);
+    CommonLookupDetail genders =
+        Optional.ofNullable(commonLookupService.getGenders().block())
+            .orElse(new CommonLookupDetail());
+    model.addAttribute("genders", genders.getContent());
 
-    List<CommonLookupValueDetail> uniqueIdentifierTypes =
-        dataService.getCommonValues(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE).block();
-    model.addAttribute("uniqueIdentifierTypes", uniqueIdentifierTypes);
+    CommonLookupDetail uniqueIdentifierTypes =
+        Optional.ofNullable(commonLookupService.getUniqueIdentifierTypes().block())
+            .orElse(new CommonLookupDetail());
+    model.addAttribute("uniqueIdentifierTypes", uniqueIdentifierTypes.getContent());
   }
 }

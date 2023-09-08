@@ -16,14 +16,14 @@ import org.springframework.security.saml2.provider.service.authentication.Saml2A
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.ui.Model;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.service.DataService;
+import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(SpringExtension.class)
 class SamlPrincipalControllerAdviceTest {
 
   @Mock
-  private DataService dataService;
+  private UserService userService;
 
   @Mock
   private HttpSession session;
@@ -38,10 +38,10 @@ class SamlPrincipalControllerAdviceTest {
   @BeforeEach
   public void setUp() {
     principal = mock(Saml2AuthenticatedPrincipal.class);
-    advice = new SamlPrincipalControllerAdvice(dataService);
+    advice = new SamlPrincipalControllerAdvice(userService);
     userDetails = new UserDetail();
     userDetails.setLoginId("test");
-    when(dataService.getUser(any())).thenReturn(Mono.just(userDetails));
+    when(userService.getUser(any())).thenReturn(Mono.just(userDetails));
     when(principal.getName()).thenReturn("test");
   }
 
@@ -65,7 +65,7 @@ class SamlPrincipalControllerAdviceTest {
 
     advice.addSamlPrincipalToModel(principal, model, session);
 
-    verify(dataService).getUser(any());
+    verify(userService).getUser(any());
     verify(model).addAttribute("user", userDetails);
     verify(model).addAttribute("userAttributes", principal.getAttributes());
     verify(session).setAttribute("user", userDetails);
@@ -78,7 +78,7 @@ class SamlPrincipalControllerAdviceTest {
 
     advice.addSamlPrincipalToModel(principal, model, session);
 
-    verify(dataService).getUser(any());
+    verify(userService).getUser(any());
     verify(model).addAttribute("user", userDetails);
     verify(model).addAttribute("userAttributes", principal.getAttributes());
     verify(session).setAttribute("user", userDetails);
@@ -89,7 +89,7 @@ class SamlPrincipalControllerAdviceTest {
   public void addSamlPrincipalToModelTest_WhenPrincipalIsNull() {
     advice.addSamlPrincipalToModel(null, model, session);
 
-    verifyNoInteractions(dataService);
+    verifyNoInteractions(userService);
     verifyNoInteractions(model);
     verifyNoInteractions(session);
   }

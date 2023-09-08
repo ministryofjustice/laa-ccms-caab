@@ -1,10 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLICATION_TYPE_CODES;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -19,7 +17,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
-import uk.gov.laa.ccms.caab.service.DataService;
+import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 /**
@@ -33,7 +32,7 @@ public class ApplicationTypeController {
 
   private final ApplicationDetailsValidator applicationValidator;
 
-  private final DataService dataService;
+  private final CommonLookupService commonLookupService;
 
   /**
    * Handles the GET request for application type selection page.
@@ -85,8 +84,9 @@ public class ApplicationTypeController {
   }
 
   private List<CommonLookupValueDetail> getFilteredApplicationTypes() {
-    return Optional.ofNullable(dataService.getCommonValues(COMMON_VALUE_APPLICATION_TYPE).block())
-        .orElse(Collections.emptyList())
+    return Optional.ofNullable(commonLookupService.getApplicationTypes().block())
+        .orElse(new CommonLookupDetail())
+        .getContent()
         .stream()
         .filter(applicationType -> {
           String code = applicationType.getCode().toUpperCase();

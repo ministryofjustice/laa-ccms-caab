@@ -27,7 +27,7 @@ import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ClientResultsDisplay;
-import uk.gov.laa.ccms.caab.service.SoaGatewayService;
+import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 
@@ -37,7 +37,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 public class ClientSearchResultsControllerTest {
 
   @Mock
-  private SoaGatewayService soaGatewayService;
+  private ClientService clientService;
 
   @Mock
   private ClientResultDisplayMapper clientResultDisplayMapper;
@@ -68,7 +68,7 @@ public class ClientSearchResultsControllerTest {
     ClientDetails clientDetails = new ClientDetails();
     clientDetails.setTotalElements(0);
 
-    when(soaGatewayService.getClients(any(), any(), any(), any(), any())).thenReturn(
+    when(clientService.getClients(any(), any(), any(), any(), any())).thenReturn(
         Mono.just(clientDetails));
 
     this.mockMvc.perform(get("/application/client/results")
@@ -84,7 +84,7 @@ public class ClientSearchResultsControllerTest {
     clientDetails.setContent(new ArrayList<>());
     clientDetails.setTotalElements(300);
 
-    when(soaGatewayService.getClients(any(), any(), any(), any(), any())).thenReturn(
+    when(clientService.getClients(any(), any(), any(), any(), any())).thenReturn(
         Mono.just(clientDetails));
 
     this.mockMvc.perform(get("/application/client/results")
@@ -100,7 +100,7 @@ public class ClientSearchResultsControllerTest {
     clientDetails.setContent(new ArrayList<>());
     clientDetails.setTotalElements(100);
 
-    when(soaGatewayService.getClients(any(), any(), any(), any(), any())).thenReturn(
+    when(clientService.getClients(any(), any(), any(), any(), any())).thenReturn(
         Mono.just(clientDetails));
 
     this.mockMvc.perform(get("/application/client/results")
@@ -121,7 +121,7 @@ public class ClientSearchResultsControllerTest {
 
   @Test
   public void testClientSearchResults_NullResults() throws Exception {
-    when(soaGatewayService.getClients(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
+    when(clientService.getClients(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
 
     this.mockMvc.perform(get("/application/client/results")
             .sessionAttr("user", user)
@@ -136,7 +136,7 @@ public class ClientSearchResultsControllerTest {
     clientDetails.setContent(new ArrayList<>());
     clientDetails.setTotalElements(0);
 
-    when(soaGatewayService.getClients(any(), any(), any(), any(), any())).thenReturn(
+    when(clientService.getClients(any(), any(), any(), any(), any())).thenReturn(
         Mono.just(clientDetails));
 
     this.mockMvc.perform(get("/application/client/results")

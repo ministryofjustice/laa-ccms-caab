@@ -1,13 +1,10 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
-import java.text.ParseException;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -18,20 +15,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple4;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
-import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.service.CaabApiService;
-import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.caab.service.SoaGatewayService;
-import uk.gov.laa.ccms.caab.util.ApplicationBuilder;
-import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 
 
 /**
@@ -43,11 +32,9 @@ import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 @SessionAttributes(value = {"clientInformation"})
 public class ClientConfirmationController {
 
-  private final SoaGatewayService soaGatewayService;
+  private final ClientService clientService;
 
-  private final CaabApiService caabApiService;
-
-  private final DataService dataService;
+  private final ApplicationService applicationService;
 
   private final ClientResultDisplayMapper clientResultDisplayMapper;
 
@@ -66,7 +53,7 @@ public class ClientConfirmationController {
                               Model model, HttpSession session) {
     log.info("GET /application/client/{}/confirm", clientReferenceNumber);
 
-    ClientDetail clientInformation = soaGatewayService.getClient(
+    ClientDetail clientInformation = clientService.getClient(
             clientReferenceNumber,
             user.getLoginId(),
             user.getUserType()).block();
@@ -101,61 +88,12 @@ public class ClientConfirmationController {
       throw new RuntimeException("Client information does not match");
     }
 
-    //need to do this first in order to get amendment types
-    ApplicationDetail baseApplication = new ApplicationBuilder()
-            .applicationType(
-                    applicationDetails.getApplicationTypeCategory(),
-                    applicationDetails.isDelegatedFunctions())
-            .build();
-
-    // get case reference Number, category of law value, contractual devolved powers,
-    // amendment types
-    Mono<Tuple4<CaseReferenceSummary,
-        List<CommonLookupValueDetail>,
-            ContractDetails,
-            AmendmentTypeLookupDetail>> combinedResult =
-            Mono.zip(
-                  soaGatewayService.getCaseReference(user.getLoginId(), user.getUserType()),
-                  dataService.getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW),
-                  soaGatewayService.getContractDetails(
-                          user.getProvider().getId(),
-                          applicationDetails.getOfficeId(),
-                          user.getLoginId(),
-                          user.getUserType()
-                  ),
-                  dataService.getAmendmentTypes(baseApplication.getApplicationType().getId())
-            );
-
-    return combinedResult.flatMap(tuple -> {
-      CaseReferenceSummary caseReferenceSummary = tuple.getT1();
-      List<CommonLookupValueDetail> categoryOfLawValues = tuple.getT2();
-      ContractDetails contractDetails = tuple.getT3();
-      AmendmentTypeLookupDetail amendmentTypes = tuple.getT4();
-
-      try {
-        ApplicationDetail application = new ApplicationBuilder(baseApplication)
-                .caseReference(caseReferenceSummary)
-                .provider(user)
-                .client(clientInformation)
-                .categoryOfLaw(applicationDetails.getCategoryOfLawId(), categoryOfLawValues)
-                .office(applicationDetails.getOfficeId(), user.getProvider().getOffices())
-                .devolvedPowers(contractDetails.getContracts(), applicationDetails)
-                .larScopeFlag(amendmentTypes)
-                .status()
-                .build();
-
-        // Create the application and block until it's done
-        return caabApiService.createApplication(user.getLoginId(), application)
-                .doOnNext(createdApplication -> {
-                  log.info("Application details submitted: {}", createdApplication);
-                  applicationDetails.setApplicationCreated(true);
-                })
-                .thenReturn("redirect:/application/agreement");
-
-      } catch (ParseException e) {
-        return Mono.error(new RuntimeException(e));
-      }
-    });
+    return applicationService.createApplication(applicationDetails, clientInformation, user)
+        .doOnSuccess(createdApplication -> {
+          applicationDetails.setApplicationCreated(true);
+          log.info("Application details submitted: {}", applicationDetails);
+        })
+        .thenReturn("redirect:/application/agreement");
   }
 
 }

@@ -23,6 +23,7 @@ import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
@@ -112,13 +113,10 @@ class ApplicationBuilderTest {
   @Test
   void testCategoryOfLaw() {
     String categoryId = "CATEGORY1";
-    CommonLookupValueDetail lookupValue = new CommonLookupValueDetail();
-    lookupValue.setCode(categoryId);
-    lookupValue.setDescription("Description");
+    CommonLookupDetail lookupDetail = new CommonLookupDetail();
+    lookupDetail.addContentItem(new CommonLookupValueDetail().code(categoryId).description("Description"));
 
-    List<CommonLookupValueDetail> lookupValues = Collections.singletonList(lookupValue);
-
-    ApplicationDetail detail = builder.categoryOfLaw(categoryId, lookupValues).build();
+    ApplicationDetail detail = builder.categoryOfLaw(categoryId, lookupDetail).build();
     assertEquals(categoryId, detail.getCategoryOfLaw().getId());
     assertEquals("Description", detail.getCategoryOfLaw().getDisplayValue());
   }

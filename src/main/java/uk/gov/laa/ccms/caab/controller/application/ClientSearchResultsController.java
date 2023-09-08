@@ -21,7 +21,7 @@ import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
-import uk.gov.laa.ccms.caab.service.SoaGatewayService;
+import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 
@@ -38,7 +38,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
     CLIENT_DETAILS})
 public class ClientSearchResultsController {
 
-  private final SoaGatewayService soaGatewayService;
+  private final ClientService clientService;
 
   private final ClientResultDisplayMapper clientResultDisplayMapper;
 
@@ -65,7 +65,7 @@ public class ClientSearchResultsController {
           Model model) {
     log.info("GET /application/client/results");
 
-    ClientDetails clientSearchResults = soaGatewayService.getClients(
+    ClientDetails clientSearchResults = clientService.getClients(
             clientSearchCriteria,
             user.getLoginId(),
             user.getUserType(),

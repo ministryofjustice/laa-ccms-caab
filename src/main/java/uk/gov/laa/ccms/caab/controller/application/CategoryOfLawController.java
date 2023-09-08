@@ -2,11 +2,9 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,8 +21,9 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
-import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.caab.service.SoaGatewayService;
+import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.ProviderService;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -39,9 +38,9 @@ public class CategoryOfLawController {
 
   private final ApplicationDetailsValidator applicationValidator;
 
-  private final SoaGatewayService soaGatewayService;
+  private final ProviderService providerService;
 
-  private final DataService dataService;
+  private final CommonLookupService commonLookupService;
 
   /**
    * Handles the GET request for category of law selection page.
@@ -112,11 +111,12 @@ public class CategoryOfLawController {
                                          UserDetail user, Model model) {
 
     List<CommonLookupValueDetail> categoriesOfLaw =
-        Optional.ofNullable(dataService.getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW).block())
-            .orElse(Collections.emptyList());
+        Optional.ofNullable(commonLookupService.getCategoriesOfLaw().block())
+            .orElse(new CommonLookupDetail())
+            .getContent();
 
     if (!applicationDetails.isExceptionalFunding()) {
-      List<String> categoryOfLawCodes = soaGatewayService.getCategoryOfLawCodes(
+      List<String> categoryOfLawCodes = providerService.getCategoryOfLawCodes(
               user.getProvider().getId(),
               applicationDetails.getOfficeId(),
               user.getLoginId(),

@@ -7,7 +7,7 @@ import org.springframework.security.saml2.provider.service.authentication.Saml2A
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import uk.gov.laa.ccms.caab.service.DataService;
+import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -18,7 +18,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @RequiredArgsConstructor
 public class SamlPrincipalControllerAdvice {
 
-  private final DataService dataService;
+  private final UserService userService;
 
   /**
    * Adds the SAML authenticated principal and user details to the model.
@@ -42,11 +42,11 @@ public class SamlPrincipalControllerAdvice {
         user = (UserDetail) session.getAttribute("user");
 
         if (!user.getLoginId().equals(principal.getName())) {
-          user = dataService.getUser(user.getLoginId()).block();
+          user = userService.getUser(user.getLoginId()).block();
         }
 
       } else {
-        user = dataService.getUser(user.getLoginId()).block();
+        user = userService.getUser(user.getLoginId()).block();
       }
 
       model.addAttribute("user", user);
