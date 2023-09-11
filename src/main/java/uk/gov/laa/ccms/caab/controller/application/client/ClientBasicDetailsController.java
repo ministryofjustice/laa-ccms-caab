@@ -155,7 +155,7 @@ public class ClientBasicDetailsController {
     Mono<CommonLookupDetail> titlesMono = commonLookupService.getContactTitles();
 
     // Asynchronously fetch countries
-    // remove any null objects
+    // remove any null objects due to data
     Mono<List<CommonLookupValueDetail>> countriesMono = commonLookupService.getCountries()
             .flatMap(countries -> {
               if (countries != null) {

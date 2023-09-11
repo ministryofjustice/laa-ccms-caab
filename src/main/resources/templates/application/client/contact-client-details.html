@@ -192,7 +192,7 @@
                                 id="correspondenceMethod"
                                 name="correspondenceMethod">
                             <option value="">Please Select</option>
-<!--                            <option th:each="method : ${correspondenceMethods}" th:value="${method.code}" th:text="${method.description}"></option>-->
+                            <option th:each="method : ${correspondenceMethods}" th:value="${method.code}" th:text="${method.description}"></option>
                         </select>
                     </div>
                 </div>
@@ -211,7 +211,7 @@
                                 id="correspondenceLanguage"
                                 name="correspondenceLanguage">
                             <option value="">Please Select</option>
-                            <!--                            <option th:each="language : ${correspondenceLanguage}" th:value="${language.code}" th:text="${language.description}"></option>-->
+                            <option th:each="language : ${correspondenceLanguages}" th:value="${language.code}" th:text="${language.description}"></option>
                         </select>
                     </div>
                     <div class="govuk-button-group">

@@ -11,9 +11,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
-import uk.gov.laa.ccms.caab.service.DataService;
+import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 
 /**
  * Controller for handling contact client details selection during the new application process.
@@ -27,7 +29,7 @@ import uk.gov.laa.ccms.caab.service.DataService;
 @SuppressWarnings({"unchecked"})
 public class ClientContactDetailsController {
 
-  private final DataService dataService;
+  private final CommonLookupService commonLookupService;
 
   private final ClientContactDetailsValidator clientContactDetailsValidator;
 
@@ -43,7 +45,7 @@ public class ClientContactDetailsController {
           @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
           Model model) {
     log.info("GET /application/client/details/contact");
-
+    populateDropdowns(model);
     return "application/client/contact-client-details";
   }
 
@@ -66,7 +68,7 @@ public class ClientContactDetailsController {
     model.addAttribute(CLIENT_DETAILS, clientDetails);
 
     if (bindingResult.hasErrors()) {
-
+      populateDropdowns(model);
       return "application/client/contact-client-details";
     }
 
@@ -75,6 +77,21 @@ public class ClientContactDetailsController {
   }
 
   private void populateDropdowns(Model model) {
+
+    Mono<CommonLookupDetail> correspondenceMethodMono =
+        commonLookupService.getCorrespondenceMethods();
+
+    // Asynchronously fetch marital statuses
+    Mono<CommonLookupDetail> correspondenceLanguageMono =
+        commonLookupService.getCorrespondenceLanguagess();
+
+    // Zip all Monos and populate the model once all results are available
+    Mono.zip(correspondenceMethodMono, correspondenceLanguageMono)
+        .doOnNext(tuple -> {
+          model.addAttribute("correspondenceMethods", tuple.getT1().getContent());
+          model.addAttribute("correspondenceLanguages", tuple.getT2().getContent());
+        })
+        .block();
 
   }
 }

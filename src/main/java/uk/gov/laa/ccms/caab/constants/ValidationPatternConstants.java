@@ -71,13 +71,13 @@ public class ValidationPatternConstants {
   /**
    * pattern for all uk postcode formats.
    */
-  public static final String UK_POSTCODE = //
-      /* ** */"^((" + UK_POSTCODE_1 + //
-      ")|(" + UK_POSTCODE_2 + //
-      ")|(" + UK_POSTCODE_3 + //
-      ")|(" + UK_POSTCODE_4 + //
-      ")|(" + UK_POSTCODE_5 + //
-      ")|(" + UK_POSTCODE_6 + "))*$";
+  public static final String UK_POSTCODE =
+      "^((" + UK_POSTCODE_1
+      + ")|(" + UK_POSTCODE_2
+      + ")|(" + UK_POSTCODE_3
+      + ")|(" + UK_POSTCODE_4
+      + ")|(" + UK_POSTCODE_5
+      + ")|(" + UK_POSTCODE_6 + "))*$";
 
 
 }

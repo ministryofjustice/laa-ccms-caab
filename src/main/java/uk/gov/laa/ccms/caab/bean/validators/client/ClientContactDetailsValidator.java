@@ -6,7 +6,8 @@ import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**
- * Validator component responsible for validating {@link uk.gov.laa.ccms.caab.bean.ClientDetails} objects.
+ * Validator component responsible for validating {@link uk.gov.laa.ccms.caab.bean.ClientDetails}
+ * objects.
  */
 @Component
 public class ClientContactDetailsValidator extends AbstractValidator {
@@ -15,8 +16,8 @@ public class ClientContactDetailsValidator extends AbstractValidator {
    * Determines if the Validator supports the provided class.
    *
    * @param clazz The class to check for support.
-   * @return {@code true} if the class is assignable from {@link uk.gov.laa.ccms.caab.bean.ClientDetails}, {@code false}
-   *         otherwise.
+   * @return {@code true} if the class is assignable from
+   *         {@link uk.gov.laa.ccms.caab.bean.ClientDetails}, {@code false} otherwise.
    */
   @Override
   public boolean supports(Class<?> clazz) {
@@ -30,7 +31,7 @@ public class ClientContactDetailsValidator extends AbstractValidator {
    * @param errors The Errors object to store validation errors.
    */
   private void validateTelephones(ClientDetails clientDetails, Errors errors) {
-      // At least one telephone number should be provided
+    // At least one telephone number should be provided
     if (clientDetails.getTelephoneHome().isEmpty()
         && clientDetails.getTelephoneWork().isEmpty()
         && clientDetails.getTelephoneMobile().isEmpty()) {

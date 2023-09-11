@@ -36,4 +36,14 @@ public class CommonValueConstants {
    * Type used to retrieve the marital values for contact details.
    */
   public static final String COMMON_VALUE_MARITAL_STATUS = "MARITAL_STATUS";
+
+  /**
+   * Type used to retrieve the correspondence method values for contact details.
+   */
+  public static final String COMMON_VALUE_CORRESPONDENCE_METHOD = "XXCCMS_PREF_CORRESPONDENCE";
+
+  /**
+   * Type used to retrieve the correspondence language values for contact details.
+   */
+  public static final String COMMON_VALUE_CORRESPONDENCE_LANGUAGE = "XXCCMS_PREF_LANGUAGE";
 }

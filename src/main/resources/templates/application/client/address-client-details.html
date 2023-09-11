@@ -162,9 +162,10 @@
                                 id="country"
                                 name="country">
                             <option value="">Please Select</option>
-                            <option value="GBR">UK</option>
-                            <option value="TEST">NON UK</option>
-                            <!--                            <option th:each="method : ${correspondenceMethods}" th:value="${method.code}" th:text="${method.description}"></option>-->
+                            <option th:each="country : ${countries}"
+                                    th:value="${country.code}"
+                                    th:text="${country.description}">
+                            </option>
                         </select>
                     </div>
                     <div class="govuk-form-group" th:classappend="${#fields.hasErrors('houseNameNumber')} ? 'govuk-form-group--error' : ''">
