@@ -6,6 +6,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAIL
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -19,8 +21,9 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
-import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.caab.service.SoaGatewayService;
+import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.ProviderService;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -35,9 +38,9 @@ public class CategoryOfLawController {
 
   private final ApplicationDetailsValidator applicationValidator;
 
-  private final SoaGatewayService soaGatewayService;
+  private final ProviderService providerService;
 
-  private final DataService dataService;
+  private final CommonLookupService commonLookupService;
 
   /**
    * Handles the GET request for category of law selection page.
@@ -107,17 +110,22 @@ public class CategoryOfLawController {
   private void initialiseCategoriesOfLaw(ApplicationDetails applicationDetails,
                                          UserDetail user, Model model) {
 
-    List<CommonLookupValueDetail> categoriesOfLaw;
-    if (applicationDetails.isExceptionalFunding()) {
-      categoriesOfLaw = dataService.getAllCategoriesOfLaw();
-    } else {
-      List<String> categoryOfLawCodes = soaGatewayService.getCategoryOfLawCodes(
+    List<CommonLookupValueDetail> categoriesOfLaw =
+        Optional.ofNullable(commonLookupService.getCategoriesOfLaw().block())
+            .orElse(new CommonLookupDetail())
+            .getContent();
+
+    if (!applicationDetails.isExceptionalFunding()) {
+      List<String> categoryOfLawCodes = providerService.getCategoryOfLawCodes(
               user.getProvider().getId(),
               applicationDetails.getOfficeId(),
               user.getLoginId(),
               user.getUserType(),
               Boolean.TRUE);
-      categoriesOfLaw = dataService.getCategoriesOfLaw(categoryOfLawCodes);
+
+      categoriesOfLaw.retainAll(categoriesOfLaw
+          .stream().filter(category -> categoryOfLawCodes.contains(category.getCode()))
+          .collect(Collectors.toList()));
     }
 
     model.addAttribute("categoriesOfLaw", categoriesOfLaw);

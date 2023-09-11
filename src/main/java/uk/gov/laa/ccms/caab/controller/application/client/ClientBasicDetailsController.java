@@ -1,8 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE;
@@ -27,7 +24,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.ClientDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
-import uk.gov.laa.ccms.caab.service.DataService;
+import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
@@ -43,7 +40,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @SuppressWarnings({"unchecked"})
 public class ClientBasicDetailsController {
 
-  private final DataService dataService;
+  private final CommonLookupService commonLookupService;
 
   private final ClientDetailsValidator clientDetailsValidator;
 
@@ -148,7 +145,6 @@ public class ClientBasicDetailsController {
     }
   }
 
-
   /**
    * Populates dropdown options for the client basic details form.
    *
@@ -156,18 +152,15 @@ public class ClientBasicDetailsController {
    */
   private void populateDropdowns(Model model) {
     // Asynchronously fetch titles
-    Mono<List<CommonLookupValueDetail>> titlesMono = dataService.getCommonValues(
-                    COMMON_VALUE_CONTACT_TITLE)
-            .map(commonLookupDetail -> Optional.ofNullable(commonLookupDetail)
-                    .map(CommonLookupDetail::getContent)
-                    .orElse(Collections.emptyList()));
+    Mono<CommonLookupDetail> titlesMono = commonLookupService.getContactTitles();
 
     // Asynchronously fetch countries
     // remove any null objects
-    Mono<List<CommonLookupValueDetail>> countriesMono = dataService.getCountries()
-            .flatMap(commonLookupDetail -> {
-              if (commonLookupDetail != null && commonLookupDetail.getContent() != null) {
-                List<CommonLookupValueDetail> filteredContent = commonLookupDetail.getContent()
+    Mono<List<CommonLookupValueDetail>> countriesMono = commonLookupService.getCountries()
+            .flatMap(countries -> {
+              if (countries != null) {
+                List<CommonLookupValueDetail> filteredContent = countries
+                        .getContent()
                         .stream()
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList());
@@ -177,26 +170,18 @@ public class ClientBasicDetailsController {
               }
             });
 
-    Mono<List<CommonLookupValueDetail>> gendersMono = dataService.getCommonValues(
-            COMMON_VALUE_GENDER)
-            .map(commonLookupDetail -> Optional.ofNullable(commonLookupDetail)
-                    .map(CommonLookupDetail::getContent)
-                    .orElse(Collections.emptyList()));
+    Mono<CommonLookupDetail> gendersMono = commonLookupService.getGenders();
 
     // Asynchronously fetch marital statuses
-    Mono<List<CommonLookupValueDetail>> maritalStatusMono = dataService.getCommonValues(
-                    COMMON_VALUE_MARITAL_STATUS)
-            .map(commonLookupDetail -> Optional.ofNullable(commonLookupDetail)
-                    .map(CommonLookupDetail::getContent)
-                    .orElse(Collections.emptyList()));
+    Mono<CommonLookupDetail> maritalStatusMono = commonLookupService.getMaritalStatuses();
 
     // Zip all Monos and populate the model once all results are available
     Mono.zip(titlesMono, countriesMono, gendersMono, maritalStatusMono)
             .doOnNext(tuple -> {
-              model.addAttribute("titles", tuple.getT1());
+              model.addAttribute("titles", tuple.getT1().getContent());
               model.addAttribute("countries", tuple.getT2());
-              model.addAttribute("genders", tuple.getT3());
-              model.addAttribute("maritalStatusList", tuple.getT4());
+              model.addAttribute("genders", tuple.getT3().getContent());
+              model.addAttribute("maritalStatusList", tuple.getT4().getContent());
             })
             .block();
   }

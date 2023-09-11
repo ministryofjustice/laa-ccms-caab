@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.service;
+package uk.gov.laa.ccms.caab.client;
 
 
 import org.junit.jupiter.api.BeforeEach;
@@ -15,23 +15,23 @@ import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
-public class DataServiceErrorHandlerTest {
+public class EbsApiClientErrorHandlerTest {
   @InjectMocks
-  private DataServiceErrorHandler dataServiceErrorHandler;
+  private EbsApiClientErrorHandler ebsApiClientErrorHandler;
 
   @BeforeEach
   public void setUp() {
-    dataServiceErrorHandler = new DataServiceErrorHandler();
+    ebsApiClientErrorHandler = new EbsApiClientErrorHandler();
   }
 
   @Test
   public void testHandleUserError() {
     Throwable throwable = new RuntimeException("Error");
 
-    Mono<UserDetail> result = dataServiceErrorHandler.handleUserError("testLoginId", throwable);
+    Mono<UserDetail> result = ebsApiClientErrorHandler.handleUserError("testLoginId", throwable);
 
     StepVerifier.create(result)
-        .verifyErrorMatches(e -> e instanceof DataServiceException
+        .verifyErrorMatches(e -> e instanceof EbsApiClientException
             && e.getMessage().equals("Failed to retrieve User with loginId: testLoginId")
             && e.getCause() == throwable);
   }
@@ -41,11 +41,11 @@ public class DataServiceErrorHandlerTest {
     Throwable throwable = new RuntimeException("Error");
 
     Mono<CommonLookupDetail> result =
-        dataServiceErrorHandler.handleCommonValuesError("testType", "testCode", "testSort",
+        ebsApiClientErrorHandler.handleCommonValuesError("testType", "testCode", "testSort",
             throwable);
 
     StepVerifier.create(result)
-        .verifyErrorMatches(e -> e instanceof DataServiceException
+        .verifyErrorMatches(e -> e instanceof EbsApiClientException
             && e.getMessage().equals(
             "Failed to retrieve Common Values: (type: testType, code: testCode, sort: testSort)")
             && e.getCause() == throwable);
@@ -55,10 +55,10 @@ public class DataServiceErrorHandlerTest {
   public void testHandleCountryLookupError() {
     Throwable throwable = new RuntimeException("Error");
 
-    Mono<CommonLookupDetail> result = dataServiceErrorHandler.handleCountryLookupError(throwable);
+    Mono<CommonLookupDetail> result = ebsApiClientErrorHandler.handleCountryLookupError(throwable);
 
     StepVerifier.create(result)
-        .verifyErrorMatches(e -> e instanceof DataServiceException
+        .verifyErrorMatches(e -> e instanceof EbsApiClientException
             && e.getMessage().equals("Failed to retrieve Countries")
             && e.getCause() == throwable);
   }
@@ -68,10 +68,10 @@ public class DataServiceErrorHandlerTest {
     Throwable throwable = new RuntimeException("Error");
 
     Mono<CaseStatusLookupDetail> result =
-        dataServiceErrorHandler.handleCaseStatusValuesError(true, throwable);
+        ebsApiClientErrorHandler.handleCaseStatusValuesError(true, throwable);
 
     StepVerifier.create(result)
-        .verifyErrorMatches(e -> e instanceof DataServiceException
+        .verifyErrorMatches(e -> e instanceof EbsApiClientException
             && e.getMessage().equals("Failed to retrieve Case Status Values: (copyAllowed: true)")
             && e.getCause() == throwable);
   }
@@ -82,13 +82,13 @@ public class DataServiceErrorHandlerTest {
     String applicationType = "testApplicationType";
 
     Mono<AmendmentTypeLookupDetail> result =
-        dataServiceErrorHandler.handleAmendmentTypeLookupError(applicationType, throwable);
+        ebsApiClientErrorHandler.handleAmendmentTypeLookupError(applicationType, throwable);
 
     final String expectedMessage =
         String.format("Failed to retrieve Amendment Types: (applicationType: %s)", applicationType);
 
     StepVerifier.create(result)
-        .verifyErrorMatches(e -> e instanceof DataServiceException
+        .verifyErrorMatches(e -> e instanceof EbsApiClientException
             && e.getMessage().equals(expectedMessage)
             && e.getCause() == throwable);
   }
@@ -99,10 +99,10 @@ public class DataServiceErrorHandlerTest {
     Integer providerId = 1234;
 
     Mono<FeeEarnerDetail> result =
-        dataServiceErrorHandler.handleFeeEarnersError(providerId, throwable);
+        ebsApiClientErrorHandler.handleFeeEarnersError(providerId, throwable);
 
     StepVerifier.create(result)
-        .verifyErrorMatches(e -> e instanceof DataServiceException
+        .verifyErrorMatches(e -> e instanceof EbsApiClientException
             && e.getMessage().equals("Failed to retrieve Fee Earners: (providerId: 1234)")
             && e.getCause() == throwable);
   }

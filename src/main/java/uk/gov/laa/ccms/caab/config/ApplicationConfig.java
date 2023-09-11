@@ -11,45 +11,45 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class ApplicationConfig {
 
-  private final String dataApiUrl;
+  private final String ebsApiUrl;
 
-  private final String soaGatewayApiUrl;
+  private final String soaApiUrl;
 
   private final String caabApiUrl;
 
   /**
    * Constructs the ApplicationConfig instance with API URLs.
    *
-   * @param dataApiUrl The URL of the data API.
-   * @param soaGatewayApiUrl The URL of the SOA Gateway API.
+   * @param ebsApiUrl The URL of the data API.
+   * @param soaApiUrl The URL of the SOA Gateway API.
    * @param caabApiUrl The URL of the CAAB API.
    */
-  public ApplicationConfig(@Value("${laa.ccms.data-api.url}") String dataApiUrl,
-                           @Value("${laa.ccms.soa-gateway-api.url}") String soaGatewayApiUrl,
+  public ApplicationConfig(@Value("${laa.ccms.ebs-api.url}") String ebsApiUrl,
+                           @Value("${laa.ccms.soa-api.url}") String soaApiUrl,
                            @Value("${laa.ccms.caab-api.url}") String caabApiUrl) {
-    this.dataApiUrl = dataApiUrl;
-    this.soaGatewayApiUrl = soaGatewayApiUrl;
+    this.ebsApiUrl = ebsApiUrl;
+    this.soaApiUrl = soaApiUrl;
     this.caabApiUrl = caabApiUrl;
   }
 
   /**
-   * Creates a WebClient bean for interacting with the data API.
+   * Creates a WebClient bean for interacting with the Ebs API.
    *
-   * @return A WebClient instance configured for the data API URL.
+   * @return A WebClient instance configured for the Ebs API URL.
    */
-  @Bean("dataWebClient")
-  WebClient dataWebClient() {
-    return WebClient.create(dataApiUrl);
+  @Bean("ebsApiWebClient")
+  WebClient ebsApiWebClient() {
+    return WebClient.create(ebsApiUrl);
   }
 
   /**
-   * Creates a WebClient bean for interacting with the SOA Gateway API.
+   * Creates a WebClient bean for interacting with the SOA API.
    *
-   * @return A WebClient instance configured for the SOA Gateway API URL.
+   * @return A WebClient instance configured for the SOA API URL.
    */
-  @Bean("soaGatewayWebClient")
-  WebClient soaGatewayWebClient() {
-    return WebClient.create(soaGatewayApiUrl);
+  @Bean("soaApiWebClient")
+  WebClient soaApiWebClient() {
+    return WebClient.create(soaApiUrl);
   }
 
   /**

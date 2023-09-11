@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.service;
+package uk.gov.laa.ccms.caab.client;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -8,15 +8,15 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 
 /**
- * Service responsible for interactions with the CAAB API.
+ * Client responsible for interactions with the CAAB API.
  */
 @Service
 @RequiredArgsConstructor
-public class CaabApiService {
+public class CaabApiClient {
 
   private final WebClient caabApiWebClient;
 
-  private final CaabApiServiceErrorHandler caabApiServiceErrorHandler;
+  private final CaabApiClientErrorHandler caabApiClientErrorHandler;
 
   /**
    * Creates an application using the CAAB API.
@@ -35,7 +35,6 @@ public class CaabApiService {
             .bodyValue(application) // Add the application details to the request body
             .retrieve()
             .bodyToMono(Void.class)
-            .onErrorResume(e -> caabApiServiceErrorHandler.handleCreateApplicationError(e));
-
+            .onErrorResume(caabApiClientErrorHandler::handleCreateApplicationError);
   }
 }

@@ -15,7 +15,6 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMI
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
@@ -126,15 +125,14 @@ public class ApplicationBuilder {
    * Sets the category of law.
    *
    * @param categoryOfLawId           The category of law ID.
-   * @param categoryOfLawLookupDetail The category of law lookup detail.
+   * @param categoryOfLawValues The category of law lookup values.
    * @return The builder instance.
    */
   public ApplicationBuilder categoryOfLaw(
           String categoryOfLawId,
-          CommonLookupDetail categoryOfLawLookupDetail) {
-    String categoryOfLawDisplayValue = Optional.of(categoryOfLawLookupDetail)
-            .map(CommonLookupDetail::getContent)
-            .orElse(Collections.emptyList())
+          CommonLookupDetail categoryOfLawValues) {
+    String categoryOfLawDisplayValue = categoryOfLawValues
+            .getContent()
             .stream()
             .filter(category -> categoryOfLawId.equals(category.getCode()))
             .map(CommonLookupValueDetail::getDescription)

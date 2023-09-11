@@ -15,8 +15,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,9 +27,11 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
+import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
-import uk.gov.laa.ccms.caab.service.DataService;
+import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 @ExtendWith(SpringExtension.class)
@@ -39,7 +39,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @WebAppConfiguration
 public class ApplicationTypeControllerTest {
   @Mock
-  private DataService dataService;
+  private CommonLookupService commonLookupService;
 
   @Mock
   private ApplicationDetailsValidator applicationDetailsValidator;
@@ -59,10 +59,12 @@ public class ApplicationTypeControllerTest {
 
   @Test
   public void testGetApplicationTypeAddsApplicationTypesToModel() throws Exception {
-    final List<CommonLookupValueDetail> applicationTypes = new ArrayList<>();
-    applicationTypes.add(new CommonLookupValueDetail().type("Type 1").code("Code 1"));
+    final CommonLookupDetail applicationTypes = new CommonLookupDetail();
+    applicationTypes.addContentItem(
+        new CommonLookupValueDetail().type("Type 1").code("Code 1"));
 
-    when(dataService.getApplicationTypes()).thenReturn(applicationTypes);
+    when(commonLookupService.getApplicationTypes()).thenReturn(
+        Mono.just(applicationTypes));
 
     this.mockMvc.perform(get("/application/application-type")
             .sessionAttr("applicationDetails", new ApplicationDetails()))
@@ -70,9 +72,9 @@ public class ApplicationTypeControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/select-application-type"))
         .andExpect(model().attribute("applicationDetails", new ApplicationDetails()))
-        .andExpect(model().attribute("applicationTypes", applicationTypes));
+        .andExpect(model().attribute("applicationTypes", applicationTypes.getContent()));
 
-    verify(dataService, times(1)).getApplicationTypes();
+    verify(commonLookupService, times(1)).getApplicationTypes();
   }
 
   @Test
@@ -86,12 +88,19 @@ public class ApplicationTypeControllerTest {
         .andDo(print())
         .andExpect(redirectedUrl("/application/client/search"));
 
-    verifyNoInteractions(dataService);
+    verifyNoInteractions(commonLookupService);
   }
 
   @Test
   public void testPostApplicationTypeHandlesValidationError() throws Exception {
     final ApplicationDetails applicationDetails = new ApplicationDetails();
+
+    final CommonLookupDetail applicationTypes = new CommonLookupDetail();
+    applicationTypes.addContentItem(
+        new CommonLookupValueDetail().type("Type 1").code("Code 1"));
+
+    when(commonLookupService.getApplicationTypes()).thenReturn(
+        Mono.just(applicationTypes));
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
@@ -117,7 +126,7 @@ public class ApplicationTypeControllerTest {
         .andDo(print())
         .andExpect(redirectedUrl("/application/delegated-functions"));
 
-    verifyNoInteractions(dataService);
+    verifyNoInteractions(commonLookupService);
   }
 
 

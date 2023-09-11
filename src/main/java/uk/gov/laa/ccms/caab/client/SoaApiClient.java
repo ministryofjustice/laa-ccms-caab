@@ -1,16 +1,12 @@
-package uk.gov.laa.ccms.caab.service;
+package uk.gov.laa.ccms.caab.client;
 
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -20,35 +16,21 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
 /**
- * Service class responsible for interactions with the Service-Oriented Architecture (SOA) Gateway.
+ * Client class responsible for interactions with the Service-Oriented Architecture (SOA) Api.
  * Provides methods to retrieve various data like notifications, contract details, client details,
  * etc.
  */
 @Service
 @Slf4j
-public class SoaGatewayService {
-  private final WebClient soaGatewayWebClient;
+@RequiredArgsConstructor
+public class SoaApiClient {
+  private final WebClient soaApiWebClient;
 
-  private final SoaGatewayServiceErrorHandler soaGatewayServiceErrorHandler;
-
-  /**
-   * Constructor to instantiate the SoaGatewayService with required dependencies.
-   *
-   * @param soaGatewayWebClient           WebClient instance for making HTTP requests to the SOA
-   *                                      Gateway.
-   * @param soaGatewayServiceErrorHandler ErrorHandler for managing errors during communication with
-   *                                      SOA Gateway.
-   */
-  public SoaGatewayService(@Qualifier("soaGatewayWebClient") WebClient soaGatewayWebClient,
-                           SoaGatewayServiceErrorHandler soaGatewayServiceErrorHandler) {
-    this.soaGatewayWebClient = soaGatewayWebClient;
-    this.soaGatewayServiceErrorHandler = soaGatewayServiceErrorHandler;
-  }
+  private final SoaApiClientErrorHandler soaApiClientErrorHandler;
 
   /**
    * Retrieve the summary of notifications for a given user.
@@ -58,72 +40,15 @@ public class SoaGatewayService {
    * @return A Mono wrapping the NotificationSummary for the specified user.
    */
   public Mono<NotificationSummary> getNotificationsSummary(String loginId, String userType) {
-    return soaGatewayWebClient
+    return soaApiWebClient
             .get()
             .uri("/users/{loginId}/notifications/summary", loginId)
             .header("SoaGateway-User-Login-Id", loginId)
             .header("SoaGateway-User-Role", userType)
             .retrieve()
             .bodyToMono(NotificationSummary.class)
-            .onErrorResume(e -> soaGatewayServiceErrorHandler
+            .onErrorResume(e -> soaApiClientErrorHandler
                     .handleNotificationSummaryError(loginId, e));
-  }
-
-  /**
-   * Fetches the list of Category of Law codes based on specified criteria.
-   *
-   * @param providerFirmId       The identifier for the provider firm.
-   * @param officeId             The identifier for the office.
-   * @param loginId              The login identifier for the user.
-   * @param userType             Type of the user (e.g., admin, user).
-   * @param initialApplication   Whether it's an initial application or not.
-   * @return A list of Category of Law codes.
-   */
-  public List<String> getCategoryOfLawCodes(
-          Integer providerFirmId,
-          Integer officeId,
-          String loginId,
-          String userType,
-          Boolean initialApplication) {
-    ContractDetails contractDetails = this.getContractDetails(
-            providerFirmId,
-            officeId,
-            loginId,
-            userType).block();
-
-    // Process and filter the response
-    return Optional.ofNullable(contractDetails)
-            .map(cd -> filterCategoriesOfLaw(cd.getContracts(), initialApplication))
-            .orElse(Collections.emptyList());
-  }
-
-  /**
-   * Retrieves the contractual devolved powers information based on a specific category of law.
-   *
-   * @param providerFirmId   The identifier for the provider firm.
-   * @param officeId         The identifier for the office.
-   * @param loginId          The login identifier for the user.
-   * @param userType         Type of the user (e.g., admin, user).
-   * @param categoryOfLaw    The specific category of law to consider.
-   * @return A string representing the devolved powers.
-   */
-  public String getContractualDevolvedPowers(
-          Integer providerFirmId,
-          Integer officeId,
-          String loginId,
-          String userType,
-          String categoryOfLaw) {
-
-    ContractDetails contractDetails = this.getContractDetails(
-            providerFirmId,
-            officeId,
-            loginId,
-            userType).block();
-
-    // Process and filter the contracts to get devolved powers
-    return Optional.ofNullable(contractDetails)
-            .map(cd -> filterContractualDevolvedPowers(cd.getContracts(), categoryOfLaw))
-            .orElse(null);
   }
 
   /**
@@ -137,7 +62,7 @@ public class SoaGatewayService {
    */
   public Mono<ContractDetails> getContractDetails(Integer providerFirmId, Integer officeId,
                                                   String loginId, String userType) {
-    return soaGatewayWebClient
+    return soaApiWebClient
             .get()
             .uri(builder -> builder.path("/contract-details")
                     .queryParam("providerFirmId", providerFirmId)
@@ -147,47 +72,8 @@ public class SoaGatewayService {
             .header("SoaGateway-User-Role", userType)
             .retrieve()
             .bodyToMono(ContractDetails.class)
-            .onErrorResume(e -> soaGatewayServiceErrorHandler
+            .onErrorResume(e -> soaApiClientErrorHandler
                     .handleContractDetailsError(providerFirmId, officeId, e));
-  }
-
-  /**
-   * Build a filtered list of Category Of Law.
-   * Include the Category code only if
-   * - CreateNewMatters is true
-   * or
-   * - This is not an initial Application and RemainderAuthorisation is true
-   *
-   * @param contractDetails    The List of contract details to process
-   * @param initialApplication if it is an initial application
-   * @return List of Category Of Law Codes
-   */
-  private List<String> filterCategoriesOfLaw(List<ContractDetail> contractDetails,
-                                             final Boolean initialApplication) {
-    return contractDetails.stream()
-            .filter(c -> Boolean.TRUE.equals(c.isCreateNewMatters()) || (!initialApplication
-                    && Boolean.TRUE.equals(c.isRemainderAuthorisation())))
-            .map(ContractDetail::getCategoryofLaw)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
-  }
-
-  /**
-   * Get a String for the contractual devolved powers.
-   *
-   * @param contractDetails The List of contract details to process
-   * @param categoryOfLaw   the category of law to filter out
-   * @return String of the first contractual devolved power.
-   */
-  public String filterContractualDevolvedPowers(
-          List<ContractDetail> contractDetails,
-          String categoryOfLaw) {
-    return contractDetails != null ? contractDetails.stream()
-            .filter(contract -> categoryOfLaw.equals(contract.getCategoryofLaw()))
-            .map(ContractDetail::getContractualDevolvedPowers)
-            .findFirst()
-            .orElse(null)
-            : null;
   }
 
   /**
@@ -206,7 +92,7 @@ public class SoaGatewayService {
           String userType,
           Integer page,
           Integer size) {
-    return soaGatewayWebClient
+    return soaApiWebClient
             .get()
             .uri(builder -> builder.path("/clients")
                     .queryParamIfPresent("first-name",
@@ -234,7 +120,7 @@ public class SoaGatewayService {
             .header("SoaGateway-User-Role", userType)
             .retrieve()
             .bodyToMono(ClientDetails.class)
-            .onErrorResume(e -> soaGatewayServiceErrorHandler
+            .onErrorResume(e -> soaApiClientErrorHandler
                     .handleClientDetailsError(clientSearchCriteria, e));
 
   }
@@ -249,14 +135,14 @@ public class SoaGatewayService {
    */
   public Mono<ClientDetail> getClient(String clientReferenceNumber, String loginId,
                                       String userType) {
-    return soaGatewayWebClient
+    return soaApiWebClient
             .get()
             .uri("/clients/{clientReferenceNumber}", clientReferenceNumber)
             .header("SoaGateway-User-Login-Id", loginId)
             .header("SoaGateway-User-Role", userType)
             .retrieve()
             .bodyToMono(ClientDetail.class)
-            .onErrorResume(e -> soaGatewayServiceErrorHandler
+            .onErrorResume(e -> soaApiClientErrorHandler
                     .handleClientDetailError(clientReferenceNumber, e));
 
   }
@@ -273,7 +159,7 @@ public class SoaGatewayService {
    */
   public Mono<CaseDetails> getCases(CopyCaseSearchCriteria copyCaseSearchCriteria, String loginId,
                                     String userType, Integer page, Integer size) {
-    return soaGatewayWebClient
+    return soaApiWebClient
             .get()
             .uri(builder -> builder.path("/cases")
                     .queryParamIfPresent("case-reference-number", Optional.ofNullable(
@@ -297,7 +183,7 @@ public class SoaGatewayService {
             .header("SoaGateway-User-Role", userType)
             .retrieve()
             .bodyToMono(CaseDetails.class)
-            .onErrorResume(e -> soaGatewayServiceErrorHandler.handleCaseDetailsError(
+            .onErrorResume(e -> soaApiClientErrorHandler.handleCaseDetailsError(
                     copyCaseSearchCriteria, e));
 
   }
@@ -311,14 +197,14 @@ public class SoaGatewayService {
    */
   public Mono<CaseReferenceSummary> getCaseReference(String loginId,
                                                      String userType) {
-    return soaGatewayWebClient
+    return soaApiWebClient
             .get()
             .uri("/case-reference")
             .header("SoaGateway-User-Login-Id", loginId)
             .header("SoaGateway-User-Role", userType)
             .retrieve()
             .bodyToMono(CaseReferenceSummary.class)
-            .onErrorResume(e -> soaGatewayServiceErrorHandler.handleCaseReferenceError(e));
+            .onErrorResume(soaApiClientErrorHandler::handleCaseReferenceError);
 
   }
 

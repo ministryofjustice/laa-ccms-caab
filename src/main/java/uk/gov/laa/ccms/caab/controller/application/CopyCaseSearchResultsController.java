@@ -22,8 +22,7 @@ import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
-import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.caab.service.SoaGatewayService;
+import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
@@ -40,9 +39,7 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
     COPY_CASE_SEARCH_RESULTS})
 public class CopyCaseSearchResultsController {
 
-  private final SoaGatewayService soaGatewayService;
-
-  private final DataService dataService;
+  private final ApplicationService applicationService;
 
   private final SearchConstants searchConstants;
 
@@ -68,12 +65,12 @@ public class CopyCaseSearchResultsController {
     log.info("GET /application/copy-case/results");
 
     // Get the Copy Case Status
-    CaseStatusLookupValueDetail copyCaseStatus = dataService.getCopyCaseStatus();
+    CaseStatusLookupValueDetail copyCaseStatus = applicationService.getCopyCaseStatus();
     if (copyCaseStatus != null) {
       copyCaseSearchCriteria.setActualStatus(copyCaseStatus.getCode());
     }
 
-    CaseDetails caseSearchResults = soaGatewayService.getCases(copyCaseSearchCriteria,
+    CaseDetails caseSearchResults = applicationService.getCases(copyCaseSearchCriteria,
             user.getLoginId(),
             user.getUserType(),
             page,

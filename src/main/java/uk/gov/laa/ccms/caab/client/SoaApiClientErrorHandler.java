@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.service;
+package uk.gov.laa.ccms.caab.client;
 
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE;
@@ -17,11 +17,11 @@ import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
 /**
- * Provides error handling capabilities for the SoaGatewayService.
+ * Provides error handling capabilities for the SoaApiClient.
  */
 @Slf4j
 @Component
-public class SoaGatewayServiceErrorHandler {
+public class SoaApiClientErrorHandler {
 
   /**
    * Handles errors that occur while fetching NotificationSummary.

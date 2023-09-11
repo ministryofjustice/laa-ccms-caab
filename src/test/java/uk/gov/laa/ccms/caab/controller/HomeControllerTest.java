@@ -24,7 +24,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.service.SoaGatewayService;
+import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
@@ -33,7 +33,7 @@ import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 @WebAppConfiguration
 public class HomeControllerTest {
   @Mock
-  private SoaGatewayService soaGatewayService;
+  private NotificationService notificationService;
 
   @InjectMocks
   private HomeController homeController;
@@ -80,7 +80,7 @@ public class HomeControllerTest {
         .overdueActions(overdueActions);
 
     // Mock the SOA Gateway service to return the notification summary
-    when(soaGatewayService.getNotificationsSummary(userDetails.getLoginId(),
+    when(notificationService.getNotificationsSummary(userDetails.getLoginId(),
         userDetails.getUserType())).thenReturn(Mono.just(notificationSummary));
 
     this.mockMvc.perform(get("/").flashAttr("user", userDetails))
@@ -98,7 +98,7 @@ public class HomeControllerTest {
   public void testHomeHandlesNullNotifications() throws Exception {
 
     // Mock the SOA Gateway service to return the notification summary
-    when(soaGatewayService.getNotificationsSummary(userDetails.getLoginId(),
+    when(notificationService.getNotificationsSummary(userDetails.getLoginId(),
         userDetails.getUserType())).thenReturn(Mono.empty());
 
     this.mockMvc.perform(get("/").flashAttr("user", userDetails))

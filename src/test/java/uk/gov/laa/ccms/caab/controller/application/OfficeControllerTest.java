@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -26,7 +25,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
-import uk.gov.laa.ccms.caab.service.DataService;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -35,8 +33,6 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ContextConfiguration
 @WebAppConfiguration
 public class OfficeControllerTest {
-  @Mock
-  private DataService dataService;
 
   @Mock
   private ApplicationDetailsValidator applicationDetailsValidator;
@@ -80,8 +76,6 @@ public class OfficeControllerTest {
             .flashAttr("applicationDetails", applicationDetails))
         .andDo(print())
         .andExpect(redirectedUrl("/application/category-of-law"));
-
-    verifyNoInteractions(dataService);
   }
 
   @Test

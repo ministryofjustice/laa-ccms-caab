@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -22,11 +23,11 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
+import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteriaValidator;
-import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.caab.service.SoaGatewayService;
+import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(SpringExtension.class)
@@ -35,10 +36,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class ClientSearchControllerTest {
 
   @Mock
-  private DataService dataService;
-
-  @Mock
-  private SoaGatewayService soaGatewayService;
+  private CommonLookupService commonLookupService;
   
   @Mock
   private ClientSearchCriteriaValidator clientSearchCriteriaValidator;
@@ -59,26 +57,32 @@ public class ClientSearchControllerTest {
   @Test
   public void testGetClientSearchDetails() {
     ClientSearchController clientSearchController =
-        new ClientSearchController(dataService, clientSearchCriteriaValidator);
+        new ClientSearchController(commonLookupService, clientSearchCriteriaValidator);
     ClientSearchCriteria clientSearchCriteria = clientSearchController.getClientSearchDetails();
     assertNotNull(clientSearchCriteria);
   }
 
   @Test
   public void testClientSearch_Get() throws Exception {
+    when(commonLookupService.getGenders()).thenReturn(Mono.empty());
+    when(commonLookupService.getUniqueIdentifierTypes()).thenReturn(Mono.empty());
+
     this.mockMvc.perform(get("/application/client/search")
             .flashAttr("applicationDetails", new ApplicationDetails())
             .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-client-search"));
 
-    verify(dataService).getGenders();
-    verify(dataService).getUniqueIdentifierTypes();
+    verify(commonLookupService).getGenders();
+    verify(commonLookupService).getUniqueIdentifierTypes();
   }
 
   @Test
   public void testClientSearch_Post_WithErrors() throws Exception {
     final ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
+
+    when(commonLookupService.getGenders()).thenReturn(Mono.empty());
+    when(commonLookupService.getUniqueIdentifierTypes()).thenReturn(Mono.empty());
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
@@ -94,8 +98,8 @@ public class ClientSearchControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-client-search"));
 
-    verify(dataService).getGenders();
-    verify(dataService).getUniqueIdentifierTypes();
+    verify(commonLookupService).getGenders();
+    verify(commonLookupService).getUniqueIdentifierTypes();
   }
 
   @Test

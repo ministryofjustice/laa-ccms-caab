@@ -33,8 +33,7 @@ import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
-import uk.gov.laa.ccms.caab.service.DataService;
-import uk.gov.laa.ccms.caab.service.SoaGatewayService;
+import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
@@ -46,10 +45,7 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 public class CopyCaseSearchResultsControllerTest {
 
   @Mock
-  private SoaGatewayService soaGatewayService;
-  
-  @Mock
-  private DataService dataService;
+  private ApplicationService applicationService;
 
   @Mock
   private SearchConstants searchConstants;
@@ -77,7 +73,7 @@ public class CopyCaseSearchResultsControllerTest {
     CaseDetails caseDetails = new CaseDetails();
     caseDetails.setTotalElements(0);
 
-    when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(
+    when(applicationService.getCases(any(), any(), any(), any(), any())).thenReturn(
         Mono.just(caseDetails));
 
     CopyCaseSearchCriteria copyCaseSearchCriteria = new CopyCaseSearchCriteria();
@@ -87,8 +83,8 @@ public class CopyCaseSearchResultsControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-copy-case-search-no-results"));
 
-    verify(dataService).getCopyCaseStatus();
-    verify(soaGatewayService).getCases(eq(copyCaseSearchCriteria), any(), any(), any(), any());
+    verify(applicationService).getCopyCaseStatus();
+    verify(applicationService).getCases(eq(copyCaseSearchCriteria), any(), any(), any(), any());
     assertNull(copyCaseSearchCriteria.getActualStatus());
   }
 
@@ -97,10 +93,10 @@ public class CopyCaseSearchResultsControllerTest {
     CaseDetails caseDetails = new CaseDetails();
     caseDetails.setTotalElements(0);
 
-    when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(
+    when(applicationService.getCases(any(), any(), any(), any(), any())).thenReturn(
         Mono.just(caseDetails));
     String COPY_STATUS_CODE = "APP";
-    when(dataService.getCopyCaseStatus()).thenReturn(
+    when(applicationService.getCopyCaseStatus()).thenReturn(
         new CaseStatusLookupValueDetail().code(COPY_STATUS_CODE));
 
     CopyCaseSearchCriteria copyCaseSearchCriteria = new CopyCaseSearchCriteria();
@@ -110,8 +106,8 @@ public class CopyCaseSearchResultsControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-copy-case-search-no-results"));
 
-    verify(dataService).getCopyCaseStatus();
-    verify(soaGatewayService).getCases(eq(copyCaseSearchCriteria), any(), any(), any(), any());
+    verify(applicationService).getCopyCaseStatus();
+    verify(applicationService).getCases(eq(copyCaseSearchCriteria), any(), any(), any(), any());
     assertEquals(COPY_STATUS_CODE, copyCaseSearchCriteria.getActualStatus());
   }
 
@@ -121,7 +117,7 @@ public class CopyCaseSearchResultsControllerTest {
     caseDetails.setContent(new ArrayList<>());
     caseDetails.setTotalElements(300);
 
-    when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(
+    when(applicationService.getCases(any(), any(), any(), any(), any())).thenReturn(
         Mono.just(caseDetails));
 
     this.mockMvc.perform(get("/application/copy-case/results")
@@ -137,7 +133,7 @@ public class CopyCaseSearchResultsControllerTest {
     caseDetails.setContent(new ArrayList<>());
     caseDetails.setTotalElements(100);
 
-    when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(
+    when(applicationService.getCases(any(), any(), any(), any(), any())).thenReturn(
         Mono.just(caseDetails));
 
     this.mockMvc.perform(get("/application/copy-case/results")
@@ -168,7 +164,7 @@ public class CopyCaseSearchResultsControllerTest {
     caseDetails.addContentItem(new CaseSummary().caseReferenceNumber("123"));
     caseDetails.setTotalElements(1);
 
-    when(soaGatewayService.getCases(any(), any(), any(), any(), any())).thenReturn(
+    when(applicationService.getCases(any(), any(), any(), any(), any())).thenReturn(
         Mono.just(caseDetails));
 
     ApplicationDetails applicationDetails = new ApplicationDetails();

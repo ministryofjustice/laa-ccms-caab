@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.service;
+package uk.gov.laa.ccms.caab.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -7,13 +7,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+
 @ExtendWith(MockitoExtension.class)
-class SoaGatewayServiceExceptionTest {
-    
+public class EbsApiClientExceptionTest {
+
   @Test
   public void testConstructorWithMessage() {
     String expectedMessage = "Test Exception";
-    SoaGatewayServiceException exception = new SoaGatewayServiceException(expectedMessage);
+    EbsApiClientException exception = new EbsApiClientException(expectedMessage);
 
     assertEquals(expectedMessage, exception.getMessage());
     assertNull(exception.getCause());
@@ -23,10 +24,9 @@ class SoaGatewayServiceExceptionTest {
   public void testConstructorWithMessageAndCause() {
     String expectedMessage = "Test Exception";
     Exception cause = new Exception("Cause Exception");
-    SoaGatewayServiceException exception = new SoaGatewayServiceException(expectedMessage, cause);
+    EbsApiClientException exception = new EbsApiClientException(expectedMessage, cause);
 
     assertEquals(expectedMessage, exception.getMessage());
     assertEquals(cause, exception.getCause());
   }
-
 }
