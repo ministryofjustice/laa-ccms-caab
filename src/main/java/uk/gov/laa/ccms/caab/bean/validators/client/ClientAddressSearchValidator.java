@@ -37,7 +37,8 @@ public class ClientAddressSearchValidator extends AbstractValidator {
 
     if (clientDetails.getNoFixedAbode()) {
       if ((clientDetails.getCountry() != null && !clientDetails.getCountry().isEmpty())
-          || (clientDetails.getHouseNameNumber() != null && !clientDetails.getHouseNameNumber().isEmpty())
+          || (clientDetails.getHouseNameNumber() != null
+          && !clientDetails.getHouseNameNumber().isEmpty())
           || (clientDetails.getPostcode() != null && !clientDetails.getPostcode().isEmpty())
           || (clientDetails.getAddressLine1() != null && !clientDetails.getAddressLine1().isEmpty())
           || (clientDetails.getAddressLine2() != null && !clientDetails.getAddressLine2().isEmpty())

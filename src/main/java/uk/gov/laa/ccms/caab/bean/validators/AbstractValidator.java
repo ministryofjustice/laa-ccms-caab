@@ -62,7 +62,7 @@ public abstract class AbstractValidator implements Validator {
   protected void validatePostcodeFormat(
       final String country, final String postcode, Errors errors) {
 
-    if (country != null && !country.isBlank()){
+    if (country != null && !country.isBlank()) {
       if (country.equals("GBR")) {
         validateRequiredField("postcode", postcode, "Postcode", errors);
         validateFieldFormat("postcode", postcode, UK_POSTCODE, "Postcode", errors);
