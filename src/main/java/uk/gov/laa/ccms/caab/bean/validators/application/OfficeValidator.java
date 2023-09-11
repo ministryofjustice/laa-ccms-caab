@@ -30,6 +30,8 @@ public class OfficeValidator extends AbstractValidator {
    */
   @Override
   public void validate(Object target, Errors errors) {
-    validateRequiredField("officeId", "Office", errors);
+    ApplicationDetails applicationDetails = (ApplicationDetails) target;
+    validateRequiredField("officeId", applicationDetails.getOfficeId(),
+        "Office", errors);
   }
 }

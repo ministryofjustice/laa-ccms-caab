@@ -36,13 +36,13 @@ public class ClientAddressSearchValidator extends AbstractValidator {
     ClientDetails clientDetails = (ClientDetails) target;
 
     if (clientDetails.getNoFixedAbode()) {
-      if (!clientDetails.getCountry().isEmpty()
-          || !clientDetails.getHouseNameNumber().isEmpty()
-          || !clientDetails.getPostcode().isEmpty()
-          || !clientDetails.getAddressLine1().isEmpty()
-          || !clientDetails.getAddressLine2().isEmpty()
-          || !clientDetails.getCityTown().isEmpty()
-          || !clientDetails.getCounty().isEmpty()) {
+      if ((clientDetails.getCountry() != null && !clientDetails.getCountry().isEmpty())
+          || (clientDetails.getHouseNameNumber() != null && !clientDetails.getHouseNameNumber().isEmpty())
+          || (clientDetails.getPostcode() != null && !clientDetails.getPostcode().isEmpty())
+          || (clientDetails.getAddressLine1() != null && !clientDetails.getAddressLine1().isEmpty())
+          || (clientDetails.getAddressLine2() != null && !clientDetails.getAddressLine2().isEmpty())
+          || (clientDetails.getCityTown() != null && !clientDetails.getCityTown().isEmpty())
+          || (clientDetails.getCounty() != null && !clientDetails.getCounty().isEmpty())) {
         //if any field populated
         errors.reject("invalid.noFixedAbode",
             "You have indicated 'No Fixed Abode'. Please remove main address details or "
@@ -50,16 +50,18 @@ public class ClientAddressSearchValidator extends AbstractValidator {
       }
     }
 
-    validateRequiredField("country", "Country", errors);
+    validateRequiredField("country", clientDetails.getCountry(),
+        "Country", errors);
 
-    if (!clientDetails.getCountry().isEmpty()) {
+    if (clientDetails.getCountry() != null && !clientDetails.getCountry().isEmpty()) {
       if (!clientDetails.getCountry().equals("GBR")) {
         errors.rejectValue("country", "required.GBR",
             "The address lookup system is not available for the country you have "
                 + "selected. Please enter the address manually.");
       }
     }
-    validateRequiredField("houseNameNumber", "House name / number", errors);
+    validateRequiredField("houseNameNumber", clientDetails.getHouseNameNumber(),
+        "House name / number", errors);
     validatePostcodeFormat(clientDetails.getCountry(), clientDetails.getPostcode(), errors);
   }
 }

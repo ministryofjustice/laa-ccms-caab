@@ -32,9 +32,12 @@ public class ClientContactDetailsValidator extends AbstractValidator {
    */
   private void validateTelephones(ClientDetails clientDetails, Errors errors) {
     // At least one telephone number should be provided
-    if (clientDetails.getTelephoneHome().isEmpty()
-        && clientDetails.getTelephoneWork().isEmpty()
-        && clientDetails.getTelephoneMobile().isEmpty()) {
+    if ((clientDetails.getTelephoneHome() == null
+        || clientDetails.getTelephoneHome().isEmpty())
+        && (clientDetails.getTelephoneWork() == null
+        || clientDetails.getTelephoneWork().isEmpty())
+        && (clientDetails.getTelephoneMobile() == null
+        || clientDetails.getTelephoneMobile().isEmpty())) {
 
       errors.reject("required.telephones",
           "Please provide at least one contact telephone number.");
@@ -59,7 +62,7 @@ public class ClientContactDetailsValidator extends AbstractValidator {
    */
   private void validateTelephoneField(
       String field, String fieldValue, String displayValue, Errors errors) {
-    if (!fieldValue.isEmpty()) {
+    if (fieldValue != null && !fieldValue.isEmpty()) {
       if (!fieldValue.matches("[0-9+/-]+")) {
         errors.rejectValue(field, "invalid." + field, "Your input for '"
             + displayValue + "' contains an invalid character. Please amend your entry.");
@@ -77,8 +80,8 @@ public class ClientContactDetailsValidator extends AbstractValidator {
    * @param errors The Errors object to store validation errors.
    */
   private void validateEmailField(ClientDetails clientDetails, Errors errors) {
-    if (clientDetails.getEmailAddress().isEmpty()
-        && clientDetails.getCorrespondenceMethod().equals("E-mail")) {
+    if ((clientDetails.getEmailAddress() == null || clientDetails.getEmailAddress().isEmpty())
+        && clientDetails.getCorrespondenceMethod().equalsIgnoreCase("E-mail")) {
       errors.rejectValue("emailAddress", "required.emailAddress",
           "Please provide an email address, or select another correspondence method.");
     }
@@ -91,8 +94,9 @@ public class ClientContactDetailsValidator extends AbstractValidator {
    * @param errors The Errors object to store validation errors.
    */
   private void validatePasswordNeedsReminder(ClientDetails clientDetails, Errors errors) {
-    if (!clientDetails.getPassword().isEmpty()) {
-      if (clientDetails.getPassword().equals(clientDetails.getPasswordReminder())) {
+    if (clientDetails.getPassword() != null && !clientDetails.getPassword().isEmpty()) {
+      if (clientDetails.getPasswordReminder() != null
+          && clientDetails.getPassword().equals(clientDetails.getPasswordReminder())) {
         errors.rejectValue("password", "same.passwordReminder",
             "Your password reminder cannot be the same as your password. "
                 + "Please amend your entry.");
@@ -110,15 +114,18 @@ public class ClientContactDetailsValidator extends AbstractValidator {
   public void validate(Object target, Errors errors) {
     ClientDetails clientDetails = (ClientDetails) target;
 
-    validateRequiredField("password", "Password", errors);
-    validateRequiredField("passwordReminder", "Password reminder", errors);
+    validateRequiredField("password", clientDetails.getPassword(),
+        "Password", errors);
+    validateRequiredField("passwordReminder", clientDetails.getPasswordReminder(),
+        "Password reminder", errors);
 
     validatePasswordNeedsReminder(clientDetails, errors);
     validateEmailField(clientDetails, errors);
 
     if (!clientDetails.getVulnerableClient()) {
       validateTelephones(clientDetails, errors);
-      validateRequiredField("correspondenceMethod", "Correspondence method", errors);
+      validateRequiredField("correspondenceMethod", clientDetails.getCorrespondenceMethod(),
+          "Correspondence method", errors);
     }
   }
 

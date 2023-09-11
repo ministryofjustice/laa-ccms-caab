@@ -32,11 +32,18 @@ public class ClientBasicDetailsValidator extends AbstractValidator {
    */
   @Override
   public void validate(Object target, Errors errors) {
-    validateRequiredField("title", "Title", errors);
-    validateRequiredField("surname", "Surname", errors);
-    validateRequiredField("countryOfOrigin", "Country of origin", errors);
-    validateRequiredField("gender", "gender", errors);
-    validateRequiredField("maritalStatus", "Marital status", errors);
+    ClientDetails clientDetails = (ClientDetails) target;
+
+    validateRequiredField("title", clientDetails.getTitle(),
+        "Title", errors);
+    validateRequiredField("surname", clientDetails.getSurname(),
+        "Surname", errors);
+    validateRequiredField("countryOfOrigin", clientDetails.getCountryOfOrigin(),
+        "Country of origin", errors);
+    validateRequiredField("gender", clientDetails.getGender(),
+        "Gender", errors);
+    validateRequiredField("maritalStatus", clientDetails.getMaritalStatus(),
+        "Marital status", errors);
   }
 
 }

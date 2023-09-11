@@ -32,7 +32,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.application.CategoryOfLawValidator;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -52,7 +52,7 @@ public class CategoryOfLawControllerTest {
   private CommonLookupService commonLookupService;
 
   @Mock
-  private ApplicationDetailsValidator applicationDetailsValidator;
+  private CategoryOfLawValidator categoryOfLawValidator;
 
   @InjectMocks
   private CategoryOfLawController categoryOfLawController;
@@ -156,7 +156,7 @@ public class CategoryOfLawControllerTest {
       errors.rejectValue("categoryOfLawId", "required.categoryOfLawId",
           "Please select a category of law.");
       return null;
-    }).when(applicationDetailsValidator).validateCategoryOfLaw(any(), any());
+    }).when(categoryOfLawValidator).validate(any(), any());
 
     this.mockMvc.perform(post("/application/category-of-law")
             .flashAttr("applicationDetails", applicationDetails)

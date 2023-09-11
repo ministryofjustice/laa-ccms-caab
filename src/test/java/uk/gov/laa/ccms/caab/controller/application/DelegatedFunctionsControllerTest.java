@@ -26,7 +26,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.application.DelegatedFunctionsValidator;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -34,7 +34,7 @@ import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 public class DelegatedFunctionsControllerTest {
 
   @Mock
-  private ApplicationDetailsValidator applicationDetailsValidator;
+  private DelegatedFunctionsValidator delegatedFunctionsValidator;
 
   @InjectMocks
   private DelegatedFunctionsController delegatedFunctionsController;
@@ -71,7 +71,7 @@ public class DelegatedFunctionsControllerTest {
       errors.rejectValue("delegatedFunctionUsedDay", "invalid.numeric",
           "Please enter a numeric value for the day.");
       return null;
-    }).when(applicationDetailsValidator).validateDelegatedFunction(any(), any());
+    }).when(delegatedFunctionsValidator).validate(any(), any());
     this.mockMvc.perform(post("/application/delegated-functions")
             .flashAttr("applicationDetails", applicationDetails))
         .andDo(print())

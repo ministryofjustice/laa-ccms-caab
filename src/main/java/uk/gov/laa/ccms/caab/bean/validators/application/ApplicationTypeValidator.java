@@ -30,6 +30,8 @@ public class ApplicationTypeValidator extends AbstractValidator {
    */
   @Override
   public void validate(Object target, Errors errors) {
-    validateRequiredField("applicationTypeCategory", "Application type", errors);
+    ApplicationDetails applicationDetails = (ApplicationDetails) target;
+    validateRequiredField("applicationTypeCategory",
+        applicationDetails.getApplicationTypeCategory(), "Application type", errors);
   }
 }

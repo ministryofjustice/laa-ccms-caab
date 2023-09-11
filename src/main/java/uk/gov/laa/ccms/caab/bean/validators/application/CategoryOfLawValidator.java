@@ -30,6 +30,8 @@ public class CategoryOfLawValidator extends AbstractValidator {
    */
   @Override
   public void validate(Object target, Errors errors) {
-    validateRequiredField("categoryOfLawId", "Category of law", errors);
+    ApplicationDetails applicationDetails = (ApplicationDetails) target;
+    validateRequiredField("categoryOfLawId", applicationDetails.getCategoryOfLawId(),
+        "Category of law", errors);
   }
 }
