@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.bean.validators.client;
 
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 
@@ -40,8 +41,7 @@ public class ClientAddressSearchValidator extends AbstractClientAddressValidator
 
     validateRequiredField("country", clientDetails.getCountry(),
         "Country", errors);
-
-    if (clientDetails.getCountry() != null && !clientDetails.getCountry().isEmpty()) {
+    if (StringUtils.hasText(clientDetails.getCountry())) {
       if (!clientDetails.getCountry().equals("GBR")) {
         errors.rejectValue("country", "required.GBR",
             "The address lookup system is not available for the country you have "

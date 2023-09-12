@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.bean.validators.client;
 
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
@@ -32,12 +33,9 @@ public class ClientContactDetailsValidator extends AbstractValidator {
    */
   private void validateTelephones(ClientDetails clientDetails, Errors errors) {
     // At least one telephone number should be provided
-    if ((clientDetails.getTelephoneHome() == null
-        || clientDetails.getTelephoneHome().isEmpty())
-        && (clientDetails.getTelephoneWork() == null
-        || clientDetails.getTelephoneWork().isEmpty())
-        && (clientDetails.getTelephoneMobile() == null
-        || clientDetails.getTelephoneMobile().isEmpty())) {
+    if (!StringUtils.hasText(clientDetails.getTelephoneHome())
+        && !StringUtils.hasText(clientDetails.getTelephoneHome())
+        && !StringUtils.hasText(clientDetails.getTelephoneHome())) {
 
       errors.reject("required.telephones",
           "Please provide at least one contact telephone number.");
@@ -80,7 +78,7 @@ public class ClientContactDetailsValidator extends AbstractValidator {
    * @param errors The Errors object to store validation errors.
    */
   private void validateEmailField(ClientDetails clientDetails, Errors errors) {
-    if ((clientDetails.getEmailAddress() == null || clientDetails.getEmailAddress().isEmpty())
+    if (!StringUtils.hasText(clientDetails.getEmailAddress())
         && clientDetails.getCorrespondenceMethod().equalsIgnoreCase("E-mail")) {
       errors.rejectValue("emailAddress", "required.emailAddress",
           "Please provide an email address, or select another correspondence method.");
@@ -94,9 +92,8 @@ public class ClientContactDetailsValidator extends AbstractValidator {
    * @param errors The Errors object to store validation errors.
    */
   private void validatePasswordNeedsReminder(ClientDetails clientDetails, Errors errors) {
-    if (clientDetails.getPassword() != null && !clientDetails.getPassword().isEmpty()) {
-      if (clientDetails.getPasswordReminder() != null
-          && clientDetails.getPassword().equals(clientDetails.getPasswordReminder())) {
+    if (StringUtils.hasText(clientDetails.getPassword())) {
+      if (clientDetails.getPassword().equalsIgnoreCase(clientDetails.getPasswordReminder())) {
         errors.rejectValue("password", "same.passwordReminder",
             "Your password reminder cannot be the same as your password. "
                 + "Please amend your entry.");

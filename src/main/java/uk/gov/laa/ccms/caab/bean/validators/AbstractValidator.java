@@ -4,6 +4,7 @@ import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.INTERNAT
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NUMERIC_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.UK_POSTCODE;
 
+import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
@@ -25,7 +26,7 @@ public abstract class AbstractValidator implements Validator {
   protected void validateRequiredField(
       final String field, final String fieldValue, final String displayValue, Errors errors) {
 
-    if (fieldValue == null || fieldValue.isEmpty()) {
+    if (!StringUtils.hasText(fieldValue)) {
       errors.rejectValue(field, "required." + field,
           String.format(GENERIC_REQUIRED_ERROR, displayValue));
     }
@@ -62,12 +63,12 @@ public abstract class AbstractValidator implements Validator {
   protected void validatePostcodeFormat(
       final String country, final String postcode, Errors errors) {
 
-    if (country != null && !country.isBlank()) {
+    if (StringUtils.hasText(country)) {
       if (country.equals("GBR")) {
         validateRequiredField("postcode", postcode, "Postcode", errors);
         validateFieldFormat("postcode", postcode, UK_POSTCODE, "Postcode", errors);
       } else {
-        if (postcode != null && !postcode.isEmpty()) {
+        if (StringUtils.hasText(postcode)) {
           validateFieldFormat("postcode", postcode, INTERNATIONAL_POSTCODE, "Postcode", errors);
         }
       }

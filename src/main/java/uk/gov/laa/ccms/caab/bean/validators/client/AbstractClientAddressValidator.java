@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.bean.validators.client;
 
+
+import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
@@ -10,14 +12,13 @@ import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 public abstract class AbstractClientAddressValidator extends AbstractValidator {
 
   protected void validateNoFixedAbode(ClientDetails clientDetails, Errors errors) {
-    if ((clientDetails.getCountry() != null && !clientDetails.getCountry().isEmpty())
-        || (clientDetails.getHouseNameNumber() != null
-        && !clientDetails.getHouseNameNumber().isEmpty())
-        || (clientDetails.getPostcode() != null && !clientDetails.getPostcode().isEmpty())
-        || (clientDetails.getAddressLine1() != null && !clientDetails.getAddressLine1().isEmpty())
-        || (clientDetails.getAddressLine2() != null && !clientDetails.getAddressLine2().isEmpty())
-        || (clientDetails.getCityTown() != null && !clientDetails.getCityTown().isEmpty())
-        || (clientDetails.getCounty() != null && !clientDetails.getCounty().isEmpty())) {
+    if (StringUtils.hasText(clientDetails.getCountry())
+        || StringUtils.hasText(clientDetails.getHouseNameNumber())
+        || StringUtils.hasText(clientDetails.getPostcode())
+        || StringUtils.hasText(clientDetails.getAddressLine1())
+        || StringUtils.hasText(clientDetails.getAddressLine2())
+        || StringUtils.hasText(clientDetails.getCityTown())
+        || StringUtils.hasText(clientDetails.getCounty())) {
       //if any field populated
       errors.reject("invalid.noFixedAbode",
           "You have indicated 'No Fixed Abode'. Please remove main address details or "
