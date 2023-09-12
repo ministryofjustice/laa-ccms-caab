@@ -83,7 +83,7 @@ public class ClientContactDetailsController {
 
     // Asynchronously fetch marital statuses
     Mono<CommonLookupDetail> correspondenceLanguageMono =
-        commonLookupService.getCorrespondenceLanguagess();
+        commonLookupService.getCorrespondenceLanguages();
 
     // Zip all Monos and populate the model once all results are available
     Mono.zip(correspondenceMethodMono, correspondenceLanguageMono)

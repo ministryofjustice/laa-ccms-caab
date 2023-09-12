@@ -61,7 +61,7 @@ public class ClientContactDetailsControllerTest {
 
     when(commonLookupService.getCorrespondenceMethods()).thenReturn(
         Mono.just(correspondenceMethodLookupDetail));
-    when(commonLookupService.getCorrespondenceLanguagess()).thenReturn(
+    when(commonLookupService.getCorrespondenceLanguages()).thenReturn(
         Mono.just(correspondenceLanguageLookupDetail));
 
     this.mockMvc.perform(get("/application/client/details/contact")
@@ -98,7 +98,7 @@ public class ClientContactDetailsControllerTest {
 
     when(commonLookupService.getCorrespondenceMethods()).thenReturn(
         Mono.just(correspondenceMethodLookupDetail));
-    when(commonLookupService.getCorrespondenceLanguagess()).thenReturn(
+    when(commonLookupService.getCorrespondenceLanguages()).thenReturn(
         Mono.just(correspondenceLanguageLookupDetail));
 
     this.mockMvc.perform(post("/application/client/details/contact")

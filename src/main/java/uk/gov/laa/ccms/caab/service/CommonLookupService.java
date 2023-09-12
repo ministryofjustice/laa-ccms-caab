@@ -103,7 +103,7 @@ public class CommonLookupService {
    *
    * @return CommonLookupDetail containing the common lookup values.
    */
-  public Mono<CommonLookupDetail> getCorrespondenceLanguagess() {
+  public Mono<CommonLookupDetail> getCorrespondenceLanguages() {
     return ebsApiClient.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE);
   }
 
