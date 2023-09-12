@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.application.PrivacyNoticeAgreementValidator;
 
 /**
  * Controller handling privacy notice agreement-related requests.
@@ -22,7 +22,7 @@ import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 @SessionAttributes(APPLICATION_DETAILS)
 public class PrivacyNoticeAgreementController {
 
-  private final ApplicationDetailsValidator applicationValidator;
+  private final PrivacyNoticeAgreementValidator applicationValidator;
 
   /**
    * Displays the privacy notice agreement page.
@@ -49,7 +49,7 @@ public class PrivacyNoticeAgreementController {
           @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
           BindingResult bindingResult) {
     log.info("POST /application/agreement: {}", applicationDetails);
-    applicationValidator.validateAgreementAcceptance(applicationDetails, bindingResult);
+    applicationValidator.validate(applicationDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {
       return "application/privacy-notice-agreement";

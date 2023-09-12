@@ -17,6 +17,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 @ExtendWith(MockitoExtension.class)
 public class CommonLookupServiceTest {
@@ -100,7 +101,8 @@ public class CommonLookupServiceTest {
 
   @Test
   public void getCountries_returnsData() {
-    CommonLookupDetail commonValues = new CommonLookupDetail();
+    CommonLookupValueDetail commonValue = new CommonLookupValueDetail().code("GBR");
+    CommonLookupDetail commonValues = new CommonLookupDetail().addContentItem(commonValue);
 
     when(ebsApiClient.getCountries()).thenReturn(Mono.just(commonValues));
 

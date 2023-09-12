@@ -4,16 +4,23 @@ package uk.gov.laa.ccms.caab.service;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 /**
  * Service class to handle Common Lookups.
@@ -81,10 +88,41 @@ public class CommonLookupService {
   /**
    * Get a list of Country Common Values.
    *
-   * @return CommonLookupDetail containing the common lookup values.
+   * @return CommonLookupDetail containing the common lookup values. Remove all null objects due
+   *         to data returned from ebs.
    */
   public Mono<CommonLookupDetail> getCountries() {
-    return ebsApiClient.getCountries();
+    return ebsApiClient.getCountries()
+        .flatMap(countries -> {
+          if (countries != null) {
+            List<CommonLookupValueDetail> filteredContent = countries
+                .getContent()
+                .stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+            return Mono.just(new CommonLookupDetail().content(filteredContent));
+          } else {
+            return Mono.just(new CommonLookupDetail().content(Collections.emptyList()));
+          }
+        });
+  }
+
+  /**
+   * Get a list of Correspondence Method Common Values.
+   *
+   * @return CommonLookupDetail containing the common lookup values.
+   */
+  public Mono<CommonLookupDetail> getCorrespondenceMethods() {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD);
+  }
+
+  /**
+   * Get a list of Correspondence Language Common Values.
+   *
+   * @return CommonLookupDetail containing the common lookup values.
+   */
+  public Mono<CommonLookupDetail> getCorrespondenceLanguages() {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE);
   }
 
 

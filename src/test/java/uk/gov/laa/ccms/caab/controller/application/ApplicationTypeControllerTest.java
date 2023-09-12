@@ -29,7 +29,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationTypeValidator;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -42,7 +42,7 @@ public class ApplicationTypeControllerTest {
   private CommonLookupService commonLookupService;
 
   @Mock
-  private ApplicationDetailsValidator applicationDetailsValidator;
+  private ApplicationTypeValidator applicationTypeValidator;
 
   @InjectMocks
   private ApplicationTypeController applicationTypeController;
@@ -107,7 +107,7 @@ public class ApplicationTypeControllerTest {
       errors.rejectValue("applicationTypeCategory", "required.applicationTypeCategory",
           "Please select an application type.");
       return null;
-    }).when(applicationDetailsValidator).validateApplicationTypeCategory(any(), any());
+    }).when(applicationTypeValidator).validate(any(), any());
 
     this.mockMvc.perform(post("/application/application-type")
             .flashAttr("applicationDetails", applicationDetails))

@@ -7,6 +7,8 @@ import lombok.Data;
  */
 @Data
 public class ClientDetails {
+
+  //basic details
   private String title;
 
   private String surname;
@@ -36,4 +38,41 @@ public class ClientDetails {
   private Boolean vexatiousLitigant = false;
 
   private Boolean mentalIncapacity = false;
+
+
+  //contact details
+  private String telephoneHome;
+
+  private String telephoneWork;
+
+  private String telephoneMobile;
+
+  private String emailAddress;
+
+  private String password;
+
+  private String passwordReminder;
+
+  private String correspondenceMethod;
+
+  private String correspondenceLanguage;
+
+
+  //address details
+  private Boolean noFixedAbode = false;
+
+  private String country;
+
+  private String houseNameNumber;
+
+  private String postcode;
+
+  private String addressLine1;
+
+  private String addressLine2;
+
+  private String cityTown;
+
+  private String county;
+
 }

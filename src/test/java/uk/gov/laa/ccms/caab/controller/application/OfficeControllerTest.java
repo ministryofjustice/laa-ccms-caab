@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.application.OfficeValidator;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -35,7 +35,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class OfficeControllerTest {
 
   @Mock
-  private ApplicationDetailsValidator applicationDetailsValidator;
+  private OfficeValidator officeValidator;
 
   @InjectMocks
   private OfficeController officeController;
@@ -86,7 +86,7 @@ public class OfficeControllerTest {
       Errors errors = (Errors) invocation.getArguments()[1];
       errors.rejectValue("officeId", "required.officeId", "Please select an office.");
       return null;
-    }).when(applicationDetailsValidator).validateSelectOffice(any(), any());
+    }).when(officeValidator).validate(any(), any());
     
     this.mockMvc.perform(post("/application/office")
             .flashAttr("user", user)

@@ -111,9 +111,7 @@
                                type="text"
                                data-module="govuk-input"
                                th:field="*{nationalInsuranceNumber}">
-                    </div>
-                    <div class="govuk-form-group" th:unless="${clientDetails.nationalInsuranceNumber}">
-                        <details class="govuk-details" data-module="govuk-details">
+                        <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
                             <summary class="govuk-details__summary">
                                 <span class="govuk-details__summary-text">
                                   National Insurance Number
@@ -145,9 +143,7 @@
                                 type="text"
                                 data-module="govuk-input"
                                 th:field="*{homeOfficeNumber}">
-                    </div>
-                    <div class="govuk-form-group" th:unless="${clientDetails.homeOfficeNumber}">
-                        <details class="govuk-details" data-module="govuk-details">
+                        <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
                             <summary class="govuk-details__summary">
                                 <span class="govuk-details__summary-text">
                                   Help with Home Office Number
@@ -241,7 +237,6 @@
                                 by which we mean the proceedings have attracted media attention
                                 and/or are likely to attract media attention or involve person(s)
                                 that are noteworthy.
-
                             </div>
                         </details>
                         <details class="govuk-details" data-module="govuk-details">

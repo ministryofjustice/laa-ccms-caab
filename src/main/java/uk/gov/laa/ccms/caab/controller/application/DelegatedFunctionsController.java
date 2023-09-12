@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.application.DelegatedFunctionsValidator;
 
 /**
  * Controller responsible for handling the application's delegated functions operations.
@@ -22,7 +22,7 @@ import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
 @SessionAttributes(APPLICATION_DETAILS)
 public class DelegatedFunctionsController {
 
-  private final ApplicationDetailsValidator applicationValidator;
+  private final DelegatedFunctionsValidator delegatedFunctionsValidator;
 
   /**
    * Displays the delegated functions selection page.
@@ -51,7 +51,7 @@ public class DelegatedFunctionsController {
           @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
           BindingResult bindingResult) {
     log.info("POST /application/delegated-functions: {}", applicationDetails);
-    applicationValidator.validateDelegatedFunction(applicationDetails, bindingResult);
+    delegatedFunctionsValidator.validate(applicationDetails, bindingResult);
 
     if (!applicationDetails.isDelegatedFunctions()) {
       applicationDetails.setDelegatedFunctionUsedDay(null);

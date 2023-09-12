@@ -5,11 +5,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRIT
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -22,8 +19,8 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
-import uk.gov.laa.ccms.caab.bean.ClientDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -42,7 +39,7 @@ public class ClientBasicDetailsController {
 
   private final CommonLookupService commonLookupService;
 
-  private final ClientDetailsValidator clientDetailsValidator;
+  private final ClientBasicDetailsValidator clientBasicDetailsValidator;
 
   /**
    * Handles the GET request for client basic details page.
@@ -84,7 +81,7 @@ public class ClientBasicDetailsController {
           Model model) {
     log.info("POST /application/client/details/basic");
 
-    clientDetailsValidator.validate(clientDetails, bindingResult);
+    clientBasicDetailsValidator.validate(clientDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {
       populateDropdowns(model);
@@ -155,21 +152,9 @@ public class ClientBasicDetailsController {
     Mono<CommonLookupDetail> titlesMono = commonLookupService.getContactTitles();
 
     // Asynchronously fetch countries
-    // remove any null objects
-    Mono<List<CommonLookupValueDetail>> countriesMono = commonLookupService.getCountries()
-            .flatMap(countries -> {
-              if (countries != null) {
-                List<CommonLookupValueDetail> filteredContent = countries
-                        .getContent()
-                        .stream()
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
-                return Mono.just(filteredContent);
-              } else {
-                return Mono.just(Collections.emptyList());
-              }
-            });
+    Mono<CommonLookupDetail> countriesMono = commonLookupService.getCountries();
 
+    // Asynchronously fetch genders
     Mono<CommonLookupDetail> gendersMono = commonLookupService.getGenders();
 
     // Asynchronously fetch marital statuses
@@ -179,7 +164,7 @@ public class ClientBasicDetailsController {
     Mono.zip(titlesMono, countriesMono, gendersMono, maritalStatusMono)
             .doOnNext(tuple -> {
               model.addAttribute("titles", tuple.getT1().getContent());
-              model.addAttribute("countries", tuple.getT2());
+              model.addAttribute("countries", tuple.getT2().getContent());
               model.addAttribute("genders", tuple.getT3().getContent());
               model.addAttribute("maritalStatusList", tuple.getT4().getContent());
             })

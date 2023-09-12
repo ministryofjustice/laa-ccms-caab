@@ -1,7 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -23,9 +25,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.application.PrivacyNoticeAgreementValidator;
 import uk.gov.laa.ccms.caab.constants.SessionConstants;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -33,7 +34,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 public class PrivacyNoticeAgreementControllerTest {
 
     @Mock
-    private ApplicationDetailsValidator applicationValidator;
+    private PrivacyNoticeAgreementValidator privacyNoticeAgreementValidator;
 
     @InjectMocks
     private PrivacyNoticeAgreementController privacyNoticeAgreementController;
@@ -69,7 +70,7 @@ public class PrivacyNoticeAgreementControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/application/client/details/basic"));
 
-        verify(applicationValidator, times(1)).validateAgreementAcceptance(any(), any());
+        verify(privacyNoticeAgreementValidator, times(1)).validate(any(), any());
     }
 
     @Test
@@ -83,7 +84,7 @@ public class PrivacyNoticeAgreementControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/application/summary"));
 
-        verify(applicationValidator, times(1)).validateAgreementAcceptance(any(), any());
+        verify(privacyNoticeAgreementValidator, times(1)).validate(any(), any());
     }
 
     @Test
@@ -96,14 +97,14 @@ public class PrivacyNoticeAgreementControllerTest {
             errors.rejectValue(null, "agreement.not.accepted",
                     "Please complete 'I confirm my client (or their representative) has read and agreed to the Privacy Notice'.");
             return null;
-        }).when(applicationValidator).validateAgreementAcceptance(any(), any());
+        }).when(privacyNoticeAgreementValidator).validate(any(), any());
 
         this.mockMvc.perform(post("/application/agreement")
                         .sessionAttr(SessionConstants.APPLICATION_DETAILS, applicationDetails))
                 .andExpect(status().isOk())
                 .andExpect(view().name("application/privacy-notice-agreement"));
 
-        verify(applicationValidator, times(1)).validateAgreementAcceptance(any(), any());
+        verify(privacyNoticeAgreementValidator, times(1)).validate(any(), any());
     }
 
     @Test
