@@ -2,10 +2,6 @@ package uk.gov.laa.ccms.caab.controller.application.client;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -21,7 +17,7 @@ import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressSearchValidator;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 
 /**
  * Controller for handling address client details selection during the new application process.
@@ -40,6 +36,8 @@ public class ClientAddressDetailsController {
   private final ClientAddressDetailsValidator clientAddressDetailsValidator;
 
   private final ClientAddressSearchValidator clientAddressSearchValidator;
+
+  private static final String ACTION_FIND_ADDRESS = "find_address";
 
   /**
    * Handles the GET request for client address details page.
@@ -77,45 +75,24 @@ public class ClientAddressDetailsController {
 
     model.addAttribute(CLIENT_DETAILS, clientDetails);
 
-    if ("find_address".equals(action)) {
+    if (ACTION_FIND_ADDRESS.equals(action)) {
       clientAddressSearchValidator.validate(clientDetails, bindingResult);
-
-      if (bindingResult.hasErrors()) {
-        populateDropdowns(model);
-        return "application/client/address-client-details";
-      } else {
-        return "redirect:/application/client/details/address/search";
-      }
-
-    } else if ("next".equals(action)) {
+    } else {
       clientAddressDetailsValidator.validate(clientDetails, bindingResult);
-
-      if (bindingResult.hasErrors()) {
-        populateDropdowns(model);
-        return "application/client/address-client-details";
-      }
     }
-    return "redirect:/application/client/details/equal-opportunities-monitoring";
+
+    if (bindingResult.hasErrors()) {
+      populateDropdowns(model);
+      return "application/client/address-client-details";
+    }
+
+    return ACTION_FIND_ADDRESS.equals(action)
+        ? "redirect:/application/client/details/address/search"
+        : "redirect:/application/client/details/equal-opportunities-monitoring";
   }
 
   private void populateDropdowns(Model model) {
-    // Asynchronously fetch countries
-    // remove any null objects due to data
-    Mono<List<CommonLookupValueDetail>> countriesMono = commonLookupService.getCountries()
-        .flatMap(countries -> {
-          if (countries != null) {
-            List<CommonLookupValueDetail> filteredContent = countries
-                .getContent()
-                .stream()
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-            return Mono.just(filteredContent);
-          } else {
-            return Mono.just(Collections.emptyList());
-          }
-        });
-
-    model.addAttribute("countries", countriesMono.block());
-
+    Mono<CommonLookupDetail> countriesMono = commonLookupService.getCountries();
+    model.addAttribute("countries", countriesMono.block().getContent());
   }
 }
