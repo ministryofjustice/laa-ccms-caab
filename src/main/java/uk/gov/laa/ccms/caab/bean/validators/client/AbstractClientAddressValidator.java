@@ -4,6 +4,9 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
+/**
+ * Abstract validator used for client address validation.
+ */
 public abstract class AbstractClientAddressValidator extends AbstractValidator {
 
   protected void validateNoFixedAbode(ClientDetails clientDetails, Errors errors) {

@@ -44,7 +44,7 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
       validateRequiredField("cityTown", clientDetails.getCityTown(),
           "City / Town", errors);
     } else if (clientDetails.getNoFixedAbode()) {
-        validateNoFixedAbode(clientDetails, errors);
+      validateNoFixedAbode(clientDetails, errors);
     }
   }
 }
