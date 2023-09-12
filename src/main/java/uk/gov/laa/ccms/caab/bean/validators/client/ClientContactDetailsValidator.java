@@ -34,8 +34,8 @@ public class ClientContactDetailsValidator extends AbstractValidator {
   private void validateTelephones(ClientDetails clientDetails, Errors errors) {
     // At least one telephone number should be provided
     if (!StringUtils.hasText(clientDetails.getTelephoneHome())
-        && !StringUtils.hasText(clientDetails.getTelephoneHome())
-        && !StringUtils.hasText(clientDetails.getTelephoneHome())) {
+        && !StringUtils.hasText(clientDetails.getTelephoneWork())
+        && !StringUtils.hasText(clientDetails.getTelephoneMobile())) {
 
       errors.reject("required.telephones",
           "Please provide at least one contact telephone number.");
