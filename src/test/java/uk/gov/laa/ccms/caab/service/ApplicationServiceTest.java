@@ -53,6 +53,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailRecordHistory;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
+import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 
 @ExtendWith(MockitoExtension.class)
 class ApplicationServiceTest {
@@ -380,7 +381,7 @@ class ApplicationServiceTest {
     verify(caabApiClient).patchApplication(eq(id), eq(user.getLoginId()), any(), eq("application-type"));
 
   }
-  
+
   private UserDetail buildUser() {
     return new UserDetail()
         .userId(1)
