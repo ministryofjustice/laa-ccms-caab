@@ -23,8 +23,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsFindAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressSearchValidator;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -39,7 +39,7 @@ public class ClientAddressDetailsControllerTest {
   private ClientAddressDetailsValidator clientAddressDetailsValidator;
 
   @Mock
-  private ClientAddressSearchValidator clientAddressSearchValidator;
+  private ClientAddressDetailsFindAddressValidator clientAddressDetailsFindAddressValidator;
 
   @InjectMocks
   private ClientAddressDetailsController clientAddressDetailsController;
@@ -125,7 +125,7 @@ public class ClientAddressDetailsControllerTest {
       Errors errors = (Errors) invocation.getArguments()[1];
       errors.rejectValue("country", "required.country", "Please complete 'Country'.");
       return null;
-    }).when(clientAddressSearchValidator).validate(any(), any());
+    }).when(clientAddressDetailsFindAddressValidator).validate(any(), any());
 
     when(commonLookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));

@@ -22,7 +22,7 @@ public abstract class AbstractClientAddressValidator extends AbstractValidator {
       //if any field populated
       errors.reject("invalid.noFixedAbode",
           "You have indicated 'No Fixed Abode'. Please remove main address details or "
-              + "uncheck box to amend your entry.");
+              + "select 'No' to amend your entry.");
     }
   }
 }

@@ -19,10 +19,10 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 
 @ExtendWith(SpringExtension.class)
-class ClientAddressSearchValidatorTest {
+class ClientAddressDetailsFindAddressValidatorTest {
 
   @InjectMocks
-  private ClientAddressSearchValidator clientAddressSearchValidator;
+  private ClientAddressDetailsFindAddressValidator clientAddressDetailsFindAddressValidator;
 
   @Mock
   private ClientDetails clientDetails;
@@ -37,17 +37,17 @@ class ClientAddressSearchValidatorTest {
 
   @Test
   public void supports_ReturnsTrueForClientDetailsClass() {
-    assertTrue(clientAddressSearchValidator.supports(ClientDetails.class));
+    assertTrue(clientAddressDetailsFindAddressValidator.supports(ClientDetails.class));
   }
 
   @Test
   public void supports_ReturnsFalseForOtherClasses() {
-    assertFalse(clientAddressSearchValidator.supports(Object.class));
+    assertFalse(clientAddressDetailsFindAddressValidator.supports(Object.class));
   }
 
   @Test
   public void validate() {
-    clientAddressSearchValidator.validate(clientDetails, errors);
+    clientAddressDetailsFindAddressValidator.validate(clientDetails, errors);
     System.out.println(errors.getAllErrors());
     assertFalse(errors.hasErrors());
   }
@@ -56,7 +56,7 @@ class ClientAddressSearchValidatorTest {
   @NullAndEmptySource
   public void validate_countryRequired(String country) {
     clientDetails.setCountry(country);
-    clientAddressSearchValidator.validate(clientDetails, errors);
+    clientAddressDetailsFindAddressValidator.validate(clientDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("country"));
     assertEquals("required.country", errors.getFieldError("country").getCode());
@@ -65,7 +65,7 @@ class ClientAddressSearchValidatorTest {
   @Test
   public void validate_countryNotUnitedKingdom() {;
     clientDetails.setCountry("USA");
-    clientAddressSearchValidator.validate(clientDetails, errors);
+    clientAddressDetailsFindAddressValidator.validate(clientDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("country"));
     assertEquals("required.GBR", errors.getFieldError("country").getCode());
@@ -75,7 +75,7 @@ class ClientAddressSearchValidatorTest {
   @NullAndEmptySource
   public void validate_houseNameNumberRequired(String houseNameNumber) {
     clientDetails.setHouseNameNumber(houseNameNumber);
-    clientAddressSearchValidator.validate(clientDetails, errors);
+    clientAddressDetailsFindAddressValidator.validate(clientDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("houseNameNumber"));
     assertEquals("required.houseNameNumber", errors.getFieldError("houseNameNumber").getCode());
@@ -111,7 +111,7 @@ class ClientAddressSearchValidatorTest {
       clientDetails.setCounty(value);
     }
 
-    clientAddressSearchValidator.validate(clientDetails, errors);
+    clientAddressDetailsFindAddressValidator.validate(clientDetails, errors);
     assertTrue(errors.hasErrors());
   }
 

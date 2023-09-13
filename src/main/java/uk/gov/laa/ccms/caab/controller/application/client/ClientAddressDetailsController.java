@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsFindAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressSearchValidator;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 
@@ -35,7 +35,7 @@ public class ClientAddressDetailsController {
 
   private final ClientAddressDetailsValidator clientAddressDetailsValidator;
 
-  private final ClientAddressSearchValidator clientAddressSearchValidator;
+  private final ClientAddressDetailsFindAddressValidator clientAddressDetailsFindAddressValidator;
 
   private static final String ACTION_FIND_ADDRESS = "find_address";
 
@@ -49,10 +49,19 @@ public class ClientAddressDetailsController {
   @GetMapping("application/client/details/address")
   public String clientDetailsAddress(
           @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
-          Model model) {
+          Model model,
+          BindingResult bindingResult) {
     log.info("GET /application/client/details/address");
 
     populateDropdowns(model);
+
+    //when accessed via the redirect from /application/client/details/address/search
+    if (clientDetails.isNoAddressLookup()) {
+      clientAddressDetailsFindAddressValidator.validate(clientDetails, bindingResult);
+      clientDetails.setNoAddressLookup(false);
+      clientDetails.setUprn(null);
+      model.addAttribute(CLIENT_DETAILS, clientDetails);
+    }
 
     return "application/client/address-client-details";
   }
@@ -76,7 +85,7 @@ public class ClientAddressDetailsController {
     model.addAttribute(CLIENT_DETAILS, clientDetails);
 
     if (ACTION_FIND_ADDRESS.equals(action)) {
-      clientAddressSearchValidator.validate(clientDetails, bindingResult);
+      clientAddressDetailsFindAddressValidator.validate(clientDetails, bindingResult);
     } else {
       clientAddressDetailsValidator.validate(clientDetails, bindingResult);
     }
