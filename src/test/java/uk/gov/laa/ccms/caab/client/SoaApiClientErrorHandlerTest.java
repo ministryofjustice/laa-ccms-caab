@@ -10,6 +10,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
+import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -87,6 +88,18 @@ class SoaApiClientErrorHandlerTest {
 
     Mono<CaseDetails> result =
         soaApiClientErrorHandler.handleCaseDetailsError(copyCaseSearchCriteria, throwable);
+
+    StepVerifier.create(result)
+        .expectNextCount(0)
+        .verifyComplete();
+  }
+
+  @Test
+  public void testHandleCaseDetailError() {
+    Throwable throwable = new RuntimeException("Error");
+
+    Mono<CaseDetail> result =
+        soaApiClientErrorHandler.handleCaseDetailError("123", throwable);
 
     StepVerifier.create(result)
         .expectNextCount(0)
