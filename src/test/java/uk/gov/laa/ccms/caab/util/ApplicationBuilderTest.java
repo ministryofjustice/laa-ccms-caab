@@ -23,10 +23,10 @@ import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.BaseOffice;
+import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
-import uk.gov.laa.ccms.data.model.OfficeDetail;
-import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
@@ -101,10 +101,10 @@ class ApplicationBuilderTest {
   @Test
   void testProvider() {
     UserDetail userDetail = new UserDetail();
-    ProviderDetail providerDetail = new ProviderDetail();
-    providerDetail.setId(123);
-    providerDetail.setName("PROVIDERNAME");
-    userDetail.setProvider(providerDetail);
+    BaseProvider provider = new BaseProvider();
+    provider.setId(123);
+    provider.setName("PROVIDERNAME");
+    userDetail.setProvider(provider);
 
     ApplicationDetail detail = builder.provider(userDetail).build();
     assertEquals("PROVIDERNAME", detail.getProvider().getDisplayValue());
@@ -124,12 +124,12 @@ class ApplicationBuilderTest {
   @Test
   void testOffice() {
     Integer officeId = 1;
-    OfficeDetail officeDetail = new OfficeDetail();
-    officeDetail.setId(officeId);
-    officeDetail.setName("OfficeName");
-    List<OfficeDetail> officeDetails = Collections.singletonList(officeDetail);
+    BaseOffice baseOffice = new BaseOffice();
+    baseOffice.setId(officeId);
+    baseOffice.setName("OfficeName");
+    List<BaseOffice> baseOffices = Collections.singletonList(baseOffice);
 
-    ApplicationDetail detail = builder.office(officeId, officeDetails).build();
+    ApplicationDetail detail = builder.office(officeId, baseOffices).build();
     assertEquals(officeId, detail.getOffice().getId());
     assertEquals("OfficeName", detail.getOffice().getDisplayValue());
   }

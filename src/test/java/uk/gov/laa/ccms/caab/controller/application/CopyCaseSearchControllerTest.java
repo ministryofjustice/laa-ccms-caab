@@ -2,9 +2,6 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -16,6 +13,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COPY_CASE_SEARCH_CRITERIA;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,9 +31,9 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.service.ProviderService;
+import uk.gov.laa.ccms.data.model.BaseOffice;
+import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.ContactDetail;
-import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
-import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -43,10 +42,10 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @WebAppConfiguration
 public class CopyCaseSearchControllerTest {
   @Mock
-  private ProviderService providerService;
+  private CopyCaseSearchCriteriaValidator validator;
 
   @Mock
-  private CopyCaseSearchCriteriaValidator validator;
+  private ProviderService providerService;
 
   @InjectMocks
   private CopyCaseSearchController copyCaseSearchController;
@@ -65,29 +64,32 @@ public class CopyCaseSearchControllerTest {
   public void testGetCopyCaseSearchAddsFeeEarnersToModel() throws Exception {
     final UserDetail user = buildUser();
 
-    final FeeEarnerDetail feeEarnerDetail = new FeeEarnerDetail().addContentItem(
-        new ContactDetail().id(123).name("A Fee Earner"));
+    ProviderDetail providerDetail = new ProviderDetail();
+    List<ContactDetail> feeEarners = buildFeeEarners();
 
-    when(providerService.getFeeEarners(user.getProvider().getId())).thenReturn(
-        Mono.just(feeEarnerDetail));
+    when(providerService.getProvider(user.getProvider().getId()))
+        .thenReturn(Mono.just(providerDetail));
+    when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
 
     this.mockMvc.perform(get("/application/copy-case/search")
             .sessionAttr("user", user))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-copy-case-search"))
-        .andExpect(model().attribute("feeEarners", feeEarnerDetail.getContent()))
+        .andExpect(model().attribute("feeEarners", feeEarners))
         .andExpect(model().attribute("offices", user.getProvider().getOffices()));
-
-    verify(providerService, times(1)).getFeeEarners(user.getProvider().getId());
   }
 
   @Test
   public void testPostCopyCaseSearchHandlesValidationFailure() throws Exception {
     final UserDetail user = buildUser();
 
-    final FeeEarnerDetail feeEarnerDetail = new FeeEarnerDetail().addContentItem(
-        new ContactDetail().id(123).name("A Fee Earner"));
+    ProviderDetail providerDetail = new ProviderDetail();
+    List<ContactDetail> feeEarners = buildFeeEarners();
+
+    when(providerService.getProvider(user.getProvider().getId()))
+        .thenReturn(Mono.just(providerDetail));
+    when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
@@ -96,18 +98,13 @@ public class CopyCaseSearchControllerTest {
       return null;
     }).when(validator).validate(any(), any());
 
-    when(providerService.getFeeEarners(user.getProvider().getId())).thenReturn(
-        Mono.just(feeEarnerDetail));
-
     this.mockMvc.perform(post("/application/copy-case/search")
             .sessionAttr("user", user))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-copy-case-search"))
-        .andExpect(model().attribute("feeEarners", feeEarnerDetail.getContent()))
+        .andExpect(model().attribute("feeEarners", feeEarners))
         .andExpect(model().attribute("offices", user.getProvider().getOffices()));
-
-    verify(providerService, times(1)).getFeeEarners(user.getProvider().getId());
   }
 
   @Test
@@ -120,8 +117,6 @@ public class CopyCaseSearchControllerTest {
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/copy-case/results"));
-
-    verify(providerService, never()).getFeeEarners(user.getProvider().getId());
   }
 
   private UserDetail buildUser() {
@@ -129,15 +124,29 @@ public class CopyCaseSearchControllerTest {
         .userId(1)
         .userType("testUserType")
         .loginId("testLoginId")
-        .provider(buildProvider());
+        .provider(buildBaseProvider());
   }
 
-  private ProviderDetail buildProvider() {
-    return new ProviderDetail()
+  private BaseProvider buildBaseProvider() {
+    return new BaseProvider()
         .id(123)
-        .addOfficesItem(
-            new OfficeDetail()
-                .id(1)
-                .name("Office 1"));
+        .name("provider1")
+        .addOfficesItem(new BaseOffice()
+            .id(10)
+            .name("Office 1"))
+        .addOfficesItem(new BaseOffice()
+            .id(11)
+            .name("Office 2"));
+  }
+
+  private List<ContactDetail> buildFeeEarners() {
+    List<ContactDetail> feeEarners = new ArrayList<>();
+    feeEarners.add(new ContactDetail()
+            .id(1)
+            .name("FeeEarner1"));
+    feeEarners.add(new ContactDetail()
+            .id(2)
+            .name("FeeEarner2"));
+    return feeEarners;
   }
 }

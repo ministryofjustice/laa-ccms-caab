@@ -23,7 +23,7 @@ import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
-import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 
@@ -173,28 +173,22 @@ public class EbsApiClientTest {
   }
 
   @Test
-  void getFeeEarners_returnsData() {
+  void getProvider_returnsData() {
     Integer providerId = 123;
-    FeeEarnerDetail feeEarnerDetail = new FeeEarnerDetail();
+    ProviderDetail providerDetail = new ProviderDetail();
 
-    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+    String expectedUri = "/providers/{providerId}";
 
     when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersUriMock.uri(expectedUri, String.valueOf(providerId))).thenReturn(requestHeadersMock);
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(FeeEarnerDetail.class)).thenReturn(Mono.just(feeEarnerDetail));
+    when(responseMock.bodyToMono(ProviderDetail.class)).thenReturn(Mono.just(providerDetail));
 
-    Mono<FeeEarnerDetail> feeEarnerDetailMono = ebsApiClient.getFeeEarners(providerId);
+    Mono<ProviderDetail> providerDetailMono = ebsApiClient.getProvider(providerId);
 
-    StepVerifier.create(feeEarnerDetailMono)
-        .expectNext(feeEarnerDetail)
+    StepVerifier.create(providerDetailMono)
+        .expectNext(providerDetail)
         .verifyComplete();
-
-    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
-
-    // Assert the URI
-    assertEquals(String.format("/fee-earners?provider-id=%s", providerId), actualUri.toString());
   }
 
   @Test

@@ -25,8 +25,8 @@ import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.validators.application.OfficeValidator;
-import uk.gov.laa.ccms.data.model.OfficeDetail;
-import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.BaseOffice;
+import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(SpringExtension.class)
@@ -105,11 +105,11 @@ public class OfficeControllerTest {
         .provider(buildProvider());
   }
 
-  private ProviderDetail buildProvider() {
-    return new ProviderDetail()
+  private BaseProvider buildProvider() {
+    return new BaseProvider()
         .id(123)
         .addOfficesItem(
-            new OfficeDetail()
+            new BaseOffice()
                 .id(1)
                 .name("Office 1"));
   }

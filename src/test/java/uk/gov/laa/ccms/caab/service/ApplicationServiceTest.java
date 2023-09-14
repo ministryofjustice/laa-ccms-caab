@@ -24,12 +24,12 @@ import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.BaseOffice;
+import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
-import uk.gov.laa.ccms.data.model.OfficeDetail;
-import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
@@ -186,14 +186,14 @@ public class ApplicationServiceTest {
         .userId(1)
         .userType("testUserType")
         .loginId("testLoginId")
-        .provider(buildProvider());
+        .provider(buildBaseProvider());
   }
 
-  private ProviderDetail buildProvider() {
-    return new ProviderDetail()
+  private BaseProvider buildBaseProvider() {
+    return new BaseProvider()
         .id(123)
         .addOfficesItem(
-            new OfficeDetail()
+            new BaseOffice()
                 .id(1)
                 .name("Office 1"));
   }

@@ -6,7 +6,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
-import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -37,8 +37,8 @@ public class EbsApiClientErrorHandler {
   /**
    * The error message for Fee Earners-related errors.
    */
-  public static String FEE_EARNERS_ERROR_MESSAGE =
-          "Failed to retrieve Fee Earners: (providerId: %s)";
+  public static String PROVIDER_ERROR_MESSAGE =
+          "Failed to retrieve Provider: (id: %s)";
 
   /**
    * The error message for Amendment Type-related errors.
@@ -128,16 +128,16 @@ public class EbsApiClientErrorHandler {
   }
 
   /**
-   * Handles errors related to fee earners data retrieval.
+   * Handles errors related to provider data retrieval.
    *
    * @param providerId the ID of the provider
    * @param e the exception encountered
    * @return a Mono error containing the specific error message and exception
    */
-  public Mono<FeeEarnerDetail> handleFeeEarnersError(
+  public Mono<ProviderDetail> handleProviderError(
           Integer providerId,
           Throwable e) {
-    final String msg = String.format(FEE_EARNERS_ERROR_MESSAGE, providerId);
+    final String msg = String.format(PROVIDER_ERROR_MESSAGE, providerId);
     log.error(msg, e);
     return Mono.error(new EbsApiClientException(msg, e));
   }
