@@ -59,7 +59,6 @@ public class ClientAddressDetailsController {
     if (clientDetails.isNoAddressLookup()) {
       clientAddressDetailsFindAddressValidator.validate(clientDetails, bindingResult);
       clientDetails.setNoAddressLookup(false);
-      clientDetails.setUprn(null);
       model.addAttribute(CLIENT_DETAILS, clientDetails);
     }
 

@@ -36,8 +36,10 @@ services:
     entrypoint: /bin/bash
     command: [ "./waitfor/wait_for.sh" ]
 
-  wiremock:
+  laa-ccms-caab-wiremock:
+    container_name: laa-ccms-caab-wiremock
     image: wiremock/wiremock:2.35.0
+    command: --global-response-templating
     ports:
       - "8051:8080"
     volumes:

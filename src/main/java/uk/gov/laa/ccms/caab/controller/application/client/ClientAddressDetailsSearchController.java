@@ -56,9 +56,6 @@ public class ClientAddressDetailsSearchController {
       clientDetails.setNoAddressLookup(true);
       model.addAttribute(CLIENT_DETAILS, clientDetails);
 
-      log.info("urpn: {}", clientDetails.getUprn());
-      log.info("addressLookup: {}", clientDetails.isNoAddressLookup());
-
       return "redirect:/application/client/details/address";
     }
 
@@ -67,8 +64,6 @@ public class ClientAddressDetailsSearchController {
 
     session.setAttribute(CLIENT_ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
     model.addAttribute(CLIENT_ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
-
-    
 
     return "application/client/address-client-search-results";
   }
@@ -94,17 +89,17 @@ public class ClientAddressDetailsSearchController {
 
     if (bindingResult.hasErrors()) {
       model.addAttribute(CLIENT_ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
-      log.info("urpn: {}", clientDetails.getUprn());
-      log.info("addressLookup: {}", clientDetails.isNoAddressLookup());
       return "application/client/address-client-search-results";
     }
 
     addressService.addAddressToClientDetails(
         clientDetails.getUprn(), clientAddressSearchResults, clientDetails);
 
-    model.addAttribute(CLIENT_DETAILS, clientDetails);
+    //Cleanup
     session.removeAttribute(CLIENT_ADDRESS_SEARCH_RESULTS);
-    log.info("client details: {}", clientDetails);
+    clientDetails.setUprn(null);
+
+    model.addAttribute(CLIENT_DETAILS, clientDetails);
 
     return "redirect:/application/client/details/address";
   }

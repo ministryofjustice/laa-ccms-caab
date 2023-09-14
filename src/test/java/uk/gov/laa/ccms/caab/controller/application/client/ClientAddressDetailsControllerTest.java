@@ -72,6 +72,26 @@ public class ClientAddressDetailsControllerTest {
   }
 
   @Test
+  void testClientDetailsAddress_redirected() throws Exception {
+    ClientDetails clientDetails = new ClientDetails();
+    clientDetails.setNoAddressLookup(true);
+
+    ClientDetails returnedClientDetails = new ClientDetails();
+    returnedClientDetails.setNoAddressLookup(false);
+
+    when(commonLookupService.getCountries()).thenReturn(
+        Mono.just(countryLookupDetail));
+
+    this.mockMvc.perform(get("/application/client/details/address")
+            .flashAttr(CLIENT_DETAILS, clientDetails))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/client/address-client-details"))
+        .andExpect(model().attributeExists("countries", "clientDetails"))
+        .andExpect(model().attribute("clientDetails", returnedClientDetails));
+  }
+
+  @Test
   void testClientDetailsAddressPostFindAddress() throws Exception {
     ClientDetails clientDetails = new ClientDetails();
 

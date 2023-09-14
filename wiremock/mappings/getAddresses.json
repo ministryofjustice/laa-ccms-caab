@@ -1,0 +1,73 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/search/places/v1/postcode",
+    "queryParameters": {
+      "key": {
+        "equalTo": "TEST_KEY"
+      },
+      "postcode": {
+        "matches": ".*"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "transformers": ["response-template"],
+    "jsonBody": {
+      "header": {
+        "uri": "https://api.os.uk/search/places/v1/postcode?postcode={{request.query.postcode}}",
+        "query": "postcode={{request.query.postcode}}",
+        "offset": 0,
+        "totalresults": 22,
+        "format": "JSON",
+        "dataset": "DPA",
+        "lr": "EN,CY",
+        "maxresults": 100,
+        "epoch": "103",
+        "lastupdate": "2023-09-13",
+        "output_srs": "EPSG:00000"
+      },
+      "results": [
+        {
+          "DPA": {
+            "UPRN": "12345678910",
+            "UDPRN": "12345678",
+            "ADDRESS": "1, TEST DRIVE, TEST LOCAL, TEST TOWN, {{upper request.query.postcode}}",
+            "BUILDING_NUMBER": "1",
+            "THOROUGHFARE_NAME": "TEST DRIVE",
+            "DEPENDENT_LOCALITY": "TEST LOCAL",
+            "POST_TOWN": "TEST TOWN",
+            "POSTCODE": "{{upper request.query.postcode}}",
+            "RPC": "5",
+            "X_COORDINATE": 123456.7,
+            "Y_COORDINATE": 987654.32,
+            "STATUS": "APPROVED",
+            "LOGICAL_STATUS_CODE": "1",
+            "CLASSIFICATION_CODE": "RD06",
+            "CLASSIFICATION_CODE_DESCRIPTION": "Self Contained Flat (Includes Maisonette / Apartment)",
+            "LOCAL_CUSTODIAN_CODE": 1125,
+            "LOCAL_CUSTODIAN_CODE_DESCRIPTION": "TEST PLACE",
+            "COUNTRY_CODE": "E",
+            "COUNTRY_CODE_DESCRIPTION": "This record is within England",
+            "POSTAL_ADDRESS_CODE": "D",
+            "POSTAL_ADDRESS_CODE_DESCRIPTION": "A record which is linked to PAF",
+            "BLPU_STATE_CODE": "2",
+            "BLPU_STATE_CODE_DESCRIPTION": "In use",
+            "TOPOGRAPHY_LAYER_TOID": "osgb0000000000000000",
+            "LAST_UPDATE_DATE": "04/07/2023",
+            "ENTRY_DATE": "12/08/2021",
+            "BLPU_STATE_DATE": "13/12/2022",
+            "LANGUAGE": "EN",
+            "MATCH": 1.0,
+            "MATCH_DESCRIPTION": "EXACT",
+            "DELIVERY_POINT_SUFFIX": "1U"
+          }
+        }
+      ]
+    }
+  }
+}
