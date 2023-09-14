@@ -39,6 +39,11 @@ public class ClientAddressDetailsController {
 
   private static final String ACTION_FIND_ADDRESS = "find_address";
 
+  @ModelAttribute(CLIENT_DETAILS)
+  public ClientDetails getApplicationDetails() {
+    return new ClientDetails();
+  }
+
   /**
    * Handles the GET request for client address details page.
    *

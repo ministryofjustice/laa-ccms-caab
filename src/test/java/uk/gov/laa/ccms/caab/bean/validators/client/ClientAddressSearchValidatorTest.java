@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.bean.validators.client;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,6 +44,7 @@ class ClientAddressSearchValidatorTest {
   public void validate_errors() {
     clientAddressSearchValidator.validate(clientDetails, errors);
     assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
   }
 
   @Test
