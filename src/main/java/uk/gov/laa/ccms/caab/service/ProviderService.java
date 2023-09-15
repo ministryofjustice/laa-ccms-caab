@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.service;
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -11,7 +13,9 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
-import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
+import uk.gov.laa.ccms.data.model.ContactDetail;
+import uk.gov.laa.ccms.data.model.OfficeDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 
@@ -97,12 +101,28 @@ public class ProviderService {
   }
 
   /**
-   * Retrieves fee earner details for a specific provider.
+   * Retrieves provider details for a specific provider.
    *
    * @param providerId The ID of the provider.
-   * @return A Mono containing the FeeEarnerDetail or an error handler if an error occurs.
+   * @return A Mono containing the ProviderDetail or an error handler if an error occurs.
    */
-  public Mono<FeeEarnerDetail> getFeeEarners(Integer providerId) {
-    return ebsApiClient.getFeeEarners(providerId);
+  public Mono<ProviderDetail> getProvider(Integer providerId) {
+    return ebsApiClient.getProvider(providerId);
+  }
+
+  /**
+   * Fetches a single list of fee earners across all offices of a provider.
+   *
+   * @param provider The Provider details.
+   * @return List of contact details representing fee earners.
+   */
+  public List<ContactDetail> getAllFeeEarners(ProviderDetail provider) {
+    return provider.getOffices().stream()
+        .map(OfficeDetail::getFeeEarners)
+        .flatMap(Collection::stream)
+        .collect(Collectors.toSet())
+        .stream()
+        .sorted(Comparator.comparing(ContactDetail::getName))
+        .collect(Collectors.toList());
   }
 }

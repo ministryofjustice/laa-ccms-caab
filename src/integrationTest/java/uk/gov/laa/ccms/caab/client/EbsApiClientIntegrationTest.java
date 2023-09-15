@@ -24,12 +24,13 @@ import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.BaseOffice;
+import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
-import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -122,18 +123,17 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testGetFeeEarners() throws Exception {
-    FeeEarnerDetail feeEarners = buildFeeEarnerDetail();
-    String feeEarnersJson = objectMapper.writeValueAsString(feeEarners);
+  public void testGetProvider() throws Exception {
+    ProviderDetail provider = buildProviderDetail();
+    String providerJson = objectMapper.writeValueAsString(provider);
 
-    wiremock.stubFor(get(urlPathEqualTo("/fee-earners"))
-        .withQueryParam("provider-id", equalTo("1"))
-        .willReturn(okJson(feeEarnersJson)));
+    wiremock.stubFor(get(String.format("/providers/%s", provider.getId()))
+        .willReturn(okJson(providerJson)));
 
-    FeeEarnerDetail result = ebsApiClient.getFeeEarners(1).block();
+    ProviderDetail result = ebsApiClient.getProvider(provider.getId()).block();
 
     assertNotNull(result);
-    assertEquals(feeEarnersJson, objectMapper.writeValueAsString(result));
+    assertEquals(providerJson, objectMapper.writeValueAsString(result));
   }
 
   @Test
@@ -199,21 +199,27 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
         .userType("testUserType")
         .loginId("user1")
         .addFirmsItem(
-            new ProviderDetail()
+            new BaseProvider()
                 .id(1)
                 .name("testProvider"))
-        .provider(new ProviderDetail()
+        .provider(new BaseProvider()
             .id(2)
-            .addOfficesItem(new OfficeDetail()
+            .addOfficesItem(new BaseOffice()
                 .id(1)
                 .name("Office 1")))
         .addFunctionsItem("testFunction");
   }
 
-  private FeeEarnerDetail buildFeeEarnerDetail() {
-    return new FeeEarnerDetail()
-        .addContentItem(new ContactDetail().id(1).name("feeEarner1"))
-        .addContentItem(new ContactDetail().id(2).name("feeEarner2"));
+  private ProviderDetail buildProviderDetail() {
+    return new ProviderDetail()
+        .id(123)
+        .name("provider1")
+        .addOfficesItem(new OfficeDetail()
+            .id(10)
+            .name("Office 1")
+            .addFeeEarnersItem(new ContactDetail()
+                .id(1)
+                .name("FeeEarner1")));
   }
 
 }

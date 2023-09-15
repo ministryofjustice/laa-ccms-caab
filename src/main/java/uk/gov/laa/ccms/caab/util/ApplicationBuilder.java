@@ -26,9 +26,9 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.BaseOffice;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
-import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -153,10 +153,10 @@ public class ApplicationBuilder {
    * @param offices  The list of office details.
    * @return The builder instance.
    */
-  public ApplicationBuilder office(Integer officeId, List<OfficeDetail> offices) {
+  public ApplicationBuilder office(Integer officeId, List<BaseOffice> offices) {
     String officeDisplayValue = offices.stream()
             .filter(office -> officeId.equals(office.getId()))
-            .map(OfficeDetail::getName)
+            .map(BaseOffice::getName)
             .findFirst()
             .orElse(null);
 

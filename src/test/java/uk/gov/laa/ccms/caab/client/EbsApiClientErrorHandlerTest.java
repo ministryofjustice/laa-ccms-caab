@@ -11,7 +11,7 @@ import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
-import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
@@ -94,16 +94,16 @@ public class EbsApiClientErrorHandlerTest {
   }
 
   @Test
-  public void testHandleFeeEarnersError() {
+  public void testHandleProviderError() {
     Throwable throwable = new RuntimeException("Error");
     Integer providerId = 1234;
 
-    Mono<FeeEarnerDetail> result =
-        ebsApiClientErrorHandler.handleFeeEarnersError(providerId, throwable);
+    Mono<ProviderDetail> result =
+        ebsApiClientErrorHandler.handleProviderError(providerId, throwable);
 
     StepVerifier.create(result)
         .verifyErrorMatches(e -> e instanceof EbsApiClientException
-            && e.getMessage().equals("Failed to retrieve Fee Earners: (providerId: 1234)")
+            && e.getMessage().equals("Failed to retrieve Provider: (id: 1234)")
             && e.getCause() == throwable);
   }
 }

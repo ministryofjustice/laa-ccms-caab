@@ -4,9 +4,6 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAIL
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COPY_CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -19,9 +16,9 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteriaValidator;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.ProviderService;
-import uk.gov.laa.ccms.data.model.ContactDetail;
-import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 
@@ -33,10 +30,9 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @Slf4j
 @SessionAttributes(value = {APPLICATION_DETAILS, COPY_CASE_SEARCH_CRITERIA})
 public class CopyCaseSearchController {
+  private final ProviderService providerService;
 
   private final CopyCaseSearchCriteriaValidator searchCriteriaValidator;
-
-  private final ProviderService providerService;
 
   /**
    * Provides an instance of {@link CopyCaseSearchCriteria} for use in the model.
@@ -52,22 +48,19 @@ public class CopyCaseSearchController {
    * Displays the copy case search form.
    *
    * @param searchCriteria The search criteria used for finding copy cases.
-   * @param userDetails The details of the currently authenticated user.
-   * @param model The model used to pass data to the view.
+   * @param userDetails    The details of the currently authenticated user.
+   * @param model          The model used to pass data to the view.
    * @return The copy case search view.
    */
 
   @GetMapping("/application/copy-case/search")
   public String copyCaseSearch(
-          @ModelAttribute(COPY_CASE_SEARCH_CRITERIA) CopyCaseSearchCriteria searchCriteria,
-          @SessionAttribute(USER_DETAILS) UserDetail userDetails,
-          Model model) {
+      @ModelAttribute(COPY_CASE_SEARCH_CRITERIA) CopyCaseSearchCriteria searchCriteria,
+      @SessionAttribute(USER_DETAILS) UserDetail userDetails,
+      Model model) {
     log.info("GET /application/copy-case/search");
 
-    model.addAttribute("feeEarners",
-            getFeeEarners(userDetails.getProvider().getId()));
-    model.addAttribute("offices",
-            userDetails.getProvider().getOffices());
+    populateDropdowns(userDetails, model);
 
     return "application/application-copy-case-search";
   }
@@ -76,40 +69,36 @@ public class CopyCaseSearchController {
    * Processes the search form submission for copy cases.
    *
    * @param searchCriteria The criteria used to search for copy cases.
-   * @param userDetails The details of the currently authenticated user.
-   * @param bindingResult Validation result of the search criteria form.
-   * @param model The model used to pass data to the view.
+   * @param userDetails    The details of the currently authenticated user.
+   * @param bindingResult  Validation result of the search criteria form.
+   * @param model          The model used to pass data to the view.
    * @return Either redirects to the search results or reloads the form with validation errors.
    */
   @PostMapping("/application/copy-case/search")
   public String copyCaseSearch(
-          @ModelAttribute(COPY_CASE_SEARCH_CRITERIA) CopyCaseSearchCriteria searchCriteria,
-          @SessionAttribute(USER_DETAILS) UserDetail userDetails,
-          BindingResult bindingResult,
-          Model model) {
+      @ModelAttribute(COPY_CASE_SEARCH_CRITERIA) CopyCaseSearchCriteria searchCriteria,
+      @SessionAttribute(USER_DETAILS) UserDetail userDetails,
+      BindingResult bindingResult,
+      Model model) {
     log.info("POST /application/copy-case/search: criteria={}", searchCriteria.toString());
 
     searchCriteriaValidator.validate(searchCriteria, bindingResult);
     if (bindingResult.hasErrors()) {
-      model.addAttribute("feeEarners",
-              getFeeEarners(userDetails.getProvider().getId()));
-      model.addAttribute("offices",
-              userDetails.getProvider().getOffices());
+      populateDropdowns(userDetails, model);
       return "application/application-copy-case-search";
     }
     return "redirect:/application/copy-case/results";
   }
 
-  /**
-   * Fetches the list of fee earners associated with a specific provider.
-   *
-   * @param providerId The ID of the provider.
-   * @return List of contact details representing fee earners.
-   */
-  private List<ContactDetail> getFeeEarners(Integer providerId) {
-    FeeEarnerDetail feeEarners = providerService.getFeeEarners(providerId).block();
-    return Optional.ofNullable(feeEarners)
-            .map(FeeEarnerDetail::getContent)
-            .orElse(Collections.emptyList());
+  private void populateDropdowns(UserDetail user, Model model) {
+    ProviderDetail provider = providerService.getProvider(user.getProvider().getId()).block();
+    if (provider == null) {
+      throw new CaabApplicationException(
+          String.format("Failed to retrieve Provider with id: %s",
+              user.getProvider().getId()));
+    }
+
+    model.addAttribute("feeEarners", providerService.getAllFeeEarners(provider));
+    model.addAttribute("offices", user.getProvider().getOffices());
   }
 }

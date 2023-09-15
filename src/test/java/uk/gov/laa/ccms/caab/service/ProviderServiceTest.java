@@ -2,8 +2,10 @@ package uk.gov.laa.ccms.caab.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,7 +18,9 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
-import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
+import uk.gov.laa.ccms.data.model.ContactDetail;
+import uk.gov.laa.ccms.data.model.OfficeDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 
@@ -92,20 +96,46 @@ public class ProviderServiceTest {
  }
 
   @Test
-  void getFeeEarners_returnsData() {
+  void getProvider_returnsData() {
     Integer providerId = 123;
-    FeeEarnerDetail feeEarnerDetail = new FeeEarnerDetail();
+    ProviderDetail providerDetail = new ProviderDetail();
 
-    when(ebsApiClient.getFeeEarners(providerId)).thenReturn(Mono.just(feeEarnerDetail));
+    when(ebsApiClient.getProvider(providerId)).thenReturn(Mono.just(providerDetail));
 
-    Mono<FeeEarnerDetail> feeEarnerDetailMono = providerService.getFeeEarners(providerId);
+    Mono<ProviderDetail> providerMono = providerService.getProvider(providerId);
 
-    StepVerifier.create(feeEarnerDetailMono)
-        .expectNext(feeEarnerDetail)
+    StepVerifier.create(providerMono)
+        .expectNext(providerDetail)
         .verifyComplete();
   }
 
-  private static ContractDetail createContractDetail(String cat, Boolean createNewMatters,
+  @Test
+  void getAllFeeEarners_returnsData() {
+    ProviderDetail providerDetail = buildProvider();
+
+    List<ContactDetail> feeEarners = providerService.getAllFeeEarners(providerDetail);
+
+    assertNotNull(feeEarners);
+    assertEquals(3, feeEarners.size());
+    assertEquals("FeeEarner1", feeEarners.get(0).getName());
+    assertEquals("FeeEarner2", feeEarners.get(1).getName());
+    assertEquals("FeeEarner3", feeEarners.get(2).getName());
+  }
+
+  @Test
+  void getAllFeeEarners_handlesNoResults() {
+    ProviderDetail providerDetail = new ProviderDetail()
+        .addOfficesItem(new OfficeDetail()
+            .feeEarners(new ArrayList<>()));
+
+    List<ContactDetail> feeEarners = providerService.getAllFeeEarners(providerDetail);
+
+    assertNotNull(feeEarners);
+    assertTrue(feeEarners.isEmpty());
+  }
+
+
+  private ContractDetail createContractDetail(String cat, Boolean createNewMatters,
       Boolean remainderAuth) {
     return new ContractDetail()
         .categoryofLaw(cat)
@@ -116,5 +146,27 @@ public class ProviderServiceTest {
         .authorisationType("AUTHTYPE1");
   }
 
-
+  private ProviderDetail buildProvider() {
+    return new ProviderDetail()
+        .id(123)
+        .name("provider1")
+        .addOfficesItem(new OfficeDetail()
+            .id(10)
+            .name("Office 1")
+            .addFeeEarnersItem(new ContactDetail()
+                .id(1)
+                .name("FeeEarner1"))
+            .addFeeEarnersItem(new ContactDetail()
+                .id(2)
+                .name("FeeEarner2")))
+        .addOfficesItem(new OfficeDetail()
+            .id(11)
+            .name("Office 2")
+            .addFeeEarnersItem(new ContactDetail()
+                .id(1)
+                .name("FeeEarner1"))
+            .addFeeEarnersItem(new ContactDetail()
+                .id(3)
+                .name("FeeEarner3")));
+  }
 }

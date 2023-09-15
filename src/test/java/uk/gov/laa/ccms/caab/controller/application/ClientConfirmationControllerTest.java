@@ -34,8 +34,8 @@ import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ClientService;
-import uk.gov.laa.ccms.data.model.OfficeDetail;
-import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.BaseOffice;
+import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
@@ -142,11 +142,11 @@ public class ClientConfirmationControllerTest {
         .provider(buildProvider());
   }
 
-  private ProviderDetail buildProvider() {
-    return new ProviderDetail()
+  private BaseProvider buildProvider() {
+    return new BaseProvider()
         .id(123)
         .addOfficesItem(
-            new OfficeDetail()
+            new BaseOffice()
                 .id(1)
                 .name("Office 1"));
   }

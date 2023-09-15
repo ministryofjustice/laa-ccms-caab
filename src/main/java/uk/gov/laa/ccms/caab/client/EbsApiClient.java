@@ -9,7 +9,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
-import uk.gov.laa.ccms.data.model.FeeEarnerDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -41,20 +41,18 @@ public class EbsApiClient {
   }
 
   /**
-   * Retrieves fee earner details for a specific provider.
+   * Retrieves details for a specific provider.
    *
    * @param providerId The ID of the provider.
-   * @return A Mono containing the FeeEarnerDetail or an error handler if an error occurs.
+   * @return A Mono containing the ProviderDetail or an error handler if an error occurs.
    */
-  public Mono<FeeEarnerDetail> getFeeEarners(Integer providerId) {
+  public Mono<ProviderDetail> getProvider(Integer providerId) {
     return ebsApiWebClient
         .get()
-        .uri(builder -> builder.path("/fee-earners")
-            .queryParam("provider-id", providerId)
-            .build())
+        .uri("/providers/{providerId}", String.valueOf(providerId))
         .retrieve()
-        .bodyToMono(FeeEarnerDetail.class)
-        .onErrorResume(e -> ebsApiClientErrorHandler.handleFeeEarnersError(providerId, e));
+        .bodyToMono(ProviderDetail.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleProviderError(providerId, e));
   }
 
   /**

@@ -35,10 +35,10 @@ import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.validators.application.CategoryOfLawValidator;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
+import uk.gov.laa.ccms.data.model.BaseOffice;
+import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
-import uk.gov.laa.ccms.data.model.OfficeDetail;
-import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(SpringExtension.class)
@@ -201,14 +201,14 @@ public class CategoryOfLawControllerTest {
         .userId(1)
         .userType("testUserType")
         .loginId("testLoginId")
-        .provider(buildProvider());
+        .provider(buildBaseProvider());
   }
 
-  private ProviderDetail buildProvider() {
-    return new ProviderDetail()
+  private BaseProvider buildBaseProvider() {
+    return new BaseProvider()
         .id(123)
         .addOfficesItem(
-            new OfficeDetail()
+            new BaseOffice()
                 .id(1)
                 .name("Office 1"));
   }
