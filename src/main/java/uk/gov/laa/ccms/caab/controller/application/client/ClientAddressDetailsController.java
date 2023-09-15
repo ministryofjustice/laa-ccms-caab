@@ -44,7 +44,7 @@ public class ClientAddressDetailsController {
    *
    * @param clientDetails The details of the client.
    * @param model The model for the view.
-   * @return The view name for the client basic details page
+   * @return The view name for the client address details page
    */
   @GetMapping("application/client/details/address")
   public String clientDetailsAddress(
@@ -71,7 +71,7 @@ public class ClientAddressDetailsController {
    * @param clientDetails The details of the client.
    * @param bindingResult Validation result.
    * @param model The model for the view.
-   * @return A redirect string to the agreement page.
+   * @return A redirect string to the client equal opportunities monitoring page.
    */
   @PostMapping("/application/client/details/address")
   public String clientDetailsAddress(

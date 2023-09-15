@@ -18,7 +18,8 @@ import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 
 /**
- * Controller for handling contact client details selection during the new application process.
+ * Controller for handling equal opportunities monitoring client details selection during the
+ * new application process.
  */
 @Controller
 @RequiredArgsConstructor
@@ -34,11 +35,11 @@ public class ClientEqualOpportunitiesMonitoringDetailsController {
   private final ClientEqualOpportunitiesMonitoringDetailsValidator validator;
 
   /**
-   * Handles the GET request for client contact details page.
+   * Handles the GET request for client equal opportunities monitoring details page.
    *
    * @param clientDetails The details of the client.
    * @param model The model for the view.
-   * @return The view name for the client basic details page
+   * @return The view name for the client equal opportunities monitoring details page
    */
   @GetMapping("application/client/details/equal-opportunities-monitoring")
   public String clientDetailsEqualOpportunitiesMonitoring(
@@ -50,12 +51,12 @@ public class ClientEqualOpportunitiesMonitoringDetailsController {
   }
 
   /**
-   * Handles the client contact details results submission.
+   * Handles the client equal opportunities monitoring details results submission.
    *
    * @param clientDetails The details of the client.
    * @param bindingResult Validation result.
    * @param model The model for the view.
-   * @return A redirect string to the agreement page.
+   * @return A redirect string to the client summary page.
    */
   @PostMapping("/application/client/details/equal-opportunities-monitoring")
   public String clientDetailsEqualOpportunitiesMonitoring(
