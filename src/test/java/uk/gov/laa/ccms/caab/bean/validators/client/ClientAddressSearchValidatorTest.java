@@ -43,6 +43,7 @@ class ClientAddressSearchValidatorTest {
   public void validate_errors() {
     clientAddressSearchValidator.validate(clientDetails, errors);
     assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
   }
 
   @Test

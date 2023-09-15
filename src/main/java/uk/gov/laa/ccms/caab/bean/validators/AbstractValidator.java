@@ -66,7 +66,9 @@ public abstract class AbstractValidator implements Validator {
     if (StringUtils.hasText(country)) {
       if (country.equals("GBR")) {
         validateRequiredField("postcode", postcode, "Postcode", errors);
-        validateFieldFormat("postcode", postcode, UK_POSTCODE, "Postcode", errors);
+        if (StringUtils.hasText(postcode)) {
+          validateFieldFormat("postcode", postcode, UK_POSTCODE, "Postcode", errors);
+        }
       } else {
         if (StringUtils.hasText(postcode)) {
           validateFieldFormat("postcode", postcode, INTERNATIONAL_POSTCODE, "Postcode", errors);

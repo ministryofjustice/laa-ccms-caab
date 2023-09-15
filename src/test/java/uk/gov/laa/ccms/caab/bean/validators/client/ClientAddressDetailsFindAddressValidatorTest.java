@@ -60,6 +60,7 @@ class ClientAddressDetailsFindAddressValidatorTest {
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("country"));
     assertEquals("required.country", errors.getFieldError("country").getCode());
+    assertEquals(1, errors.getErrorCount());
   }
 
   @Test
@@ -69,6 +70,7 @@ class ClientAddressDetailsFindAddressValidatorTest {
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("country"));
     assertEquals("required.GBR", errors.getFieldError("country").getCode());
+    assertEquals(1, errors.getErrorCount());
   }
 
   @ParameterizedTest
@@ -79,19 +81,22 @@ class ClientAddressDetailsFindAddressValidatorTest {
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("houseNameNumber"));
     assertEquals("required.houseNameNumber", errors.getFieldError("houseNameNumber").getCode());
+    assertEquals(1, errors.getErrorCount());
   }
 
   @ParameterizedTest
   @CsvSource({
-      "country, test",
-      "houseNameNumber, test",
-      "postcode, SW1A 1AA",
-      "addressLine1, test",
-      "addressLine2, test",
-      "cityTown, test",
-      "county, test"
+      "country, , 2",
+      "country, test, 3",
+      "country, GBR, 3",
+      "houseNameNumber, test, 2",
+      "postcode, SW1A 1AA, 3",
+      "addressLine1, test, 3",
+      "addressLine2, test, 3",
+      "cityTown, test, 3",
+      "county, test, 3"
   })
-  public void validate_noFixedAbode_invalid(String field, String value) {
+  public void validate_noFixedAbode_invalid(String field, String value, int numberOfErrors) {
     clientDetails = new ClientDetails();
     clientDetails.setNoFixedAbode(true);
 
@@ -113,6 +118,7 @@ class ClientAddressDetailsFindAddressValidatorTest {
 
     clientAddressDetailsFindAddressValidator.validate(clientDetails, errors);
     assertTrue(errors.hasErrors());
+    assertEquals(numberOfErrors, errors.getErrorCount());
   }
 
   private ClientDetails buildClientDetails() {
