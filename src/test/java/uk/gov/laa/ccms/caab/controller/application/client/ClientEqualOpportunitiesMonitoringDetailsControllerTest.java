@@ -56,6 +56,7 @@ public class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
 
   @Test
   public void testClientEqualOpportunitiesMonitoringGet() throws Exception {
+    ClientDetails clientDetails = new ClientDetails();
 
     when(commonLookupService.getEthnicOrigins()).thenReturn(
         Mono.just(ethnicityLookupDetail));
@@ -63,7 +64,8 @@ public class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
     when(commonLookupService.getDisabilities()).thenReturn(
         Mono.just(disabilityLookupDetail));
 
-    mockMvc.perform(get("/application/client/details/equal-opportunities-monitoring"))
+    mockMvc.perform(get("/application/client/details/equal-opportunities-monitoring")
+            .flashAttr(CLIENT_DETAILS, clientDetails))
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/equal-opportunities-monitoring-client-details"))
         .andExpect(model().attributeExists("ethnicOrigins", "disabilities"));
@@ -98,7 +100,8 @@ public class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
     clientDetails.setDisability("TEST");
     clientDetails.setEthnicOrigin("TEST");
 
-    mockMvc.perform(post("/application/client/details/equal-opportunities-monitoring"))
+    mockMvc.perform(post("/application/client/details/equal-opportunities-monitoring")
+            .flashAttr(CLIENT_DETAILS, clientDetails))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/client/details/summary"));
   }
