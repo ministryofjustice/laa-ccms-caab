@@ -37,3 +37,10 @@ laa:
       hostname: localhost
       port: 8125
       url: http://${laa.ccms.caab-api.hostname}:${laa.ccms.caab-api.port}
+
+os:
+  api:
+    hostname: localhost
+    port: 8126
+    url: ${os.api.hostname}:${os.api.port}
+    key: key

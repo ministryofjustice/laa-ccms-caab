@@ -53,15 +53,16 @@ class ClientAddressDetailsValidatorTest {
 
   @ParameterizedTest
   @CsvSource({
-      "country, test",
-      "houseNameNumber, test",
-      "postcode, SW1A 1AA",
-      "addressLine1, test",
-      "addressLine2, test",
-      "cityTown, test",
-      "county, test"
+      "country, test, 1",
+      "country, GBR, 1",
+      "houseNameNumber, test, 1",
+      "postcode, SW1A 1AA, 1",
+      "addressLine1, test, 1",
+      "addressLine2, test, 1",
+      "cityTown, test, 1",
+      "county, test, 1"
   })
-  public void validate_noFixedAbode_invalid(String field, String value) {
+  public void validate_noFixedAbode_invalid(String field, String value, int numberOfErrors) {
     clientDetails = new ClientDetails();
     clientDetails.setNoFixedAbode(true);
     clientDetails.setVulnerableClient(true);
@@ -84,6 +85,7 @@ class ClientAddressDetailsValidatorTest {
 
     clientAddressDetailsValidator.validate(clientDetails, errors);
     assertTrue(errors.hasErrors());
+    assertEquals(numberOfErrors, errors.getErrorCount());
   }
 
   @ParameterizedTest
@@ -94,6 +96,7 @@ class ClientAddressDetailsValidatorTest {
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("country"));
     assertEquals("required.country", errors.getFieldError("country").getCode());
+    assertEquals(1, errors.getErrorCount());
   }
 
   @ParameterizedTest
@@ -104,6 +107,7 @@ class ClientAddressDetailsValidatorTest {
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("houseNameNumber"));
     assertEquals("required.houseNameNumber", errors.getFieldError("houseNameNumber").getCode());
+    assertEquals(1, errors.getErrorCount());
   }
 
   @ParameterizedTest
@@ -114,6 +118,7 @@ class ClientAddressDetailsValidatorTest {
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("addressLine1"));
     assertEquals("required.addressLine1", errors.getFieldError("addressLine1").getCode());
+    assertEquals(1, errors.getErrorCount());
   }
 
   @ParameterizedTest
@@ -124,6 +129,7 @@ class ClientAddressDetailsValidatorTest {
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("cityTown"));
     assertEquals("required.cityTown", errors.getFieldError("cityTown").getCode());
+    assertEquals(1, errors.getErrorCount());
   }
 
   // Test for UK postcodes
@@ -136,6 +142,7 @@ class ClientAddressDetailsValidatorTest {
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("postcode"));
     assertEquals("required.postcode", errors.getFieldError("postcode").getCode());
+    assertEquals(1, errors.getErrorCount());
   }
 
   @ParameterizedTest
@@ -150,6 +157,7 @@ class ClientAddressDetailsValidatorTest {
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("postcode"));
     assertEquals("invalid.format", errors.getFieldError("postcode").getCode());
+    assertEquals(1, errors.getErrorCount());
   }
 
   private ClientDetails buildClientDetails() {

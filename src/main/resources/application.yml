@@ -44,3 +44,7 @@ laa:
     caab-api:
         hostname: ${CAAB_API_HOSTNAME}
         url: ${laa.ccms.caab-api.hostname}
+os:
+  api:
+    url: ${OS_API_HOSTNAME}
+    key: ${OS_API_KEY}

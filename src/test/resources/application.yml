@@ -1,3 +1,7 @@
+os:
+  api:
+    url: http://localhost:1234
+    key: key
 
 laa:
   ccms:

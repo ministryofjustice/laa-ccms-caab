@@ -33,6 +33,13 @@ spring:
       cache:
         period: 0
 
+os:
+  api:
+    hostname: localhost
+    port: 8051
+    url: http://${os.api.hostname}:${os.api.port}
+    key: TEST_KEY
+
 laa:
   ccms:
     ebs-api:

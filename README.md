@@ -71,6 +71,15 @@ When you see this message you can stop the liquibase container.
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-db
 ```
 
+## Wiremock standalone 
+
+This is required due to a dependency on the ordinance survey api, instead of calling the real thing we call this.
+The wiremock can handle and postcode request.
+
+```
+docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-wiremock
+```
+
 ## secrets.gradle (required for gradle build)
 
 create a secrets.gradle file in the root directory:

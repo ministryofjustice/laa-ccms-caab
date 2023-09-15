@@ -23,8 +23,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsFindAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressSearchValidator;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -39,7 +39,7 @@ public class ClientAddressDetailsControllerTest {
   private ClientAddressDetailsValidator clientAddressDetailsValidator;
 
   @Mock
-  private ClientAddressSearchValidator clientAddressSearchValidator;
+  private ClientAddressDetailsFindAddressValidator clientAddressDetailsFindAddressValidator;
 
   @InjectMocks
   private ClientAddressDetailsController clientAddressDetailsController;
@@ -69,6 +69,26 @@ public class ClientAddressDetailsControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/address-client-details"))
         .andExpect(model().attributeExists("countries"));
+  }
+
+  @Test
+  void testClientDetailsAddress_redirected() throws Exception {
+    ClientDetails clientDetails = new ClientDetails();
+    clientDetails.setNoAddressLookup(true);
+
+    ClientDetails returnedClientDetails = new ClientDetails();
+    returnedClientDetails.setNoAddressLookup(false);
+
+    when(commonLookupService.getCountries()).thenReturn(
+        Mono.just(countryLookupDetail));
+
+    this.mockMvc.perform(get("/application/client/details/address")
+            .flashAttr(CLIENT_DETAILS, clientDetails))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/client/address-client-details"))
+        .andExpect(model().attributeExists("countries", "clientDetails"))
+        .andExpect(model().attribute("clientDetails", returnedClientDetails));
   }
 
   @Test
@@ -125,7 +145,7 @@ public class ClientAddressDetailsControllerTest {
       Errors errors = (Errors) invocation.getArguments()[1];
       errors.rejectValue("country", "required.country", "Please complete 'Country'.");
       return null;
-    }).when(clientAddressSearchValidator).validate(any(), any());
+    }).when(clientAddressDetailsFindAddressValidator).validate(any(), any());
 
     when(commonLookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));

@@ -4,6 +4,8 @@ import static org.mockito.Mockito.when;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
@@ -107,6 +109,30 @@ public class CommonLookupServiceTest {
     when(ebsApiClient.getCountries()).thenReturn(Mono.just(commonValues));
 
     Mono<CommonLookupDetail> commonLookupDetailMono = commonLookupService.getCountries();
+    StepVerifier.create(commonLookupDetailMono)
+        .expectNext(commonValues)
+        .verifyComplete();
+  }
+
+  @Test
+  public void getCorrespondenceMethods_returnsData() {
+    CommonLookupDetail commonValues = new CommonLookupDetail();
+
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD)).thenReturn(Mono.just(commonValues));
+
+    Mono<CommonLookupDetail> commonLookupDetailMono = commonLookupService.getCorrespondenceMethods();
+    StepVerifier.create(commonLookupDetailMono)
+        .expectNext(commonValues)
+        .verifyComplete();
+  }
+
+  @Test
+  public void getCorrespondenceLanguages_returnsData() {
+    CommonLookupDetail commonValues = new CommonLookupDetail();
+
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE)).thenReturn(Mono.just(commonValues));
+
+    Mono<CommonLookupDetail> commonLookupDetailMono = commonLookupService.getCorrespondenceLanguages();
     StepVerifier.create(commonLookupDetailMono)
         .expectNext(commonValues)
         .verifyComplete();

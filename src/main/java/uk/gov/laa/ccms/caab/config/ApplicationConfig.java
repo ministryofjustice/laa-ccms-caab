@@ -17,6 +17,8 @@ public class ApplicationConfig {
 
   private final String caabApiUrl;
 
+  private final String osApiUrl;
+
   /**
    * Constructs the ApplicationConfig instance with API URLs.
    *
@@ -26,10 +28,12 @@ public class ApplicationConfig {
    */
   public ApplicationConfig(@Value("${laa.ccms.ebs-api.url}") String ebsApiUrl,
                            @Value("${laa.ccms.soa-api.url}") String soaApiUrl,
-                           @Value("${laa.ccms.caab-api.url}") String caabApiUrl) {
+                           @Value("${laa.ccms.caab-api.url}") String caabApiUrl,
+                           @Value("${os.api.url}") String osApiUrl) {
     this.ebsApiUrl = ebsApiUrl;
     this.soaApiUrl = soaApiUrl;
     this.caabApiUrl = caabApiUrl;
+    this.osApiUrl = osApiUrl;
   }
 
   /**
@@ -60,5 +64,15 @@ public class ApplicationConfig {
   @Bean("caabApiWebClient")
   WebClient caabApiWebClient() {
     return WebClient.create(caabApiUrl);
+  }
+
+  /**
+   * Creates a WebClient bean for interacting with the Ordinance Survey API.
+   *
+   * @return A WebClient instance configured for the Ordinance Survey API.
+   */
+  @Bean("osApiWebClient")
+  WebClient osApiWebClient() {
+    return WebClient.create(osApiUrl);
   }
 }

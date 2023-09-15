@@ -63,7 +63,7 @@ public class ClientConfirmationController {
             user.getLoginId(),
             user.getUserType()).block();
 
-    session.setAttribute("clientInformation", clientInformation);
+    session.setAttribute(CLIENT_INFORMATION, clientInformation);
     model.addAttribute("clientReferenceNumber", clientReferenceNumber);
     model.addAttribute("client", clientResultDisplayMapper
             .toClientResultRowDisplay(clientInformation));
