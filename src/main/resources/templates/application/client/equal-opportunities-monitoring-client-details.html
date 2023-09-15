@@ -90,7 +90,14 @@
               <label class="govuk-label" for="specialConsiderations">
                 What special requirements may your client have? (optional)
               </label>
-              <textarea class="govuk-textarea govuk-!-margin-bottom-2" id="specialConsiderations" name="specialConsiderations" rows="5" maxlength="2000"></textarea>
+              <textarea
+                      class="govuk-textarea govuk-!-margin-bottom-2"
+                      id="specialConsiderations"
+                      name="specialConsiderations"
+                      th:text="${clientDetails.specialConsiderations}"
+                      rows="5"
+                      maxlength="2000">
+              </textarea>
             </fieldset>
             <details class="govuk-details" data-module="govuk-details">
               <summary class="govuk-details__summary">

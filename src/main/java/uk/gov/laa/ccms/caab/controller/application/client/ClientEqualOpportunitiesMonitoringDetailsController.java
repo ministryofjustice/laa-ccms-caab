@@ -33,11 +33,6 @@ public class ClientEqualOpportunitiesMonitoringDetailsController {
 
   private final ClientEqualOpportunitiesMonitoringDetailsValidator validator;
 
-  @ModelAttribute(CLIENT_DETAILS)
-  public ClientDetails getClientDetails() {
-    return new ClientDetails();
-  }
-
   /**
    * Handles the GET request for client contact details page.
    *
