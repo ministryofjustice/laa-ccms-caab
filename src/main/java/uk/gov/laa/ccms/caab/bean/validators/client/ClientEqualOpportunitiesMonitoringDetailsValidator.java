@@ -3,12 +3,13 @@ package uk.gov.laa.ccms.caab.bean.validators.client;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**
- * Validates the uprn details provided by client address search.
+ * Validator the details provided by client equal opportunities monitoring form.
  */
 @Component
-public class ClientAddressSearchValidator extends AbstractClientAddressValidator {
+public class ClientEqualOpportunitiesMonitoringDetailsValidator extends AbstractValidator {
 
   /**
    * Determines if the Validator supports the provided class.
@@ -23,7 +24,7 @@ public class ClientAddressSearchValidator extends AbstractClientAddressValidator
   }
 
   /**
-   * Validates the client address search details in the
+   * Validates the client equal opportunities monitoring details in the
    * {@link uk.gov.laa.ccms.caab.bean.ClientDetails}.
    *
    * @param target The object to be validated.
@@ -32,6 +33,11 @@ public class ClientAddressSearchValidator extends AbstractClientAddressValidator
   @Override
   public void validate(Object target, Errors errors) {
     ClientDetails clientDetails = (ClientDetails) target;
-    validateRequiredField("uprn", clientDetails.getUprn(), "Address", errors);
+
+    validateRequiredField("ethnicOrigin", clientDetails.getEthnicOrigin(),
+        "Ethnic monitoring", errors);
+    validateRequiredField("disability", clientDetails.getDisability(),
+        "Disability monitoring", errors);
   }
+
 }

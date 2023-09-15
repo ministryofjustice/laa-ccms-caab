@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>LAA CCMS - Start new application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+      <a href="/application/client/details/cancel?" class="govuk-back-link">Cancel and return to client search</a>
+  </div>
+  <div id="main-content">
+    <form action="#" th:action="@{/application/client/details/equal-opportunities-monitoring}" th:object="${clientDetails}" method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <span class="govuk-caption-l">About your client</span>
+      <h1 class="govuk-heading-l">
+          Equal opportunities monitoring
+      </h1>
+      <p class="govuk-body-l">
+          Please provide information to reflect how your client would describe themselves.
+      </p>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+          <div class="govuk-form-group" th:classappend="${#fields.hasErrors('ethnicOrigin')} ? 'govuk-form-group--error' : ''">
+            <h2 class="govuk-heading-m">
+              Ethnic monitoring
+            </h2>
+            <fieldset class="govuk-fieldset">
+              <label class="govuk-label" for="ethnicOrigin">
+                Which ethnicity would your client describe themselves being?
+              </label>
+<!--                <span th:if="${#fields.hasErrors('ethnicOrigin')}" th:errors="*{ethnicOrigin}" class="govuk-error-message"></span>-->
+              <select class="govuk-select" data-module="govuk-select" th:field="*{ethnicOrigin}" th:errorclass="govuk-select--error" id="ethnicOrigin" name="ethnicOrigin">
+                  <option value="">Please select</option>
+                  <option th:each="origin : ${ethnicOrigins}" th:value="${origin.code}" th:text="${origin.description}"></option>
+              </select>
+            </fieldset>
+            <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
+              <summary class="govuk-details__summary">
+                <span class="govuk-details__summary-text">
+                  Help with ethnic monitoring
+                </span>
+              </summary>
+              <div class="govuk-details__text">
+                Please select the ethnicity which your client would describe themselves as being.
+                Please inform your client that this section is voluntary, and that any information
+                entered will be treated with the strictest confidence (can only be seen by those
+                directly dealing with your case), and that information will only be used for
+                statistical monitoring and research.
+              </div>
+            </details>
+          </div>
+          <div class="govuk-form-group" th:classappend="${#fields.hasErrors('disability')} ? 'govuk-form-group--error' : ''">
+            <h2 class="govuk-heading-m">
+              Disability monitoring
+            </h2>
+            <fieldset class="govuk-fieldset">
+              <label class="govuk-label" for="disability">
+                Would your client describe themselves as being disabled?
+              </label>
+              <!--                <span th:if="${#fields.hasErrors('ethnicOrigin')}" th:errors="*{ethnicOrigin}" class="govuk-error-message"></span>-->
+              <select class="govuk-select" data-module="govuk-select" th:field="*{disability}" th:errorclass="govuk-select--error" id="disability" name="disability">
+                <option value="">Please select</option>
+                <option th:each="disability : ${disabilities}" th:value="${disability.code}" th:text="${disability.description}"></option>
+              </select>
+            </fieldset>
+            <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
+              <summary class="govuk-details__summary">
+                <span class="govuk-details__summary-text">
+                  Help with disability monitoring
+                </span>
+              </summary>
+              <div class="govuk-details__text">
+                The Disability Discrimination Act defines disability as: a physical or mental
+                impairment which has a substantial and long-term adverse effect on a person's
+                ability to carry out normal day-to-day activities. If a client considers himself or
+                herself to have a disability please select the most appropriate definition. If the
+                client has multiple disabilities please select the definition that reflects the
+                predominant disability. Please inform your client that this section is voluntary,
+                and that any information entered will be treated with the strictest confidence (can
+                only be seen by those directly dealing with your case), and that information will
+                only be used for statistical monitoring and research.
+              </div>
+            </details>
+          </div>
+          <div class="govuk-form-group">
+            <h2 class="govuk-heading-m">
+              Special considerations
+            </h2>
+            <fieldset class="govuk-fieldset">
+              <label class="govuk-label" for="specialConsiderations">
+                What special requirements may your client have? (optional)
+              </label>
+              <textarea class="govuk-textarea govuk-!-margin-bottom-2" id="specialConsiderations" name="specialConsiderations" rows="5" maxlength="2000"></textarea>
+            </fieldset>
+            <details class="govuk-details" data-module="govuk-details">
+              <summary class="govuk-details__summary">
+                <span class="govuk-details__summary-text">
+                  Help with special considerations
+                </span>
+              </summary>
+              <div class="govuk-details__text">
+                Enter any special requirements your client may have, and any other needs that
+                should be considered when dealing with the LAA.
+                <br>
+                Maximum 2000 characters allowed.
+              </div>
+            </details>
+          </div>
+          <div class="govuk-button-group">
+            <button type="submit" name="action" value="next" class="govuk-button" data-module="govuk-button">
+              Next
+            </button>
+            <a class="govuk-button govuk-button--secondary"
+               data-module="govuk-button"
+               href="/application/client/details/address">
+              Back
+            </a>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

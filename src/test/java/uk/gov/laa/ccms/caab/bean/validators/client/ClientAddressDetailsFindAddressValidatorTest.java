@@ -73,6 +73,15 @@ class ClientAddressDetailsFindAddressValidatorTest {
     assertEquals(1, errors.getErrorCount());
   }
 
+  @Test
+  public void validate_isNoAddressLokup() {;
+    clientDetails.setNoAddressLookup(true);
+    clientAddressDetailsFindAddressValidator.validate(clientDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+    assertEquals("address.none",errors.getAllErrors().get(0).getCode());
+  }
+
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_houseNameNumberRequired(String houseNameNumber) {
