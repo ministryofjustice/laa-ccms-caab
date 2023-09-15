@@ -50,7 +50,6 @@ public class ClientAddressDetailsControllerTest {
 
   @BeforeEach
   public void setup() {
-
     mockMvc = standaloneSetup(clientAddressDetailsController).build();
     countryLookupDetail = new CommonLookupDetail();
     countryLookupDetail.addContentItem(new CommonLookupValueDetail());

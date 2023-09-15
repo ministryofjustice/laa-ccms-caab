@@ -46,4 +46,14 @@ public class CommonValueConstants {
    * Type used to retrieve the correspondence language values for contact details.
    */
   public static final String COMMON_VALUE_CORRESPONDENCE_LANGUAGE = "XXCCMS_PREF_LANGUAGE";
+
+  /**
+   * Type used to retrieve the ethnic origin values for equal opportunity monitoring details.
+   */
+  public static final String COMMON_VALUE_ETHNIC_ORIGIN = "XXCCMS_ETHNICITY";
+
+  /**
+   * Type used to retrieve the disability values for equal opportunity monitoring details.
+   */
+  public static final String COMMON_VALUE_DISABILITY = "XXCCMS_DISABILITY_TYPES";
 }

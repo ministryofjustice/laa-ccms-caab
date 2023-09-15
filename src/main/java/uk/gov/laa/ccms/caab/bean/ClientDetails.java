@@ -25,7 +25,6 @@ public class ClientDetails {
   private Boolean vexatiousLitigant = false;
   private Boolean mentalIncapacity = false;
 
-
   //contact details
   private String telephoneHome;
   private String telephoneWork;
@@ -35,7 +34,6 @@ public class ClientDetails {
   private String passwordReminder;
   private String correspondenceMethod;
   private String correspondenceLanguage;
-
 
   //address details
   private Boolean noFixedAbode = false;
@@ -50,5 +48,11 @@ public class ClientDetails {
   //address search details
   private String uprn;
   private boolean noAddressLookup = false;
+
+  //equal opportunities monitoring
+  private String ethnicOrigin;
+  private String disability;
+  private String specialConsiderations;
+
 
 }
