@@ -64,6 +64,7 @@ public class CommonLookupService {
   /**
    * Get a Gender Common Values.
    *
+   * @param code The code of the common lookup values.
    * @return CommonLookupValueDetail containing the common lookup value.
    */
   public Mono<CommonLookupValueDetail> getGender(String code) {
@@ -95,6 +96,7 @@ public class CommonLookupService {
   /**
    * Get a Contact Title Common Value.
    *
+   * @param code The code of the common lookup values
    * @return CommonLookupDetail containing the common lookup values.
    */
   public Mono<CommonLookupValueDetail> getContactTitle(String code) {
@@ -117,6 +119,7 @@ public class CommonLookupService {
   /**
    * Get a Marital Status Common Value.
    *
+   * @param code The code of the common lookup values
    * @return CommonLookupDetail containing the common lookup values.
    */
   public Mono<CommonLookupValueDetail> getMaritalStatus(String code) {
@@ -152,6 +155,7 @@ public class CommonLookupService {
   /**
    * Get a Country Common Value.
    *
+   * @param code The code of the common lookup values
    * @return CommonLookupValueDetail containing the common lookup value.
    */
   public Mono<CommonLookupValueDetail> getCountry(String code) {
@@ -181,6 +185,7 @@ public class CommonLookupService {
   /**
    * Get a Correspondence Method Common Values.
    *
+   * @param code The code of the common lookup values
    * @return CommonLookupValueDetail containing the common lookup value.
    */
   public Mono<CommonLookupValueDetail> getCorrespondenceMethod(String code) {
@@ -203,6 +208,7 @@ public class CommonLookupService {
   /**
    * Get a Correspondence Language Common Values.
    *
+   * @param code The code of the common lookup values
    * @return CommonLookupValueDetail containing the common lookup value.
    */
   public Mono<CommonLookupValueDetail> getCorrespondenceLanguage(String code) {
@@ -225,6 +231,7 @@ public class CommonLookupService {
   /**
    * Get an Ethnic Origin Common Values.
    *
+   * @param code The code of the common lookup values
    * @return CommonLookupValueDetail containing the common lookup value.
    */
   public Mono<CommonLookupValueDetail> getEthnicOrigin(String code) {
@@ -247,6 +254,7 @@ public class CommonLookupService {
   /**
    * Get a Disability Common Values.
    *
+   * @param code The code of the common lookup values
    * @return CommonLookupValueDetail containing the common lookup value.
    */
   public Mono<CommonLookupValueDetail> getDisability(String code) {

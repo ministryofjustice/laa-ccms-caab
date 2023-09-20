@@ -64,7 +64,7 @@ public class ClientSummaryController {
   }
 
   /**
-   * Handles the GET request for the client summary page.
+   * Handles the POST request for the client summary page.
    *
    * @return The view name for the client summary details
    */

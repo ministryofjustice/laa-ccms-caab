@@ -13,6 +13,8 @@ import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 @Component
 public class ClientContactDetailsValidator extends AbstractValidator {
 
+  private static String CORRESPONDENCE_EMAIL = "E-mail";
+
   /**
    * Determines if the Validator supports the provided class.
    *
@@ -79,8 +81,7 @@ public class ClientContactDetailsValidator extends AbstractValidator {
    */
   private void validateEmailField(ClientDetails clientDetails, Errors errors) {
     if (!StringUtils.hasText(clientDetails.getEmailAddress())
-        && clientDetails.getCorrespondenceMethod() != null
-        && clientDetails.getCorrespondenceMethod().equalsIgnoreCase("E-mail")) {
+        && CORRESPONDENCE_EMAIL.equalsIgnoreCase(clientDetails.getCorrespondenceMethod())) {
       errors.rejectValue("emailAddress", "required.emailAddress",
           "Please provide an email address, or select another correspondence method.");
     }

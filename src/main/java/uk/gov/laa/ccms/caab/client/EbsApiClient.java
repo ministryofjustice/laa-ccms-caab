@@ -92,6 +92,7 @@ public class EbsApiClient {
    * Retrieves common lookup values based on the supplied type and code.
    *
    * @param type The type of the common lookup values. Can be null.
+   * @param code The code of the common lookup values. Can be null.
    * @return A Mono containing the CommonLookupDetail or an error handler if an error occurs.
    */
   public Mono<CommonLookupDetail> getCommonValues(String type, String code) {
