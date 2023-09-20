@@ -79,6 +79,7 @@ public class ClientContactDetailsValidator extends AbstractValidator {
    */
   private void validateEmailField(ClientDetails clientDetails, Errors errors) {
     if (!StringUtils.hasText(clientDetails.getEmailAddress())
+        && clientDetails.getCorrespondenceMethod() != null
         && clientDetails.getCorrespondenceMethod().equalsIgnoreCase("E-mail")) {
       errors.rejectValue("emailAddress", "required.emailAddress",
           "Please provide an email address, or select another correspondence method.");

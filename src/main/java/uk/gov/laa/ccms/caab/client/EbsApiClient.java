@@ -89,6 +89,16 @@ public class EbsApiClient {
   }
 
   /**
+   * Retrieves common lookup values based on the supplied type and code.
+   *
+   * @param type The type of the common lookup values. Can be null.
+   * @return A Mono containing the CommonLookupDetail or an error handler if an error occurs.
+   */
+  public Mono<CommonLookupDetail> getCommonValues(String type, String code) {
+    return this.getCommonValues(type, code, null);
+  }
+
+  /**
    * Retrieves the case status lookup details based on the provided copyAllowed flag.
    *
    * @param copyAllowed A boolean flag indicating whether copying is allowed.
