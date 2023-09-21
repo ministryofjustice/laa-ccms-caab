@@ -15,6 +15,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_U
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +62,20 @@ public class CommonLookupService {
   }
 
   /**
+   * Get a Gender Common Values.
+   *
+   * @param code The code of the common lookup values.
+   * @return CommonLookupValueDetail containing the common lookup value.
+   */
+  public Mono<CommonLookupValueDetail> getGender(String code) {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_GENDER, code)
+        .mapNotNull(commonLookupDetail -> commonLookupDetail
+            .getContent().stream()
+            .findFirst()
+            .orElse(null));
+  }
+
+  /**
    * Get a list of Unique Identifier Type Common Values.
    *
    * @return CommonLookupDetail containing the common lookup values.
@@ -79,12 +94,40 @@ public class CommonLookupService {
   }
 
   /**
+   * Get a Contact Title Common Value.
+   *
+   * @param code The code of the common lookup values
+   * @return CommonLookupDetail containing the common lookup values.
+   */
+  public Mono<CommonLookupValueDetail> getContactTitle(String code) {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_CONTACT_TITLE, code)
+        .mapNotNull(commonLookupDetail -> commonLookupDetail
+            .getContent().stream()
+            .findFirst()
+            .orElse(null));
+  }
+
+  /**
    * Get a list of Marital Status Common Values.
    *
    * @return CommonLookupDetail containing the common lookup values.
    */
   public Mono<CommonLookupDetail> getMaritalStatuses() {
     return ebsApiClient.getCommonValues(COMMON_VALUE_MARITAL_STATUS);
+  }
+
+  /**
+   * Get a Marital Status Common Value.
+   *
+   * @param code The code of the common lookup values
+   * @return CommonLookupDetail containing the common lookup values.
+   */
+  public Mono<CommonLookupValueDetail> getMaritalStatus(String code) {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_MARITAL_STATUS, code)
+        .mapNotNull(commonLookupDetail -> commonLookupDetail
+            .getContent().stream()
+            .findFirst()
+            .orElse(null));
   }
 
   /**
@@ -110,12 +153,47 @@ public class CommonLookupService {
   }
 
   /**
+   * Get a Country Common Value.
+   *
+   * @param code The code of the common lookup values
+   * @return CommonLookupValueDetail containing the common lookup value.
+   */
+  public Mono<CommonLookupValueDetail> getCountry(String code) {
+    return getCountries()
+        .flatMap(commonLookupDetail -> {
+          Optional<CommonLookupValueDetail> country = commonLookupDetail
+              .getContent()
+              .stream()
+              .filter(Objects::nonNull)
+              .filter(countryDetail -> code.equals(countryDetail.getCode()))
+              .findFirst();
+
+          return country.map(Mono::just).orElse(Mono.empty());
+        });
+  }
+
+
+  /**
    * Get a list of Correspondence Method Common Values.
    *
    * @return CommonLookupDetail containing the common lookup values.
    */
   public Mono<CommonLookupDetail> getCorrespondenceMethods() {
     return ebsApiClient.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD);
+  }
+
+  /**
+   * Get a Correspondence Method Common Values.
+   *
+   * @param code The code of the common lookup values
+   * @return CommonLookupValueDetail containing the common lookup value.
+   */
+  public Mono<CommonLookupValueDetail> getCorrespondenceMethod(String code) {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD, code)
+        .mapNotNull(commonLookupDetail -> commonLookupDetail
+            .getContent().stream()
+            .findFirst()
+            .orElse(null));
   }
 
   /**
@@ -128,12 +206,40 @@ public class CommonLookupService {
   }
 
   /**
+   * Get a Correspondence Language Common Values.
+   *
+   * @param code The code of the common lookup values
+   * @return CommonLookupValueDetail containing the common lookup value.
+   */
+  public Mono<CommonLookupValueDetail> getCorrespondenceLanguage(String code) {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE, code)
+        .mapNotNull(commonLookupDetail -> commonLookupDetail
+            .getContent().stream()
+            .findFirst()
+            .orElse(null));
+  }
+
+  /**
    * Get a list of Ethnic Origin Common Values.
    *
    * @return CommonLookupDetail containing the common lookup values.
    */
   public Mono<CommonLookupDetail> getEthnicOrigins() {
     return ebsApiClient.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN);
+  }
+
+  /**
+   * Get an Ethnic Origin Common Values.
+   *
+   * @param code The code of the common lookup values
+   * @return CommonLookupValueDetail containing the common lookup value.
+   */
+  public Mono<CommonLookupValueDetail> getEthnicOrigin(String code) {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN, code)
+        .mapNotNull(commonLookupDetail -> commonLookupDetail
+            .getContent().stream()
+            .findFirst()
+            .orElse(null));
   }
 
   /**
@@ -144,6 +250,22 @@ public class CommonLookupService {
   public Mono<CommonLookupDetail> getDisabilities() {
     return ebsApiClient.getCommonValues(COMMON_VALUE_DISABILITY);
   }
+
+  /**
+   * Get a Disability Common Values.
+   *
+   * @param code The code of the common lookup values
+   * @return CommonLookupValueDetail containing the common lookup value.
+   */
+  public Mono<CommonLookupValueDetail> getDisability(String code) {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_DISABILITY, code)
+        .mapNotNull(commonLookupDetail -> commonLookupDetail
+            .getContent().stream()
+            .findFirst()
+            .orElse(null));
+  }
+
+
 
 
 }

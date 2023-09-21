@@ -30,6 +30,7 @@ public class GlobalExceptionHandler {
     log.error("EbsApiClientException caught by GlobalExceptionHandler", e);
     // return an appropriate response
     model.addAttribute("error", e.getLocalizedMessage());
+    model.addAttribute("errorTime", System.currentTimeMillis());
 
     return "error";
   }
@@ -48,6 +49,7 @@ public class GlobalExceptionHandler {
     log.error("CaabApplicationException caught by GlobalExceptionHandler", e);
     // return an appropriate response
     model.addAttribute("error", e.getLocalizedMessage());
+    model.addAttribute("errorTime", System.currentTimeMillis());
 
     return "error";
   }
