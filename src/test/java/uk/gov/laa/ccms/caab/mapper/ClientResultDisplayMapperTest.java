@@ -13,7 +13,7 @@ import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientSummary;
 
 @ExtendWith(SpringExtension.class)
-public class ClientResultDisplayMapperTest {
+class ClientResultDisplayMapperTest {
 
   private final ClientResultDisplayMapper mapper = new ClientResultDisplayMapperImpl();
   
@@ -44,7 +44,7 @@ public class ClientResultDisplayMapperTest {
   }
 
   @Test
-  public void testToClientResultRowDisplay_FromClientSummary() {
+  void testToClientResultRowDisplay_FromClientSummary() {
     ClientSummary clientSummary = new ClientSummary();
     clientSummary.setClientReferenceNumber("client123");
 

@@ -34,6 +34,10 @@ import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
 
 public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
 
+  public static final String USER_1 = "user1";
+  public static final String USER_TYPE = "userType";
+  public static final String SOA_GATEWAY_USER_LOGIN_ID = "SoaGateway-User-Login-Id";
+  public static final String SOA_GATEWAY_USER_ROLE = "SoaGateway-User-Role";
   @RegisterExtension
   protected static WireMockExtension wiremock = WireMockExtension.newInstance()
       .options(wireMockConfig().dynamicPort())
@@ -54,16 +58,16 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   public void testGetContractDetails_returnData() throws Exception {
     Integer providerFirmId = 123;
     Integer officeId = 345;
-    String loginId = "user1";
-    String userType = "userType";
+    String loginId = USER_1;
+    String userType = USER_TYPE;
     ContractDetails contractDetails = buildContractDetails();
     String contractDetailsJson = objectMapper.writeValueAsString(contractDetails);
 
     wiremock.stubFor(
         get(String.format("/contract-details?providerFirmId=%s&officeId=%s", providerFirmId,
             officeId))
-            .withHeader("SoaGateway-User-Login-Id", equalTo(loginId))
-            .withHeader("SoaGateway-User-Role", equalTo(userType))
+            .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+            .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
             .willReturn(okJson(contractDetailsJson)));
 
     Mono<ContractDetails> response =
@@ -75,14 +79,14 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
 
   @Test
   public void testGetNotificationsSummary_returnData() throws Exception {
-    String loginId = "user1";
-    String userType = "userType";
+    String loginId = USER_1;
+    String userType = USER_TYPE;
     NotificationSummary expectedSummary = buildNotificationSummary();
     String summaryJson = objectMapper.writeValueAsString(expectedSummary);
 
     wiremock.stubFor(get(String.format("/users/%s/notifications/summary", loginId))
-        .withHeader("SoaGateway-User-Login-Id", equalTo(loginId))
-        .withHeader("SoaGateway-User-Role", equalTo(userType))
+        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
         .willReturn(okJson(summaryJson)));
 
     Mono<NotificationSummary> summaryMono =
@@ -95,8 +99,8 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
 
   @Test
   public void testGetCases_returnData() throws Exception {
-    String loginId = "user1";
-    String userType = "userType";
+    String loginId = USER_1;
+    String userType = USER_TYPE;
     int page = 0;
     int size = 20;
     CopyCaseSearchCriteria searchCriteria = buildCopyCaseSearchCriteria();
@@ -119,8 +123,8 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
         searchCriteria.getClientSurname(),
         page,
         size))
-        .withHeader("SoaGateway-User-Login-Id", equalTo(loginId))
-        .withHeader("SoaGateway-User-Role", equalTo(userType))
+        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
         .willReturn(okJson(caseDetailsJson)));
 
     CaseDetails response =
@@ -134,14 +138,14 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   @Test
   public void testGetClient_returnData() throws Exception {
     String clientReferenceNumber = "clientRef1";
-    String loginId = "user1";
-    String userType = "userType";
+    String loginId = USER_1;
+    String userType = USER_TYPE;
     ClientDetail clientDetail = new ClientDetail(); // Fill with appropriate data
     String clientDetailJson = objectMapper.writeValueAsString(clientDetail);
 
     wiremock.stubFor(get(String.format("/clients/%s", clientReferenceNumber))
-        .withHeader("SoaGateway-User-Login-Id", equalTo(loginId))
-        .withHeader("SoaGateway-User-Role", equalTo(userType))
+        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
         .willReturn(okJson(clientDetailJson)));
 
     Mono<ClientDetail> clientMono =
@@ -154,15 +158,15 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
 
   @Test
   public void testGetCaseReference_returnData() throws Exception {
-    String loginId = "user1";
-    String userType = "userType";
+    String loginId = USER_1;
+    String userType = USER_TYPE;
     CaseReferenceSummary caseReferenceSummary =
         new CaseReferenceSummary(); // Fill with appropriate data
     String caseReferenceJson = objectMapper.writeValueAsString(caseReferenceSummary);
 
     wiremock.stubFor(get("/case-reference")
-        .withHeader("SoaGateway-User-Login-Id", equalTo(loginId))
-        .withHeader("SoaGateway-User-Role", equalTo(userType))
+        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
         .willReturn(okJson(caseReferenceJson)));
 
     Mono<CaseReferenceSummary> caseReferenceMono =

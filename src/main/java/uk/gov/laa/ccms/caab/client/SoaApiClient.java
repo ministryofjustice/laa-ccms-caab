@@ -30,6 +30,10 @@ import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 @Slf4j
 @RequiredArgsConstructor
 public class SoaApiClient {
+
+  public static final String SOA_GATEWAY_USER_LOGIN_ID = "SoaGateway-User-Login-Id";
+  public static final String SOA_GATEWAY_USER_ROLE = "SoaGateway-User-Role";
+  public static final String CASE_REFERENCE_NUMBER = "case-reference-number";
   private final WebClient soaApiWebClient;
 
   private final SoaApiClientErrorHandler soaApiClientErrorHandler;
@@ -45,8 +49,8 @@ public class SoaApiClient {
     return soaApiWebClient
             .get()
             .uri("/users/{loginId}/notifications/summary", loginId)
-            .header("SoaGateway-User-Login-Id", loginId)
-            .header("SoaGateway-User-Role", userType)
+            .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+            .header(SOA_GATEWAY_USER_ROLE, userType)
             .retrieve()
             .bodyToMono(NotificationSummary.class)
             .onErrorResume(e -> soaApiClientErrorHandler
@@ -70,8 +74,8 @@ public class SoaApiClient {
                     .queryParam("providerFirmId", providerFirmId)
                     .queryParam("officeId", officeId)
                     .build())
-            .header("SoaGateway-User-Login-Id", loginId)
-            .header("SoaGateway-User-Role", userType)
+            .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+            .header(SOA_GATEWAY_USER_ROLE, userType)
             .retrieve()
             .bodyToMono(ContractDetails.class)
             .onErrorResume(e -> soaApiClientErrorHandler
@@ -110,7 +114,7 @@ public class SoaApiClient {
                             Optional.ofNullable(clientSearchCriteria
                                     .getUniqueIdentifier(
                                             UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER)))
-                    .queryParamIfPresent("case-reference-number",
+                    .queryParamIfPresent(CASE_REFERENCE_NUMBER,
                             Optional.ofNullable(clientSearchCriteria
                                     .getUniqueIdentifier(UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER)))
                     .queryParamIfPresent("page",
@@ -118,8 +122,8 @@ public class SoaApiClient {
                     .queryParamIfPresent("size",
                             Optional.ofNullable(size))
                     .build())
-            .header("SoaGateway-User-Login-Id", loginId)
-            .header("SoaGateway-User-Role", userType)
+            .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+            .header(SOA_GATEWAY_USER_ROLE, userType)
             .retrieve()
             .bodyToMono(ClientDetails.class)
             .onErrorResume(e -> soaApiClientErrorHandler
@@ -140,8 +144,8 @@ public class SoaApiClient {
     return soaApiWebClient
             .get()
             .uri("/clients/{clientReferenceNumber}", clientReferenceNumber)
-            .header("SoaGateway-User-Login-Id", loginId)
-            .header("SoaGateway-User-Role", userType)
+            .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+            .header(SOA_GATEWAY_USER_ROLE, userType)
             .retrieve()
             .bodyToMono(ClientDetail.class)
             .onErrorResume(e -> soaApiClientErrorHandler
@@ -164,7 +168,7 @@ public class SoaApiClient {
     return soaApiWebClient
             .get()
             .uri(builder -> builder.path("/cases")
-                    .queryParamIfPresent("case-reference-number", Optional.ofNullable(
+                    .queryParamIfPresent(CASE_REFERENCE_NUMBER, Optional.ofNullable(
                             copyCaseSearchCriteria.getCaseReference()))
                     .queryParamIfPresent("provider-case-reference", Optional.ofNullable(
                             copyCaseSearchCriteria.getProviderCaseReference()))
@@ -181,8 +185,8 @@ public class SoaApiClient {
                     .queryParamIfPresent("size",
                             Optional.ofNullable(size))
                     .build())
-            .header("SoaGateway-User-Login-Id", loginId)
-            .header("SoaGateway-User-Role", userType)
+            .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+            .header(SOA_GATEWAY_USER_ROLE, userType)
             .retrieve()
             .bodyToMono(CaseDetails.class)
             .onErrorResume(e -> soaApiClientErrorHandler.handleCaseDetailsError(
@@ -202,8 +206,8 @@ public class SoaApiClient {
     return soaApiWebClient
             .get()
             .uri("/case-reference")
-            .header("SoaGateway-User-Login-Id", loginId)
-            .header("SoaGateway-User-Role", userType)
+            .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+            .header(SOA_GATEWAY_USER_ROLE, userType)
             .retrieve()
             .bodyToMono(CaseReferenceSummary.class)
             .onErrorResume(soaApiClientErrorHandler::handleCaseReferenceError);

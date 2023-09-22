@@ -40,7 +40,7 @@ import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 
 @ExtendWith(MockitoExtension.class)
-public class ApplicationServiceTest {
+class ApplicationServiceTest {
   @Mock
   private CaabApiClient caabApiClient;
 
