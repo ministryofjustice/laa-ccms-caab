@@ -7,6 +7,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
@@ -24,7 +26,11 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
+import uk.gov.laa.ccms.soa.gateway.model.Notification;
+import uk.gov.laa.ccms.soa.gateway.model.NotificationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
+import uk.gov.laa.ccms.soa.gateway.model.Notifications;
+import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
 
 public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
 
@@ -167,6 +173,34 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     assertEquals(caseReferenceSummary, response);
   }
 
+  @Test
+  public void testGetNotifications_returnsData() throws JsonProcessingException {
+    Notifications notifications = buildNotifications();
+    String notificationsJson = objectMapper.writeValueAsString(notifications);
+
+    NotificationSearchCriteria criteria = new NotificationSearchCriteria();
+    criteria.setAssignedToUserId("testUserId");
+
+    criteria.setLoginId("testUserId");
+    criteria.setUserType("testUserType");
+    int page = 10;
+    int size = 10;
+
+    wiremock.stubFor(get(String.format("/notifications?assigned-to-user-id=%s&include-closed=%s&page=%s&" +
+            "size=%s",
+        criteria.getAssignedToUserId(),
+        criteria.isIncludeClosed(),
+        page,
+        size))
+        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(criteria.getLoginId()))
+        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(criteria.getUserType()))
+        .willReturn(okJson(notificationsJson)));
+    Mono<Notifications> notificationsMono =
+        soaApiClient.getNotifications(criteria,page, size);
+    Notifications response = notificationsMono.block();
+    assertEquals(notifications, response);
+  }
+
   private NotificationSummary buildNotificationSummary() {
     return new NotificationSummary()
         .notifications(10)
@@ -205,5 +239,22 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     searchCriteria.setOfficeId(345);
     searchCriteria.setClientSurname("clientSurname");
     return searchCriteria;
+  }
+
+  private Notifications buildNotifications() {
+    return new Notifications()
+        .addContentItem(
+            new Notification()
+                .notificationDetail(
+                    new NotificationDetail()
+                        .notificationType("N")
+                )
+                .user(
+                    new UserDetail()
+                        .userName("testUserName")
+                        .userType("testUserType")
+                        .userLoginId("testUserName")
+                )
+        );
   }
 }

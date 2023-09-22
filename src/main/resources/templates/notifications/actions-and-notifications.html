@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>LAA CCMS - Your actions / notifications</title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a href="/static" class="govuk-back-link">Return to home</a>
+    </div>
+    <div id="main-content">
+        <h1 class="govuk-heading-l">
+            Your actions / notifications
+        </h1>
+        <p class="govuk-body-l">
+            Your search has returned <span th:text="${notifications.content.size}"></span> results.
+            To select one of the records that has been returned, click on the
+            subject title. If the results shown do not include the actions or
+            notifications you are looking for, please review your search criteria
+            using the Refine search button at the top of the results table.
+        </p>
+        <p class="govuk-body govuk-!-text-align-right">
+            <a class="govuk-button govuk-button--secondary"
+               data-module="govuk-button"
+               href="">
+                Refine search
+            </a>
+        </p>
+
+        <table class="govuk-table">
+            <caption class="govuk-table__caption govuk-table__caption--m">Your actions / notifications</caption>
+            <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+                <th scope="col" class="govuk-table__header">Date assigned</th>
+                <th scope="col" class="govuk-table__header">Subject</th>
+                <th scope="col" class="govuk-table__header">Due date</th>
+                <th scope="col" class="govuk-table__header">Assigned to</th>
+                <th scope="col" class="govuk-table__header">Status</th>
+                <th scope="col" class="govuk-table__header">LAA Ref</th>
+                <th scope="col" class="govuk-table__header">Provider ref</th>
+                <th scope="col" class="govuk-table__header">Client</th>
+                <th scope="col" class="govuk-table__header">Fee earner</th>
+            </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+            <tr class="govuk-table__row" th:each="notification : ${notifications.content}">
+                <td class="govuk-table__cell" th:text="${#dates.format(notification.notificationDetail.assignDate,'dd-MM-yyyy')}"></td>
+                <td class="govuk-table__cell" th:text="${notification.notificationDetail.subject}"></td>
+                <td class="govuk-table__cell" th:text="${#dates.format(notification.notificationDetail.dueDate,'dd-MM-yyy')}"></td>
+                <td class="govuk-table__cell" th:text="${notification.user.userLoginId}"></td>
+                <td class="govuk-table__cell" th:text="${notification.notificationDetail.status}"></td>
+                <td class="govuk-table__cell" th:text="${notification.caseReferenceNumber}"></td>
+                <td class="govuk-table__cell" th:text="${notification.providerCaseReferenceNumber}"></td>
+                <td class="govuk-table__cell" th:text="${notification.clientName}"></td>
+                <td class="govuk-table__cell" th:text="${notification.feeEarner}"></td>
+            </tr>
+            </tbody>
+        </table>
+        <nav th:replace="~{partials/pagination :: pagination(page=${notifications})}"></nav>
+    </div>
+</div>
+</body>
+</html>

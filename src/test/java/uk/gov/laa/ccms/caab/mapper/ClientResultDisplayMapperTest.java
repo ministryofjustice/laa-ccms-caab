@@ -9,7 +9,7 @@ import uk.gov.laa.ccms.caab.model.ClientResultRowDisplay;
 import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientNameDetail;
+import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientSummary;
 
 @ExtendWith(SpringExtension.class)
@@ -19,8 +19,8 @@ public class ClientResultDisplayMapperTest {
   
 
   @Test
-  public void testToClientResultRowDisplay_FromClientDetail() {
-    ClientNameDetail name = new ClientNameDetail()
+  void testToClientResultRowDisplay_FromClientDetail() {
+    NameDetail name = new NameDetail()
         .firstName("John")
         .surname("Doe")
         .surnameAtBirth("Smith");
