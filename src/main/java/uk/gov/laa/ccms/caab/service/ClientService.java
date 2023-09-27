@@ -6,8 +6,11 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
+import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
 
 /**
  * Service class to handle Clients.
@@ -48,5 +51,31 @@ public class ClientService {
   public Mono<ClientDetail> getClient(String clientReferenceNumber, String loginId,
       String userType) {
     return soaApiClient.getClient(clientReferenceNumber, loginId, userType);
+  }
+
+  /**
+   * Fetches the transaction status for a client create transaction.
+   *
+   * @param transactionId         The transaction id for the client create transaction in soa.
+   * @param loginId               The login identifier for the user.
+   * @param userType              Type of the user (e.g., admin, user).
+   * @return A Mono wrapping the ClientDetail.
+   */
+  public Mono<ClientStatus> getClientStatus(String transactionId, String loginId,
+                                            String userType) {
+    return soaApiClient.getClientStatus(transactionId, loginId, userType);
+  }
+
+  /**
+   * Creates a client based on a given client details.
+   *
+   * @param clientDetails         The client's details.
+   * @param loginId               The login identifier for the user.
+   * @param userType              Type of the user (e.g., admin, user).
+   * @return A Mono wrapping the ClientCreated transaction id.
+   */
+  public Mono<ClientCreated> postClient(ClientDetailDetails clientDetails, String loginId,
+                                        String userType){
+    return soaApiClient.postClient(clientDetails, loginId, userType);
   }
 }

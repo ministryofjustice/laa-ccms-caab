@@ -112,11 +112,13 @@ public class ClientBasicDetailsController {
     clientDetails.setFirstName(clientSearchCriteria.getForename());
     clientDetails.setSurnameAtBirth(clientSearchCriteria.getSurname());
 
-    String dob = clientSearchCriteria.getDobDay() + "/"
-            + clientSearchCriteria.getDobMonth() + "/"
-            + clientSearchCriteria.getDobYear();
+//    String dob = clientSearchCriteria.getDobDay() + "/"
+//            + clientSearchCriteria.getDobMonth() + "/"
+//            + clientSearchCriteria.getDobYear();
 
-    clientDetails.setDateOfBirth(dob);
+    clientDetails.setDobDay(clientSearchCriteria.getDobDay());
+    clientDetails.setDobMonth(clientSearchCriteria.getDobMonth());
+    clientDetails.setDobYear(clientSearchCriteria.getDobYear());
 
     clientDetails.setNationalInsuranceNumber(
             clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER));

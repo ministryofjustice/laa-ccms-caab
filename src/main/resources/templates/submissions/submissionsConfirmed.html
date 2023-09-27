@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>LAA CCMS - Start new application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs"></div>
+  <div id="main-content" style="padding-top: 40px;">
+    <form action="#" th:action="'/submissions/' + ${submissionType} + '/confirmed'" method="post">
+      <h1 class="govuk-heading-l">
+        Submission confirmation
+      </h1>
+      <p class="govuk-body-l">
+        Your data has been successfully processed. Please click 'Next' to continue.
+      </p>
+      <div class="govuk-button-group">
+        <button type="submit" class="govuk-button" data-module="govuk-button">
+          Next
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

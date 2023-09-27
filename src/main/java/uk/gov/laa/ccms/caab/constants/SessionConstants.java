@@ -64,5 +64,10 @@ public class SessionConstants {
    */
   public static final String CLIENT_ADDRESS_SEARCH_RESULTS = "clientAddressSearchResults";
 
+  /**
+   * Session attribute used to keep track of submission transactions.
+   */
+  public static final String SUBMISSION_TRANSACTION_ID = "submissionTransactionId";
+
 
 }

@@ -1,7 +1,11 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_CLIENT;
 
+import jakarta.servlet.http.HttpSession;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +18,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -23,8 +28,13 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
+import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 /**
  * Controller for handling client summary details during the new application process.
@@ -37,6 +47,8 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 })
 public class ClientSummaryController {
 
+  private final ClientService clientService;
+
   private final CommonLookupService commonLookupService;
 
   private final ClientBasicDetailsValidator basicValidator;
@@ -46,6 +58,8 @@ public class ClientSummaryController {
   private final ClientAddressDetailsValidator addressValidator;
 
   private final ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator;
+
+  private final ClientDetailMapper clientDetailsMapper;
 
   /**
    * Handles the GET request for the client summary page.
@@ -71,7 +85,10 @@ public class ClientSummaryController {
   @PostMapping("application/client/details/summary")
   public String clientDetailsSummary(
       @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
-      BindingResult bindingResult) {
+      @SessionAttribute(USER_DETAILS) UserDetail user,
+      BindingResult bindingResult,
+      HttpSession session
+      ) {
     log.info("POST /application/client/details/summary");
 
     basicValidator.validate(clientDetails, bindingResult);
@@ -84,7 +101,23 @@ public class ClientSummaryController {
           "Client submission containing missing or invalid client details.");
     }
 
-    return "redirect:/submissions/client-create";
+    ClientDetail clientDetail = clientDetailsMapper.toSoaClientDetail(clientDetails);
+
+    //add soa call here to create client
+    ClientCreated response =
+        clientService.postClient(
+            clientDetail.getDetails(),
+            user.getLoginId(),
+            user.getUserType()).block();
+
+    log.debug("SOA Client Details to post: {}", clientDetail);
+
+    //TODO add error on transactionID if it doesnt exist
+
+    session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
+    session.removeAttribute(CLIENT_DETAILS);
+
+    return String.format("redirect:/submissions/%s", SUBMISSION_CREATE_CLIENT);
   }
 
   private void populateSummaryListLookups(ClientDetails clientDetails, Model model) {

@@ -7,6 +7,7 @@ import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQU
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -14,8 +15,11 @@ import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
+import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
+import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
@@ -144,6 +148,52 @@ public class SoaApiClient {
             .bodyToMono(ClientDetail.class)
             .onErrorResume(e -> soaApiClientErrorHandler
                     .handleClientDetailError(clientReferenceNumber, e));
+
+  }
+
+  /**
+   * Fetches the transaction status for a client create transaction.
+   *
+   * @param transactionId         The transaction id for the client create transaction in soa.
+   * @param loginId               The login identifier for the user.
+   * @param userType              Type of the user (e.g., admin, user).
+   * @return A Mono wrapping the ClientDetail.
+   */
+  public Mono<ClientStatus> getClientStatus(String transactionId, String loginId,
+                                            String userType) {
+    return soaApiWebClient
+        .get()
+        .uri("/clients/status/{transactionId}", transactionId)
+        .header("SoaGateway-User-Login-Id", loginId)
+        .header("SoaGateway-User-Role", userType)
+        .retrieve()
+        .bodyToMono(ClientStatus.class);
+//        .onErrorResume(e -> soaApiClientErrorHandler
+//            .handleClientDetailError(clientReferenceNumber, e));
+
+  }
+
+  /**
+   * Creates a client based on a given client details.
+   *
+   * @param clientDetails         The client's details.
+   * @param loginId               The login identifier for the user.
+   * @param userType              Type of the user (e.g., admin, user).
+   * @return A Mono wrapping the ClientCreated transaction id.
+   */
+  public Mono<ClientCreated> postClient(ClientDetailDetails clientDetails, String loginId,
+                                        String userType) {
+    return soaApiWebClient
+        .post()
+        .uri("/clients")
+        .header("SoaGateway-User-Login-Id", loginId)
+        .header("SoaGateway-User-Role", userType)
+        .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
+        .bodyValue(clientDetails)
+        .retrieve()
+        .bodyToMono(ClientCreated.class);
+//        .onErrorResume(e -> soaApiClientErrorHandler
+//            .handleClientDetailError(clientReferenceNumber, e));
 
   }
 
