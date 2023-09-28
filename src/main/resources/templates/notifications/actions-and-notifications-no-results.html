@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>LAA CCMS - Your actions / notifications</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a href="/static" class="govuk-back-link">Return to home</a>
+  </div>
+  <div id="main-content">
+    <h1 class="govuk-heading-l">
+      Your actions / notifications
+    </h1>
+    <p class="govuk-body-l">
+      Your search has returned <span th:text="0"></span> results.
+      If the results shown do not include the actions or
+      notifications you are looking for, please review your search criteria
+      using the Refine search button.
+    </p>
+    <p class="govuk-body govuk-!-text-align-right">
+      <a class="govuk-button govuk-button--secondary"
+         data-module="govuk-button"
+         href="">
+        Refine search
+      </a>
+    </p>
+    <p class="govuk-body-l">
+      There are no actions or notifications that match the specified search criteria
+    </p>
+
+  </div>
+</div>
+</body>
+</html>

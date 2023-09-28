@@ -9,12 +9,14 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
+import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 
 /**
  * Provides error handling capabilities for the SoaApiClient.
@@ -119,6 +121,37 @@ public class SoaApiClientErrorHandler {
    */
   public Mono<CaseReferenceSummary> handleCaseReferenceError(Throwable e) {
     log.error("Failed to retrieve CaseReferenceSummary", e);
+    return Mono.empty();
+  }
+
+  /**
+   * Handles errors that occur while fetching Notifications.
+   *
+   * @param criteria the search criteria.
+   * @param e Exception thrown during operation.
+   * @return and empty Mono.
+   */
+  public Mono<Notifications> handleNotificationsError(NotificationSearchCriteria criteria,
+      Throwable e) {
+    log.error("Failed to retrieve Notifications for "
+            + "caseReferenceNumber: {}, "
+            + "providerCaseReference: {}, "
+            + "assignedToUserId: {}, "
+            + "clientSurname: {}"
+            + "feeEarnerId: {}, "
+            + "includeClosed: {}, "
+            + "notificationType: {}, "
+            + "dateFrom: {}, "
+            + "dateTo: {}",
+        criteria.getCaseReference(),
+        criteria.getProviderCaseReference(),
+        criteria.getAssignedToUserId(),
+        criteria.getClientSurname(),
+        criteria.getFeeEarnerId(),
+        criteria.isIncludeClosed(),
+        criteria.getNotificationType(),
+        criteria.getDateFrom(),
+        criteria.getDateTo(), e);
     return Mono.empty();
   }
 
