@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_CLIENT;
@@ -31,6 +32,8 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.util.ReflectionUtils;
+import uk.gov.laa.ccms.caab.util.SessionUtil;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
@@ -70,7 +73,6 @@ public class ClientSummaryController {
   public String clientDetailsSummary(
       @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
       Model model) {
-    log.info("GET /application/client/details/summary");
 
     populateSummaryListLookups(clientDetails, model);
 
@@ -87,9 +89,7 @@ public class ClientSummaryController {
       @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       BindingResult bindingResult,
-      HttpSession session
-      ) {
-    log.info("POST /application/client/details/summary");
+      HttpSession session) {
 
     basicValidator.validate(clientDetails, bindingResult);
     contactValidator.validate(clientDetails, bindingResult);
@@ -101,6 +101,7 @@ public class ClientSummaryController {
           "Client submission containing missing or invalid client details.");
     }
 
+    ReflectionUtils.nullifyStrings(clientDetails);
     ClientDetail clientDetail = clientDetailsMapper.toSoaClientDetail(clientDetails);
 
     //add soa call here to create client
@@ -110,12 +111,7 @@ public class ClientSummaryController {
             user.getLoginId(),
             user.getUserType()).block();
 
-    log.debug("SOA Client Details to post: {}", clientDetail);
-
-    //TODO add error on transactionID if it doesnt exist
-
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
-    session.removeAttribute(CLIENT_DETAILS);
 
     return String.format("redirect:/submissions/%s", SUBMISSION_CREATE_CLIENT);
   }

@@ -2,10 +2,12 @@ package uk.gov.laa.ccms.caab.controller.application.submission;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_INFORMATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
+import java.util.Enumeration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.service.ClientService;
+import uk.gov.laa.ccms.caab.util.SessionUtil;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
@@ -25,19 +28,9 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes({
-    CLIENT_DETAILS,
-    SUBMISSION_TRANSACTION_ID
-})
 public class ClientCreateSubmissionInProgressController {
 
   private final ClientService clientService;
-
-  //TODO Remove this
-  @ModelAttribute(SUBMISSION_TRANSACTION_ID)
-  public String getTransactionId(){
-    return "202309221121586000634848422";
-  }
 
   /**
    * Handles the GET request for the client creation submission in progress screen.
@@ -46,17 +39,16 @@ public class ClientCreateSubmissionInProgressController {
    */
   @GetMapping("submissions/client-create")
   public String submissionsInProgress(
-      @ModelAttribute(SUBMISSION_TRANSACTION_ID) String transactionId,
+      @SessionAttribute(SUBMISSION_TRANSACTION_ID) String transactionId,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       HttpSession session) {
-    log.info("GET /submissions/client-create/{}", transactionId);
 
     ClientStatus clientStatus = clientService.getClientStatus(
         transactionId,
         user.getLoginId(),
         user.getUserType()).block();
 
-    if (StringUtils.hasText(clientStatus.getClientReferenceNumber())){
+    if (StringUtils.hasText(clientStatus.getClientReferenceNumber())) {
 
       ClientDetail clientInformation = clientService.getClient(
           clientStatus.getClientReferenceNumber(),
@@ -64,12 +56,29 @@ public class ClientCreateSubmissionInProgressController {
           user.getUserType()).block();
 
       session.setAttribute(CLIENT_INFORMATION, clientInformation);
+
+      //Do some session tidy up
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
+      session.removeAttribute(CLIENT_SEARCH_CRITERIA);
+      session.removeAttribute(CLIENT_DETAILS);
+
       return String.format("redirect:/submissions/client-create/confirmed");
     }
 
-    //TODO increment poll count
+    return incrementPollCountAndReturnView(session);
+  }
 
+  private String incrementPollCountAndReturnView(HttpSession session) {
+    int submissionPollCount = 0;
+    if (session.getAttribute("submissionPollCount") != null) {
+      submissionPollCount = (int) session.getAttribute("submissionPollCount");
+      if (submissionPollCount >= 6) {
+        return "redirect:/submissions/client-create/failed";
+      }
+    }
+    submissionPollCount = submissionPollCount + 1;
+    session.setAttribute("submissionPollCount", submissionPollCount);
     return "submissions/submissionsInProgress";
   }
+
 }

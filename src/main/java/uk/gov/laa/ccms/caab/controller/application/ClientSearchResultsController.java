@@ -63,8 +63,6 @@ public class ClientSearchResultsController {
           @SessionAttribute(USER_DETAILS) UserDetail user,
           HttpServletRequest request,
           Model model) {
-    log.info("GET /application/client/results");
-
     ClientDetails clientSearchResults = clientService.getClients(
             clientSearchCriteria,
             user.getLoginId(),
@@ -99,7 +97,6 @@ public class ClientSearchResultsController {
   public String clientSearch(
       @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
       Model model) {
-    log.info("POST /application/client/results");
 
     // a post only occurs when register new client has been clicked ,if so we want to amend
     // application created to false, so they get redirected correctly after the privacy notice

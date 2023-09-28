@@ -9,7 +9,7 @@ import lombok.Data;
 public class SubmissionConstants {
 
   /**
-   * submission used for create client
+   * submission used for create client.
    */
   public static final String SUBMISSION_CREATE_CLIENT = "client-create";
 }

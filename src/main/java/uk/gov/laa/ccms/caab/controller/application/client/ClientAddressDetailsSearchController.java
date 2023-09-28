@@ -45,7 +45,6 @@ public class ClientAddressDetailsSearchController {
   public String clientDetailsAddressSearch(
       @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
       Model model, HttpSession session) {
-    log.info("GET /application/client/details/address/search");
 
     ClientAddressResultsDisplay clientAddressSearchResults =
         addressService.getAddresses(clientDetails.getPostcode());

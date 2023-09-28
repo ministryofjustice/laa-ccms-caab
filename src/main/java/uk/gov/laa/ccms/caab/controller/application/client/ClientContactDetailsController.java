@@ -44,7 +44,7 @@ public class ClientContactDetailsController {
   public String clientDetailsContact(
           @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
           Model model) {
-    log.info("GET /application/client/details/contact");
+
     populateDropdowns(model);
     return "application/client/contact-client-details";
   }
@@ -62,7 +62,6 @@ public class ClientContactDetailsController {
       @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
       BindingResult bindingResult,
       Model model) {
-    log.info("POST /application/client/details/contact");
 
     clientContactDetailsValidator.validate(clientDetails, bindingResult);
     model.addAttribute(CLIENT_DETAILS, clientDetails);

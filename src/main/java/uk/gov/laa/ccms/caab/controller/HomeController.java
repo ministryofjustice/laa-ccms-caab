@@ -29,7 +29,6 @@ public class HomeController {
    */
   @GetMapping("/")
   public String home(Model model) {
-
     UserDetail user = (UserDetail) model.getAttribute(USER_DETAILS);
 
     // Retrieve a summary of the User's Notifications & Actions from the SOA Gateway

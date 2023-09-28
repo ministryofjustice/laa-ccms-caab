@@ -45,7 +45,6 @@ public class ClientEqualOpportunitiesMonitoringDetailsController {
   public String clientDetailsEqualOpportunitiesMonitoring(
           @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
           Model model) {
-    log.info("GET /application/client/details/equal-opportunities-monitoring");
     populateDropdowns(model);
     return "application/client/equal-opportunities-monitoring-client-details";
   }
@@ -63,7 +62,6 @@ public class ClientEqualOpportunitiesMonitoringDetailsController {
       @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
       BindingResult bindingResult,
       Model model) {
-    log.info("POST /application/client/details/equal-opportunities-monitoring");
 
     validator.validate(clientDetails, bindingResult);
     model.addAttribute(CLIENT_DETAILS, clientDetails);

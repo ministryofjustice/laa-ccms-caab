@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.advice;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
@@ -51,6 +52,26 @@ public class GlobalExceptionHandler {
     model.addAttribute("error", e.getLocalizedMessage());
     model.addAttribute("errorTime", System.currentTimeMillis());
 
+    return "error";
+  }
+
+  /**
+   * Handles {@link ServletRequestBindingException} by logging the error details and returning an
+   * appropriate error response.
+   *
+   * @param e The ServletRequestBindingException that was thrown.
+   * @param model The Model object to which error information will be added.
+   * @return The name of the error view to be displayed.
+   */
+  @ExceptionHandler(value = {ServletRequestBindingException.class})
+  public String handleServletRequestBindingException(
+      ServletRequestBindingException e,
+      Model model) {
+    // Generic handler
+    log.error("ServletRequestBindingException caught by GlobalExceptionHandler", e);
+    // return an appropriate response
+    model.addAttribute("error", e.getLocalizedMessage());
+    model.addAttribute("errorTime", System.currentTimeMillis());
     return "error";
   }
 }

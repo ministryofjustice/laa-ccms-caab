@@ -33,7 +33,6 @@ public class PrivacyNoticeAgreementController {
   @GetMapping("/application/agreement")
   public String privacyNoticeAgreement(
           @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails) {
-    log.info("GET /application/agreement: {}", applicationDetails);
     return "application/privacy-notice-agreement";
   }
 
@@ -48,7 +47,6 @@ public class PrivacyNoticeAgreementController {
   public String privacyNoticeAgreement(
           @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
           BindingResult bindingResult) {
-    log.info("POST /application/agreement: {}", applicationDetails);
     applicationValidator.validate(applicationDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {
@@ -71,7 +69,6 @@ public class PrivacyNoticeAgreementController {
    */
   @GetMapping("/application/agreement/print")
   public String privacyNoticeAgreementPrintable() {
-    log.info("GET /application/agreement/printable");
     return "application/privacy-notice-agreement-printable";
   }
 

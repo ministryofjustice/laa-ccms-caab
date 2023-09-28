@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.mapper;
 
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -25,7 +27,8 @@ public interface ClientDetailMapper {
       source = "clientFormData",
       qualifiedByName = "mapFullName")
   @Mapping(target = "details.personalInformation.dateOfBirth",
-      source = "dateOfBirth")
+      source = ".",
+      qualifiedByName = "mapDateOfBirth")
   @Mapping(target = "details.personalInformation.dateOfDeath",
       ignore = true)
   @Mapping(target = "details.personalInformation.gender",
@@ -67,6 +70,10 @@ public interface ClientDetailMapper {
   @Mapping(target = "details.disabilityMonitoring.disabilityType",
       source = "disability",
       qualifiedByName = "mapStringToList")
+  @Mapping(target = "details.ethnicMonitoring",
+      source = "ethnicOrigin")
+  @Mapping(target = "details.specialConsiderations",
+      source = "specialConsiderations")
   @Mapping(target = "details.noFixedAbode",
       source = "noFixedAbode")
   @Mapping(target = "details.address.addressId",
@@ -108,7 +115,26 @@ public interface ClientDetailMapper {
   @Named("mapFullName")
   default String mapFullName(ClientDetails clientFormData) {
     if (clientFormData != null) {
-      return clientFormData.getFirstName() + " " + clientFormData.getMiddleNames() + " " + clientFormData.getSurname();
+      return clientFormData.getFirstName()
+          + " " + clientFormData.getMiddleNames()
+          + " " + clientFormData.getSurname();
+    }
+    return null;
+  }
+
+  @Named("mapDateOfBirth")
+  default Date mapDateOfBirth(ClientDetails clientFormData) {
+    if (clientFormData != null) {
+      int day = Integer.parseInt(clientFormData.getDobDay());
+
+      // Subtract 1 since Calendar months are zero-based
+      int month = Integer.parseInt(clientFormData.getDobMonth()) - 1;
+      int year = Integer.parseInt(clientFormData.getDobYear());
+
+      Calendar calendar = Calendar.getInstance();
+      calendar.set(year, month, day);
+
+      return calendar.getTime();
     }
     return null;
   }

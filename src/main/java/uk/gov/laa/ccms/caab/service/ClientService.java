@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
@@ -37,6 +38,7 @@ public class ClientService {
       String userType,
       Integer page,
       Integer size) {
+    log.debug("SOA Clients to get using criteria: {}", clientSearchCriteria);
     return soaApiClient.getClients(clientSearchCriteria, loginId, userType, page, size);
   }
 
@@ -50,6 +52,7 @@ public class ClientService {
    */
   public Mono<ClientDetail> getClient(String clientReferenceNumber, String loginId,
       String userType) {
+    log.debug("SOA Client to get using reference: {}", clientReferenceNumber);
     return soaApiClient.getClient(clientReferenceNumber, loginId, userType);
   }
 
@@ -63,6 +66,7 @@ public class ClientService {
    */
   public Mono<ClientStatus> getClientStatus(String transactionId, String loginId,
                                             String userType) {
+    log.debug("SOA Client Status to get using transaction Id: {}", transactionId);
     return soaApiClient.getClientStatus(transactionId, loginId, userType);
   }
 
@@ -74,8 +78,11 @@ public class ClientService {
    * @param userType              Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientCreated transaction id.
    */
-  public Mono<ClientCreated> postClient(ClientDetailDetails clientDetails, String loginId,
-                                        String userType){
+  public Mono<ClientCreated> postClient(
+      ClientDetailDetails clientDetails,
+      String loginId,
+      String userType) {
+    log.debug("SOA Client Details to post: {}", clientDetails);
     return soaApiClient.postClient(clientDetails, loginId, userType);
   }
 }

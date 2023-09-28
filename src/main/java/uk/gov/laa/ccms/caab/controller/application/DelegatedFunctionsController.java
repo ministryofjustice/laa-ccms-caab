@@ -33,8 +33,6 @@ public class DelegatedFunctionsController {
   @GetMapping("/application/delegated-functions")
   public String delegatedFunction(
           @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails) {
-    log.info("GET /application/delegated-functions: {}", applicationDetails);
-
     return "application/select-delegated-functions";
   }
 
@@ -50,7 +48,6 @@ public class DelegatedFunctionsController {
   public String delegatedFunction(
           @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
           BindingResult bindingResult) {
-    log.info("POST /application/delegated-functions: {}", applicationDetails);
     delegatedFunctionsValidator.validate(applicationDetails, bindingResult);
 
     if (!applicationDetails.isDelegatedFunctions()) {

@@ -32,8 +32,6 @@ public class CancelClientRegistrationController {
    */
   @GetMapping("application/client/details/cancel")
   public String clientDetailsBasic() {
-    log.info("GET /application/client/details/cancel");
-
     return "application/client/cancel-client";
   }
 

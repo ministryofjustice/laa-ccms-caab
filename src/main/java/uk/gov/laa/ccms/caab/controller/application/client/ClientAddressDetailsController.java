@@ -51,7 +51,6 @@ public class ClientAddressDetailsController {
           @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
           Model model,
           BindingResult bindingResult) {
-    log.info("GET /application/client/details/address");
 
     populateDropdowns(model);
 
