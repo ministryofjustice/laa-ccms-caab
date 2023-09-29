@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application;
+package uk.gov.laa.ccms.caab.controller.application.client;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;

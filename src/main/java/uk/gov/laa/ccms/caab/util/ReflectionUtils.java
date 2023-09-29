@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.util;
 
 import java.lang.reflect.Field;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 /**
  * A utility class providing functionality related to Java reflection.
@@ -31,8 +32,8 @@ public class ReflectionUtils {
             f.set(o, null);
           }
         }
-      } catch (Exception e) {
-        throw new RuntimeException(e);
+      } catch (IllegalAccessException e) {
+        throw new CaabApplicationException("Failed to nullify field: " + f.getName(), e);
       }
     }
   }

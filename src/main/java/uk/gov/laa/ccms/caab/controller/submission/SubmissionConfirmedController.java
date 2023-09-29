@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application.submission;
+package uk.gov.laa.ccms.caab.controller.submission;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,7 @@ public class SubmissionConfirmedController {
    *
    * @return The view name for a completed submission.
    */
-  @GetMapping("submissions/{submissionType}/confirmed")
+  @GetMapping("/submissions/{submissionType}/confirmed")
   public String submissionsConfirmed(
       @PathVariable String submissionType,
       Model model) {

@@ -10,6 +10,10 @@ import org.mapstruct.Named;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
+/**
+ * Maps between Client details form bean and the soa-api client detail. Requires the
+ * {@link uk.gov.laa.ccms.caab.mapper.IgnoreUnmappedMapperConfig}.
+ */
 @Mapper(componentModel = "spring", config = IgnoreUnmappedMapperConfig.class)
 public interface ClientDetailMapper {
 
@@ -104,6 +108,12 @@ public interface ClientDetailMapper {
       source = "postcode")
   ClientDetail toSoaClientDetail(ClientDetails clientFormData);
 
+  /**
+   * Translates a string into a singleton list.
+   *
+   * @param value The String to translate.
+   * @return Translated singleton list.
+   */
   @Named("mapStringToList")
   default List<String> map(String value) {
     if (value != null) {
@@ -112,6 +122,12 @@ public interface ClientDetailMapper {
     return null;
   }
 
+  /**
+   * Translates the client name details into a single full name String.
+   *
+   * @param clientFormData The client details containing all name components
+   * @return Translated String of full name details.
+   */
   @Named("mapFullName")
   default String mapFullName(ClientDetails clientFormData) {
     if (clientFormData != null) {
@@ -122,6 +138,12 @@ public interface ClientDetailMapper {
     return null;
   }
 
+  /**
+   * Translates the clients dob name, month, year into a Date object.
+   *
+   * @param clientFormData The client details containing all dob components
+   * @return Translated Date for date of birth.
+   */
   @Named("mapDateOfBirth")
   default Date mapDateOfBirth(ClientDetails clientFormData) {
     if (clientFormData != null) {

@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application.submission;
+package uk.gov.laa.ccms.caab.controller.submission;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_INFORMATION;
@@ -7,17 +7,13 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSAC
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
-import java.util.Enumeration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.SessionAttribute;
-import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.service.ClientService;
-import uk.gov.laa.ccms.caab.util.SessionUtil;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
@@ -37,7 +33,7 @@ public class ClientCreateSubmissionInProgressController {
    *
    * @return The view name for the submission in progress.
    */
-  @GetMapping("submissions/client-create")
+  @GetMapping("/submissions/client-create")
   public String submissionsInProgress(
       @SessionAttribute(SUBMISSION_TRANSACTION_ID) String transactionId,
       @SessionAttribute(USER_DETAILS) UserDetail user,
@@ -65,10 +61,10 @@ public class ClientCreateSubmissionInProgressController {
       return String.format("redirect:/submissions/client-create/confirmed");
     }
 
-    return incrementPollCountAndReturnView(session);
+    return viewIncludingPollCount(session);
   }
 
-  private String incrementPollCountAndReturnView(HttpSession session) {
+  private String viewIncludingPollCount(HttpSession session) {
     int submissionPollCount = 0;
     if (session.getAttribute("submissionPollCount") != null) {
       submissionPollCount = (int) session.getAttribute("submissionPollCount");

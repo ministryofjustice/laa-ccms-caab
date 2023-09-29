@@ -12,8 +12,11 @@ import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
+import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
+import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
@@ -110,6 +113,34 @@ public class SoaApiClientErrorHandler {
     log.error("Failed to retrieve ClientDetail for clientReferenceNumber: {}",
             clientReferenceNumber,
             e);
+    return Mono.empty();
+  }
+
+  /**
+   * Handles errors that occur while posting a client to soa.
+   *
+   * @param transactionId the id for the transaction creating the client.
+   * @param e Exception thrown during operation.
+   * @return An empty Mono.
+   */
+  public Mono<ClientStatus> handleClientStatusError(String transactionId, Throwable e) {
+    log.error("Failed to retrieve Client Status for: {}",
+        transactionId,
+        e);
+    return Mono.empty();
+  }
+
+  /**
+   * Handles errors that occur while fetching Client Status.
+   *
+   * @param fullName client full name.
+   * @param e Exception thrown during operation.
+   * @return An empty Mono.
+   */
+  public Mono<ClientCreated> handleClientCreatedError(String fullName, Throwable e) {
+    log.error("Failed to create Client: {}",
+        fullName,
+        e);
     return Mono.empty();
   }
 

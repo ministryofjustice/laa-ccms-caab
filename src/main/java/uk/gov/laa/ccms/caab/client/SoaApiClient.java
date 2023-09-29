@@ -170,12 +170,12 @@ public class SoaApiClient {
     return soaApiWebClient
         .get()
         .uri("/clients/status/{transactionId}", transactionId)
-        .header("SoaGateway-User-Login-Id", loginId)
-        .header("SoaGateway-User-Role", userType)
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
-        .bodyToMono(ClientStatus.class);
-//        .onErrorResume(e -> soaApiClientErrorHandler
-//            .handleClientDetailError(clientReferenceNumber, e));
+        .bodyToMono(ClientStatus.class)
+        .onErrorResume(e -> soaApiClientErrorHandler
+            .handleClientStatusError(transactionId, e));
 
   }
 
@@ -197,10 +197,9 @@ public class SoaApiClient {
         .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
         .bodyValue(clientDetails)
         .retrieve()
-        .bodyToMono(ClientCreated.class);
-//        .onErrorResume(e -> soaApiClientErrorHandler
-//            .handleClientDetailError(clientReferenceNumber, e));
-
+        .bodyToMono(ClientCreated.class)
+        .onErrorResume(e -> soaApiClientErrorHandler
+            .handleClientCreatedError(clientDetails.getName().getFullName(), e));
   }
 
   /**

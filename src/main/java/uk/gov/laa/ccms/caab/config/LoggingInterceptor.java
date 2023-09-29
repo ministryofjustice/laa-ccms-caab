@@ -2,10 +2,13 @@ package uk.gov.laa.ccms.caab.config;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
+import jakarta.servlet.http.HttpSession;
+import java.util.Enumeration;
+import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
@@ -16,9 +19,11 @@ import org.springframework.web.servlet.ModelAndView;
  * or @RestController. For POST requests, it additionally logs any redirect URL after the controller
  * processing.
  */
-@Slf4j
 @Component
 public class LoggingInterceptor implements HandlerInterceptor {
+
+  @Setter
+  private Logger log = LoggerFactory.getLogger(LoggingInterceptor.class);
 
   /**
    * Logs the request method and URI before the controller method is invoked.
@@ -39,8 +44,7 @@ public class LoggingInterceptor implements HandlerInterceptor {
       Class<?> beanType = handlerMethod.getBeanType();
 
       // Check if it's a controller or rest controller
-      if (beanType.isAnnotationPresent(Controller.class)
-          || beanType.isAnnotationPresent(RestController.class)) {
+      if (beanType.isAnnotationPresent(Controller.class)) {
         log.info("[{}] {}",
             request.getMethod(),
             request.getRequestURI());
@@ -63,23 +67,36 @@ public class LoggingInterceptor implements HandlerInterceptor {
       HttpServletResponse response,
       Object handler,
       ModelAndView modelAndView) {
-    if (handler instanceof HandlerMethod handlerMethod
-        && request.getMethod().equalsIgnoreCase("POST")) {
+    if (handler instanceof HandlerMethod handlerMethod) {
       Class<?> beanType = handlerMethod.getBeanType();
 
       // Check if it's a controller or rest controller
-      if ((beanType.isAnnotationPresent(Controller.class)
-          || beanType.isAnnotationPresent(RestController.class))
+      if ((beanType.isAnnotationPresent(Controller.class))
           && modelAndView != null && modelAndView.getViewName() != null) {
 
-        String viewName = modelAndView.getViewName();
-        if (viewName.startsWith("redirect:")) {
-          log.info("[{}] {} - Redirecting to: [GET] {}",
-              request.getMethod(),
-              request.getRequestURI(),
-              viewName.substring("redirect:".length()));
-        }
+        printAllSessionAttributeNames(request.getSession());
+
+        log.debug("[DISPLAY] {}",
+            modelAndView.getViewName());
       }
     }
+  }
+
+
+  /**
+   * Prints the names of all attributes stored in the provided HttpSession.
+   *
+   * @param session The HttpSession object from which attributes will be fetched and logged.
+   */
+  private void printAllSessionAttributeNames(HttpSession session) {
+    Enumeration<String> attributeNames = session.getAttributeNames();
+
+    StringBuilder sessionLogs = new StringBuilder("[SESSION KEYS] - [");
+    while (attributeNames.hasMoreElements()) {
+      String attributeName = attributeNames.nextElement();
+      sessionLogs.append(String.format("%s,", attributeName));
+    }
+    sessionLogs.append("]");
+    log.debug("{}", sessionLogs);
   }
 }

@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application.submission;
+package uk.gov.laa.ccms.caab.controller.submission;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_INFORMATION;
@@ -10,18 +10,10 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
-import org.springframework.web.bind.annotation.SessionAttributes;
-import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
-import uk.gov.laa.ccms.caab.service.ClientService;
-import uk.gov.laa.ccms.caab.util.SessionUtil;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
@@ -44,7 +36,7 @@ public class ClientCreateSubmissionConfirmedController {
    * @param session The http session for the view.
    * @return The view name for a client creation submission page.
    */
-  @PostMapping("submissions/client-create/confirmed")
+  @PostMapping("/submissions/client-create/confirmed")
   public String submissionsConfirmed(
       @SessionAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
       @SessionAttribute(USER_DETAILS) UserDetail user,
@@ -61,4 +53,6 @@ public class ClientCreateSubmissionConfirmedController {
         })
         .thenReturn("redirect:/application/summary").block();
   }
+
+
 }

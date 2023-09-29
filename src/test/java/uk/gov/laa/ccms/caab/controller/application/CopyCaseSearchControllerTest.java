@@ -1,5 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
@@ -12,7 +16,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COPY_CASE_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import jakarta.servlet.ServletException;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +36,7 @@ import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteriaValidator;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.data.model.BaseOffice;
 import uk.gov.laa.ccms.data.model.BaseProvider;
@@ -78,6 +85,21 @@ public class CopyCaseSearchControllerTest {
         .andExpect(view().name("application/application-copy-case-search"))
         .andExpect(model().attribute("feeEarners", feeEarners))
         .andExpect(model().attribute("offices", user.getProvider().getOffices()));
+  }
+
+  @Test
+  public void testGetCopyCaseSearchNoFeeEarners() throws Exception {
+    final UserDetail user = buildUser();
+
+    when(providerService.getProvider(user.getProvider().getId()))
+        .thenReturn(Mono.empty());
+
+    Exception exception = assertThrows(Exception.class, () ->
+        this.mockMvc.perform(get("/application/copy-case/search")
+            .sessionAttr(USER_DETAILS, user)));
+
+    assertTrue(exception.getCause() instanceof CaabApplicationException);
+    assertEquals(String.format("Failed to retrieve Provider with id: %s", user.getProvider().getId()), exception.getCause().getMessage());
   }
 
   @Test
