@@ -4,6 +4,8 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -130,12 +132,15 @@ public interface ClientDetailMapper {
    */
   @Named("mapFullName")
   default String mapFullName(ClientDetails clientFormData) {
-    if (clientFormData != null) {
-      return clientFormData.getFirstName()
-          + " " + clientFormData.getMiddleNames()
-          + " " + clientFormData.getSurname();
-    }
-    return null;
+    String fullName = Stream.of(
+            clientFormData.getFirstName(),
+            clientFormData.getMiddleNames(),
+            clientFormData.getSurname()
+        )
+        .filter(name -> name != null && !name.isEmpty())
+        .collect(Collectors.joining(" "));
+
+    return fullName.isEmpty() ? null : fullName;
   }
 
   /**
