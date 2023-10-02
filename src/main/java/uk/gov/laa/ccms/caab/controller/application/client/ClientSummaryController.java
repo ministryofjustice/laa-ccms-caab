@@ -123,6 +123,12 @@ public class ClientSummaryController {
         ? commonLookupService.getCorrespondenceLanguage(clientDetails.getCorrespondenceLanguage())
         : Mono.just(new CommonLookupValueDetail());
 
+    //handle separately due to vulnerable client
+    Mono<CommonLookupValueDetail> countryMono =
+        StringUtils.hasText(clientDetails.getCountry())
+            ? commonLookupService.getCountry(clientDetails.getCountry())
+            : Mono.just(new CommonLookupValueDetail());
+
     // Create a list of Mono calls and their respective attribute keys
     List<Pair<String, Mono<CommonLookupValueDetail>>> lookups = List.of(
         Pair.of("contactTitle",
@@ -136,7 +142,7 @@ public class ClientSummaryController {
         Pair.of("correspondenceMethod",
             commonLookupService.getCorrespondenceMethod(clientDetails.getCorrespondenceMethod())),
         Pair.of("country",
-            commonLookupService.getCountry(clientDetails.getCountry())),
+            countryMono),
         Pair.of("ethnicity",
             commonLookupService.getEthnicOrigin(clientDetails.getEthnicOrigin())),
         Pair.of("disability",
