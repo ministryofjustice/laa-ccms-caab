@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_CLIENT;
@@ -117,18 +116,6 @@ public class ClientSummaryController {
 
   private void populateSummaryListLookups(ClientDetails clientDetails, Model model) {
 
-    //handle separately due to optionality
-    Mono<CommonLookupValueDetail> correspondenceLanguageMono =
-        StringUtils.hasText(clientDetails.getCorrespondenceLanguage())
-        ? commonLookupService.getCorrespondenceLanguage(clientDetails.getCorrespondenceLanguage())
-        : Mono.just(new CommonLookupValueDetail());
-
-    //handle separately due to vulnerable client
-    Mono<CommonLookupValueDetail> countryMono =
-        StringUtils.hasText(clientDetails.getCountry())
-            ? commonLookupService.getCountry(clientDetails.getCountry())
-            : Mono.just(new CommonLookupValueDetail());
-
     // Create a list of Mono calls and their respective attribute keys
     List<Pair<String, Mono<CommonLookupValueDetail>>> lookups = List.of(
         Pair.of("contactTitle",
@@ -141,14 +128,22 @@ public class ClientSummaryController {
             commonLookupService.getGender(clientDetails.getGender())),
         Pair.of("correspondenceMethod",
             commonLookupService.getCorrespondenceMethod(clientDetails.getCorrespondenceMethod())),
-        Pair.of("country",
-            countryMono),
         Pair.of("ethnicity",
             commonLookupService.getEthnicOrigin(clientDetails.getEthnicOrigin())),
         Pair.of("disability",
             commonLookupService.getDisability(clientDetails.getDisability())),
+
+        //Processed differently due to optionality
+        Pair.of("country",
+            StringUtils.hasText(clientDetails.getCountry())
+                ? commonLookupService.getCountry(
+                clientDetails.getCountry())
+                : Mono.just(new CommonLookupValueDetail())),
         Pair.of("correspondenceLanguage",
-            correspondenceLanguageMono)
+            StringUtils.hasText(clientDetails.getCorrespondenceLanguage())
+                ? commonLookupService.getCorrespondenceLanguage(
+                    clientDetails.getCorrespondenceLanguage())
+                : Mono.just(new CommonLookupValueDetail()))
     );
 
     // Fetch all Monos asynchronously
