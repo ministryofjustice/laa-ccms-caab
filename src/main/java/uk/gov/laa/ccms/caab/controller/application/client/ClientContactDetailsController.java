@@ -40,7 +40,7 @@ public class ClientContactDetailsController {
    * @param model The model for the view.
    * @return The view name for the client basic details page
    */
-  @GetMapping("application/client/details/contact")
+  @GetMapping("/application/client/details/contact")
   public String clientDetailsContact(
           @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
           Model model) {

@@ -49,7 +49,7 @@ public class ClientBasicDetailsController {
    * @param model The model for the view.
    * @return The view name for the client basic details page
    */
-  @GetMapping("application/client/details/basic")
+  @GetMapping("/application/client/details/basic")
   public String clientDetailsBasic(
           @SessionAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
           @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,

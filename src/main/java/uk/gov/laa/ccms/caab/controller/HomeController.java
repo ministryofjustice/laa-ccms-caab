@@ -27,7 +27,7 @@ public class HomeController {
    * @param model Model for the view.
    * @return The name of the view to render.
    */
-  @GetMapping("/")
+  @GetMapping({"/home", "/"})
   public String home(Model model) {
     UserDetail user = (UserDetail) model.getAttribute(USER_DETAILS);
 

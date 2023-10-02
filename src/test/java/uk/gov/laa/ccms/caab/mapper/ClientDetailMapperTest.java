@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.mapper;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,17 +44,70 @@ public class ClientDetailMapperTest {
   private String disability = "TEST";
   private String specialConsiderations = "TEST SPECIAL CONSIDERATIONS";
 
+  private String day = "10";
+  private String month = "06";
+  private String year = "2000";
+
+
   @BeforeEach
   void setUp() {
     clientDetailMapper = Mappers.getMapper(ClientDetailMapper.class);
   }
 
-//  @Test
-//  void testToSoaClientDetail() {
-//    // Create a ClientDetails object for testing
-//    ClientDetails clientDetails = buildClientDetails();
-//
-//  }
+  @Test
+  void testToSoaClientDetail() {
+    // Create a ClientDetails object for testing
+    ClientDetails clientDetails = buildClientDetails();
+
+    ClientDetail clientDetail = clientDetailMapper.toSoaClientDetail(clientDetails);
+
+    assertEquals(title, clientDetail.getDetails().getName().getTitle());
+    assertEquals(surname, clientDetail.getDetails().getName().getSurname());
+
+    // Assertions for personal information
+    assertNotNull(clientDetail.getDetails().getPersonalInformation().getDateOfBirth());  // assuming a non-null date is set
+    assertEquals(gender, clientDetail.getDetails().getPersonalInformation().getGender());
+    assertEquals(maritalStatus, clientDetail.getDetails().getPersonalInformation().getMaritalStatus());
+
+    // Assertions for contact details
+    assertEquals(telephoneHome, clientDetail.getDetails().getContacts().getTelephoneHome());
+    assertEquals(telephoneWork, clientDetail.getDetails().getContacts().getTelephoneWork());
+    assertEquals(telephoneMobile, clientDetail.getDetails().getContacts().getMobileNumber());
+    assertEquals(emailAddress, clientDetail.getDetails().getContacts().getEmailAddress());
+
+    // Assertions for correspondence details
+    assertEquals(correspondenceMethod, clientDetail.getDetails().getContacts().getCorrespondenceMethod());
+    assertEquals(correspondenceLanguage, clientDetail.getDetails().getContacts().getCorrespondenceLanguage());
+
+    // Assertions for disability and ethnic monitoring
+    assertEquals(Collections.singletonList(disability), clientDetail.getDetails().getDisabilityMonitoring().getDisabilityType());
+    assertEquals(ethnicOrigin, clientDetail.getDetails().getEthnicMonitoring());
+
+    // Assertions for special considerations
+    assertEquals(specialConsiderations, clientDetail.getDetails().getSpecialConsiderations());
+
+    // Assertions for address details
+    assertEquals(houseNameNumber, clientDetail.getDetails().getAddress().getHouse());
+    assertEquals(addressLine1, clientDetail.getDetails().getAddress().getAddressLine1());
+    assertEquals(cityTown, clientDetail.getDetails().getAddress().getCity());
+    assertEquals(country, clientDetail.getDetails().getAddress().getCountry());
+    assertEquals(postcode, clientDetail.getDetails().getAddress().getPostalCode());
+
+  }
+
+  @Test
+  void testMapStringToListNonNullValue() {
+    String inputValue = "testString";
+    List<String> expectedOutput = Collections.singletonList(inputValue);
+    List<String> result = clientDetailMapper.map(inputValue);
+    assertEquals(expectedOutput, result);
+  }
+
+  @Test
+  void testMapStringToListNullValue() {
+    List<String> result = clientDetailMapper.map(null);
+    assertNull(result);
+  }
 
   @ParameterizedTest
   @CsvSource({
@@ -115,6 +169,10 @@ public class ClientDetailMapperTest {
     clientDetails.setCountryOfOrigin(countryOfOrigin);
     clientDetails.setGender(gender);
     clientDetails.setMaritalStatus(maritalStatus);
+
+    clientDetails.setDobDay(day);
+    clientDetails.setDobMonth(month);
+    clientDetails.setDobYear(year);
 
     clientDetails.setTelephoneHome(telephoneHome);
     clientDetails.setTelephoneWork(telephoneWork);

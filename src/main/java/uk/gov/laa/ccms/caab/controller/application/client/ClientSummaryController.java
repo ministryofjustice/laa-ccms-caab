@@ -68,7 +68,7 @@ public class ClientSummaryController {
    *
    * @return The view name for the client summary details
    */
-  @GetMapping("application/client/details/summary")
+  @GetMapping("/application/client/details/summary")
   public String clientDetailsSummary(
       @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
       Model model) {
@@ -83,7 +83,7 @@ public class ClientSummaryController {
    *
    * @return The view name for the client summary details
    */
-  @PostMapping("application/client/details/summary")
+  @PostMapping("/application/client/details/summary")
   public String clientDetailsSummary(
       @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
       @SessionAttribute(USER_DETAILS) UserDetail user,

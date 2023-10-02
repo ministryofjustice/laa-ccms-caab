@@ -30,7 +30,7 @@ public class CancelClientRegistrationController {
    *
    * @return The view name for cancelling the creation of a new client page
    */
-  @GetMapping("application/client/details/cancel")
+  @GetMapping("/application/client/details/cancel")
   public String clientDetailsBasic() {
     return "application/client/cancel-client";
   }

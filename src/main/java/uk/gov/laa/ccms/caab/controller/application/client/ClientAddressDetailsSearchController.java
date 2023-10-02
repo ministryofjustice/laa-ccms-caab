@@ -41,7 +41,7 @@ public class ClientAddressDetailsSearchController {
    * @param model The model for the view.
    * @return The view name for the client basic details page
    */
-  @GetMapping("application/client/details/address/search")
+  @GetMapping("/application/client/details/address/search")
   public String clientDetailsAddressSearch(
       @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
       Model model, HttpSession session) {
