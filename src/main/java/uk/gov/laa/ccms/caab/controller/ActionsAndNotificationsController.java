@@ -43,8 +43,6 @@ public class ActionsAndNotificationsController {
       @RequestParam(value = "size", defaultValue = "10") int size,
       @ModelAttribute(USER_DETAILS) UserDetail user,
       Model model) {
-
-    log.info("GET /notifications");
     NotificationSearchCriteria criteria = new NotificationSearchCriteria();
     criteria.setLoginId(user.getLoginId());
     criteria.setUserType(user.getUserType());

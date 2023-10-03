@@ -11,8 +11,11 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
+import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class ClientServiceTest {
@@ -68,4 +71,41 @@ public class ClientServiceTest {
         .verifyComplete();
   }
 
+  @Test
+  void getClientStatus_ReturnsClientStatus_Successful() {
+    String transactionId = "TRANS123";
+    String loginId = "user1";
+    String userType = "userType";
+
+    ClientStatus mockClientStatus = new ClientStatus();
+
+    when(soaApiClient.getClientStatus(transactionId, loginId, userType))
+        .thenReturn(Mono.just(mockClientStatus));
+
+    Mono<ClientStatus> clientStatusMono =
+        clientService.getClientStatus(transactionId, loginId, userType);
+
+    StepVerifier.create(clientStatusMono)
+        .expectNextMatches(clientStatus -> clientStatus == mockClientStatus)
+        .verifyComplete();
+  }
+
+  @Test
+  void postClient_ReturnsTransactionId_Successful() {
+    ClientDetailDetails clientDetailDetails = new ClientDetailDetails();
+    String loginId = "user1";
+    String userType = "userType";
+
+    ClientCreated mockClientCreated = new ClientCreated();
+
+    when(soaApiClient.postClient(clientDetailDetails, loginId, userType))
+        .thenReturn(Mono.just(mockClientCreated));
+
+    Mono<ClientCreated> clientCreatedMono =
+        clientService.postClient(clientDetailDetails, loginId, userType);
+
+    StepVerifier.create(clientCreatedMono)
+        .expectNextMatches(clientCreated -> clientCreated == mockClientCreated)
+        .verifyComplete();
+  }
 }

@@ -58,7 +58,6 @@ public class CopyCaseSearchController {
       @ModelAttribute(COPY_CASE_SEARCH_CRITERIA) CopyCaseSearchCriteria searchCriteria,
       @SessionAttribute(USER_DETAILS) UserDetail userDetails,
       Model model) {
-    log.info("GET /application/copy-case/search");
 
     populateDropdowns(userDetails, model);
 
@@ -80,7 +79,6 @@ public class CopyCaseSearchController {
       @SessionAttribute(USER_DETAILS) UserDetail userDetails,
       BindingResult bindingResult,
       Model model) {
-    log.info("POST /application/copy-case/search: criteria={}", searchCriteria.toString());
 
     searchCriteriaValidator.validate(searchCriteria, bindingResult);
     if (bindingResult.hasErrors()) {

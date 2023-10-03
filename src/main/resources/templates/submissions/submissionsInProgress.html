@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html th:fragment="layout" lang="en" class="govuk-template">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="blue">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="shortcut icon" sizes="16x16 32x32 48x48" href="/assets/images/favicon.ico" type="image/x-icon">
+    <link rel="mask-icon" href="/assets/images/govuk-mask-icon.svg" color="blue">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/govuk-apple-touch-icon-180x180.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/assets/images/govuk-apple-touch-icon-167x167.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/assets/images/govuk-apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" href="/assets/images/govuk-apple-touch-icon.png">
+    <link href="/govuk-frontend/all.css" rel="stylesheet">
+    <link href="/spinner.css" rel="stylesheet">
+    <meta http-equiv="refresh" th:content="'5;'" />
+    <title>LAA CCMS - Submission</title>
+  </head>
+
+  <body class="govuk-template__body">
+    <script>
+        document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');
+    </script>
+
+    <a href="#main-content" class="govuk-skip-link" data-module="govuk-skip-link">Skip to main content</a>
+
+    <header th:replace="~{partials/header :: header}"></header>
+
+    <div class="govuk-width-container">
+      <div th:replace="~{partials/phase-banner :: phase-banner}"></div>
+
+      <main class="govuk-main-wrapper" id="main-content" role="main">
+        <h1 class="govuk-heading-l">
+          Submission in progress
+        </h1>
+        <p class="govuk-body-l">
+          Submission is now in progress. This page will automatically redirect you to the
+          submission status. If this does not happen within 30 seconds please select continue to
+          submission status.
+        </p>
+        <div class="govuk-grid-row">
+          <div class="govuk-grid-column-full">
+            <div class="loader"></div>
+            <p class="govuk-body govuk-!-text-align-centre">
+              Submitting
+            </p>
+          </div>
+        </div>
+      </main>
+    </div>
+    <script src="/govuk-frontend/all.js"></script>
+  </body>
+</html>

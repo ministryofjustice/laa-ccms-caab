@@ -46,12 +46,11 @@ public class ClientAddressDetailsController {
    * @param model The model for the view.
    * @return The view name for the client address details page
    */
-  @GetMapping("application/client/details/address")
+  @GetMapping("/application/client/details/address")
   public String clientDetailsAddress(
           @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
           Model model,
           BindingResult bindingResult) {
-    log.info("GET /application/client/details/address");
 
     populateDropdowns(model);
 

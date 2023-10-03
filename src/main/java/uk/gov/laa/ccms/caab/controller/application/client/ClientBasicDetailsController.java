@@ -49,7 +49,7 @@ public class ClientBasicDetailsController {
    * @param model The model for the view.
    * @return The view name for the client basic details page
    */
-  @GetMapping("application/client/details/basic")
+  @GetMapping("/application/client/details/basic")
   public String clientDetailsBasic(
           @SessionAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
           @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
@@ -79,7 +79,6 @@ public class ClientBasicDetailsController {
           @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
           BindingResult bindingResult,
           Model model) {
-    log.info("POST /application/client/details/basic");
 
     clientBasicDetailsValidator.validate(clientDetails, bindingResult);
 
@@ -88,13 +87,10 @@ public class ClientBasicDetailsController {
       populateFields(clientSearchCriteria, clientDetails, model);
 
       model.addAttribute(CLIENT_DETAILS, clientDetails);
-      log.info("clientDetails: {}", clientDetails);
-
       return "application/client/basic-client-details";
     }
 
     model.addAttribute(CLIENT_DETAILS, clientDetails);
-    log.info("clientDetails: {}", clientDetails);
 
     return "redirect:/application/client/details/contact";
   }
@@ -111,12 +107,9 @@ public class ClientBasicDetailsController {
 
     clientDetails.setFirstName(clientSearchCriteria.getForename());
     clientDetails.setSurnameAtBirth(clientSearchCriteria.getSurname());
-
-    String dob = clientSearchCriteria.getDobDay() + "/"
-            + clientSearchCriteria.getDobMonth() + "/"
-            + clientSearchCriteria.getDobYear();
-
-    clientDetails.setDateOfBirth(dob);
+    clientDetails.setDobDay(clientSearchCriteria.getDobDay());
+    clientDetails.setDobMonth(clientSearchCriteria.getDobMonth());
+    clientDetails.setDobYear(clientSearchCriteria.getDobYear());
 
     clientDetails.setNationalInsuranceNumber(
             clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER));
