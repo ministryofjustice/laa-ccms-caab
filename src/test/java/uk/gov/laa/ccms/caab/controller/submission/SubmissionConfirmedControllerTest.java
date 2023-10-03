@@ -30,6 +30,6 @@ public class SubmissionConfirmedControllerTest {
   void testSubmissionsConfirmed() throws Exception {
     mockMvc.perform(get("/submissions/testType/confirmed"))
         .andExpect(status().isOk())
-        .andExpect(view().name("submissions/submissionsConfirmed"));
+        .andExpect(view().name("submissions/submissionConfirmed"));
   }
 }

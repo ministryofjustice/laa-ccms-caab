@@ -81,7 +81,7 @@ public class ClientCreateSubmissionInProgressControllerTest {
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
                 .sessionAttr(USER_DETAILS, user))
         .andExpect(status().isOk())
-        .andExpect(view().name("submissions/submissionsInProgress"));
+        .andExpect(view().name("submissions/submissionInProgress"));
   }
 
   @Test
@@ -103,7 +103,7 @@ public class ClientCreateSubmissionInProgressControllerTest {
                 .sessionAttr(USER_DETAILS, user)
                 .sessionAttr("submissionPollCount", submissionPollCount))
         .andExpect(status().isOk())
-        .andExpect(view().name("submissions/submissionsInProgress"));
+        .andExpect(view().name("submissions/submissionInProgress"));
   }
 
   @Test

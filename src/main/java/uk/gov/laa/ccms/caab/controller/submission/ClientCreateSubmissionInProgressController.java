@@ -34,7 +34,7 @@ public class ClientCreateSubmissionInProgressController {
    * @return The view name for the submission in progress.
    */
   @GetMapping("/submissions/client-create")
-  public String submissionsInProgress(
+  public String submissionInProgress(
       @SessionAttribute(SUBMISSION_TRANSACTION_ID) String transactionId,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       HttpSession session) {
@@ -58,7 +58,7 @@ public class ClientCreateSubmissionInProgressController {
       session.removeAttribute(CLIENT_SEARCH_CRITERIA);
       session.removeAttribute(CLIENT_DETAILS);
 
-      return String.format("redirect:/submissions/client-create/confirmed");
+      return "redirect:/submissions/client-create/confirmed";
     }
 
     return viewIncludingPollCount(session);
@@ -74,7 +74,7 @@ public class ClientCreateSubmissionInProgressController {
     }
     submissionPollCount = submissionPollCount + 1;
     session.setAttribute("submissionPollCount", submissionPollCount);
-    return "submissions/submissionsInProgress";
+    return "submissions/submissionInProgress";
   }
 
 }

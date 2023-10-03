@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.advice;
 
 import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.pqc.crypto.ExchangePair;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ControllerAdvice;

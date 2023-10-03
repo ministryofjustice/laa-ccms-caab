@@ -2,12 +2,14 @@ package uk.gov.laa.ccms.caab.bean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 @ExtendWith(SpringExtension.class)
 class ClientDetailsTest {
@@ -42,9 +44,9 @@ class ClientDetailsTest {
     clientDetails.setDobMonth(dobMonth);
     clientDetails.setDobYear(dobYear);
 
-    String dateOfBirth = clientDetails.getDateOfBirth();
-
-    assertNull(dateOfBirth);
+    Assertions.assertThrows(CaabApplicationException.class, () -> {
+      clientDetails.getDateOfBirth();
+    });
   }
 
 }

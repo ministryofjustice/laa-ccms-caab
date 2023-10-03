@@ -27,6 +27,6 @@ public class SubmissionConfirmedController {
 
     model.addAttribute("submissionType", submissionType);
 
-    return "submissions/submissionsConfirmed";
+    return "submissions/submissionConfirmed";
   }
 }
