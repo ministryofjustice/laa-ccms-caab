@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>LAA CCMS - Application summary</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a href="/home" class="govuk-back-link">Return to home</a>
+  </div>
+  <div id="main-content">
+    <span class="govuk-caption-l">About your application</span>
+    <h1 class="govuk-heading-l">
+      Application summary
+    </h1>
+    <p class="govuk-body-l">
+      To create an application, please complete the relevant application sections in the summary
+      below.  Please use the links provided to access the various sections.  Although the section
+      can be completed in any order, it is recommended that you work from top to bottom as some
+      areas later in the process may be established as irrelevant in earlier sections.
+    </p>
+
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <table class="govuk-table">
+          <caption class="govuk-table__caption govuk-table__caption--m">Application summary</caption>
+          <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header">Application sections</th>
+            <th scope="col" class="govuk-table__header">Status</th>
+            <th scope="col" class="govuk-table__header">Last saved</th>
+            <th scope="col" class="govuk-table__header">Last saved by</th>
+          </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell"><a href="#" class="govuk-link">Application type</a></td>
+            <td class="govuk-table__cell"><strong class="govuk-tag--grey">Substantive</strong></td>
+            <td class="govuk-table__cell">18/05/2023</td>
+            <td class="govuk-table__cell">PENNY.WALL@SWITALSKIS.COM</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-two-thirds">
+        <h2 class="govuk-heading-m">
+          1. Check before you start
+        </h2>
+        <dl class="govuk-summary-list">
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__value">
+              <a href="#" class="govuk-link">Application type</a>
+            </dt>
+            <dd class="govuk-summary-list__actions govuk-!-font-weight-bold" style="width: 40%;">
+              Substantive
+            </dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__value">
+              <a href="#" class="govuk-link">Client details</a>
+            </dt>
+            <dd class="govuk-summary-list__actions" style="width: 40%;">
+              <strong class="govuk-tag">
+                Complete
+              </strong>
+            </dd>
+          </div>
+        </dl>
+        <h2 class="govuk-heading-m govuk-!-static-padding-top-5">
+          2. Prepare application
+        </h2>
+        <dl class="govuk-summary-list">
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__value">
+              <a href="#" class="govuk-link">Provider details</a>
+            </dt>
+            <dd class="govuk-summary-list__actions" style="width: 40%;">
+              <strong class="govuk-tag govuk-tag--blue">
+                In Progress
+              </strong>
+            </dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__value">
+              <a href="#" class="govuk-link">General details</a>
+            </dt>
+            <dd class="govuk-summary-list__actions" style="width: 40%;">
+              <strong class="govuk-tag govuk-tag--yellow">
+                Not started
+              </strong>
+            </dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__value">
+              <a href="#" class="govuk-link">Proceedings and costs</a>
+            </dt>
+            <dd class="govuk-summary-list__actions" style="width: 40%;">
+              <strong class="govuk-tag govuk-tag--yellow">
+                Not started
+              </strong>
+            </dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__value">
+              <a href="#" class="govuk-link">Opponents and other parties</a>
+            </dt>
+            <dd class="govuk-summary-list__actions" style="width: 40%;">
+              <strong class="govuk-tag govuk-tag--yellow">
+                Not started
+              </strong>
+            </dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__value">
+              Means assessment
+            </dt>
+            <dd class="govuk-summary-list__actions" style="width: 40%;">
+              <strong class="govuk-tag govuk-tag--grey">
+                Not available
+              </strong>
+            </dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__value">
+              Merits assessment
+            </dt>
+            <dd class="govuk-summary-list__actions" style="width: 40%;">
+              <strong class="govuk-tag govuk-tag--grey">
+                Not available
+              </strong>
+            </dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__value">
+              <a href="#" class="govuk-link">Document upload</a>
+            </dt>
+            <dd class="govuk-summary-list__actions" style="width: 40%;">
+            </dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__value">
+              <a href="#" class="govuk-link">View application summary</a>
+            </dt>
+            <dd class="govuk-summary-list__actions" style="width: 40%;">
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
