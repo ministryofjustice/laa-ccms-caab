@@ -58,7 +58,6 @@ public class CategoryOfLawController {
           @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
           @SessionAttribute(USER_DETAILS) UserDetail userDetails,
           Model model) {
-    log.info("GET /application/category-of-law: {}", applicationDetails);
 
     applicationDetails.setExceptionalFunding(exceptionalFunding);
 
@@ -83,7 +82,6 @@ public class CategoryOfLawController {
           @SessionAttribute(USER_DETAILS) UserDetail userDetails,
           BindingResult bindingResult,
           Model model) {
-    log.info("POST /application/category-of-law: {}", applicationDetails);
     categoryOfLawValidator.validate(applicationDetails, bindingResult);
 
     String viewName = "redirect:/application/application-type";

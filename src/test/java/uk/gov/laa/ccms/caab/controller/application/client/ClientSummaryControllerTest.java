@@ -14,6 +14,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,11 +34,19 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
+import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 @ExtendWith(MockitoExtension.class)
 public class ClientSummaryControllerTest {
+
+  @Mock
+  private ClientService clientService;
 
   @Mock
   private CommonLookupService commonLookupService;
@@ -53,6 +63,9 @@ public class ClientSummaryControllerTest {
   @Mock
   private ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator;
 
+  @Mock
+  private ClientDetailMapper clientDetailsMapper;
+
   @InjectMocks
   private ClientSummaryController clientSummaryController;
 
@@ -66,6 +79,11 @@ public class ClientSummaryControllerTest {
   private CommonLookupValueDetail disabilityLookupValueDetail;
   private CommonLookupValueDetail correspondenceMethodLookupValueDetail;
   private CommonLookupValueDetail correspondenceLanguageLookupValueDetail;
+
+  private static final UserDetail userDetails = new UserDetail()
+      .userId(1)
+      .userType("testUserType")
+      .loginId("testLoginId");
 
   @BeforeEach
   public void setup() {
@@ -157,7 +175,14 @@ public class ClientSummaryControllerTest {
   void testClientDetailsSummary_Post() throws Exception {
     ClientDetails clientDetails = new ClientDetails();
 
+    when(clientDetailsMapper.toSoaClientDetail(clientDetails)).thenReturn(
+        new ClientDetail());
+
+    when(clientService.postClient(any(), any(), any())).thenReturn(
+        Mono.just(new ClientCreated()));
+
     mockMvc.perform(post("/application/client/details/summary")
+            .sessionAttr(USER_DETAILS, userDetails)
             .flashAttr("clientDetails", clientDetails))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/submissions/client-create"));
@@ -166,6 +191,9 @@ public class ClientSummaryControllerTest {
     verify(contactValidator).validate(any(), any());
     verify(addressValidator).validate(any(), any());
     verify(opportunitiesValidator).validate(any(), any());
+
+    verify(clientDetailsMapper).toSoaClientDetail(clientDetails);
+    verify(clientService).postClient(any(), any(), any());
   }
 
   @Test
@@ -180,6 +208,7 @@ public class ClientSummaryControllerTest {
 
     Exception exception = assertThrows(ServletException.class, () ->
         this.mockMvc.perform(post("/application/client/details/summary")
+            .sessionAttr(USER_DETAILS, userDetails)
             .flashAttr("clientDetails", clientDetails)));
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());

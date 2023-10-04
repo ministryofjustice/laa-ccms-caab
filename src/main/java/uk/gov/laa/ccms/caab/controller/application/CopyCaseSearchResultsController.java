@@ -62,7 +62,6 @@ public class CopyCaseSearchResultsController {
           @SessionAttribute(USER_DETAILS) UserDetail user,
           HttpServletRequest request,
           Model model) {
-    log.info("GET /application/copy-case/results");
 
     // Get the Copy Case Status
     CaseStatusLookupValueDetail copyCaseStatus = applicationService.getCopyCaseStatus();
@@ -103,7 +102,6 @@ public class CopyCaseSearchResultsController {
           @PathVariable("case-reference-number") String copyCaseReferenceNumber,
           @SessionAttribute(COPY_CASE_SEARCH_RESULTS) CaseDetails caseDetails,
           @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails) {
-    log.info("GET /application/copy-case/{}/confirm", copyCaseReferenceNumber);
 
     // Validate that the supplied caseRef is one from the search results in the session
     boolean validCaseRef = Optional.ofNullable(caseDetails.getContent())

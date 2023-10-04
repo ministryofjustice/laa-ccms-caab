@@ -10,12 +10,16 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
+import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
+import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
+import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 
 @ExtendWith(MockitoExtension.class)
 class SoaApiClientErrorHandlerTest {
@@ -112,6 +116,55 @@ class SoaApiClientErrorHandlerTest {
 
     Mono<CaseReferenceSummary> result =
         soaApiClientErrorHandler.handleCaseReferenceError(throwable);
+
+    StepVerifier.create(result)
+        .expectNextCount(0)
+        .verifyComplete();
+  }
+
+  @Test
+  public void testHandleClientStatusError() {
+    String transactionId = "testTransactionId";
+    Throwable throwable = new RuntimeException("Error");
+
+    Mono<ClientStatus> result =
+        soaApiClientErrorHandler.handleClientStatusError(transactionId, throwable);
+
+    StepVerifier.create(result)
+        .expectNextCount(0)
+        .verifyComplete();
+  }
+
+  @Test
+  public void testHandleClientCreatedError() {
+    String fullName = "John Doe";
+    Throwable throwable = new RuntimeException("Error");
+
+    Mono<ClientCreated> result =
+        soaApiClientErrorHandler.handleClientCreatedError(fullName, throwable);
+
+    StepVerifier.create(result)
+        .expectNextCount(0)
+        .verifyComplete();
+  }
+
+  @Test
+  public void testHandleNotificationsError() {
+    NotificationSearchCriteria criteria = new NotificationSearchCriteria();
+    criteria.setCaseReference("caseRef123");
+    criteria.setProviderCaseReference("provCaseRef456");
+    criteria.setAssignedToUserId("userId789");
+    criteria.setClientSurname("Doe");
+    criteria.setFeeEarnerId(123);
+    criteria.setIncludeClosed(true);
+    criteria.setNotificationType("typeABC");
+    criteria.setDateFrom("2023-01-01");
+    criteria.setDateTo("2023-12-31");
+
+    Throwable throwable = new RuntimeException("Error");
+
+    Mono<Notifications> result =
+        soaApiClientErrorHandler.handleNotificationsError(criteria, throwable);
 
     StepVerifier.create(result)
         .expectNextCount(0)

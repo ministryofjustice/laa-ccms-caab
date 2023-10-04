@@ -61,7 +61,6 @@ public interface ClientAddressResultDisplayMapper {
       qualifiedByName = "houseNameNumberTranslator")
   @Mapping(target = "postcode", source = "deliveryPointAddress.postcode")
   @Mapping(target = "cityTown", source = "deliveryPointAddress.postTown")
-  @Mapping(target = "county", source = "deliveryPointAddress.dependentLocality")
   @Mapping(target = "country", constant = "GBR")
   ClientAddressResultRowDisplay toClientAddressResultRowDisplay(
       OrdinanceSurveyResult ordinanceSurveyResult);

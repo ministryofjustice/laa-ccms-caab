@@ -3,6 +3,8 @@ package uk.gov.laa.ccms.caab.bean;
 
 import java.io.Serializable;
 import lombok.Data;
+import uk.gov.laa.ccms.caab.client.CaabApiClientException;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 /**
  * Represents the details used for client search.
@@ -65,7 +67,7 @@ public class ClientSearchCriteria implements Serializable {
       return String.format("%d-%02d-%02d", year, month, day);
     } catch (NumberFormatException e) {
       // Handle the exception if any of the dobYear, dobMonth, or dobDay is not a valid integer
-      return null;
+      throw new CaabApplicationException("Unable to format date of birth", e);
     }
   }
 

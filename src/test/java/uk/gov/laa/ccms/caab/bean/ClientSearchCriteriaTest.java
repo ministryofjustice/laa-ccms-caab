@@ -3,12 +3,14 @@ package uk.gov.laa.ccms.caab.bean;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 @ExtendWith(SpringExtension.class)
 public class ClientSearchCriteriaTest {
@@ -43,9 +45,9 @@ public class ClientSearchCriteriaTest {
     clientSearchCriteria.setDobMonth(dobMonth);
     clientSearchCriteria.setDobYear(dobYear);
 
-    String dateOfBirth = clientSearchCriteria.getDateOfBirth();
-
-    assertNull(dateOfBirth);
+    Assertions.assertThrows(CaabApplicationException.class, () -> {
+      clientSearchCriteria.getDateOfBirth();
+    });
   }
 
   @Test

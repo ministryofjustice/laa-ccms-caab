@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application;
+package uk.gov.laa.ccms.caab.controller.application.client;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
@@ -55,7 +55,6 @@ public class ClientSearchController {
           @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
           @ModelAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
           Model model) {
-    log.info("GET /application/client/search: {}", clientSearchCriteria);
     applicationDetails.setApplicationCreated(false);
     applicationDetails.setAgreementAccepted(false);
 
@@ -76,7 +75,6 @@ public class ClientSearchController {
           @ModelAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
           BindingResult bindingResult,
           Model model) {
-    log.info("POST /application/client/search: {}", clientSearchCriteria);
 
     clientSearchCriteriaValidator.validate(clientSearchCriteria, bindingResult);
 

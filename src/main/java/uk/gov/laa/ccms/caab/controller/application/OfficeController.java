@@ -68,8 +68,6 @@ public class OfficeController {
           @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
           BindingResult bindingResult,
           Model model) {
-
-    log.info("POST /application/office: {}", applicationDetails);
     officeValidator.validate(applicationDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {
