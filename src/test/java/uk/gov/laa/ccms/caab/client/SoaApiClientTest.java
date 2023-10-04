@@ -191,7 +191,7 @@ class SoaApiClientTest {
 
   @Test
   void getClients_ReturnsClientDetails_Successful() {
-    String expectedUri = "/clients?first-name=John&surname=Doe&page=0&size=10";
+    String expectedUri = "/clients?first-name=John&surname=Doe&date-of-birth=2000-01-01&page=0&size=10";
 
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
     String loginId = "user1";
@@ -204,6 +204,9 @@ class SoaApiClientTest {
 
     clientSearchCriteria.setForename(firstName);
     clientSearchCriteria.setSurname(lastName);
+    clientSearchCriteria.setDobDay("1");
+    clientSearchCriteria.setDobMonth("1");
+    clientSearchCriteria.setDobYear("2000");
 
     ClientDetails mockClientDetails = new ClientDetails();
 

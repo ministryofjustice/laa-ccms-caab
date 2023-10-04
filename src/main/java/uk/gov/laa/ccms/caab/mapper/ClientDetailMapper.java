@@ -10,7 +10,11 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientPersonalDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ContactDetail;
+import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 
 /**
  * Maps between Client details form bean and the soa-api client detail. Requires the
@@ -19,60 +23,14 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 @Mapper(componentModel = "spring", config = IgnoreUnmappedMapperConfig.class)
 public interface ClientDetailMapper {
 
-  @Mapping(target = "details.name.title",
-      source = "title")
-  @Mapping(target = "details.name.surname",
-      source = "surname")
-  @Mapping(target = "details.name.firstName",
-      source = "firstName")
-  @Mapping(target = "details.name.middleName",
-      source = "middleNames")
-  @Mapping(target = "details.name.surnameAtBirth",
-      source = "surnameAtBirth")
-  @Mapping(target = "details.name.fullName",
-      source = "clientFormData",
-      qualifiedByName = "mapFullName")
-  @Mapping(target = "details.personalInformation.dateOfBirth",
-      source = ".",
-      qualifiedByName = "mapDateOfBirth")
-  @Mapping(target = "details.personalInformation.dateOfDeath",
-      ignore = true)
-  @Mapping(target = "details.personalInformation.gender",
-      source = "gender")
-  @Mapping(target = "details.personalInformation.maritalStatus",
-      source = "maritalStatus")
-  @Mapping(target = "details.personalInformation.nationalInsuranceNumber",
-      source = "nationalInsuranceNumber")
-  @Mapping(target = "details.personalInformation.homeOfficeNumber",
-      source = "homeOfficeNumber")
-  @Mapping(target = "details.personalInformation.vulnerableClient",
-      source = "vulnerableClient")
-  @Mapping(target = "details.personalInformation.highProfileClient",
-      source = "highProfileClient")
-  @Mapping(target = "details.personalInformation.vexatiousLitigant",
-      source = "vexatiousLitigant")
-  @Mapping(target = "details.personalInformation.countryOfOrigin",
-      source = "countryOfOrigin")
-  @Mapping(target = "details.personalInformation.mentalCapacityInd",
-      source = "mentalIncapacity")
-  @Mapping(target = "details.contacts.telephoneHome",
-      source = "telephoneHome")
-  @Mapping(target = "details.contacts.telephoneWork",
-      source = "telephoneWork")
-  @Mapping(target = "details.contacts.mobileNumber",
-      source = "telephoneMobile")
-  @Mapping(target = "details.contacts.emailAddress",
-      source = "emailAddress")
-  @Mapping(target = "details.contacts.fax",
-      ignore = true)
-  @Mapping(target = "details.contacts.password",
-      source = "password")
-  @Mapping(target = "details.contacts.passwordReminder",
-      source = "passwordReminder")
-  @Mapping(target = "details.contacts.correspondenceMethod",
-      source = "correspondenceMethod")
-  @Mapping(target = "details.contacts.correspondenceLanguage",
-      source = "correspondenceLanguage")
+  @Mapping(target = "details.name", source = "clientFormData",
+      qualifiedByName = "mapNameDetail")
+  @Mapping(target = "details.personalInformation", source = "clientFormData",
+      qualifiedByName = "mapPersonalInformationDetail")
+  @Mapping(target = "details.contacts", source = "clientFormData",
+      qualifiedByName = "mapContactDetail")
+  @Mapping(target = "details.address", source = "clientFormData",
+      qualifiedByName = "mapAddressDetail")
   @Mapping(target = "details.disabilityMonitoring.disabilityType",
       source = "disability",
       qualifiedByName = "mapStringToList")
@@ -82,33 +40,54 @@ public interface ClientDetailMapper {
       source = "specialConsiderations")
   @Mapping(target = "details.noFixedAbode",
       source = "noFixedAbode")
-  @Mapping(target = "details.address.addressId",
-      ignore = true)
-  @Mapping(target = "details.address.house",
-      source = "houseNameNumber")
-  @Mapping(target = "details.address.careOfName",
-      ignore = true)
-  @Mapping(target = "details.address.addressLine1",
-      source = "addressLine1")
-  @Mapping(target = "details.address.addressLine2",
-      source = "addressLine2")
-  @Mapping(target = "details.address.addressLine3",
-      ignore = true)
-  @Mapping(target = "details.address.addressLine4",
-      ignore = true)
-  @Mapping(target = "details.address.city",
-      source = "cityTown")
-  @Mapping(target = "details.address.country",
-      source = "country")
-  @Mapping(target = "details.address.county",
-      source = "county")
-  @Mapping(target = "details.address.province",
-      ignore = true)
-  @Mapping(target = "details.address.state",
-      ignore = true)
-  @Mapping(target = "details.address.postalCode",
-      source = "postcode")
   ClientDetail toSoaClientDetail(ClientDetails clientFormData);
+
+  @Mapping(target = "title", source = "title")
+  @Mapping(target = "surname", source = "surname")
+  @Mapping(target = "firstName", source = "firstName")
+  @Mapping(target = "middleName", source = "middleNames")
+  @Mapping(target = "surnameAtBirth", source = "surnameAtBirth")
+  @Mapping(target = "fullName", source = "clientFormData", qualifiedByName = "mapFullName")
+  @Named("mapNameDetail")
+  NameDetail mapNameDetail(ClientDetails clientFormData);
+
+  @Mapping(target = "dateOfBirth",
+      source = ".",
+      qualifiedByName = "mapDateOfBirth")
+  @Mapping(target = "dateOfDeath",
+      ignore = true)
+  @Mapping(target = "mentalCapacityInd",
+      source = "mentalIncapacity")
+  @Named("mapPersonalInformationDetail")
+  ClientPersonalDetail mapPersonalInformationDetail(ClientDetails clientFormData);
+
+  @Mapping(target = "mobileNumber",
+      source = "telephoneMobile")
+  @Mapping(target = "fax",
+      ignore = true)
+  @Named("mapContactDetail")
+  ContactDetail mapContactDetail(ClientDetails clientFormData);
+
+  @Mapping(target = "addressId",
+      ignore = true)
+  @Mapping(target = "house",
+      source = "houseNameNumber")
+  @Mapping(target = "careOfName",
+      ignore = true)
+  @Mapping(target = "addressLine3",
+      ignore = true)
+  @Mapping(target = "addressLine4",
+      ignore = true)
+  @Mapping(target = "city",
+      source = "cityTown")
+  @Mapping(target = "province",
+      ignore = true)
+  @Mapping(target = "state",
+      ignore = true)
+  @Mapping(target = "postalCode",
+      source = "postcode")
+  @Named("mapAddressDetail")
+  AddressDetail mapAddressDetail(ClientDetails clientFormData);
 
   /**
    * Translates a string into a singleton list.

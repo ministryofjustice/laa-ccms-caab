@@ -30,14 +30,14 @@ public class ClientCreateSubmissionConfirmedController {
   /**
    * Handles the POST request for a client creation submission.
    *
-   * @param clientInformation The client details from the session
    * @param applicationDetails The application details from session.
    * @param user The user details from session.
+   * @param clientInformation The client details from the session
    * @param session The http session for the view.
    * @return The view name for a client creation submission page.
    */
   @PostMapping("/submissions/client-create/confirmed")
-  public String submissionsConfirmed(
+  public String submissionConfirmed(
       @SessionAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       @SessionAttribute(CLIENT_INFORMATION) ClientDetail clientInformation,
