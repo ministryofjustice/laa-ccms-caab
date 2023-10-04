@@ -13,7 +13,7 @@
             Your actions / notifications
         </h1>
         <p class="govuk-body-l">
-            Your search has returned <span th:text="${notifications.content.size}"></span> results.
+            Your search has returned <span th:text="${notifications.totalElements}"></span> results.
             To select one of the records that has been returned, click on the
             subject title. If the results shown do not include the actions or
             notifications you are looking for, please review your search criteria
@@ -31,28 +31,28 @@
             <caption class="govuk-table__caption govuk-table__caption--m">Your actions / notifications</caption>
             <thead class="govuk-table__head">
             <tr class="govuk-table__row">
-                <th scope="col" class="govuk-table__header">Date assigned</th>
-                <th scope="col" class="govuk-table__header">Subject</th>
-                <th scope="col" class="govuk-table__header">Due date</th>
-                <th scope="col" class="govuk-table__header">Assigned to</th>
-                <th scope="col" class="govuk-table__header">Status</th>
-                <th scope="col" class="govuk-table__header">LAA Ref</th>
-                <th scope="col" class="govuk-table__header">Provider ref</th>
-                <th scope="col" class="govuk-table__header">Client</th>
-                <th scope="col" class="govuk-table__header">Fee earner</th>
+                <th th:replace="~{notifications/partials/sorting :: sorting(${notifications},'assignDate','Date assigned')}"></th>
+                <th th:replace="~{notifications/partials/sorting :: sorting(${notifications},'subject','Subject')}"></th>
+                <th th:replace="~{notifications/partials/sorting :: sorting(${notifications},'dueDate','Due date')}"></th>
+                <th th:replace="~{notifications/partials/sorting :: sorting(${notifications},'userName','Assigned to')}"></th>
+                <th th:replace="~{notifications/partials/sorting :: sorting(${notifications},'status','Status')}"></th>
+                <th th:replace="~{notifications/partials/sorting :: sorting(${notifications},'caseReferenceNumber','LAA Ref')}"></th>
+                <th th:replace="~{notifications/partials/sorting :: sorting(${notifications},'providerCaseReferenceNumber','Provider ref')}"></th>
+                <th th:replace="~{notifications/partials/sorting :: sorting(${notifications},'clientName','Client')}"></th>
+                <th th:replace="~{notifications/partials/sorting :: sorting(${notifications},'feeEarner','Fee earner')}"></th>
             </tr>
             </thead>
             <tbody class="govuk-table__body">
             <tr class="govuk-table__row" th:each="notification : ${notifications.content}">
-                <td class="govuk-table__cell" th:text="${#dates.format(notification.notificationDetail.assignDate,'dd-MM-yyyy')}"></td>
-                <td class="govuk-table__cell" th:text="${notification.notificationDetail.subject}"></td>
-                <td class="govuk-table__cell" th:text="${#dates.format(notification.notificationDetail.dueDate,'dd-MM-yyy')}"></td>
-                <td class="govuk-table__cell" th:text="${notification.user.userLoginId}"></td>
-                <td class="govuk-table__cell" th:text="${notification.notificationDetail.status}"></td>
-                <td class="govuk-table__cell" th:text="${notification.caseReferenceNumber}"></td>
-                <td class="govuk-table__cell" th:text="${notification.providerCaseReferenceNumber}"></td>
-                <td class="govuk-table__cell" th:text="${notification.clientName}"></td>
-                <td class="govuk-table__cell" th:text="${notification.feeEarner}"></td>
+                <td class="govuk-table__cell govuk-!-font-size-17" th:text="${#dates.format(notification.assignDate,'dd-MM-yyyy')}"></td>
+                <td class="govuk-table__cell govuk-!-font-size-17" th:text="${notification.subject}"></td>
+                <td class="govuk-table__cell govuk-!-font-size-17" th:text="${#dates.format(notification.dueDate,'dd-MM-yyy')}"></td>
+                <td class="govuk-table__cell govuk-!-font-size-17" th:text="${notification.user.userLoginId}"></td>
+                <td class="govuk-table__cell govuk-!-font-size-17" th:text="${notification.status}"></td>
+                <td class="govuk-table__cell govuk-!-font-size-17" th:text="${notification.caseReferenceNumber}"></td>
+                <td class="govuk-table__cell govuk-!-font-size-17" th:text="${notification.providerCaseReferenceNumber}"></td>
+                <td class="govuk-table__cell govuk-!-font-size-17" th:text="${notification.clientName}"></td>
+                <td class="govuk-table__cell govuk-!-font-size-17" th:text="${notification.feeEarner}"></td>
             </tr>
             </tbody>
         </table>

@@ -62,4 +62,14 @@ public class NotificationSearchCriteria {
    */
   private String userType;
 
+  /**
+   * a switch to ascertain whether to recreate or reuse for sorting.
+   */
+  private boolean instantiated;
+
+  /**
+   * the sort field and direction.
+   */
+  private String sort;
+
 }

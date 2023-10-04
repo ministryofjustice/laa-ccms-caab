@@ -12,7 +12,6 @@ import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
-import uk.gov.laa.ccms.soa.gateway.model.NotificationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
@@ -60,10 +59,8 @@ class NotificationServiceTest {
                 .user(new UserDetail()
                     .userLoginId("user1")
                     .userType("user1"))
-                .notificationDetail(new NotificationDetail()
-                    .notificationId("234")
-                    .notificationType("N"))
-        );
+                .notificationId("234")
+                .notificationType("N"));
     NotificationSearchCriteria criteria = new NotificationSearchCriteria();
     criteria.setAssignedToUserId("user1");
 

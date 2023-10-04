@@ -27,7 +27,6 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
-import uk.gov.laa.ccms.soa.gateway.model.NotificationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
@@ -249,10 +248,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     return new Notifications()
         .addContentItem(
             new Notification()
-                .notificationDetail(
-                    new NotificationDetail()
-                        .notificationType("N")
-                )
+                .notificationType("N")
                 .user(
                     new UserDetail()
                         .userName("testUserName")
