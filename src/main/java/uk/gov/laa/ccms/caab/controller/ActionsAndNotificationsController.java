@@ -60,7 +60,7 @@ public class ActionsAndNotificationsController {
       @RequestParam(value = "page", defaultValue = "0") int page,
       @RequestParam(value = "size", defaultValue = "10") int size,
       @RequestParam(required = false) String sort,
-      @RequestParam(value = "notificationType", required = false) String notificationType,
+      @RequestParam(value = "notification_type", required = false) String notificationType,
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
       Model model) {
@@ -92,14 +92,7 @@ public class ActionsAndNotificationsController {
     // set the sort configuration in the model
 
     if (StringUtils.isNotEmpty(criteria.getSort())) {
-      sort = criteria.getSort();
-      String[] params = sort.split(",");
-      String sortField = params[0];
-      String sortDirection = params[1];
-      model.addAttribute(SORT_FIELD, sortField);
-      model.addAttribute(SORT_DIRECTION, sortDirection);
-      model.addAttribute(REVERSE_SORT_DIRECTION,
-          sortDirection.equals("asc") ? "desc" : "asc");
+      populateModelFromCriteria(criteria, model);
     } else {
       model.addAttribute(SORT_FIELD, "assignDate");
       model.addAttribute(SORT_DIRECTION, "asc");
@@ -109,6 +102,17 @@ public class ActionsAndNotificationsController {
     model.addAttribute("notifications", notificationsResponse);
 
     return "notifications/actions-and-notifications";
+  }
+
+  private static void populateModelFromCriteria(NotificationSearchCriteria criteria, Model model) {
+    String sort = criteria.getSort();
+    String[] params = sort.split(",");
+    String sortField = params[0];
+    String sortDirection = params[1];
+    model.addAttribute(SORT_FIELD, sortField);
+    model.addAttribute(SORT_DIRECTION, sortDirection);
+    model.addAttribute(REVERSE_SORT_DIRECTION,
+        sortDirection.equals("asc") ? "desc" : "asc");
   }
 
 }

@@ -90,7 +90,7 @@ class ActionsAndNotificationsControllerTest {
 
     Mockito.when(notificationService.getNotifications(any(), any(), any())).thenReturn(Mono.just(notificationsMock));
 
-    mockMvc.perform(get("/notifications?notificationType=A")
+    mockMvc.perform(get("/notifications?notification_type=A")
         .flashAttr("user", userDetails))
         .andDo(print())
         .andExpect(model().attribute("notificationSearchCriteria",
@@ -114,7 +114,7 @@ class ActionsAndNotificationsControllerTest {
   void testSortFieldsSetCorrectlyInModel() throws Exception {
     Notifications notificationsMock = getNotificationsMock();
     Mockito.when(notificationService.getNotifications(any(), any(), any())).thenReturn(Mono.just(notificationsMock));
-    mockMvc.perform(get("/notifications?notificationType=N&sort=subject,asc")
+    mockMvc.perform(get("/notifications?notification_type=N&sort=subject,asc")
             .flashAttr("user", userDetails))
         .andDo(print())
         .andExpect(model().attribute("notificationSearchCriteria",
