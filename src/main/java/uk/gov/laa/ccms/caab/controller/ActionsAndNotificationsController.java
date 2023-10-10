@@ -60,21 +60,18 @@ public class ActionsAndNotificationsController {
       @RequestParam(value = "page", defaultValue = "0") int page,
       @RequestParam(value = "size", defaultValue = "10") int size,
       @RequestParam(required = false) String sort,
+      @RequestParam(value = "notificationType", required = false) String notificationType,
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
       Model model) {
 
-    log.info("GET /notifications");
-
-    // first time the criteria has been set?
     // set the basic attributes for a user search
-
     criteria.setLoginId(user.getLoginId());
     criteria.setUserType(user.getUserType());
     criteria.setAssignedToUserId(user.getLoginId());
+    criteria.setNotificationType(notificationType);
 
     // Get the sort parameters
-
     if (StringUtils.isNotEmpty(sort)) {
       criteria.setSort(sort);
     }
