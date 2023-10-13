@@ -39,24 +39,18 @@ public class ClientAddressDetailsController {
 
   private static final String ACTION_FIND_ADDRESS = "find_address";
 
-  @ModelAttribute(CLIENT_DETAILS)
-  public ClientDetails getApplicationDetails() {
-    return new ClientDetails();
-  }
-
   /**
    * Handles the GET request for client address details page.
    *
    * @param clientDetails The details of the client.
    * @param model The model for the view.
-   * @return The view name for the client basic details page
+   * @return The view name for the client address details page
    */
-  @GetMapping("application/client/details/address")
+  @GetMapping("/application/client/details/address")
   public String clientDetailsAddress(
           @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
           Model model,
           BindingResult bindingResult) {
-    log.info("GET /application/client/details/address");
 
     populateDropdowns(model);
 
@@ -76,7 +70,7 @@ public class ClientAddressDetailsController {
    * @param clientDetails The details of the client.
    * @param bindingResult Validation result.
    * @param model The model for the view.
-   * @return A redirect string to the agreement page.
+   * @return A redirect string to the client equal opportunities monitoring page.
    */
   @PostMapping("/application/client/details/address")
   public String clientDetailsAddress(

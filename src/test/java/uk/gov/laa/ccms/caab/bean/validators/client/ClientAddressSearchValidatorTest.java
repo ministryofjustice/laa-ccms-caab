@@ -45,6 +45,7 @@ class ClientAddressSearchValidatorTest {
     clientAddressSearchValidator.validate(clientDetails, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
+    assertEquals("required.uprn",errors.getAllErrors().get(0).getCode());
   }
 
   @Test

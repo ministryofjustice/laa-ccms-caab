@@ -4,12 +4,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * Configuration class for creating WebClient instances used for making HTTP requests.
  */
 @Configuration
-public class ApplicationConfig {
+public class ApplicationConfig implements WebMvcConfigurer {
 
   private final String ebsApiUrl;
 
@@ -19,21 +21,33 @@ public class ApplicationConfig {
 
   private final String osApiUrl;
 
+  private final LoggingInterceptor loggingInterceptor;
+
+
+  @Override
+  public void addInterceptors(InterceptorRegistry registry) {
+    registry.addInterceptor(loggingInterceptor);
+  }
+
   /**
    * Constructs the ApplicationConfig instance with API URLs.
    *
-   * @param ebsApiUrl The URL of the data API.
-   * @param soaApiUrl The URL of the SOA Gateway API.
-   * @param caabApiUrl The URL of the CAAB API.
+   * @param ebsApiUrl          The URL of the data API.
+   * @param soaApiUrl          The URL of the SOA Gateway API.
+   * @param caabApiUrl         The URL of the CAAB API.
+   * @param osApiUrl           The URL of the ordinance survey API.
+   * @param loggingInterceptor A logging interceptor for the caab.
    */
   public ApplicationConfig(@Value("${laa.ccms.ebs-api.url}") String ebsApiUrl,
                            @Value("${laa.ccms.soa-api.url}") String soaApiUrl,
                            @Value("${laa.ccms.caab-api.url}") String caabApiUrl,
-                           @Value("${os.api.url}") String osApiUrl) {
+                           @Value("${os.api.url}") String osApiUrl,
+                           LoggingInterceptor loggingInterceptor) {
     this.ebsApiUrl = ebsApiUrl;
     this.soaApiUrl = soaApiUrl;
     this.caabApiUrl = caabApiUrl;
     this.osApiUrl = osApiUrl;
+    this.loggingInterceptor = loggingInterceptor;
   }
 
   /**

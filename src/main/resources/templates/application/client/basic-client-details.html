@@ -76,7 +76,7 @@
                         <span  class="govuk-!-font-weight-bold govuk-!-padding-right-2">
                             Date of birth (DD/MM/YYYY)
                         </span>
-                        <span th:text="${clientDetails.dateOfBirth}"></span>
+                        <span th:text="${clientDetails.dobDay} + '/' + ${clientDetails.dobMonth} + '/' + ${clientDetails.dobYear}"></span>
                     </p>
                     <div class="govuk-form-group" th:classappend="${#fields.hasErrors('countryOfOrigin')} ? 'govuk-form-group--error' : ''">
                         <label class="govuk-label" for="countryOfOrigin">

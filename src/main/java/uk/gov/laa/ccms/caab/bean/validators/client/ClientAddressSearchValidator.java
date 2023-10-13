@@ -5,7 +5,7 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 
 /**
- * Validates the urpn details provided by client address search.
+ * Validates the uprn details provided by client address search.
  */
 @Component
 public class ClientAddressSearchValidator extends AbstractClientAddressValidator {

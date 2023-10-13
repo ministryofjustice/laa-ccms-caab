@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.ServletRequestBindingException;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
@@ -40,6 +41,16 @@ public class GlobalExceptionHandlerTest {
     CaabApplicationException e = new CaabApplicationException(errorMsg);
 
     globalExceptionHandler.handleCaabApplicationException(e, model);
+
+    verify(model).addAttribute("error", errorMsg);
+  }
+
+  @Test
+  public void testHandleServletRequestBindingException() {
+    final String errorMsg = "Test Exception";
+    ServletRequestBindingException e = new ServletRequestBindingException(errorMsg);
+
+    globalExceptionHandler.handleServletRequestBindingException(e, model);
 
     verify(model).addAttribute("error", errorMsg);
   }

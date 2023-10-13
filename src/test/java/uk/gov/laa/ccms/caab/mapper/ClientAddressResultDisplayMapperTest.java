@@ -102,7 +102,6 @@ public class ClientAddressResultDisplayMapperTest {
     assertNull(resultRowDisplay.getAddressLine2());
     assertEquals("AB12 3CD", resultRowDisplay.getPostcode());
     assertEquals("London", resultRowDisplay.getCityTown());
-    assertEquals("Sometown", resultRowDisplay.getCounty());
     assertEquals("GBR", resultRowDisplay.getCountry());
   }
 

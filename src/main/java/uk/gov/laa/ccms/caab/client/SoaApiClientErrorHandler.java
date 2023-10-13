@@ -9,13 +9,18 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
+import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
+import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
+import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 
 /**
  * Provides error handling capabilities for the SoaApiClient.
@@ -128,6 +133,34 @@ public class SoaApiClientErrorHandler {
   }
 
   /**
+   * Handles errors that occur while posting a client to soa.
+   *
+   * @param transactionId the id for the transaction creating the client.
+   * @param e Exception thrown during operation.
+   * @return An empty Mono.
+   */
+  public Mono<ClientStatus> handleClientStatusError(String transactionId, Throwable e) {
+    log.error("Failed to retrieve Client Status for: {}",
+        transactionId,
+        e);
+    return Mono.empty();
+  }
+
+  /**
+   * Handles errors that occur while fetching Client Status.
+   *
+   * @param fullName client full name.
+   * @param e Exception thrown during operation.
+   * @return An empty Mono.
+   */
+  public Mono<ClientCreated> handleClientCreatedError(String fullName, Throwable e) {
+    log.error("Failed to create Client: {}",
+        fullName,
+        e);
+    return Mono.empty();
+  }
+
+  /**
    * Handles errors that occur while fetching CaseReferenceSummary.
    *
    * @param e Exception thrown during operation.
@@ -135,6 +168,37 @@ public class SoaApiClientErrorHandler {
    */
   public Mono<CaseReferenceSummary> handleCaseReferenceError(Throwable e) {
     log.error("Failed to retrieve CaseReferenceSummary", e);
+    return Mono.empty();
+  }
+
+  /**
+   * Handles errors that occur while fetching Notifications.
+   *
+   * @param criteria the search criteria.
+   * @param e Exception thrown during operation.
+   * @return and empty Mono.
+   */
+  public Mono<Notifications> handleNotificationsError(NotificationSearchCriteria criteria,
+      Throwable e) {
+    log.error("Failed to retrieve Notifications for "
+            + "caseReferenceNumber: {}, "
+            + "providerCaseReference: {}, "
+            + "assignedToUserId: {}, "
+            + "clientSurname: {}"
+            + "feeEarnerId: {}, "
+            + "includeClosed: {}, "
+            + "notificationType: {}, "
+            + "dateFrom: {}, "
+            + "dateTo: {}",
+        criteria.getCaseReference(),
+        criteria.getProviderCaseReference(),
+        criteria.getAssignedToUserId(),
+        criteria.getClientSurname(),
+        criteria.getFeeEarnerId(),
+        criteria.isIncludeClosed(),
+        criteria.getNotificationType(),
+        criteria.getDateFrom(),
+        criteria.getDateTo(), e);
     return Mono.empty();
   }
 

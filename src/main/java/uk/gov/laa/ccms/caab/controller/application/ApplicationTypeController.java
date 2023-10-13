@@ -46,7 +46,6 @@ public class ApplicationTypeController {
   public String applicationType(
       @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
       Model model) {
-    log.info("GET /application/application-type: {}", applicationDetails);
 
     if (applicationDetails.isExceptionalFunding()) {
       log.warn("ApplicationTypeController hit despite exceptionalFunding being true. "
@@ -72,7 +71,6 @@ public class ApplicationTypeController {
       @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
       BindingResult bindingResult,
       Model model) {
-    log.info("POST /application/application-type: {}", applicationDetails);
     applicationTypeValidator.validate(applicationDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {

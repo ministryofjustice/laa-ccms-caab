@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application;
+package uk.gov.laa.ccms.caab.controller.application.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -45,7 +45,7 @@ import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class ClientConfirmationControllerTest {
+class ClientConfirmationControllerTest {
 
   @Mock
   private HttpSession httpSession;
@@ -73,7 +73,7 @@ public class ClientConfirmationControllerTest {
   }
 
   @Test
-  public void testClientConfirm() throws Exception {
+  void testClientConfirm() throws Exception {
     String clientReferenceNumber = "123456";
     UserDetail user = buildUser(); // Assuming buildUser() method creates a UserDetail object
     ClientDetail clientInformation = new ClientDetail(); // Assuming proper initialization
@@ -92,7 +92,7 @@ public class ClientConfirmationControllerTest {
   }
 
   @Test
-  public void testClientConfirmedSuccess() throws Exception {
+  void testClientConfirmedSuccess() throws Exception {
     String confirmedClientReference = "12345"; //must match client reference above
     ApplicationDetails applicationDetails = buildApplicationDetails();
     ClientDetail clientInformation = buildClientInformation();
@@ -111,7 +111,7 @@ public class ClientConfirmationControllerTest {
   }
 
   @Test
-  public void testClientConfirmedClientMismatch() {
+  void testClientConfirmedClientMismatch() {
     String wrongReference = "wrongReference";
     ApplicationDetails applicationDetails = buildApplicationDetails();
     ClientDetail clientInformation = buildClientInformation();
