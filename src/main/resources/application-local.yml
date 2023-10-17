@@ -47,32 +47,25 @@ logging:
 
 os:
   api:
-#    hostname: localhost
-#    port: 8051
-    url: https://api.os.uk
-    key: IyPSxe9FQ9q0XxzfeVTWmHPohh9osP2D
+    hostname: localhost
+    port: 8051
+    url: http://${os.api.hostname}:${os.api.port}
+    key: TEST_KEY
 
 laa:
   ccms:
-    #    ebs-api:
-    #      hostname: localhost
-    #      port: 8009
-    #      url: http://${laa.ccms.ebs-api.hostname}:${laa.ccms.ebs-api.port}
-#    soa-api:
-#      hostname: localhost
-#      port: 8007
-#      url: http://${laa.ccms.soa-api.hostname}:${laa.ccms.soa-api.port}
+    ebs-api:
+      hostname: localhost
+      port: 8009
+      url: http://${laa.ccms.ebs-api.hostname}:${laa.ccms.ebs-api.port}
+    soa-api:
+      hostname: localhost
+      port: 8007
+      url: http://${laa.ccms.soa-api.hostname}:${laa.ccms.soa-api.port}
     caab-api:
       hostname: localhost
       port: 8005
       url: http://${laa.ccms.caab-api.hostname}:${laa.ccms.caab-api.port}
-    ebs-api:
-      url: https://development-laa-ccms-caab-ebs-api-laa-ccms-civil.apps.live.cloud-platform.service.justice.gov.uk
-    soa-api:
-      url: https://development-laa-ccms-caab-soa-api-laa-ccms-civil.apps.live.cloud-platform.service.justice.gov.uk
-#    caab-api:
-#      url: https://development-laa-ccms-caab-api-laa-ccms-civil.apps.live.cloud-platform.service.justice.gov.uk
-
 
 server:
   port: 8010

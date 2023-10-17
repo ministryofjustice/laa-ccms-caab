@@ -24,6 +24,7 @@ import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 
@@ -189,6 +190,56 @@ public class EbsApiClientTest {
     StepVerifier.create(providerDetailMono)
         .expectNext(providerDetail)
         .verifyComplete();
+  }
+
+  @Test
+  void getPersonRelationshipsToCaseValues_returnsData() {
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail
+        = new RelationshipToCaseLookupDetail();
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(RelationshipToCaseLookupDetail.class))
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
+
+    Mono<RelationshipToCaseLookupDetail> relationshipToCaseLookupDetailMono =
+        ebsApiClient.getPersonRelationshipsToCaseValues();
+
+    StepVerifier.create(relationshipToCaseLookupDetailMono)
+        .expectNext(relationshipToCaseLookupDetail)
+        .verifyComplete();
+
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    // Assert the URI
+    assertEquals("/lookup/person-to-case-relationships", actualUri.toString());
+  }
+
+  @Test
+  void getOrganisationRelationshipsToCaseValues_returnsData() {
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail
+        = new RelationshipToCaseLookupDetail();
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(RelationshipToCaseLookupDetail.class))
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
+
+    Mono<RelationshipToCaseLookupDetail> relationshipToCaseLookupDetailMono =
+        ebsApiClient.getOrganisationRelationshipsToCaseValues();
+
+    StepVerifier.create(relationshipToCaseLookupDetailMono)
+        .expectNext(relationshipToCaseLookupDetail)
+        .verifyComplete();
+
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    // Assert the URI
+    assertEquals("/lookup/organisation-to-case-relationships", actualUri.toString());
   }
 
   @Test

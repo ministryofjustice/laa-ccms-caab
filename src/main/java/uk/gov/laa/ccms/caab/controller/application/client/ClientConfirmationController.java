@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application.client;
 
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_INFORMATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -85,16 +86,18 @@ public class ClientConfirmationController {
           String confirmedClientReference,
           @SessionAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
           @SessionAttribute(CLIENT_INFORMATION) ClientDetail clientInformation,
-          @SessionAttribute(USER_DETAILS) UserDetail user) {
+          @SessionAttribute(USER_DETAILS) UserDetail user,
+          HttpSession session) {
 
     if (!confirmedClientReference.equals(clientInformation.getClientReferenceNumber())) {
       throw new RuntimeException("Client information does not match");
     }
 
     return applicationService.createApplication(applicationDetails, clientInformation, user)
-        .doOnSuccess(createdApplication -> {
+        .doOnSuccess(applicationId -> {
           applicationDetails.setApplicationCreated(true);
           log.info("Application details submitted");
+          session.setAttribute(APPLICATION_ID, applicationId);
         })
         .thenReturn("redirect:/application/agreement");
   }

@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.util;
+package uk.gov.laa.ccms.caab.builders;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
@@ -19,9 +19,8 @@ import java.util.List;
 import java.util.Optional;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.model.ApplicationDetailClient;
-import uk.gov.laa.ccms.caab.model.ApplicationDetailDevolvedPowers;
-import uk.gov.laa.ccms.caab.model.ApplicationDetailProvider;
+import uk.gov.laa.ccms.caab.model.Client;
+import uk.gov.laa.ccms.caab.model.DevolvedPowers;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
@@ -100,8 +99,9 @@ public class ApplicationBuilder {
    * @return The builder instance.
    */
   public ApplicationBuilder provider(UserDetail user) {
-    ApplicationDetailProvider provider = new ApplicationDetailProvider(user.getProvider().getId())
-            .displayValue(user.getProvider().getName());
+    IntDisplayValue provider = new IntDisplayValue()
+        .id(user.getProvider().getId())
+        .displayValue(user.getProvider().getName());
     application.setProvider(provider);
     return this;
   }
@@ -113,7 +113,7 @@ public class ApplicationBuilder {
    * @return The builder instance.
    */
   public ApplicationBuilder client(ClientDetail clientInformation) {
-    ApplicationDetailClient client = new ApplicationDetailClient()
+    Client client = new Client()
             .firstName(clientInformation.getDetails().getName().getFirstName())
             .surname(clientInformation.getDetails().getName().getSurname())
             .reference(clientInformation.getClientReferenceNumber());
@@ -178,7 +178,7 @@ public class ApplicationBuilder {
   public ApplicationBuilder devolvedPowers(
           List<ContractDetail> contractDetails,
           ApplicationDetails applicationDetails) throws ParseException {
-    ApplicationDetailDevolvedPowers devolvedPowers = new ApplicationDetailDevolvedPowers();
+    DevolvedPowers devolvedPowers = new DevolvedPowers();
 
     String contractualDevolvedPower = contractDetails != null ? contractDetails.stream()
             .filter(contract -> applicationDetails.getCategoryOfLawId()
@@ -209,13 +209,15 @@ public class ApplicationBuilder {
    * @return The builder instance.
    */
   public ApplicationBuilder larScopeFlag(AmendmentTypeLookupDetail amendmentTypes) {
+
     String defaultLarScopeFlag = Optional.ofNullable(amendmentTypes.getContent())
             .filter(content -> !content.isEmpty())
             .map(content -> content.get(0))
             .map(AmendmentTypeLookupValueDetail::getDefaultLarScopeFlag)
             .orElseThrow(() -> new RuntimeException(
                     "No amendment type available, unable to continue"));
-    application.setLarScopeFlag(defaultLarScopeFlag);
+
+    application.setLarScopeFlag("Y".equalsIgnoreCase(defaultLarScopeFlag));
     return this;
   }
 

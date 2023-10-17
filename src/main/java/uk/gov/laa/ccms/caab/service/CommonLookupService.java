@@ -24,6 +24,8 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 
 /**
  * Service class to handle Common Lookups.
@@ -150,6 +152,14 @@ public class CommonLookupService {
             return Mono.just(new CommonLookupDetail().content(Collections.emptyList()));
           }
         });
+  }
+
+  public Mono<RelationshipToCaseLookupDetail> getPersonToCaseRelationships() {
+    return ebsApiClient.getPersonRelationshipsToCaseValues();
+  }
+
+  public Mono<RelationshipToCaseLookupDetail> getOrganisationToCaseRelationships() {
+    return ebsApiClient.getOrganisationRelationshipsToCaseValues();
   }
 
   /**

@@ -23,14 +23,10 @@ import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 @Mapper(componentModel = "spring", config = IgnoreUnmappedMapperConfig.class)
 public interface ClientDetailMapper {
 
-  @Mapping(target = "details.name", source = "clientFormData",
-      qualifiedByName = "mapNameDetail")
-  @Mapping(target = "details.personalInformation", source = "clientFormData",
-      qualifiedByName = "mapPersonalInformationDetail")
-  @Mapping(target = "details.contacts", source = "clientFormData",
-      qualifiedByName = "mapContactDetail")
-  @Mapping(target = "details.address", source = "clientFormData",
-      qualifiedByName = "mapAddressDetail")
+  @Mapping(target = "details.name", source = "clientFormData")
+  @Mapping(target = "details.personalInformation", source = "clientFormData")
+  @Mapping(target = "details.contacts", source = "clientFormData")
+  @Mapping(target = "details.address", source = "clientFormData")
   @Mapping(target = "details.disabilityMonitoring.disabilityType",
       source = "disability",
       qualifiedByName = "mapStringToList")
@@ -48,7 +44,6 @@ public interface ClientDetailMapper {
   @Mapping(target = "middleName", source = "middleNames")
   @Mapping(target = "surnameAtBirth", source = "surnameAtBirth")
   @Mapping(target = "fullName", source = "clientFormData", qualifiedByName = "mapFullName")
-  @Named("mapNameDetail")
   NameDetail mapNameDetail(ClientDetails clientFormData);
 
   @Mapping(target = "dateOfBirth",
@@ -58,14 +53,12 @@ public interface ClientDetailMapper {
       ignore = true)
   @Mapping(target = "mentalCapacityInd",
       source = "mentalIncapacity")
-  @Named("mapPersonalInformationDetail")
   ClientPersonalDetail mapPersonalInformationDetail(ClientDetails clientFormData);
 
   @Mapping(target = "mobileNumber",
       source = "telephoneMobile")
   @Mapping(target = "fax",
       ignore = true)
-  @Named("mapContactDetail")
   ContactDetail mapContactDetail(ClientDetails clientFormData);
 
   @Mapping(target = "addressId",
@@ -86,7 +79,6 @@ public interface ClientDetailMapper {
       ignore = true)
   @Mapping(target = "postalCode",
       source = "postcode")
-  @Named("mapAddressDetail")
   AddressDetail mapAddressDetail(ClientDetails clientFormData);
 
   /**
