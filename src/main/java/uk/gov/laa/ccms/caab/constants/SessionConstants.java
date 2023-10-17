@@ -70,6 +70,11 @@ public class SessionConstants {
   public static final String SUBMISSION_TRANSACTION_ID = "submissionTransactionId";
 
   /**
+   * Session attribute used for maintaining current search criteria during a notifications search.
+   */
+  public static final String NOTIFICATION_SEARCH_CRITERIA = "notificationSearchCriteria";
+
+  /**
    * Session attribute used to keep track of the application, used for application summary page.
    */
   public static final String APPLICATION_ID = "applicationId";

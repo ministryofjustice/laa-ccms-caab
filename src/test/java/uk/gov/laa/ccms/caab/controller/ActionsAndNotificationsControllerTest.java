@@ -1,12 +1,16 @@
 package uk.gov.laa.ccms.caab.controller;
 
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
+import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +27,6 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
-import uk.gov.laa.ccms.soa.gateway.model.NotificationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 
 @ExtendWith(SpringExtension.class)
@@ -54,16 +57,7 @@ class ActionsAndNotificationsControllerTest {
 
   @Test
   void testNotificationsEndpointAndViewName_Data() throws Exception {
-    Notifications notificationsMock = new Notifications()
-        .addContentItem(
-            new Notification()
-                .user(new uk.gov.laa.ccms.soa.gateway.model.UserDetail()
-                    .userLoginId("user1")
-                    .userType("user1"))
-                .notificationDetail(new NotificationDetail()
-                    .notificationId("234")
-                    .notificationType("N"))
-        );
+    Notifications notificationsMock = getNotificationsMock();
 
     Mockito.when(notificationService.getNotifications(any(), any(), any())).thenReturn(Mono.just(notificationsMock));
 
@@ -76,7 +70,9 @@ class ActionsAndNotificationsControllerTest {
   @Test
   void testNotificationsEndpointAndViewName_NoData() throws Exception {
 
-    Notifications notificationsMock = new Notifications();
+    Notifications notificationsMock = new Notifications()
+        .content(new ArrayList<>());
+
 
     Mockito.when(notificationService.getNotifications(any(), any(), any())).thenReturn(Mono.just(notificationsMock));
 
@@ -84,6 +80,48 @@ class ActionsAndNotificationsControllerTest {
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("notifications/actions-and-notifications-no-results"));
+
+  }
+
+  @Test
+  void testNotificationTypePropagatesThroughToModel() throws Exception {
+
+    Notifications notificationsMock = getNotificationsMock();
+
+    Mockito.when(notificationService.getNotifications(any(), any(), any())).thenReturn(Mono.just(notificationsMock));
+
+    mockMvc.perform(get("/notifications?notification_type=A")
+        .flashAttr("user", userDetails))
+        .andDo(print())
+        .andExpect(model().attribute("notificationSearchCriteria",
+            hasProperty("notificationType", is("A"))))
+        .andExpect(status().isOk());
+  }
+
+  private static Notifications getNotificationsMock() {
+    return new Notifications()
+        .addContentItem(
+            new Notification()
+                .user(new uk.gov.laa.ccms.soa.gateway.model.UserDetail()
+                    .userLoginId("user1")
+                    .userType("user1"))
+                .notificationId("234")
+                .notificationType("N"));
+
+  }
+
+  @Test
+  void testSortFieldsSetCorrectlyInModel() throws Exception {
+    Notifications notificationsMock = getNotificationsMock();
+    Mockito.when(notificationService.getNotifications(any(), any(), any())).thenReturn(Mono.just(notificationsMock));
+    mockMvc.perform(get("/notifications?notification_type=N&sort=subject,asc")
+            .flashAttr("user", userDetails))
+        .andDo(print())
+        .andExpect(model().attribute("notificationSearchCriteria",
+            hasProperty("notificationType", is("N"))))
+        .andExpect(model().attribute("sortDirection", is("asc")))
+        .andExpect(model().attribute("sortField", is("subject")))
+        .andExpect(status().isOk());
 
   }
 }

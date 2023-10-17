@@ -1,38 +1,63 @@
-<nav th:fragment="pagination(page)" th:if="${page.totalPages > 1}" class="govuk-pagination" role="navigation" aria-label="results">
-    <div th:if="${page.number > 0}" class="govuk-pagination__prev">
-        <a  class="govuk-link govuk-pagination__link" th:href="@{(${currentUrl})(page=${page.number - 1})}" rel="prev">
-            <svg class="govuk-pagination__icon govuk-pagination__icon--prev" xmlns="http://www.w3.org/2000/svg" height="13" width="15" aria-hidden="true" focusable="false" viewBox="0 0 15 13">
-                <path d="m6.5938-0.0078125-6.7266 6.7266 6.7441 6.4062 1.377-1.449-4.1856-3.9768h12.896v-2h-12.984l4.2931-4.293-1.414-1.414z"></path>
-            </svg>
-            <span class="govuk-pagination__link-title">Previous</span>
-        </a>
-    </div>
-    <ul class="govuk-pagination__list">
-        <th:block th:each="pageNumber : ${#numbers.sequence(0, page.totalPages - 1)}">
-            <th:block th:if="${pageNumber == 0 || pageNumber == page.totalPages - 1 || (pageNumber <= page.number + 1 && pageNumber >= page.number - 1) || (pageNumber == 1 && page.number == 3) || (pageNumber == page.totalPages - 2 && page.number == page.totalPages - 4)}">
-                <li class="govuk-pagination__item" th:classappend="${pageNumber == page.number} ? 'govuk-pagination__item--current'">
-                    <a th:if="${pageNumber == page.number}" class="govuk-link govuk-pagination__link" href="#" aria-label="Page [[${pageNumber + 1}]]" aria-current="page">
-                        <span th:text="${pageNumber + 1}"></span>
-                    </a>
-                    <a th:unless="${pageNumber == page.number}" class="govuk-link govuk-pagination__link" th:href="@{(${currentUrl})(page=${pageNumber})}" href="#" aria-label="Page [[${pageNumber + 1}]]">
-                        <span th:text="${pageNumber + 1}"></span>
-                    </a>
-                </li>
-            </th:block>
-            <th:block th:if="${pageNumber == 2 && page.number > 3}">
-                <li class="govuk-pagination__item govuk-pagination__item--ellipses">&ctdot;</li>
-            </th:block>
-            <th:block th:if="${pageNumber == page.totalPages - 3 && page.number < page.totalPages - 4}">
-                <li class="govuk-pagination__item govuk-pagination__item--ellipses">&ctdot;</li>
-            </th:block>
-        </th:block>
-    </ul>
-    <div th:if="${page.number < page.totalPages - 1}" class="govuk-pagination__next">
-        <a class="govuk-link govuk-pagination__link" th:href="@{(${currentUrl})(page=${page.number + 1})}" rel="next">
-            <span class="govuk-pagination__link-title">Next</span>
-            <svg class="govuk-pagination__icon govuk-pagination__icon--next" xmlns="http://www.w3.org/2000/svg" height="13" width="15" aria-hidden="true" focusable="false" viewBox="0 0 15 13">
-                <path d="m8.107-0.0078125-1.4136 1.414 4.2926 4.293h-12.986v2h12.896l-4.1855 3.9766 1.377 1.4492 6.7441-6.4062-6.7246-6.7266z"></path>
-            </svg>
-        </a>
-    </div>
+<nav th:fragment="pagination(page)" th:if="${page.totalPages > 1}" class="govuk-pagination"
+     role="navigation" aria-label="results">
+  <div th:if="${page.number > 0}" class="govuk-pagination__prev">
+    <a class="govuk-link govuk-pagination__link"
+       th:href="@{(${currentUrl})(page=${page.number - 1})}" rel="prev">
+      <svg class="govuk-pagination__icon govuk-pagination__icon--prev"
+           xmlns="http://www.w3.org/2000/svg" height="13" width="15" aria-hidden="true"
+           focusable="false" viewBox="0 0 15 13">
+        <path
+            d="m6.5938-0.0078125-6.7266 6.7266 6.7441 6.4062 1.377-1.449-4.1856-3.9768h12.896v-2h-12.984l4.2931-4.293-1.414-1.414z"></path>
+      </svg>
+      <span class="govuk-pagination__link-title">Previous</span>
+    </a>
+  </div>
+  <ul class="govuk-pagination__list">
+    <th:block th:each="pageNumber : ${#numbers.sequence(0, page.totalPages - 1)}">
+      <th:block
+          th:if="${pageNumber == 0 || pageNumber == page.totalPages - 1 || (pageNumber <= page.number + 1 && pageNumber >= page.number - 1) || (pageNumber == 1 && page.number == 3) || (pageNumber == page.totalPages - 2 && page.number == page.totalPages - 4)}">
+        <li class="govuk-pagination__item"
+            th:classappend="${pageNumber == page.number} ? 'govuk-pagination__item--current'">
+          <a th:if="${pageNumber == page.number}" class="govuk-link govuk-pagination__link" href="#"
+             aria-label="Page [[${pageNumber + 1}]]" aria-current="page">
+            <span th:text="${pageNumber + 1}"></span>
+          </a>
+          <a th:unless="${pageNumber == page.number}" class="govuk-link govuk-pagination__link"
+             th:href="@{(${currentUrl})(page=${pageNumber})}" href="#"
+             aria-label="Page [[${pageNumber + 1}]]">
+            <span th:text="${pageNumber + 1}"></span>
+          </a>
+        </li>
+      </th:block>
+      <th:block th:if="${pageNumber == 2 && page.number > 3}">
+        <li class="govuk-pagination__item govuk-pagination__item--ellipses">&ctdot;</li>
+      </th:block>
+      <th:block th:if="${pageNumber == page.totalPages - 3 && page.number < page.totalPages - 4}">
+        <li class="govuk-pagination__item govuk-pagination__item--ellipses">&ctdot;</li>
+      </th:block>
+    </th:block>
+  </ul>
+  <div th:if="${page.number < page.totalPages - 1}" class="govuk-pagination__next">
+    <a class="govuk-link govuk-pagination__link"
+       th:href="@{(${currentUrl})(page=${page.number + 1})}" rel="next">
+      <span class="govuk-pagination__link-title">Next</span>
+      <svg class="govuk-pagination__icon govuk-pagination__icon--next"
+           xmlns="http://www.w3.org/2000/svg" height="13" width="15" aria-hidden="true"
+           focusable="false" viewBox="0 0 15 13">
+        <path
+            d="m8.107-0.0078125-1.4136 1.414 4.2926 4.293h-12.986v2h12.896l-4.1855 3.9766 1.377 1.4492 6.7441-6.4062-6.7246-6.7266z"></path>
+      </svg>
+    </a>
+  </div>
 </nav>
+
+<th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
+    style="margin-top: 0; white-space: nowrap" th:fragment="sorting(page, field, label)">
+  <a th:href="@{'/notifications?'
+                + 'page=' + ${page.number} + '&size=' + ${page.size}
+                + ${sortField!=null ? '&sort=' + field + ',' + (sortField == field ? reverseSortDirection : sortDirection) : ''}}">[[${label}]]
+    <span th:if="${sortField == field}"
+          th:utext="${sortDirection == 'asc' || sortDrection == '' ? '&#x25b2;' : '&#x25bc;'}"></span>
+    <span th:if="${sortField != field}" th:utext="${'&#x25b6;'}"></span>
+  </a>
+</th>

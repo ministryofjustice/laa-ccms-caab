@@ -45,93 +45,93 @@ public class SoaApiClient {
   /**
    * Retrieve the summary of notifications for a given user.
    *
-   * @param loginId   The login identifier for the user.
-   * @param userType  Type of the user (e.g., admin, user).
+   * @param loginId  The login identifier for the user.
+   * @param userType Type of the user (e.g., admin, user).
    * @return A Mono wrapping the NotificationSummary for the specified user.
    */
   public Mono<NotificationSummary> getNotificationsSummary(String loginId, String userType) {
     return soaApiWebClient
-            .get()
-            .uri("/users/{loginId}/notifications/summary", loginId)
-            .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
-            .header(SOA_GATEWAY_USER_ROLE, userType)
-            .retrieve()
-            .bodyToMono(NotificationSummary.class)
-            .onErrorResume(e -> soaApiClientErrorHandler
-                    .handleNotificationSummaryError(loginId, e));
+        .get()
+        .uri("/users/{loginId}/notifications/summary", loginId)
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .retrieve()
+        .bodyToMono(NotificationSummary.class)
+        .onErrorResume(e -> soaApiClientErrorHandler
+            .handleNotificationSummaryError(loginId, e));
   }
 
   /**
    * Fetches the contract details for the given criteria.
    *
-   * @param providerFirmId   The identifier for the provider firm.
-   * @param officeId         The identifier for the office.
-   * @param loginId          The login identifier for the user.
-   * @param userType         Type of the user (e.g., admin, user).
+   * @param providerFirmId The identifier for the provider firm.
+   * @param officeId       The identifier for the office.
+   * @param loginId        The login identifier for the user.
+   * @param userType       Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ContractDetails.
    */
   public Mono<ContractDetails> getContractDetails(Integer providerFirmId, Integer officeId,
-                                                  String loginId, String userType) {
+      String loginId, String userType) {
     return soaApiWebClient
-            .get()
-            .uri(builder -> builder.path("/contract-details")
-                    .queryParam("providerFirmId", providerFirmId)
-                    .queryParam("officeId", officeId)
-                    .build())
-            .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
-            .header(SOA_GATEWAY_USER_ROLE, userType)
-            .retrieve()
-            .bodyToMono(ContractDetails.class)
-            .onErrorResume(e -> soaApiClientErrorHandler
-                    .handleContractDetailsError(providerFirmId, officeId, e));
+        .get()
+        .uri(builder -> builder.path("/contract-details")
+            .queryParam("providerFirmId", providerFirmId)
+            .queryParam("officeId", officeId)
+            .build())
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .retrieve()
+        .bodyToMono(ContractDetails.class)
+        .onErrorResume(e -> soaApiClientErrorHandler
+            .handleContractDetailsError(providerFirmId, officeId, e));
   }
 
   /**
    * Searches and retrieves client details based on provided search criteria.
    *
-   * @param clientSearchCriteria  The search criteria to use when fetching clients.
-   * @param loginId               The login identifier for the user.
-   * @param userType              Type of the user (e.g., admin, user).
-   * @param page                  The page number for pagination.
-   * @param size                  The size or number of records per page.
+   * @param clientSearchCriteria The search criteria to use when fetching clients.
+   * @param loginId              The login identifier for the user.
+   * @param userType             Type of the user (e.g., admin, user).
+   * @param page                 The page number for pagination.
+   * @param size                 The size or number of records per page.
    * @return A Mono wrapping the ClientDetails.
    */
   public Mono<ClientDetails> getClients(
-          ClientSearchCriteria clientSearchCriteria,
-          String loginId,
-          String userType,
-          Integer page,
-          Integer size) {
+      ClientSearchCriteria clientSearchCriteria,
+      String loginId,
+      String userType,
+      Integer page,
+      Integer size) {
     return soaApiWebClient
-            .get()
-            .uri(builder -> builder.path("/clients")
-                    .queryParamIfPresent("first-name",
-                            Optional.ofNullable(clientSearchCriteria.getForename()))
-                    .queryParamIfPresent("surname",
-                            Optional.ofNullable(clientSearchCriteria.getSurname()))
-                    .queryParamIfPresent("date-of-birth",
-                            Optional.ofNullable(clientSearchCriteria.getDateOfBirth()))
-                    .queryParamIfPresent("home-office-reference",
-                            Optional.ofNullable(clientSearchCriteria
-                                    .getUniqueIdentifier(UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE)))
-                    .queryParamIfPresent("national-insurance_number",
-                            Optional.ofNullable(clientSearchCriteria
-                                    .getUniqueIdentifier(
-                                            UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER)))
-                    .queryParamIfPresent(CASE_REFERENCE_NUMBER,
-                            Optional.ofNullable(clientSearchCriteria
-                                    .getUniqueIdentifier(UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER)))
-                    .queryParamIfPresent("page",
-                            Optional.ofNullable(page))
-                    .queryParamIfPresent("size",
-                            Optional.ofNullable(size))
-                    .build())
-            .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
-            .header(SOA_GATEWAY_USER_ROLE, userType)
-            .retrieve()
-            .bodyToMono(ClientDetails.class)
-            .onErrorResume(e -> soaApiClientErrorHandler
-                    .handleClientDetailsError(clientSearchCriteria, e));
+        .get()
+        .uri(builder -> builder.path("/clients")
+            .queryParamIfPresent("first-name",
+                Optional.ofNullable(clientSearchCriteria.getForename()))
+            .queryParamIfPresent("surname",
+                Optional.ofNullable(clientSearchCriteria.getSurname()))
+            .queryParamIfPresent("date-of-birth",
+                Optional.ofNullable(clientSearchCriteria.getDateOfBirth()))
+            .queryParamIfPresent("home-office-reference",
+                Optional.ofNullable(clientSearchCriteria
+                    .getUniqueIdentifier(UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE)))
+            .queryParamIfPresent("national-insurance_number",
+                Optional.ofNullable(clientSearchCriteria
+                    .getUniqueIdentifier(
+                        UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER)))
+            .queryParamIfPresent(CASE_REFERENCE_NUMBER,
+                Optional.ofNullable(clientSearchCriteria
+                    .getUniqueIdentifier(UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER)))
+            .queryParamIfPresent("page",
+                Optional.ofNullable(page))
+            .queryParamIfPresent("size",
+                Optional.ofNullable(size))
+            .build())
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .retrieve()
+        .bodyToMono(ClientDetails.class)
+        .onErrorResume(e -> soaApiClientErrorHandler
+            .handleClientDetailsError(clientSearchCriteria, e));
 
   }
 
@@ -144,16 +144,16 @@ public class SoaApiClient {
    * @return A Mono wrapping the ClientDetail.
    */
   public Mono<ClientDetail> getClient(String clientReferenceNumber, String loginId,
-                                      String userType) {
+      String userType) {
     return soaApiWebClient
-            .get()
-            .uri("/clients/{clientReferenceNumber}", clientReferenceNumber)
-            .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
-            .header(SOA_GATEWAY_USER_ROLE, userType)
-            .retrieve()
-            .bodyToMono(ClientDetail.class)
-            .onErrorResume(e -> soaApiClientErrorHandler
-                    .handleClientDetailError(clientReferenceNumber, e));
+        .get()
+        .uri("/clients/{clientReferenceNumber}", clientReferenceNumber)
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .retrieve()
+        .bodyToMono(ClientDetail.class)
+        .onErrorResume(e -> soaApiClientErrorHandler
+            .handleClientDetailError(clientReferenceNumber, e));
 
   }
 
@@ -213,62 +213,62 @@ public class SoaApiClient {
    * @return A Mono wrapping the CaseDetails.
    */
   public Mono<CaseDetails> getCases(CopyCaseSearchCriteria copyCaseSearchCriteria, String loginId,
-                                    String userType, Integer page, Integer size) {
+      String userType, Integer page, Integer size) {
     return soaApiWebClient
-            .get()
-            .uri(builder -> builder.path("/cases")
-                    .queryParamIfPresent(CASE_REFERENCE_NUMBER, Optional.ofNullable(
-                            copyCaseSearchCriteria.getCaseReference()))
-                    .queryParamIfPresent("provider-case-reference", Optional.ofNullable(
-                            copyCaseSearchCriteria.getProviderCaseReference()))
-                    .queryParamIfPresent("case-status",
-                            Optional.ofNullable(copyCaseSearchCriteria.getActualStatus()))
-                    .queryParamIfPresent("fee-earner-id",
-                            Optional.ofNullable(copyCaseSearchCriteria.getFeeEarnerId()))
-                    .queryParamIfPresent("office-id",
-                            Optional.ofNullable(copyCaseSearchCriteria.getOfficeId()))
-                    .queryParamIfPresent("client-surname",
-                            Optional.ofNullable(copyCaseSearchCriteria.getClientSurname()))
-                    .queryParamIfPresent("page",
-                            Optional.ofNullable(page))
-                    .queryParamIfPresent("size",
-                            Optional.ofNullable(size))
-                    .build())
-            .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
-            .header(SOA_GATEWAY_USER_ROLE, userType)
-            .retrieve()
-            .bodyToMono(CaseDetails.class)
-            .onErrorResume(e -> soaApiClientErrorHandler.handleCaseDetailsError(
-                    copyCaseSearchCriteria, e));
+        .get()
+        .uri(builder -> builder.path("/cases")
+            .queryParamIfPresent(CASE_REFERENCE_NUMBER, Optional.ofNullable(
+                copyCaseSearchCriteria.getCaseReference()))
+            .queryParamIfPresent("provider-case-reference", Optional.ofNullable(
+                copyCaseSearchCriteria.getProviderCaseReference()))
+            .queryParamIfPresent("case-status",
+                Optional.ofNullable(copyCaseSearchCriteria.getActualStatus()))
+            .queryParamIfPresent("fee-earner-id",
+                Optional.ofNullable(copyCaseSearchCriteria.getFeeEarnerId()))
+            .queryParamIfPresent("office-id",
+                Optional.ofNullable(copyCaseSearchCriteria.getOfficeId()))
+            .queryParamIfPresent("client-surname",
+                Optional.ofNullable(copyCaseSearchCriteria.getClientSurname()))
+            .queryParamIfPresent("page",
+                Optional.ofNullable(page))
+            .queryParamIfPresent("size",
+                Optional.ofNullable(size))
+            .build())
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .retrieve()
+        .bodyToMono(CaseDetails.class)
+        .onErrorResume(e -> soaApiClientErrorHandler.handleCaseDetailsError(
+            copyCaseSearchCriteria, e));
 
   }
 
   /**
    * Fetches a summary of case references.
    *
-   * @param loginId   The login identifier for the user.
-   * @param userType  Type of the user (e.g., admin, user).
+   * @param loginId  The login identifier for the user.
+   * @param userType Type of the user (e.g., admin, user).
    * @return A Mono wrapping the CaseReferenceSummary.
    */
   public Mono<CaseReferenceSummary> getCaseReference(String loginId,
-                                                     String userType) {
+      String userType) {
     return soaApiWebClient
-            .get()
-            .uri("/case-reference")
-            .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
-            .header(SOA_GATEWAY_USER_ROLE, userType)
-            .retrieve()
-            .bodyToMono(CaseReferenceSummary.class)
-            .onErrorResume(soaApiClientErrorHandler::handleCaseReferenceError);
+        .get()
+        .uri("/case-reference")
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .retrieve()
+        .bodyToMono(CaseReferenceSummary.class)
+        .onErrorResume(soaApiClientErrorHandler::handleCaseReferenceError);
 
   }
 
   /**
    * Searches and retrieves notifications based on search criteria.
    *
-   * @param criteria  The {@link NotificationSearchCriteria} class.
-   * @param page      The page number for pagination.
-   * @param size      The size or number of records per page.
+   * @param criteria The {@link NotificationSearchCriteria} class.
+   * @param page     The page number for pagination.
+   * @param size     The size or number of records per page.
    * @return A Mono wrapping the Notifications
    */
   public Mono<Notifications> getNotifications(NotificationSearchCriteria criteria,
@@ -298,6 +298,8 @@ public class SoaApiClient {
                 Optional.ofNullable(page))
             .queryParamIfPresent("size",
                 Optional.ofNullable(size))
+            .queryParamIfPresent("sort",
+                Optional.ofNullable(criteria.getSort()))
             .build())
         .header(SOA_GATEWAY_USER_LOGIN_ID, criteria.getLoginId())
         .header(SOA_GATEWAY_USER_ROLE, criteria.getUserType())

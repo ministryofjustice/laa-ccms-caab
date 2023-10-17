@@ -38,11 +38,7 @@ public interface ClientDetailMapper {
       source = "noFixedAbode")
   ClientDetail toSoaClientDetail(ClientDetails clientFormData);
 
-  @Mapping(target = "title", source = "title")
-  @Mapping(target = "surname", source = "surname")
-  @Mapping(target = "firstName", source = "firstName")
   @Mapping(target = "middleName", source = "middleNames")
-  @Mapping(target = "surnameAtBirth", source = "surnameAtBirth")
   @Mapping(target = "fullName", source = "clientFormData", qualifiedByName = "mapFullName")
   NameDetail mapNameDetail(ClientDetails clientFormData);
 

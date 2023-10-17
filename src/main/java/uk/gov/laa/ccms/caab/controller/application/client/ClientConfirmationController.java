@@ -1,8 +1,7 @@
-package uk.gov.laa.ccms.caab.controller.application.client;
+package uk.gov.laa.ccms.caab.controller.application;
 
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_INFORMATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -57,6 +56,7 @@ public class ClientConfirmationController {
   public String clientConfirm(@PathVariable("client-reference-number") String clientReferenceNumber,
                               @SessionAttribute(USER_DETAILS) UserDetail user,
                               Model model, HttpSession session) {
+    log.info("GET /application/client/{}/confirm", clientReferenceNumber);
 
     ClientDetail clientInformation = clientService.getClient(
             clientReferenceNumber,
