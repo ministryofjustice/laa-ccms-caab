@@ -54,7 +54,7 @@ public class EbsApiClientErrorHandler {
           "Failed to retrieve Countries";
 
   /**
-   * The error message for Country errors.
+   * The error message for relationships to case.
    */
   public static String RELATIONSHIP_TO_CASE_ERROR_MESSAGE =
       "Failed to retrieve relationship to case";
