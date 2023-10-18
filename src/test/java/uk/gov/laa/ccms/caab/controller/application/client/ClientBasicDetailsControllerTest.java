@@ -29,7 +29,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
@@ -37,7 +37,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 public class ClientBasicDetailsControllerTest {
 
   @Mock
-  private CommonLookupService commonLookupService;
+  private LookupService lookupService;
 
   @Mock
   private ClientBasicDetailsValidator clientBasicDetailsValidator;
@@ -71,13 +71,13 @@ public class ClientBasicDetailsControllerTest {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
     ClientDetails clientDetails = new ClientDetails();
 
-    when(commonLookupService.getContactTitles()).thenReturn(
+    when(lookupService.getContactTitles()).thenReturn(
         Mono.just(titleLookupDetail));
-    when(commonLookupService.getCountries()).thenReturn(
+    when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
-    when(commonLookupService.getGenders()).thenReturn(
+    when(lookupService.getGenders()).thenReturn(
         Mono.just(genderLookupDetail));
-    when(commonLookupService.getMaritalStatuses()).thenReturn(
+    when(lookupService.getMaritalStatuses()).thenReturn(
         Mono.just(maritalStatusLookupDetail));
 
     this.mockMvc.perform(get("/application/client/details/basic")
@@ -96,13 +96,13 @@ public class ClientBasicDetailsControllerTest {
   void testClientDetailsBasicGetWithPopulatedFields() throws Exception {
     ClientSearchCriteria clientSearchCriteria = buildClientSearchCriteria();
 
-    when(commonLookupService.getContactTitles()).thenReturn(
+    when(lookupService.getContactTitles()).thenReturn(
         Mono.just(titleLookupDetail));
-    when(commonLookupService.getCountries()).thenReturn(
+    when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
-    when(commonLookupService.getGenders()).thenReturn(
+    when(lookupService.getGenders()).thenReturn(
         Mono.just(genderLookupDetail));
-    when(commonLookupService.getMaritalStatuses()).thenReturn(
+    when(lookupService.getMaritalStatuses()).thenReturn(
         Mono.just(maritalStatusLookupDetail));
 
     mockMvc.perform(get("/application/client/details/basic")
@@ -127,13 +127,13 @@ public class ClientBasicDetailsControllerTest {
     countryLookupDetail.addContentItem(
         new CommonLookupValueDetail().code("UK").description("United Kingdom"));
 
-    when(commonLookupService.getContactTitles()).thenReturn(
+    when(lookupService.getContactTitles()).thenReturn(
         Mono.just(titleLookupDetail));
-    when(commonLookupService.getCountries()).thenReturn(
+    when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
-    when(commonLookupService.getGenders()).thenReturn(
+    when(lookupService.getGenders()).thenReturn(
         Mono.just(genderLookupDetail));
-    when(commonLookupService.getMaritalStatuses()).thenReturn(
+    when(lookupService.getMaritalStatuses()).thenReturn(
         Mono.just(maritalStatusLookupDetail));
 
     this.mockMvc.perform(get("/application/client/details/basic")
@@ -173,13 +173,13 @@ public class ClientBasicDetailsControllerTest {
       return null;
     }).when(clientBasicDetailsValidator).validate(any(), any());
 
-    when(commonLookupService.getContactTitles()).thenReturn(
+    when(lookupService.getContactTitles()).thenReturn(
         Mono.just(titleLookupDetail));
-    when(commonLookupService.getCountries()).thenReturn(
+    when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
-    when(commonLookupService.getGenders()).thenReturn(
+    when(lookupService.getGenders()).thenReturn(
         Mono.just(genderLookupDetail));
-    when(commonLookupService.getMaritalStatuses()).thenReturn(
+    when(lookupService.getMaritalStatuses()).thenReturn(
         Mono.just(maritalStatusLookupDetail));
 
     mockMvc.perform(post("/application/client/details/basic")

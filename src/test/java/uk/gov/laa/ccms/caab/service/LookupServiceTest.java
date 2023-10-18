@@ -33,12 +33,12 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 @SuppressWarnings({"unchecked"})
 @ExtendWith(MockitoExtension.class)
-public class CommonLookupServiceTest {
+public class LookupServiceTest {
   @Mock
   private EbsApiClient ebsApiClient;
 
   @InjectMocks
-  private CommonLookupService commonLookupService;
+  private LookupService lookupService;
 
   private static Stream<Arguments> getCommonLookupArguments() {
     return Stream.of(
@@ -62,7 +62,7 @@ public class CommonLookupServiceTest {
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
 
     // Retrieve the method with its argument types if any
-    Method method = commonLookupService.getClass().getDeclaredMethod(methodCall);
+    Method method = lookupService.getClass().getDeclaredMethod(methodCall);
     CommonLookupDetail commonValues = new CommonLookupDetail();
 
     // Mock the behavior
@@ -70,7 +70,7 @@ public class CommonLookupServiceTest {
 
     // Invoke the method on the correct instance
     Mono<CommonLookupDetail> commonLookupDetailMono =
-        (Mono<CommonLookupDetail>) method.invoke(commonLookupService);
+        (Mono<CommonLookupDetail>) method.invoke(lookupService);
 
     // Verify
     StepVerifier.create(commonLookupDetailMono)
@@ -110,11 +110,11 @@ public class CommonLookupServiceTest {
     when(ebsApiClient.getCommonValues(constantValue, code)).thenReturn(Mono.just(commonValues));
 
     // Retrieve the method using reflection
-    Method method = commonLookupService.getClass().getMethod(methodCall, String.class);
+    Method method = lookupService.getClass().getMethod(methodCall, String.class);
 
     // Invoke the method
     Mono<CommonLookupValueDetail> commonLookupDetailMono =
-        (Mono<CommonLookupValueDetail>) method.invoke(commonLookupService, code);
+        (Mono<CommonLookupValueDetail>) method.invoke(lookupService, code);
 
     StepVerifier.create(commonLookupDetailMono)
         .expectNextMatches(result -> code.equals(result.getCode())
@@ -130,7 +130,7 @@ public class CommonLookupServiceTest {
 
     when(ebsApiClient.getCountries()).thenReturn(Mono.just(commonValues));
 
-    Mono<CommonLookupDetail> commonLookupDetailMono = commonLookupService.getCountries();
+    Mono<CommonLookupDetail> commonLookupDetailMono = lookupService.getCountries();
     StepVerifier.create(commonLookupDetailMono)
         .expectNext(commonValues)
         .verifyComplete();
@@ -143,7 +143,7 @@ public class CommonLookupServiceTest {
 
     when(ebsApiClient.getCountries()).thenReturn(Mono.just(commonValues));
 
-    Mono<CommonLookupValueDetail> commonLookupDetailMono = commonLookupService.getCountry("GBR");
+    Mono<CommonLookupValueDetail> commonLookupDetailMono = lookupService.getCountry("GBR");
     StepVerifier.create(commonLookupDetailMono)
         .expectNextMatches(result -> "GBR".equals(result.getCode()))
         .verifyComplete();

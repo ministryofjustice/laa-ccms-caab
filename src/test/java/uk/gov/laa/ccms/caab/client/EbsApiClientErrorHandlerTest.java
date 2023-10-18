@@ -11,6 +11,7 @@ import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -104,6 +105,20 @@ public class EbsApiClientErrorHandlerTest {
     StepVerifier.create(result)
         .verifyErrorMatches(e -> e instanceof EbsApiClientException
             && e.getMessage().equals("Failed to retrieve Provider: (id: 1234)")
+            && e.getCause() == throwable);
+  }
+
+  @Test
+  public void testHandleProceedingError() {
+    Throwable throwable = new RuntimeException("Error");
+    String proceedingCode = "PROC1";
+
+    Mono<ProceedingDetail> result =
+        ebsApiClientErrorHandler.handleProceedingError(proceedingCode, throwable);
+
+    StepVerifier.create(result)
+        .verifyErrorMatches(e -> e instanceof EbsApiClientException
+            && e.getMessage().equals("Failed to retrieve Proceeding: (code: PROC1)")
             && e.getCause() == throwable);
   }
 }

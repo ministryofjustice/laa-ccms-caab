@@ -31,7 +31,7 @@ import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationTypeValidator;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
@@ -40,7 +40,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @WebAppConfiguration
 public class ApplicationTypeControllerTest {
   @Mock
-  private CommonLookupService commonLookupService;
+  private LookupService lookupService;
 
   @Mock
   private ApplicationTypeValidator applicationTypeValidator;
@@ -64,7 +64,7 @@ public class ApplicationTypeControllerTest {
     applicationTypes.addContentItem(
         new CommonLookupValueDetail().type("Type 1").code("Code 1"));
 
-    when(commonLookupService.getApplicationTypes()).thenReturn(
+    when(lookupService.getApplicationTypes()).thenReturn(
         Mono.just(applicationTypes));
 
     this.mockMvc.perform(get("/application/application-type")
@@ -75,7 +75,7 @@ public class ApplicationTypeControllerTest {
         .andExpect(model().attribute(APPLICATION_FORM_DATA, new ApplicationFormData()))
         .andExpect(model().attribute("applicationTypes", applicationTypes.getContent()));
 
-    verify(commonLookupService, times(1)).getApplicationTypes();
+    verify(lookupService, times(1)).getApplicationTypes();
   }
 
   @Test
@@ -89,7 +89,7 @@ public class ApplicationTypeControllerTest {
         .andDo(print())
         .andExpect(redirectedUrl("/application/client/search"));
 
-    verifyNoInteractions(commonLookupService);
+    verifyNoInteractions(lookupService);
   }
 
   @Test
@@ -100,7 +100,7 @@ public class ApplicationTypeControllerTest {
     applicationTypes.addContentItem(
         new CommonLookupValueDetail().type("Type 1").code("Code 1"));
 
-    when(commonLookupService.getApplicationTypes()).thenReturn(
+    when(lookupService.getApplicationTypes()).thenReturn(
         Mono.just(applicationTypes));
 
     doAnswer(invocation -> {
@@ -127,7 +127,7 @@ public class ApplicationTypeControllerTest {
         .andDo(print())
         .andExpect(redirectedUrl("/application/delegated-functions"));
 
-    verifyNoInteractions(commonLookupService);
+    verifyNoInteractions(lookupService);
   }
 
 

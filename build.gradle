@@ -72,9 +72,9 @@ repositories {
 }
 
 dependencies {
-	implementation 'uk.gov.laa.ccms.data:data-api:0.0.2'
-	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.6'
-	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.5'
+	implementation 'uk.gov.laa.ccms.data:data-api:0.0.1-a239134-SNAPSHOT'
+	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.1-c6ee5f9-SNAPSHOT'
+	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.1-24498ef-SNAPSHOT'
 
 	//Starters
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'

@@ -58,6 +58,36 @@ public class CommonValueConstants {
   public static final String COMMON_VALUE_DISABILITY = "XXCCMS_DISABILITY_TYPES";
 
   /**
+   * Type used to retrieve the level of service values.
+   */
+  public static final String COMMON_VALUE_LEVEL_OF_SERVICE = "XXCCMS_LEVEL_OF_SERVICE";
+
+  /**
+   * Type used to retrieve the matter type values.
+   */
+  public static final String COMMON_VALUE_MATTER_TYPES = "XXCCMS_MATTER_TYPE";
+
+  /**
+   * Type used to retrieve the client involvement type values.
+   */
+  public static final String COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES = "XXCCMS_CLIENT_INVOLVE_TYPE";
+
+  /**
+   * Type used to retrieve the scope limitation values.
+   */
+  public static final String COMMON_VALUE_SCOPE_LIMITATIONS = "XXCCMS_SCOPE_LIMITATION";
+
+  /**
+   * Type used to retrieve the proceeding status values.
+   */
+  public static final String COMMON_VALUE_PROCEEDING_STATUS = "XXCCMS_PROCEEDING_STATUS";
+
+  /**
+   * Type used to retrieve the courts values.
+   */
+  public static final String COMMON_VALUE_COURTS = "XXCCMS_COURTS";
+
+  /**
    * Type used to retrieve the Notification Types for the Notification search.
    */
   public static final String COMMON_VALUE_NOTIFICATION_TYPE = "XXCCMS_NOTIFICATION_TYPES";

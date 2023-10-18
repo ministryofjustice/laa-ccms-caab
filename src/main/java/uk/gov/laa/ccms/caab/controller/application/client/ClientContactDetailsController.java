@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 
 /**
@@ -29,7 +29,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 @SuppressWarnings({"unchecked"})
 public class ClientContactDetailsController {
 
-  private final CommonLookupService commonLookupService;
+  private final LookupService lookupService;
 
   private final ClientContactDetailsValidator clientContactDetailsValidator;
 
@@ -78,11 +78,11 @@ public class ClientContactDetailsController {
   private void populateDropdowns(Model model) {
 
     Mono<CommonLookupDetail> correspondenceMethodMono =
-        commonLookupService.getCorrespondenceMethods();
+        lookupService.getCorrespondenceMethods();
 
     // Asynchronously fetch marital statuses
     Mono<CommonLookupDetail> correspondenceLanguageMono =
-        commonLookupService.getCorrespondenceLanguages();
+        lookupService.getCorrespondenceLanguages();
 
     // Zip all Monos and populate the model once all results are available
     Mono.zip(correspondenceMethodMono, correspondenceLanguageMono)

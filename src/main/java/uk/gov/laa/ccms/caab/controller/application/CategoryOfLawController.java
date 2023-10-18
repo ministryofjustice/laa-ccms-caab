@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.CategoryOfLawValidator;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -40,7 +40,7 @@ public class CategoryOfLawController {
 
   private final ProviderService providerService;
 
-  private final CommonLookupService commonLookupService;
+  private final LookupService lookupService;
 
   /**
    * Handles the GET request for category of law selection page.
@@ -115,7 +115,7 @@ public class CategoryOfLawController {
       BindingResult bindingResult) {
 
     List<CommonLookupValueDetail> categoriesOfLaw =
-        Optional.ofNullable(commonLookupService.getCategoriesOfLaw().block())
+        Optional.ofNullable(lookupService.getCategoriesOfLaw().block())
             .orElse(new CommonLookupDetail())
             .getContent();
 

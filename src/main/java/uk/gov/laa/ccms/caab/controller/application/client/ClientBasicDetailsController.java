@@ -21,7 +21,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
@@ -37,7 +37,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @SuppressWarnings({"unchecked"})
 public class ClientBasicDetailsController {
 
-  private final CommonLookupService commonLookupService;
+  private final LookupService lookupService;
 
   private final ClientBasicDetailsValidator clientBasicDetailsValidator;
 
@@ -142,16 +142,16 @@ public class ClientBasicDetailsController {
    */
   private void populateDropdowns(Model model) {
     // Asynchronously fetch titles
-    Mono<CommonLookupDetail> titlesMono = commonLookupService.getContactTitles();
+    Mono<CommonLookupDetail> titlesMono = lookupService.getContactTitles();
 
     // Asynchronously fetch countries
-    Mono<CommonLookupDetail> countriesMono = commonLookupService.getCountries();
+    Mono<CommonLookupDetail> countriesMono = lookupService.getCountries();
 
     // Asynchronously fetch genders
-    Mono<CommonLookupDetail> gendersMono = commonLookupService.getGenders();
+    Mono<CommonLookupDetail> gendersMono = lookupService.getGenders();
 
     // Asynchronously fetch marital statuses
-    Mono<CommonLookupDetail> maritalStatusMono = commonLookupService.getMaritalStatuses();
+    Mono<CommonLookupDetail> maritalStatusMono = lookupService.getMaritalStatuses();
 
     // Zip all Monos and populate the model once all results are available
     Mono.zip(titlesMono, countriesMono, gendersMono, maritalStatusMono)

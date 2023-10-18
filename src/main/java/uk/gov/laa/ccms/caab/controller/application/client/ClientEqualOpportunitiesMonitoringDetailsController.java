@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 
 /**
@@ -30,7 +30,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 @SuppressWarnings({"unchecked"})
 public class ClientEqualOpportunitiesMonitoringDetailsController {
 
-  private final CommonLookupService commonLookupService;
+  private final LookupService lookupService;
 
   private final ClientEqualOpportunitiesMonitoringDetailsValidator validator;
 
@@ -79,11 +79,11 @@ public class ClientEqualOpportunitiesMonitoringDetailsController {
 
     // Asynchronously fetch ethnic origins
     Mono<CommonLookupDetail> ethnicOriginsMono =
-        commonLookupService.getEthnicOrigins();
+        lookupService.getEthnicOrigins();
 
     // Asynchronously fetch disabilities
     Mono<CommonLookupDetail> disabilitiesMono =
-        commonLookupService.getDisabilities();
+        lookupService.getDisabilities();
 
     // Zip all Monos and populate the model once all results are available
     Mono.zip(ethnicOriginsMono, disabilitiesMono)

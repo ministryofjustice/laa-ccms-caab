@@ -41,7 +41,7 @@ import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.CategoryOfLawValidator;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.data.model.BaseOffice;
 import uk.gov.laa.ccms.data.model.BaseProvider;
@@ -57,7 +57,7 @@ public class CategoryOfLawControllerTest {
   private ProviderService providerService;
 
   @Mock
-  private CommonLookupService commonLookupService;
+  private LookupService lookupService;
 
   @Mock
   private CategoryOfLawValidator categoryOfLawValidator;
@@ -103,7 +103,7 @@ public class CategoryOfLawControllerTest {
         user.getUserType(),
         Boolean.TRUE)).thenReturn(categoryOfLawCodes);
 
-    when(commonLookupService.getCategoriesOfLaw()).thenReturn(
+    when(lookupService.getCategoriesOfLaw()).thenReturn(
         Mono.just(categoriesOfLaw));
 
     this.mockMvc.perform(get("/application/category-of-law")
@@ -120,7 +120,7 @@ public class CategoryOfLawControllerTest {
         user.getUserType(),
         Boolean.TRUE);
 
-    verify(commonLookupService).getCategoriesOfLaw();
+    verify(lookupService).getCategoriesOfLaw();
   }
 
   @Test
@@ -160,7 +160,7 @@ public class CategoryOfLawControllerTest {
 
   @Test
   public void testGetCategoryOfLaw_ExceptionFundingReturnsAllCodes() throws Exception {
-    when(commonLookupService.getCategoriesOfLaw()).thenReturn(
+    when(lookupService.getCategoriesOfLaw()).thenReturn(
         Mono.just(categoriesOfLaw));
 
     this.mockMvc.perform(get("/application/category-of-law?exceptional_funding=true")
@@ -174,7 +174,7 @@ public class CategoryOfLawControllerTest {
 
     assertTrue(applicationFormData.isExceptionalFunding());
     verifyNoInteractions(providerService);
-    verify(commonLookupService).getCategoriesOfLaw();
+    verify(lookupService).getCategoriesOfLaw();
   }
 
   @Test
@@ -190,7 +190,7 @@ public class CategoryOfLawControllerTest {
         user.getUserType(),
         Boolean.TRUE)).thenReturn(categoryOfLawCodes);
 
-    when(commonLookupService.getCategoriesOfLaw()).thenReturn(
+    when(lookupService.getCategoriesOfLaw()).thenReturn(
         Mono.just(categoriesOfLaw));
 
     doAnswer(invocation -> {
@@ -220,7 +220,7 @@ public class CategoryOfLawControllerTest {
         .andExpect(redirectedUrl("/application/application-type"));
 
     verifyNoInteractions(providerService);
-    verifyNoInteractions(commonLookupService);
+    verifyNoInteractions(lookupService);
   }
 
   @Test
@@ -235,7 +235,7 @@ public class CategoryOfLawControllerTest {
         .andExpect(redirectedUrl("/application/client/search"));
 
     verifyNoInteractions(providerService);
-    verifyNoInteractions(commonLookupService);
+    verifyNoInteractions(lookupService);
   }
 
 
