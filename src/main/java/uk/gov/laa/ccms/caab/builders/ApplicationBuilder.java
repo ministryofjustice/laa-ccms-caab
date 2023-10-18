@@ -56,8 +56,8 @@ public class ApplicationBuilder {
    * @return The builder instance.
    */
   public ApplicationBuilder applicationType(
-          String applicationTypeCategory,
-          boolean isDelegatedFunctions) {
+          final String applicationTypeCategory,
+          final boolean isDelegatedFunctions) {
     StringDisplayValue applicationType = new StringDisplayValue();
     if (APP_TYPE_SUBSTANTIVE.equals(applicationTypeCategory)) {
       applicationType.setId(isDelegatedFunctions
@@ -83,7 +83,7 @@ public class ApplicationBuilder {
    * @param caseReferenceSummary The case reference summary.
    * @return The builder instance.
    */
-  public ApplicationBuilder caseReference(CaseReferenceSummary caseReferenceSummary) {
+  public ApplicationBuilder caseReference(final CaseReferenceSummary caseReferenceSummary) {
     String caseReference = Optional.ofNullable(caseReferenceSummary.getCaseReferenceNumber())
             .orElseThrow(() -> new RuntimeException(
                     "No case reference number was created, unable to continue"));
@@ -98,7 +98,7 @@ public class ApplicationBuilder {
    * @param user The user detail.
    * @return The builder instance.
    */
-  public ApplicationBuilder provider(UserDetail user) {
+  public ApplicationBuilder provider(final UserDetail user) {
     IntDisplayValue provider = new IntDisplayValue()
         .id(user.getProvider().getId())
         .displayValue(user.getProvider().getName());
@@ -112,7 +112,7 @@ public class ApplicationBuilder {
    * @param clientInformation The client information.
    * @return The builder instance.
    */
-  public ApplicationBuilder client(ClientDetail clientInformation) {
+  public ApplicationBuilder client(final ClientDetail clientInformation) {
     Client client = new Client()
             .firstName(clientInformation.getDetails().getName().getFirstName())
             .surname(clientInformation.getDetails().getName().getSurname())
@@ -129,8 +129,8 @@ public class ApplicationBuilder {
    * @return The builder instance.
    */
   public ApplicationBuilder categoryOfLaw(
-          String categoryOfLawId,
-          CommonLookupDetail categoryOfLawValues) {
+          final String categoryOfLawId,
+          final CommonLookupDetail categoryOfLawValues) {
     String categoryOfLawDisplayValue = categoryOfLawValues
             .getContent()
             .stream()
@@ -153,7 +153,7 @@ public class ApplicationBuilder {
    * @param offices  The list of office details.
    * @return The builder instance.
    */
-  public ApplicationBuilder office(Integer officeId, List<BaseOffice> offices) {
+  public ApplicationBuilder office(final Integer officeId, final List<BaseOffice> offices) {
     String officeDisplayValue = offices.stream()
             .filter(office -> officeId.equals(office.getId()))
             .map(BaseOffice::getName)
@@ -176,8 +176,8 @@ public class ApplicationBuilder {
    * @throws ParseException If there's an error in parsing dates.
    */
   public ApplicationBuilder devolvedPowers(
-          List<ContractDetail> contractDetails,
-          ApplicationDetails applicationDetails) throws ParseException {
+          final List<ContractDetail> contractDetails,
+          final ApplicationDetails applicationDetails) throws ParseException {
     DevolvedPowers devolvedPowers = new DevolvedPowers();
 
     String contractualDevolvedPower = contractDetails != null ? contractDetails.stream()
@@ -208,7 +208,7 @@ public class ApplicationBuilder {
    * @param amendmentTypes The amendment type details.
    * @return The builder instance.
    */
-  public ApplicationBuilder larScopeFlag(AmendmentTypeLookupDetail amendmentTypes) {
+  public ApplicationBuilder larScopeFlag(final AmendmentTypeLookupDetail amendmentTypes) {
 
     String defaultLarScopeFlag = Optional.ofNullable(amendmentTypes.getContent())
             .filter(content -> !content.isEmpty())

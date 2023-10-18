@@ -38,7 +38,7 @@ public class ApplicationSummaryController {
    */
   @GetMapping("/application/summary")
   public String applicationSummary(
-      @SessionAttribute(APPLICATION_ID) String applicationId,
+      @SessionAttribute(APPLICATION_ID) final String applicationId,
       HttpSession session,
       Model model) {
 

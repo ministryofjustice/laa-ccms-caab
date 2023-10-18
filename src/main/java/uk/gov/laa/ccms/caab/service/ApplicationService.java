@@ -164,7 +164,7 @@ public class ApplicationService {
    * @param id the identifier of the application to retrieve a summary for.
    * @return A Mono of ApplicationSummaryDisplay representing the case summary display values.
    */
-  public Mono<ApplicationSummaryDisplay> getApplicationSummary(String id) {
+  public Mono<ApplicationSummaryDisplay> getApplicationSummary(final String id) {
 
     Mono<RelationshipToCaseLookupDetail> organisationRelationshipsMono =
         ebsApiClient.getOrganisationRelationshipsToCaseValues();

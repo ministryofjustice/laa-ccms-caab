@@ -243,7 +243,85 @@ class ApplicationServiceTest {
 
     // Verify the result
     StepVerifier.create(summaryMono)
-        .expectNextMatches(summary -> summary != null)
+        .expectNextMatches(summary -> {
+          // Add assertions to check the content of the summary
+          assertNotNull(summary); // Check that summary is not null
+          assertEquals("bob ross", summary.getClientFullName());
+          assertEquals("testing123", summary.getApplicationType().getStatus());
+          assertEquals("Started", summary.getProviderDetails().getStatus());
+          assertEquals("Complete", summary.getClientDetails().getStatus());
+          assertEquals("Started", summary.getGeneralDetails().getStatus());
+          assertEquals("Not started", summary.getProceedingsAndCosts().getStatus());
+          assertEquals("Not started", summary.getOpponentsAndOtherParties().getStatus());
+          // Add more assertions as needed
+          return true; // Return true to indicate the match is successful
+        })
+        .verifyComplete();
+  }
+
+  @Test
+  void getApplicationSummary_returnsApplicationSummary() {
+    String applicationId = "12345";
+
+    // Create mock data for successful Mono results
+    RelationshipToCaseLookupDetail orgRelationshipsDetail = new RelationshipToCaseLookupDetail();
+    orgRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail());
+
+    RelationshipToCaseLookupDetail personRelationshipsDetail = new RelationshipToCaseLookupDetail();
+    personRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail());
+
+    AuditDetail auditDetail = new AuditDetail();
+    auditDetail.setLastSaved(Date.from(Instant.now()));
+    auditDetail.setLastSavedBy("TestUser");
+
+    CostStructure costStructure = new CostStructure();
+    costStructure.setAuditTrail(auditDetail);
+
+    Client client = new Client();
+    client.setFirstName("bob");
+    client.setSurname("ross");
+
+    StringDisplayValue applicationType = new StringDisplayValue();
+    applicationType.id("test 123");
+    applicationType.setDisplayValue("testing123");
+
+    ApplicationDetail mockApplicationDetail = new ApplicationDetail();
+    mockApplicationDetail.setAuditTrail(auditDetail);
+    mockApplicationDetail.setClient(client);
+    mockApplicationDetail.setApplicationType(applicationType);
+    mockApplicationDetail.setProceedings(new ArrayList<>());
+    mockApplicationDetail.setPriorAuthorities(new ArrayList<>());
+    mockApplicationDetail.setOpponents(new ArrayList<>());
+    mockApplicationDetail.setCosts(costStructure);
+
+    // Mock the behavior of your dependencies
+    when(ebsApiClient.getOrganisationRelationshipsToCaseValues()).thenReturn(
+        Mono.just(orgRelationshipsDetail));
+
+    when(ebsApiClient.getPersonRelationshipsToCaseValues()).thenReturn(
+        Mono.just(personRelationshipsDetail));
+
+    when(caabApiClient.getApplication(applicationId)).thenReturn(
+        Mono.just(mockApplicationDetail));
+
+    Mono<ApplicationSummaryDisplay> summaryMono =
+        applicationService.getApplicationSummary(applicationId);
+
+    // Verify the result
+    StepVerifier.create(summaryMono)
+        .expectNextMatches(summary -> {
+          // Add assertions to check the content of the summary
+          assertNotNull(summary); // Check that summary is not null
+          assertEquals("bob ross", summary.getClientFullName());
+          assertEquals("testing123", summary.getApplicationType().getStatus());
+          assertEquals("Started", summary.getProviderDetails().getStatus());
+          assertEquals("Complete", summary.getClientDetails().getStatus());
+          assertEquals("Started", summary.getGeneralDetails().getStatus());
+          assertEquals("Not started", summary.getProceedingsAndCosts().getStatus());
+          assertEquals("Not started", summary.getOpponentsAndOtherParties().getStatus());
+          // Add more assertions as needed
+          return true; // Return true to indicate the match is successful
+        })
         .verifyComplete();
   }
 

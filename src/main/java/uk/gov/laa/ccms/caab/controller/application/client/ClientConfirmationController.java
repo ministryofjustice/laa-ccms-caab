@@ -54,8 +54,8 @@ public class ClientConfirmationController {
    * @return The view name for the client confirmation page.
    */
   @GetMapping("/application/client/{client-reference-number}/confirm")
-  public String clientConfirm(@PathVariable("client-reference-number") String clientReferenceNumber,
-                              @SessionAttribute(USER_DETAILS) UserDetail user,
+  public String clientConfirm(@PathVariable("client-reference-number") final String clientReferenceNumber,
+                              @SessionAttribute(USER_DETAILS) final UserDetail user,
                               Model model, HttpSession session) {
     log.info("GET /application/client/{}/confirm", clientReferenceNumber);
 
@@ -85,9 +85,9 @@ public class ClientConfirmationController {
   @PostMapping("/application/client/confirmed")
   public Mono<String> clientConfirmed(
           String confirmedClientReference,
-          @SessionAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
-          @SessionAttribute(CLIENT_INFORMATION) ClientDetail clientInformation,
-          @SessionAttribute(USER_DETAILS) UserDetail user,
+          @SessionAttribute(APPLICATION_DETAILS) final ApplicationDetails applicationDetails,
+          @SessionAttribute(CLIENT_INFORMATION) final ClientDetail clientInformation,
+          @SessionAttribute(USER_DETAILS) final UserDetail user,
           HttpSession session) {
 
     if (!confirmedClientReference.equals(clientInformation.getClientReferenceNumber())) {

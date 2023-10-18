@@ -54,8 +54,11 @@ public class ApplicationSummaryBuilder {
    * @param lastName the application's client's last name
    * @return the builder with amended clientFullName details.
    */
-  public ApplicationSummaryBuilder clientFullName(String firstName, String lastName) {
-    applicationSummary.setClientFullName(firstName + " " + lastName);
+  public ApplicationSummaryBuilder clientFullName(final String firstName, final String lastName) {
+    String fullName = (firstName != null ? firstName : "")
+        + " "
+        + (lastName != null ? lastName : "");
+    applicationSummary.setClientFullName(fullName.trim());
     return this;
   }
 
@@ -65,7 +68,7 @@ public class ApplicationSummaryBuilder {
    * @param caseReferenceNumber the applications case reference number.
    * @return the builder with amended case reference number details.
    */
-  public ApplicationSummaryBuilder caseReferenceNumber(String caseReferenceNumber) {
+  public ApplicationSummaryBuilder caseReferenceNumber(final String caseReferenceNumber) {
     applicationSummary.setCaseReferenceNumber(caseReferenceNumber);
     return this;
   }
@@ -77,7 +80,7 @@ public class ApplicationSummaryBuilder {
    * @return the builder with amended provider case reference number details.
    */
   public ApplicationSummaryBuilder providerCaseReferenceNumber(
-      String providerCaseReferenceNumber) {
+      final String providerCaseReferenceNumber) {
     applicationSummary.setProviderCaseReferenceNumber(providerCaseReferenceNumber);
     return this;
   }
@@ -88,7 +91,7 @@ public class ApplicationSummaryBuilder {
    * @param applicationTypeDisplayValue the application's type display value.
    * @return the builder with amended application type details.
    */
-  public ApplicationSummaryBuilder applicationType(String applicationTypeDisplayValue) {
+  public ApplicationSummaryBuilder applicationType(final String applicationTypeDisplayValue) {
     applicationSummary.getApplicationType().setStatus(applicationTypeDisplayValue);
     return this;
   }
@@ -99,7 +102,7 @@ public class ApplicationSummaryBuilder {
    * @param providerContact the provider's contact information.
    * @return the builder with amended provider details.
    */
-  public ApplicationSummaryBuilder providerDetails(StringDisplayValue providerContact) {
+  public ApplicationSummaryBuilder providerDetails(final StringDisplayValue providerContact) {
     if (providerContact != null && StringUtils.hasText(providerContact.getDisplayValue())) {
       applicationSummary.getProviderDetails().setStatus(COMPLETE);
     } else {
@@ -114,7 +117,7 @@ public class ApplicationSummaryBuilder {
    * @param address the address information.
    * @return the builder with amended general details.
    */
-  public ApplicationSummaryBuilder generalDetails(Address address) {
+  public ApplicationSummaryBuilder generalDetails(final Address address) {
     if (address != null && StringUtils.hasText(address.getPreferredAddress())) {
       applicationSummary.getGeneralDetails().setStatus(COMPLETE);
     } else {
@@ -132,9 +135,9 @@ public class ApplicationSummaryBuilder {
    * @return the builder with amended proceedings, prior authorities, and costs details.
    */
   public ApplicationSummaryBuilder proceedingsAndCosts(
-      List<Proceeding> proceedings,
-      List<PriorAuthority> priorAuthorities,
-      CostStructure costs) {
+      final List<Proceeding> proceedings,
+      final List<PriorAuthority> priorAuthorities,
+      final CostStructure costs) {
     String status = NOT_STARTED;
     if (!proceedings.isEmpty()) {
       if (!priorAuthorities.isEmpty()) {
@@ -178,9 +181,9 @@ public class ApplicationSummaryBuilder {
    * @return the builder with amended opponents and other parties details.
    */
   public ApplicationSummaryBuilder opponentsAndOtherParties(
-      List<Opponent> opponents,
-      List<RelationshipToCaseLookupValueDetail> organisationRelationships,
-      List<RelationshipToCaseLookupValueDetail> personRelationships) {
+      final List<Opponent> opponents,
+      final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
+      final List<RelationshipToCaseLookupValueDetail> personRelationships) {
 
     if (opponents.isEmpty()) {
       applicationSummary.getOpponentsAndOtherParties().setStatus(NOT_STARTED);
@@ -214,8 +217,8 @@ public class ApplicationSummaryBuilder {
   }
 
   private void checkAndSetLastSaved(
-      ApplicationSummaryStatusDisplay statusDisplay,
-      AuditDetail newInfo) {
+      final ApplicationSummaryStatusDisplay statusDisplay,
+      final AuditDetail newInfo) {
     if ((newInfo.getLastSaved() != null
         && statusDisplay.getLastSaved() != null
         && statusDisplay.getLastSaved().compareTo(newInfo.getLastSaved()) < 0)
@@ -226,9 +229,9 @@ public class ApplicationSummaryBuilder {
   }
 
   private boolean isOpponentCreated(
-      Opponent opponent,
-      List<RelationshipToCaseLookupValueDetail> organisationRelationships,
-      List<RelationshipToCaseLookupValueDetail> personRelationships) {
+      final Opponent opponent,
+      final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
+      final List<RelationshipToCaseLookupValueDetail> personRelationships) {
 
     List<RelationshipToCaseLookupValueDetail> relationships =
         opponent.getType().equalsIgnoreCase(TYPE_ORGANISATION)

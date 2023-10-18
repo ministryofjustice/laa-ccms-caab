@@ -27,7 +27,9 @@ public class CaabApiClient {
    * @param application the details of the application to be created
    * @return a Mono signaling the completion of the application creation
    */
-  public Mono<String> createApplication(String loginId, ApplicationDetail application) {
+  public Mono<String> createApplication(
+      final String loginId,
+      final ApplicationDetail application) {
 
     return caabApiWebClient
             .post()
@@ -57,7 +59,7 @@ public class CaabApiClient {
    * @return a Mono containing applications detail
    */
   public Mono<ApplicationDetail> getApplication(
-      String id) {
+      final String id) {
     return caabApiWebClient
         .get()
         .uri("/applications/{id}", id)
