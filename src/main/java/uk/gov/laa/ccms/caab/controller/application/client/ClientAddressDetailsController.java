@@ -16,7 +16,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsFindAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 
 /**
@@ -31,7 +31,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 @SuppressWarnings({"unchecked"})
 public class ClientAddressDetailsController {
 
-  private final CommonLookupService commonLookupService;
+  private final LookupService lookupService;
 
   private final ClientAddressDetailsValidator clientAddressDetailsValidator;
 
@@ -99,7 +99,7 @@ public class ClientAddressDetailsController {
   }
 
   private void populateDropdowns(Model model) {
-    Mono<CommonLookupDetail> countriesMono = commonLookupService.getCountries();
+    Mono<CommonLookupDetail> countriesMono = lookupService.getCountries();
     model.addAttribute("countries", countriesMono.block().getContent());
   }
 }

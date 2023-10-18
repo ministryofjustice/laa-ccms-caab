@@ -77,10 +77,40 @@ public class ApplicationConstants {
   /**
    * The actual value for the status of an unsubmitted application.
    */
-  public static String STATUS_UNSUBMITTED_ACTUAL_VALUE = "UNSUBMITTED";
+  public static final String STATUS_UNSUBMITTED_ACTUAL_VALUE = "UNSUBMITTED";
 
   /**
    * The display value for the status of an unsubmitted application.
    */
-  public static String STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY = "Unsubmitted";
+  public static final String STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY = "Unsubmitted";
+
+  /**
+   * The status of a draft domain object (used for, for example, proceedings and bills).
+   */
+  public static final String STATUS_DRAFT = "Draft";
+
+  /**
+   * Display value for a Proceeding at status 'outcome'.
+   */
+  public static final String PROCEEDING_STATUS_OUTCOME_DISPLAY = "Outcome";
+
+  /**
+   * Display value for a Proceeding at status 'submitted'.
+   */
+  public static final String PROCEEDING_STATUS_SUBMITTED_DISPLAY = "Submitted";
+
+  /**
+   * Display value for a Proceeding at status 'added'.
+   */
+  public static final String PROCEEDING_STATUS_ADDED_DISPLAY = "Added";
+
+  /**
+   * Display value for a Proceeding at status 'unchanged'.
+   */
+  public static final String PROCEEDING_STATUS_UNCHANGED_DISPLAY = "Unchanged";
+
+  /**
+   * Display value for a Proceeding at status 'updated'.
+   */
+  public static final String PROCEEDING_STATUS_UPDATED_DISPLAY = "Updated";
 }

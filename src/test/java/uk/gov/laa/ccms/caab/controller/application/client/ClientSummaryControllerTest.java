@@ -14,7 +14,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.ServletException;
@@ -36,7 +35,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonit
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
@@ -49,7 +48,7 @@ public class ClientSummaryControllerTest {
   private ClientService clientService;
 
   @Mock
-  private CommonLookupService commonLookupService;
+  private LookupService lookupService;
 
   @Mock
   private ClientBasicDetailsValidator basicValidator;
@@ -103,19 +102,19 @@ public class ClientSummaryControllerTest {
   void testClientDetailsSummary_Get() throws Exception {
     ClientDetails clientDetails = new ClientDetails();
 
-    when(commonLookupService.getContactTitle(any())).thenReturn(
+    when(lookupService.getContactTitle(any())).thenReturn(
         Mono.just(titleLookupValueDetail));
-    when(commonLookupService.getCountry(any())).thenReturn(
+    when(lookupService.getCountry(any())).thenReturn(
         Mono.just(countryLookupValueDetail));
-    when(commonLookupService.getGender(any())).thenReturn(
+    when(lookupService.getGender(any())).thenReturn(
         Mono.just(genderLookupValueDetail));
-    when(commonLookupService.getMaritalStatus(any())).thenReturn(
+    when(lookupService.getMaritalStatus(any())).thenReturn(
         Mono.just(maritalStatusLookupValueDetail));
-    when(commonLookupService.getEthnicOrigin(any())).thenReturn(
+    when(lookupService.getEthnicOrigin(any())).thenReturn(
         Mono.just(ethnicityLookupValueDetail));
-    when(commonLookupService.getDisability(any())).thenReturn(
+    when(lookupService.getDisability(any())).thenReturn(
         Mono.just(disabilityLookupValueDetail));
-    when(commonLookupService.getCorrespondenceMethod(any())).thenReturn(
+    when(lookupService.getCorrespondenceMethod(any())).thenReturn(
         Mono.just(correspondenceMethodLookupValueDetail));
 
     mockMvc.perform(get("/application/client/details/summary")
@@ -123,14 +122,14 @@ public class ClientSummaryControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/client-summary-details"));
 
-    verify(commonLookupService, atLeastOnce()).getContactTitle(any());
-    verify(commonLookupService, atLeastOnce()).getCountry(any());
-    verify(commonLookupService, atLeastOnce()).getGender(any());
-    verify(commonLookupService, atLeastOnce()).getMaritalStatus(any());
-    verify(commonLookupService, atLeastOnce()).getEthnicOrigin(any());
-    verify(commonLookupService, atLeastOnce()).getDisability(any());
-    verify(commonLookupService, atLeastOnce()).getCorrespondenceMethod(any());
-    verify(commonLookupService, never()).getCorrespondenceLanguage(any());
+    verify(lookupService, atLeastOnce()).getContactTitle(any());
+    verify(lookupService, atLeastOnce()).getCountry(any());
+    verify(lookupService, atLeastOnce()).getGender(any());
+    verify(lookupService, atLeastOnce()).getMaritalStatus(any());
+    verify(lookupService, atLeastOnce()).getEthnicOrigin(any());
+    verify(lookupService, atLeastOnce()).getDisability(any());
+    verify(lookupService, atLeastOnce()).getCorrespondenceMethod(any());
+    verify(lookupService, never()).getCorrespondenceLanguage(any());
   }
 
   @Test
@@ -138,22 +137,22 @@ public class ClientSummaryControllerTest {
     ClientDetails clientDetails = new ClientDetails();
     clientDetails.setCorrespondenceLanguage("TEST");
 
-    when(commonLookupService.getContactTitle(any())).thenReturn(
+    when(lookupService.getContactTitle(any())).thenReturn(
         Mono.just(titleLookupValueDetail));
-    when(commonLookupService.getCountry(any())).thenReturn(
+    when(lookupService.getCountry(any())).thenReturn(
         Mono.just(countryLookupValueDetail));
-    when(commonLookupService.getGender(any())).thenReturn(
+    when(lookupService.getGender(any())).thenReturn(
         Mono.just(genderLookupValueDetail));
-    when(commonLookupService.getMaritalStatus(any())).thenReturn(
+    when(lookupService.getMaritalStatus(any())).thenReturn(
         Mono.just(maritalStatusLookupValueDetail));
-    when(commonLookupService.getEthnicOrigin(any())).thenReturn(
+    when(lookupService.getEthnicOrigin(any())).thenReturn(
         Mono.just(ethnicityLookupValueDetail));
-    when(commonLookupService.getDisability(any())).thenReturn(
+    when(lookupService.getDisability(any())).thenReturn(
         Mono.just(disabilityLookupValueDetail));
-    when(commonLookupService.getCorrespondenceMethod(any())).thenReturn(
+    when(lookupService.getCorrespondenceMethod(any())).thenReturn(
         Mono.just(correspondenceMethodLookupValueDetail));
 
-    when(commonLookupService.getCorrespondenceLanguage(any())).thenReturn(
+    when(lookupService.getCorrespondenceLanguage(any())).thenReturn(
         Mono.just(correspondenceLanguageLookupValueDetail));
 
     mockMvc.perform(get("/application/client/details/summary")
@@ -161,14 +160,14 @@ public class ClientSummaryControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/client-summary-details"));
 
-    verify(commonLookupService, atLeastOnce()).getContactTitle(any());
-    verify(commonLookupService, atLeastOnce()).getCountry(any());
-    verify(commonLookupService, atLeastOnce()).getGender(any());
-    verify(commonLookupService, atLeastOnce()).getMaritalStatus(any());
-    verify(commonLookupService, atLeastOnce()).getEthnicOrigin(any());
-    verify(commonLookupService, atLeastOnce()).getDisability(any());
-    verify(commonLookupService, atLeastOnce()).getCorrespondenceMethod(any());
-    verify(commonLookupService, atLeastOnce()).getCorrespondenceLanguage(any());
+    verify(lookupService, atLeastOnce()).getContactTitle(any());
+    verify(lookupService, atLeastOnce()).getCountry(any());
+    verify(lookupService, atLeastOnce()).getGender(any());
+    verify(lookupService, atLeastOnce()).getMaritalStatus(any());
+    verify(lookupService, atLeastOnce()).getEthnicOrigin(any());
+    verify(lookupService, atLeastOnce()).getDisability(any());
+    verify(lookupService, atLeastOnce()).getCorrespondenceMethod(any());
+    verify(lookupService, atLeastOnce()).getCorrespondenceLanguage(any());
   }
 
   @Test

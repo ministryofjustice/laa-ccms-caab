@@ -6,7 +6,12 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
+import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
+import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
+import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -51,6 +56,32 @@ public class EbsApiClientErrorHandler {
    */
   public static String COUNTRY_ERROR_MESSAGE =
           "Failed to retrieve Countries";
+
+  /**
+   * The error message for Proceeding-related errors.
+   */
+  public static String PROCEEDING_ERROR_MESSAGE =
+      "Failed to retrieve Proceeding: (code: %s)";
+
+  /**
+   * The error message for Scope Limitations-related errors.
+   */
+  public static String SCOPE_LIMITATIONS_ERROR_MESSAGE =
+      "Failed to retrieve ScopeLimitationsDetails with search criteria: %s";
+
+  /**
+   * The error message for Outcome Results-related errors.
+   */
+  public static String OUTCOME_RESULTS_ERROR_MESSAGE =
+      "Failed to retrieve OutcomeResultDetails with search criteria: "
+          + "proceedingCode=%s, outcomeResult=%s";
+
+  /**
+   * The error message for Stage End-related errors.
+   */
+  public static String STAGE_END_ERROR_MESSAGE =
+      "Failed to retrieve StageEndLookupDetails with search criteria: "
+          + "proceedingCode=%s, stageEnd=%s";
 
   /**
    * Handles errors related to user data retrieval.
@@ -138,6 +169,70 @@ public class EbsApiClientErrorHandler {
           Integer providerId,
           Throwable e) {
     final String msg = String.format(PROVIDER_ERROR_MESSAGE, providerId);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to proceeding data retrieval.
+   *
+   * @param proceedingCode the code of the proceeding
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<ProceedingDetail> handleProceedingError(
+      String proceedingCode,
+      Throwable e) {
+    final String msg = String.format(PROCEEDING_ERROR_MESSAGE, proceedingCode);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to scope limitations data retrieval.
+   *
+   * @param scopeLimitationDetail the scope limitation params
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<ScopeLimitationDetails> handleScopeLimitationsError(
+      ScopeLimitationDetail scopeLimitationDetail,
+      Throwable e) {
+    final String msg = String.format(SCOPE_LIMITATIONS_ERROR_MESSAGE, scopeLimitationDetail.toString());
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to outcome results data retrieval.
+   *
+   * @param proceedingCode the proceeding code.
+   * @param outcomeResult the outcome result value.
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<OutcomeResultLookupDetail> handleOutcomeResultsError(
+      String proceedingCode,
+      String outcomeResult,
+      Throwable e) {
+    final String msg = String.format(OUTCOME_RESULTS_ERROR_MESSAGE, proceedingCode, outcomeResult);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to stage end data retrieval.
+   *
+   * @param proceedingCode the proceeding code.
+   * @param stageEnd the stage end value.
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<StageEndLookupDetail> handleStageEndError(
+      String proceedingCode,
+      String stageEnd,
+      Throwable e) {
+    final String msg = String.format(STAGE_END_ERROR_MESSAGE, proceedingCode, stageEnd);
     log.error(msg, e);
     return Mono.error(new EbsApiClientException(msg, e));
   }

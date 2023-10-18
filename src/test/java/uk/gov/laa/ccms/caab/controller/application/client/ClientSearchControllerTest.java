@@ -27,7 +27,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteriaValidator;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(SpringExtension.class)
@@ -36,7 +36,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class ClientSearchControllerTest {
 
   @Mock
-  private CommonLookupService commonLookupService;
+  private LookupService lookupService;
   
   @Mock
   private ClientSearchCriteriaValidator clientSearchCriteriaValidator;
@@ -57,15 +57,15 @@ public class ClientSearchControllerTest {
   @Test
   public void testGetClientSearchDetails() {
     ClientSearchController clientSearchController =
-        new ClientSearchController(commonLookupService, clientSearchCriteriaValidator);
+        new ClientSearchController(lookupService, clientSearchCriteriaValidator);
     ClientSearchCriteria clientSearchCriteria = clientSearchController.getClientSearchDetails();
     assertNotNull(clientSearchCriteria);
   }
 
   @Test
   public void testClientSearch_Get() throws Exception {
-    when(commonLookupService.getGenders()).thenReturn(Mono.empty());
-    when(commonLookupService.getUniqueIdentifierTypes()).thenReturn(Mono.empty());
+    when(lookupService.getGenders()).thenReturn(Mono.empty());
+    when(lookupService.getUniqueIdentifierTypes()).thenReturn(Mono.empty());
 
     this.mockMvc.perform(get("/application/client/search")
             .flashAttr("applicationDetails", new ApplicationDetails())
@@ -73,16 +73,16 @@ public class ClientSearchControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-client-search"));
 
-    verify(commonLookupService).getGenders();
-    verify(commonLookupService).getUniqueIdentifierTypes();
+    verify(lookupService).getGenders();
+    verify(lookupService).getUniqueIdentifierTypes();
   }
 
   @Test
   public void testClientSearch_Post_WithErrors() throws Exception {
     final ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
 
-    when(commonLookupService.getGenders()).thenReturn(Mono.empty());
-    when(commonLookupService.getUniqueIdentifierTypes()).thenReturn(Mono.empty());
+    when(lookupService.getGenders()).thenReturn(Mono.empty());
+    when(lookupService.getUniqueIdentifierTypes()).thenReturn(Mono.empty());
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
@@ -98,8 +98,8 @@ public class ClientSearchControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-client-search"));
 
-    verify(commonLookupService).getGenders();
-    verify(commonLookupService).getUniqueIdentifierTypes();
+    verify(lookupService).getGenders();
+    verify(lookupService).getUniqueIdentifierTypes();
   }
 
   @Test

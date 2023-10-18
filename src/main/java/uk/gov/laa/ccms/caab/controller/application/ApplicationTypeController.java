@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationTypeValidator;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
@@ -32,7 +32,7 @@ public class ApplicationTypeController {
 
   private final ApplicationTypeValidator applicationTypeValidator;
 
-  private final CommonLookupService commonLookupService;
+  private final LookupService lookupService;
 
   /**
    * Handles the GET request for application type selection page.
@@ -82,7 +82,7 @@ public class ApplicationTypeController {
   }
 
   private List<CommonLookupValueDetail> getFilteredApplicationTypes() {
-    return Optional.ofNullable(commonLookupService.getApplicationTypes().block())
+    return Optional.ofNullable(lookupService.getApplicationTypes().block())
         .orElse(new CommonLookupDetail())
         .getContent()
         .stream()

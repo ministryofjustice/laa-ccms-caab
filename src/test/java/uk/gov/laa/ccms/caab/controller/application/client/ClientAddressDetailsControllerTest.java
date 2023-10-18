@@ -25,7 +25,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsFindAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
@@ -33,7 +33,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 public class ClientAddressDetailsControllerTest {
 
   @Mock
-  private CommonLookupService commonLookupService;
+  private LookupService lookupService;
 
   @Mock
   private ClientAddressDetailsValidator clientAddressDetailsValidator;
@@ -59,7 +59,7 @@ public class ClientAddressDetailsControllerTest {
   void testClientDetailsAddress() throws Exception {
     ClientDetails clientDetails = new ClientDetails();
 
-    when(commonLookupService.getCountries()).thenReturn(
+    when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
     this.mockMvc.perform(get("/application/client/details/address")
@@ -78,7 +78,7 @@ public class ClientAddressDetailsControllerTest {
     ClientDetails returnedClientDetails = new ClientDetails();
     returnedClientDetails.setNoAddressLookup(false);
 
-    when(commonLookupService.getCountries()).thenReturn(
+    when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
     this.mockMvc.perform(get("/application/client/details/address")
@@ -124,7 +124,7 @@ public class ClientAddressDetailsControllerTest {
       return null;
     }).when(clientAddressDetailsValidator).validate(any(), any());
 
-    when(commonLookupService.getCountries()).thenReturn(
+    when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
     this.mockMvc.perform(post("/application/client/details/address")
@@ -146,7 +146,7 @@ public class ClientAddressDetailsControllerTest {
       return null;
     }).when(clientAddressDetailsFindAddressValidator).validate(any(), any());
 
-    when(commonLookupService.getCountries()).thenReturn(
+    when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
     this.mockMvc.perform(post("/application/client/details/address")

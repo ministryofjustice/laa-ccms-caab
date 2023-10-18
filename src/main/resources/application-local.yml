@@ -43,18 +43,20 @@ os:
 laa:
   ccms:
     ebs-api:
-      hostname: localhost
-      port: 8009
-      url: http://${laa.ccms.ebs-api.hostname}:${laa.ccms.ebs-api.port}
+#      hostname: localhost
+#      port: 8009
+#      url: http://${laa.ccms.ebs-api.hostname}:${laa.ccms.ebs-api.port}
+      url: https://development-laa-ccms-caab-ebs-api-laa-ccms-civil.apps.live.cloud-platform.service.justice.gov.uk
     soa-api:
-      hostname: localhost
-      port: 8007
-      url: http://${laa.ccms.soa-api.hostname}:${laa.ccms.soa-api.port}
+#      hostname: localhost
+#      port: 8007
+#      url: http://${laa.ccms.soa-api.hostname}:${laa.ccms.soa-api.port}
+      url: https://development-laa-ccms-caab-soa-api-laa-ccms-civil.apps.live.cloud-platform.service.justice.gov.uk
     caab-api:
       hostname: localhost
       port: 8005
       url: http://${laa.ccms.caab-api.hostname}:${laa.ccms.caab-api.port}
-
+#      url: https://development-laa-ccms-caab-api-laa-ccms-civil.apps.live.cloud-platform.service.justice.gov.uk
 
 server:
   port: 8010
