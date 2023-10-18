@@ -33,6 +33,18 @@ spring:
       cache:
         period: 0
 
+#logging:
+#  level:
+#    org.springframework.security.saml: DEBUG
+#    org.opensaml: DEBUG
+#    org.springframework.web: DEBUG
+#  thymeleaf: # Thymeleaf
+#    cache: false
+
+logging:
+  level:
+    uk.gov.laa.ccms.caab: DEBUG
+
 os:
   api:
     hostname: localhost

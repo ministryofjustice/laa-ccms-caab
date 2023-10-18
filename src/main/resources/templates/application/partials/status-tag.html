@@ -1,0 +1,8 @@
+<div th:fragment="statusTag(status)">
+  <strong
+          th:class="${status == 'Complete' ? 'govuk-tag' :
+                      status == 'Started' ? 'govuk-tag govuk-tag--blue' :
+                      'govuk-tag govuk-tag--grey'}"
+          th:text="${status}">
+  </strong>
+</div>

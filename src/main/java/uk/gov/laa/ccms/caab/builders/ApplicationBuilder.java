@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.util;
+package uk.gov.laa.ccms.caab.builders;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
@@ -19,9 +19,8 @@ import java.util.List;
 import java.util.Optional;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.model.ApplicationDetailClient;
-import uk.gov.laa.ccms.caab.model.ApplicationDetailDevolvedPowers;
-import uk.gov.laa.ccms.caab.model.ApplicationDetailProvider;
+import uk.gov.laa.ccms.caab.model.Client;
+import uk.gov.laa.ccms.caab.model.DevolvedPowers;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
@@ -57,8 +56,8 @@ public class ApplicationBuilder {
    * @return The builder instance.
    */
   public ApplicationBuilder applicationType(
-          String applicationTypeCategory,
-          boolean isDelegatedFunctions) {
+          final String applicationTypeCategory,
+          final boolean isDelegatedFunctions) {
     StringDisplayValue applicationType = new StringDisplayValue();
     if (APP_TYPE_SUBSTANTIVE.equals(applicationTypeCategory)) {
       applicationType.setId(isDelegatedFunctions
@@ -84,7 +83,7 @@ public class ApplicationBuilder {
    * @param caseReferenceSummary The case reference summary.
    * @return The builder instance.
    */
-  public ApplicationBuilder caseReference(CaseReferenceSummary caseReferenceSummary) {
+  public ApplicationBuilder caseReference(final CaseReferenceSummary caseReferenceSummary) {
     String caseReference = Optional.ofNullable(caseReferenceSummary.getCaseReferenceNumber())
             .orElseThrow(() -> new RuntimeException(
                     "No case reference number was created, unable to continue"));
@@ -99,9 +98,10 @@ public class ApplicationBuilder {
    * @param user The user detail.
    * @return The builder instance.
    */
-  public ApplicationBuilder provider(UserDetail user) {
-    ApplicationDetailProvider provider = new ApplicationDetailProvider(user.getProvider().getId())
-            .displayValue(user.getProvider().getName());
+  public ApplicationBuilder provider(final UserDetail user) {
+    IntDisplayValue provider = new IntDisplayValue()
+        .id(user.getProvider().getId())
+        .displayValue(user.getProvider().getName());
     application.setProvider(provider);
     return this;
   }
@@ -112,8 +112,8 @@ public class ApplicationBuilder {
    * @param clientInformation The client information.
    * @return The builder instance.
    */
-  public ApplicationBuilder client(ClientDetail clientInformation) {
-    ApplicationDetailClient client = new ApplicationDetailClient()
+  public ApplicationBuilder client(final ClientDetail clientInformation) {
+    Client client = new Client()
             .firstName(clientInformation.getDetails().getName().getFirstName())
             .surname(clientInformation.getDetails().getName().getSurname())
             .reference(clientInformation.getClientReferenceNumber());
@@ -129,8 +129,8 @@ public class ApplicationBuilder {
    * @return The builder instance.
    */
   public ApplicationBuilder categoryOfLaw(
-          String categoryOfLawId,
-          CommonLookupDetail categoryOfLawValues) {
+          final String categoryOfLawId,
+          final CommonLookupDetail categoryOfLawValues) {
     String categoryOfLawDisplayValue = categoryOfLawValues
             .getContent()
             .stream()
@@ -153,7 +153,7 @@ public class ApplicationBuilder {
    * @param offices  The list of office details.
    * @return The builder instance.
    */
-  public ApplicationBuilder office(Integer officeId, List<BaseOffice> offices) {
+  public ApplicationBuilder office(final Integer officeId, final List<BaseOffice> offices) {
     String officeDisplayValue = offices.stream()
             .filter(office -> officeId.equals(office.getId()))
             .map(BaseOffice::getName)
@@ -176,9 +176,9 @@ public class ApplicationBuilder {
    * @throws ParseException If there's an error in parsing dates.
    */
   public ApplicationBuilder devolvedPowers(
-          List<ContractDetail> contractDetails,
-          ApplicationDetails applicationDetails) throws ParseException {
-    ApplicationDetailDevolvedPowers devolvedPowers = new ApplicationDetailDevolvedPowers();
+          final List<ContractDetail> contractDetails,
+          final ApplicationDetails applicationDetails) throws ParseException {
+    DevolvedPowers devolvedPowers = new DevolvedPowers();
 
     String contractualDevolvedPower = contractDetails != null ? contractDetails.stream()
             .filter(contract -> applicationDetails.getCategoryOfLawId()
@@ -208,14 +208,16 @@ public class ApplicationBuilder {
    * @param amendmentTypes The amendment type details.
    * @return The builder instance.
    */
-  public ApplicationBuilder larScopeFlag(AmendmentTypeLookupDetail amendmentTypes) {
+  public ApplicationBuilder larScopeFlag(final AmendmentTypeLookupDetail amendmentTypes) {
+
     String defaultLarScopeFlag = Optional.ofNullable(amendmentTypes.getContent())
             .filter(content -> !content.isEmpty())
             .map(content -> content.get(0))
             .map(AmendmentTypeLookupValueDetail::getDefaultLarScopeFlag)
             .orElseThrow(() -> new RuntimeException(
                     "No amendment type available, unable to continue"));
-    application.setLarScopeFlag(defaultLarScopeFlag);
+
+    application.setLarScopeFlag("Y".equalsIgnoreCase(defaultLarScopeFlag));
     return this;
   }
 
