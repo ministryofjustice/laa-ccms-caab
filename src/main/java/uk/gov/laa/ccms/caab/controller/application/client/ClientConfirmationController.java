@@ -54,9 +54,10 @@ public class ClientConfirmationController {
    * @return The view name for the client confirmation page.
    */
   @GetMapping("/application/client/{client-reference-number}/confirm")
-  public String clientConfirm(@PathVariable("client-reference-number") final String clientReferenceNumber,
-                              @SessionAttribute(USER_DETAILS) final UserDetail user,
-                              Model model, HttpSession session) {
+  public String clientConfirm(
+      @PathVariable("client-reference-number") final String clientReferenceNumber,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      Model model, HttpSession session) {
     log.info("GET /application/client/{}/confirm", clientReferenceNumber);
 
     ClientDetail clientInformation = clientService.getClient(
