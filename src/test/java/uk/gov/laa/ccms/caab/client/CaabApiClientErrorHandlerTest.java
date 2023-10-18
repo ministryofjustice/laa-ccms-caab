@@ -17,7 +17,7 @@ class CaabApiClientErrorHandlerTest {
   public void testHandleCreateApplicationError() {
     Throwable throwable = new RuntimeException("Error");
 
-    Mono<Void> result = caabApiClientErrorHandler.handleCreateApplicationError(throwable);
+    Mono<String> result = caabApiClientErrorHandler.handleCreateApplicationError(throwable);
 
     StepVerifier.create(result)
         .verifyErrorMatches(e -> e instanceof CaabApiClientException

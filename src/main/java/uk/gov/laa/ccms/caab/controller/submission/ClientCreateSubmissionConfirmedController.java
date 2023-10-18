@@ -1,10 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_INFORMATION;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
-import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_CLIENT;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -45,11 +44,12 @@ public class ClientCreateSubmissionConfirmedController {
   ) {
 
     return applicationService.createApplication(applicationDetails, clientInformation, user)
-        .doOnSuccess(createdApplication -> {
+        .doOnSuccess(applicationId -> {
           log.info("Application details submitted");
           log.debug("Application details submitted: {}", applicationDetails);
           session.removeAttribute(APPLICATION_DETAILS);
           session.removeAttribute(CLIENT_INFORMATION);
+          session.setAttribute(APPLICATION_ID, applicationId);
         })
         .thenReturn("redirect:/application/summary").block();
   }

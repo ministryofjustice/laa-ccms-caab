@@ -46,9 +46,10 @@ public class CaabApiClientIntegrationTest extends AbstractIntegrationTest {
     wiremock.stubFor(post("/applications")
         .withHeader("Caab-User-Login-Id", equalTo(loginId))
         .withRequestBody(equalToJson(applicationDetailJson))
-        .willReturn(ok()));
+        .willReturn(ok()
+            .withHeader("Location", "https://laa-ccms-caab-api/applications/123")));
 
-    Mono<Void> responseMono = caabApiClient.createApplication(loginId, applicationDetail);
+    Mono<String> responseMono = caabApiClient.createApplication(loginId, applicationDetail);
     responseMono.block();
   }
 }

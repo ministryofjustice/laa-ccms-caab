@@ -7,6 +7,7 @@ import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -51,6 +52,12 @@ public class EbsApiClientErrorHandler {
    */
   public static String COUNTRY_ERROR_MESSAGE =
           "Failed to retrieve Countries";
+
+  /**
+   * The error message for relationships to case.
+   */
+  public static String RELATIONSHIP_TO_CASE_ERROR_MESSAGE =
+      "Failed to retrieve relationship to case";
 
   /**
    * Handles errors related to user data retrieval.
@@ -123,6 +130,18 @@ public class EbsApiClientErrorHandler {
           Boolean copyAllowed,
           Throwable e) {
     final String msg = String.format(CASE_STATUS_VALUES_ERROR_MESSAGE, copyAllowed);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to person or organisation to case relationship.
+   *
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<RelationshipToCaseLookupDetail> handleToCaseRelationshipValuesError(Throwable e) {
+    final String msg = String.format(RELATIONSHIP_TO_CASE_ERROR_MESSAGE);
     log.error(msg, e);
     return Mono.error(new EbsApiClientException(msg, e));
   }

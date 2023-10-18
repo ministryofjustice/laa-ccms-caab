@@ -4,6 +4,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_C
 
 import java.text.ParseException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,15 +13,19 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple4;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
+import uk.gov.laa.ccms.caab.builders.ApplicationBuilder;
+import uk.gov.laa.ccms.caab.builders.ApplicationSummaryBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.util.ApplicationBuilder;
+import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
@@ -73,9 +78,9 @@ public class ApplicationService {
    * @param applicationDetails - The details of the Application to create
    * @param clientDetail - The client details
    * @param user - The related User.
-   * @return a Mono Void
+   * @return a String containing the id of the application
    */
-  public Mono<Void> createApplication(ApplicationDetails applicationDetails,
+  public Mono<String> createApplication(ApplicationDetails applicationDetails,
       ClientDetail clientDetail, UserDetail user) {
     //need to do this first in order to get amendment types
     ApplicationDetail baseApplication = new ApplicationBuilder()
@@ -151,6 +156,60 @@ public class ApplicationService {
         .map(CaseStatusLookupDetail::getContent)
         .orElse(Collections.emptyList())
         .stream().findFirst().orElse(null);
+  }
+
+  /**
+   * Retrieves the application Summary display values.
+   *
+   * @param id the identifier of the application to retrieve a summary for.
+   * @return A Mono of ApplicationSummaryDisplay representing the case summary display values.
+   */
+  public Mono<ApplicationSummaryDisplay> getApplicationSummary(final String id) {
+
+    Mono<RelationshipToCaseLookupDetail> organisationRelationshipsMono =
+        ebsApiClient.getOrganisationRelationshipsToCaseValues();
+
+    Mono<RelationshipToCaseLookupDetail> personRelationshipsMono =
+        ebsApiClient.getPersonRelationshipsToCaseValues();
+
+    Mono<ApplicationDetail> applicationMono
+        = caabApiClient.getApplication(id);
+
+    return Mono.zip(organisationRelationshipsMono,
+            personRelationshipsMono,
+            applicationMono)
+        .map(tuple -> {
+
+          List<RelationshipToCaseLookupValueDetail> organisationRelationships
+              = tuple.getT1().getContent();
+          List<RelationshipToCaseLookupValueDetail> personsRelationships
+              = tuple.getT2().getContent();
+          ApplicationDetail application = tuple.getT3();
+
+          return new ApplicationSummaryBuilder(application.getAuditTrail())
+              .clientFullName(
+                  application.getClient().getFirstName(),
+                  application.getClient().getSurname())
+              .caseReferenceNumber(
+                  application.getCaseReferenceNumber())
+              .providerCaseReferenceNumber(
+                  application.getProviderCaseReference())
+              .applicationType(
+                  application.getApplicationType().getDisplayValue())
+              .providerDetails(
+                  application.getProviderContact())
+              .generalDetails(
+                  application.getCorrespondenceAddress())
+              .proceedingsAndCosts(
+                  application.getProceedings(),
+                  application.getPriorAuthorities(),
+                  application.getCosts())
+              .opponentsAndOtherParties(
+                  application.getOpponents(),
+                  organisationRelationships,
+                  personsRelationships)
+              .build();
+        });
   }
 
 }

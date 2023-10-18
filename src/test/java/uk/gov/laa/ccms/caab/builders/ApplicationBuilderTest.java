@@ -1,7 +1,8 @@
-package uk.gov.laa.ccms.caab.util;
+package uk.gov.laa.ccms.caab.builders;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS_DISPLAY;
@@ -20,6 +21,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.builders.ApplicationBuilder;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
@@ -151,12 +153,12 @@ class ApplicationBuilderTest {
   @Test
   void testLarScopeFlag() {
     AmendmentTypeLookupValueDetail lookupValueDetail = new AmendmentTypeLookupValueDetail();
-    lookupValueDetail.setDefaultLarScopeFlag("FLAG1");
+    lookupValueDetail.setDefaultLarScopeFlag("Y");
     AmendmentTypeLookupDetail lookupDetail = new AmendmentTypeLookupDetail();
     lookupDetail.setContent(Collections.singletonList(lookupValueDetail));
 
     ApplicationDetail detail = builder.larScopeFlag(lookupDetail).build();
-    assertEquals("FLAG1", detail.getLarScopeFlag());
+    assertTrue(detail.getLarScopeFlag());
   }
 
   @Test

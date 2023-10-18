@@ -10,6 +10,7 @@ import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -97,6 +98,41 @@ public class EbsApiClient {
    */
   public Mono<CommonLookupDetail> getCommonValues(String type, String code) {
     return this.getCommonValues(type, code, null);
+  }
+
+
+  /**
+   * Retrieves the person to case relationships lookup values.
+   *
+   * @return A Mono containing the RelationshipToCaseLookupDetail or an error handler if an error
+   *         occurs.
+   */
+  public Mono<RelationshipToCaseLookupDetail> getPersonRelationshipsToCaseValues() {
+
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/lookup/person-to-case-relationships")
+            .build())
+        .retrieve()
+        .bodyToMono(RelationshipToCaseLookupDetail.class)
+       .onErrorResume(ebsApiClientErrorHandler::handleToCaseRelationshipValuesError);
+  }
+
+  /**
+   * Retrieves the organisation to case relationships lookup values.
+   *
+   * @return A Mono containing the RelationshipToCaseLookupDetail or an error handler if an error
+   *         occurs.
+   */
+  public Mono<RelationshipToCaseLookupDetail> getOrganisationRelationshipsToCaseValues() {
+
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/lookup/organisation-to-case-relationships")
+            .build())
+        .retrieve()
+        .bodyToMono(RelationshipToCaseLookupDetail.class)
+        .onErrorResume(ebsApiClientErrorHandler::handleToCaseRelationshipValuesError);
   }
 
   /**

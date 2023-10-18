@@ -33,6 +33,18 @@ spring:
       cache:
         period: 0
 
+#logging:
+#  level:
+#    org.springframework.security.saml: DEBUG
+#    org.opensaml: DEBUG
+#    org.springframework.web: DEBUG
+#  thymeleaf: # Thymeleaf
+#    cache: false
+
+logging:
+  level:
+    uk.gov.laa.ccms.caab: DEBUG
+
 os:
   api:
     hostname: localhost
@@ -54,7 +66,6 @@ laa:
       hostname: localhost
       port: 8005
       url: http://${laa.ccms.caab-api.hostname}:${laa.ccms.caab-api.port}
-
 
 server:
   port: 8010
