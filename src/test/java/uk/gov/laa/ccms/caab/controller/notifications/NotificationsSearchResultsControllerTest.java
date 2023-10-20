@@ -1,11 +1,8 @@
-package uk.gov.laa.ccms.caab.controller;
+package uk.gov.laa.ccms.caab.controller.notifications;
 
-import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
@@ -24,6 +21,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
@@ -32,70 +30,59 @@ import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-class ActionsAndNotificationsControllerTest {
+class NotificationsSearchResultsControllerTest {
 
+  @InjectMocks
+  NotificationsSearchResultsController notificationsSearchResultsController;
   @Mock
   private NotificationService notificationService;
 
-  @InjectMocks
-  ActionsAndNotificationsController actionsAndNotificationsController;
-
   @Autowired
   private WebApplicationContext webApplicationContext;
-
   private MockMvc mockMvc;
-
-  private static final UserDetail userDetails = new UserDetail()
-      .userId(1)
-      .userType("testUserType")
-      .loginId("testLoginId");
 
   @BeforeEach
   void setUp() {
-    mockMvc = standaloneSetup(actionsAndNotificationsController).build();
+    mockMvc = standaloneSetup(notificationsSearchResultsController).build();
   }
 
   @Test
-  void testNotificationsEndpointAndViewName_Data() throws Exception {
+  void testGetSearchResults_returnsData() throws Exception {
     Notifications notificationsMock = getNotificationsMock();
 
-    Mockito.when(notificationService.getNotifications(any(), any(), any())).thenReturn(Mono.just(notificationsMock));
+    Mockito.when(notificationService.getNotifications(any(), any(), any()))
+        .thenReturn(Mono.just(notificationsMock));
 
-    this.mockMvc.perform(get("/notifications").flashAttr("user", userDetails))
+    this.mockMvc.perform(get("/notifications/search-results")
+            .sessionAttr("user", userDetails)
+            .sessionAttr("notificationSearchCriteria", buildNotificationSearchCritieria())
+        )
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("notifications/actions-and-notifications"));
   }
 
   @Test
-  void testNotificationsEndpointAndViewName_NoData() throws Exception {
+  void testGetSearchResults_noData() throws Exception {
+
+
 
     Notifications notificationsMock = new Notifications()
         .content(new ArrayList<>());
 
+    Mockito.when(notificationService.getNotifications(any(), any(), any()))
+        .thenReturn(Mono.just(notificationsMock));
 
-    Mockito.when(notificationService.getNotifications(any(), any(), any())).thenReturn(Mono.just(notificationsMock));
-
-    this.mockMvc.perform(get("/notifications").flashAttr("user", userDetails))
+    this.mockMvc.perform(get("/notifications/search-results")
+            .sessionAttr("user", userDetails)
+            .sessionAttr("notificationSearchCriteria", buildNotificationSearchCritieria()))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("notifications/actions-and-notifications-no-results"));
 
-  }
 
-  @Test
-  void testNotificationTypePropagatesThroughToModel() throws Exception {
 
-    Notifications notificationsMock = getNotificationsMock();
 
-    Mockito.when(notificationService.getNotifications(any(), any(), any())).thenReturn(Mono.just(notificationsMock));
-
-    mockMvc.perform(get("/notifications?notification_type=A")
-        .flashAttr("user", userDetails))
-        .andDo(print())
-        .andExpect(model().attribute("notificationSearchCriteria",
-            hasProperty("notificationType", is("A"))))
-        .andExpect(status().isOk());
   }
 
   private static Notifications getNotificationsMock() {
@@ -110,18 +97,16 @@ class ActionsAndNotificationsControllerTest {
 
   }
 
-  @Test
-  void testSortFieldsSetCorrectlyInModel() throws Exception {
-    Notifications notificationsMock = getNotificationsMock();
-    Mockito.when(notificationService.getNotifications(any(), any(), any())).thenReturn(Mono.just(notificationsMock));
-    mockMvc.perform(get("/notifications?notification_type=N&sort=subject,asc")
-            .flashAttr("user", userDetails))
-        .andDo(print())
-        .andExpect(model().attribute("notificationSearchCriteria",
-            hasProperty("notificationType", is("N"))))
-        .andExpect(model().attribute("sortDirection", is("asc")))
-        .andExpect(model().attribute("sortField", is("subject")))
-        .andExpect(status().isOk());
+  private static final UserDetail userDetails = new UserDetail()
+      .userId(1)
+      .userType("testUserType")
+      .loginId("testLoginId");
 
+  private static NotificationSearchCriteria buildNotificationSearchCritieria() {
+    NotificationSearchCriteria criteria = new NotificationSearchCriteria();
+    criteria.setNotificationToDateDay("12");
+    criteria.setNotificationToDateMonth("12");
+    criteria.setNotificationToDateYear("2022");
+    return criteria;
   }
 }

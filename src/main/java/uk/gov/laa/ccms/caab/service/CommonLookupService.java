@@ -9,6 +9,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_D
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ETHNIC_ORIGIN;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_NOTIFICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
 
 import java.util.Collections;
@@ -262,6 +263,15 @@ public class CommonLookupService {
             .getContent().stream()
             .findFirst()
             .orElse(null));
+  }
+
+  /**
+   * Get a list of Notification Type Common Values.
+   *
+   * @return CommonLookupDetail containing the common lookup values.
+   */
+  public Mono<CommonLookupDetail> getNotificationTypes() {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE);
   }
 
 

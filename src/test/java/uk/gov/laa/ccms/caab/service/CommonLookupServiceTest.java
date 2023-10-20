@@ -10,6 +10,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_D
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ETHNIC_ORIGIN;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_NOTIFICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
 
 import java.lang.reflect.InvocationTargetException;
@@ -50,7 +51,8 @@ public class CommonLookupServiceTest {
         Arguments.of("getCorrespondenceMethods", COMMON_VALUE_CORRESPONDENCE_METHOD),
         Arguments.of("getCorrespondenceLanguages", COMMON_VALUE_CORRESPONDENCE_LANGUAGE),
         Arguments.of("getEthnicOrigins", COMMON_VALUE_ETHNIC_ORIGIN),
-        Arguments.of("getDisabilities", COMMON_VALUE_DISABILITY)
+        Arguments.of("getDisabilities", COMMON_VALUE_DISABILITY),
+        Arguments.of("getNotificationTypes", COMMON_VALUE_NOTIFICATION_TYPE)
     );
   }
 

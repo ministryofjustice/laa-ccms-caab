@@ -4,6 +4,11 @@ import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.INTERNAT
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NUMERIC_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.UK_POSTCODE;
 
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.Date;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
@@ -11,17 +16,19 @@ import org.springframework.validation.Validator;
 /**
  * Abstract validator used for all form validation.
  */
+@Slf4j
 public abstract class AbstractValidator implements Validator {
 
-  private static String GENERIC_REQUIRED_ERROR = "Please complete '%s'.";
-
-  private static String GENERIC_NUMERIC_REQUIRED = "Please enter a numeric value for %s.";
-
-  private static String GENERIC_INCORRECT_FORMAT = "Your input for '%s' is in an incorrect "
+  /**
+   * Generic error message.
+   */
+  private static final String GENERIC_REQUIRED_ERROR = "Please complete '%s'.";
+  private static final String GENERIC_NUMERIC_REQUIRED = "Please enter a numeric value for %s.";
+  private static final String GENERIC_DATEFIELD_ENTRY = "Your date range is invalid."
+      + " Please amend your entry for the %s field.";
+  protected static String GENERIC_INCORRECT_FORMAT = "Your input for '%s' is in an incorrect "
       + "format. Please amend your entry.";
 
-  private static String GENERIC_INVALID_CHARACTER = "Your input for '%s' contains an invalid "
-      + "character. Please amend your entry.";
 
   protected void validateRequiredField(
       final String field, final String fieldValue, final String displayValue, Errors errors) {
@@ -67,13 +74,50 @@ public abstract class AbstractValidator implements Validator {
       if (country.equals("GBR")) {
         validateRequiredField("postcode", postcode, "Postcode", errors);
         if (StringUtils.hasText(postcode)) {
-          validateFieldFormat("postcode", postcode, UK_POSTCODE, "Postcode", errors);
+          validateFieldFormat("postcode", postcode, UK_POSTCODE, "Postcode",
+              errors);
         }
       } else {
         if (StringUtils.hasText(postcode)) {
-          validateFieldFormat("postcode", postcode, INTERNATIONAL_POSTCODE, "Postcode", errors);
+          validateFieldFormat("postcode", postcode, INTERNATIONAL_POSTCODE,
+              "Postcode", errors);
         }
       }
     }
   }
+
+  protected Date validateValidDateField(final String dateString,
+      final String field, final String datePattern, Errors errors) {
+    SimpleDateFormat sdf = new SimpleDateFormat(datePattern);
+    sdf.setLenient(false);
+    ParsePosition pos = new ParsePosition(0);
+    Date validDate = sdf.parse(dateString, pos);
+    if (pos.getIndex() == 0) {
+      validDate = null;
+      log.warn(String.format("invalid %s", field));
+      errors.rejectValue(field, "invalid.format",
+          String.format(GENERIC_INCORRECT_FORMAT, field));
+    }
+    return validDate;
+  }
+
+  protected void validateFromAfterToDates(final Date fromDate, final String fieldName,
+      final Date toDate, Errors errors) {
+    if (!toDate.after(fromDate)) {
+      errors.rejectValue(fieldName, "invalid.input",
+          String.format(GENERIC_DATEFIELD_ENTRY, fieldName));
+    }
+  }
+
+  protected void validateDateInPast(final Date dateToCheck, final String fieldName,
+      String field, Errors errors) {
+    Date today = Date.from(Instant.now());
+    if (!today.after(dateToCheck)) {
+      errors.rejectValue(fieldName, "invalid.input",
+          String.format(GENERIC_DATEFIELD_ENTRY, field));
+    }
+  }
+
+
+
 }

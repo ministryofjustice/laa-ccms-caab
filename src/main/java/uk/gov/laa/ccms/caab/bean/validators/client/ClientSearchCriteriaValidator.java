@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.bean;
+package uk.gov.laa.ccms.caab.bean.validators.client;
 
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE;
@@ -7,18 +7,18 @@ import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CASE_REF
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CASE_REFERENCE_NUMBER_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.HOME_OFFICE_NUMBER_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NATIONAL_INSURANCE_NUMBER_PATTERN;
-import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NUMERIC_PATTERN;
 
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
-import org.springframework.validation.Validator;
+import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**
  * Validator component responsible for validating {@link ClientSearchCriteria} objects.
  */
 @Component
-public class ClientSearchCriteriaValidator implements Validator {
+public class ClientSearchCriteriaValidator extends AbstractValidator {
 
   private static final String GENERIC_UNIQUE_IDENTIFIER_ERROR =
           "Your input for 'Unique Identifier Value' is in an incorrect format. "
@@ -75,26 +75,19 @@ public class ClientSearchCriteriaValidator implements Validator {
     ClientSearchCriteria clientSearchCriteria = (ClientSearchCriteria) target;
 
     if (!clientSearchCriteria.getDobDay().isBlank()) {
-      if (!clientSearchCriteria.getDobDay().matches(NUMERIC_PATTERN)) {
-        errors.rejectValue("dobDay", "invalid.numeric",
-                "Please enter a numeric value for the day.");
-      }
+      validateNumericField("dobDay", clientSearchCriteria.getDobDay(),
+          "the day", errors);
     }
 
     if (!clientSearchCriteria.getDobMonth().isBlank()) {
-      if (!clientSearchCriteria.getDobMonth().matches(NUMERIC_PATTERN)) {
-        errors.rejectValue("dobMonth", "invalid.numeric",
-                "Please enter a numeric value for the month.");
-      }
+      validateNumericField("dobMonth", clientSearchCriteria.getDobMonth(),
+          "the month", errors);
     }
 
     if (!clientSearchCriteria.getDobYear().isBlank()) {
-      if (!clientSearchCriteria.getDobYear().matches(NUMERIC_PATTERN)) {
-        errors.rejectValue("dobYear", "invalid.numeric",
-                "Please enter a numeric value for the year.");
-      }
+      validateNumericField("dobYear", clientSearchCriteria.getDobYear(),
+          "the year", errors);
     }
-
   }
 
   /**

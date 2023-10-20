@@ -1,15 +1,16 @@
-package uk.gov.laa.ccms.caab.bean;
+package uk.gov.laa.ccms.caab.bean.validators.application;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
-import org.springframework.validation.Validator;
+import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**
  * Validator component responsible for validating {@link CopyCaseSearchCriteria} objects.
  */
 @Component
-public class CopyCaseSearchCriteriaValidator implements Validator {
+public class CopyCaseSearchCriteriaValidator extends AbstractValidator {
 
   /**
    * Determines if the Validator supports the provided class.

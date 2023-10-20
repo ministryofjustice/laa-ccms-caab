@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.data.model.UserDetails;
 
 /**
  * Service class to handle Users.
@@ -24,5 +25,16 @@ public class UserService {
    */
   public Mono<UserDetail> getUser(String loginId) {
     return ebsApiClient.getUser(loginId);
+  }
+
+
+  /**
+   * Retrieves the list of users for the given provider ID.
+   *
+   * @param providerId the ID of the provider.
+   * @return A Mono containing the list of users or an error handler if an error occurs.
+   */
+  public Mono<UserDetails> getUsers(final Integer providerId) {
+    return ebsApiClient.getUsers(providerId);
   }
 }

@@ -43,9 +43,39 @@ public class NotificationSearchCriteria {
   private String notificationType;
 
   /**
+   * The day of the {@see dateFrom}.
+   */
+  private String notificationFromDateDay;
+
+  /**
+   * The month of the {@see dateFrom}.
+   */
+  private String notificationFromDateMonth;
+
+  /**
+   * The year of the {@see dateFrom}.
+   */
+  private String notificationFromDateYear;
+
+  /**
    * The date from which to start the search.
    */
   private String dateFrom;
+
+  /**
+   * The day of the {@see dateTo}.
+   */
+  private String notificationToDateDay;
+
+  /**
+   * The month of the {@see dateTo}.
+   */
+  private String notificationToDateMonth;
+
+  /**
+   * The year of the {@see dateTo}.
+   */
+  private String notificationToDateYear;
 
   /**
    * The date to search up to.
@@ -63,13 +93,10 @@ public class NotificationSearchCriteria {
   private String userType;
 
   /**
-   * a switch to ascertain whether to recreate or reuse for sorting.
-   */
-  private boolean instantiated;
-
-  /**
    * the sort field and direction.
    */
   private String sort;
+
+
 
 }

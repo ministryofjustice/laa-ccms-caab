@@ -79,5 +79,32 @@ public class ValidationPatternConstants {
       + ")|(" + UK_POSTCODE_5
       + ")|(" + UK_POSTCODE_6 + "))*$";
 
+  /**
+   * pattern for double-space.
+   */
+  public static final String DOUBLE_SPACE = "\\s\\s";
 
+  /**
+   * pattern for case reference - contains alphanumerics and also allows a forward slash for
+   *     legacy reasons.
+   */
+  public static final String ALPHA_NUMERIC_SLASH_SPACE_STRING = "^[A-Za-z0-9\\s/]*$";
+
+  /**
+   * pattern to test that the first character in a string is alphabetic.
+   */
+  public static final String FIRST_CHARACTER_MUST_BE_ALPHA = "^[A-Za-z].*";
+
+  /**
+   * pattern to match what is known in provider-ui as 'characterSetC'.
+   * Valid characters are alphabetic, space, apostrophe and hyphen.
+   */
+  public static final String CHARACTER_SET_C = "^[A-Za-z\\'\\- ]*$";
+
+  /**
+   * pattern to match what is known in provider-ui as 'characterSetF.
+   * Valid characters are A-Z a-z 0-9 & ' ( ) . * - / ! # $ % , ; ? @ [ \ ] _ ` | + = > £ :
+   */
+  public static final String CHARACTER_SET_F
+      = "^[A-Za-z0-9\\&\\'\\(\\)\\.\\*\\-/!#$%,;\\?\\@\\[\\]_+\\=\\>£:&#92;&#96;\\\\]*$";
 }

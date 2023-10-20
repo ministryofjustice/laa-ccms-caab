@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.ClientSearchCriteriaValidator;
+import uk.gov.laa.ccms.caab.bean.validators.client.ClientSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 
