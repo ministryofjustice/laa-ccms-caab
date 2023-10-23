@@ -181,7 +181,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   public void testGetUsers_notFound() {
     Integer providerId = 123;
     String expectedMessage = String.format(USERS_ERROR_MESSAGE, providerId);
-    wiremock.stubFor(get(String.format("/users/provider-id=%s", providerId))
+    wiremock.stubFor(get(String.format("/users?provider-id=%s", providerId))
         .willReturn(notFound()));
     Mono<UserDetails> userDetailsMono = ebsApiClient.getUsers(providerId);
 

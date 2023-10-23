@@ -71,7 +71,7 @@ public class ActionsAndNotificationsController {
       @RequestParam(value = "page", defaultValue = "0") int page,
       @RequestParam(value = "size", defaultValue = "10") int size,
       @RequestParam(required = false) String sort,
-      @RequestParam(value = "notification_type", required = false) String notificationType,
+      @RequestParam(value = "notification_type", defaultValue = "all") String notificationType,
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
       Model model) {
@@ -178,9 +178,10 @@ public class ActionsAndNotificationsController {
     criteria.setUserType(user.getUserType());
     criteria.setAssignedToUserId(user.getLoginId());
     criteria.setNotificationType(notificationType);
-    if (StringUtils.isNotEmpty(notificationType) && notificationType.equals("all")) {
+    if (notificationType.equals("all")) {
       // do not set a notification type and reset the search criteria
-      resetCriteria(criteria);
+      criteria = new NotificationSearchCriteria();
+      criteria.setAssignedToUserId(user.getLoginId());
     }
     // Get the sort parameters
     if (StringUtils.isNotEmpty(sort)) {
@@ -188,22 +189,6 @@ public class ActionsAndNotificationsController {
     }
   }
 
-  private static void resetCriteria(NotificationSearchCriteria criteria) {
-    criteria.setNotificationType("");
-    criteria.setProviderCaseReference("");
-    criteria.setClientSurname("");
-    criteria.setFeeEarnerId(null);
-    criteria.setCaseReference("");
-    criteria.setNotificationToDateDay("");
-    criteria.setNotificationToDateMonth("");
-    criteria.setNotificationToDateYear("");
-    criteria.setNotificationFromDateDay("");
-    criteria.setNotificationFromDateMonth("");
-    criteria.setNotificationFromDateYear("");
-    criteria.setIncludeClosed(false);
-    criteria.setDateFrom("");
-    criteria.setDateTo("");
-  }
 
   private static void populateModelFromCriteria(NotificationSearchCriteria criteria, Model model) {
     String sort = criteria.getSort();

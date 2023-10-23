@@ -158,7 +158,7 @@ public class NotificationSearchValidator extends AbstractValidator {
             "Your input for 'Client surname' contains an invalid character. "
                 + "Please amend your entry.");
       } else if (clientSurname.matches(DOUBLE_SPACE)) {
-        errors.rejectValue("caseReference", "invalid.case-ref",
+        errors.rejectValue("clientSurname", "invalid.surname",
             "Your input for 'Client surname'"
                 + " contains double spaces. Please amend your entry.");
       }
