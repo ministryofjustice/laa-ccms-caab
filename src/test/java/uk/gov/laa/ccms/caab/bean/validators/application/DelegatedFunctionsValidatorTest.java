@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,7 +13,7 @@ import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 
 @ExtendWith(SpringExtension.class)
 class DelegatedFunctionsValidatorTest {
@@ -20,20 +21,20 @@ class DelegatedFunctionsValidatorTest {
   @InjectMocks
   private DelegatedFunctionsValidator delegatedFunctionsValidator;
 
-  private ApplicationDetails applicationDetails;
+  private ApplicationFormData applicationFormData;
 
   private Errors errors;
 
   @BeforeEach
   public void setUp() {
-    applicationDetails =
-        new ApplicationDetails(); // Assuming that the default constructor sets all fields to null.
-    errors = new BeanPropertyBindingResult(applicationDetails, "applicationDetails");
+    applicationFormData =
+        new ApplicationFormData(); // Assuming that the default constructor sets all fields to null.
+    errors = new BeanPropertyBindingResult(applicationFormData, APPLICATION_FORM_DATA);
   }
 
   @Test
   public void supports_ReturnsTrueForApplicationDetailsClass() {
-    assertTrue(delegatedFunctionsValidator.supports(ApplicationDetails.class));
+    assertTrue(delegatedFunctionsValidator.supports(ApplicationFormData.class));
   }
 
   @Test
@@ -43,15 +44,15 @@ class DelegatedFunctionsValidatorTest {
 
   @Test
   public void validate_withoutDelegatedFunctions() {
-    delegatedFunctionsValidator.validate(applicationDetails, errors);
+    delegatedFunctionsValidator.validate(applicationFormData, errors);
     assertFalse(errors.hasErrors());
   }
 
   @Test
   public void validate_withDelegatedFunctions() {
-    applicationDetails.setDelegatedFunctions(true);
+    applicationFormData.setDelegatedFunctions(true);
 
-    delegatedFunctionsValidator.validate(applicationDetails, errors);
+    delegatedFunctionsValidator.validate(applicationFormData, errors);
 
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("delegatedFunctionUsedDay"));

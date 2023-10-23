@@ -1,7 +1,7 @@
-package uk.gov.laa.ccms.caab.controller.application;
+package uk.gov.laa.ccms.caab.controller.application.summary;
 
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 
 import jakarta.servlet.http.HttpSession;
@@ -12,7 +12,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 
@@ -25,8 +24,6 @@ import uk.gov.laa.ccms.caab.service.ApplicationService;
 public class ApplicationSummaryController {
 
   private final ApplicationService applicationService;
-
-
 
   /**
    * Handles the GET request for application summary page.
@@ -53,8 +50,8 @@ public class ApplicationSummaryController {
         .providerCaseReferenceNumber(summary.getProviderCaseReferenceNumber())
         .build();
 
-    model.addAttribute("activeCase", activeCase);
-    session.setAttribute("activeCase", activeCase);
+    model.addAttribute(ACTIVE_CASE, activeCase);
+    session.setAttribute(ACTIVE_CASE, activeCase);
 
     return "application/summary-task-page";
   }

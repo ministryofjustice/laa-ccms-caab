@@ -2,7 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.List;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.CategoryOfLawValidator;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
@@ -33,7 +33,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(APPLICATION_DETAILS)
+@SessionAttributes(APPLICATION_FORM_DATA)
 public class CategoryOfLawController {
 
   private final CategoryOfLawValidator categoryOfLawValidator;
@@ -46,7 +46,7 @@ public class CategoryOfLawController {
    * Handles the GET request for category of law selection page.
    *
    * @param exceptionalFunding A flag indicating exceptional funding.
-   * @param applicationDetails The application details from session.
+   * @param applicationFormData The application details from session.
    * @param userDetails The user details from session.
    * @param model The model for the view.
    * @return The view name for the category of law selection page.
@@ -55,13 +55,13 @@ public class CategoryOfLawController {
   public String categoryOfLaw(
           @RequestParam(value = "exceptional_funding", defaultValue = "false")
                 boolean exceptionalFunding,
-          @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
+          @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
           @SessionAttribute(USER_DETAILS) UserDetail userDetails,
           Model model) {
 
-    applicationDetails.setExceptionalFunding(exceptionalFunding);
+    applicationFormData.setExceptionalFunding(exceptionalFunding);
 
-    initialiseCategoriesOfLaw(applicationDetails, userDetails, model);
+    initialiseCategoriesOfLaw(applicationFormData, userDetails, model);
 
     return "application/select-category-of-law";
   }
@@ -70,7 +70,7 @@ public class CategoryOfLawController {
   /**
    * Handles the POST request for category of law selection form submission.
    *
-   * @param applicationDetails The application details from session.
+   * @param applicationFormData The application details from session.
    * @param userDetails The user details from session.
    * @param bindingResult The result of data binding/validation.
    * @param model The model for the view.
@@ -78,20 +78,20 @@ public class CategoryOfLawController {
    */
   @PostMapping("/application/category-of-law")
   public String categoryOfLaw(
-          @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
+          @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
           @SessionAttribute(USER_DETAILS) UserDetail userDetails,
           BindingResult bindingResult,
           Model model) {
-    categoryOfLawValidator.validate(applicationDetails, bindingResult);
+    categoryOfLawValidator.validate(applicationFormData, bindingResult);
 
     String viewName = "redirect:/application/application-type";
     if (bindingResult.hasErrors()) {
-      initialiseCategoriesOfLaw(applicationDetails, userDetails, model);
+      initialiseCategoriesOfLaw(applicationFormData, userDetails, model);
       viewName = "application/select-category-of-law";
-    } else if (applicationDetails.isExceptionalFunding()) {
+    } else if (applicationFormData.isExceptionalFunding()) {
       // Exception Funding has been selected, so initialise the ApplicationType to ECF
       // and bypass the ApplicationType screen.
-      applicationDetails.setApplicationTypeCategory(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
+      applicationFormData.setApplicationTypeCategory(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
       viewName = "redirect:/application/client/search";
     }
 
@@ -101,11 +101,11 @@ public class CategoryOfLawController {
   /**
    * Initializes the categories of law for the view.
    *
-   * @param applicationDetails The application details.
+   * @param applicationFormData The application details.
    * @param user The user details.
    * @param model The model for the view.
    */
-  private void initialiseCategoriesOfLaw(ApplicationDetails applicationDetails,
+  private void initialiseCategoriesOfLaw(ApplicationFormData applicationFormData,
                                          UserDetail user, Model model) {
 
     List<CommonLookupValueDetail> categoriesOfLaw =
@@ -113,10 +113,10 @@ public class CategoryOfLawController {
             .orElse(new CommonLookupDetail())
             .getContent();
 
-    if (!applicationDetails.isExceptionalFunding()) {
+    if (!applicationFormData.isExceptionalFunding()) {
       List<String> categoryOfLawCodes = providerService.getCategoryOfLawCodes(
               user.getProvider().getId(),
-              applicationDetails.getOfficeId(),
+              applicationFormData.getOfficeId(),
               user.getLoginId(),
               user.getUserType(),
               Boolean.TRUE);

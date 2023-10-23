@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,7 +25,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
@@ -68,7 +69,7 @@ public class ClientSearchControllerTest {
     when(commonLookupService.getUniqueIdentifierTypes()).thenReturn(Mono.empty());
 
     this.mockMvc.perform(get("/application/client/search")
-            .flashAttr("applicationDetails", new ApplicationDetails())
+            .flashAttr(APPLICATION_FORM_DATA, new ApplicationFormData())
             .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-client-search"));

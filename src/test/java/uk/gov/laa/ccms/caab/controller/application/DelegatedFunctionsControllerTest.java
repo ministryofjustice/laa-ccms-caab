@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.DelegatedFunctionsValidator;
 
 @ExtendWith(SpringExtension.class)
@@ -44,22 +45,22 @@ public class DelegatedFunctionsControllerTest {
   @Autowired
   private WebApplicationContext webApplicationContext;
 
-  private ApplicationDetails applicationDetails;
+  private ApplicationFormData applicationFormData;
 
   @BeforeEach
   public void setup() {
     mockMvc = standaloneSetup(delegatedFunctionsController).build();
-    applicationDetails = new ApplicationDetails();
+    applicationFormData = new ApplicationFormData();
   }
 
   @Test
   public void testGetDelegatedFunctions() throws Exception {
     this.mockMvc.perform(get("/application/delegated-functions")
-            .sessionAttr("applicationDetails", applicationDetails))
+            .sessionAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/select-delegated-functions"))
-        .andExpect(model().attribute("applicationDetails", applicationDetails));
+        .andExpect(model().attribute(APPLICATION_FORM_DATA, applicationFormData));
   }
 
   @Test
@@ -73,7 +74,7 @@ public class DelegatedFunctionsControllerTest {
       return null;
     }).when(delegatedFunctionsValidator).validate(any(), any());
     this.mockMvc.perform(post("/application/delegated-functions")
-            .flashAttr("applicationDetails", applicationDetails))
+            .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/select-delegated-functions"));
@@ -87,11 +88,11 @@ public class DelegatedFunctionsControllerTest {
   public void testPostDelegatedFunctionsIsSuccessful(String category, boolean delegatedFunctions,
                                                      String expectedApplicationType)
       throws Exception {
-    applicationDetails.setApplicationTypeCategory(category);
-    applicationDetails.setDelegatedFunctions(delegatedFunctions);
+    applicationFormData.setApplicationTypeCategory(category);
+    applicationFormData.setDelegatedFunctions(delegatedFunctions);
 
     this.mockMvc.perform(post("/application/delegated-functions")
-            .flashAttr("applicationDetails", applicationDetails))
+            .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(redirectedUrl("/application/client/search"))
         .andReturn();

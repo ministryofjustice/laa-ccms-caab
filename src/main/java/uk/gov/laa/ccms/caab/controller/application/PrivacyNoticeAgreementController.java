@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.PrivacyNoticeAgreementValidator;
 
 /**
@@ -19,7 +19,7 @@ import uk.gov.laa.ccms.caab.bean.validators.application.PrivacyNoticeAgreementVa
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(APPLICATION_DETAILS)
+@SessionAttributes(APPLICATION_FORM_DATA)
 public class PrivacyNoticeAgreementController {
 
   private final PrivacyNoticeAgreementValidator applicationValidator;
@@ -27,32 +27,32 @@ public class PrivacyNoticeAgreementController {
   /**
    * Displays the privacy notice agreement page.
    *
-   * @param applicationDetails The application details.
+   * @param applicationFormData The application details.
    * @return The name of the view to render.
    */
   @GetMapping("/application/agreement")
   public String privacyNoticeAgreement(
-          @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails) {
+          @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData) {
     return "application/privacy-notice-agreement";
   }
 
   /**
    * Handles the submission of the privacy notice agreement.
    *
-   * @param applicationDetails The application details.
+   * @param applicationFormData The application details.
    * @param bindingResult Validation result.
    * @return Redirects to the appropriate page based on agreement acceptance.
    */
   @PostMapping("/application/agreement")
   public String privacyNoticeAgreement(
-          @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
+          @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
           BindingResult bindingResult) {
-    applicationValidator.validate(applicationDetails, bindingResult);
+    applicationValidator.validate(applicationFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {
       return "application/privacy-notice-agreement";
     } else {
-      if (applicationDetails.isApplicationCreated()) {
+      if (applicationFormData.isApplicationCreated()) {
         //using an existing client
         return "redirect:/application/summary";
       } else {

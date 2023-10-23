@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
 
 /**
  * Provides error-handling capabilities for the CAAB API client interactions.
@@ -33,6 +34,30 @@ public class CaabApiClientErrorHandler {
    */
   public Mono<ApplicationDetail> handleGetApplicationError(Throwable e) {
     final String msg = "Failed to retrieve application";
+    log.error(msg, e);
+    return Mono.error(new CaabApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors encountered during retrieval of an application's application type.
+   *
+   * @param e the encountered error
+   * @return a Mono signaling the error wrapped in a {@code CaabApiServiceException}
+   */
+  public Mono<ApplicationType> handleGetApplicationTypeError(Throwable e) {
+    final String msg = "Failed to retrieve application type";
+    log.error(msg, e);
+    return Mono.error(new CaabApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors encountered during patching of an application's application type.
+   *
+   * @param e the encountered error
+   * @return a Mono signaling the error wrapped in a {@code CaabApiServiceException}
+   */
+  public Mono<Void> handlePatchApplicationTypeError(Throwable e) {
+    final String msg = "Failed to patch application type";
     log.error(msg, e);
     return Mono.error(new CaabApiClientException(msg, e));
   }

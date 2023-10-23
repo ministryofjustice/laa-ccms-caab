@@ -17,8 +17,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Optional;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.Client;
 import uk.gov.laa.ccms.caab.model.DevolvedPowers;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
@@ -51,28 +52,11 @@ public class ApplicationBuilder {
   /**
    * Sets the application type.
    *
-   * @param applicationTypeCategory The type category of the application.
-   * @param isDelegatedFunctions    Flag indicating if delegated functions are enabled.
+   * @param applicationType The application type of the application.
    * @return The builder instance.
    */
   public ApplicationBuilder applicationType(
-          final String applicationTypeCategory,
-          final boolean isDelegatedFunctions) {
-    StringDisplayValue applicationType = new StringDisplayValue();
-    if (APP_TYPE_SUBSTANTIVE.equals(applicationTypeCategory)) {
-      applicationType.setId(isDelegatedFunctions
-              ? APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS : APP_TYPE_SUBSTANTIVE);
-      applicationType.setDisplayValue(isDelegatedFunctions
-              ? APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS_DISPLAY : APP_TYPE_SUBSTANTIVE_DISPLAY);
-    } else if (APP_TYPE_EMERGENCY.equals(applicationTypeCategory)) {
-      applicationType.setId(isDelegatedFunctions
-              ? APP_TYPE_EMERGENCY_DEVOLVED_POWERS : APP_TYPE_EMERGENCY);
-      applicationType.setDisplayValue(isDelegatedFunctions
-              ? APP_TYPE_EMERGENCY_DEVOLVED_POWERS_DISPLAY : APP_TYPE_EMERGENCY_DISPLAY);
-    } else {
-      applicationType.setId(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
-      applicationType.setDisplayValue(APP_TYPE_EXCEPTIONAL_CASE_FUNDING_DISPLAY);
-    }
+          final ApplicationType applicationType) {
     application.setApplicationType(applicationType);
     return this;
   }
@@ -168,37 +152,32 @@ public class ApplicationBuilder {
   }
 
   /**
-   * Sets the devolved powers details.
+   * Sets the contractual Devolved Power flag.
    *
-   * @param contractDetails     The list of contract details.
-   * @param applicationDetails  The application details.
+   * @param contractDetails a list of contract details.
+   * @param categoryOfLawId the id of the category of law type.
    * @return The builder instance.
-   * @throws ParseException If there's an error in parsing dates.
    */
-  public ApplicationBuilder devolvedPowers(
-          final List<ContractDetail> contractDetails,
-          final ApplicationDetails applicationDetails) throws ParseException {
-    DevolvedPowers devolvedPowers = new DevolvedPowers();
+  public ApplicationBuilder contractualDevolvedPower(
+      final List<ContractDetail> contractDetails,
+      final String categoryOfLawId) throws ParseException {
 
     String contractualDevolvedPower = contractDetails != null ? contractDetails.stream()
-            .filter(contract -> applicationDetails.getCategoryOfLawId()
-                    .equals(contract.getCategoryofLaw()))
-            .map(ContractDetail::getContractualDevolvedPowers)
-            .findFirst()
-            .orElse(null)
-            : null;
+        .filter(contract -> categoryOfLawId
+            .equals(contract.getCategoryofLaw()))
+        .map(ContractDetail::getContractualDevolvedPowers)
+        .findFirst()
+        .orElse(null)
+        : null;
 
-    devolvedPowers.setContractFlag(contractualDevolvedPower);
-    devolvedPowers.setUsed(applicationDetails.isDelegatedFunctions());
-
-    if (applicationDetails.isDelegatedFunctions()) {
-      String dateString = applicationDetails.getDelegatedFunctionUsedDay() + "-"
-              + applicationDetails.getDelegatedFunctionUsedMonth() + "-"
-              + applicationDetails.getDelegatedFunctionUsedYear();
-      SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-      devolvedPowers.setDateUsed(sdf.parse(dateString));
+    if (application.getApplicationType().getDevolvedPowers() == null) {
+      if (application.getApplicationType() == null) {
+        application.setApplicationType(new ApplicationType());
+      }
+      application.getApplicationType().setDevolvedPowers(new DevolvedPowers());
     }
-    application.setDevolvedPowers(devolvedPowers);
+    application.getApplicationType().getDevolvedPowers().setContractFlag(contractualDevolvedPower);
+
     return this;
   }
 

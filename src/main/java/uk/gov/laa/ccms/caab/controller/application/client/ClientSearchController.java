@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 
 import java.util.Optional;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
@@ -25,7 +25,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(value = {APPLICATION_DETAILS, CLIENT_SEARCH_CRITERIA})
+@SessionAttributes(value = {APPLICATION_FORM_DATA, CLIENT_SEARCH_CRITERIA})
 public class ClientSearchController {
 
   private final CommonLookupService commonLookupService;
@@ -45,18 +45,18 @@ public class ClientSearchController {
   /**
    * Handles the GET request for client search page.
    *
-   * @param applicationDetails The details of the application.
+   * @param applicationFormData The details of the application.
    * @param clientSearchCriteria The criteria for client search.
    * @param model The model for the view.
    * @return The view name for the client search page.
    */
   @GetMapping("/application/client/search")
   public String clientSearch(
-          @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
+          @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
           @ModelAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
           Model model) {
-    applicationDetails.setApplicationCreated(false);
-    applicationDetails.setAgreementAccepted(false);
+    applicationFormData.setApplicationCreated(false);
+    applicationFormData.setAgreementAccepted(false);
 
     populateDropdowns(model);
     return "application/application-client-search";

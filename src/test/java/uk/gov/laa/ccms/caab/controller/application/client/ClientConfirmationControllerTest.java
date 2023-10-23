@@ -14,7 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
@@ -30,7 +30,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.controller.application.ClientConfirmationController;
 import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
@@ -95,26 +95,26 @@ class ClientConfirmationControllerTest {
   @Test
   void testClientConfirmedSuccess() throws Exception {
     String confirmedClientReference = "12345"; //must match client reference above
-    ApplicationDetails applicationDetails = buildApplicationDetails();
+    ApplicationFormData applicationFormData = buildApplicationDetails();
     ClientDetail clientInformation = buildClientInformation();
     UserDetail user = buildUser();
 
-    when(applicationService.createApplication(applicationDetails, clientInformation, user)).thenReturn(Mono.empty());
+    when(applicationService.createApplication(applicationFormData, clientInformation, user)).thenReturn(Mono.empty());
 
     this.mockMvc.perform(post("/application/client/confirmed")
             .param("confirmedClientReference", confirmedClientReference)
-            .sessionAttr(APPLICATION_DETAILS, applicationDetails)
+            .sessionAttr(APPLICATION_FORM_DATA, applicationFormData)
             .sessionAttr("clientInformation", clientInformation)
             .sessionAttr(USER_DETAILS, user))
         .andReturn();
 
-    verify(applicationService).createApplication(applicationDetails, clientInformation, user);
+    verify(applicationService).createApplication(applicationFormData, clientInformation, user);
   }
 
   @Test
   void testClientConfirmedClientMismatch() {
     String wrongReference = "wrongReference";
-    ApplicationDetails applicationDetails = buildApplicationDetails();
+    ApplicationFormData applicationFormData = buildApplicationDetails();
     ClientDetail clientInformation = buildClientInformation();
     UserDetail user = buildUser();
 
@@ -123,7 +123,7 @@ class ClientConfirmationControllerTest {
     try {
       this.mockMvc.perform(post("/application/client/confirmed")
           .param("confirmedClientReference", wrongReference)
-          .sessionAttr(APPLICATION_DETAILS, applicationDetails)
+          .sessionAttr(APPLICATION_FORM_DATA, applicationFormData)
           .sessionAttr("clientInformation", clientInformation)
           .sessionAttr(USER_DETAILS, user));
     } catch (Exception e) {
@@ -152,17 +152,17 @@ class ClientConfirmationControllerTest {
                 .name("Office 1"));
   }
 
-  private ApplicationDetails buildApplicationDetails() {
-    ApplicationDetails applicationDetails = new ApplicationDetails();
-    applicationDetails.setOfficeId(1);
-    applicationDetails.setCategoryOfLawId("COL");
-    applicationDetails.setExceptionalFunding(false);
-    applicationDetails.setApplicationTypeCategory(APP_TYPE_SUBSTANTIVE);
-    applicationDetails.setDelegatedFunctions(true);
-    applicationDetails.setDelegatedFunctionUsedDay("01");
-    applicationDetails.setDelegatedFunctionUsedMonth("01");
-    applicationDetails.setDelegatedFunctionUsedYear("2022");
-    return applicationDetails;
+  private ApplicationFormData buildApplicationDetails() {
+    ApplicationFormData applicationFormData = new ApplicationFormData();
+    applicationFormData.setOfficeId(1);
+    applicationFormData.setCategoryOfLawId("COL");
+    applicationFormData.setExceptionalFunding(false);
+    applicationFormData.setApplicationTypeCategory(APP_TYPE_SUBSTANTIVE);
+    applicationFormData.setDelegatedFunctions(true);
+    applicationFormData.setDelegatedFunctionUsedDay("01");
+    applicationFormData.setDelegatedFunctionUsedMonth("01");
+    applicationFormData.setDelegatedFunctionUsedYear("2022");
+    return applicationFormData;
   }
 
   public ClientDetail buildClientInformation() {

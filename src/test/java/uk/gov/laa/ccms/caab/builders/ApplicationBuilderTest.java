@@ -20,8 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
-import uk.gov.laa.ccms.caab.builders.ApplicationBuilder;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
@@ -41,56 +40,6 @@ class ApplicationBuilderTest {
   void setUp() {
     builder = new ApplicationBuilder();
   }
-
-  @Test
-  void testApplicationTypeForSubstantiveWithoutDelegatedFunctions() {
-    ApplicationDetail detail =
-        builder.applicationType(APP_TYPE_SUBSTANTIVE, false).build();
-    assertEquals(APP_TYPE_SUBSTANTIVE, detail.getApplicationType().getId());
-    assertEquals(APP_TYPE_SUBSTANTIVE_DISPLAY,
-        detail.getApplicationType().getDisplayValue());
-  }
-
-  @Test
-  void testApplicationTypeForSubstantiveWithDelegatedFunctions() {
-    ApplicationDetail detail =
-        builder.applicationType(APP_TYPE_SUBSTANTIVE, true).build();
-    assertEquals(APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS,
-        detail.getApplicationType().getId());
-    assertEquals(APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS_DISPLAY,
-        detail.getApplicationType().getDisplayValue());
-  }
-
-  @Test
-  void testApplicationTypeForEmergencyWithoutDelegatedFunctions() {
-    ApplicationDetail detail =
-        builder.applicationType(APP_TYPE_EMERGENCY, false).build();
-    assertEquals(APP_TYPE_EMERGENCY, detail.getApplicationType().getId());
-    assertEquals(APP_TYPE_EMERGENCY_DISPLAY,
-        detail.getApplicationType().getDisplayValue());
-  }
-
-  @Test
-  void testApplicationTypeForEmergencyWithDelegatedFunctions() {
-    ApplicationDetail detail =
-        builder.applicationType(APP_TYPE_EMERGENCY, true).build();
-    assertEquals(APP_TYPE_EMERGENCY_DEVOLVED_POWERS,
-        detail.getApplicationType().getId());
-    assertEquals(APP_TYPE_EMERGENCY_DEVOLVED_POWERS_DISPLAY,
-        detail.getApplicationType().getDisplayValue());
-  }
-
-  @Test
-  void testApplicationTypeForExceptionalCaseFunding() {
-    // Here I am passing an unknown category to force the code into the "else" branch.
-    // However, for more clarity, you could also directly use APP_TYPE_EXCEPTIONAL_CASE_FUNDING.
-    ApplicationDetail detail = builder.applicationType("ECF", false).build();
-    assertEquals(APP_TYPE_EXCEPTIONAL_CASE_FUNDING,
-        detail.getApplicationType().getId());
-    assertEquals(APP_TYPE_EXCEPTIONAL_CASE_FUNDING_DISPLAY,
-        detail.getApplicationType().getDisplayValue());
-  }
-
 
   @Test
   void testCaseReference() {
@@ -134,20 +83,6 @@ class ApplicationBuilderTest {
     ApplicationDetail detail = builder.office(officeId, baseOffices).build();
     assertEquals(officeId, detail.getOffice().getId());
     assertEquals("OfficeName", detail.getOffice().getDisplayValue());
-  }
-
-  @Test
-  void testDevolvedPowers() throws Exception {
-    List<ContractDetail> contractDetails = Collections.singletonList(new ContractDetail());
-    ApplicationDetails appDetails = new ApplicationDetails();
-    appDetails.setCategoryOfLawId("CATEGORY1");
-    appDetails.setDelegatedFunctionUsedDay("01");
-    appDetails.setDelegatedFunctionUsedMonth("01");
-    appDetails.setDelegatedFunctionUsedYear("2022");
-    appDetails.setDelegatedFunctions(true);
-
-    ApplicationDetail detail = builder.devolvedPowers(contractDetails, appDetails).build();
-    assertNotNull(detail.getDevolvedPowers());
   }
 
   @Test

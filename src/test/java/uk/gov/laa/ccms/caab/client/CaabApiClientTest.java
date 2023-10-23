@@ -18,6 +18,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
@@ -92,6 +93,46 @@ public class CaabApiClientTest {
     StepVerifier.create(applicationDetailMono)
         .expectNext(mockApplication)
         .verifyComplete();
+  }
+
+  @Test
+  void getApplicationType_success() {
+
+    String id = "123";
+    String expectedUri = "/applications/{id}/application-type";
+
+    ApplicationType mockApplication = new ApplicationType();
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, id)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(ApplicationType.class)).thenReturn(Mono.just(mockApplication));
+
+    Mono<ApplicationType> applicationTypeMono
+        = caabApiClient.getApplicationType(id);
+
+    StepVerifier.create(applicationTypeMono)
+        .expectNext(mockApplication)
+        .verifyComplete();
+  }
+
+  @Test
+  void patchApplicationType_success() {
+    String loginId = "user1";
+    String id = "123";
+    String expectedUri = "/applications/{id}/application-type";
+
+    ApplicationType applicationType = new ApplicationType();
+
+    when(caabApiWebClient.patch()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri, id)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(any(MediaType.class))).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(ApplicationType.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    caabApiClient.patchApplicationType(id, loginId, applicationType);
   }
 
 }

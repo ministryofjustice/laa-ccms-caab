@@ -1,12 +1,13 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_INFORMATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
+import java.text.ParseException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ClientService;
@@ -33,7 +34,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 @Slf4j
 @SessionAttributes(value = {
     USER_DETAILS,
-    APPLICATION_DETAILS,
+    APPLICATION_FORM_DATA,
     CLIENT_INFORMATION
 })
 public class ClientConfirmationController {
@@ -78,7 +79,7 @@ public class ClientConfirmationController {
    * Handles the POST request for confirmed client submission.
    *
    * @param confirmedClientReference The confirmed client reference number.
-   * @param applicationDetails The application details from session.
+   * @param applicationFormData The application details from session.
    * @param clientInformation The client information from session.
    * @param user The user details from session.
    * @return A Mono containing a redirect string or error.
@@ -86,18 +87,18 @@ public class ClientConfirmationController {
   @PostMapping("/application/client/confirmed")
   public Mono<String> clientConfirmed(
           String confirmedClientReference,
-          @SessionAttribute(APPLICATION_DETAILS) final ApplicationDetails applicationDetails,
+          @SessionAttribute(APPLICATION_FORM_DATA) final ApplicationFormData applicationFormData,
           @SessionAttribute(CLIENT_INFORMATION) final ClientDetail clientInformation,
           @SessionAttribute(USER_DETAILS) final UserDetail user,
-          HttpSession session) {
+          HttpSession session) throws ParseException {
 
     if (!confirmedClientReference.equals(clientInformation.getClientReferenceNumber())) {
       throw new RuntimeException("Client information does not match");
     }
 
-    return applicationService.createApplication(applicationDetails, clientInformation, user)
+    return applicationService.createApplication(applicationFormData, clientInformation, user)
         .doOnSuccess(applicationId -> {
-          applicationDetails.setApplicationCreated(true);
+          applicationFormData.setApplicationCreated(true);
           log.info("Application details submitted");
           session.setAttribute(APPLICATION_ID, applicationId);
         })

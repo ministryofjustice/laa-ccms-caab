@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COPY_CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COPY_CASE_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -34,7 +34,7 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 @RequiredArgsConstructor
 @Slf4j
 @SessionAttributes(value = {
-    APPLICATION_DETAILS,
+    APPLICATION_FORM_DATA,
     COPY_CASE_SEARCH_CRITERIA,
     COPY_CASE_SEARCH_RESULTS})
 public class CopyCaseSearchResultsController {
@@ -94,14 +94,14 @@ public class CopyCaseSearchResultsController {
    *
    * @param copyCaseReferenceNumber The reference number of the selected copy case.
    * @param caseDetails Search results containing copy cases.
-   * @param applicationDetails Details of the current application.
+   * @param applicationFormData Details of the current application.
    * @return Redirects to the client search page after storing the selected case reference number.
    */
   @GetMapping("/application/copy-case/{case-reference-number}/confirm")
   public String selectCopyCaseReferenceNumber(
           @PathVariable("case-reference-number") String copyCaseReferenceNumber,
           @SessionAttribute(COPY_CASE_SEARCH_RESULTS) CaseDetails caseDetails,
-          @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails) {
+          @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData) {
 
     // Validate that the supplied caseRef is one from the search results in the session
     boolean validCaseRef = Optional.ofNullable(caseDetails.getContent())
@@ -116,7 +116,7 @@ public class CopyCaseSearchResultsController {
 
     // Store the selected caseReferenceNumber in the ApplicationDetails.
     // This will be used at the point the Application is created.
-    applicationDetails.setCopyCaseReferenceNumber(copyCaseReferenceNumber);
+    applicationFormData.setCopyCaseReferenceNumber(copyCaseReferenceNumber);
     return "redirect:/application/client/search";
   }
 }

@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
 
 import java.sql.Date;
+import java.text.ParseException;
 import java.time.Instant;
 import java.util.ArrayList;
 import org.junit.jupiter.api.Test;
@@ -20,17 +21,17 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AuditDetail;
 import uk.gov.laa.ccms.caab.model.Client;
 import uk.gov.laa.ccms.caab.model.CostStructure;
-import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.BaseOffice;
@@ -149,8 +150,8 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void createApplication_success() {
-    ApplicationDetails applicationDetails = buildApplicationDetails();
+  void createApplication_success() throws ParseException {
+    ApplicationFormData applicationFormData = buildApplicationDetails();
     ClientDetail clientInformation = buildClientInformation();
     UserDetail user = buildUser();
 
@@ -179,7 +180,7 @@ class ApplicationServiceTest {
     when(caabApiClient.createApplication(anyString(), any())).thenReturn(Mono.empty());
 
     Mono<String> applicationMono = applicationService.createApplication(
-        applicationDetails, clientInformation, user);
+        applicationFormData, clientInformation, user);
 
     StepVerifier.create(applicationMono)
         .verifyComplete();
@@ -214,7 +215,7 @@ class ApplicationServiceTest {
     client.setFirstName("bob");
     client.setSurname("ross");
 
-    StringDisplayValue applicationType = new StringDisplayValue();
+    ApplicationType applicationType = new ApplicationType();
     applicationType.id("test 123");
     applicationType.setDisplayValue("testing123");
 
@@ -280,7 +281,7 @@ class ApplicationServiceTest {
     client.setFirstName("bob");
     client.setSurname("ross");
 
-    StringDisplayValue applicationType = new StringDisplayValue();
+    ApplicationType applicationType = new ApplicationType();
     applicationType.id("test 123");
     applicationType.setDisplayValue("testing123");
 
@@ -342,17 +343,17 @@ class ApplicationServiceTest {
                 .name("Office 1"));
   }
 
-  private ApplicationDetails buildApplicationDetails() {
-    ApplicationDetails applicationDetails = new ApplicationDetails();
-    applicationDetails.setOfficeId(1);
-    applicationDetails.setCategoryOfLawId("COL");
-    applicationDetails.setExceptionalFunding(false);
-    applicationDetails.setApplicationTypeCategory(APP_TYPE_SUBSTANTIVE);
-    applicationDetails.setDelegatedFunctions(true);
-    applicationDetails.setDelegatedFunctionUsedDay("01");
-    applicationDetails.setDelegatedFunctionUsedMonth("01");
-    applicationDetails.setDelegatedFunctionUsedYear("2022");
-    return applicationDetails;
+  private ApplicationFormData buildApplicationDetails() {
+    ApplicationFormData applicationFormData = new ApplicationFormData();
+    applicationFormData.setOfficeId(1);
+    applicationFormData.setCategoryOfLawId("COL");
+    applicationFormData.setExceptionalFunding(false);
+    applicationFormData.setApplicationTypeCategory(APP_TYPE_SUBSTANTIVE);
+    applicationFormData.setDelegatedFunctions(true);
+    applicationFormData.setDelegatedFunctionUsedDay("01");
+    applicationFormData.setDelegatedFunctionUsedMonth("01");
+    applicationFormData.setDelegatedFunctionUsedYear("2022");
+    return applicationFormData;
   }
 
   public ClientDetail buildClientInformation() {

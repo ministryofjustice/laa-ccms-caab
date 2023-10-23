@@ -18,6 +18,7 @@ public class ApplicationSummaryStatusDisplay {
   private String status;
   private Date lastSaved;
   private String lastSavedBy;
+  private boolean enabled;
 
   /**
    * Constructor taking in its own class used for copying status displays.
@@ -29,6 +30,7 @@ public class ApplicationSummaryStatusDisplay {
     this.status = applicationSummaryStatusDisplay.getStatus();
     this.lastSaved = applicationSummaryStatusDisplay.getLastSaved();
     this.lastSavedBy = applicationSummaryStatusDisplay.getLastSavedBy();
+    this.enabled = false;
   }
 
 }

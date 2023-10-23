@@ -24,7 +24,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.PrivacyNoticeAgreementValidator;
 import uk.gov.laa.ccms.caab.constants.SessionConstants;
 
@@ -51,22 +51,23 @@ public class PrivacyNoticeAgreementControllerTest {
 
     @Test
     public void testGetPrivacyNoticeAgreement() throws Exception {
-        ApplicationDetails applicationDetails = new ApplicationDetails();
+        ApplicationFormData applicationFormData = new ApplicationFormData();
         this.mockMvc.perform(get("/application/agreement")
-                        .sessionAttr(SessionConstants.APPLICATION_DETAILS, applicationDetails))
+                        .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData))
                 .andExpect(status().isOk())
                 .andExpect(view().name("application/privacy-notice-agreement"))
-                .andExpect(model().attribute(SessionConstants.APPLICATION_DETAILS, applicationDetails));
+                .andExpect(model().attribute(SessionConstants.APPLICATION_FORM_DATA,
+                    applicationFormData));
     }
 
     @Test
     public void testPostPrivacyNoticeAgreement_ValidationSuccess_NewClient() throws Exception {
-        ApplicationDetails applicationDetails = new ApplicationDetails();
-        applicationDetails.setApplicationCreated(false);
-        applicationDetails.setAgreementAccepted(true);
+        ApplicationFormData applicationFormData = new ApplicationFormData();
+        applicationFormData.setApplicationCreated(false);
+        applicationFormData.setAgreementAccepted(true);
 
         this.mockMvc.perform(post("/application/agreement")
-                        .sessionAttr(SessionConstants.APPLICATION_DETAILS, applicationDetails))
+                        .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/application/client/details/basic"));
 
@@ -75,12 +76,12 @@ public class PrivacyNoticeAgreementControllerTest {
 
     @Test
     public void testPostPrivacyNoticeAgreement_ValidationSuccess_ExistingClient() throws Exception {
-        ApplicationDetails applicationDetails = new ApplicationDetails();
-        applicationDetails.setApplicationCreated(true);
-        applicationDetails.setAgreementAccepted(true);
+        ApplicationFormData applicationFormData = new ApplicationFormData();
+        applicationFormData.setApplicationCreated(true);
+        applicationFormData.setAgreementAccepted(true);
 
         this.mockMvc.perform(post("/application/agreement")
-                        .sessionAttr(SessionConstants.APPLICATION_DETAILS, applicationDetails))
+                        .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/application/summary"));
 
@@ -89,8 +90,8 @@ public class PrivacyNoticeAgreementControllerTest {
 
     @Test
     public void testPostPrivacyNoticeAgreement_ValidationError() throws Exception {
-        ApplicationDetails applicationDetails = new ApplicationDetails();
-        applicationDetails.setAgreementAccepted(false);
+        ApplicationFormData applicationFormData = new ApplicationFormData();
+        applicationFormData.setAgreementAccepted(false);
 
         doAnswer(invocation -> {
             Errors errors = (Errors) invocation.getArguments()[1];
@@ -100,7 +101,7 @@ public class PrivacyNoticeAgreementControllerTest {
         }).when(privacyNoticeAgreementValidator).validate(any(), any());
 
         this.mockMvc.perform(post("/application/agreement")
-                        .sessionAttr(SessionConstants.APPLICATION_DETAILS, applicationDetails))
+                        .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData))
                 .andExpect(status().isOk())
                 .andExpect(view().name("application/privacy-notice-agreement"));
 

@@ -7,7 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_INFORMATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -25,8 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
-import uk.gov.laa.ccms.caab.controller.submission.ClientCreateSubmissionConfirmedController;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -57,15 +56,15 @@ public class ClientCreateSubmissionConfirmedControllerTest {
 
   @Test
   void testSubmissionsConfirmed() throws Exception {
-    ApplicationDetails mockApplicationDetails = new ApplicationDetails(); // Assuming you have a constructor or a mock object
+    ApplicationFormData mockApplicationFormData = new ApplicationFormData(); // Assuming you have a constructor or a mock object
     UserDetail mockUserDetail = new UserDetail(); // Similarly, create or mock
     ClientDetail mockClientDetail = new ClientDetail();
 
-    when(applicationService.createApplication(eq(mockApplicationDetails), eq(mockClientDetail), eq(mockUserDetail))).thenReturn(Mono.empty());
+    when(applicationService.createApplication(eq(mockApplicationFormData), eq(mockClientDetail), eq(mockUserDetail))).thenReturn(Mono.empty());
 
     mockMvc.perform(
             post("/submissions/client-create/confirmed")
-                .sessionAttr(APPLICATION_DETAILS, mockApplicationDetails)
+                .sessionAttr(APPLICATION_FORM_DATA, mockApplicationFormData)
                 .sessionAttr(USER_DETAILS, mockUserDetail)
                 .sessionAttr(CLIENT_INFORMATION, mockClientDetail)
         )

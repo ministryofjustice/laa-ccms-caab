@@ -6,7 +6,7 @@ import lombok.Data;
  * Represents the details of an application.
  */
 @Data
-public class ApplicationDetails {
+public class ApplicationFormData {
 
   /**
    * The caseReferenceNumber selected for a Copy Case.
@@ -62,6 +62,12 @@ public class ApplicationDetails {
    * The boolean to control the routing after the privacy notice agreement.
    */
   private boolean applicationCreated = false;
+
+  /**
+   * The string to control contractual devolved powers flag, used for amend application type, not
+   * on creation of an application.
+   */
+  private String devolvedPowersContractFlag;
 
 }
 

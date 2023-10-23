@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AuditDetail;
 import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.Opponent;
@@ -57,9 +58,13 @@ class ApplicationSummaryBuilderTest {
 
   @Test
   void testApplicationType() {
-    builder.applicationType("TestType");
+    ApplicationType applicationType = new ApplicationType();
+    applicationType.setId("TEST");
+    applicationType.setDisplayValue("TEST DISPLAY");
+    builder.applicationType(applicationType);
+
     ApplicationSummaryDisplay result = builder.build();
-    assertEquals("TestType", result.getApplicationType().getStatus());
+    assertEquals("TEST DISPLAY", result.getApplicationType().getStatus());
   }
 
   @Test

@@ -37,7 +37,12 @@
           </thead>
           <tbody class="govuk-table__body">
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell"><a href="#" class="govuk-link">Application type</a></td>
+            <td class="govuk-table__cell" th:if="${summary.applicationType.enabled}">
+              <a href="/application/summary/application-type" class="govuk-link">Application type</a>
+            </td>
+            <td class="govuk-table__cell" th:unless="${summary.applicationType.enabled}">
+              Application type
+            </td>
             <td class="govuk-table__cell" th:text="${summary.applicationType.status}"></td>
             <td class="govuk-table__cell" th:text="${#dates.format(summary.applicationType.lastSaved, 'dd/MM/yyyy')}"></td>
             <td class="govuk-table__cell" th:text="${summary.applicationType.lastSavedBy}"></td>
