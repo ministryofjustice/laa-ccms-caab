@@ -9,6 +9,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.data.model.UserDetails;
 
 /**
  * ErrorHandler for the EbsApiClient, providing detailed error messages
@@ -52,6 +53,9 @@ public class EbsApiClientErrorHandler {
    */
   public static String COUNTRY_ERROR_MESSAGE =
           "Failed to retrieve Countries";
+
+  public static String USERS_ERROR_MESSAGE =
+      "Failed to retrieve Users for provider: (id: %s)";
 
   /**
    * The error message for relationships to case.
@@ -157,6 +161,20 @@ public class EbsApiClientErrorHandler {
           Integer providerId,
           Throwable e) {
     final String msg = String.format(PROVIDER_ERROR_MESSAGE, providerId);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+
+  /**
+   * Handles errors related to users by provider data retrieval.
+   *
+   * @param providerId the ID for the logged-in user's provider
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception.
+   */
+  public Mono<UserDetails> handleUsersError(final String providerId, Throwable e) {
+    final String msg = String.format(USERS_ERROR_MESSAGE, providerId);
     log.error(msg, e);
     return Mono.error(new EbsApiClientException(msg, e));
   }

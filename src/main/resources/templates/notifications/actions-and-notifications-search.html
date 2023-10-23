@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+  <title>LAA CCMS - Your actions / notifications</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a href="/notifications" class="govuk-back-link">Cancel and return to search results</a>
+  </div>
+  <div id="main-content">
+    <form action="#" th:action="@{/notifications/search}" th:object="${notificationSearchCriteria}"
+          method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <span class="govuk-caption-l">Search for notifications</span>
+      <h1 class="govuk-heading-l">
+        Search
+      </h1>
+      <div class="govuk-body-l">
+        Please enter as many details as you have available in the provided search fields in
+        order to find your required action or notification. At least one of the search criteria
+        fields should be completed.
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+          <div class="govuk-form-group">
+            <fieldset class="govuk-fieldset">
+              <label class="govuk-label" for="assignedToUserId">
+                Assigned to
+              </label>
+              <select class="govuk-select" data-module="govuk-select" id="assignedToUserId"
+                      name="assignedToUserId">
+                <option value="">Please Select</option>
+                <option th:each="baseUser : ${users}" th:value="${baseUser.userId}"
+                        th:text="${baseUser.loginId}"></option>
+              </select>
+            </fieldset>
+          </div>
+          <div class="govuk-form-group"
+               th:classappend="${#fields.hasErrors('notificationFromDateDay') || #fields.hasErrors('notificationFromDateMonth') || #fields.hasErrors('notificationFromDateYear')}  ? 'govuk-form-group--error' : ''">
+            <fieldset class="govuk-fieldset" role="group"
+                      aria-describedby="notf-hint not-from-date-error">
+              <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                <h3>Notification dates</h3>
+                <legend class="govuk-fieldset__legend--s">
+                  From:
+                </legend>
+              </legend>
+              <div id="notf-hint" class="govuk-hint">
+                For example, 27 3 2007
+              </div>
+              <p id="not-from-date-error" class="govuk-error-message">
+                <span th:each="error : ${#fields.detailedErrors()}">
+                    <span th:inline="text"
+                          th:if="${error.fieldName == 'notificationFromDateDay' || error.fieldName == 'notificationFromDateMonth' || error.fieldName == 'notificationFromDateYear'}">
+                        <span th:utext="${error.message + '<br>'}"></span>
+                    </span>
+                </span>
+              </p>
+              <div class="govuk-date-input" id="notificationFromDate">
+                <div class="govuk-date-input__item">
+                  <div class="govuk-form-group">
+                    <label class="govuk-label govuk-date-input__label"
+                           for="notificationFromDateDay">
+                      Day
+                    </label>
+                    <input th:errorclass="govuk-input--error"
+                           class="govuk-input govuk-date-input__input govuk-input--width-2"
+                           id="notificationFromDateDay"
+                           name="notificationFromDateDay"
+                           type="text"
+                           inputmode="numeric"
+                           maxlength="2"
+                           th:value="${notificationSearchCriteria.notificationFromDateDay}">
+                  </div>
+                </div>
+                <div class="govuk-date-input__item">
+                  <div class="govuk-form-group">
+                    <label class="govuk-label govuk-date-input__label"
+                           for="notificationFromDateMonth">
+                      Month
+                    </label>
+                    <input th:errorclass="govuk-input--error"
+                           class="govuk-input govuk-date-input__input govuk-input--width-2"
+                           id="notificationFromDateMonth"
+                           name="notificationFromDateMonth"
+                           type="text"
+                           inputmode="numeric"
+                           maxlength="2"
+                           th:value="${notificationSearchCriteria.notificationFromDateMonth}">
+                  </div>
+                </div>
+                <div class="govuk-date-input__item">
+                  <div class="govuk-form-group">
+                    <label class="govuk-label govuk-date-input__label"
+                           for="notificationFromDateYear">
+                      Year
+                    </label>
+                    <input th:errorclass="govuk-input--error"
+                           class="govuk-input govuk-date-input__input govuk-input--width-4"
+                           id="notificationFromDateYear"
+                           name="notificationFromDateYear"
+                           type="text"
+                           inputmode="numeric"
+                           maxlength="4"
+                           th:value="${notificationSearchCriteria.notificationFromDateYear}">
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+            <div class="govuk-form-group"
+                 th:classappend="${#fields.hasErrors('notificationToDateDay') || #fields.hasErrors('notificationToDateMonth') || #fields.hasErrors('notificationToDateYear')} ? 'govuk-form-group--error' : ''">
+              <fieldset class="govuk-fieldset" role="group"
+                        aria-describedby="nott-hint nott-error">
+                <h2></h2>
+                <legend class="govuk-fieldset__legend--s">
+                  To:
+                </legend>
+                <div id="nott-hint" class="govuk-hint">
+                  For example, 27 3 2007
+                </div>
+                <p id="nott-error" class="govuk-error-message">
+                    <span th:each="error : ${#fields.detailedErrors()}">
+                        <span th:inline="text"
+                              th:if="${error.fieldName == 'notificationToDateDay' || error.fieldName == 'notificationToDateMonth' || error.fieldName == 'notificationToDateYear'}">
+                            <span th:utext="${error.message + '<br>'}"></span>
+                        </span>
+                    </span>
+                </p>
+                <div class="govuk-date-input" id="notificationToDate">
+                  <div class="govuk-date-input__item">
+                    <div class="govuk-form-group">
+                      <label class="govuk-label govuk-date-input__label"
+                             for="notificationToDateDay">
+                        Day
+                      </label>
+                      <input th:errorclass="govuk-input--error"
+                             class="govuk-input govuk-date-input__input govuk-input--width-2"
+                             id="notificationToDateDay"
+                             name="notificationToDateDay"
+                             type="text"
+                             inputmode="numeric"
+                             maxlength="2"
+                             th:value="${notificationSearchCriteria.notificationToDateDay}">
+                    </div>
+                  </div>
+                  <div class="govuk-date-input__item">
+                    <div class="govuk-form-group">
+                      <label class="govuk-label govuk-date-input__label"
+                             for="notificationToDateMonth">
+                        Month
+                      </label>
+                      <input th:errorclass="govuk-input--error"
+                             class="govuk-input govuk-date-input__input govuk-input--width-2"
+                             id="notificationToDateMonth"
+                             name="notificationToDateMonth"
+                             type="text"
+                             inputmode="numeric"
+                             maxlength="2"
+                             th:value="${notificationSearchCriteria.notificationToDateMonth}">
+                    </div>
+                  </div>
+                  <div class="govuk-date-input__item">
+                    <div class="govuk-form-group">
+                      <label class="govuk-label govuk-date-input__label"
+                             for="notificationToDateYear">
+                        Year
+                      </label>
+                      <input th:errorclass="govuk-input--error"
+                             class="govuk-input govuk-date-input__input govuk-input--width-4"
+                             id="notificationToDateYear"
+                             name="notificationToDateYear"
+                             type="text"
+                             inputmode="numeric"
+                             maxlength="4"
+                             th:value="${notificationSearchCriteria.notificationToDateYear}">
+                    </div>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+
+            <div class="govuk-form-group">
+              <label class="govuk-label" for="providerCaseReference">
+                Provider case reference
+              </label>
+              <span th:if="${#fields.hasErrors('providerCaseReference')}"
+                    th:errors="*{providerCaseReference}" class="govuk-error-message"></span>
+              <input class="govuk-input govuk-input--width-20"
+                     id="providerCaseReference"
+                     name="providerCaseReference"
+                     type="text"
+                     data-module="govuk-input"
+                     th:value="${notificationSearchCriteria.providerCaseReference}">
+            </div>
+            <div class="govuk-form-group">
+              <label class="govuk-label" for="caseReference">
+                LAA application / case reference
+              </label>
+              <span th:if="${#fields.hasErrors('caseReference')}" th:errors="*{caseReference}"
+                    class="govuk-error-message"></span>
+              <input th:errorclass="govuk-input--error"
+                     class="govuk-input govuk-input--width-20"
+                     id="caseReference"
+                     name="caseReference"
+                     type="text"
+                     data-module="govuk-input"
+                     th:value="${notificationSearchCriteria.caseReference}">
+            </div>
+            <div class="govuk-form-group">
+              <label class="govuk-label" for="clientSurname">
+                Client surname
+              </label>
+              <span th:if="${#fields.hasErrors('clientSurname')}" th:errors="*{clientSurname}"
+                    class="govuk-error-message"></span>
+              <input th:errorclass="govuk-input--error"
+                     class="govuk-input govuk-input--width-20"
+                     id="clientSurname"
+                     name="clientSurname"
+                     type="text"
+                     data-module="govuk-input"
+                     th:value="${notificationSearchCriteria.clientSurname}">
+            </div>
+            <div class="govuk-form-group">
+              <fieldset class="govuk-fieldset">
+                <label class="govuk-label" for="feeEarnerId">
+                  Fee earner
+                </label>
+                <select class="govuk-select" data-module="govuk-select" id="feeEarnerId"
+                        name="feeEarnerId">
+                  <option value="">Please select</option>
+                  <option th:each="feeEarner : ${feeEarners}" th:value="${feeEarner.id}"
+                          th:text="${feeEarner.name}"></option>
+                </select>
+              </fieldset>
+            </div>
+            <div class="govuk-form-group">
+              <fieldset class="govuk-fieldset">
+                <label class="govuk-label" for="notificationTypeId">
+                  Action / Notification Type
+                </label>
+                <select class="govuk-select" data-module="govuk-select" id="notificationTypeId"
+                        name="notificationTypeId">
+                  <option value="">Please Select</option>
+                  <option th:each="notificationType : ${notificationTypes}"
+                          th:value="${notificationType.code}"
+                          th:text="${notificationType.description}"></option>
+                </select>
+              </fieldset>
+            </div>
+            <div class="govuk-form-group">
+              <fieldset class="govuk-fieldset">
+                <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                  <h2 class="govuk-fieldset__heading">
+                    Include closed notifications?
+                  </h2>
+                </legend>
+                <div class="govuk-radios govuk-radios--inline" data-module="govuk-radios">
+                  <div class="govuk-radios__item">
+                    <input class="govuk-radios__input" id="includeClosed-yes" name="includeClosed"
+                           type="radio" value="true" th:checked="${criteria.includeClosed}">
+                    <label class="govuk-label govuk-radios__label" for="includeClosed-yes">
+                      Yes
+                    </label>
+                  </div>
+                  <div class="govuk-radios__item">
+                    <input class="govuk-radios__input" id="includeClosed-no" name="includeClosed"
+                           type="radio" value="false" th:checked="${!criteria.includeClosed}">
+                    <label class="govuk-label govuk-radios__label" for="includeClosed-no">
+                      No
+                    </label>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+            <button class="govuk-button" data-module="govuk-button">Search</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteriaValidator;
+import uk.gov.laa.ccms.caab.bean.validators.application.CopyCaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.data.model.ProviderDetail;

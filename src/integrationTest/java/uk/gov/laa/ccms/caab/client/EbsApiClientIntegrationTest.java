@@ -10,7 +10,9 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static uk.gov.laa.ccms.caab.client.EbsApiClientErrorHandler.USER_ERROR_MESSAGE;
+import static uk.gov.laa.ccms.caab.client.EbsApiClientErrorHandler.USERS_ERROR_MESSAGE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import java.util.ArrayList;
@@ -26,6 +28,7 @@ import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.BaseOffice;
 import uk.gov.laa.ccms.data.model.BaseProvider;
+import uk.gov.laa.ccms.data.model.BaseUser;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -34,6 +37,7 @@ import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.data.model.UserDetails;
 
 public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
@@ -153,6 +157,40 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
     assertEquals(amendmentTypesJson, objectMapper.writeValueAsString(amendmentTypes));
   }
+
+  @Test
+  void testGetUsers_returnsData() throws JsonProcessingException {
+    String username = "user1";
+    Integer providerId = 123;
+    BaseUser user = new BaseUser()
+        .username(username)
+        .userId(123);
+    UserDetails userDetails = new UserDetails()
+        .addContentItem(user);
+
+    String userDetailsJson = objectMapper.writeValueAsString(userDetails);
+    wiremock.stubFor(get(String.format("/users?provider-id=%s", providerId))
+        .willReturn(okJson(userDetailsJson)));
+    UserDetails result = ebsApiClient.getUsers(providerId).block();
+
+    assertNotNull(result);
+    assertEquals(userDetailsJson, objectMapper.writeValueAsString(result));
+
+  }
+  @Test
+  public void testGetUsers_notFound() {
+    Integer providerId = 123;
+    String expectedMessage = String.format(USERS_ERROR_MESSAGE, providerId);
+    wiremock.stubFor(get(String.format("/users?provider-id=%s", providerId))
+        .willReturn(notFound()));
+    Mono<UserDetails> userDetailsMono = ebsApiClient.getUsers(providerId);
+
+    StepVerifier.create(userDetailsMono)
+        .expectErrorMatches(throwable -> throwable instanceof EbsApiClientException
+            && throwable.getMessage().equals(expectedMessage)
+        ).verify();
+  }
+
 
   // You may need to build the AmendmentTypeLookupDetail for the test
   private AmendmentTypeLookupDetail buildAmendmentTypeLookupDetail() {

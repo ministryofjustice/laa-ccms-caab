@@ -10,7 +10,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
+import uk.gov.laa.ccms.data.model.BaseUser;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.data.model.UserDetails;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
@@ -34,6 +36,21 @@ public class UserServiceTest {
 
     StepVerifier.create(userDetailsMono)
         .expectNextMatches(user -> user.getLoginId().equals(loginId))
+        .verifyComplete();
+  }
+
+  @Test
+  void getUsers_returnsData() {
+    Integer providerId = 1234;
+    UserDetails userDetails = new UserDetails()
+        .addContentItem(new BaseUser()
+            .userId(123)
+            .userType("type1")
+            .loginId("login1"));
+    when(ebsApiClient.getUsers(providerId)).thenReturn(Mono.just(userDetails));
+    Mono<UserDetails> userDetailsMono = userService.getUsers(providerId);
+    StepVerifier.create(userDetailsMono)
+        .expectNextMatches(userList -> userList.getContent().get(0).getLoginId().equals("login1"))
         .verifyComplete();
   }
 }

@@ -12,6 +12,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.data.model.UserDetails;
 
 /**
  * Client class responsible for interacting with the ebs-api microservice to retrieve various data
@@ -187,6 +188,26 @@ public class EbsApiClient {
             .retrieve()
             .bodyToMono(CommonLookupDetail.class)
             .onErrorResume(ebsApiClientErrorHandler::handleCountryLookupError);
+  }
+
+  /**
+   * Retrieve the list of users for a given Provider.
+   *
+   * @param providerId the provider id.
+   * @return A Mono containing the UserDetail or an error handler if an error occurs.
+   */
+  public Mono<UserDetails> getUsers(final Integer providerId) {
+    return  ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/users")
+            .queryParamIfPresent("provider-id",
+                Optional.ofNullable(providerId))
+            .build())
+        .retrieve()
+        .bodyToMono(UserDetails.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler
+            .handleUsersError(Integer.toString(providerId), e));
+
   }
 
 }

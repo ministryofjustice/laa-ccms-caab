@@ -56,4 +56,9 @@ public class CommonValueConstants {
    * Type used to retrieve the disability values for equal opportunity monitoring details.
    */
   public static final String COMMON_VALUE_DISABILITY = "XXCCMS_DISABILITY_TYPES";
+
+  /**
+   * Type used to retrieve the Notification Types for the Notification search.
+   */
+  public static final String COMMON_VALUE_NOTIFICATION_TYPE = "XXCCMS_NOTIFICATION_TYPES";
 }

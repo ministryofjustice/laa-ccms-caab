@@ -52,9 +52,11 @@ public class HomeController {
        * 'x Outstanding Actions (x overdue)', or
        * 'No Outstanding Actions'
        */
-      final String actionsMsg = notificationSummary.getStandardActions() > 0
+      int totalActions = notificationSummary.getStandardActions()
+          + notificationSummary.getOverdueActions();
+      final String actionsMsg = totalActions > 0
               ? String.format("%s Outstanding Actions (%s)",
-                      notificationSummary.getStandardActions(),
+                      totalActions,
                       overdueActionsMsg) : NO_OUTSTANDING_ACTIONS;
 
       /*

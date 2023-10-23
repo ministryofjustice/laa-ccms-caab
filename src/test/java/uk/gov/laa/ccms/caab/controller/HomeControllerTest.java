@@ -50,11 +50,11 @@ public class HomeControllerTest {
 
   private static Stream<Arguments> userDetailsAndNotificationParameters() {
     return Stream.of(
-        Arguments.of(1, 2, 3, true, "2 Outstanding Actions (3 overdue)",
+        Arguments.of(1, 2, 3, true, "5 Outstanding Actions (3 overdue)",
             "View Notifications (1 outstanding)"),
         Arguments.of(0, 2, 0, true, "2 Outstanding Actions (none overdue)",
             "View Notifications (none outstanding)"),
-        Arguments.of(0, 0, 5, true, HomeController.NO_OUTSTANDING_ACTIONS,
+        Arguments.of(0, 0, 5, true, "5 Outstanding Actions (5 overdue)",
             "View Notifications (none outstanding)")
     );
   }

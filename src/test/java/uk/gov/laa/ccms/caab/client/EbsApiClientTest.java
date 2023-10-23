@@ -21,11 +21,13 @@ import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.BaseUser;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.data.model.UserDetails;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -339,5 +341,58 @@ public class EbsApiClientTest {
     assertEquals("/lookup/countries?size=1000", actualUri.toString());
   }
 
+  @Test
+  void getUsersForProvider_returnsData() {
+    // Mock some objects
+    String username = "user1";
+    String expectedUri = "/users?provider-id=123";
+    Integer providerId = 123;
+    BaseUser mockUser = new BaseUser()
+        .username(username)
+        .userId(123);
+    UserDetails mockDetails = new UserDetails()
+        .addContentItem(mockUser);
+
+    // Stubs
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(UserDetails.class)).thenReturn(Mono.just(mockDetails));
+
+    // Call the method
+    Mono<UserDetails> userDetailsMono = ebsApiClient.getUsers(providerId);
+
+    // Assertions
+    StepVerifier.create(userDetailsMono)
+        .expectNext(mockDetails)
+        .verifyComplete();
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+    assertEquals(expectedUri, actualUri.toString());
+
+  }
+
+  @Test
+  void getUsersForProvider_notFound() {
+    Integer providerId = 123;
+
+    String expectedUri = "/users?provider-id=123";
+
+    // Stubs
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(UserDetails.class)).thenReturn(Mono.error(
+        new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+    when(ebsApiClientErrorHandler.handleUsersError(eq(providerId.toString()),
+        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+
+    Mono<UserDetails> userDetailsMono = ebsApiClient.getUsers(providerId);
+    StepVerifier.create(userDetailsMono)
+        .verifyComplete();
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+    assertEquals(expectedUri, actualUri.toString());
+  }
 
 }

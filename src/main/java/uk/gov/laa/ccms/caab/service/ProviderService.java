@@ -122,6 +122,7 @@ public class ProviderService {
         .flatMap(Collection::stream)
         .collect(Collectors.toSet())
         .stream()
+        .filter(contactDetail -> contactDetail.getName() != null)
         .sorted(Comparator.comparing(ContactDetail::getName))
         .collect(Collectors.toList());
   }
