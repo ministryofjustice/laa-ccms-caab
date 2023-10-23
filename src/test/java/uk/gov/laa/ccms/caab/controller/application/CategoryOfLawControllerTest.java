@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +32,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.CategoryOfLawValidator;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
@@ -64,7 +65,7 @@ public class CategoryOfLawControllerTest {
 
   private UserDetail user;
 
-  private ApplicationDetails applicationDetails;
+  private ApplicationFormData applicationFormData;
 
   private CommonLookupDetail categoriesOfLaw;
 
@@ -74,8 +75,8 @@ public class CategoryOfLawControllerTest {
 
     this.user = buildUser();
 
-    applicationDetails = new ApplicationDetails();
-    applicationDetails.setOfficeId(345);
+    applicationFormData = new ApplicationFormData();
+    applicationFormData.setOfficeId(345);
 
     categoriesOfLaw = new CommonLookupDetail();
     categoriesOfLaw.addContentItem(new CommonLookupValueDetail().code("CAT1").description("Category 1"));
@@ -90,7 +91,7 @@ public class CategoryOfLawControllerTest {
 
     when(providerService.getCategoryOfLawCodes(
         user.getProvider().getId(),
-        applicationDetails.getOfficeId(),
+        applicationFormData.getOfficeId(),
         user.getLoginId(),
         user.getUserType(),
         Boolean.TRUE)).thenReturn(categoryOfLawCodes);
@@ -99,16 +100,16 @@ public class CategoryOfLawControllerTest {
         Mono.just(categoriesOfLaw));
 
     this.mockMvc.perform(get("/application/category-of-law")
-            .flashAttr("applicationDetails", applicationDetails)
+            .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
             .sessionAttr("user", user))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/select-category-of-law"))
         .andExpect(model().attribute("categoriesOfLaw", Matchers.hasSize(1)))
-        .andExpect(model().attributeExists("applicationDetails"));
+        .andExpect(model().attributeExists(APPLICATION_FORM_DATA));
 
     verify(providerService).getCategoryOfLawCodes(user.getProvider().getId(),
-        applicationDetails.getOfficeId(),
+        applicationFormData.getOfficeId(),
         user.getLoginId(),
         user.getUserType(),
         Boolean.TRUE);
@@ -122,15 +123,15 @@ public class CategoryOfLawControllerTest {
         Mono.just(categoriesOfLaw));
 
     this.mockMvc.perform(get("/application/category-of-law?exceptional_funding=true")
-            .flashAttr("applicationDetails", applicationDetails)
+            .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
             .sessionAttr("user", user))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/select-category-of-law"))
         .andExpect(model().attribute("categoriesOfLaw", categoriesOfLaw.getContent()))
-        .andExpect(model().attributeExists("applicationDetails"));
+        .andExpect(model().attributeExists(APPLICATION_FORM_DATA));
 
-    assertTrue(applicationDetails.isExceptionalFunding());
+    assertTrue(applicationFormData.isExceptionalFunding());
     verifyNoInteractions(providerService);
     verify(commonLookupService).getCategoriesOfLaw();
   }
@@ -143,7 +144,7 @@ public class CategoryOfLawControllerTest {
 
     when(providerService.getCategoryOfLawCodes(
         user.getProvider().getId(),
-        applicationDetails.getOfficeId(),
+        applicationFormData.getOfficeId(),
         user.getLoginId(),
         user.getUserType(),
         Boolean.TRUE)).thenReturn(categoryOfLawCodes);
@@ -159,7 +160,7 @@ public class CategoryOfLawControllerTest {
     }).when(categoryOfLawValidator).validate(any(), any());
 
     this.mockMvc.perform(post("/application/category-of-law")
-            .flashAttr("applicationDetails", applicationDetails)
+            .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
             .sessionAttr("user", user))
         .andDo(print())
         .andExpect(status().isOk())
@@ -169,10 +170,10 @@ public class CategoryOfLawControllerTest {
 
   @Test
   public void testPostCategoryOfLawIsSuccessful() throws Exception {
-    applicationDetails.setCategoryOfLawId("CAT1");
+    applicationFormData.setCategoryOfLawId("CAT1");
 
     this.mockMvc.perform(post("/application/category-of-law")
-            .flashAttr("applicationDetails", applicationDetails)
+            .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
             .sessionAttr("user", user))
         .andDo(print())
         .andExpect(redirectedUrl("/application/application-type"));
@@ -183,11 +184,11 @@ public class CategoryOfLawControllerTest {
 
   @Test
   public void testPostCategoryOfLaw_HandlesExceptionalFunding() throws Exception {
-    applicationDetails.setCategoryOfLawId("CAT1");
-    applicationDetails.setExceptionalFunding(true);
+    applicationFormData.setCategoryOfLawId("CAT1");
+    applicationFormData.setExceptionalFunding(true);
 
     this.mockMvc.perform(post("/application/category-of-law")
-            .flashAttr("applicationDetails", applicationDetails)
+            .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
             .sessionAttr("user", user))
         .andDo(print())
         .andExpect(redirectedUrl("/application/client/search"));

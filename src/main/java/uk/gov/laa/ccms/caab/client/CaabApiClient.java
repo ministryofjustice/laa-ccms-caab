@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
 
 /**
  * Client responsible for interactions with the CAAB API.
@@ -66,5 +67,45 @@ public class CaabApiClient {
         .retrieve()
         .bodyToMono(ApplicationDetail.class)
         .onErrorResume(caabApiClientErrorHandler::handleGetApplicationError);
+  }
+
+  /**
+   * Retrieves an application's application type using the CAAB API.
+   *
+   * @param id the ID associated with the application
+   * @return a Mono containing application's application type
+   */
+  public Mono<ApplicationType> getApplicationType(
+      final String id) {
+    return caabApiWebClient
+        .get()
+        .uri("/applications/{id}/application-type", id)
+        .retrieve()
+        .bodyToMono(ApplicationType.class)
+        .onErrorResume(caabApiClientErrorHandler::handleGetApplicationTypeError);
+  }
+
+  /**
+   * Patches an application's application type using the CAAB API.
+   *
+   * @param id the ID associated with the application
+   * @param loginId the ID associated with the user login
+   * @param applicationType the application type to amend to the application
+   * @return a Mono containing application's application type
+   */
+  public Mono<Void> patchApplicationType(
+      final String id,
+      final String loginId,
+      final ApplicationType applicationType) {
+
+    return caabApiWebClient
+        .patch()
+        .uri("/applications/{id}/application-type", id)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
+        .bodyValue(applicationType) // Add the application details to the request body
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(caabApiClientErrorHandler::handlePatchApplicationTypeError);
   }
 }

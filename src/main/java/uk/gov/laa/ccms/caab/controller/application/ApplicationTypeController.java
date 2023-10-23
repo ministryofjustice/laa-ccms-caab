@@ -1,7 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLICATION_TYPE_CODES;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationTypeValidator;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -27,7 +27,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(APPLICATION_DETAILS)
+@SessionAttributes(APPLICATION_FORM_DATA)
 public class ApplicationTypeController {
 
   private final ApplicationTypeValidator applicationTypeValidator;
@@ -37,17 +37,17 @@ public class ApplicationTypeController {
   /**
    * Handles the GET request for application type selection page.
    *
-   * @param applicationDetails The application details from session.
+   * @param applicationFormData The application details from session.
    * @param model              The model for the view.
    * @return The view name for the application type selection page or a redirect if exceptional
    *     funding.
    */
   @GetMapping("/application/application-type")
   public String applicationType(
-      @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
+      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       Model model) {
 
-    if (applicationDetails.isExceptionalFunding()) {
+    if (applicationFormData.isExceptionalFunding()) {
       log.warn("ApplicationTypeController hit despite exceptionalFunding being true. "
           + "Redirecting to client-search");
       return "redirect:/application/client/search";
@@ -61,17 +61,17 @@ public class ApplicationTypeController {
   /**
    * Handles the POST request for application type selection form submission.
    *
-   * @param applicationDetails The application details from session.
+   * @param applicationFormData The application details from session.
    * @param bindingResult      The result of data binding/validation.
    * @param model              The model for the view.
    * @return A redirect string or view name based on validation result.
    */
   @PostMapping("/application/application-type")
   public String applicationType(
-      @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
+      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       BindingResult bindingResult,
       Model model) {
-    applicationTypeValidator.validate(applicationDetails, bindingResult);
+    applicationTypeValidator.validate(applicationFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {
       model.addAttribute("applicationTypes", getFilteredApplicationTypes());

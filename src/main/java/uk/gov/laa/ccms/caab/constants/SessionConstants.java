@@ -17,7 +17,7 @@ public class SessionConstants {
    * Session attribute used to keep track of application details during the creation of a new
    * application.
    */
-  public static final String APPLICATION_DETAILS = "applicationDetails";
+  public static final String APPLICATION_FORM_DATA = "applicationFormData";
 
   /**
    * Session attribute used to keep track of search criteria when copying a case.
@@ -79,5 +79,11 @@ public class SessionConstants {
    */
   public static final String APPLICATION_ID = "applicationId";
 
+
+  /**
+   * Session attribute used to keep track of the active case details, used for application summary
+   * page and its sections to render the case details within the header.
+   */
+  public static final String ACTIVE_CASE = "activeCase";
 
 }

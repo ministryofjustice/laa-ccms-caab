@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,7 +13,7 @@ import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 
 @ExtendWith(SpringExtension.class)
 class ApplicationTypeValidatorTest {
@@ -20,20 +21,20 @@ class ApplicationTypeValidatorTest {
   @InjectMocks
   private ApplicationTypeValidator applicationTypeValidator;
 
-  private ApplicationDetails applicationDetails;
+  private ApplicationFormData applicationFormData;
 
   private Errors errors;
 
   @BeforeEach
   public void setUp() {
-    applicationDetails =
-        new ApplicationDetails(); // Assuming that the default constructor sets all fields to null.
-    errors = new BeanPropertyBindingResult(applicationDetails, "applicationDetails");
+    applicationFormData =
+        new ApplicationFormData(); // Assuming that the default constructor sets all fields to null.
+    errors = new BeanPropertyBindingResult(applicationFormData, APPLICATION_FORM_DATA);
   }
 
   @Test
   public void supports_ReturnsTrueForApplicationDetailsClass() {
-    assertTrue(applicationTypeValidator.supports(ApplicationDetails.class));
+    assertTrue(applicationTypeValidator.supports(ApplicationFormData.class));
   }
 
   @Test
@@ -43,7 +44,7 @@ class ApplicationTypeValidatorTest {
 
   @Test
   public void validate() {
-    applicationTypeValidator.validate(applicationDetails, errors);
+    applicationTypeValidator.validate(applicationFormData, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("applicationTypeCategory"));
     assertEquals("required.applicationTypeCategory", errors.getFieldError("applicationTypeCategory").getCode());

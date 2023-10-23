@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COPY_CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -28,7 +28,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(value = {APPLICATION_DETAILS, COPY_CASE_SEARCH_CRITERIA})
+@SessionAttributes(value = {APPLICATION_FORM_DATA, COPY_CASE_SEARCH_CRITERIA})
 public class CopyCaseSearchController {
   private final ProviderService providerService;
 

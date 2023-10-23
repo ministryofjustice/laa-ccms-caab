@@ -2,7 +2,7 @@ package uk.gov.laa.ccms.caab.bean.validators.application;
 
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**
@@ -19,7 +19,7 @@ public class CategoryOfLawValidator extends AbstractValidator {
    */
   @Override
   public boolean supports(Class<?> clazz) {
-    return ApplicationDetails.class.isAssignableFrom(clazz);
+    return ApplicationFormData.class.isAssignableFrom(clazz);
   }
 
   /**
@@ -30,8 +30,8 @@ public class CategoryOfLawValidator extends AbstractValidator {
    */
   @Override
   public void validate(Object target, Errors errors) {
-    ApplicationDetails applicationDetails = (ApplicationDetails) target;
-    validateRequiredField("categoryOfLawId", applicationDetails.getCategoryOfLawId(),
+    ApplicationFormData applicationFormData = (ApplicationFormData) target;
+    validateRequiredField("categoryOfLawId", applicationFormData.getCategoryOfLawId(),
         "Category of law", errors);
   }
 }

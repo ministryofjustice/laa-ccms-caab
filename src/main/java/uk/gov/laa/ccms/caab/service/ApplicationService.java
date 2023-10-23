@@ -8,18 +8,22 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple4;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.builders.ApplicationBuilder;
 import uk.gov.laa.ccms.caab.builders.ApplicationSummaryBuilder;
+import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
@@ -44,6 +48,8 @@ public class ApplicationService {
   private final EbsApiClient ebsApiClient;
 
   private final CaabApiClient caabApiClient;
+
+  private final ApplicationFormDataMapper applicationFormDataMapper;
 
   /**
    * Searches and retrieves case details based on provided search criteria.
@@ -75,18 +81,29 @@ public class ApplicationService {
   /**
    * Create a draft Application in the CAAB's Transient Data Store.
    *
-   * @param applicationDetails - The details of the Application to create
+   * @param applicationFormData - The details of the Application to create
    * @param clientDetail - The client details
    * @param user - The related User.
    * @return a String containing the id of the application
    */
-  public Mono<String> createApplication(ApplicationDetails applicationDetails,
-      ClientDetail clientDetail, UserDetail user) {
+  public Mono<String> createApplication(ApplicationFormData applicationFormData,
+                                        ClientDetail clientDetail, UserDetail user)
+      throws ParseException {
+
+    ApplicationType applicationType = new ApplicationTypeBuilder()
+        .applicationType(
+            applicationFormData.getApplicationTypeCategory(),
+            applicationFormData.isDelegatedFunctions())
+        .devolvedPowers(
+            applicationFormData.isDelegatedFunctions(),
+            applicationFormData.getDelegatedFunctionUsedDay(),
+            applicationFormData.getDelegatedFunctionUsedMonth(),
+            applicationFormData.getDelegatedFunctionUsedYear())
+        .build();
+
     //need to do this first in order to get amendment types
     ApplicationDetail baseApplication = new ApplicationBuilder()
-        .applicationType(
-            applicationDetails.getApplicationTypeCategory(),
-            applicationDetails.isDelegatedFunctions())
+        .applicationType(applicationType)
         .build();
 
     // get case reference Number, category of law value, contractual devolved powers,
@@ -100,7 +117,7 @@ public class ApplicationService {
               ebsApiClient.getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW),
               soaApiClient.getContractDetails(
                   user.getProvider().getId(),
-                  applicationDetails.getOfficeId(),
+                  applicationFormData.getOfficeId(),
                   user.getLoginId(),
                   user.getUserType()
               ),
@@ -115,13 +132,20 @@ public class ApplicationService {
 
       ApplicationDetail application;
       try {
+
         application = new ApplicationBuilder(baseApplication)
             .caseReference(caseReferenceSummary)
             .provider(user)
             .client(clientDetail)
-            .categoryOfLaw(applicationDetails.getCategoryOfLawId(), categoryOfLawValues)
-            .office(applicationDetails.getOfficeId(), user.getProvider().getOffices())
-            .devolvedPowers(contractDetails.getContracts(), applicationDetails)
+            .categoryOfLaw(
+                applicationFormData.getCategoryOfLawId(),
+                categoryOfLawValues)
+            .office(
+                applicationFormData.getOfficeId(),
+                user.getProvider().getOffices())
+            .contractualDevolvedPower(
+                contractDetails.getContracts(),
+                applicationFormData.getCategoryOfLawId())
             .larScopeFlag(amendmentTypes)
             .status()
             .build();
@@ -195,7 +219,7 @@ public class ApplicationService {
               .providerCaseReferenceNumber(
                   application.getProviderCaseReference())
               .applicationType(
-                  application.getApplicationType().getDisplayValue())
+                  application.getApplicationType())
               .providerDetails(
                   application.getProviderContact())
               .generalDetails(
@@ -210,6 +234,40 @@ public class ApplicationService {
                   personsRelationships)
               .build();
         });
+  }
+
+  public ApplicationFormData getApplicationTypeFormData(final String id) {
+    return caabApiClient.getApplicationType(id)
+        .map(applicationFormDataMapper::toApplicationTypeFormData).block();
+  }
+
+  /**
+   * Patches an application's application type in the CAAB's Transient Data Store.
+   *
+   * @param id the ID associated with the application
+   * @param applicationFormData the details of the Application to amend
+   * @param user the related User.
+   */
+  public void patchApplicationType(
+      final String id,
+      final ApplicationFormData applicationFormData,
+      final UserDetail user)
+      throws ParseException {
+
+    ApplicationType applicationType = new ApplicationTypeBuilder()
+        .applicationType(
+            applicationFormData.getApplicationTypeCategory(),
+            applicationFormData.isDelegatedFunctions())
+        .devolvedPowers(
+            applicationFormData.isDelegatedFunctions(),
+            applicationFormData.getDelegatedFunctionUsedDay(),
+            applicationFormData.getDelegatedFunctionUsedMonth(),
+            applicationFormData.getDelegatedFunctionUsedYear())
+        .devolvedPowersContractFlag(
+            applicationFormData.getDevolvedPowersContractFlag())
+        .build();
+
+    caabApiClient.patchApplicationType(id, user.getLoginId(), applicationType).block();
   }
 
 }

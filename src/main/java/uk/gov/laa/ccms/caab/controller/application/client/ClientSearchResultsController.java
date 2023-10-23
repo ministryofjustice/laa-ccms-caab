@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_RESULTS;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
@@ -32,7 +32,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 @RequiredArgsConstructor
 @Slf4j
 @SessionAttributes(value = {
-    APPLICATION_DETAILS,
+    APPLICATION_FORM_DATA,
     CLIENT_SEARCH_CRITERIA,
     CLIENT_SEARCH_RESULTS,
     CLIENT_DETAILS})
@@ -90,17 +90,17 @@ public class ClientSearchResultsController {
   /**
    * Handles the client search results submission.
    *
-   * @param applicationDetails The details of the application.
+   * @param applicationFormData The details of the application.
    * @return A redirect string to the agreement page.
    */
   @PostMapping("/application/client/results")
   public String clientSearch(
-      @ModelAttribute(APPLICATION_DETAILS) ApplicationDetails applicationDetails,
+      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       Model model) {
 
     // a post only occurs when register new client has been clicked ,if so we want to amend
     // application created to false, so they get redirected correctly after the privacy notice
-    applicationDetails.setApplicationCreated(false);
+    applicationFormData.setApplicationCreated(false);
 
     //always make a new client Details session object when clicking the register new client button
     model.addAttribute(CLIENT_DETAILS, new uk.gov.laa.ccms.caab.bean.ClientDetails());

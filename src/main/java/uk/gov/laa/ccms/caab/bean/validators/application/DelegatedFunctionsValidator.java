@@ -2,7 +2,7 @@ package uk.gov.laa.ccms.caab.bean.validators.application;
 
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**
@@ -19,7 +19,7 @@ public class DelegatedFunctionsValidator extends AbstractValidator {
    */
   @Override
   public boolean supports(Class<?> clazz) {
-    return ApplicationDetails.class.isAssignableFrom(clazz);
+    return ApplicationFormData.class.isAssignableFrom(clazz);
   }
 
   /**
@@ -30,17 +30,17 @@ public class DelegatedFunctionsValidator extends AbstractValidator {
    */
   @Override
   public void validate(Object target, Errors errors) {
-    ApplicationDetails applicationDetails = (ApplicationDetails) target;
+    ApplicationFormData applicationFormData = (ApplicationFormData) target;
 
-    if (applicationDetails.isDelegatedFunctions()) {
+    if (applicationFormData.isDelegatedFunctions()) {
       validateNumericField("delegatedFunctionUsedDay",
-          applicationDetails.getDelegatedFunctionUsedDay(), "the day", errors);
+          applicationFormData.getDelegatedFunctionUsedDay(), "the day", errors);
 
       validateNumericField("delegatedFunctionUsedMonth",
-          applicationDetails.getDelegatedFunctionUsedMonth(), "the month", errors);
+          applicationFormData.getDelegatedFunctionUsedMonth(), "the month", errors);
 
       validateNumericField("delegatedFunctionUsedYear",
-          applicationDetails.getDelegatedFunctionUsedYear(), "the year", errors);
+          applicationFormData.getDelegatedFunctionUsedYear(), "the year", errors);
     }
   }
 }

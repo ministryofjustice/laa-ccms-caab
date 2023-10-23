@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
 import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,7 +23,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
@@ -113,7 +114,7 @@ public class ClientSearchResultsControllerTest {
   @Test
   public void testClientSearch_Post() throws Exception {
     this.mockMvc.perform(post("/application/client/results")
-            .sessionAttr("applicationDetails", new ApplicationDetails())
+            .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())
             .sessionAttr("clientSearchResults", new ClientResultsDisplay()))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/agreement"));

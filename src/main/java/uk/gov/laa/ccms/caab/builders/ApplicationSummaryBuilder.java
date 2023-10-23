@@ -1,10 +1,13 @@
 package uk.gov.laa.ccms.caab.builders;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
+
 import java.util.List;
 import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryStatusDisplay;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AuditDetail;
 import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.Opponent;
@@ -88,11 +91,15 @@ public class ApplicationSummaryBuilder {
   /**
    * Builder method for application type.
    *
-   * @param applicationTypeDisplayValue the application's type display value.
+   * @param applicationType the application's type.
    * @return the builder with amended application type details.
    */
-  public ApplicationSummaryBuilder applicationType(final String applicationTypeDisplayValue) {
-    applicationSummary.getApplicationType().setStatus(applicationTypeDisplayValue);
+  public ApplicationSummaryBuilder applicationType(final ApplicationType applicationType) {
+    applicationSummary.getApplicationType().setStatus(applicationType.getDisplayValue());
+    //Not equal to ECF set enabled true
+    if (!applicationType.getId().equalsIgnoreCase(APP_TYPE_EXCEPTIONAL_CASE_FUNDING)) {
+      applicationSummary.getApplicationType().setEnabled(true);
+    }
     return this;
   }
 

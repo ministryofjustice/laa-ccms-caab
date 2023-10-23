@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
 import jakarta.servlet.ServletException;
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -148,7 +149,7 @@ public class CopyCaseSearchResultsControllerTest {
     Exception exception = assertThrows(ServletException.class, () ->
         this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm", "123")
             .sessionAttr("copyCaseSearchResults", new CaseDetails())
-            .sessionAttr("applicationDetails", new ApplicationDetails())));
+            .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())));
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
 
@@ -167,14 +168,14 @@ public class CopyCaseSearchResultsControllerTest {
     when(applicationService.getCases(any(), any(), any(), any(), any())).thenReturn(
         Mono.just(caseDetails));
 
-    ApplicationDetails applicationDetails = new ApplicationDetails();
+    ApplicationFormData applicationFormData = new ApplicationFormData();
     this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm", "123")
             .sessionAttr("copyCaseSearchResults", caseDetails)
-            .sessionAttr("applicationDetails", applicationDetails))
+            .sessionAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/client/search"));
 
-    assertEquals("123", applicationDetails.getCopyCaseReferenceNumber());
+    assertEquals("123", applicationFormData.getCopyCaseReferenceNumber());
   }
 
   private UserDetail buildUser() {

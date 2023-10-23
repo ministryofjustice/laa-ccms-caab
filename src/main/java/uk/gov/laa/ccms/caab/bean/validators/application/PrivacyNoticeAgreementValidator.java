@@ -2,7 +2,7 @@ package uk.gov.laa.ccms.caab.bean.validators.application;
 
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**
@@ -19,7 +19,7 @@ public class PrivacyNoticeAgreementValidator extends AbstractValidator {
    */
   @Override
   public boolean supports(Class<?> clazz) {
-    return ApplicationDetails.class.isAssignableFrom(clazz);
+    return ApplicationFormData.class.isAssignableFrom(clazz);
   }
 
   /**
@@ -30,9 +30,9 @@ public class PrivacyNoticeAgreementValidator extends AbstractValidator {
    */
   @Override
   public void validate(Object target, Errors errors) {
-    ApplicationDetails applicationDetails = (ApplicationDetails) target;
+    ApplicationFormData applicationFormData = (ApplicationFormData) target;
 
-    if (!applicationDetails.isAgreementAccepted()) {
+    if (!applicationFormData.isAgreementAccepted()) {
       errors.rejectValue("agreementAccepted",
           "agreement.not.accepted",
           "Please complete 'I confirm my client (or their representative) has read and "

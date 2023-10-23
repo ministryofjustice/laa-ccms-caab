@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.OfficeValidator;
 import uk.gov.laa.ccms.data.model.BaseOffice;
 import uk.gov.laa.ccms.data.model.BaseProvider;
@@ -62,25 +63,25 @@ public class OfficeControllerTest {
         .andExpect(view().name("application/select-office"))
         .andExpect(model().attribute("user", user))
         .andExpect(model().attribute("offices", user.getProvider().getOffices()))
-        .andExpect(model().attributeExists("applicationDetails"));
+        .andExpect(model().attributeExists(APPLICATION_FORM_DATA));
 
   }
 
   @Test
   public void testPostOfficeIsSuccessful() throws Exception {
-    final ApplicationDetails applicationDetails = new ApplicationDetails();
-    applicationDetails.setOfficeId(1);
+    final ApplicationFormData applicationFormData = new ApplicationFormData();
+    applicationFormData.setOfficeId(1);
 
     this.mockMvc.perform(post("/application/office")
             .flashAttr("user", user)
-            .flashAttr("applicationDetails", applicationDetails))
+            .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(redirectedUrl("/application/category-of-law"));
   }
 
   @Test
   public void testPostOfficeHandlesValidationError() throws Exception {
-    final ApplicationDetails applicationDetails = new ApplicationDetails();
+    final ApplicationFormData applicationFormData = new ApplicationFormData();
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
@@ -90,7 +91,7 @@ public class OfficeControllerTest {
     
     this.mockMvc.perform(post("/application/office")
             .flashAttr("user", user)
-            .flashAttr("applicationDetails", applicationDetails))
+            .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/select-office"))

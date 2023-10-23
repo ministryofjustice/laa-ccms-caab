@@ -13,7 +13,7 @@
             <h1 class="govuk-heading-l">
                 Select office
             </h1>
-            <form action="#" th:action="@{/application/office}" th:object="${applicationDetails}" method="post">
+            <form action="#" th:action="@{/application/office}" th:object="${applicationFormData}" method="post">
                 <div th:replace="~{partials/error-summary :: error-summary}"></div>
               <div class="govuk-body-l">
                   Please select the office where the application will be held. Alternatively, click

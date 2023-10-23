@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ApplicationDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationTypeValidator;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -67,11 +68,11 @@ public class ApplicationTypeControllerTest {
         Mono.just(applicationTypes));
 
     this.mockMvc.perform(get("/application/application-type")
-            .sessionAttr("applicationDetails", new ApplicationDetails()))
+            .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData()))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/select-application-type"))
-        .andExpect(model().attribute("applicationDetails", new ApplicationDetails()))
+        .andExpect(model().attribute(APPLICATION_FORM_DATA, new ApplicationFormData()))
         .andExpect(model().attribute("applicationTypes", applicationTypes.getContent()));
 
     verify(commonLookupService, times(1)).getApplicationTypes();
@@ -79,12 +80,12 @@ public class ApplicationTypeControllerTest {
 
   @Test
   public void testGetApplicationTypeHandlesExceptionalFunding() throws Exception {
-    final ApplicationDetails applicationDetails = new ApplicationDetails();
-    applicationDetails.setApplicationTypeCategory("ECF");
-    applicationDetails.setExceptionalFunding(true);
+    final ApplicationFormData applicationFormData = new ApplicationFormData();
+    applicationFormData.setApplicationTypeCategory("ECF");
+    applicationFormData.setExceptionalFunding(true);
 
     this.mockMvc.perform(get("/application/application-type")
-            .flashAttr("applicationDetails", applicationDetails))
+            .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(redirectedUrl("/application/client/search"));
 
@@ -93,7 +94,7 @@ public class ApplicationTypeControllerTest {
 
   @Test
   public void testPostApplicationTypeHandlesValidationError() throws Exception {
-    final ApplicationDetails applicationDetails = new ApplicationDetails();
+    final ApplicationFormData applicationFormData = new ApplicationFormData();
 
     final CommonLookupDetail applicationTypes = new CommonLookupDetail();
     applicationTypes.addContentItem(
@@ -110,7 +111,7 @@ public class ApplicationTypeControllerTest {
     }).when(applicationTypeValidator).validate(any(), any());
 
     this.mockMvc.perform(post("/application/application-type")
-            .flashAttr("applicationDetails", applicationDetails))
+            .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/select-application-type"));
@@ -118,11 +119,11 @@ public class ApplicationTypeControllerTest {
 
   @Test
   public void testPostApplicationTypeIsSuccessful() throws Exception {
-    final ApplicationDetails applicationDetails = new ApplicationDetails();
-    applicationDetails.setApplicationTypeCategory("ECF");
+    final ApplicationFormData applicationFormData = new ApplicationFormData();
+    applicationFormData.setApplicationTypeCategory("ECF");
 
     this.mockMvc.perform(post("/application/application-type")
-            .flashAttr("applicationDetails", applicationDetails))
+            .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(redirectedUrl("/application/delegated-functions"));
 

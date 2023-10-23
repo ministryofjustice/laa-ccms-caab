@@ -3,17 +3,17 @@
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
 <head>
-    <title>LAA CCMS - Start new application</title>
+    <title>LAA CCMS - Create application</title>
 </head>
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a href="/" class="govuk-back-link">Cancel and return to Home</a>
+        <a href="/application/summary" class="govuk-back-link">Cancel and return to create application</a>
     </div>
     <div id="main-content">
-        <form action="#" th:action="@{/application/delegated-functions}" th:object="${applicationFormData}" method="post">
+        <form action="#" th:action="@{/application/summary/application-type}" th:object="${applicationFormData}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <span class="govuk-caption-l">About your application</span>
+            <span class="govuk-caption-l">Create application</span>
             <div th:replace="~{application/partials/delegated-functions}"></div>
         </form>
     </div>
