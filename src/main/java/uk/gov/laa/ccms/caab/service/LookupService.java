@@ -13,10 +13,10 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_G
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_LEVEL_OF_SERVICE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MATTER_TYPES;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_NOTIFICATION_TYPE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
 
 import java.util.Collections;
 import java.util.List;
@@ -29,9 +29,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
@@ -300,7 +302,8 @@ public class LookupService {
    *
    * @return ScopeLimitationDetails containing the scope limitation details.
    */
-  public Mono<ScopeLimitationDetails> getScopeLimitationDetails(ScopeLimitationDetail searchCriteria) {
+  public Mono<ScopeLimitationDetails> getScopeLimitationDetails(
+      ScopeLimitationDetail searchCriteria) {
     return ebsApiClient.getScopeLimitations(searchCriteria);
   }
 
@@ -367,7 +370,49 @@ public class LookupService {
     return ebsApiClient.getStageEnds(proceedingCode, stageEnd);
   }
 
-  private Mono<CommonLookupValueDetail> getCommonValue(String type, String code) {
+  /**
+   * Retrieves all prior authority types.
+   *
+   * @return A Mono containing the PriorAuthorityLookupDetail
+   *   or an error handler if an error occurs.
+   */
+  public Mono<PriorAuthorityTypeDetails> getPriorAuthorityTypes() {
+    return this.getPriorAuthorityTypes(null, null);
+  }
+
+  /**
+   * Retrieves prior authority types matching the specified code and valueRequired flag.
+   *
+   * @return A Mono containing the PriorAuthorityLookupDetail
+   *   or an error handler if an error occurs.
+   */
+  public Mono<PriorAuthorityTypeDetails> getPriorAuthorityTypes(
+      final String code, final Boolean valueRequired) {
+    return ebsApiClient.getPriorAuthorityTypes(code, valueRequired);
+  }
+
+  /**
+   * Retrieves all award types.
+   *
+   * @return A Mono containing the AwardTypeLookupDetail
+   *   or an error handler if an error occurs.
+   */
+  public Mono<AwardTypeLookupDetail> getAwardTypes() {
+    return this.getAwardTypes(null, null);
+  }
+
+  /**
+   * Retrieves award types matching the specified code and awardType values.
+   *
+   * @return A Mono containing the AwardTypeLookupDetail
+   *   or an error handler if an error occurs.
+   */
+  public Mono<AwardTypeLookupDetail> getAwardTypes(
+      final String code, final String awardType) {
+    return ebsApiClient.getAwardTypes(code, awardType);
+  }
+
+  public Mono<CommonLookupValueDetail> getCommonValue(String type, String code) {
     return ebsApiClient.getCommonValues(type, code)
         .mapNotNull(commonLookupDetail -> commonLookupDetail
             .getContent().stream()
