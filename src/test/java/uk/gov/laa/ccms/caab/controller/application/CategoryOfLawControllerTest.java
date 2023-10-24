@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -16,19 +17,25 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
+import com.google.common.base.Verify;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
@@ -100,13 +107,12 @@ public class CategoryOfLawControllerTest {
         Mono.just(categoriesOfLaw));
 
     this.mockMvc.perform(get("/application/category-of-law")
-            .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
+            .flashAttr("applicationFormData", applicationFormData)
             .sessionAttr("user", user))
-        .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/select-category-of-law"))
         .andExpect(model().attribute("categoriesOfLaw", Matchers.hasSize(1)))
-        .andExpect(model().attributeExists(APPLICATION_FORM_DATA));
+        .andExpect(model().attributeExists(APPLICATION_FORM_DATA))
+        .andReturn();
 
     verify(providerService).getCategoryOfLawCodes(user.getProvider().getId(),
         applicationFormData.getOfficeId(),
@@ -115,6 +121,41 @@ public class CategoryOfLawControllerTest {
         Boolean.TRUE);
 
     verify(commonLookupService).getCategoriesOfLaw();
+  }
+
+  @Test
+  public void testGetCategoryOfLawNoCategoriesOfLawToModel() throws Exception {
+    final List<String> categoryOfLawCodes = new ArrayList<>();
+
+    when(providerService.getCategoryOfLawCodes(
+        user.getProvider().getId(),
+        applicationFormData.getOfficeId(),
+        user.getLoginId(),
+        user.getUserType(),
+        Boolean.TRUE)).thenReturn(categoryOfLawCodes);
+
+    when(commonLookupService.getCategoriesOfLaw()).thenReturn(
+        Mono.just(categoriesOfLaw));
+
+    MvcResult result = mockMvc.perform(get("/application/category-of-law")
+            .flashAttr("applicationFormData", applicationFormData)
+            .sessionAttr("user", user))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("categoriesOfLaw", Collections.emptyList()))
+        .andExpect(model().attributeExists(APPLICATION_FORM_DATA))
+        .andReturn();
+
+    verify(providerService).getCategoryOfLawCodes(user.getProvider().getId(),
+        applicationFormData.getOfficeId(),
+        user.getLoginId(),
+        user.getUserType(),
+        Boolean.TRUE);
+
+    verify(commonLookupService).getCategoriesOfLaw();
+
+    BindingResult bindingResult = (BindingResult) result.getModelAndView().getModel().get("org.springframework.validation.BindingResult.applicationFormData");
+    assertEquals(1, bindingResult.getFieldErrors("categoryOfLawId").size());
+    assertEquals("no.categoriesOfLaw", bindingResult.getFieldError("categoryOfLawId").getCode());
   }
 
   @Test
@@ -196,6 +237,8 @@ public class CategoryOfLawControllerTest {
     verifyNoInteractions(providerService);
     verifyNoInteractions(commonLookupService);
   }
+
+
 
   private UserDetail buildUser() {
     return new UserDetail()
