@@ -113,4 +113,45 @@ public class ApplicationConstants {
    * Display value for a Proceeding at status 'updated'.
    */
   public static final String PROCEEDING_STATUS_UPDATED_DISPLAY = "Updated";
+
+  /**
+   * Type value for an LOV Reference Data Item
+   */
+  public static final String REFERENCE_DATA_ITEM_TYPE_LOV = "LOV";
+
+  /**
+   * Type value for an AMOUNT Reference Data Item
+   */
+  public static final String REFERENCE_DATA_ITEM_TYPE_AMOUNT = "AMT";
+
+  /**
+   * Cost Award Type.
+   */
+  public static final String AWARD_TYPE_COST = "COST";
+
+  /**
+   * Description for Cost Award Type.
+   */
+  public static final String AWARD_TYPE_COST_DESCRIPTION = "Cost";
+
+  /**
+   * Financial Award Type.
+   */
+  public static final String AWARD_TYPE_FINANCIAL = "DAMAGE";
+
+  /**
+   * Description for Cost Award Type.
+   */
+  public static final String AWARD_TYPE_FINANCIAL_DESCRIPTION = "Damage";
+
+  /**
+   * Land Award Type.
+   */
+  public static final String AWARD_TYPE_LAND = "LAND";
+
+  /**
+   * Other Asset Award Type.
+   */
+  public static final String AWARD_TYPE_OTHER_ASSET = "ASSET";
+
 }

@@ -4,15 +4,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
-import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -89,6 +91,18 @@ public class EbsApiClientErrorHandler {
    */
   public static String RELATIONSHIP_TO_CASE_ERROR_MESSAGE =
       "Failed to retrieve relationship to case";
+
+  /**
+   * The error message for prior authority type.
+   */
+  public static String PRIOR_AUTHORITY_TYPE_ERROR_MESSAGE =
+      "Failed to retrieve prior authority types with code: %s and valueRequired: %s";
+
+  /**
+   * The error message for award type.
+   */
+  public static String AWARD_TYPE_ERROR_MESSAGE =
+      "Failed to retrieve award types with code: %s and awardType: %s";
 
   /**
    * Handles errors related to user data retrieval.
@@ -217,7 +231,8 @@ public class EbsApiClientErrorHandler {
   public Mono<ScopeLimitationDetails> handleScopeLimitationsError(
       ScopeLimitationDetail scopeLimitationDetail,
       Throwable e) {
-    final String msg = String.format(SCOPE_LIMITATIONS_ERROR_MESSAGE, scopeLimitationDetail.toString());
+    final String msg = String.format(SCOPE_LIMITATIONS_ERROR_MESSAGE,
+        scopeLimitationDetail.toString());
     log.error(msg, e);
     return Mono.error(new EbsApiClientException(msg, e));
   }
@@ -252,6 +267,40 @@ public class EbsApiClientErrorHandler {
       String stageEnd,
       Throwable e) {
     final String msg = String.format(STAGE_END_ERROR_MESSAGE, proceedingCode, stageEnd);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to prior authority type retrieval.
+   *
+   * @param code the prior auth type code.
+   * @param valueRequired the value required flag.
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<PriorAuthorityTypeDetails> handlePriorAuthorityTypeError(
+      String code,
+      Boolean valueRequired,
+      Throwable e) {
+    final String msg = String.format(PRIOR_AUTHORITY_TYPE_ERROR_MESSAGE, code, valueRequired);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to award type retrieval.
+   *
+   * @param code the award type code.
+   * @param awardType the award type value.
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<AwardTypeLookupDetail> handleAwardTypeError(
+      String code,
+      String awardType,
+      Throwable e) {
+    final String msg = String.format(AWARD_TYPE_ERROR_MESSAGE, code, awardType);
     log.error(msg, e);
     return Mono.error(new EbsApiClientException(msg, e));
   }

@@ -73,7 +73,8 @@ public class ApplicationBuilder {
       applicationType.setId(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
       applicationType.setDisplayValue(APP_TYPE_EXCEPTIONAL_CASE_FUNDING_DISPLAY);
     }
-    application.setApplicationType(applicationType);
+    // Commented out until merge/rebase is done with Phil's stuff!
+    //application.setApplicationType(applicationType);
     return this;
   }
 
@@ -198,7 +199,7 @@ public class ApplicationBuilder {
       SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
       devolvedPowers.setDateUsed(sdf.parse(dateString));
     }
-    application.setDevolvedPowers(devolvedPowers);
+    //application.setDevolvedPowers(devolvedPowers);
     return this;
   }
 

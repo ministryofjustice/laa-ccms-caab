@@ -7,15 +7,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
-import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -211,6 +213,26 @@ public class EbsApiClient {
   }
 
   /**
+   * Retrieves prior authority types by code and valueRequired flag.
+   *
+   * @return A Mono containing the PriorAuthorityTypeDetails or an error handler if an error occurs.
+   */
+  public Mono<PriorAuthorityTypeDetails> getPriorAuthorityTypes(String code, Boolean valueRequired) {
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/prior-authority-types")
+            .queryParamIfPresent("code",
+                Optional.ofNullable(code))
+            .queryParamIfPresent("value-required",
+                Optional.ofNullable(valueRequired))
+            .build())
+        .retrieve()
+        .bodyToMono(PriorAuthorityTypeDetails.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler
+            .handlePriorAuthorityTypeError(code, valueRequired, e));
+  }
+
+  /**
    * Retrieves proceeding detail.
    *
    * @return A Mono containing the ProceedingDetail or an error handler if an error occurs.
@@ -317,6 +339,30 @@ public class EbsApiClient {
         .bodyToMono(StageEndLookupDetail.class)
         .onErrorResume(e -> ebsApiClientErrorHandler.handleStageEndError(proceedingCode,
             stageEnd, e));
+  }
+
+  /**
+   * Retrieves award type lookup detail based on the provided code and
+   * award type values.
+   *
+   * @param code - the award type code.
+   * @param awardType - the award type value.
+   * @return A Mono containing the AwardTypeLookupDetail or an error handler if an error occurs.
+   */
+  public Mono<AwardTypeLookupDetail> getAwardTypes(String code,
+      String awardType) {
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/lookup/award-types")
+            .queryParamIfPresent("code",
+                Optional.ofNullable(code))
+            .queryParamIfPresent("award-type",
+                Optional.ofNullable(awardType))
+            .build())
+        .retrieve()
+        .bodyToMono(AwardTypeLookupDetail.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleAwardTypeError(code,
+            awardType, e));
   }
 }
 

@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
@@ -222,7 +221,8 @@ public class ApplicationServiceTest {
     ApplicationDetail mockApplicationDetail = new ApplicationDetail();
     mockApplicationDetail.setAuditTrail(auditDetail);
     mockApplicationDetail.setClient(client);
-    mockApplicationDetail.setApplicationType(applicationType);
+    // Commented out until merge/rebase is done with Phil's stuff!
+//    mockApplicationDetail.setApplicationType(applicationType);
     mockApplicationDetail.setProceedings(new ArrayList<>());
     mockApplicationDetail.setPriorAuthorities(new ArrayList<>());
     mockApplicationDetail.setOpponents(new ArrayList<>());
@@ -288,7 +288,7 @@ public class ApplicationServiceTest {
     ApplicationDetail mockApplicationDetail = new ApplicationDetail();
     mockApplicationDetail.setAuditTrail(auditDetail);
     mockApplicationDetail.setClient(client);
-    mockApplicationDetail.setApplicationType(applicationType);
+//    mockApplicationDetail.setApplicationType(applicationType);
     mockApplicationDetail.setProceedings(new ArrayList<>());
     mockApplicationDetail.setPriorAuthorities(new ArrayList<>());
     mockApplicationDetail.setOpponents(new ArrayList<>());
