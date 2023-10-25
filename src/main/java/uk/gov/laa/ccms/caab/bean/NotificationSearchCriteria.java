@@ -97,6 +97,28 @@ public class NotificationSearchCriteria {
    */
   private String sort;
 
+  /**
+   * reset the search criteria.
+   *
+   * @param criteria the criteria to reset
+   */
+  public static void reset(NotificationSearchCriteria criteria) {
+    criteria.setSort("");
+    criteria.setDateFrom("");
+    criteria.setNotificationFromDateDay("");
+    criteria.setNotificationFromDateMonth("");
+    criteria.setNotificationFromDateYear("");
+    criteria.setNotificationToDateDay("");
+    criteria.setNotificationToDateMonth("");
+    criteria.setNotificationToDateYear("");
+    criteria.setDateTo("");
+    criteria.setNotificationType("");
+    criteria.setCaseReference("");
+    criteria.setFeeEarnerId(null);
+    criteria.setClientSurname("");
+    criteria.setProviderCaseReference("");
+    criteria.setAssignedToUserId("");
+  }
 
 
 }

@@ -53,8 +53,8 @@
 
 <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
     style="margin-top: 0; white-space: nowrap" th:fragment="sorting(page, field, label)">
-  <a th:href="@{'/notifications?'
-                + 'page=' + ${page.number} + '&size=' + ${page.size}
+  <a th:href="@{${currentUrl}
+                + '?page=' + ${page.number} + '&size=' + ${page.size}
                 + ${sortField!=null ? '&sort=' + field + ',' + (sortField == field ? reverseSortDirection : sortDirection) : ''}}">[[${label}]]
     <span th:if="${sortField == field}"
           th:utext="${sortDirection == 'asc' || sortDrection == '' ? '&#x25b2;' : '&#x25bc;'}"></span>

@@ -82,7 +82,7 @@ public class ValidationPatternConstants {
   /**
    * pattern for double-space.
    */
-  public static final String DOUBLE_SPACE = "\\s\\s";
+  public static final String DOUBLE_SPACE = "[ ]{2,}";
 
   /**
    * pattern for case reference - contains alphanumerics and also allows a forward slash for

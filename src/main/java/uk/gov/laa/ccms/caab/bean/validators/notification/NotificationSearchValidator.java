@@ -46,11 +46,38 @@ public class NotificationSearchValidator extends AbstractValidator {
   @Override
   public void validate(Object target, Errors errors) {
     NotificationSearchCriteria searchCriteria = (NotificationSearchCriteria) target;
+    // check that at least one field is populated
+    validateAtLeastOneFieldValidated(target, errors);
     // validate the dates - only if they are populated
-    validateDateFieldFormats(searchCriteria, errors);
-    validateCaseRef(searchCriteria.getCaseReference(), errors);
-    validateClientSurname(searchCriteria.getClientSurname(), errors);
-    validateProviderCaseRef(searchCriteria.getProviderCaseReference(), errors);
+
+    if (!errors.hasErrors()) {
+      validateDateFieldFormats(searchCriteria, errors);
+      validateCaseRef(searchCriteria.getCaseReference(), errors);
+      validateClientSurname(searchCriteria.getClientSurname(), errors);
+      validateProviderCaseRef(searchCriteria.getProviderCaseReference(), errors);
+    }
+  }
+
+  private void validateAtLeastOneFieldValidated(Object target, Errors errors) {
+    if (!errors.hasErrors()) {
+      NotificationSearchCriteria searchCriteria = (NotificationSearchCriteria) target;
+      if (StringUtils.isEmpty(searchCriteria.getAssignedToUserId())
+          && StringUtils.isEmpty(searchCriteria.getNotificationFromDateDay())
+          && StringUtils.isEmpty(searchCriteria.getNotificationFromDateMonth())
+          && StringUtils.isEmpty(searchCriteria.getNotificationFromDateYear())
+          && StringUtils.isEmpty(searchCriteria.getNotificationToDateDay())
+          && StringUtils.isEmpty(searchCriteria.getNotificationToDateMonth())
+          && StringUtils.isEmpty(searchCriteria.getNotificationToDateYear())
+          && StringUtils.isEmpty(searchCriteria.getDateFrom())
+          && StringUtils.isEmpty(searchCriteria.getDateTo())
+          && StringUtils.isEmpty(searchCriteria.getProviderCaseReference())
+          && StringUtils.isEmpty(searchCriteria.getCaseReference())
+          && StringUtils.isEmpty(searchCriteria.getClientSurname())
+          && searchCriteria.getFeeEarnerId() == null) {
+        errors.reject("invalid.criteria",
+            "You must provide at least one search criteria below. Please amend your entry.");
+      }
+    }
   }
 
 
@@ -157,14 +184,15 @@ public class NotificationSearchValidator extends AbstractValidator {
         errors.rejectValue("clientSurname", "invalid.surname-char",
             "Your input for 'Client surname' contains an invalid character. "
                 + "Please amend your entry.");
-      } else if (clientSurname.matches(DOUBLE_SPACE)) {
+      } else if (patternMatches(clientSurname, DOUBLE_SPACE)) {
         errors.rejectValue("clientSurname", "invalid.surname",
             "Your input for 'Client surname'"
                 + " contains double spaces. Please amend your entry.");
       }
     }
-
   }
+
+
 
   private void validateProviderCaseRef(String providerCaseReference, Errors errors) {
     if (StringUtils.isNotEmpty(providerCaseReference)) {

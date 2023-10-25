@@ -33,7 +33,7 @@
               <select class="govuk-select" data-module="govuk-select" id="assignedToUserId"
                       name="assignedToUserId">
                 <option value="">Please Select</option>
-                <option th:each="baseUser : ${users}" th:value="${baseUser.userId}"
+                <option th:each="baseUser : ${users}" th:value="${baseUser.loginId}"
                         th:text="${baseUser.loginId}"></option>
               </select>
             </fieldset>
@@ -260,14 +260,14 @@
                 <div class="govuk-radios govuk-radios--inline" data-module="govuk-radios">
                   <div class="govuk-radios__item">
                     <input class="govuk-radios__input" id="includeClosed-yes" name="includeClosed"
-                           type="radio" value="true" th:checked="${criteria.includeClosed}">
+                           type="radio" value="true" th:checked="${notificationSearchCriteria.includeClosed}">
                     <label class="govuk-label govuk-radios__label" for="includeClosed-yes">
                       Yes
                     </label>
                   </div>
                   <div class="govuk-radios__item">
                     <input class="govuk-radios__input" id="includeClosed-no" name="includeClosed"
-                           type="radio" value="false" th:checked="${!criteria.includeClosed}">
+                           type="radio" value="false" th:checked="${!notificationSearchCriteria.includeClosed}">
                     <label class="govuk-label govuk-radios__label" for="includeClosed-no">
                       No
                     </label>

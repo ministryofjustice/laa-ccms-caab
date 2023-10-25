@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.notifications;
 
 import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
@@ -111,20 +110,65 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testNotificationsEndpointAndViewName_Data() throws Exception {
+  void testNotificationsEndpointAndViewNameWhenNotificationTypeSet_Data() throws Exception {
     Notifications notificationsMock = getNotificationsMock();
 
     Mockito.when(notificationService.getNotifications(any(), any(), any()))
         .thenReturn(Mono.just(notificationsMock));
 
-    this.mockMvc.perform(get("/notifications").flashAttr("user", userDetails))
+    this.mockMvc.perform(
+            get("/notifications/search?notification_type=N").flashAttr("user", userDetails))
         .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("notifications/actions-and-notifications"));
+        .andExpect(status().is3xxRedirection())
+        .andExpect(view().name("redirect:/notifications/search-results"));
   }
 
   @Test
-  void testNotificationsEndpointAndViewName_NoData() throws Exception {
+  void testNotificationsEndpoint_FromHeaderURL_NotificationType_ALL_RedirectsToResultsEndpoint()
+      throws Exception {
+    NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+    flashMap.put("notificationSearchCriteria", criteria);
+
+    this.mockMvc.perform(get("/notifications/search?notification_type=all")
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(view().name("redirect:/notifications/search-results"));
+  }
+
+
+  @Test
+  void testNotificationsFromHeaderEndpoint_dropdownCodeExecutes_andRedirectsToSearchResultsEndpoint()
+      throws Exception {
+
+    NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+    flashMap.put("notificationSearchCriteria", criteria);
+
+    ProviderDetail providerDetail = new ProviderDetail();
+    List<ContactDetail> feeEarners = buildFeeEarners();
+
+    CommonLookupDetail notificationTypes = new CommonLookupDetail();
+    notificationTypes
+        .addContentItem(
+            new CommonLookupValueDetail().type("N").code("code n").description("description")
+        );
+
+    UserDetails baseUsers = new UserDetails()
+        .addContentItem(new BaseUser()
+            .userId(123)
+            .userType("type1")
+            .loginId("login1"));
+
+    when(commonLookupService.getNotificationTypes()).thenReturn(Mono.just(notificationTypes));
+    when(providerService.getProvider(userDetails.getProvider().getId()))
+        .thenReturn(Mono.just(providerDetail));
+    when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
+    when(userService.getUsers(any())).thenReturn(Mono.just(baseUsers));
+    /**/
 
     Notifications notificationsMock = new Notifications()
         .content(new ArrayList<>());
@@ -132,58 +176,14 @@ class ActionsAndNotificationsControllerTest {
     Mockito.when(notificationService.getNotifications(any(), any(), any()))
         .thenReturn(Mono.just(notificationsMock));
 
-    this.mockMvc.perform(get("/notifications").flashAttr("user", userDetails))
+    this.mockMvc.perform(get("/notifications/search")
+            .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("notifications/actions-and-notifications-no-results"));
+        .andExpect(view().name("notifications/actions-and-notifications-search"));
 
   }
 
-  @Test
-  void testNotificationsFromHeaderEndpointAndViewName_NoData() throws Exception {
-
-    Notifications notificationsMock = new Notifications()
-        .content(new ArrayList<>());
-
-    Mockito.when(notificationService.getNotifications(any(), any(), any()))
-        .thenReturn(Mono.just(notificationsMock));
-
-    this.mockMvc.perform(get("/notifications?notification_type=all").flashAttr("user", userDetails))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("notifications/actions-and-notifications-no-results"));
-
-  }
-  @Test
-  void testNotificationTypePropagatesThroughToModel() throws Exception {
-
-    Notifications notificationsMock = getNotificationsMock();
-
-    Mockito.when(notificationService.getNotifications(any(), any(), any()))
-        .thenReturn(Mono.just(notificationsMock));
-
-    mockMvc.perform(get("/notifications?notification_type=A")
-            .flashAttr("user", userDetails))
-        .andDo(print())
-        .andExpect(model().attribute("notificationSearchCriteria",
-            hasProperty("notificationType", is("A"))))
-        .andExpect(status().isOk());
-  }
-
-  @Test
-  void testSortFieldsSetCorrectlyInModel() throws Exception {
-    Notifications notificationsMock = getNotificationsMock();
-    Mockito.when(notificationService.getNotifications(any(), any(), any()))
-        .thenReturn(Mono.just(notificationsMock));
-    mockMvc.perform(get("/notifications?notification_type=N&sort=subject,asc")
-            .flashAttr("user", userDetails))
-        .andDo(print())
-        .andExpect(model().attribute("notificationSearchCriteria",
-            hasProperty("notificationType", is("N"))))
-        .andExpect(model().attribute("sortDirection", is("asc")))
-        .andExpect(model().attribute("sortField", is("subject")))
-        .andExpect(status().isOk());
-  }
 
   @Test
   void testNotificationsSearchValidationForcesReturnToSearchPage() throws Exception {
@@ -224,27 +224,61 @@ class ActionsAndNotificationsControllerTest {
     mockMvc.perform(post("/notifications/search")
             .flashAttrs(flashMap))
         .andDo(print())
-        .andExpect(model().attribute("criteria", hasProperty("notificationToDateDay")))
+        .andExpect(
+            model().attribute("notificationSearchCriteria", hasProperty("notificationToDateDay")))
         .andExpect(model().hasErrors())
         .andExpect(forwardedUrl("notifications/actions-and-notifications-search"));
   }
 
+  @Test
+  void testSearchEndpointCalledFromRefineSearch_ExecuteDropdownCodeRedirectToSearchPage()
+      throws Exception {
+    NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+    flashMap.put("notificationSearchCriteria", criteria);
+
+    ProviderDetail providerDetail = new ProviderDetail();
+    List<ContactDetail> feeEarners = buildFeeEarners();
+
+    CommonLookupDetail notificationTypes = new CommonLookupDetail();
+    notificationTypes
+        .addContentItem(
+            new CommonLookupValueDetail().type("N").code("code n").description("description")
+        );
+
+    UserDetails baseUsers = new UserDetails()
+        .addContentItem(new BaseUser()
+            .userId(123)
+            .userType("type1")
+            .loginId("login1"));
+
+    when(commonLookupService.getNotificationTypes()).thenReturn(Mono.just(notificationTypes));
+    when(providerService.getProvider(userDetails.getProvider().getId()))
+        .thenReturn(Mono.just(providerDetail));
+    when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
+    when(userService.getUsers(any())).thenReturn(Mono.just(baseUsers));
+    mockMvc.perform(get("/notifications/search")
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(
+            model().attribute("notificationSearchCriteria", hasProperty("notificationToDateDay")))
+        .andExpect(forwardedUrl("notifications/actions-and-notifications-search"));
+  }
 
   @Test
-  void testGetNotificationsFromPhaseBanner_RetunsData() throws Exception {
-    Notifications notificationsMock = getNotificationsMock();
+  void testNotificationsSearchEndpoint_validCriteria_redirectsToSearchResults() throws Exception {
+    NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+    flashMap.put("notificationSearchCriteria", criteria);
 
-    Mockito.when(notificationService.getNotifications(any(), any(), any()))
-        .thenReturn(Mono.just(notificationsMock));
-
-    this.mockMvc.perform(get("/notifications?notification_type=all")
-            .sessionAttr("user", userDetails)
-            .sessionAttr("notificationSearchCriteria", buildNotificationSearchCritieria())
-        )
+    mockMvc.perform(post("/notifications/search")
+            .flashAttrs(flashMap))
         .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("notifications/actions-and-notifications"));
+        .andExpect(view().name("redirect:/notifications/search-results"));
   }
+
 
   private List<ContactDetail> buildFeeEarners() {
     List<ContactDetail> feeEarners = new ArrayList<>();

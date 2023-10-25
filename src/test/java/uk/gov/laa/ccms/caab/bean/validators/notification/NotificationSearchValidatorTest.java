@@ -28,6 +28,13 @@ class NotificationSearchValidatorTest {
   }
 
   @Test
+  void testAllFieldsBlankValidator() {
+    validator.validate(criteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
   void testValidateFromDate() {
     criteria.setNotificationFromDateDay("12");
     criteria.setNotificationFromDateMonth("12");
@@ -126,7 +133,7 @@ class NotificationSearchValidatorTest {
 
   @Test
   void validateInvalidClientSurnameWithDoubleSpace() {
-    criteria.setClientSurname("  ");
+    criteria.setClientSurname("a  b");
     validator.validate(criteria, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());

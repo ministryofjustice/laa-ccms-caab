@@ -1,13 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.notifications;
 
-import static uk.gov.laa.ccms.caab.constants.NotificationConstants.REVERSE_SORT_DIRECTION;
-import static uk.gov.laa.ccms.caab.constants.NotificationConstants.SORT_DIRECTION;
-import static uk.gov.laa.ccms.caab.constants.NotificationConstants.SORT_FIELD;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -22,17 +18,13 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationSearchValidator;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
-import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
-import uk.gov.laa.ccms.soa.gateway.model.Notification;
-import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 
 /**
  * Controller for handling requests for actions and notifications.
@@ -43,7 +35,6 @@ import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 @SessionAttributes(value = {NOTIFICATION_SEARCH_CRITERIA})
 public class ActionsAndNotificationsController {
 
-  private final NotificationService notificationService;
   private final CommonLookupService commonLookupService;
   private final ProviderService providerService;
   private final NotificationSearchValidator notificationSearchValidator;
@@ -60,63 +51,33 @@ public class ActionsAndNotificationsController {
   }
 
   /**
-   * Displays the actions and notifications page for the user.
-   *
-   * @param user  Current user details.
-   * @param model Model to pass attributes to the view.
-   * @return Path to the view.
-   */
-  @GetMapping("/notifications")
-  public String getNotifications(
-      @RequestParam(value = "page", defaultValue = "0") int page,
-      @RequestParam(value = "size", defaultValue = "10") int size,
-      @RequestParam(required = false) String sort,
-      @RequestParam(value = "notification_type", defaultValue = "all") String notificationType,
-      @ModelAttribute(USER_DETAILS) UserDetail user,
-      @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
-      Model model) {
-
-    // set the criteria
-    populateCriteria(sort, notificationType, user, criteria);
-    // Retrieve the Notifications and actions based on the search criteria
-    Notifications notificationsResponse =
-        notificationService
-            .getNotifications(criteria, page, size)
-            .block();
-    List<Notification> notifications = Optional.ofNullable(
-            notificationsResponse)
-        .map(Notifications::getContent)
-        .orElseThrow(() -> new CaabApplicationException("Error retrieving notifications"));
-    if (notifications.isEmpty()) {
-      return "notifications/actions-and-notifications-no-results";
-    }
-    // set the sort configuration in the model
-    if (StringUtils.isNotEmpty(criteria.getSort())) {
-      populateModelFromCriteria(criteria, model);
-    } else {
-      populateModelWithDefaultValues(model);
-    }
-
-    model.addAttribute("notifications", notificationsResponse);
-    return "notifications/actions-and-notifications";
-  }
-
-  /**
    * Loads the Notifications Search Page and populates the dropdowns.
    *
-   * @param user     current user details.
-   * @param criteria the search criteria object in the model.
-   * @param model    the model.
+   * @param user             current user details.
+   * @param criteria         the search criteria object in the model.
+   * @param notificationType the notification type
+   * @param model            the model.
    * @return the notifications search view.
    */
   @GetMapping("/notifications/search")
   public String notificationsSearch(
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
+      @RequestParam(value = "notification_type", required = false) String notificationType,
       Model model) {
+    if (StringUtils.isNotEmpty(notificationType)) {
+      criteria.setNotificationType(notificationType.equals("all") ? "" : notificationType);
+      if (notificationType.equals("all")) {
+        NotificationSearchCriteria.reset(criteria);
+      }
+      criteria.setLoginId(user.getLoginId());
+      criteria.setUserType(user.getUserType());
+      criteria.setAssignedToUserId(user.getLoginId());
+      model.addAttribute(NOTIFICATION_SEARCH_CRITERIA, criteria);
+      return "redirect:/notifications/search-results";
+    }
 
     populateDropdowns(user, model, criteria);
-
     return "notifications/actions-and-notifications-search";
   }
 
@@ -161,45 +122,8 @@ public class ActionsAndNotificationsController {
           model.addAttribute("users", tuple.getT3().getContent());
         })
         .block();
-    model.addAttribute("criteria", criteria);
+    model.addAttribute("notificationSearchCriteria", criteria);
 
   }
-
-  private static void populateModelWithDefaultValues(Model model) {
-    model.addAttribute(SORT_FIELD, "assignDate");
-    model.addAttribute(SORT_DIRECTION, "asc");
-    model.addAttribute(REVERSE_SORT_DIRECTION, "desc");
-  }
-
-  private static void populateCriteria(String sort,
-      String notificationType, UserDetail user,
-      NotificationSearchCriteria criteria) {
-    criteria.setLoginId(user.getLoginId());
-    criteria.setUserType(user.getUserType());
-    criteria.setAssignedToUserId(user.getLoginId());
-    criteria.setNotificationType(notificationType);
-    if (notificationType.equals("all")) {
-      // do not set a notification type and reset the search criteria
-      criteria = new NotificationSearchCriteria();
-      criteria.setAssignedToUserId(user.getLoginId());
-    }
-    // Get the sort parameters
-    if (StringUtils.isNotEmpty(sort)) {
-      criteria.setSort(sort);
-    }
-  }
-
-
-  private static void populateModelFromCriteria(NotificationSearchCriteria criteria, Model model) {
-    String sort = criteria.getSort();
-    String[] params = sort.split(",");
-    String sortField = params[0];
-    String sortDirection = params[1];
-    model.addAttribute(SORT_FIELD, sortField);
-    model.addAttribute(SORT_DIRECTION, sortDirection);
-    model.addAttribute(REVERSE_SORT_DIRECTION,
-        sortDirection.equals("asc") ? "desc" : "asc");
-  }
-
 
 }
