@@ -92,12 +92,14 @@ public class ProviderService {
    */
   private List<String> filterCategoriesOfLaw(List<ContractDetail> contractDetails,
       final Boolean initialApplication) {
-    return contractDetails.stream()
-        .filter(c -> Boolean.TRUE.equals(c.isCreateNewMatters()) || (!initialApplication
-            && Boolean.TRUE.equals(c.isRemainderAuthorisation())))
-        .map(ContractDetail::getCategoryofLaw)
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+    return Optional.ofNullable(contractDetails)  // Wrap the list in an Optional
+        .map(list -> list.stream()
+            .filter(c -> Boolean.TRUE.equals(c.isCreateNewMatters()) || (!initialApplication
+                && Boolean.TRUE.equals(c.isRemainderAuthorisation())))
+            .map(ContractDetail::getCategoryofLaw)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList()))
+        .orElse(Collections.emptyList());
   }
 
   /**

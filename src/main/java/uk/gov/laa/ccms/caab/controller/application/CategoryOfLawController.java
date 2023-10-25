@@ -48,6 +48,7 @@ public class CategoryOfLawController {
    * @param exceptionalFunding A flag indicating exceptional funding.
    * @param applicationFormData The application details from session.
    * @param userDetails The user details from session.
+   * @param bindingResult The result of data binding/validation.
    * @param model The model for the view.
    * @return The view name for the category of law selection page.
    */
@@ -57,11 +58,12 @@ public class CategoryOfLawController {
                 boolean exceptionalFunding,
           @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
           @SessionAttribute(USER_DETAILS) UserDetail userDetails,
+          BindingResult bindingResult,
           Model model) {
 
     applicationFormData.setExceptionalFunding(exceptionalFunding);
 
-    initialiseCategoriesOfLaw(applicationFormData, userDetails, model);
+    initialiseCategoriesOfLaw(applicationFormData, userDetails, model, bindingResult);
 
     return "application/select-category-of-law";
   }
@@ -86,7 +88,7 @@ public class CategoryOfLawController {
 
     String viewName = "redirect:/application/application-type";
     if (bindingResult.hasErrors()) {
-      initialiseCategoriesOfLaw(applicationFormData, userDetails, model);
+      initialiseCategoriesOfLaw(applicationFormData, userDetails, model, bindingResult);
       viewName = "application/select-category-of-law";
     } else if (applicationFormData.isExceptionalFunding()) {
       // Exception Funding has been selected, so initialise the ApplicationType to ECF
@@ -104,9 +106,13 @@ public class CategoryOfLawController {
    * @param applicationFormData The application details.
    * @param user The user details.
    * @param model The model for the view.
+   * @param bindingResult The result of data binding/validation.
    */
-  private void initialiseCategoriesOfLaw(ApplicationFormData applicationFormData,
-                                         UserDetail user, Model model) {
+  private void initialiseCategoriesOfLaw(
+      ApplicationFormData applicationFormData,
+      UserDetail user,
+      Model model,
+      BindingResult bindingResult) {
 
     List<CommonLookupValueDetail> categoriesOfLaw =
         Optional.ofNullable(commonLookupService.getCategoriesOfLaw().block())
@@ -127,5 +133,12 @@ public class CategoryOfLawController {
     }
 
     model.addAttribute("categoriesOfLaw", categoriesOfLaw);
+
+    if (categoriesOfLaw.isEmpty()) {
+      bindingResult.rejectValue("categoryOfLawId", "no.categoriesOfLaw",
+          "Warning: The Office selected is not contracted in any Category of Law, "
+              + "it is therefore only possible to make applications for 'Exceptional Funding' "
+              + "under this Office.");
+    }
   }
 }
