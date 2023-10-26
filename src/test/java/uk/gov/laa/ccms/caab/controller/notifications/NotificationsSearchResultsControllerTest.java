@@ -1,19 +1,25 @@
 package uk.gov.laa.ccms.caab.controller.notifications;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARCH_CRITERIA;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -22,6 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
@@ -50,7 +57,7 @@ class NotificationsSearchResultsControllerTest {
   void testGetSearchResults_returnsData() throws Exception {
     Notifications notificationsMock = getNotificationsMock();
 
-    Mockito.when(notificationService.getNotifications(any(), any(), any()))
+    when(notificationService.getNotifications(any(), any(), any()))
         .thenReturn(Mono.just(notificationsMock));
 
     this.mockMvc.perform(get("/notifications/search-results")
@@ -70,7 +77,7 @@ class NotificationsSearchResultsControllerTest {
     Notifications notificationsMock = new Notifications()
         .content(new ArrayList<>());
 
-    Mockito.when(notificationService.getNotifications(any(), any(), any()))
+    when(notificationService.getNotifications(any(), any(), any()))
         .thenReturn(Mono.just(notificationsMock));
 
     this.mockMvc.perform(get("/notifications/search-results")
@@ -79,9 +86,26 @@ class NotificationsSearchResultsControllerTest {
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("notifications/actions-and-notifications-no-results"));
+  }
 
+  @Test
+  void testSearchResults_WithoutAssignedUser_AndNoContent_ThrowsException() {
+    Notifications notificationsMock = new Notifications();
+    NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+    criteria.setAssignedToUserId("mildew@rot.com");
 
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+    flashMap.put(NOTIFICATION_SEARCH_CRITERIA, criteria);
+    when(notificationService.getNotifications(any(), any(), any()))
+        .thenReturn(Mono.just(notificationsMock));
 
+    Exception exception = assertThrows(Exception.class, () ->
+        this.mockMvc.perform(get("/notifications/search-results")
+            .flashAttrs(flashMap)));
+
+    assertTrue(exception.getCause() instanceof CaabApplicationException);
+    assertEquals("Error retrieving notifications", exception.getCause().getMessage());
 
   }
 

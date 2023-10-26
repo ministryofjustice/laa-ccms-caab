@@ -9,6 +9,8 @@ import lombok.Data;
 public class NotificationConstants {
 
   public static final String SORT_FIELD = "sortField";
+
   public static final String SORT_DIRECTION = "sortDirection";
+
   public static final String REVERSE_SORT_DIRECTION = "reverseSortDirection";
 }

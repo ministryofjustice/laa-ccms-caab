@@ -34,7 +34,7 @@
                 <th th:replace="~{partials/pagination :: sorting(${notifications},'assignDate','Date assigned')}"></th>
                 <th th:replace="~{partials/pagination :: sorting(${notifications},'subject','Subject')}"></th>
                 <th th:replace="~{partials/pagination :: sorting(${notifications},'dueDate','Due date')}"></th>
-                <th th:replace="~{partials/pagination :: sorting(${notifications},'userName','Assigned to')}"></th>
+                <th th:replace="~{partials/pagination :: sorting(${notifications},'user.userLoginId','Assigned to')}"></th>
                 <th th:replace="~{partials/pagination :: sorting(${notifications},'status','Status')}"></th>
                 <th th:replace="~{partials/pagination :: sorting(${notifications},'caseReferenceNumber','LAA Ref')}"></th>
                 <th th:replace="~{partials/pagination :: sorting(${notifications},'providerCaseReferenceNumber','Provider ref')}"></th>

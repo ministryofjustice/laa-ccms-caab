@@ -8,6 +8,8 @@ import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
@@ -116,6 +118,13 @@ public abstract class AbstractValidator implements Validator {
       errors.rejectValue(fieldName, "invalid.input",
           String.format(GENERIC_DATEFIELD_ENTRY, field));
     }
+  }
+
+  protected boolean patternMatches(String inputString, String pattern) {
+    Pattern p = Pattern.compile(pattern);
+    Matcher m = p.matcher(inputString);
+    //return inputString.matches(pattern);
+    return m.find();
   }
 
 

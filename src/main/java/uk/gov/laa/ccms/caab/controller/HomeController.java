@@ -1,7 +1,9 @@
 package uk.gov.laa.ccms.caab.controller;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -28,7 +30,8 @@ public class HomeController {
    * @return The name of the view to render.
    */
   @GetMapping({"/home", "/"})
-  public String home(Model model) {
+  public String home(Model model, HttpSession session) {
+    session.removeAttribute(NOTIFICATION_SEARCH_CRITERIA);
     UserDetail user = (UserDetail) model.getAttribute(USER_DETAILS);
 
     // Retrieve a summary of the User's Notifications & Actions from the SOA Gateway

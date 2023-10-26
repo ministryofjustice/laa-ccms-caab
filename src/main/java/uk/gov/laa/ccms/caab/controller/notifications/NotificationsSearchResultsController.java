@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.NotificationService;
+import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 
@@ -41,6 +43,7 @@ public class NotificationsSearchResultsController {
    * @param page     Page number for pagination.
    * @param size     Size of results per page.
    * @param criteria Criteria used for the search.
+   * @param user      The logged-in user.
    * @param request  The HTTP request.
    * @param model    Model to store attributes for the view.
    * @return The appropriate view based on the search results.
@@ -50,9 +53,12 @@ public class NotificationsSearchResultsController {
       @RequestParam(value = "page", defaultValue = "0") int page,
       @RequestParam(value = "size", defaultValue = "10") int size,
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
+      @ModelAttribute(USER_DETAILS) UserDetail user,
       HttpServletRequest request,
       Model model) {
-
+    if (StringUtils.isBlank(criteria.getAssignedToUserId())) {
+      criteria.setAssignedToUserId(user.getLoginId());
+    }
     Notifications notificationsResponse =
         notificationService
             .getNotifications(criteria, page, size)
