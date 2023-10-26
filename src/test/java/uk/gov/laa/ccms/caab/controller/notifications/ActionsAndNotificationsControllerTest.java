@@ -1,6 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.notifications;
 
 import static org.hamcrest.Matchers.hasProperty;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
@@ -33,6 +36,7 @@ import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationSearchValidator;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
@@ -293,6 +297,23 @@ class ActionsAndNotificationsControllerTest {
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(model().attributeExists("notification"));
+  }
+
+  @Test
+  void testGetNotification_throwsException_whenNotification_notFound() {
+    NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+    Notifications notificationsMock = getNotificationsMock();
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+    flashMap.put("notificationSearchCriteria", criteria);
+    flashMap.put("notifications", notificationsMock);
+
+    Exception exception = assertThrows(Exception.class, () ->
+            mockMvc.perform(get("/notification/123")
+                .flashAttrs(flashMap)));
+    assertTrue(exception.getCause() instanceof CaabApplicationException);
+    assertEquals("Notification with id 123 not found", exception.getCause().getMessage());
+
   }
 
 
