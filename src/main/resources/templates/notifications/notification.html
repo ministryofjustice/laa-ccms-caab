@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Placeholder for notification display page</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a href="/" class="govuk-back-link">Return to home</a>
+  </div>
+  <div id="main-content">
+    <h1 class="govuk-heading-l">
+      Placeholder for notification display page
+    </h1>
+    <th:block th:text="${notification.getSubject()}"/>
+  </div>
+</div>
+</body>
+</html>

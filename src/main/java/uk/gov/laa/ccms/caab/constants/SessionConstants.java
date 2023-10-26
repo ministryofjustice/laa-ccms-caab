@@ -74,6 +74,8 @@ public class SessionConstants {
    */
   public static final String NOTIFICATION_SEARCH_CRITERIA = "notificationSearchCriteria";
 
+  public static final String NOTIFICATIONS = "notifications";
+
   /**
    * Session attribute used to keep track of the application, used for application summary page.
    */

@@ -251,7 +251,8 @@ class ActionsAndNotificationsControllerTest {
         .addContentItem(new BaseUser()
             .userId(123)
             .userType("type1")
-            .loginId("login1"));
+            .loginId("login1")
+            .username("login1"));
 
     when(commonLookupService.getNotificationTypes()).thenReturn(Mono.just(notificationTypes));
     when(providerService.getProvider(userDetails.getProvider().getId()))
@@ -277,6 +278,21 @@ class ActionsAndNotificationsControllerTest {
             .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(view().name("redirect:/notifications/search-results"));
+  }
+
+  @Test
+  void testGetNotification() throws Exception {
+    NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+    Notifications notificationsMock = getNotificationsMock();
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+    flashMap.put("notificationSearchCriteria", criteria);
+    flashMap.put("notifications", notificationsMock);
+    mockMvc.perform(get("/notification/234")
+        .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(model().attributeExists("notification"));
   }
 
 
