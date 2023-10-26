@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple4;
@@ -20,14 +19,20 @@ import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.model.IntDisplayValue;
+import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.ContactDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -48,6 +53,8 @@ public class ApplicationService {
   private final EbsApiClient ebsApiClient;
 
   private final CaabApiClient caabApiClient;
+
+  private final ProviderService providerService;
 
   private final ApplicationFormDataMapper applicationFormDataMapper;
 
@@ -241,6 +248,11 @@ public class ApplicationService {
         .map(applicationFormDataMapper::toApplicationTypeFormData).block();
   }
 
+  public ApplicationFormData getProviderDetailsFormData(final String id) {
+    return caabApiClient.getProviderDetails(id)
+        .map(applicationFormDataMapper::toApplicationProviderDetailsFormData).block();
+  }
+
   /**
    * Patches an application's application type in the CAAB's Transient Data Store.
    *
@@ -267,7 +279,59 @@ public class ApplicationService {
             applicationFormData.getDevolvedPowersContractFlag())
         .build();
 
-    caabApiClient.patchApplicationType(id, user.getLoginId(), applicationType).block();
+    caabApiClient.patchApplication(
+        id, user.getLoginId(), applicationType, "application-type").block();
   }
+
+  /**
+   * Patches an application's provider details in the CAAB's Transient Data Store.
+   *
+   * @param id the ID associated with the application
+   * @param applicationFormData the details of the Application to amend
+   * @param user the related User.
+   */
+  public void patchProviderDetails(
+      final String id,
+      final ApplicationFormData applicationFormData,
+      final UserDetail user) {
+
+    ProviderDetail provider = Optional.ofNullable(user.getProvider())
+        .map(providerData -> providerService.getProvider(providerData.getId()).block())
+        .orElseThrow(() -> new CaabApplicationException("Error retrieving provider"));
+
+    ContactDetail feeEarner = providerService.getFeeEarnerByOfficeAndId(
+        provider, applicationFormData.getOfficeId(), applicationFormData.getFeeEarnerId());
+    ContactDetail supervisor = providerService.getFeeEarnerByOfficeAndId(
+        provider, applicationFormData.getOfficeId(), applicationFormData.getSupervisorId());
+
+    ContactDetail contactName = provider.getContactNames().stream()
+        .filter(contactDetail -> contactDetail.getId().toString()
+            .equals(applicationFormData.getContactNameId()))
+        .findFirst()
+        .orElseThrow(() -> new CaabApplicationException("Error retrieving contact name"));
+
+    ApplicationProviderDetails providerDetails = new ApplicationProviderDetails()
+        .provider(new IntDisplayValue()
+            .id(provider.getId())
+            .displayValue(provider.getName()))
+        .office(new IntDisplayValue()
+            .id(applicationFormData.getOfficeId())
+            .displayValue(applicationFormData.getOfficeName()))
+        .feeEarner(new StringDisplayValue()
+            .id(feeEarner.getId().toString())
+            .displayValue(feeEarner.getName()))
+        .supervisor(new StringDisplayValue()
+            .id(supervisor.getId().toString())
+            .displayValue(supervisor.getName()))
+        .providerContact(new StringDisplayValue()
+            .id(contactName.getId().toString())
+            .displayValue(contactName.getName()))
+        .providerCaseReference(applicationFormData.getProviderCaseReference());
+
+    caabApiClient.patchApplication(
+        id, user.getLoginId(), providerDetails, "provider-details").block();
+
+  }
+
 
 }

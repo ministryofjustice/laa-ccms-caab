@@ -25,7 +25,7 @@ import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
- * Controller for the application summary.
+ * Controller for the application's application type section.
  */
 @Controller
 @RequiredArgsConstructor
@@ -64,7 +64,7 @@ public class ApplicationTypeSectionController {
 
     applicationFormData = applicationService.getApplicationTypeFormData(applicationId);
 
-    model.addAttribute("activeCase", activeCase);
+    model.addAttribute(ACTIVE_CASE, activeCase);
     model.addAttribute(APPLICATION_FORM_DATA, applicationFormData);
 
     return "application/summary/application-type-section";
@@ -75,9 +75,10 @@ public class ApplicationTypeSectionController {
    *
    * @param applicationId The id of the application
    * @param activeCase The active case details to display in the header
+   * @param user The details of the active user
    * @param applicationFormData The details of the current application.
    * @param bindingResult Validation result for the delegated functions form.
-   * @return The path to the next step in the application process or the current page based on
+   * @return The path to the next step in the application summary edit or the current page based on
    *         validation.
    */
   @PostMapping("/application/summary/application-type")

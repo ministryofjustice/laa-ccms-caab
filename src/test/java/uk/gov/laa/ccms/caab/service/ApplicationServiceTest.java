@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
@@ -26,7 +27,9 @@ import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AuditDetail;
@@ -61,6 +64,9 @@ class ApplicationServiceTest {
 
   @Mock
   private EbsApiClient ebsApiClient;
+
+  @Mock
+  private ApplicationFormDataMapper applicationFormDataMapper;
 
   @InjectMocks
   private ApplicationService applicationService;
@@ -324,6 +330,69 @@ class ApplicationServiceTest {
         })
         .verifyComplete();
   }
+
+  @Test
+  void testGetApplicationTypeFormData() {
+    String id = "12345";
+    ApplicationFormData mockApplicationFormData = new ApplicationFormData();
+    ApplicationType applicationType = new ApplicationType();
+    // Set up any necessary mocks for caabApiClient.getApplicationType
+
+    when(caabApiClient.getApplicationType(id))
+        .thenReturn(Mono.just(applicationType));
+    when(applicationFormDataMapper.toApplicationTypeFormData(applicationType))
+        .thenReturn(mockApplicationFormData);
+
+    ApplicationFormData result = applicationService.getApplicationTypeFormData(id);
+
+    assertEquals(mockApplicationFormData, result);
+  }
+
+  @Test
+  void testGetProviderDetailsFormData() {
+    String id = "12345";
+    ApplicationFormData mockApplicationFormData = new ApplicationFormData();
+    ApplicationProviderDetails providerDetails = new ApplicationProviderDetails();
+
+    when(caabApiClient.getProviderDetails(id))
+        .thenReturn(Mono.just(providerDetails));
+    when(applicationFormDataMapper.toApplicationProviderDetailsFormData(providerDetails))
+        .thenReturn(mockApplicationFormData);
+
+    ApplicationFormData result = applicationService.getProviderDetailsFormData(id);
+
+    assertEquals(mockApplicationFormData, result);
+  }
+
+  @Test
+  void testPatchApplicationType() throws ParseException {
+    String id = "12345";
+    ApplicationFormData applicationFormData = new ApplicationFormData();
+    UserDetail user = new UserDetail().loginId("TEST123");
+
+    ApplicationType mockApplicationType = new ApplicationType();
+
+    when(caabApiClient.patchApplication(eq(id), eq(user.getLoginId()), any(), eq("application-type")))
+        .thenReturn(Mono.empty());
+
+    applicationService.patchApplicationType(id, applicationFormData, user);
+
+    verify(caabApiClient).patchApplication(eq(id), eq(user.getLoginId()), any(), eq("application-type"));
+
+  }
+//
+//  @Test
+//  void testPatchProviderDetails() {
+//    String id = "12345";
+//    ApplicationFormData applicationFormData = new ApplicationFormData();
+//    UserDetail user = new UserDetail();
+//    // Set up any necessary mocks for caabApiClient.patchApplication
+//
+//    // Call the method you want to test
+//    applicationService.patchProviderDetails(id, applicationFormData, user);
+//
+//    // Add assertions or verifications here
+//  }
 
 
   private UserDetail buildUser() {

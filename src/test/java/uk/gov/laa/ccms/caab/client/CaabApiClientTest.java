@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.client;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -13,7 +15,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -117,10 +121,11 @@ public class CaabApiClientTest {
   }
 
   @Test
-  void patchApplicationType_success() {
+  void patchApplication_applicationType_success() {
     String loginId = "user1";
     String id = "123";
-    String expectedUri = "/applications/{id}/application-type";
+    String type = "application-type";
+    String expectedUri = String.format("/applications/{id}/%s", type);
 
     ApplicationType applicationType = new ApplicationType();
 
@@ -132,7 +137,9 @@ public class CaabApiClientTest {
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
 
-    caabApiClient.patchApplicationType(id, loginId, applicationType);
+    assertDoesNotThrow(() -> {
+      caabApiClient.patchApplication(id, loginId, applicationType, type).block();
+    });
   }
 
 }

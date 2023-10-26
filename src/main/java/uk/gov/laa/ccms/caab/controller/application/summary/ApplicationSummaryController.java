@@ -53,7 +53,7 @@ public class ApplicationSummaryController {
     model.addAttribute(ACTIVE_CASE, activeCase);
     session.setAttribute(ACTIVE_CASE, activeCase);
 
-    return "application/summary-task-page";
+    return "application/summary/summary-task-page";
   }
 
 }

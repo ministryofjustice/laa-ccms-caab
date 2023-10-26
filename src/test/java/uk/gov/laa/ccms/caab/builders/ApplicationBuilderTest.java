@@ -16,12 +16,16 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBST
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 
+import java.text.ParseException;
 import java.util.Collections;
 import java.util.List;
+import org.checkerframework.checker.units.qual.A;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.model.DevolvedPowers;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.BaseOffice;
@@ -70,6 +74,28 @@ class ApplicationBuilderTest {
     ApplicationDetail detail = builder.categoryOfLaw(categoryId, lookupDetail).build();
     assertEquals(categoryId, detail.getCategoryOfLaw().getId());
     assertEquals("Description", detail.getCategoryOfLaw().getDisplayValue());
+  }
+
+  @Test
+  void testContractualDevolvedPower() throws ParseException {
+
+    ApplicationType applicationType = new ApplicationType();
+    // Create a mock ContractDetail object
+    ContractDetail contractDetail = new ContractDetail();
+    contractDetail.setCategoryofLaw("CATEGORY1");
+    contractDetail.setContractualDevolvedPowers("CONTRACTUAL_DEVOLVED_POWERS");
+
+    // Create a list of ContractDetail containing the mock contractDetail
+    List<ContractDetail> contractDetails = Collections.singletonList(contractDetail);
+
+    // Perform the contractualDevolvedPower operation
+    ApplicationDetail application = builder.contractualDevolvedPower(contractDetails, "CATEGORY1").build();
+
+    // Verify that application.getApplicationType() and applicationType.getDevolvedPowers() were called
+    // Verify that the contractFlag was set in the DevolvedPowers object
+    assertEquals(
+        "CONTRACTUAL_DEVOLVED_POWERS",
+        application.getApplicationType().getDevolvedPowers().getContractFlag());
   }
 
   @Test

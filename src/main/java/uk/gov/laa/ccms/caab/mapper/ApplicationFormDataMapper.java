@@ -6,6 +6,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 
 /**
@@ -29,6 +30,14 @@ public interface ApplicationFormDataMapper {
   @Mapping(target = "devolvedPowersContractFlag",
       source = "devolvedPowers.contractFlag")
   ApplicationFormData toApplicationTypeFormData(ApplicationType applicationType);
+
+  @Mapping(target = "officeId", source = "office.id")
+  @Mapping(target = "officeName", source = "office.displayValue")
+  @Mapping(target = "feeEarnerId", source = "feeEarner.id")
+  @Mapping(target = "supervisorId", source = "supervisor.id")
+  @Mapping(target = "contactNameId", source = "providerContact.id")
+  ApplicationFormData toApplicationProviderDetailsFormData(
+      ApplicationProviderDetails providerDetails);
 
   /**
    * Translates Date into a day string.

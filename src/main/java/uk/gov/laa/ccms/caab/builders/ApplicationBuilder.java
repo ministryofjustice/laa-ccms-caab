@@ -170,12 +170,14 @@ public class ApplicationBuilder {
         .orElse(null)
         : null;
 
+    if (application.getApplicationType() == null) {
+      application.setApplicationType(new ApplicationType());
+    }
     if (application.getApplicationType().getDevolvedPowers() == null) {
-      if (application.getApplicationType() == null) {
-        application.setApplicationType(new ApplicationType());
-      }
       application.getApplicationType().setDevolvedPowers(new DevolvedPowers());
     }
+
+    // Set the contractFlag
     application.getApplicationType().getDevolvedPowers().setContractFlag(contractualDevolvedPower);
 
     return this;

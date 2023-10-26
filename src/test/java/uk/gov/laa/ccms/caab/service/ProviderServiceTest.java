@@ -146,6 +146,26 @@ public class ProviderServiceTest {
         .authorisationType("AUTHTYPE1");
   }
 
+  @Test
+  void testGetFeeEarnersByOffice() {
+    ProviderDetail providerDetail = buildProvider();
+
+    List<ContactDetail> feeEarners = providerService.getFeeEarnersByOffice(providerDetail, 10);
+
+    assertEquals(2, feeEarners.size());
+    assertEquals("FeeEarner1", feeEarners.get(0).getName());
+    assertEquals("FeeEarner2", feeEarners.get(1).getName());
+  }
+
+  @Test
+  void testGetFeeEarnerByOfficeAndId() {
+    ProviderDetail providerDetail = buildProvider();
+
+    ContactDetail feeEarner = providerService.getFeeEarnerByOfficeAndId(providerDetail, 11, 3);
+
+    assertEquals("FeeEarner3", feeEarner.getName());
+  }
+
   private ProviderDetail buildProvider() {
     return new ProviderDetail()
         .id(123)
