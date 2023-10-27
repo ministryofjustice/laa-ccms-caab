@@ -380,21 +380,7 @@ class ApplicationServiceTest {
     verify(caabApiClient).patchApplication(eq(id), eq(user.getLoginId()), any(), eq("application-type"));
 
   }
-//
-//  @Test
-//  void testPatchProviderDetails() {
-//    String id = "12345";
-//    ApplicationFormData applicationFormData = new ApplicationFormData();
-//    UserDetail user = new UserDetail();
-//    // Set up any necessary mocks for caabApiClient.patchApplication
-//
-//    // Call the method you want to test
-//    applicationService.patchProviderDetails(id, applicationFormData, user);
-//
-//    // Add assertions or verifications here
-//  }
-
-
+  
   private UserDetail buildUser() {
     return new UserDetail()
         .userId(1)
