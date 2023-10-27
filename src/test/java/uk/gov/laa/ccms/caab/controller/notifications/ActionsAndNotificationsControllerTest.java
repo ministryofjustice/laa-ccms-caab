@@ -291,7 +291,7 @@ class ActionsAndNotificationsControllerTest {
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
     flashMap.put("notificationSearchCriteria", criteria);
-    flashMap.put("notifications", notificationsMock);
+    flashMap.put("notificationsSearchResults", notificationsMock);
     mockMvc.perform(get("/notification/234")
         .flashAttrs(flashMap))
         .andDo(print())
@@ -306,7 +306,7 @@ class ActionsAndNotificationsControllerTest {
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
     flashMap.put("notificationSearchCriteria", criteria);
-    flashMap.put("notifications", notificationsMock);
+    flashMap.put("notificationsSearchResults", notificationsMock);
 
     Exception exception = assertThrows(Exception.class, () ->
             mockMvc.perform(get("/notification/123")

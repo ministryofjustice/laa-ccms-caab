@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.notifications;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -37,7 +37,7 @@ import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(value = {NOTIFICATION_SEARCH_CRITERIA, NOTIFICATIONS})
+@SessionAttributes(value = {NOTIFICATION_SEARCH_CRITERIA, NOTIFICATIONS_SEARCH_RESULTS})
 public class ActionsAndNotificationsController {
 
   private final CommonLookupService commonLookupService;
@@ -124,7 +124,7 @@ public class ActionsAndNotificationsController {
   public String getNotification(
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
-      @ModelAttribute(NOTIFICATIONS) Notifications notifications,
+      @ModelAttribute(NOTIFICATIONS_SEARCH_RESULTS) Notifications notifications,
       @PathVariable(value = "notification_id") String notificationId,
       Model model
   ) {

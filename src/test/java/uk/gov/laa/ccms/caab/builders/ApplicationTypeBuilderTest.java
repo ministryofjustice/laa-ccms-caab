@@ -21,7 +21,7 @@ public class ApplicationTypeBuilderTest {
 
   @BeforeEach
   void setUp() {
-    MockitoAnnotations.initMocks(this);
+    MockitoAnnotations.openMocks(this);
     builder = new ApplicationTypeBuilder();
   }
 
