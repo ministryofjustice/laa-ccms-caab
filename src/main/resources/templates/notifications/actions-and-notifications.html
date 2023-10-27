@@ -13,7 +13,7 @@
             Your actions / notifications
         </h1>
         <p class="govuk-body-l">
-            Your search has returned <span th:text="${notifications.totalElements}"></span> results.
+            Your search has returned <span th:text="${notificationsSearchResults.totalElements}"></span> results.
             To select one of the records that has been returned, click on the
             subject title. If the results shown do not include the actions or
             notifications you are looking for, please review your search criteria
@@ -31,19 +31,19 @@
             <caption class="govuk-table__caption govuk-table__caption--m">Your actions / notifications</caption>
             <thead class="govuk-table__head">
             <tr class="govuk-table__row">
-                <th th:replace="~{partials/pagination :: sorting(${notifications},'assignDate','Date assigned')}"></th>
-                <th th:replace="~{partials/pagination :: sorting(${notifications},'subject','Subject')}"></th>
-                <th th:replace="~{partials/pagination :: sorting(${notifications},'dueDate','Due date')}"></th>
-                <th th:replace="~{partials/pagination :: sorting(${notifications},'user.userLoginId','Assigned to')}"></th>
-                <th th:replace="~{partials/pagination :: sorting(${notifications},'status','Status')}"></th>
-                <th th:replace="~{partials/pagination :: sorting(${notifications},'caseReferenceNumber','LAA Ref')}"></th>
-                <th th:replace="~{partials/pagination :: sorting(${notifications},'providerCaseReferenceNumber','Provider ref')}"></th>
-                <th th:replace="~{partials/pagination :: sorting(${notifications},'clientName','Client')}"></th>
-                <th th:replace="~{partials/pagination :: sorting(${notifications},'feeEarner','Fee earner')}"></th>
+                <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'assignDate','Date assigned')}"></th>
+                <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'subject','Subject')}"></th>
+                <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dueDate','Due date')}"></th>
+                <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'user.userLoginId','Assigned to')}"></th>
+                <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'status','Status')}"></th>
+                <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'caseReferenceNumber','LAA Ref')}"></th>
+                <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'providerCaseReferenceNumber','Provider ref')}"></th>
+                <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'clientName','Client')}"></th>
+                <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'feeEarner','Fee earner')}"></th>
             </tr>
             </thead>
             <tbody class="govuk-table__body">
-            <tr class="govuk-table__row" th:each="notification : ${notifications.content}">
+            <tr class="govuk-table__row" th:each="notification : ${notificationsSearchResults.content}">
                 <td class="govuk-table__cell govuk-!-font-size-17" th:text="${#dates.format(notification.assignDate,'dd-MM-yyyy')}"></td>
                 <td class="govuk-table__cell govuk-!-font-size-17"><a th:href="@{/notification/{notification_id}(notification_id=${notification.notificationId})}" th:text="${notification.subject}"></a></td>
                 <td class="govuk-table__cell govuk-!-font-size-17" th:text="${#dates.format(notification.dueDate,'dd-MM-yyy')}"></td>
@@ -56,7 +56,7 @@
             </tr>
             </tbody>
         </table>
-        <nav th:replace="~{partials/pagination :: pagination(page=${notifications})}"></nav>
+        <nav th:replace="~{partials/pagination :: pagination(page=${notificationsSearchResults})}"></nav>
     </div>
 </div>
 </body>
