@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>LAA CCMS - Create application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a href="/application/summary" class="govuk-back-link">Cancel and return to create application</a>
+  </div>
+  <div id="main-content">
+    <span class="govuk-caption-l">Create application</span>
+    <h1 class="govuk-heading-l">
+      Provider details
+    </h1>
+    <form action="#" th:action="@{/application/summary/provider-details}" th:object="${applicationFormData}" method="post">
+      <input type="hidden" th:field="*{officeId}" th:value="${applicationFormData.officeId}" />
+      <input type="hidden" th:field="*{officeName}" th:value="${applicationFormData.officeName}" />
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <div class="govuk-body-l">
+        Please enter the details in the fields provided.
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+          <p class="govuk-body">
+            <span  class="govuk-!-font-weight-bold govuk-!-padding-right-2">
+                Office
+            </span>
+            <span th:text="*{officeName}"></span>
+          </p>
+          <div class="govuk-form-group" th:classappend="${#fields.hasErrors('feeEarnerId')} ? 'govuk-form-group--error' : ''">
+            <label class="govuk-label" for="feeEarnerId">
+              Name of solicitor or Fellow of the Institute of Legal Executives instructed (optional)
+            </label>
+            <span th:if="${#fields.hasErrors('feeEarnerId')}" th:errors="*{feeEarnerId}" class="govuk-error-message"></span>
+            <select class="govuk-select" data-module="govuk-select" th:field="*{feeEarnerId}" th:errorclass="govuk-select--error" id="feeEarnerId" name="feeEarnerId">
+              <option value="">Please Select</option>
+              <option th:each="feeEarner : ${feeEarners}" th:value="${feeEarner.id}" th:text="${feeEarner.name}"></option>
+            </select>
+          </div>
+          <div class="govuk-form-group" th:classappend="${#fields.hasErrors('supervisorId')} ? 'govuk-form-group--error' : ''">
+            <label class="govuk-label" for="feeEarnerId">
+              Supervisor (optional)
+            </label>
+            <span th:if="${#fields.hasErrors('supervisorId')}" th:errors="*{supervisorId}" class="govuk-error-message"></span>
+            <select class="govuk-select" data-module="govuk-select" th:field="*{supervisorId}" th:errorclass="govuk-select--error" id="supervisorId" name="supervisorId">
+              <option value="">Please Select</option>
+              <option th:each="supervisor : ${feeEarners}" th:value="${supervisor.id}" th:text="${supervisor.name}"></option>
+            </select>
+          </div>
+          <div class="govuk-form-group" th:classappend="${#fields.hasErrors('providerCaseReference')} ? 'govuk-form-group--error' : ''">
+            <label class="govuk-label" for="surname">
+              Provider case reference (optional)
+            </label>
+            <span th:if="${#fields.hasErrors('providerCaseReference')}" th:errors="*{providerCaseReference}" class="govuk-error-message"></span>
+            <input th:errorclass="govuk-input--error"
+                   class="govuk-input govuk-input--width-20"
+                   id="surname"
+                   name="surname"
+                   type="text"
+                   data-module="govuk-input"
+                   th:field="*{providerCaseReference}">
+          </div>
+          <div class="govuk-form-group" th:classappend="${#fields.hasErrors('contactNameId')} ? 'govuk-form-group--error' : ''">
+            <label class="govuk-label" for="contactNameId">
+              Contact name
+            </label>
+            <span th:if="${#fields.hasErrors('contactNameId')}" th:errors="*{contactNameId}" class="govuk-error-message"></span>
+            <select class="govuk-select" data-module="govuk-select" th:field="*{contactNameId}" th:errorclass="govuk-select--error" id="contactNameId" name="contactNameId">
+              <option value="">Please Select</option>
+              <option th:each="contactName : ${contactNames}" th:value="${contactName.id}" th:text="${contactName.name}"></option>
+            </select>
+          </div>
+          <button class="govuk-button" data-module="govuk-button">
+            Confirm
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

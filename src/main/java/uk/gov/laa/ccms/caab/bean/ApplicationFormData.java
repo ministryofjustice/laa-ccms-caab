@@ -19,6 +19,12 @@ public class ApplicationFormData {
   private Integer officeId;
 
   /**
+   * The name of the office related to this application, used for the edit provider details, part
+   * of application summary sections.
+   */
+  private String officeName;
+
+  /**
    * The ID of the category of law related to this application.
    */
   private String categoryOfLawId;
@@ -64,10 +70,34 @@ public class ApplicationFormData {
   private boolean applicationCreated = false;
 
   /**
-   * The string to control contractual devolved powers flag, used for amend application type, not
+   * The string to control contractual devolved powers flag, used for edit application type, not
    * on creation of an application.
    */
   private String devolvedPowersContractFlag;
+
+  /**
+   * The string containing the fee earners id, used for the edit provider details, part of
+   * application summary sections.
+   */
+  private Integer feeEarnerId;
+
+  /**
+   * The string containing the supervisor id, used for the edit provider details, part of
+   * application summary sections.
+   */
+  private Integer supervisorId;
+
+  /**
+   * The string containing the provider case reference, used for the edit provider details, part of
+   * application summary sections.
+   */
+  private String providerCaseReference;
+
+  /**
+   * The string containing the contact name id, used for the edit provider details, part of
+   * application summary sections.
+   */
+  private String contactNameId;
 
 }
 

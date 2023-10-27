@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
@@ -127,5 +128,41 @@ public class ProviderService {
         .filter(contactDetail -> contactDetail.getName() != null)
         .sorted(Comparator.comparing(ContactDetail::getName))
         .collect(Collectors.toList());
+  }
+
+  /**
+   * Fetches a list of fee earners for a specific office of a provider.
+   *
+   * @param provider The Provider details.
+   * @param officeId The ID of the office to get fee earners from.
+   * @return List of contact details representing fee earners for the specified office.
+   */
+  public List<ContactDetail> getFeeEarnersByOffice(ProviderDetail provider, Integer officeId) {
+    return provider.getOffices().stream()
+        .filter(officeDetail -> officeDetail.getId().equals(officeId))
+        .flatMap(officeDetail -> officeDetail.getFeeEarners().stream())
+        .filter(contactDetail -> contactDetail.getName() != null)
+        .sorted(Comparator.comparing(ContactDetail::getName))
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Fetches a list of fee earners for a specific office of a provider.
+   *
+   * @param provider The Provider details.
+   * @param officeId The ID of the office to get the fee earners from.
+   * @param feeEarnerId The ID of the fee earner to get the fee earner from.
+   * @return List of contact details representing fee earners for the specified office.
+   */
+  public ContactDetail getFeeEarnerByOfficeAndId(
+      ProviderDetail provider,
+      Integer officeId,
+      Integer feeEarnerId) {
+
+    return getFeeEarnersByOffice(provider, officeId)
+        .stream()
+        .filter(fe -> fe.getId().equals(feeEarnerId))
+        .findFirst()
+        .orElseThrow(() -> new CaabApplicationException("Error retrieving fee earner"));
   }
 }

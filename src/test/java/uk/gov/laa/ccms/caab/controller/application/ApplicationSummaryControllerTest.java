@@ -63,9 +63,8 @@ class ApplicationSummaryControllerTest {
             .sessionAttr("applicationId", id))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary-task-page"))
+        .andExpect(view().name("application/summary/summary-task-page"))
         .andExpect(model().attributeExists("activeCase"));
-
 
     verify(applicationService, times(1)).getApplicationSummary(id);
   }

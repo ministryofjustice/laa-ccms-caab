@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 
 /**
@@ -86,26 +87,44 @@ public class CaabApiClient {
   }
 
   /**
-   * Patches an application's application type using the CAAB API.
+   * Retrieves an application's application type using the CAAB API.
+   *
+   * @param id the ID associated with the application
+   * @return a Mono containing application's application type
+   */
+  public Mono<ApplicationProviderDetails> getProviderDetails(
+      final String id) {
+    return caabApiWebClient
+        .get()
+        .uri("/applications/{id}/provider-details", id)
+        .retrieve()
+        .bodyToMono(ApplicationProviderDetails.class)
+        .onErrorResume(caabApiClientErrorHandler::handleGetProviderDetailsError);
+  }
+
+  /**
+   * Patches an application using the CAAB API.
    *
    * @param id the ID associated with the application
    * @param loginId the ID associated with the user login
-   * @param applicationType the application type to amend to the application
-   * @return a Mono containing application's application type
+   * @param data the data to amend to the application
+   * @param type the type of data being patched (e.g., "application-type", "provider-details")
+   * @return a Mono containing application's data
    */
-  public Mono<Void> patchApplicationType(
+  public Mono<Void> patchApplication(
       final String id,
       final String loginId,
-      final ApplicationType applicationType) {
+      final Object data,
+      final String type) {
 
     return caabApiWebClient
         .patch()
-        .uri("/applications/{id}/application-type", id)
+        .uri("/applications/{id}/" + type, id)
         .header("Caab-User-Login-Id", loginId)
-        .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
-        .bodyValue(applicationType) // Add the application details to the request body
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(data)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(caabApiClientErrorHandler::handlePatchApplicationTypeError);
+        .onErrorResume(e -> caabApiClientErrorHandler.handlePatchApplicationError(e, type));
   }
 }
