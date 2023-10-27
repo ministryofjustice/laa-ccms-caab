@@ -45,7 +45,7 @@
             <tbody class="govuk-table__body">
             <tr class="govuk-table__row" th:each="notification : ${notifications.content}">
                 <td class="govuk-table__cell govuk-!-font-size-17" th:text="${#dates.format(notification.assignDate,'dd-MM-yyyy')}"></td>
-                <td class="govuk-table__cell govuk-!-font-size-17" th:text="${notification.subject}"></td>
+                <td class="govuk-table__cell govuk-!-font-size-17"><a th:href="@{/notification/{notification_id}(notification_id=${notification.notificationId})}" th:text="${notification.subject}"></a></td>
                 <td class="govuk-table__cell govuk-!-font-size-17" th:text="${#dates.format(notification.dueDate,'dd-MM-yyy')}"></td>
                 <td class="govuk-table__cell govuk-!-font-size-17" th:text="${notification.user.userLoginId}"></td>
                 <td class="govuk-table__cell govuk-!-font-size-17" th:text="${notification.status}"></td>

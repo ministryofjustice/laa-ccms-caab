@@ -75,6 +75,11 @@ public class SessionConstants {
   public static final String NOTIFICATION_SEARCH_CRITERIA = "notificationSearchCriteria";
 
   /**
+   * Session attribute used for holding the Notifications retrieved from SOA.
+   */
+  public static final String NOTIFICATIONS_SEARCH_RESULTS = "notificationsSearchResults";
+
+  /**
    * Session attribute used to keep track of the application, used for application summary page.
    */
   public static final String APPLICATION_ID = "applicationId";

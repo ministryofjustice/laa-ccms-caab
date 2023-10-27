@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.notifications;
 import static uk.gov.laa.ccms.caab.constants.NotificationConstants.REVERSE_SORT_DIRECTION;
 import static uk.gov.laa.ccms.caab.constants.NotificationConstants.SORT_DIRECTION;
 import static uk.gov.laa.ccms.caab.constants.NotificationConstants.SORT_FIELD;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -31,7 +32,8 @@ import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(value = {NOTIFICATION_SEARCH_CRITERIA, USER_DETAILS})
+@SessionAttributes(value = {NOTIFICATION_SEARCH_CRITERIA, USER_DETAILS,
+    NOTIFICATIONS_SEARCH_RESULTS})
 public class NotificationsSearchResultsController {
 
   private final NotificationService notificationService;
@@ -73,7 +75,7 @@ public class NotificationsSearchResultsController {
     String currentUrl = request.getRequestURL().toString();
     model.addAttribute("currentUrl", currentUrl);
     populateModelWithDefaultValues(model);
-    model.addAttribute("notifications", notificationsResponse);
+    model.addAttribute(NOTIFICATIONS_SEARCH_RESULTS, notificationsResponse);
     return "notifications/actions-and-notifications";
   }
 

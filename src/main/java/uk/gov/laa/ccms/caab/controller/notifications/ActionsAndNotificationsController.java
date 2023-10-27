@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.notifications;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -12,12 +13,14 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationSearchValidator;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.service.UserService;
@@ -25,6 +28,8 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
+import uk.gov.laa.ccms.soa.gateway.model.Notification;
+import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 
 /**
  * Controller for handling requests for actions and notifications.
@@ -32,7 +37,7 @@ import uk.gov.laa.ccms.data.model.UserDetails;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(value = {NOTIFICATION_SEARCH_CRITERIA})
+@SessionAttributes(value = {NOTIFICATION_SEARCH_CRITERIA, NOTIFICATIONS_SEARCH_RESULTS})
 public class ActionsAndNotificationsController {
 
   private final CommonLookupService commonLookupService;
@@ -104,6 +109,37 @@ public class ActionsAndNotificationsController {
 
     return "redirect:/notifications/search-results";
   }
+
+  /**
+   * Get the required notification from the SOA Gateway response object.
+   *
+   * @param user             current user details.
+   * @param criteria         the search criteria object in the model.
+   * @param notifications    the notifications response from the prior call to SOA.
+   * @param notificationId   the ID of the notification to retrieve.
+   * @param model            the model.
+   * @return  the notification display page or an error if not found.
+   */
+  @GetMapping("/notification/{notification_id}")
+  public String getNotification(
+      @ModelAttribute(USER_DETAILS) UserDetail user,
+      @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
+      @ModelAttribute(NOTIFICATIONS_SEARCH_RESULTS) Notifications notifications,
+      @PathVariable(value = "notification_id") String notificationId,
+      Model model
+  ) {
+
+    Notification found = notifications.getContent()
+        .stream()
+        .filter(notification -> notification.getNotificationId().equals(notificationId))
+        .findFirst()
+        .orElseThrow(() -> new CaabApplicationException(
+            String.format("Notification with id %s not found", notificationId)));
+    model.addAttribute("notification", found);
+
+    return "/notifications/notification";
+  }
+
 
   private void populateDropdowns(UserDetail user, Model model,
       NotificationSearchCriteria criteria) {
