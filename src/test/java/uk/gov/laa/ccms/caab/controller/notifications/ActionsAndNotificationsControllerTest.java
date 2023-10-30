@@ -12,9 +12,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.forwardedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -316,6 +318,34 @@ class ActionsAndNotificationsControllerTest {
 
   }
 
+  @Test
+  void TestReturnToNotifications_Data_RedirectsToResultsPage() throws Exception {
+    NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+    Notifications notificationsMock = getNotificationsMock();
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("notificationSearchCriteria", criteria);
+    mockMvc.perform(get("/notifications")
+            .sessionAttr(NOTIFICATIONS_SEARCH_RESULTS, notificationsMock)
+            .sessionAttr("user", userDetails)
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("notifications/actions-and-notifications"));
+  }
+
+
+  @Test
+  void TestReturnToNotifications_noData_redirectsToResultsPage() throws Exception {
+    NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("notificationSearchCriteria", criteria);
+    mockMvc.perform(get("/notifications")
+            .sessionAttr("user", userDetails)
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/notifications/search?notification_type=all"));
+  }
 
   private List<ContactDetail> buildFeeEarners() {
     List<ContactDetail> feeEarners = new ArrayList<>();

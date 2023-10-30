@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
@@ -53,6 +54,32 @@ public class ActionsAndNotificationsController {
   @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA)
   public NotificationSearchCriteria notificationSearchCriteria() {
     return new NotificationSearchCriteria();
+  }
+
+  /**
+   * Endpoint to return the user to the Notifications Search Results.
+   *
+   * @param notifications the Notifications search results.
+   * @param user          the logged-in user
+   * @param criteria      the search criteria object
+   * @param model         the model
+   * @return the user to the results page or the full list if the results are null.
+   */
+  @GetMapping("/notifications")
+  public String returnToNotifications(
+      @SessionAttribute(
+          value = NOTIFICATIONS_SEARCH_RESULTS, required = false) Notifications notifications,
+      @SessionAttribute(USER_DETAILS) UserDetail user,
+      @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
+      Model model
+  ) {
+    if (notifications == null) {
+      model.addAttribute(USER_DETAILS, user);
+      model.addAttribute(NOTIFICATION_SEARCH_CRITERIA, criteria);
+      return "redirect:/notifications/search?notification_type=all";
+    }
+    model.addAttribute(NOTIFICATIONS_SEARCH_RESULTS, notifications);
+    return "notifications/actions-and-notifications";
   }
 
   /**
@@ -113,12 +140,12 @@ public class ActionsAndNotificationsController {
   /**
    * Get the required notification from the SOA Gateway response object.
    *
-   * @param user             current user details.
-   * @param criteria         the search criteria object in the model.
-   * @param notifications    the notifications response from the prior call to SOA.
-   * @param notificationId   the ID of the notification to retrieve.
-   * @param model            the model.
-   * @return  the notification display page or an error if not found.
+   * @param user           current user details.
+   * @param criteria       the search criteria object in the model.
+   * @param notifications  the notifications response from the prior call to SOA.
+   * @param notificationId the ID of the notification to retrieve.
+   * @param model          the model.
+   * @return the notification display page or an error if not found.
    */
   @GetMapping("/notification/{notification_id}")
   public String getNotification(
