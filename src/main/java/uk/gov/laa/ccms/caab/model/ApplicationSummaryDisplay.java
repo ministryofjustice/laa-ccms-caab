@@ -11,8 +11,9 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ApplicationSummaryDisplay {
 
-  private String caseReferenceNumber;
   private String clientFullName;
+  private String clientReferenceNumber;
+  private String caseReferenceNumber;
   private String providerCaseReferenceNumber;
 
   @Builder.Default

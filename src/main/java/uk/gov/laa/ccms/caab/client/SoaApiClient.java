@@ -203,6 +203,29 @@ public class SoaApiClient {
   }
 
   /**
+   * Updates a client based on a given client details.
+   *
+   * @param clientDetails         The client's details.
+   * @param loginId               The login identifier for the user.
+   * @param userType              Type of the user (e.g., admin, user).
+   * @return A Mono wrapping the ClientCreated transaction id.
+   */
+  public Mono<ClientCreated> putClient(ClientDetailDetails clientDetails, String loginId,
+                                        String userType) {
+    return soaApiWebClient
+        .put()
+        .uri("/clients/{}", clientDetails.get)
+        .header("SoaGateway-User-Login-Id", loginId)
+        .header("SoaGateway-User-Role", userType)
+        .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
+        .bodyValue(clientDetails)
+        .retrieve()
+        .bodyToMono(ClientCreated.class)
+        .onErrorResume(e -> soaApiClientErrorHandler
+            .handleClientCreatedError(clientDetails.getName().getFullName(), e));
+  }
+
+  /**
    * Searches and retrieves case details based on provided search criteria.
    *
    * @param copyCaseSearchCriteria The search criteria to use when fetching cases.

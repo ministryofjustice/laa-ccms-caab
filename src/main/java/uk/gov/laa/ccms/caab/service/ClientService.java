@@ -6,7 +6,9 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.util.ReflectionUtils;
+import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
@@ -21,6 +23,8 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
 @Slf4j
 public class ClientService {
   private final SoaApiClient soaApiClient;
+
+  private final ClientDetailMapper clientDetailsMapper;
 
   /**
    * Searches and retrieves client details based on provided search criteria.
@@ -74,15 +78,33 @@ public class ClientService {
    * Creates a client based on a given client details.
    *
    * @param clientDetails         The client's details.
-   * @param loginId               The login identifier for the user.
-   * @param userType              Type of the user (e.g., admin, user).
+   * @param user                  The user.
    * @return A Mono wrapping the ClientCreated transaction id.
    */
-  public Mono<ClientCreated> postClient(
-      ClientDetailDetails clientDetails,
-      String loginId,
-      String userType) {
-    log.debug("SOA Client Details to post: {}", clientDetails);
-    return soaApiClient.postClient(clientDetails, loginId, userType);
+  public Mono<ClientCreated> createClient(
+      uk.gov.laa.ccms.caab.bean.ClientDetails clientDetails,
+      UserDetail user) {
+
+    ReflectionUtils.nullifyStrings(clientDetails);
+    ClientDetail clientDetail = clientDetailsMapper.toSoaClientDetail(clientDetails);
+
+    return soaApiClient.postClient(clientDetail.getDetails(), user.getLoginId(), user.getUserType());
+  }
+
+  /**
+   * Updates a client based on a given client details.
+   *
+   * @param clientDetails         The client's details.
+   * @param user                  The user.
+   * @return A Mono wrapping the ClientCreated transaction id.
+   */
+  public Mono<ClientCreated> updateClient(
+      uk.gov.laa.ccms.caab.bean.ClientDetails clientDetails,
+      UserDetail user) {
+
+    ReflectionUtils.nullifyStrings(clientDetails);
+    ClientDetail clientDetail = clientDetailsMapper.toSoaClientDetail(clientDetails);
+
+    return soaApiClient.postClient(clientDetail.getDetails(), user.getLoginId(), user.getUserType());
   }
 }

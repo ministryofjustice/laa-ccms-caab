@@ -12,4 +12,9 @@ public class SubmissionConstants {
    * submission used for create client.
    */
   public static final String SUBMISSION_CREATE_CLIENT = "client-create";
+
+  /**
+   * submission used for edit client.
+   */
+  public static final String SUBMISSION_CREATE_EDIT = "client-edit";
 }

@@ -221,6 +221,8 @@ public class ApplicationService {
               .clientFullName(
                   application.getClient().getFirstName(),
                   application.getClient().getSurname())
+              .clientReferenceNumber(
+                  application.getClient().getReference())
               .caseReferenceNumber(
                   application.getCaseReferenceNumber())
               .providerCaseReferenceNumber(

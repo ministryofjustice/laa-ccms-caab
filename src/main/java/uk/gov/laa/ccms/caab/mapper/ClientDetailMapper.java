@@ -132,4 +132,104 @@ public interface ClientDetailMapper {
     }
     return null;
   }
+
+  @Mapping(target = "title", source = "details.name.title")
+  @Mapping(target = "firstName", source = "details.name.firstName")
+  @Mapping(target = "middleNames", source = "details.name.middleName")
+  @Mapping(target = "surname", source = "details.name.surname")
+  @Mapping(target = "surnameAtBirth", source = "details.name.surnameAtBirth")
+  @Mapping(target = "dobDay", source = "details.personalInformation.dateOfBirth",
+      qualifiedByName = "mapDayFromDate")
+  @Mapping(target = "dobMonth", source = "details.personalInformation.dateOfBirth",
+      qualifiedByName = "mapMonthFromDate")
+  @Mapping(target = "dobYear", source = "details.personalInformation.dateOfBirth",
+      qualifiedByName = "mapYearFromDate")
+  @Mapping(target = "countryOfOrigin", source = "details.personalInformation.countryOfOrigin")
+  @Mapping(target = "nationalInsuranceNumber",
+      source = "details.personalInformation.nationalInsuranceNumber")
+  @Mapping(target = "homeOfficeNumber",
+      source = "details.personalInformation.homeOfficeNumber")
+  @Mapping(target = "gender",
+      source = "details.personalInformation.gender")
+  @Mapping(target = "maritalStatus",
+      source = "details.personalInformation.maritalStatus")
+  @Mapping(target = "vulnerableClient",
+      source = "details.personalInformation.vulnerableClient")
+  @Mapping(target = "highProfileClient",
+      source = "details.personalInformation.highProfileClient")
+  @Mapping(target = "vexatiousLitigant",
+      source = "details.personalInformation.vexatiousLitigant")
+  @Mapping(target = "mentalIncapacity",
+      source = "details.personalInformation.mentalCapacityInd")
+  @Mapping(target = "telephoneHome",
+      source = "details.contacts.telephoneHome")
+  @Mapping(target = "telephoneWork",
+      source = "details.contacts.telephoneWork")
+  @Mapping(target = "telephoneMobile",
+      source = "details.contacts.mobileNumber")
+  @Mapping(target = "emailAddress",
+      source = "details.contacts.emailAddress")
+  @Mapping(target = "passwordReminder",
+      source = "details.contacts.passwordReminder")
+  @Mapping(target = "correspondenceMethod",
+      source = "details.contacts.correspondenceMethod")
+  @Mapping(target = "correspondenceLanguage",
+      source = "details.contacts.correspondenceLanguage")
+  @Mapping(target = "noFixedAbode",
+      source = "details.noFixedAbode")
+  @Mapping(target = "country",
+      source = "details.address.country")
+  @Mapping(target = "ethnicOrigin",
+      source = "details.ethnicMonitoring")
+  @Mapping(target = "disability",
+      source = "details.disabilityMonitoring.disabilityType",
+      qualifiedByName = "mapListToString")
+  @Mapping(target = "specialConsiderations",
+      source = "details.specialConsiderations")
+  @Mapping(target = "houseNameNumber", source = "details.address.house")
+  @Mapping(target = "addressLine1", source = "details.address.addressLine1")
+  @Mapping(target = "addressLine2", source = "details.address.addressLine2")
+  @Mapping(target = "cityTown", source = "details.address.city")
+  @Mapping(target = "postcode", source = "details.address.postalCode")
+  @Mapping(target = "county", source = "details.address.county")
+  ClientDetails toClientDetails(ClientDetail soaClientDetail);
+
+  @Named("mapListToString")
+  default String map(List<String> values) {
+    if (values != null && !values.isEmpty()) {
+      return values.get(0);
+    }
+    return null;
+  }
+
+  @Named("mapDayFromDate")
+  default String mapDayFromDate(Date date) {
+    if (date != null) {
+      Calendar calendar = Calendar.getInstance();
+      calendar.setTime(date);
+      return Integer.toString(calendar.get(Calendar.DAY_OF_MONTH));
+    }
+    return null;
+  }
+
+  @Named("mapMonthFromDate")
+  default String mapMonthFromDate(Date date) {
+    if (date != null) {
+      Calendar calendar = Calendar.getInstance();
+      calendar.setTime(date);
+      // Add 1 since Calendar months are zero-based
+      return Integer.toString(calendar.get(Calendar.MONTH) + 1);
+    }
+    return null;
+  }
+
+  @Named("mapYearFromDate")
+  default String mapYearFromDate(Date date) {
+    if (date != null) {
+      Calendar calendar = Calendar.getInstance();
+      calendar.setTime(date);
+      return Integer.toString(calendar.get(Calendar.YEAR));
+    }
+    return null;
+  }
 }
