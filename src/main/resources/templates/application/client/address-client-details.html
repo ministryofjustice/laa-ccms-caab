@@ -151,18 +151,8 @@
                         </fieldset>
                     </div>
                     <div th:replace="~{partials/forms :: dropdown('country', 'Country', ${countries}, 'code', 'description', false)}"></div>
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('houseNameNumber')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="houseNameNumber">
-                            House name / number
-                        </label>
-                        <input th:errorclass="govuk-input--error"
-                               class="govuk-input govuk-input--width-20"
-                               id="houseNameNumber"
-                               name="houseNameNumber"
-                               type="text"
-                               data-module="govuk-input"
-                               th:field="*{houseNameNumber}">
-                    </div>
+                    <div th:replace="~{partials/forms :: textInput('houseNameNumber', 'House name / number', 'govuk-input--width-20')}"></div>
+
                     <div class="govuk-form-group" th:classappend="${#fields.hasErrors('postcode')} ? 'govuk-form-group--error' : ''">
                         <label class="govuk-label" for="postcode">
                             Postcode

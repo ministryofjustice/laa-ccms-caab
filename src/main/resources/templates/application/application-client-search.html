@@ -55,51 +55,9 @@
                                 </span>
                             </p>
                             <div class="govuk-date-input" id="dob">
-                                <div class="govuk-date-input__item">
-                                    <div class="govuk-form-group">
-                                        <label class="govuk-label govuk-date-input__label" for="dobDay">
-                                            Day
-                                        </label>
-                                        <input th:errorclass="govuk-input--error"
-                                               class="govuk-input govuk-date-input__input govuk-input--width-2"
-                                               id="dobDay"
-                                               name="dobDay"
-                                               type="text"
-                                               inputmode="numeric"
-                                               maxlength="2"
-                                               th:value="${clientSearchCriteria.dobDay}">
-                                    </div>
-                                </div>
-                                <div class="govuk-date-input__item">
-                                    <div class="govuk-form-group">
-                                        <label class="govuk-label govuk-date-input__label" for="dobMonth">
-                                            Month
-                                        </label>
-                                        <input th:errorclass="govuk-input--error"
-                                               class="govuk-input govuk-date-input__input govuk-input--width-2"
-                                               id="dobMonth"
-                                               name="dobMonth"
-                                               type="text"
-                                               inputmode="numeric"
-                                               maxlength="2"
-                                               th:value="${clientSearchCriteria.dobMonth}">
-                                    </div>
-                                </div>
-                                <div class="govuk-date-input__item">
-                                    <div class="govuk-form-group">
-                                        <label class="govuk-label govuk-date-input__label" for="dobYear">
-                                            Year
-                                        </label>
-                                        <input th:errorclass="govuk-input--error"
-                                               class="govuk-input govuk-date-input__input govuk-input--width-4"
-                                               id="dobYear"
-                                               name="dobYear"
-                                               type="text"
-                                               inputmode="numeric"
-                                               maxlength="4"
-                                               th:value="${clientSearchCriteria.dobYear}">
-                                    </div>
-                                </div>
+                                <div th:replace="partials/forms::numericInput('dobDay', 'Day', '2')"></div>
+                                <div th:replace="partials/forms::numericInput('dobMonth', 'Month', '2')"></div>
+                                <div th:replace="partials/forms::numericInput('dobYear', 'Year', '4')"></div>
                             </div>
                         </fieldset>
                     </div>

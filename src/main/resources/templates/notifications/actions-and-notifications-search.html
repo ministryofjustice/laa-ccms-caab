@@ -48,54 +48,9 @@
                 </span>
               </p>
               <div class="govuk-date-input" id="notificationFromDate">
-                <div class="govuk-date-input__item">
-                  <div class="govuk-form-group">
-                    <label class="govuk-label govuk-date-input__label"
-                           for="notificationFromDateDay">
-                      Day
-                    </label>
-                    <input th:errorclass="govuk-input--error"
-                           class="govuk-input govuk-date-input__input govuk-input--width-2"
-                           id="notificationFromDateDay"
-                           name="notificationFromDateDay"
-                           type="text"
-                           inputmode="numeric"
-                           maxlength="2"
-                           th:value="${notificationSearchCriteria.notificationFromDateDay}">
-                  </div>
-                </div>
-                <div class="govuk-date-input__item">
-                  <div class="govuk-form-group">
-                    <label class="govuk-label govuk-date-input__label"
-                           for="notificationFromDateMonth">
-                      Month
-                    </label>
-                    <input th:errorclass="govuk-input--error"
-                           class="govuk-input govuk-date-input__input govuk-input--width-2"
-                           id="notificationFromDateMonth"
-                           name="notificationFromDateMonth"
-                           type="text"
-                           inputmode="numeric"
-                           maxlength="2"
-                           th:value="${notificationSearchCriteria.notificationFromDateMonth}">
-                  </div>
-                </div>
-                <div class="govuk-date-input__item">
-                  <div class="govuk-form-group">
-                    <label class="govuk-label govuk-date-input__label"
-                           for="notificationFromDateYear">
-                      Year
-                    </label>
-                    <input th:errorclass="govuk-input--error"
-                           class="govuk-input govuk-date-input__input govuk-input--width-4"
-                           id="notificationFromDateYear"
-                           name="notificationFromDateYear"
-                           type="text"
-                           inputmode="numeric"
-                           maxlength="4"
-                           th:value="${notificationSearchCriteria.notificationFromDateYear}">
-                  </div>
-                </div>
+                <div th:replace="partials/forms::numericInput('notificationFromDateDay', 'Day', '2')"></div>
+                <div th:replace="partials/forms::numericInput('notificationFromDateMonth', 'Month', '2')"></div>
+                <div th:replace="partials/forms::numericInput('notificationFromDateYear', 'Year', '4')"></div>
               </div>
             </fieldset>
             <div class="govuk-form-group"
@@ -118,101 +73,17 @@
                     </span>
                 </p>
                 <div class="govuk-date-input" id="notificationToDate">
-                  <div class="govuk-date-input__item">
-                    <div class="govuk-form-group">
-                      <label class="govuk-label govuk-date-input__label"
-                             for="notificationToDateDay">
-                        Day
-                      </label>
-                      <input th:errorclass="govuk-input--error"
-                             class="govuk-input govuk-date-input__input govuk-input--width-2"
-                             id="notificationToDateDay"
-                             name="notificationToDateDay"
-                             type="text"
-                             inputmode="numeric"
-                             maxlength="2"
-                             th:value="${notificationSearchCriteria.notificationToDateDay}">
-                    </div>
-                  </div>
-                  <div class="govuk-date-input__item">
-                    <div class="govuk-form-group">
-                      <label class="govuk-label govuk-date-input__label"
-                             for="notificationToDateMonth">
-                        Month
-                      </label>
-                      <input th:errorclass="govuk-input--error"
-                             class="govuk-input govuk-date-input__input govuk-input--width-2"
-                             id="notificationToDateMonth"
-                             name="notificationToDateMonth"
-                             type="text"
-                             inputmode="numeric"
-                             maxlength="2"
-                             th:value="${notificationSearchCriteria.notificationToDateMonth}">
-                    </div>
-                  </div>
-                  <div class="govuk-date-input__item">
-                    <div class="govuk-form-group">
-                      <label class="govuk-label govuk-date-input__label"
-                             for="notificationToDateYear">
-                        Year
-                      </label>
-                      <input th:errorclass="govuk-input--error"
-                             class="govuk-input govuk-date-input__input govuk-input--width-4"
-                             id="notificationToDateYear"
-                             name="notificationToDateYear"
-                             type="text"
-                             inputmode="numeric"
-                             maxlength="4"
-                             th:value="${notificationSearchCriteria.notificationToDateYear}">
-                    </div>
-                  </div>
+                  <div th:replace="partials/forms::numericInput('notificationToDateDay', 'Day', '2')"></div>
+                  <div th:replace="partials/forms::numericInput('notificationToDateMonth', 'Month', '2')"></div>
+                  <div th:replace="partials/forms::numericInput('notificationToDateYear', 'Year', '4')"></div>
                 </div>
               </fieldset>
             </div>
-
-            <div class="govuk-form-group">
-              <label class="govuk-label" for="providerCaseReference">
-                Provider case reference
-              </label>
-              <span th:if="${#fields.hasErrors('providerCaseReference')}"
-                    th:errors="*{providerCaseReference}" class="govuk-error-message"></span>
-              <input class="govuk-input govuk-input--width-20"
-                     id="providerCaseReference"
-                     name="providerCaseReference"
-                     type="text"
-                     data-module="govuk-input"
-                     th:value="${notificationSearchCriteria.providerCaseReference}">
-            </div>
-            <div class="govuk-form-group">
-              <label class="govuk-label" for="caseReference">
-                LAA application / case reference
-              </label>
-              <span th:if="${#fields.hasErrors('caseReference')}" th:errors="*{caseReference}"
-                    class="govuk-error-message"></span>
-              <input th:errorclass="govuk-input--error"
-                     class="govuk-input govuk-input--width-20"
-                     id="caseReference"
-                     name="caseReference"
-                     type="text"
-                     data-module="govuk-input"
-                     th:value="${notificationSearchCriteria.caseReference}">
-            </div>
-            <div class="govuk-form-group">
-              <label class="govuk-label" for="clientSurname">
-                Client surname
-              </label>
-              <span th:if="${#fields.hasErrors('clientSurname')}" th:errors="*{clientSurname}"
-                    class="govuk-error-message"></span>
-              <input th:errorclass="govuk-input--error"
-                     class="govuk-input govuk-input--width-20"
-                     id="clientSurname"
-                     name="clientSurname"
-                     type="text"
-                     data-module="govuk-input"
-                     th:value="${notificationSearchCriteria.clientSurname}">
-            </div>
+            <div th:replace="~{partials/forms :: textInput('providerCaseReference', 'Provider case reference', 'govuk-input--width-20')}"></div>
+            <div th:replace="~{partials/forms :: textInput('caseReference', 'LAA application / case reference', 'govuk-input--width-20')}"></div>
+            <div th:replace="~{partials/forms :: textInput('clientSurname', 'Client surname', 'govuk-input--width-20')}"></div>
             <div th:replace="~{partials/forms :: dropdown('feeEarnerId', 'Fee earner', ${feeEarners}, 'id', 'name', false)}"></div>
-            <div th:replace="~{partials/forms :: dropdown('notificationTypeId', 'Action / Notification Type', ${notificationTypes}, 'code', 'description', false)}"></div>
+            <div th:replace="~{partials/forms :: dropdown('notificationType', 'Action / Notification Type', ${notificationTypes}, 'code', 'description', false)}"></div>
             </div>
             <div class="govuk-form-group">
               <fieldset class="govuk-fieldset">
