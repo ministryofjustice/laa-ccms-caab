@@ -155,7 +155,6 @@ public class ActionsAndNotificationsController {
       @PathVariable(value = "notification_id") String notificationId,
       Model model
   ) {
-
     Notification found = notifications.getContent()
         .stream()
         .filter(notification -> notification.getNotificationId().equals(notificationId))
@@ -164,7 +163,7 @@ public class ActionsAndNotificationsController {
             String.format("Notification with id %s not found", notificationId)));
     model.addAttribute("notification", found);
 
-    return "/notifications/notification";
+    return "notifications/notification";
   }
 
 
