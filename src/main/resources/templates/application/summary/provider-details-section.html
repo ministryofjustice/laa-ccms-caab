@@ -30,19 +30,7 @@
           </p>
           <div th:replace="~{partials/forms :: dropdown('feeEarnerId', 'Name of solicitor or Fellow of the Institute of Legal Executives instructed (optional)', ${feeEarners}, 'id', 'name', false)}"></div>
           <div th:replace="~{partials/forms :: dropdown('supervisorId', 'Supervisor (optional)', ${feeEarners}, 'id', 'name', false)}"></div>
-          <div class="govuk-form-group" th:classappend="${#fields.hasErrors('providerCaseReference')} ? 'govuk-form-group--error' : ''">
-            <label class="govuk-label" for="surname">
-              Provider case reference (optional)
-            </label>
-            <span th:if="${#fields.hasErrors('providerCaseReference')}" th:errors="*{providerCaseReference}" class="govuk-error-message"></span>
-            <input th:errorclass="govuk-input--error"
-                   class="govuk-input govuk-input--width-20"
-                   id="surname"
-                   name="surname"
-                   type="text"
-                   data-module="govuk-input"
-                   th:field="*{providerCaseReference}">
-          </div>
+          <div th:replace="~{partials/forms :: textInput('providerCaseReference', 'Provider case reference (optional)', 'govuk-input--width-20')}"></div>
           <div th:replace="~{partials/forms :: dropdown('contactNameId', 'Contact name', ${contactNames}, 'id', 'name', false)}"></div>
           <button class="govuk-button" data-module="govuk-button">
             Confirm

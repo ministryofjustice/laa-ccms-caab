@@ -23,22 +23,8 @@
             </p>
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('forename')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="forename">
-                           First name
-                        </label>
-                        <span th:if="${#fields.hasErrors('forename')}" th:errors="*{forename}" class="govuk-error-message"></span>
-                        <input class="govuk-input govuk-input--width-20" id="forename" name="forename" type="text"
-                               th:value="${clientSearchCriteria.forename}">
-                    </div>
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('surname')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="surname">
-                            Surname at birth
-                        </label>
-                        <span th:if="${#fields.hasErrors('surname')}" th:errors="*{surname}" class="govuk-error-message"></span>
-                        <input class="govuk-input govuk-input--width-20" id="surname" name="surname" type="text"
-                               th:value="${clientSearchCriteria.surname}">
-                    </div>
+                    <div th:replace="~{partials/forms :: textInput('forename', 'First name', 'govuk-input--width-20')}"></div>
+                    <div th:replace="~{partials/forms :: textInput('surname', 'Surname at birth', 'govuk-input--width-20')}"></div>
                     <div class="govuk-form-group" th:classappend="${#fields.hasErrors('dobDay') || #fields.hasErrors('dobMonth') || #fields.hasErrors('dobYear')} ? 'govuk-form-group--error' : ''">
                         <fieldset class="govuk-fieldset" role="group" aria-describedby="dob-hint dob-error">
                             <legend class="govuk-fieldset__legend">
@@ -63,14 +49,7 @@
                     </div>
                     <div th:replace="~{partials/forms :: dropdown('gender', 'Gender (optional)', ${genders}, 'code', 'description', false)}"></div>
                     <div th:replace="~{partials/forms :: dropdown('uniqueIdentifierType', 'Unique identifier type (optional)', ${uniqueIdentifierTypes}, 'code', 'description', false)}"></div>
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('uniqueIdentifierValue')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="uniqueIdentifierValue">
-                            Unique identifier value (optional)
-                        </label>
-                        <span th:if="${#fields.hasErrors('uniqueIdentifierValue')}" th:errors="*{uniqueIdentifierValue}" class="govuk-error-message"></span>
-                        <input class="govuk-input govuk-input--width-20" id="uniqueIdentifierValue" name="uniqueIdentifierValue" type="text"
-                               th:value="${clientSearchCriteria.uniqueIdentifierValue}">
-                    </div>
+                    <div th:replace="~{partials/forms :: textInput('uniqueIdentifierValue', 'Unique identifier value (optional)', 'govuk-input--width-20')}"></div>
                     <div class="govuk-form-group">
                         <details class="govuk-details" data-module="govuk-details">
                             <summary class="govuk-details__summary">
