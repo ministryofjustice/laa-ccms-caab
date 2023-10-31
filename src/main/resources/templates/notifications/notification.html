@@ -1,19 +1,128 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <title>Placeholder for notification display page</title>
+  <title>LAA CCMS - Your actions / notifications</title>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a href="/" class="govuk-back-link">Return to home</a>
+    <a href="/notifications/search?notification_type=all"
+     class="govuk-back-link">Return to notification search results</a>
   </div>
   <div id="main-content">
     <h1 class="govuk-heading-l">
-      Placeholder for notification display page
+      <th:block th:text="${notification.subject}"/>
     </h1>
-    <th:block th:text="${notification.subject}"/>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <table class="govuk-table">
+          <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
+                style="margin-top: 0; white-space: nowrap">Date assigned</th>
+              <td class="govuk-table__cell govuk-!-font-size-15"
+                  th:text="${#dates.format(notification.assignDate,'dd-MM-yyyy')}"></td>
+            <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
+                style="margin-top: 0; white-space: nowrap">Due date</th>
+              <td class="govuk-table__cell govuk-!-font-size-15"
+                  th:text="${#dates.format(notification.dueDate,'dd-MM-yyyy')}"></td>
+            <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
+                style="margin-top: 0; white-space: nowrap">Status</th>
+              <td class="govuk-table__cell govuk-!-font-size-15"
+                  th:text="${notification.status}"></td>
+            <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
+                style="margin-top: 0; white-space: nowrap">Assigned to</th>
+              <td class="govuk-table__cell govuk-!-font-size-15"
+                  th:text="${notification.user.userLoginId}"></td>
+          </tr>
+          </thead>
+        </table>
+      </div>
+    </div>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <table class="govuk-table">
+          <tr class="govuk-table__row">
+            <td class=govuk-table__cell colspan="8"
+                th:if="${#lists.isEmpty(notification.notes)}">
+              <br/>
+            </td>
+            <td class="govuk-table__cell" colspan="4">
+              <th:block th:each="note :  ${notification.notes}">
+                <p th:utext="${note.message}"></p>
+              </th:block>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h1 class="govuk-heading-m">
+          Case Details
+        </h1>
+        <table class="govuk-table">
+          <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+              <th scope="col" class="govuk-table__header">LAA Ref</th>
+              <th scope="col" class="govuk-table__header">Provider ref</th>
+              <th scope="col" class="govuk-table__header">Client</th>
+              <th scope="col" class="govuk-table__header">Fee earner</th>
+            </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+            <tr class="govuk-table__row">
+              <td class="govuk-table__cell"
+                  th:text="${#strings.isEmpty(notification.caseReferenceNumber) ? 'None' :notification.caseReferenceNumber}"></td>
+              <td class="govuk-table__cell"
+                  th:text="${notification.providerCaseReferenceNumber}"></td>
+              <td class="govuk-table__cell" th:text="${notification.clientName}"></td>
+              <td class="govuk-table__cell" th:text="${notification.feeEarner}"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h1 class="govuk-heading-m">
+          Attachments
+        </h1>
+        <table class="govuk-table">
+          <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header">Description</th>
+            <th scope="col" class="govuk-table__header">Action</th>
+          </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+          <tr class="govuk-table__row" th:each="attachment : ${notification.attachedDocuments}">
+            <td class="govuk-table__cell" th:text="${attachment.text}"></td>
+            <td class="govuk-table__cell">
+              <a href="/#" class="govuk-link">View</a>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-one-third">
+        <p class="govuk-body govuk-!-text-align-left">
+          <a class="govuk-button govuk-button--secondary"
+             data-module="govuk-button"
+             href="#TODO">
+            Provide documents or evidence
+          </a>
+        </p>
+        <p class="govuk-body govuk-!-font-size-15-!-text-align-left">
+          <a class="govuk-back-link"
+             href="/notifications/search?notification_type=all">
+            Back
+          </a>
+        </p>
+      </div>
+    </div>
   </div>
 </div>
 </body>

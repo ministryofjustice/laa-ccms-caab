@@ -26,12 +26,27 @@
                     You currently have:
                 </div>
                 <ul class="govuk-list">
-                    <li>
-                        <a th:text="${actionsMsg}" href="/notifications/search?notification_type=A"></a>
-                    </li>
-                    <li>
-                        <a th:text="${notificationsMsg}" href="/notifications/search?notification_type=N"></a>
-                    </li>
+                   <div th:if="${#strings.equals(actionsMsg, 'No Outstanding Actions')}">
+                        <li>
+                            <div th:text="${actionsMsg}"> </div>
+                        </li>
+                    </div>
+                    <div th:unless="${#strings.equals(actionsMsg, 'No Outstanding Actions')}">
+                        <li>
+                            <a th:text="${actionsMsg}"
+                               href="/notifications/search?notification_type=A"> </a>
+                        </li>
+                    </div>
+                    <div th:if="${#strings.equals(actionsMsg, 'View Notifications (none outstanding)')}">
+                        <li>
+                            <div th:text="${notificationsMsg}"></div>
+                        </li>
+                    </div>
+                    <div th:unless="${#strings.equals(actionsMsg, 'View Notifications (none outstanding)')}">
+                        <li>
+                            <a th:text="${notificationsMsg}" href="/notifications/search?notification_type=N"></a>
+                        </li>
+                    </div>
                 </ul>
             </div>
 
