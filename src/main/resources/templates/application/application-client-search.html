@@ -103,33 +103,8 @@
                             </div>
                         </fieldset>
                     </div>
-                    <div class="govuk-form-group">
-                        <fieldset class="govuk-fieldset">
-                            <label class="govuk-label" for="gender">
-                                Gender (optional)
-                            </label>
-                            <select class="govuk-select"
-                                    data-module="govuk-select"
-                                    th:field="*{gender}"
-                                    th:errorclass="govuk-select--error"
-                                    id="gender"
-                                    name="gender" >
-                                <option value="">Please Select</option>
-                                <option th:each="gender : ${genders}" th:value="${gender.code}" th:text="${gender.description}"></option>
-                            </select>
-                        </fieldset>
-                    </div>
-                    <div class="govuk-form-group">
-                        <fieldset class="govuk-fieldset">
-                            <label class="govuk-label" for="uniqueIdentifierType">
-                                Unique identifier type (optional)
-                            </label>
-                            <select class="govuk-select" data-module="govuk-select" th:field="*{uniqueIdentifierType}" th:errorclass="govuk-select--error" id="uniqueIdentifierType" name="uniqueIdentifierType" >
-                                <option value="">Please Select</option>
-                                <option th:each="type : ${uniqueIdentifierTypes}" th:value="${type.code}" th:text="${type.description}"></option>
-                            </select>
-                        </fieldset>
-                    </div>
+                    <div th:replace="~{partials/forms :: dropdown('gender', 'Gender (optional)', ${genders}, 'code', 'description', false)}"></div>
+                    <div th:replace="~{partials/forms :: dropdown('uniqueIdentifierType', 'Unique identifier type (optional)', ${uniqueIdentifierTypes}, 'code', 'description', false)}"></div>
                     <div class="govuk-form-group" th:classappend="${#fields.hasErrors('uniqueIdentifierValue')} ? 'govuk-form-group--error' : ''">
                         <label class="govuk-label" for="uniqueIdentifierValue">
                             Unique identifier value (optional)

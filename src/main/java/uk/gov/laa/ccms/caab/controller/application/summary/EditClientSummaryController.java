@@ -59,14 +59,13 @@ public class EditClientSummaryController extends AbstractClientSummaryController
         clientDetailsMapper);
   }
 
-
   /**
    * Handles the GET request for the client summary page.
    *
    * @return The view name for the client summary details
    */
   @GetMapping("/application/summary/client/details/summary")
-  public String clientDetailsSummary(
+  public String getClientDetailsSummary(
       @SessionAttribute(USER_DETAILS) UserDetail user,
       @SessionAttribute(ACTIVE_CASE) ActiveCase activeCase,
       Model model,
@@ -97,12 +96,12 @@ public class EditClientSummaryController extends AbstractClientSummaryController
   }
 
   /**
-   * Handles the POST request for the client summary page.
+   * Handles the POST request for the edit client summary page.
    *
-   * @return The view name for the client summary details
+   * @return The view name for the edit client summary details
    */
-  @PostMapping("/application/client/details/summary")
-  public String clientDetailsSummary(
+  @PostMapping("/application/summary/client/details/summary")
+  public String postClientDetailsSummary(
       @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       BindingResult bindingResult,

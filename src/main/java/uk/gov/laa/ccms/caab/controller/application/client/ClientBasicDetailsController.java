@@ -54,7 +54,6 @@ public class ClientBasicDetailsController {
           @SessionAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
           @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
           Model model) {
-    log.info("GET /application/client/details/basic");
 
     populateDropdowns(model);
     populateFields(clientSearchCriteria, clientDetails, model);

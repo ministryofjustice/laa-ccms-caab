@@ -25,19 +25,7 @@
       </div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
-          <div class="govuk-form-group">
-            <fieldset class="govuk-fieldset">
-              <label class="govuk-label" for="assignedToUserId">
-                Assigned to
-              </label>
-              <select class="govuk-select" data-module="govuk-select" id="assignedToUserId"
-                      name="assignedToUserId">
-                <option value="">Please Select</option>
-                <option th:each="baseUser : ${users}" th:value="${baseUser.loginId}"
-                        th:text="${baseUser.loginId}"></option>
-              </select>
-            </fieldset>
-          </div>
+          <div th:replace="~{partials/forms :: dropdown('assignedToUserId', 'Assigned to', ${users}, 'loginId', 'loginId', false)}"></div>
           <div class="govuk-form-group"
                th:classappend="${#fields.hasErrors('notificationFromDateDay') || #fields.hasErrors('notificationFromDateMonth') || #fields.hasErrors('notificationFromDateYear')}  ? 'govuk-form-group--error' : ''">
             <fieldset class="govuk-fieldset" role="group"
@@ -223,32 +211,8 @@
                      data-module="govuk-input"
                      th:value="${notificationSearchCriteria.clientSurname}">
             </div>
-            <div class="govuk-form-group">
-              <fieldset class="govuk-fieldset">
-                <label class="govuk-label" for="feeEarnerId">
-                  Fee earner
-                </label>
-                <select class="govuk-select" data-module="govuk-select" id="feeEarnerId"
-                        name="feeEarnerId">
-                  <option value="">Please select</option>
-                  <option th:each="feeEarner : ${feeEarners}" th:value="${feeEarner.id}"
-                          th:text="${feeEarner.name}"></option>
-                </select>
-              </fieldset>
-            </div>
-            <div class="govuk-form-group">
-              <fieldset class="govuk-fieldset">
-                <label class="govuk-label" for="notificationTypeId">
-                  Action / Notification Type
-                </label>
-                <select class="govuk-select" data-module="govuk-select" id="notificationTypeId"
-                        name="notificationTypeId">
-                  <option value="">Please Select</option>
-                  <option th:each="notificationType : ${notificationTypes}"
-                          th:value="${notificationType.code}"
-                          th:text="${notificationType.description}"></option>
-                </select>
-              </fieldset>
+            <div th:replace="~{partials/forms :: dropdown('feeEarnerId', 'Fee earner', ${feeEarners}, 'id', 'name', false)}"></div>
+            <div th:replace="~{partials/forms :: dropdown('notificationTypeId', 'Action / Notification Type', ${notificationTypes}, 'code', 'description', false)}"></div>
             </div>
             <div class="govuk-form-group">
               <fieldset class="govuk-fieldset">

@@ -180,40 +180,12 @@
             </div>
             <div class="govuk-grid-row" th:unless="${clientDetails.vulnerableClient}">
                 <div class="govuk-grid-column-two-thirds">
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('correspondenceMethod')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="correspondenceMethod">
-                            Correspondence method
-                        </label>
-                        <span th:if="${#fields.hasErrors('correspondenceMethod')}" th:errors="*{correspondenceMethod}" class="govuk-error-message"></span>
-                        <select class="govuk-select"
-                                data-module="govuk-select"
-                                th:field="*{correspondenceMethod}"
-                                th:errorclass="govuk-select--error"
-                                id="correspondenceMethod"
-                                name="correspondenceMethod">
-                            <option value="">Please Select</option>
-                            <option th:each="method : ${correspondenceMethods}" th:value="${method.code}" th:text="${method.description}"></option>
-                        </select>
-                    </div>
+                    <div th:replace="~{partials/forms :: dropdown('correspondenceMethod', 'Correspondence method', ${correspondenceMethods}, 'code', 'description', false)}"></div>
                 </div>
             </div>
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('correspondenceLanguage')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="correspondenceLanguage">
-                            Correspondence language (optional)
-                        </label>
-                        <span th:if="${#fields.hasErrors('correspondenceLanguage')}" th:errors="*{correspondenceLanguage}" class="govuk-error-message"></span>
-                        <select class="govuk-select"
-                                data-module="govuk-select"
-                                th:field="*{correspondenceLanguage}"
-                                th:errorclass="govuk-select--error"
-                                id="correspondenceLanguage"
-                                name="correspondenceLanguage">
-                            <option value="">Please Select</option>
-                            <option th:each="language : ${correspondenceLanguages}" th:value="${language.code}" th:text="${language.description}"></option>
-                        </select>
-                    </div>
+                    <div th:replace="~{partials/forms :: dropdown('correspondenceLanguage', 'Correspondence language (optional)', ${correspondenceLanguages}, 'code', 'description', false)}"></div>
                     <div class="govuk-button-group">
                         <button type="submit" class="govuk-button" data-module="govuk-button">
                             Next

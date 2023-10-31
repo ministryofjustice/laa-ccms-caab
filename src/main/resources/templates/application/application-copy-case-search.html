@@ -58,30 +58,8 @@
                                data-module="govuk-input"
                                th:field="*{providerCaseReference}">
                     </div>
-                    <div class="govuk-form-group">
-                        <fieldset class="govuk-fieldset">
-                            <label class="govuk-label" for="feeEarnerId">
-                                Fee earner
-                            </label>
-                            <span th:if="${#fields.hasErrors('feeEarnerId')}" th:errors="*{feeEarnerId}" class="govuk-error-message"></span>
-                            <select class="govuk-select" data-module="govuk-select" th:field="*{feeEarnerId}" th:errorclass="govuk-select--error" id="feeEarnerId" name="feeEarnerId" >
-                                <option value="">Please select</option>
-                                <option th:each="feeEarner : ${feeEarners}" th:value="${feeEarner.id}" th:text="${feeEarner.name}"></option>
-                            </select>
-                        </fieldset>
-                    </div>
-                    <div class="govuk-form-group">
-                        <fieldset class="govuk-fieldset">
-                            <label class="govuk-label" for="officeId">
-                                Office
-                            </label>
-                            <span th:if="${#fields.hasErrors('officeId')}" th:errors="*{officeId}" class="govuk-error-message"></span>
-                            <select class="govuk-select" data-module="govuk-select" th:field="*{officeId}" th:errorclass="govuk-select--error" id="officeId" name="officeId" >
-                                <option value="">Please select</option>
-                                <option th:each="office : ${offices}" th:value="${office.id}" th:text="${office.name}"></option>
-                            </select>
-                        </fieldset>
-                    </div>
+                    <div th:replace="~{partials/forms :: dropdown('feeEarnerId', 'Fee earner', ${feeEarners}, 'id', 'name', false)}"></div>
+                    <div th:replace="~{partials/forms :: dropdown('officeId', 'Office', ${offices}, 'id', 'name', false)}"></div>
                     <button class="govuk-button" data-module="govuk-button">
                         Continue
                     </button>

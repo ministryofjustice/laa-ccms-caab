@@ -150,24 +150,7 @@
                             </div>
                         </fieldset>
                     </div>
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('country')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="country">
-                            Country
-                        </label>
-                        <span th:if="${#fields.hasErrors('country')}" th:errors="*{country}" class="govuk-error-message"></span>
-                        <select class="govuk-select"
-                                data-module="govuk-select"
-                                th:field="*{country}"
-                                th:errorclass="govuk-select--error"
-                                id="country"
-                                name="country">
-                            <option value="">Please Select</option>
-                            <option th:each="country : ${countries}"
-                                    th:value="${country.code}"
-                                    th:text="${country.description}">
-                            </option>
-                        </select>
-                    </div>
+                    <div th:replace="~{partials/forms :: dropdown('country', 'Country', ${countries}, 'code', 'description', false)}"></div>
                     <div class="govuk-form-group" th:classappend="${#fields.hasErrors('houseNameNumber')} ? 'govuk-form-group--error' : ''">
                         <label class="govuk-label" for="houseNameNumber">
                             House name / number

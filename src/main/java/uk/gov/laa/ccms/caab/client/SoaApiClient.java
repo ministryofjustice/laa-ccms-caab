@@ -214,7 +214,7 @@ public class SoaApiClient {
                                         String userType) {
     return soaApiWebClient
         .put()
-        .uri("/clients/{}", clientDetails.get)
+        .uri("/clients")
         .header("SoaGateway-User-Login-Id", loginId)
         .header("SoaGateway-User-Role", userType)
         .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON

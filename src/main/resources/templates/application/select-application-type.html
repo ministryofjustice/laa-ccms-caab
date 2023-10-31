@@ -20,20 +20,7 @@
             </div>
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('applicationTypeCategory')} ? 'govuk-form-group--error' : ''">
-                        <fieldset class="govuk-fieldset">
-                            <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
-                                <h2 class="govuk-fieldset__heading">
-                                    What is your application type?
-                                </h2>
-                            </legend>
-                            <span th:if="${#fields.hasErrors('applicationTypeCategory')}" th:errors="*{applicationTypeCategory}" class="govuk-error-message"></span>
-                            <select class="govuk-select" data-module="govuk-select" th:field="*{applicationTypeCategory}" th:errorclass="govuk-select--error" id="applicationTypeCategory" name="applicationTypeCategory" >
-                                <option value="">Please Select</option>
-                                <option th:each="type : ${applicationTypes}" th:value="${type.code}" th:text="${type.description}"></option>
-                            </select>
-                        </fieldset>
-                    </div>
+                    <div th:replace="~{partials/forms :: dropdown('applicationTypeCategory', 'What is your application type?', ${applicationTypes}, 'code', 'description', true)}"></div>
                     <button class="govuk-button" data-module="govuk-button">
                         Continue
                     </button>
