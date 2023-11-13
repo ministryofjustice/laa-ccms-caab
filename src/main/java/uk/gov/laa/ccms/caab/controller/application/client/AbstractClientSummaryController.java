@@ -7,7 +7,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.Errors;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
@@ -21,6 +20,9 @@ import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
+/**
+ * Abstract controller for handling Client Summary Information.
+ */
 @RequiredArgsConstructor
 public abstract class AbstractClientSummaryController {
 
@@ -38,7 +40,7 @@ public abstract class AbstractClientSummaryController {
 
   protected final ClientDetailMapper clientDetailsMapper;
 
-  protected void validateClientDetails(ClientDetails clientDetails, BindingResult bindingResult){
+  protected void validateClientDetails(ClientDetails clientDetails, BindingResult bindingResult) {
     basicValidator.validate(clientDetails, bindingResult);
     contactValidator.validate(clientDetails, bindingResult);
     addressValidator.validate(clientDetails, bindingResult);

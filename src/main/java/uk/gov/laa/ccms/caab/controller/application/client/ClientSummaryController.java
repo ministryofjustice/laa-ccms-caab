@@ -39,6 +39,9 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 })
 public class ClientSummaryController extends AbstractClientSummaryController {
 
+  /**
+   * Default constructor method implementing the abstract controller's constructor.
+   */
   public ClientSummaryController(
       CommonLookupService commonLookupService,
       ClientService clientService,

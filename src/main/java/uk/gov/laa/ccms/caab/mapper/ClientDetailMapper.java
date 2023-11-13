@@ -84,7 +84,7 @@ public interface ClientDetailMapper {
    * @return Translated singleton list.
    */
   @Named("mapStringToList")
-  default List<String> map(String value) {
+  default List<String> mapStringToList(String value) {
     if (value != null) {
       return Collections.singletonList(value);
     }
@@ -194,14 +194,26 @@ public interface ClientDetailMapper {
   @Mapping(target = "county", source = "details.address.county")
   ClientDetails toClientDetails(ClientDetail soaClientDetail);
 
+  /**
+   * Translates a list to a sting, using the first element.
+   *
+   * @param values The list of strings to convert
+   * @return Translated String value.
+   */
   @Named("mapListToString")
-  default String map(List<String> values) {
+  default String mapListToString(List<String> values) {
     if (values != null && !values.isEmpty()) {
       return values.get(0);
     }
     return null;
   }
 
+  /**
+   * Translates a Date and extracts the day.
+   *
+   * @param date The date to convert
+   * @return Translated String value.
+   */
   @Named("mapDayFromDate")
   default String mapDayFromDate(Date date) {
     if (date != null) {
@@ -212,6 +224,12 @@ public interface ClientDetailMapper {
     return null;
   }
 
+  /**
+   * Translates a Date and extracts the month.
+   *
+   * @param date The date to convert
+   * @return Translated String value.
+   */
   @Named("mapMonthFromDate")
   default String mapMonthFromDate(Date date) {
     if (date != null) {
@@ -223,6 +241,12 @@ public interface ClientDetailMapper {
     return null;
   }
 
+  /**
+   * Translates a Date and extracts the year.
+   *
+   * @param date The date to convert
+   * @return Translated String value.
+   */
   @Named("mapYearFromDate")
   default String mapYearFromDate(Date date) {
     if (date != null) {

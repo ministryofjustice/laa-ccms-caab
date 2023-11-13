@@ -175,10 +175,7 @@ public class ClientSummaryControllerTest {
   void testClientDetailsSummary_Post() throws Exception {
     ClientDetails clientDetails = new ClientDetails();
 
-    when(clientDetailsMapper.toSoaClientDetail(clientDetails)).thenReturn(
-        new ClientDetail());
-
-    when(clientService.postClient(any(), any(), any())).thenReturn(
+    when(clientService.createClient(any(), any())).thenReturn(
         Mono.just(new ClientCreated()));
 
     mockMvc.perform(post("/application/client/details/summary")
@@ -192,8 +189,7 @@ public class ClientSummaryControllerTest {
     verify(addressValidator).validate(any(), any());
     verify(opportunitiesValidator).validate(any(), any());
 
-    verify(clientDetailsMapper).toSoaClientDetail(clientDetails);
-    verify(clientService).postClient(any(), any(), any());
+    verify(clientService).createClient(any(), any());
   }
 
   @Test

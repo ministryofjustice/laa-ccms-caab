@@ -88,7 +88,10 @@ public class ClientService {
     ReflectionUtils.nullifyStrings(clientDetails);
     ClientDetail clientDetail = clientDetailsMapper.toSoaClientDetail(clientDetails);
 
-    return soaApiClient.postClient(clientDetail.getDetails(), user.getLoginId(), user.getUserType());
+    return soaApiClient.postClient(
+        clientDetail.getDetails(),
+        user.getLoginId(),
+        user.getUserType());
   }
 
   /**
@@ -105,6 +108,9 @@ public class ClientService {
     ReflectionUtils.nullifyStrings(clientDetails);
     ClientDetail clientDetail = clientDetailsMapper.toSoaClientDetail(clientDetails);
 
-    return soaApiClient.postClient(clientDetail.getDetails(), user.getLoginId(), user.getUserType());
+    return soaApiClient.postClient(
+        clientDetail.getDetails(),
+        user.getLoginId(),
+        user.getUserType());
   }
 }

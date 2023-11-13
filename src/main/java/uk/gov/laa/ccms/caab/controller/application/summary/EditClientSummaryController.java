@@ -42,6 +42,9 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 })
 public class EditClientSummaryController extends AbstractClientSummaryController {
 
+  /**
+   * Default constructor method implementing the abstract controller's constructor.
+   */
   public EditClientSummaryController(
       CommonLookupService commonLookupService,
       ClientService clientService,
@@ -109,7 +112,7 @@ public class EditClientSummaryController extends AbstractClientSummaryController
 
     validateClientDetails(clientDetails, bindingResult);
 
-    //TODO AMEND TO UPDATE CLIENT
+    //TODO AMEND TO UPDATE CLIENT - Not Completed for this story
     ClientCreated response =
         clientService.createClient(
             clientDetails,

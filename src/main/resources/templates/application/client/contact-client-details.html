@@ -133,17 +133,17 @@
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
                     <div th:replace="~{partials/forms :: dropdown('correspondenceLanguage', 'Correspondence language (optional)', ${correspondenceLanguages}, 'code', 'description', false)}"></div>
-                    <div class="govuk-button-group">
-                        <button type="submit" class="govuk-button" data-module="govuk-button">
-                            Next
-                        </button>
-                        <a class="govuk-button govuk-button--secondary"
-                           data-module="govuk-button"
-                           href="/application/client/details/basic">
-                            Back
-                        </a>
-                    </div>
                 </div>
+            </div>
+            <div class="govuk-button-group">
+                <button type="submit" class="govuk-button" data-module="govuk-button">
+                    Next
+                </button>
+                <a class="govuk-button govuk-button--secondary"
+                   data-module="govuk-button"
+                   href="/application/client/details/basic">
+                    Back
+                </a>
             </div>
         </form>
     </div>
