@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.application.summary;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -47,11 +48,13 @@ public class ApplicationSummaryController {
     ActiveCase activeCase = ActiveCase.builder()
         .caseReferenceNumber(summary.getCaseReferenceNumber())
         .client(summary.getClientFullName())
+        .clientReferenceNumber(summary.getClientReferenceNumber())
         .providerCaseReferenceNumber(summary.getProviderCaseReferenceNumber())
         .build();
 
     model.addAttribute(ACTIVE_CASE, activeCase);
     session.setAttribute(ACTIVE_CASE, activeCase);
+    session.removeAttribute(CLIENT_DETAILS);
 
     return "application/summary/summary-task-page";
   }

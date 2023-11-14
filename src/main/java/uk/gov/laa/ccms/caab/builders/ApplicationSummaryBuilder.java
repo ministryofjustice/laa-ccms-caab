@@ -66,6 +66,17 @@ public class ApplicationSummaryBuilder {
   }
 
   /**
+   * Builder method for clients reference number.
+   *
+   * @param referenceNumber the application's clients reference number
+   * @return the builder with amended clientFullName details.
+   */
+  public ApplicationSummaryBuilder clientReferenceNumber(final String referenceNumber) {
+    applicationSummary.setClientReferenceNumber(referenceNumber);
+    return this;
+  }
+
+  /**
    * Builder method for case reference number.
    *
    * @param caseReferenceNumber the applications case reference number.

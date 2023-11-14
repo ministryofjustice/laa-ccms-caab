@@ -1,9 +1,10 @@
-package uk.gov.laa.ccms.caab.controller.application.client;
+package uk.gov.laa.ccms.caab.controller.application.summary;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
-import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_CLIENT;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_EDIT;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
@@ -15,11 +16,13 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ClientDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
+import uk.gov.laa.ccms.caab.controller.application.client.AbstractClientSummaryController;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
@@ -30,19 +33,19 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 /**
- * Controller for handling client summary details during the new application process.
+ * Controller for handling edits to client summary details during the application summary process.
  */
 @Controller
 @Slf4j
 @SessionAttributes({
     CLIENT_DETAILS
 })
-public class ClientSummaryController extends AbstractClientSummaryController {
+public class EditClientSummaryController extends AbstractClientSummaryController {
 
   /**
    * Default constructor method implementing the abstract controller's constructor.
    */
-  public ClientSummaryController(
+  public EditClientSummaryController(
       CommonLookupService commonLookupService,
       ClientService clientService,
       ClientBasicDetailsValidator basicValidator,
@@ -64,23 +67,44 @@ public class ClientSummaryController extends AbstractClientSummaryController {
    *
    * @return The view name for the client summary details
    */
-  @GetMapping("/application/client/details/summary")
-  public String clientDetailsSummary(
-      @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
-      Model model) {
+  @GetMapping("/application/summary/client/details/summary")
+  public String getClientDetailsSummary(
+      @SessionAttribute(USER_DETAILS) UserDetail user,
+      @SessionAttribute(ACTIVE_CASE) ActiveCase activeCase,
+      Model model,
+      HttpSession session) {
+
+    ClientDetails clientDetails;
+
+    if (session.getAttribute(CLIENT_DETAILS) != null) {
+      clientDetails = (ClientDetails) session.getAttribute(CLIENT_DETAILS);
+    } else {
+      //if session contains clientDetails
+      ClientDetail clientInformation = clientService.getClient(
+          activeCase.getClientReferenceNumber(),
+          user.getLoginId(),
+          user.getUserType()).block();
+
+      //map data to the view
+      clientDetails = clientDetailsMapper.toClientDetails(clientInformation);
+      session.setAttribute(CLIENT_DETAILS, clientDetails);
+    }
 
     populateSummaryListLookups(clientDetails, model);
 
-    return "application/client/client-summary-details";
+    model.addAttribute(activeCase);
+    model.addAttribute(CLIENT_DETAILS, clientDetails);
+
+    return "application/summary/client-summary-details";
   }
 
   /**
-   * Handles the POST request for the client summary page.
+   * Handles the POST request for the edit client summary page.
    *
-   * @return The view name for the client summary details
+   * @return The view name for the edit client summary details
    */
-  @PostMapping("/application/client/details/summary")
-  public String clientDetailsSummary(
+  @PostMapping("/application/summary/client/details/summary")
+  public String postClientDetailsSummary(
       @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       BindingResult bindingResult,
@@ -88,6 +112,7 @@ public class ClientSummaryController extends AbstractClientSummaryController {
 
     validateClientDetails(clientDetails, bindingResult);
 
+    //TODO AMEND TO UPDATE CLIENT - Not Completed for this story
     ClientCreated response =
         clientService.createClient(
             clientDetails,
@@ -95,6 +120,7 @@ public class ClientSummaryController extends AbstractClientSummaryController {
 
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
 
-    return String.format("redirect:/submissions/%s", SUBMISSION_CREATE_CLIENT);
+    return String.format("redirect:/submissions/%s", SUBMISSION_CREATE_EDIT);
   }
+
 }

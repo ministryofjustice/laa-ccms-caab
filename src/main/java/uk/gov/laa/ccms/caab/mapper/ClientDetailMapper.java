@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.mapper;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -84,7 +86,7 @@ public interface ClientDetailMapper {
    * @return Translated singleton list.
    */
   @Named("mapStringToList")
-  default List<String> map(String value) {
+  default List<String> mapStringToList(String value) {
     if (value != null) {
       return Collections.singletonList(value);
     }
@@ -120,15 +122,131 @@ public interface ClientDetailMapper {
   default Date mapDateOfBirth(ClientDetails clientFormData) {
     if (clientFormData != null) {
       int day = Integer.parseInt(clientFormData.getDobDay());
-
-      // Subtract 1 since Calendar months are zero-based
-      int month = Integer.parseInt(clientFormData.getDobMonth()) - 1;
+      int month = Integer.parseInt(clientFormData.getDobMonth());
       int year = Integer.parseInt(clientFormData.getDobYear());
 
-      Calendar calendar = Calendar.getInstance();
-      calendar.set(year, month, day);
+      LocalDate localDate = LocalDate.of(year, month, day);
+      return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
+    return null;
+  }
 
-      return calendar.getTime();
+  @Mapping(target = "title", source = "details.name.title")
+  @Mapping(target = "firstName", source = "details.name.firstName")
+  @Mapping(target = "middleNames", source = "details.name.middleName")
+  @Mapping(target = "surname", source = "details.name.surname")
+  @Mapping(target = "surnameAtBirth", source = "details.name.surnameAtBirth")
+  @Mapping(target = "dobDay", source = "details.personalInformation.dateOfBirth",
+      qualifiedByName = "mapDayFromDate")
+  @Mapping(target = "dobMonth", source = "details.personalInformation.dateOfBirth",
+      qualifiedByName = "mapMonthFromDate")
+  @Mapping(target = "dobYear", source = "details.personalInformation.dateOfBirth",
+      qualifiedByName = "mapYearFromDate")
+  @Mapping(target = "countryOfOrigin", source = "details.personalInformation.countryOfOrigin")
+  @Mapping(target = "nationalInsuranceNumber",
+      source = "details.personalInformation.nationalInsuranceNumber")
+  @Mapping(target = "homeOfficeNumber",
+      source = "details.personalInformation.homeOfficeNumber")
+  @Mapping(target = "gender",
+      source = "details.personalInformation.gender")
+  @Mapping(target = "maritalStatus",
+      source = "details.personalInformation.maritalStatus")
+  @Mapping(target = "vulnerableClient",
+      source = "details.personalInformation.vulnerableClient")
+  @Mapping(target = "highProfileClient",
+      source = "details.personalInformation.highProfileClient")
+  @Mapping(target = "vexatiousLitigant",
+      source = "details.personalInformation.vexatiousLitigant")
+  @Mapping(target = "mentalIncapacity",
+      source = "details.personalInformation.mentalCapacityInd")
+  @Mapping(target = "telephoneHome",
+      source = "details.contacts.telephoneHome")
+  @Mapping(target = "telephoneWork",
+      source = "details.contacts.telephoneWork")
+  @Mapping(target = "telephoneMobile",
+      source = "details.contacts.mobileNumber")
+  @Mapping(target = "emailAddress",
+      source = "details.contacts.emailAddress")
+  @Mapping(target = "passwordReminder",
+      source = "details.contacts.passwordReminder")
+  @Mapping(target = "correspondenceMethod",
+      source = "details.contacts.correspondenceMethod")
+  @Mapping(target = "correspondenceLanguage",
+      source = "details.contacts.correspondenceLanguage")
+  @Mapping(target = "noFixedAbode",
+      source = "details.noFixedAbode")
+  @Mapping(target = "country",
+      source = "details.address.country")
+  @Mapping(target = "ethnicOrigin",
+      source = "details.ethnicMonitoring")
+  @Mapping(target = "disability",
+      source = "details.disabilityMonitoring.disabilityType",
+      qualifiedByName = "mapListToString")
+  @Mapping(target = "specialConsiderations",
+      source = "details.specialConsiderations")
+  @Mapping(target = "houseNameNumber", source = "details.address.house")
+  @Mapping(target = "addressLine1", source = "details.address.addressLine1")
+  @Mapping(target = "addressLine2", source = "details.address.addressLine2")
+  @Mapping(target = "cityTown", source = "details.address.city")
+  @Mapping(target = "postcode", source = "details.address.postalCode")
+  @Mapping(target = "county", source = "details.address.county")
+  ClientDetails toClientDetails(ClientDetail soaClientDetail);
+
+  /**
+   * Translates a list to a sting, using the first element.
+   *
+   * @param values The list of strings to convert
+   * @return Translated String value.
+   */
+  @Named("mapListToString")
+  default String mapListToString(List<String> values) {
+    if (values != null && !values.isEmpty()) {
+      return values.get(0);
+    }
+    return null;
+  }
+
+  /**
+   * Translates a Date and extracts the day.
+   *
+   * @param date The date to convert
+   * @return Translated String value.
+   */
+  @Named("mapDayFromDate")
+  default String mapDayFromDate(Date date) {
+    if (date != null) {
+      LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+      return Integer.toString(localDate.getDayOfMonth());
+    }
+    return null;
+  }
+
+  /**
+   * Translates a Date and extracts the month.
+   *
+   * @param date The date to convert
+   * @return Translated String value.
+   */
+  @Named("mapMonthFromDate")
+  default String mapMonthFromDate(Date date) {
+    if (date != null) {
+      LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+      return Integer.toString(localDate.getMonthValue());
+    }
+    return null;
+  }
+
+  /**
+   * Translates a Date and extracts the year.
+   *
+   * @param date The date to convert
+   * @return Translated String value.
+   */
+  @Named("mapYearFromDate")
+  default String mapYearFromDate(Date date) {
+    if (date != null) {
+      LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+      return Integer.toString(localDate.getYear());
     }
     return null;
   }

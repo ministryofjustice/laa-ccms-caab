@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a href="/application/client/details/cancel?" class="govuk-back-link">Cancel and return to client search</a>
+        <a href="/application/client/details/cancel" class="govuk-back-link">Cancel and return to client search</a>
     </div>
     <div id="main-content">
         <form action="#" th:action="@{/application/client/details/address}" th:object="${clientDetails}" method="post">
@@ -150,101 +150,18 @@
                             </div>
                         </fieldset>
                     </div>
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('country')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="country">
-                            Country
-                        </label>
-                        <span th:if="${#fields.hasErrors('country')}" th:errors="*{country}" class="govuk-error-message"></span>
-                        <select class="govuk-select"
-                                data-module="govuk-select"
-                                th:field="*{country}"
-                                th:errorclass="govuk-select--error"
-                                id="country"
-                                name="country">
-                            <option value="">Please Select</option>
-                            <option th:each="country : ${countries}"
-                                    th:value="${country.code}"
-                                    th:text="${country.description}">
-                            </option>
-                        </select>
-                    </div>
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('houseNameNumber')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="houseNameNumber">
-                            House name / number
-                        </label>
-                        <input th:errorclass="govuk-input--error"
-                               class="govuk-input govuk-input--width-20"
-                               id="houseNameNumber"
-                               name="houseNameNumber"
-                               type="text"
-                               data-module="govuk-input"
-                               th:field="*{houseNameNumber}">
-                    </div>
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('postcode')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="postcode">
-                            Postcode
-                        </label>
-                        <input th:errorclass="govuk-input--error"
-                               class="govuk-input govuk-input--width-20"
-                               id="postcode"
-                               name="postcode"
-                               type="text"
-                               data-module="govuk-input"
-                               th:field="*{postcode}">
-                    </div>
+                    <div th:replace="~{partials/forms :: dropdown('country', 'Country', ${countries}, 'code', 'description', false)}"></div>
+                    <div th:replace="~{partials/forms :: textInput('houseNameNumber', 'House name / number', 'govuk-input--width-20')}"></div>
+                    <div th:replace="~{partials/forms :: textInput('postcode', 'Postcode', 'govuk-input--width-20')}"></div>
                     <div class="govuk-form-group">
                         <button type="submit" name="action" value="find_address" class="govuk-button govuk-button--secondary" data-module="govuk-button">
                             Find address
                         </button>
                     </div>
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('addressLine1')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="addressLine1">
-                            Address line 1
-                        </label>
-                        <input th:errorclass="govuk-input--error"
-                               class="govuk-input govuk-input--width-20"
-                               id="addressLine1"
-                               name="addressLine1"
-                               type="text"
-                               data-module="govuk-input"
-                               th:field="*{addressLine1}">
-                    </div>
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('addressLine2')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="addressLine2">
-                            Address line 2 (optional)
-                        </label>
-                        <input th:errorclass="govuk-input--error"
-                               class="govuk-input govuk-input--width-20"
-                               id="addressLine2"
-                               name="addressLine2"
-                               type="text"
-                               data-module="govuk-input"
-                               th:field="*{addressLine2}">
-                    </div>
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('cityTown')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="cityTown">
-                            City / Town
-                        </label>
-                        <input th:errorclass="govuk-input--error"
-                               class="govuk-input govuk-input--width-20"
-                               id="cityTown"
-                               name="cityTown"
-                               type="text"
-                               data-module="govuk-input"
-                               th:field="*{cityTown}">
-                    </div>
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('county')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="county">
-                            County (optional)
-                        </label>
-                        <input th:errorclass="govuk-input--error"
-                               class="govuk-input govuk-input--width-20"
-                               id="county"
-                               name="county"
-                               type="text"
-                               data-module="govuk-input"
-                               th:field="*{county}">
-                    </div>
+                    <div th:replace="~{partials/forms :: textInput('addressLine1', 'Address line 1', 'govuk-input--width-20')}"></div>
+                    <div th:replace="~{partials/forms :: textInput('addressLine2', 'Address line 2 (optional)', 'govuk-input--width-20')}"></div>
+                    <div th:replace="~{partials/forms :: textInput('cityTown', 'City / Town', 'govuk-input--width-20')}"></div>
+                    <div th:replace="~{partials/forms :: textInput('county', 'County (optional)', 'govuk-input--width-20')}"></div>
                 </div>
             </div>
             <div class="govuk-grid-row">

@@ -20,20 +20,11 @@
       </p>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
-          <div class="govuk-form-group" th:classappend="${#fields.hasErrors('ethnicOrigin')} ? 'govuk-form-group--error' : ''">
+          <div class="govuk-form-group">
             <h2 class="govuk-heading-m">
               Ethnic monitoring
             </h2>
-            <fieldset class="govuk-fieldset">
-              <label class="govuk-label" for="ethnicOrigin">
-                Which ethnicity would your client describe themselves as being?
-              </label>
-<!--                <span th:if="${#fields.hasErrors('ethnicOrigin')}" th:errors="*{ethnicOrigin}" class="govuk-error-message"></span>-->
-              <select class="govuk-select" data-module="govuk-select" th:field="*{ethnicOrigin}" th:errorclass="govuk-select--error" id="ethnicOrigin" name="ethnicOrigin">
-                  <option value="">Please select</option>
-                  <option th:each="origin : ${ethnicOrigins}" th:value="${origin.code}" th:text="${origin.description}"></option>
-              </select>
-            </fieldset>
+            <div th:replace="~{partials/forms :: dropdown('ethnicOrigin', 'Which ethnicity would your client describe themselves as being?', ${ethnicOrigins}, 'code', 'description', false)}"></div>
             <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
               <summary class="govuk-details__summary">
                 <span class="govuk-details__summary-text">
@@ -49,20 +40,11 @@
               </div>
             </details>
           </div>
-          <div class="govuk-form-group" th:classappend="${#fields.hasErrors('disability')} ? 'govuk-form-group--error' : ''">
+          <div class="govuk-form-group">
             <h2 class="govuk-heading-m">
               Disability monitoring
             </h2>
-            <fieldset class="govuk-fieldset">
-              <label class="govuk-label" for="disability">
-                Would your client describe themselves as being disabled?
-              </label>
-              <!--                <span th:if="${#fields.hasErrors('ethnicOrigin')}" th:errors="*{ethnicOrigin}" class="govuk-error-message"></span>-->
-              <select class="govuk-select" data-module="govuk-select" th:field="*{disability}" th:errorclass="govuk-select--error" id="disability" name="disability">
-                <option value="">Please select</option>
-                <option th:each="disability : ${disabilities}" th:value="${disability.code}" th:text="${disability.description}"></option>
-              </select>
-            </fieldset>
+            <div th:replace="~{partials/forms :: dropdown('disability', 'Would your client describe themselves as being disabled?', ${disabilities}, 'code', 'description', false)}"></div>
             <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
               <summary class="govuk-details__summary">
                 <span class="govuk-details__summary-text">

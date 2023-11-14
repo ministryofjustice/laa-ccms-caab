@@ -76,6 +76,12 @@ dependencies {
 	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.6'
 	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.5'
 
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+
 	//Starters
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -94,11 +100,7 @@ dependencies {
 	implementation "org.opensaml:opensaml-saml-api:4.3.0"
 	implementation "org.opensaml:opensaml-saml-impl:4.3.0"
 
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
 
-	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
-	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.mockito:mockito-core:5.5.0'

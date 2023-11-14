@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,8 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
+import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
@@ -21,6 +24,9 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
 public class ClientServiceTest {
   @Mock
   private SoaApiClient soaApiClient;
+
+  @Mock
+  private ClientDetailMapper clientDetailMapper;
 
   @InjectMocks
   private ClientService clientService;
@@ -92,17 +98,27 @@ public class ClientServiceTest {
 
   @Test
   void postClient_ReturnsTransactionId_Successful() {
+    ClientDetail clientDetail = new ClientDetail();
     ClientDetailDetails clientDetailDetails = new ClientDetailDetails();
+    clientDetail.setDetails(clientDetailDetails);
+
+    uk.gov.laa.ccms.caab.bean.ClientDetails clientDetails = new uk.gov.laa.ccms.caab.bean.ClientDetails();
     String loginId = "user1";
     String userType = "userType";
 
     ClientCreated mockClientCreated = new ClientCreated();
+    UserDetail userDetail = new UserDetail();
+    userDetail.setLoginId(loginId);
+    userDetail.setUserType(userType);
+
+    when(clientDetailMapper.toSoaClientDetail(any()))
+        .thenReturn(clientDetail);
 
     when(soaApiClient.postClient(clientDetailDetails, loginId, userType))
         .thenReturn(Mono.just(mockClientCreated));
 
     Mono<ClientCreated> clientCreatedMono =
-        clientService.postClient(clientDetailDetails, loginId, userType);
+        clientService.createClient(clientDetails, userDetail);
 
     StepVerifier.create(clientCreatedMono)
         .expectNextMatches(clientCreated -> clientCreated == mockClientCreated)

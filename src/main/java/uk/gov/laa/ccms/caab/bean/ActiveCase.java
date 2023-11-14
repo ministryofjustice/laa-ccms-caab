@@ -10,6 +10,8 @@ import lombok.Data;
 @Builder
 public class ActiveCase {
   private String client;
+  private String clientReferenceNumber;
+
   private String caseReferenceNumber;
   private String providerCaseReferenceNumber;
 }

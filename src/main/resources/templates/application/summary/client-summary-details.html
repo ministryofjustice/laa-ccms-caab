@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+  <title>LAA CCMS - Create application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a href="/application/summary" class="govuk-back-link">Cancel and return to create application</a>
+  </div>
+  <div id="main-content">
+    <form action="#" th:action="@{/application/summary/client/details/summary}" th:object="${clientDetails}" method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <span class="govuk-caption-l">Edit your client</span>
+      <h1 class="govuk-heading-l">
+        Summary of client information
+      </h1>
+      <p class="govuk-body-l">
+        To amend your client details click on the edit link relevant to the section you wish to
+        change (for example, to edit 'Basic Details', click the 'Edit Basic Details link'. You will
+        then be taken to the appropriate amendment page.
+        <span class="govuk-!-font-weight-bold">
+          Once changed, please confirm your changes, after which you will return to this page. Once
+          happy with all your changes, click 'Submit Amendments'. Your changes will not be
+          registered in the system until you have done this.
+        </span>
+      </p>
+      <div th:replace="~{application/partials/client-fragments :: clientSummaryFragment (clientState='edit')}"></div>
+      <div class="govuk-button-group">
+        <button type="submit" class="govuk-button" data-module="govuk-button">
+          Submit amendments
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

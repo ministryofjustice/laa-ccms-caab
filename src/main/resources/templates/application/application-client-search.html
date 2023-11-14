@@ -23,22 +23,8 @@
             </p>
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('forename')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="forename">
-                           First name
-                        </label>
-                        <span th:if="${#fields.hasErrors('forename')}" th:errors="*{forename}" class="govuk-error-message"></span>
-                        <input class="govuk-input govuk-input--width-20" id="forename" name="forename" type="text"
-                               th:value="${clientSearchCriteria.forename}">
-                    </div>
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('surname')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="surname">
-                            Surname at birth
-                        </label>
-                        <span th:if="${#fields.hasErrors('surname')}" th:errors="*{surname}" class="govuk-error-message"></span>
-                        <input class="govuk-input govuk-input--width-20" id="surname" name="surname" type="text"
-                               th:value="${clientSearchCriteria.surname}">
-                    </div>
+                    <div th:replace="~{partials/forms :: textInput('forename', 'First name', 'govuk-input--width-20')}"></div>
+                    <div th:replace="~{partials/forms :: textInput('surname', 'Surname at birth', 'govuk-input--width-20')}"></div>
                     <div class="govuk-form-group" th:classappend="${#fields.hasErrors('dobDay') || #fields.hasErrors('dobMonth') || #fields.hasErrors('dobYear')} ? 'govuk-form-group--error' : ''">
                         <fieldset class="govuk-fieldset" role="group" aria-describedby="dob-hint dob-error">
                             <legend class="govuk-fieldset__legend">
@@ -55,89 +41,15 @@
                                 </span>
                             </p>
                             <div class="govuk-date-input" id="dob">
-                                <div class="govuk-date-input__item">
-                                    <div class="govuk-form-group">
-                                        <label class="govuk-label govuk-date-input__label" for="dobDay">
-                                            Day
-                                        </label>
-                                        <input th:errorclass="govuk-input--error"
-                                               class="govuk-input govuk-date-input__input govuk-input--width-2"
-                                               id="dobDay"
-                                               name="dobDay"
-                                               type="text"
-                                               inputmode="numeric"
-                                               maxlength="2"
-                                               th:value="${clientSearchCriteria.dobDay}">
-                                    </div>
-                                </div>
-                                <div class="govuk-date-input__item">
-                                    <div class="govuk-form-group">
-                                        <label class="govuk-label govuk-date-input__label" for="dobMonth">
-                                            Month
-                                        </label>
-                                        <input th:errorclass="govuk-input--error"
-                                               class="govuk-input govuk-date-input__input govuk-input--width-2"
-                                               id="dobMonth"
-                                               name="dobMonth"
-                                               type="text"
-                                               inputmode="numeric"
-                                               maxlength="2"
-                                               th:value="${clientSearchCriteria.dobMonth}">
-                                    </div>
-                                </div>
-                                <div class="govuk-date-input__item">
-                                    <div class="govuk-form-group">
-                                        <label class="govuk-label govuk-date-input__label" for="dobYear">
-                                            Year
-                                        </label>
-                                        <input th:errorclass="govuk-input--error"
-                                               class="govuk-input govuk-date-input__input govuk-input--width-4"
-                                               id="dobYear"
-                                               name="dobYear"
-                                               type="text"
-                                               inputmode="numeric"
-                                               maxlength="4"
-                                               th:value="${clientSearchCriteria.dobYear}">
-                                    </div>
-                                </div>
+                                <div th:replace="partials/forms::numericInput('dobDay', 'Day', '2')"></div>
+                                <div th:replace="partials/forms::numericInput('dobMonth', 'Month', '2')"></div>
+                                <div th:replace="partials/forms::numericInput('dobYear', 'Year', '4')"></div>
                             </div>
                         </fieldset>
                     </div>
-                    <div class="govuk-form-group">
-                        <fieldset class="govuk-fieldset">
-                            <label class="govuk-label" for="gender">
-                                Gender (optional)
-                            </label>
-                            <select class="govuk-select"
-                                    data-module="govuk-select"
-                                    th:field="*{gender}"
-                                    th:errorclass="govuk-select--error"
-                                    id="gender"
-                                    name="gender" >
-                                <option value="">Please Select</option>
-                                <option th:each="gender : ${genders}" th:value="${gender.code}" th:text="${gender.description}"></option>
-                            </select>
-                        </fieldset>
-                    </div>
-                    <div class="govuk-form-group">
-                        <fieldset class="govuk-fieldset">
-                            <label class="govuk-label" for="uniqueIdentifierType">
-                                Unique identifier type (optional)
-                            </label>
-                            <select class="govuk-select" data-module="govuk-select" th:field="*{uniqueIdentifierType}" th:errorclass="govuk-select--error" id="uniqueIdentifierType" name="uniqueIdentifierType" >
-                                <option value="">Please Select</option>
-                                <option th:each="type : ${uniqueIdentifierTypes}" th:value="${type.code}" th:text="${type.description}"></option>
-                            </select>
-                        </fieldset>
-                    </div>
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('uniqueIdentifierValue')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="uniqueIdentifierValue">
-                            Unique identifier value (optional)
-                        </label>
-                        <span th:if="${#fields.hasErrors('uniqueIdentifierValue')}" th:errors="*{uniqueIdentifierValue}" class="govuk-error-message"></span>
-                        <input class="govuk-input govuk-input--width-20" id="uniqueIdentifierValue" name="uniqueIdentifierValue" type="text"
-                               th:value="${clientSearchCriteria.uniqueIdentifierValue}">
-                    </div>
+                    <div th:replace="~{partials/forms :: dropdown('gender', 'Gender (optional)', ${genders}, 'code', 'description', false)}"></div>
+                    <div th:replace="~{partials/forms :: dropdown('uniqueIdentifierType', 'Unique identifier type (optional)', ${uniqueIdentifierTypes}, 'code', 'description', false)}"></div>
+                    <div th:replace="~{partials/forms :: textInput('uniqueIdentifierValue', 'Unique identifier value (optional)', 'govuk-input--width-20')}"></div>
                     <div class="govuk-form-group">
                         <details class="govuk-details" data-module="govuk-details">
                             <summary class="govuk-details__summary">
