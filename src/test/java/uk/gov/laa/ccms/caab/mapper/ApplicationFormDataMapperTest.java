@@ -3,6 +3,8 @@ package uk.gov.laa.ccms.caab.mapper;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Date;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,8 +50,7 @@ class ApplicationFormDataMapperTest {
 
   // Helper method to create a Date object with a specific year, month, and day
   private Date createDate(int year, int month, int day) {
-    Calendar calendar = Calendar.getInstance();
-    calendar.set(year, month - 1, day); // Calendar.MONTH is 0-based
-    return calendar.getTime();
+    LocalDate localDate = LocalDate.of(year, month, day);
+    return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
   }
 }

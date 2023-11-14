@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -118,9 +121,9 @@ public class ClientDetailMapperTest {
 
   @ParameterizedTest
   @CsvSource({
-      "1, 1, 2000, 1, 0, 2000",
-      "15, 7, 1990, 15, 6, 1990",
-      "31, 12, 2022, 31, 11, 2022"
+      "1, 1, 2000, 1, 1, 2000",
+      "15, 7, 1990, 15, 7, 1990",
+      "31, 12, 2022, 31, 12, 2022"
   })
   void testMapDateOfBirth(String day, String month, String year, int expectedDay, int expectedMonth, int expectedYear) {
     // Create a ClientDetails object for testing
@@ -132,14 +135,13 @@ public class ClientDetailMapperTest {
     // Perform the mapping
     Date dateOfBirth = clientDetailMapper.mapDateOfBirth(clientDetails);
 
-    // Get Calendar instance for assertions
-    Calendar calendar = Calendar.getInstance();
-    calendar.setTime(dateOfBirth);
+    // Convert the mapped Date to LocalDate
+    LocalDate localDate = dateOfBirth.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
     // Assertions for the mapped date
-    assertEquals(expectedYear, calendar.get(Calendar.YEAR));
-    assertEquals(expectedMonth, calendar.get(Calendar.MONTH));
-    assertEquals(expectedDay, calendar.get(Calendar.DAY_OF_MONTH));
+    assertEquals(expectedYear, localDate.getYear());
+    assertEquals(expectedMonth, localDate.getMonthValue());
+    assertEquals(expectedDay, localDate.getDayOfMonth());
   }
 
   @Test
@@ -238,9 +240,9 @@ public class ClientDetailMapperTest {
   void testToClientDetails_personalDetails(){
     ClientPersonalDetail personalInformation = new ClientPersonalDetail();
 
-    Calendar calendar = Calendar.getInstance();
-    calendar.set(2000, Calendar.JANUARY, 1, 0, 0, 0);
-    Date dateOfBirth = calendar.getTime();
+    LocalDate localDate = LocalDate.of(2000, 1, 1);
+    ZonedDateTime zonedDateTime = localDate.atStartOfDay(ZoneId.systemDefault());
+    Date dateOfBirth = Date.from(zonedDateTime.toInstant());
 
     personalInformation.setDateOfBirth(dateOfBirth);
     personalInformation.setCountryOfOrigin("Country");
