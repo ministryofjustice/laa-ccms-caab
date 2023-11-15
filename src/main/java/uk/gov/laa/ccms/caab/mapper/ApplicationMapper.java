@@ -6,11 +6,9 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FIN
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FINANCIAL_DESCRIPTION;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_LAND;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTHER_ASSET;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_ORGANISATION;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Stream;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -58,22 +56,22 @@ import uk.gov.laa.ccms.soa.gateway.model.TimeRelatedAward;
  */
 @Mapper(componentModel = "spring")
 public interface ApplicationMapper {
-
-  @Mapping(target = "caseReferenceNumber", source = "caseDetail.caseReferenceNumber")
-  @Mapping(target = "certificate.id", source = "caseDetail.certificateType")
+  
+  @Mapping(target = "caseReferenceNumber", source = "soaCaseDetail.caseReferenceNumber")
+  @Mapping(target = "certificate.id", source = "soaCaseDetail.certificateType")
   @Mapping(target = "applicationType.id",
-      source = "caseDetail.applicationDetails.applicationAmendmentType")
+      source = "soaCaseDetail.applicationDetails.applicationAmendmentType")
   @Mapping(target = "applicationType.displayValue", source = "applicationTypeLookup.description")
-  @Mapping(target = "dateCreated", source = "caseDetail.recordHistory.dateCreated")
+  @Mapping(target = "dateCreated", source = "soaCaseDetail.recordHistory.dateCreated")
   @Mapping(target = "providerCaseReference",
-      source = "caseDetail.applicationDetails.providerDetails.providerCaseReferenceNumber")
+      source = "soaCaseDetail.applicationDetails.providerDetails.providerCaseReferenceNumber")
   @Mapping(target = "provider.id",
-      source = "caseDetail.applicationDetails.providerDetails.providerFirmId")
+      source = "soaCaseDetail.applicationDetails.providerDetails.providerFirmId")
   @Mapping(target = "provider.displayValue", source = "ebsProvider.name")
   @Mapping(target = "providerContact.id",
-      source = "caseDetail.applicationDetails.providerDetails.contactUserId.userLoginId")
+      source = "soaCaseDetail.applicationDetails.providerDetails.contactUserId.userLoginId")
   @Mapping(target = "providerContact.displayValue",
-      source = "caseDetail.applicationDetails.providerDetails.contactUserId.userName")
+      source = "soaCaseDetail.applicationDetails.providerDetails.contactUserId.userName")
   @Mapping(target = "office.id", source = "providerOffice.id")
   @Mapping(target = "office.displayValue", source = "providerOffice.name")
   @Mapping(target = "supervisor.id", source = "supervisorContact.id")
@@ -81,40 +79,76 @@ public interface ApplicationMapper {
   @Mapping(target = "feeEarner.id", source = "feeEarnerContact.id")
   @Mapping(target = "feeEarner.displayValue", source = "feeEarnerContact.name")
   @Mapping(target = "correspondenceAddress",
-      source = "caseDetail.applicationDetails.correspondenceAddress")
-//  @Mapping(target = "correspondenceAddress.preferredAddress",
-//    source = "caseDetail.applicationDetails.preferredAddress")
-//  @Mapping(target = "correspondenceAddress.noFixedAbode", constant = "false")
-//  @Mapping(target = "client", source = "caseDetail.applicationDetails.client")
-//  @Mapping(target = "client.reference",
-  //  source = "caseDetail.applicationDetails.client.clientReferenceNumber")
+      source = "soaCaseDetail.applicationDetails.correspondenceAddress")
+  @Mapping(target = "client", source = "soaCaseDetail.applicationDetails.client")
   @Mapping(target = "categoryOfLaw.id",
-      source = "caseDetail.applicationDetails.categoryOfLaw.categoryOfLawCode")
+      source = "soaCaseDetail.applicationDetails.categoryOfLaw.categoryOfLawCode")
   @Mapping(target = "categoryOfLaw.displayValue",
-      source = "caseDetail.applicationDetails.categoryOfLaw.categoryOfLawDescription")
+      source = "soaCaseDetail.applicationDetails.categoryOfLaw.categoryOfLawDescription")
   @Mapping(target = "costs.grantedCostLimitation",
-      source = "caseDetail.applicationDetails.categoryOfLaw.grantedAmount")
+      source = "soaCaseDetail.applicationDetails.categoryOfLaw.grantedAmount")
   @Mapping(target = "costs.requestedCostLimitation",
-      source = "caseDetail.applicationDetails.categoryOfLaw.requestedAmount")
+      source = "soaCaseDetail.applicationDetails.categoryOfLaw.requestedAmount")
   @Mapping(target = "costs.defaultCostLimitation", ignore = true)
   @Mapping(target = "costs.costEntries",
-      source = "caseDetail.applicationDetails.categoryOfLaw.costLimitations")
+      source = "soaCaseDetail.applicationDetails.categoryOfLaw.costLimitations")
   @Mapping(target = "costs.currentProviderBilledAmount", ignore = true)
   @Mapping(target = "costs.auditTrail", ignore = true)
   @Mapping(target = "larScopeFlag",
-      source = "caseDetail.applicationDetails.larDetails.larScopeFlag", defaultValue = "false")
-  @Mapping(target = "status.id", source = "caseDetail.caseStatus.actualCaseStatus")
-  @Mapping(target = "status.displayValue", source = "caseDetail.caseStatus.displayCaseStatus")
-  @Mapping(target = "availableFunctions", source = "caseDetail.availableFunctions")
+      source = "soaCaseDetail.applicationDetails.larDetails.larScopeFlag", defaultValue = "false")
+  @Mapping(target = "status.id", source = "soaCaseDetail.caseStatus.actualCaseStatus")
+  @Mapping(target = "status.displayValue", source = "soaCaseDetail.caseStatus.displayCaseStatus")
+  @Mapping(target = "availableFunctions", source = "soaCaseDetail.availableFunctions")
+  @Mapping(target = "priorAuthorities", ignore = true)
+  @Mapping(target = "submitted", ignore = true)
+  @Mapping(target = "relationToLinkedCase", ignore = true)
+  @Mapping(target = "quickEditType", ignore = true)
+  @Mapping(target = "proceedings", ignore = true)
+  @Mapping(target = "opponents", ignore = true)
+  @Mapping(target = "opponentMode", ignore = true)
+  @Mapping(target = "opponentAppliedForFunding", ignore = true)
+  @Mapping(target = "meritsReassessmentRequired", ignore = true)
+  @Mapping(target = "meritsAssessmentStatus", ignore = true)
+  @Mapping(target = "meritsAssessmentAmended", ignore = true)
+  @Mapping(target = "meritsAssessment", ignore = true)
+  @Mapping(target = "meansAssessmentStatus", ignore = true)
+  @Mapping(target = "meansAssessmentAmended", ignore = true)
+  @Mapping(target = "meansAssessment", ignore = true)
+  @Mapping(target = "leadProceedingChanged", ignore = true)
+  @Mapping(target = "editProceedingsAndCostsAllowed", ignore = true)
+  @Mapping(target = "costLimit", ignore = true)
+  @Mapping(target = "caseOutcome", ignore = true)
+  @Mapping(target = "award", ignore = true)
+  @Mapping(target = "auditTrail", ignore = true)
+  @Mapping(target = "appMode", ignore = true)
+  @Mapping(target = "amendmentProceedingsInEbs", ignore = true)
+  @Mapping(target = "amendment", ignore = true)
+  @Mapping(target = "allSectionsComplete", ignore = true)
   ApplicationDetail toApplicationDetail(
-      CaseDetail caseDetail,
+      CaseDetail soaCaseDetail,
       CommonLookupValueDetail applicationTypeLookup,
       uk.gov.laa.ccms.data.model.ProviderDetail ebsProvider,
       OfficeDetail providerOffice,
       ContactDetail supervisorContact,
       ContactDetail feeEarnerContact);
 
-  List<CostEntry> toCostEntryList(List<CostLimitation> costLimitationList);
+  /**
+   * AfterMapping method to finalise the ApplicationDetail.
+   *
+   * @param applicationDetail - the mapping target
+   * @param soaCase - the source CaseDetail
+   */
+  @AfterMapping
+  default void finaliseApplicationDetails(@MappingTarget ApplicationDetail applicationDetail,
+      CaseDetail soaCase) {
+
+    if (soaCase.getApplicationDetails() != null) {
+      if (applicationDetail.getCorrespondenceAddress() != null) {
+        applicationDetail.getCorrespondenceAddress().setPreferredAddress(
+            soaCase.getApplicationDetails().getPreferredAddress());
+      }
+    }
+  }
 
   @Mapping(target = "lscResourceId", source = "billingProviderId")
   @Mapping(target = "amountBilled", source = "paidToDate")
@@ -138,11 +172,10 @@ public interface ApplicationMapper {
   @Mapping(target = "levelOfService.id", source = "levelOfServiceLookup.code")
   @Mapping(target = "levelOfService.displayValue", source = "levelOfServiceLookup.description")
   @Mapping(target = "clientInvolvement.id", source = "clientInvolvementLookup.code")
-  @Mapping(
-      target = "clientInvolvement.displayValue",
+  @Mapping(target = "clientInvolvement.displayValue",
       source = "clientInvolvementLookup.description")
-  @Mapping(target = "status.id", source = "proceedingStatus.code")
-  @Mapping(target = "status.displayValue", source = "proceedingStatus.description")
+  @Mapping(target = "status.id", source = "proceedingStatusLookup.code")
+  @Mapping(target = "status.displayValue", source = "proceedingStatusLookup.description")
   @Mapping(target = "typeOfOrder.id", source = "soaProceeding.orderType")
   @Mapping(target = "scopeLimitations", ignore = true)
   @Mapping(target = "outcome", ignore = true)
@@ -158,7 +191,7 @@ public interface ApplicationMapper {
       CommonLookupValueDetail matterTypeLookup,
       CommonLookupValueDetail levelOfServiceLookup,
       CommonLookupValueDetail clientInvolvementLookup,
-      CommonLookupValueDetail proceedingStatus);
+      CommonLookupValueDetail proceedingStatusLookup);
 
   @Mapping(target = "ebsId", source = "soaScopeLimitation.scopeLimitationId")
   @Mapping(target = "scopeLimitation.id", source = "scopeLimitationLookup.code")
@@ -202,25 +235,24 @@ public interface ApplicationMapper {
   AssessmentResult toAssessmentResult(
       uk.gov.laa.ccms.soa.gateway.model.AssessmentResult assessmentResult);
 
-
-  @Mapping(target = "preferredAddress", ignore = true)
   @Mapping(target = "careOf", source = "careOfName")
   @Mapping(target = "houseNameOrNumber", source = "house")
   @Mapping(target = "postcode", source = "postalCode")
   @Mapping(target = "noFixedAbode", constant = "false")
+  @Mapping(target = "preferredAddress", ignore = true)
   Address toAddress(AddressDetail soaAddress);
 
   @Mapping(target = "reference", source = "clientReferenceNumber")
   Client toClient(BaseClient soaClient);
 
-  @Mapping(target = "type", constant = "Individual")
-//  @Mapping(target = "id", source = "otherPartyId")
+  @Mapping(target = "type", constant = OPPONENT_TYPE_INDIVIDUAL)
   @Mapping(target = "ebsId", source = "otherPartyId")
   @Mapping(target = ".", source = "person")
   @Mapping(target = "courtOrderedMeansAssessment", source = "person.courtOrderedMeansAssesment")
   @Mapping(target = "employmentAddress", source = "person.organizationAddress")
   @Mapping(target = "employerName", source = "person.organizationName")
   @Mapping(target = ".", source = "person.name")
+  @Mapping(target = "middleNames", source = "person.name.middleName")
   @Mapping(target = "legalAided", source = "person.partyLegalAidedInd")
   @Mapping(target = "nationalInsuranceNumber", source = "person.niNumber")
   @Mapping(target = "relationshipToCase", source = "person.relationToCase")
@@ -230,13 +262,28 @@ public interface ApplicationMapper {
   @Mapping(target = "faxNumber", source = "person.contactDetails.fax")
   @Mapping(target = "publicFundingApplied", source = "person.publicFundingAppliedInd")
   @Mapping(target = "deleteInd", constant = "false")
+  @Mapping(target = "amendment", ignore = true)
+  @Mapping(target = "appMode", ignore = true)
+  @Mapping(target = "auditTrail", ignore = true)
+  @Mapping(target = "award", ignore = true)
+  @Mapping(target = "confirmed", ignore = true)
+  @Mapping(target = "contactNameRole", ignore = true)
+  @Mapping(target = "currentlyTrading", ignore = true)
+  @Mapping(target = "displayAddress", ignore = true)
+  @Mapping(target = "displayName", ignore = true)
+  @Mapping(target = "organisationName", ignore = true)
+  @Mapping(target = "organisationType", ignore = true)
+  @Mapping(target = "partyId", ignore = true)
   Opponent toIndividualOpponent(OtherParty otherParty);
 
-  @Mapping(target = "type", constant = "Organisation")
-//  @Mapping(target = "id", source = "otherPartyId")
+
+  @Mapping(target = "type", constant = OPPONENT_TYPE_ORGANISATION)
   @Mapping(target = "ebsId", source = "otherPartyId")
   @Mapping(target = ".", source = "organisation")
-  @Mapping(target = ".", source = "organisation.address")
+  @Mapping(target = "address", source = "organisation.address")
+  @Mapping(target = "organisationName", source = "organisation.organizationName")
+  @Mapping(target = "organisationType.id", source = "organisation.organizationType")
+  @Mapping(target = "organisationType.displayValue", ignore = true)
   @Mapping(target = "contactNameRole", source = "organisation.contactName")
   @Mapping(target = "relationshipToCase", source = "organisation.relationToCase")
   @Mapping(target = "relationshipToClient", source = "organisation.relationToClient")
@@ -244,6 +291,31 @@ public interface ApplicationMapper {
   @Mapping(target = "telephoneMobile", source = "organisation.contactDetails.mobileNumber")
   @Mapping(target = "faxNumber", source = "organisation.contactDetails.fax")
   @Mapping(target = "deleteInd", constant = "false")
+  @Mapping(target = "amendment", ignore = true)
+  @Mapping(target = "appMode", ignore = true)
+  @Mapping(target = "assessedAssets", ignore = true)
+  @Mapping(target = "assessedIncome", ignore = true)
+  @Mapping(target = "assessedIncomeFrequency", ignore = true)
+  @Mapping(target = "assessmentDate", ignore = true)
+  @Mapping(target = "title", ignore = true)
+  @Mapping(target = "surname", ignore = true)
+  @Mapping(target = "publicFundingApplied", ignore = true)
+  @Mapping(target = "partyId", ignore = true)
+  @Mapping(target = "nationalInsuranceNumber", ignore = true)
+  @Mapping(target = "middleNames", ignore = true)
+  @Mapping(target = "legalAided", ignore = true)
+  @Mapping(target = "firstName", ignore = true)
+  @Mapping(target = "employmentStatus", ignore = true)
+  @Mapping(target = "employmentAddress", ignore = true)
+  @Mapping(target = "employerName", ignore = true)
+  @Mapping(target = "displayName", ignore = true)
+  @Mapping(target = "displayAddress", ignore = true)
+  @Mapping(target = "dateOfBirth", ignore = true)
+  @Mapping(target = "courtOrderedMeansAssessment", ignore = true)
+  @Mapping(target = "confirmed", ignore = true)
+  @Mapping(target = "certificateNumber", ignore = true)
+  @Mapping(target = "award", ignore = true)
+  @Mapping(target = "auditTrail", ignore = true)
   Opponent toOrganisationOpponent(OtherParty otherParty);
 
   @Mapping(target = "lscCaseReference", source = "caseReferenceNumber")
@@ -265,14 +337,18 @@ public interface ApplicationMapper {
   @Mapping(target = "amountRequested", source = "soaPriorAuthority.requestAmount")
   @Mapping(target = "valueRequired", source = "priorAuthTypeLookup.valueRequired")
   @Mapping(target = "items", source = "priorAuthTypeLookup.priorAuthorities")
-  PriorAuthority toPriorAuthority(uk.gov.laa.ccms.soa.gateway.model.PriorAuthority soaPriorAuthority,
+  @Mapping(target = "ebsId", ignore = true)
+  @Mapping(target = "auditTrail", ignore = true)
+  PriorAuthority toPriorAuthority(
+      uk.gov.laa.ccms.soa.gateway.model.PriorAuthority soaPriorAuthority,
       PriorAuthorityTypeDetail priorAuthTypeLookup);
 
   @Mapping(target = "code.id", source = "code")
   @Mapping(target = "code.displayValue", source = "description")
   @Mapping(target = "type", source = "dataType")
-//  @Mapping(target = "mandatory", source = "mandatoryFlag")
   @Mapping(target = "lovLookUp", source = "lovCode")
+  //  @Mapping(target = "mandatory", source = "mandatoryFlag")
+  @Mapping(target = "mandatory", ignore = true)
   @Mapping(target = "value", ignore = true)
   ReferenceDataItem toReferenceDataItem(PriorAuthorityDetail priorAuthorityDetail);
 
@@ -282,26 +358,15 @@ public interface ApplicationMapper {
   @Mapping(target = "otherDetails", source = "dischargeStatus.otherDetails")
   @Mapping(target = "dischargeReason", source = "dischargeStatus.reason")
   @Mapping(target = "clientContinueInd", source = "dischargeStatus.clientContinuePvtInd")
-
+  @Mapping(target = "costAwards", ignore = true)
+  @Mapping(target = "financialAwards", ignore = true)
+  @Mapping(target = "landAwards", ignore = true)
+  @Mapping(target = "otherAssetAwards", ignore = true)
+  @Mapping(target = "proceedingOutcomes", ignore = true)
+  @Mapping(target = "dischargeCaseInd", ignore = true)
+  @Mapping(target = "providerId", ignore = true)
+  @Mapping(target = "caseReferenceNumber", ignore = true)
   CaseOutcome toCaseOutcome(CaseDetail caseDetail);
-  /* TODO: 24/10/23 - Is this below needed?
-   * The ProceedingOutcome has already been converted. Is this actually changing any
-   * of the values?
-   */
-//    if (ebsCase != null && ebsCase.getProceedings() != null) {
-//      for (Proceeding proceeding : ebsCase.getProceedings()) {
-//        if (proceeding.hasOutcome()) {
-//          ProceedingOutcome proceedingOutcome = proceeding.getOutcome();
-//          proceedingOutcome.setProceedingCaseId(proceeding.getProceedingCaseId());
-//          proceedingOutcome.setMatterTypeDisplayValue(proceeding.getMatterTypeDisplayValue());
-//          proceedingOutcome
-//              .setProceedingTypeDisplayValue(proceeding.getProceedingTypeDisplayValue());
-//          proceedingOutcome.setDescription(proceeding.getDescription());
-//          proceedingOutcome.setProceedingType(proceeding.getProceedingType());
-//          outcome.addProceedingOutcome(proceedingOutcome);
-//        }
-//      }
-//    }
 
   @Mapping(target = "ebsId", source = "awardId")
   @Mapping(target = "awardType", constant = AWARD_TYPE_COST)
@@ -309,17 +374,47 @@ public interface ApplicationMapper {
   @Mapping(target = "awardCode", source = "awardType")
   @Mapping(target = ".", source = "costAward")
   @Mapping(target = "dateOfOrder", source = "costAward.orderDate")
-  @Mapping(target = "preCertificateLscCost", source = "costAward.preCertificateAwardLsc")
-  @Mapping(target = "preCertificateOtherCost", source = "costAward.preCertificateAwardOth")
-  @Mapping(target = ".", source = "costAward.serviceAddress")
+  @Mapping(target = "preCertificateLscCost",
+      source = "costAward.preCertificateAwardLsc", defaultValue = "0.00")
+  @Mapping(target = "preCertificateOtherCost",
+      source = "costAward.preCertificateAwardOth", defaultValue = "0.00")
+  @Mapping(target = "certificateCostLsc",
+      source = "costAward.certificateCostRateLsc", defaultValue = "0.00")
+  @Mapping(target = "certificateCostRateMarket",
+      source = "costAward.certificateCostRateMarket", defaultValue = "0.00")
+  @Mapping(target = "orderServedDate", source = "costAward.orderDateServed")
+  @Mapping(target = "interestStartDate", source = "costAward.interestAwardedStartDate")
+  @Mapping(target = "addressLine1", source = "costAward.serviceAddress.addressLine1")
+  @Mapping(target = "addressLine2", source = "costAward.serviceAddress.addressLine2")
+  @Mapping(target = "addressLine3", source = "costAward.serviceAddress.addressLine3")
   @Mapping(target = "recovery", source = "costAward.recovery")
   @Mapping(target = "liableParties", source = "costAward.liableParties")
+  @Mapping(target = "auditTrail", ignore = true)
+  @Mapping(target = "opponentId", ignore = true)
+  @Mapping(target = "opponentsToSelect", ignore = true)
+  @Mapping(target = "costOrFinancial", ignore = true)
+  @Mapping(target = "effectiveDate", ignore = true)
+  @Mapping(target = "timeRelatedRecoveryDetails", ignore = true)
+  @Mapping(target = "totalCertCostsAwarded", ignore = true)
+  @Mapping(target = "triggeringEvent", ignore = true)
+  @Mapping(target = "awardAmount", ignore = true)
   CostAward toCostAward(Award soaAward);
 
+  /**
+   * AfterMapping method to finalise a CostAward.
+   *
+   * @param costAward - the target for extra mapping.
+   */
   @AfterMapping
-  default void afterMapping(@MappingTarget CostAward costAward) {
-    costAward.getRecovery().setAwardType(AWARD_TYPE_COST);
-    costAward.getRecovery().setDescription(AWARD_TYPE_COST_DESCRIPTION);
+  default void finaliseCostAward(@MappingTarget CostAward costAward) {
+    if (costAward.getRecovery() != null) {
+      costAward.getRecovery().setAwardType(AWARD_TYPE_COST);
+      costAward.getRecovery().setDescription(AWARD_TYPE_COST_DESCRIPTION);
+    }
+
+    // Calculate the total costs awarded by summing LSC and Market
+    costAward.setTotalCertCostsAwarded(costAward.getCertificateCostLsc()
+        .add(costAward.getCertificateCostRateMarket()));
   }
 
   @Mapping(target = "ebsId", source = "awardId")
@@ -330,16 +425,33 @@ public interface ApplicationMapper {
   @Mapping(target = "dateOfOrder", source = "financialAward.orderDate")
   @Mapping(target = "awardAmount", source = "financialAward.amount")
   @Mapping(target = "orderServedDate", source = "financialAward.orderDateServed")
-  @Mapping(target = "statutoryChargeExemptionReason", source = "financialAward.statutoryChangeReason")
-  @Mapping(target = ".", source = "financialAward.serviceAddress")
+  @Mapping(target = "statutoryChargeExemptionReason",
+      source = "financialAward.statutoryChangeReason")
+  @Mapping(target = "addressLine1", source = "financialAward.serviceAddress.addressLine1")
+  @Mapping(target = "addressLine2", source = "financialAward.serviceAddress.addressLine2")
+  @Mapping(target = "addressLine3", source = "financialAward.serviceAddress.addressLine3")
   @Mapping(target = "recovery", source = "financialAward.recovery")
   @Mapping(target = "liableParties", source = "financialAward.liableParties")
+  @Mapping(target = "auditTrail", ignore = true)
+  @Mapping(target = "opponentId", ignore = true)
+  @Mapping(target = "opponentsToSelect", ignore = true)
+  @Mapping(target = "costOrFinancial", ignore = true)
+  @Mapping(target = "effectiveDate", ignore = true)
+  @Mapping(target = "timeRelatedRecoveryDetails", ignore = true)
+  @Mapping(target = "triggeringEvent", ignore = true)
   FinancialAward toFinancialAward(Award soaAward);
 
+  /**
+   * AfterMapping method to finalise a FinancialAward.
+   *
+   * @param financialAward - the target for extra mapping.
+   */
   @AfterMapping
-  default void afterMapping(@MappingTarget FinancialAward financialAward) {
-    financialAward.getRecovery().setAwardType(AWARD_TYPE_FINANCIAL);
-    financialAward.getRecovery().setDescription(AWARD_TYPE_FINANCIAL_DESCRIPTION);
+  default void finaliseFinancialAward(@MappingTarget FinancialAward financialAward) {
+    if (financialAward.getRecovery() != null) {
+      financialAward.getRecovery().setAwardType(AWARD_TYPE_FINANCIAL);
+      financialAward.getRecovery().setDescription(AWARD_TYPE_FINANCIAL_DESCRIPTION);
+    }
   }
 
   @Mapping(target = "awardCode", source = "awardType")
@@ -347,21 +459,47 @@ public interface ApplicationMapper {
   @Mapping(target = "dateOfOrder", source = "landAward.orderDate")
   @Mapping(target = "awardType", constant = AWARD_TYPE_LAND)
   @Mapping(target = ".", source = "landAward")
-  @Mapping(target = ".", source = "landAward.propertyAddress")
-  @Mapping(target = "valuationAmount", source = "landAward.valuation.amount")
+  @Mapping(target = "addressLine1", source = "landAward.propertyAddress.addressLine1")
+  @Mapping(target = "addressLine2", source = "landAward.propertyAddress.addressLine2")
+  @Mapping(target = "addressLine3", source = "landAward.propertyAddress.addressLine3")
+  @Mapping(target = "disputedPercentage",
+      source = "landAward.disputedPercentage", defaultValue = "0.00")
+  @Mapping(target = "awardedPercentage",
+      source = "landAward.awardedPercentage", defaultValue = "0.00")
+  @Mapping(target = "mortgageAmountDue",
+      source = "landAward.mortgageAmountDue", defaultValue = "0.00")
+  @Mapping(target = "valuationAmount", source = "landAward.valuation.amount", defaultValue = "0.00")
   @Mapping(target = "valuationCriteria", source = "landAward.valuation.criteria")
   @Mapping(target = "valuationDate", source = "landAward.valuation.date")
   @Mapping(target = "timeRecovery", source = "landAward.timeRelatedAward")
   @Mapping(target = "liableParties", source = "landAward.otherProprietors")
+  @Mapping(target = "equity", ignore = true)
+  @Mapping(target = "awardAmount", ignore = true)
+  @Mapping(target = "opponentId", ignore = true)
+  @Mapping(target = "opponentsToSelect", ignore = true)
+  @Mapping(target = "costOrFinancial", ignore = true)
+  @Mapping(target = "effectiveDate", ignore = true)
+  @Mapping(target = "recoveryOfAwardTimeRelated", ignore = true)
+  @Mapping(target = "timeRelatedRecoveryDetails", ignore = true)
+  @Mapping(target = "triggeringEvent", ignore = true)
+  @Mapping(target = "auditTrail", ignore = true)
   LandAward toLandAward(Award soaAward);
 
+  /**
+   * Complete the mapping for a LandAward.
+   *
+   * @param landAward - the mapping target
+   */
   @AfterMapping
-  default void afterMapping(@MappingTarget LandAward landAward) {
+  default void finaliseLandAward(@MappingTarget LandAward landAward) {
     TimeRecovery timeRecovery = landAward.getTimeRecovery();
-    landAward.setRecoveryOfAwardTimeRelated(timeRecovery != null); // To be changed once api updated
+    landAward.setRecoveryOfAwardTimeRelated(timeRecovery != null);
     if (timeRecovery != null) {
       timeRecovery.setAwardType(AWARD_TYPE_LAND);
     }
+
+    // Initialise the equity value based on Valuation Amount vs Mortgage Amount Due
+    landAward.setEquity(landAward.getValuationAmount().subtract(landAward.getMortgageAmountDue()));
   }
 
   @Mapping(target = "ebsId", source = "awardId")
@@ -369,58 +507,96 @@ public interface ApplicationMapper {
   @Mapping(target = "awardType", constant = AWARD_TYPE_OTHER_ASSET)
   @Mapping(target = "awardCode", source = "awardType")
   @Mapping(target = ".", source = "otherAsset")
-  @Mapping(target = "valuationAmount", source = "otherAsset.valuation.amount")
+  @Mapping(target = "valuationAmount",
+      source = "otherAsset.valuation.amount", defaultValue = "0.00")
   @Mapping(target = "valuationCriteria", source = "otherAsset.valuation.criteria")
   @Mapping(target = "valuationDate", source = "otherAsset.valuation.date")
   @Mapping(target = "timeRecovery", source = "otherAsset.timeRelatedAward")
   @Mapping(target = "liableParties", source = "otherAsset.heldBy")
+  @Mapping(target = "awardAmount", ignore = true)
+  @Mapping(target = "auditTrail", ignore = true)
+  @Mapping(target = "costOrFinancial", ignore = true)
+  @Mapping(target = "effectiveDate", ignore = true)
+  @Mapping(target = "opponentId", ignore = true)
+  @Mapping(target = "opponentsToSelect", ignore = true)
+  @Mapping(target = "recoveryOfAwardTimeRelated", ignore = true)
+  @Mapping(target = "timeRelatedRecoveryDetails", ignore = true)
+  @Mapping(target = "triggeringEvent", ignore = true)
   OtherAssetAward toOtherAssetAward(Award soaAward);
 
+  /**
+   * Complete the mapping for an OtherAssetAward.
+   *
+   * @param otherAssetAward - the mapping target
+   */
   @AfterMapping
-  default void afterMapping(@MappingTarget OtherAssetAward otherAssetAward) {
+  default void finaliseOtherAssetAward(@MappingTarget OtherAssetAward otherAssetAward) {
     TimeRecovery timeRecovery = otherAssetAward.getTimeRecovery();
-    otherAssetAward.setRecoveryOfAwardTimeRelated(timeRecovery != null ? "true" : "false"); // To be changed once api updated
+    /* TODO: To be changed once api updated */
+    otherAssetAward.setRecoveryOfAwardTimeRelated(timeRecovery != null ? "true" : "false");
     if (timeRecovery != null) {
       timeRecovery.setAwardType(AWARD_TYPE_OTHER_ASSET);
     }
   }
 
-  @Mapping(target = "auditTrail", ignore = true)
-  @Mapping(target = "opponentId", source = ".")
-  LiableParty toLiableParty(String partyId);
-
+  /**
+   * Complete the mapping for a BaseAward.
+   *
+   * @param baseAward - the mapping target
+   */
   @AfterMapping
-  default void afterMapping(@MappingTarget BaseAward baseAward, Award soaAward) {
+  default void finaliseAward(@MappingTarget BaseAward baseAward) {
     baseAward.getLiableParties().forEach(
-        liableParty -> liableParty.setAwardType(soaAward.getAwardType()));
+        liableParty -> liableParty.setAwardType(baseAward.getAwardType()));
   }
 
-  @Mapping(target = "awardAmount", source = "awardValue")
-  @Mapping(target = "clientAmountPaidToLsc", source = "recoveredAmount.client.paidToLsc")
-  @Mapping(target = "clientRecoveryAmount", source = "recoveredAmount.client.amount")
+  @Mapping(target = "opponentId", source = ".")
+  @Mapping(target = "awardType", ignore = true)
+  @Mapping(target = "auditTrail", ignore = true)
+  LiableParty toLiableParty(String partyId);
+
+  @Mapping(target = "awardAmount", source = "awardValue", defaultValue = "0.00")
+  @Mapping(target = "clientAmountPaidToLsc",
+      source = "recoveredAmount.client.paidToLsc", defaultValue = "0.00")
+  @Mapping(target = "clientRecoveryAmount",
+      source = "recoveredAmount.client.amount", defaultValue = "0.00")
   @Mapping(target = "clientRecoveryDate", source = "recoveredAmount.client.dateReceived")
-  @Mapping(target = "courtAmountPaidToLsc", source = "recoveredAmount.court.paidToLsc")
-  @Mapping(target = "courtRecoveryAmount", source = "recoveredAmount.court.amount")
+  @Mapping(target = "courtAmountPaidToLsc",
+      source = "recoveredAmount.court.paidToLsc", defaultValue = "0.00")
+  @Mapping(target = "courtRecoveryAmount",
+      source = "recoveredAmount.court.amount", defaultValue = "0.00")
   @Mapping(target = "courtRecoveryDate", source = "recoveredAmount.court.dateReceived")
-  @Mapping(target = "solicitorAmountPaidToLsc", source = "recoveredAmount.solicitor.paidToLsc")
-  @Mapping(target = "solicitorRecoveryAmount", source = "recoveredAmount.solicitor.amount")
+  @Mapping(target = "solicitorAmountPaidToLsc",
+      source = "recoveredAmount.solicitor.paidToLsc", defaultValue = "0.00")
+  @Mapping(target = "solicitorRecoveryAmount",
+      source = "recoveredAmount.solicitor.amount", defaultValue = "0.00")
   @Mapping(target = "solicitorRecoveryDate", source = "recoveredAmount.solicitor.dateReceived")
-  @Mapping(target = "offeredAmount", source = "offeredAmount.amount")
+  @Mapping(target = "offeredAmount", source = "offeredAmount.amount", defaultValue = "0.00")
   @Mapping(target = "conditionsOfOffer", source = "offeredAmount.conditionsOfOffer")
   @Mapping(target = "detailsOfOffer", source = "offeredAmount.conditionsOfOffer")
   @Mapping(target = "leaveOfCourtRequiredInd", source = "leaveOfCourtReqdInd")
+  @Mapping(target = "unrecoveredAmount", ignore = true)
   @Mapping(target = "recoveredAmount", ignore = true)
+  @Mapping(target = "awardType", ignore = true)
+  @Mapping(target = "description", ignore = true)
   Recovery toRecovery(uk.gov.laa.ccms.soa.gateway.model.Recovery soaRecovery);
 
+  /**
+   * Perform after-mapping for a Recovery.
+   *
+   * @param recovery - the mapping target
+   */
   @AfterMapping
-  default void calculateRecoveredAmount(@MappingTarget Recovery recovery,
-      uk.gov.laa.ccms.soa.gateway.model.Recovery soaRecovery) {
-    recovery.setRecoveredAmount(Stream.of(
-        soaRecovery.getRecoveredAmount().getSolicitor().getAmount(),
-        soaRecovery.getRecoveredAmount().getCourt().getAmount(),
-        soaRecovery.getRecoveredAmount().getClient().getAmount())
-        .filter(Objects::nonNull)
-        .reduce(BigDecimal.ZERO, BigDecimal::add));
+  default void finaliseRecovery(@MappingTarget Recovery recovery) {
+    // Set the total recovered amount to be a sum of solicitor, court and client.
+    recovery.setRecoveredAmount(
+        recovery.getSolicitorRecoveryAmount()
+            .add(recovery.getCourtRecoveryAmount())
+            .add(recovery.getClientRecoveryAmount()));
+
+    // Now set the unrecovered amount accordingly
+    recovery.setUnrecoveredAmount(
+        recovery.getAwardAmount().subtract(recovery.getRecoveredAmount()));
   }
 
   @Mapping(target = "awardAmount", source = "amount")

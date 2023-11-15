@@ -374,7 +374,7 @@ public class LookupService {
    * Retrieves all prior authority types.
    *
    * @return A Mono containing the PriorAuthorityLookupDetail
-   *   or an error handler if an error occurs.
+   *     or an error handler if an error occurs.
    */
   public Mono<PriorAuthorityTypeDetails> getPriorAuthorityTypes() {
     return this.getPriorAuthorityTypes(null, null);
@@ -384,7 +384,7 @@ public class LookupService {
    * Retrieves prior authority types matching the specified code and valueRequired flag.
    *
    * @return A Mono containing the PriorAuthorityLookupDetail
-   *   or an error handler if an error occurs.
+   *     or an error handler if an error occurs.
    */
   public Mono<PriorAuthorityTypeDetails> getPriorAuthorityTypes(
       final String code, final Boolean valueRequired) {
@@ -395,7 +395,7 @@ public class LookupService {
    * Retrieves all award types.
    *
    * @return A Mono containing the AwardTypeLookupDetail
-   *   or an error handler if an error occurs.
+   *     or an error handler if an error occurs.
    */
   public Mono<AwardTypeLookupDetail> getAwardTypes() {
     return this.getAwardTypes(null, null);
@@ -405,13 +405,21 @@ public class LookupService {
    * Retrieves award types matching the specified code and awardType values.
    *
    * @return A Mono containing the AwardTypeLookupDetail
-   *   or an error handler if an error occurs.
+   *     or an error handler if an error occurs.
    */
   public Mono<AwardTypeLookupDetail> getAwardTypes(
       final String code, final String awardType) {
     return ebsApiClient.getAwardTypes(code, awardType);
   }
 
+  /**
+   * Get a single common value based on type and code.
+   *
+   * @param type - the value type.
+   * @param code - the value code.
+   * @return a Mono containing the CommonLookupValueDetail
+   *     or an error handler if an error occurs.
+   */
   public Mono<CommonLookupValueDetail> getCommonValue(String type, String code) {
     return ebsApiClient.getCommonValues(type, code)
         .mapNotNull(commonLookupDetail -> commonLookupDetail

@@ -51,7 +51,6 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailRecordHistory;
-import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 
@@ -65,6 +64,9 @@ class ApplicationServiceTest {
 
   @Mock
   private EbsApiClient ebsApiClient;
+
+  @Mock
+  private LookupService lookupService;
 
   @Mock
   private ApplicationFormDataMapper applicationFormDataMapper;
@@ -179,10 +181,10 @@ class ApplicationServiceTest {
 
     when(soaApiClient.getCaseReference(user.getLoginId(), user.getUserType())).thenReturn(
         Mono.just(caseReferenceSummary));
-    when(ebsApiClient.getCommonValues(anyString())).thenReturn(
-        Mono.just(categoryOfLawLookupDetail));
     when(soaApiClient.getContractDetails(anyInt(), anyInt(), anyString(),
         anyString())).thenReturn(Mono.just(contractDetails));
+    when(lookupService.getCategoriesOfLaw()).thenReturn(
+        Mono.just(categoryOfLawLookupDetail));
     when(ebsApiClient.getAmendmentTypes(any())).thenReturn(Mono.just(amendmentTypes));
     when(caabApiClient.createApplication(anyString(), any())).thenReturn(Mono.empty());
 
@@ -193,7 +195,7 @@ class ApplicationServiceTest {
         .verifyComplete();
 
     verify(soaApiClient).getCaseReference(user.getLoginId(), user.getUserType());
-    verify(ebsApiClient).getCommonValues(anyString());
+    verify(lookupService).getCategoriesOfLaw();
     verify(soaApiClient).getContractDetails(anyInt(), anyInt(), anyString(), anyString());
     verify(ebsApiClient).getAmendmentTypes(any());
     verify(caabApiClient).createApplication(anyString(), any());

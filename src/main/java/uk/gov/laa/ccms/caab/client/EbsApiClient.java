@@ -218,7 +218,8 @@ public class EbsApiClient {
    *
    * @return A Mono containing the PriorAuthorityTypeDetails or an error handler if an error occurs.
    */
-  public Mono<PriorAuthorityTypeDetails> getPriorAuthorityTypes(String code, Boolean valueRequired) {
+  public Mono<PriorAuthorityTypeDetails> getPriorAuthorityTypes(String code,
+      Boolean valueRequired) {
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/prior-authority-types")
@@ -297,8 +298,6 @@ public class EbsApiClient {
                 Optional.ofNullable(scopeLimitationDetail.getEmergencyCostLimitation()))
             .queryParamIfPresent("non-standard-wording",
                 Optional.ofNullable(scopeLimitationDetail.getNonStandardWordingRequired()))
-            .queryParamIfPresent("emergency-scope-default",
-                Optional.ofNullable(scopeLimitationDetail.getEmergencyScopeDefault()))
             .queryParamIfPresent("emergency-scope-default",
                 Optional.ofNullable(scopeLimitationDetail.getEmergencyScopeDefault()))
             .queryParamIfPresent("emergency",

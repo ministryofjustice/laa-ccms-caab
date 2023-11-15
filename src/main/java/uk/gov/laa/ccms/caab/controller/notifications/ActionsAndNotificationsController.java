@@ -22,7 +22,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationSearchValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -41,7 +41,7 @@ import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 @SessionAttributes(value = {NOTIFICATION_SEARCH_CRITERIA, NOTIFICATIONS_SEARCH_RESULTS})
 public class ActionsAndNotificationsController {
 
-  private final CommonLookupService commonLookupService;
+  private final LookupService lookupService;
   private final ProviderService providerService;
   private final NotificationSearchValidator notificationSearchValidator;
   private final UserService userService;
@@ -172,7 +172,7 @@ public class ActionsAndNotificationsController {
     Mono<List<ContactDetail>> feeEarners = providerService.getProvider(user.getProvider().getId())
         .map(providerService::getAllFeeEarners);
     // get the notification types
-    Mono<CommonLookupDetail> notificationTypes = commonLookupService.getNotificationTypes();
+    Mono<CommonLookupDetail> notificationTypes = lookupService.getNotificationTypes();
     // get the Users
     Mono<UserDetails> users = userService.getUsers(user.getProvider().getId());
 

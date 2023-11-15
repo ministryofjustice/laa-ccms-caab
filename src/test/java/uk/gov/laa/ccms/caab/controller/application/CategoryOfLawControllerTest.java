@@ -17,18 +17,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
-import com.google.common.base.Verify;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -134,7 +131,7 @@ public class CategoryOfLawControllerTest {
         user.getUserType(),
         Boolean.TRUE)).thenReturn(categoryOfLawCodes);
 
-    when(commonLookupService.getCategoriesOfLaw()).thenReturn(
+    when(lookupService.getCategoriesOfLaw()).thenReturn(
         Mono.just(categoriesOfLaw));
 
     MvcResult result = mockMvc.perform(get("/application/category-of-law")
@@ -151,7 +148,7 @@ public class CategoryOfLawControllerTest {
         user.getUserType(),
         Boolean.TRUE);
 
-    verify(commonLookupService).getCategoriesOfLaw();
+    verify(lookupService).getCategoriesOfLaw();
 
     BindingResult bindingResult = (BindingResult) result.getModelAndView().getModel().get("org.springframework.validation.BindingResult.applicationFormData");
     assertEquals(1, bindingResult.getFieldErrors("categoryOfLawId").size());

@@ -22,13 +22,17 @@ import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.BaseUser;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
+import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
 
@@ -101,6 +105,7 @@ public class EbsApiClientTest {
   void getCommonValues_returnsData() {
     String type = "type1";
     String code = "code1";
+    String descr = "desc1";
     String sort = "sort1";
     CommonLookupDetail commonValues = new CommonLookupDetail();
 
@@ -111,7 +116,7 @@ public class EbsApiClientTest {
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
 
-    Mono<CommonLookupDetail> commonValuesMono = ebsApiClient.getCommonValues(type, code, sort);
+    Mono<CommonLookupDetail> commonValuesMono = ebsApiClient.getCommonValues(type, code, descr, sort);
 
     StepVerifier.create(commonValuesMono)
         .expectNext(commonValues)
@@ -121,13 +126,15 @@ public class EbsApiClientTest {
     URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
     // Assert the URI
-    assertEquals("/lookup/common?type=type1&code=code1&sort=sort1", actualUri.toString());
+    assertEquals(String.format("/lookup/common?type=%s&code=%s&description=%s&sort=%s",
+            type, code, descr, sort), actualUri.toString());
   }
 
   @Test
   void getCommonValues_notFound() {
     String type = "type1";
     String code = "code1";
+    String descr = "desc1";
     String sort = "sort1";
 
     ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
@@ -141,7 +148,8 @@ public class EbsApiClientTest {
     when(ebsApiClientErrorHandler.handleCommonValuesError(eq(type), eq(code), eq(sort),
         any(WebClientResponseException.class))).thenReturn(Mono.empty());
 
-    Mono<CommonLookupDetail> commonValuesMono = ebsApiClient.getCommonValues(type, code, sort);
+    Mono<CommonLookupDetail> commonValuesMono = ebsApiClient.getCommonValues(
+        type, code, descr, sort);
 
     StepVerifier.create(commonValuesMono)
         .verifyComplete();
@@ -150,7 +158,8 @@ public class EbsApiClientTest {
     URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
     // Assert the URI
-    assertEquals("/lookup/common?type=type1&code=code1&sort=sort1", actualUri.toString());
+    assertEquals(String.format("/lookup/common?type=%s&code=%s&description=%s&sort=%s",
+        type, code, descr, sort), actualUri.toString());
   }
 
   @Test
@@ -349,7 +358,7 @@ public class EbsApiClientTest {
     String proceedingCode = "PROC1";
     ProceedingDetail proceedingDetail = new ProceedingDetail();
 
-    String expectedUri = "/proceedings/{proceedingCode}";
+    String expectedUri = "/proceedings/{proceeding-code}";
 
     when(webClientMock.get()).thenReturn(requestHeadersUriMock);
     when(requestHeadersUriMock.uri(expectedUri, proceedingCode)).thenReturn(requestHeadersMock);
@@ -475,5 +484,117 @@ public class EbsApiClientTest {
 
     // Assert the URI
     assertEquals(expectedUri, actualUri.toString());
+  }
+
+  @Test
+  void getPriorAuthorityTypes_returnsData() {
+    String code = "code1";
+    Boolean valueRequired = Boolean.TRUE;
+
+    PriorAuthorityTypeDetails priorAuthorityTypeDetails = new PriorAuthorityTypeDetails();
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(PriorAuthorityTypeDetails.class)).thenReturn(
+        Mono.just(priorAuthorityTypeDetails));
+
+    Mono<PriorAuthorityTypeDetails> priorAuthorityTypeDetailsMono =
+        ebsApiClient.getPriorAuthorityTypes(code, valueRequired);
+
+    StepVerifier.create(priorAuthorityTypeDetailsMono)
+        .expectNext(priorAuthorityTypeDetails)
+        .verifyComplete();
+
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    // Assert the URI
+    assertEquals(String.format("/prior-authority-types?code=%s&value-required=%s",
+        code, valueRequired), actualUri.toString());
+  }
+
+  @Test
+  void getOutcomeResults_returnsData() {
+    String proceedingCode = "code1";
+    String outcomeResult = "or1";
+
+    OutcomeResultLookupDetail outcomeResultLookupDetail = new OutcomeResultLookupDetail();
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(OutcomeResultLookupDetail.class)).thenReturn(
+        Mono.just(outcomeResultLookupDetail));
+
+    Mono<OutcomeResultLookupDetail> outcomeResultLookupDetailMono =
+        ebsApiClient.getOutcomeResults(proceedingCode, outcomeResult);
+
+    StepVerifier.create(outcomeResultLookupDetailMono)
+        .expectNext(outcomeResultLookupDetail)
+        .verifyComplete();
+
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    // Assert the URI
+    assertEquals(String.format("/lookup/outcome-results?proceeding-code=%s&outcome-result=%s",
+        proceedingCode, outcomeResult), actualUri.toString());
+  }
+
+  @Test
+  void getStageEnds_returnsData() {
+    String proceedingCode = "code1";
+    String stageEnd = "stageEnd1";
+
+    StageEndLookupDetail stageEndLookupDetail = new StageEndLookupDetail();
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(StageEndLookupDetail.class)).thenReturn(
+        Mono.just(stageEndLookupDetail));
+
+    Mono<StageEndLookupDetail> stageEndLookupDetailMono =
+        ebsApiClient.getStageEnds(proceedingCode, stageEnd);
+
+    StepVerifier.create(stageEndLookupDetailMono)
+        .expectNext(stageEndLookupDetail)
+        .verifyComplete();
+
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    // Assert the URI
+    assertEquals(String.format("/lookup/stage-ends?proceeding-code=%s&stage-end=%s",
+        proceedingCode, stageEnd), actualUri.toString());
+  }
+
+  @Test
+  void getAwardTypes_returnsData() {
+    String code = "code1";
+    String awardType = "type1";
+
+    AwardTypeLookupDetail awardTypeLookupDetail = new AwardTypeLookupDetail();
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(AwardTypeLookupDetail.class)).thenReturn(
+        Mono.just(awardTypeLookupDetail));
+
+    Mono<AwardTypeLookupDetail> awardTypeLookupDetailMono =
+        ebsApiClient.getAwardTypes(code, awardType);
+
+    StepVerifier.create(awardTypeLookupDetailMono)
+        .expectNext(awardTypeLookupDetail)
+        .verifyComplete();
+
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    // Assert the URI
+    assertEquals(String.format("/lookup/award-types?code=%s&award-type=%s",
+        code, awardType), actualUri.toString());
   }
 }

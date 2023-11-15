@@ -115,12 +115,12 @@ public class ApplicationConstants {
   public static final String PROCEEDING_STATUS_UPDATED_DISPLAY = "Updated";
 
   /**
-   * Type value for an LOV Reference Data Item
+   * Type value for an LOV Reference Data Item.
    */
   public static final String REFERENCE_DATA_ITEM_TYPE_LOV = "LOV";
 
   /**
-   * Type value for an AMOUNT Reference Data Item
+   * Type value for an AMOUNT Reference Data Item.
    */
   public static final String REFERENCE_DATA_ITEM_TYPE_AMOUNT = "AMT";
 
@@ -153,5 +153,15 @@ public class ApplicationConstants {
    * Other Asset Award Type.
    */
   public static final String AWARD_TYPE_OTHER_ASSET = "ASSET";
+
+  /**
+   * The individual opponent type.
+   */
+  public static final String OPPONENT_TYPE_INDIVIDUAL = "Individual";
+
+  /**
+   * The organisation opponent type.
+   */
+  public static final String OPPONENT_TYPE_ORGANISATION = "Organisation";
 
 }

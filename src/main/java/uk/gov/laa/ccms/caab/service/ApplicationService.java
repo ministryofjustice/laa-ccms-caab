@@ -371,7 +371,6 @@ public class ApplicationService {
         || APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS.equalsIgnoreCase(
         soaApplicationDetails.getApplicationAmendmentType());
 
-    // Commented out until merge/rebase is done with Phil's stuff!
     caabApplication.getApplicationType().setDevolvedPowers(
         new DevolvedPowers()
             .used(isDevolvedPowers)
@@ -382,7 +381,7 @@ public class ApplicationService {
     }
 
 
-    caabApplication.setCaseOutcome(convertCaseOutcome(soaCase));
+    caabApplication.setCaseOutcome(convertCaseOutcome(soaCase, caabApplication));
 
     return caabApplication;
   }
@@ -423,7 +422,7 @@ public class ApplicationService {
     Map<String, CommonLookupValueDetail> statuses = toCommonValueMap(
         lookupService.getProceedingStatuses().block());
 
-    // Check whether all of the soa proceedings are at status DRAFT
+    // Check whether all soa proceedings are at status DRAFT
     boolean caseWithOnlyDraftProceedings = soaProceedings.stream().allMatch(proceedingDetail ->
         STATUS_DRAFT.equalsIgnoreCase(proceedingDetail.getStatus()));
     application.setSubmitted(caseWithOnlyDraftProceedings);
@@ -589,7 +588,8 @@ public class ApplicationService {
 
   }
 
-  private void calculateProceedingCostLimitation(Proceeding proceeding, ApplicationDetail applicationDetail) {
+  private void calculateProceedingCostLimitation(Proceeding proceeding,
+      ApplicationDetail applicationDetail) {
     if (applicationDetail.getCategoryOfLaw().getId() != null
         && proceeding.getMatterType().getId() != null
         && proceeding.getProceedingType().getId() != null
@@ -737,16 +737,33 @@ public class ApplicationService {
     return opponents;
   }
 
+
   /**
-   * @return caseoutcome domain object
+   * Convert a CaseOutcome.
+   *
+   * @param soaCaseDetails - the Soa Case Details to convert.
+   * @return a converted CaseOutcome.
    */
-  protected CaseOutcome convertCaseOutcome(final CaseDetail soaCaseDetails) {
+  protected CaseOutcome convertCaseOutcome(final CaseDetail soaCaseDetails,
+      final ApplicationDetail caabApplication) {
     CaseOutcome outcome = applicationMapper.toCaseOutcome(soaCaseDetails);
 
     List<Award> soaAwards = soaCaseDetails.getAwards();
     if (soaAwards != null) {
       convertAwards(soaAwards, outcome);
     }
+
+    /*
+     * Copy the ProceedingOutcome for each Proceeding into a flat List in the CaseOutcome
+     */
+    if (caabApplication.getProceedings() != null) {
+      for (Proceeding proceeding : caabApplication.getProceedings()) {
+        if (proceeding.getOutcome() != null) {
+          outcome.addProceedingOutcomesItem(proceeding.getOutcome());
+        }
+      }
+    }
+
 
     return outcome;
   }
@@ -778,6 +795,7 @@ public class ApplicationService {
             applicationMapper.toLandAward(award));
         case AWARD_TYPE_OTHER_ASSET -> caabCaseOutcome.addOtherAssetAwardsItem(
             applicationMapper.toOtherAssetAward(award));
+        default -> log.warn("Unknown AwardType: " + awardType);
       }
     }
   }
