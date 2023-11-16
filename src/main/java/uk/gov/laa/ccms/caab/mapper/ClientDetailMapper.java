@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.mapper;
 
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -115,15 +116,11 @@ public interface ClientDetailMapper {
   default Date mapDateOfBirth(ClientFormDataBasicDetails basicDetails) {
     if (basicDetails != null) {
       int day = Integer.parseInt(basicDetails.getDobDay());
-
-      // Subtract 1 since Calendar months are zero-based
-      int month = Integer.parseInt(basicDetails.getDobMonth()) - 1;
+      int month = Integer.parseInt(basicDetails.getDobMonth());
       int year = Integer.parseInt(basicDetails.getDobYear());
 
-      Calendar calendar = Calendar.getInstance();
-      calendar.set(year, month, day);
-
-      return calendar.getTime();
+      LocalDate localDate = LocalDate.of(year, month, day);
+      return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
     }
     return null;
   }
@@ -192,9 +189,8 @@ public interface ClientDetailMapper {
   @Named("mapDayFromDate")
   default String mapDayFromDate(Date date) {
     if (date != null) {
-      Calendar calendar = Calendar.getInstance();
-      calendar.setTime(date);
-      return Integer.toString(calendar.get(Calendar.DAY_OF_MONTH));
+      LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+      return Integer.toString(localDate.getDayOfMonth());
     }
     return null;
   }
@@ -208,10 +204,8 @@ public interface ClientDetailMapper {
   @Named("mapMonthFromDate")
   default String mapMonthFromDate(Date date) {
     if (date != null) {
-      Calendar calendar = Calendar.getInstance();
-      calendar.setTime(date);
-      // Add 1 since Calendar months are zero-based
-      return Integer.toString(calendar.get(Calendar.MONTH) + 1);
+      LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+      return Integer.toString(localDate.getMonthValue());
     }
     return null;
   }
@@ -225,9 +219,8 @@ public interface ClientDetailMapper {
   @Named("mapYearFromDate")
   default String mapYearFromDate(Date date) {
     if (date != null) {
-      Calendar calendar = Calendar.getInstance();
-      calendar.setTime(date);
-      return Integer.toString(calendar.get(Calendar.YEAR));
+      LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+      return Integer.toString(localDate.getYear());
     }
     return null;
   }

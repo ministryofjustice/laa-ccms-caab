@@ -1,6 +1,9 @@
 package uk.gov.laa.ccms.caab.bean.validators.notification;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +29,17 @@ class NotificationSearchValidatorTest {
     criteria = new NotificationSearchCriteria();
     errors = new BeanPropertyBindingResult(criteria, "criteria");
   }
+
+  @Test
+  public void supports_ReturnsTrueForApplicationFormDataClass() {
+    assertTrue(validator.supports(NotificationSearchCriteria.class));
+  }
+
+  @Test
+  public void supports_ReturnsFalseForOtherClasses() {
+    assertFalse(validator.supports(Object.class));
+  }
+
 
   @Test
   void testAllFieldsBlankValidator() {

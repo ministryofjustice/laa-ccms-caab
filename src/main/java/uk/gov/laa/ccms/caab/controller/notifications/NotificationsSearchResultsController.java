@@ -73,6 +73,8 @@ public class NotificationsSearchResultsController {
       return "notifications/actions-and-notifications-no-results";
     }
     String currentUrl = request.getRequestURL().toString();
+    model.addAttribute(String.valueOf(page), "page");
+    model.addAttribute(String.valueOf(size), "size");
     model.addAttribute("currentUrl", currentUrl);
     populateModelWithDefaultValues(model);
     model.addAttribute(NOTIFICATIONS_SEARCH_RESULTS, notificationsResponse);
