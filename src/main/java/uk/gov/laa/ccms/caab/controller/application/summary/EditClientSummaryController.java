@@ -1,7 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
+import static uk.gov.laa.ccms.caab.constants.ActionConstants.ACTION_EDIT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_EDIT;
@@ -17,17 +18,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
 import uk.gov.laa.ccms.caab.controller.application.client.AbstractClientSummaryController;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
-import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -37,9 +36,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
  */
 @Controller
 @Slf4j
-@SessionAttributes({
-    CLIENT_DETAILS
-})
+@SessionAttributes({CLIENT_FLOW_FORM_DATA})
 public class EditClientSummaryController extends AbstractClientSummaryController {
 
   /**
@@ -74,10 +71,10 @@ public class EditClientSummaryController extends AbstractClientSummaryController
       Model model,
       HttpSession session) {
 
-    ClientDetails clientDetails;
+    ClientFlowFormData clientFlowFormData;
 
-    if (session.getAttribute(CLIENT_DETAILS) != null) {
-      clientDetails = (ClientDetails) session.getAttribute(CLIENT_DETAILS);
+    if (session.getAttribute(CLIENT_FLOW_FORM_DATA) != null) {
+      clientFlowFormData = (ClientFlowFormData) session.getAttribute(CLIENT_FLOW_FORM_DATA);
     } else {
       //if session contains clientDetails
       ClientDetail clientInformation = clientService.getClient(
@@ -86,14 +83,15 @@ public class EditClientSummaryController extends AbstractClientSummaryController
           user.getUserType()).block();
 
       //map data to the view
-      clientDetails = clientDetailsMapper.toClientDetails(clientInformation);
-      session.setAttribute(CLIENT_DETAILS, clientDetails);
+      clientFlowFormData = clientDetailsMapper.toClientFlowFormData(clientInformation.getDetails());
+      clientFlowFormData.setAction(ACTION_EDIT);
+      session.setAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
     }
 
-    populateSummaryListLookups(clientDetails, model);
+    populateSummaryListLookups(clientFlowFormData, model);
 
     model.addAttribute(activeCase);
-    model.addAttribute(CLIENT_DETAILS, clientDetails);
+    model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
     return "application/summary/client-summary-details";
   }
@@ -105,17 +103,17 @@ public class EditClientSummaryController extends AbstractClientSummaryController
    */
   @PostMapping("/application/summary/client/details/summary")
   public String postClientDetailsSummary(
-      @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
+      @ModelAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       BindingResult bindingResult,
       HttpSession session) {
 
-    validateClientDetails(clientDetails, bindingResult);
+    validateClientFlowFormData(clientFlowFormData, bindingResult);
 
     //TODO AMEND TO UPDATE CLIENT - Not Completed for this story
     ClientCreated response =
         clientService.createClient(
-            clientDetails,
+            clientFlowFormData,
             user).block();
 
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());

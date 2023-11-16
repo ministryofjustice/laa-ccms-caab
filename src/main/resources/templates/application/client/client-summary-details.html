@@ -9,7 +9,7 @@
         <a href="/application/client/search" class="govuk-back-link">Cancel and return to client search</a>
     </div>
     <div id="main-content">
-        <form action="#" th:action="@{/application/client/details/summary}" th:object="${clientDetails}" method="post">
+        <form action="#" th:action="@{/application/client/details/summary}" th:object="${clientFlowFormData}" method="post">
             <span class="govuk-caption-l">About your client</span>
             <h1 class="govuk-heading-l">
                 Summary of client information
@@ -19,7 +19,7 @@
                 any details that change, or request deletion of the record from the LAA. Please
                 check the summary details are correct before registration.
             </p>
-            <div th:replace="~{application/partials/client-fragments :: clientSummaryFragment (clientState='create')}"></div>
+            <div th:replace="~{application/partials/client-fragments :: clientSummaryFragment}"></div>
             <div class="govuk-button-group">
                 <button type="submit" class="govuk-button" data-module="govuk-button">
                     Submit client

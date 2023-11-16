@@ -52,6 +52,18 @@ public class SessionConstants {
   public static final String CLIENT_DETAILS = "clientDetails";
 
   /**
+   * Session attribute used to keep track of client details through the multiple screens of the
+   * client flows.
+   */
+  public static final String CLIENT_FLOW_FORM_DATA = "clientFlowFormData";
+
+  /**
+   * Session attribute used to keep track of client reference during the creation of a new
+   * application.
+   */
+  public static final String CLIENT_REFERENCE = "clientReference";
+
+  /**
    * Session attribute used to keep track of client details during the creation of a new
    * application.
    */

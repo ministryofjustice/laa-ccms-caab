@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,10 +10,14 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
+import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 
@@ -23,74 +27,79 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes({
-    CLIENT_DETAILS
-})
-@SuppressWarnings({"unchecked"})
+@SessionAttributes({CLIENT_FLOW_FORM_DATA})
 public class ClientContactDetailsController {
 
   private final CommonLookupService commonLookupService;
 
   private final ClientContactDetailsValidator clientContactDetailsValidator;
 
+  @ModelAttribute("contactDetails")
+  public ClientFormDataContactDetails getContactDetails() {
+    return new ClientFormDataContactDetails();
+  }
+
   /**
    * Handles the GET request for client contact details page.
    *
-   * @param clientDetails The details of the client.
+   * @param clientFlowFormData The data for create client flow.
+   * @param contactDetails The contact details of the client.
    * @param model The model for the view.
    * @return The view name for the client basic details page
    */
   @GetMapping("/application/client/details/contact")
   public String clientDetailsContact(
-          @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
-          Model model) {
+      @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
+      @ModelAttribute("contactDetails") ClientFormDataContactDetails contactDetails,
+      Model model) {
 
     populateDropdowns(model);
+    contactDetails.setVulnerableClient(
+        clientFlowFormData.getBasicDetails().getVulnerableClient());
+    contactDetails.setClientFlowFormAction(clientFlowFormData.getAction());
+
+    if(clientFlowFormData.getContactDetails() != null){
+      model.addAttribute("contactDetails", clientFlowFormData.getContactDetails());
+    }
+
     return "application/client/contact-client-details";
   }
 
   /**
    * Handles the client contact details results submission.
    *
-   * @param clientDetails The details of the client.
+   * @param clientFlowFormData The data for create client flow.
+   * @param contactDetails The contact details of the client.
    * @param bindingResult Validation result.
    * @param model The model for the view.
    * @return A redirect string to the agreement page.
    */
   @PostMapping("/application/client/details/contact")
   public String clientDetailsContact(
-      @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
+      @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
+      @ModelAttribute("contactDetails") ClientFormDataContactDetails contactDetails,
       BindingResult bindingResult,
       Model model) {
 
-    clientContactDetailsValidator.validate(clientDetails, bindingResult);
-    model.addAttribute(CLIENT_DETAILS, clientDetails);
+    clientContactDetailsValidator.validate(contactDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {
       populateDropdowns(model);
       return "application/client/contact-client-details";
     }
 
-    log.info("clientDetails: {}", clientDetails);
+    clientFlowFormData.setContactDetails(contactDetails);
+    model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
+
     return "redirect:/application/client/details/address";
   }
 
   private void populateDropdowns(Model model) {
-
-    Mono<CommonLookupDetail> correspondenceMethodMono =
-        commonLookupService.getCorrespondenceMethods();
-
-    // Asynchronously fetch marital statuses
-    Mono<CommonLookupDetail> correspondenceLanguageMono =
-        commonLookupService.getCorrespondenceLanguages();
-
-    // Zip all Monos and populate the model once all results are available
-    Mono.zip(correspondenceMethodMono, correspondenceLanguageMono)
-        .doOnNext(tuple -> {
-          model.addAttribute("correspondenceMethods", tuple.getT1().getContent());
-          model.addAttribute("correspondenceLanguages", tuple.getT2().getContent());
-        })
-        .block();
-
+    new DropdownBuilder(model)
+        .addDropdown("correspondenceMethods",
+            commonLookupService.getCorrespondenceMethods())
+        .addDropdown("correspondenceLanguages",
+            commonLookupService.getCorrespondenceLanguages())
+        .build();
   }
 }

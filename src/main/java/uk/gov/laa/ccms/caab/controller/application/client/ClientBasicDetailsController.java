@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER;
@@ -18,9 +19,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
+import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -31,9 +35,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes({
-    CLIENT_DETAILS
-})
+@SessionAttributes({CLIENT_FLOW_FORM_DATA})
 @SuppressWarnings({"unchecked"})
 public class ClientBasicDetailsController {
 
@@ -41,24 +43,34 @@ public class ClientBasicDetailsController {
 
   private final ClientBasicDetailsValidator clientBasicDetailsValidator;
 
+  @ModelAttribute("basicDetails")
+  public ClientFormDataBasicDetails getBasicDetails() {
+    return new ClientFormDataBasicDetails();
+  }
+
   /**
    * Handles the GET request for client basic details page.
    *
    * @param clientSearchCriteria Search criteria for finding clients.
-   * @param clientDetails The details of the client.
    * @param model The model for the view.
    * @return The view name for the client basic details page
    */
   @GetMapping("/application/client/details/basic")
   public String clientDetailsBasic(
           @SessionAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
-          @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
+          @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
+          @ModelAttribute("basicDetails") ClientFormDataBasicDetails basicDetails,
           Model model) {
 
     populateDropdowns(model);
-    populateFields(clientSearchCriteria, clientDetails, model);
+    basicDetails.setClientFlowFormAction(clientFlowFormData.getAction());
 
-    log.info("clientDetails: {}", clientDetails);
+    if(clientFlowFormData.getBasicDetails() != null){
+      model.addAttribute("basicDetails", clientFlowFormData.getBasicDetails());
+      populateFields(clientSearchCriteria, clientFlowFormData.getBasicDetails(), model);
+    } else {
+      populateFields(clientSearchCriteria, basicDetails, model);
+    }
 
     return "application/client/basic-client-details";
   }
@@ -67,29 +79,29 @@ public class ClientBasicDetailsController {
    * Handles the client search results submission.
    *
    * @param clientSearchCriteria Search criteria for finding clients.
-   * @param clientDetails The details of the client.
-   * @param bindingResult Validation result.
+   * @param basicDetails The basic details of the client.
+   * @param bindingResult Validation result
    * @param model The model for the view.
    * @return A redirect string to the agreement page.
    */
   @PostMapping("/application/client/details/basic")
   public String clientDetailsBasic(
           @SessionAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
-          @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
+          @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
+          @ModelAttribute("basicDetails") ClientFormDataBasicDetails basicDetails,
           BindingResult bindingResult,
           Model model) {
 
-    clientBasicDetailsValidator.validate(clientDetails, bindingResult);
+    clientBasicDetailsValidator.validate(basicDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {
       populateDropdowns(model);
-      populateFields(clientSearchCriteria, clientDetails, model);
-
-      model.addAttribute(CLIENT_DETAILS, clientDetails);
+      populateFields(clientSearchCriteria, basicDetails, model);
       return "application/client/basic-client-details";
     }
 
-    model.addAttribute(CLIENT_DETAILS, clientDetails);
+    clientFlowFormData.setBasicDetails(basicDetails);
+    model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
     return "redirect:/application/client/details/contact";
   }
@@ -101,25 +113,25 @@ public class ClientBasicDetailsController {
    */
   private void populateFields(
           ClientSearchCriteria clientSearchCriteria,
-          ClientDetails clientDetails,
+          ClientFormDataBasicDetails basicDetails,
           Model model) {
 
-    clientDetails.setFirstName(clientSearchCriteria.getForename());
-    clientDetails.setSurnameAtBirth(clientSearchCriteria.getSurname());
-    clientDetails.setDobDay(clientSearchCriteria.getDobDay());
-    clientDetails.setDobMonth(clientSearchCriteria.getDobMonth());
-    clientDetails.setDobYear(clientSearchCriteria.getDobYear());
+    basicDetails.setFirstName(clientSearchCriteria.getForename());
+    basicDetails.setSurnameAtBirth(clientSearchCriteria.getSurname());
+    basicDetails.setDobDay(clientSearchCriteria.getDobDay());
+    basicDetails.setDobMonth(clientSearchCriteria.getDobMonth());
+    basicDetails.setDobYear(clientSearchCriteria.getDobYear());
 
-    clientDetails.setNationalInsuranceNumber(
+    basicDetails.setNationalInsuranceNumber(
             clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER));
 
-    clientDetails.setHomeOfficeNumber(
+    basicDetails.setHomeOfficeNumber(
             clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE));
 
     String searchCriteriaGender = clientSearchCriteria.getGender();
 
     if (searchCriteriaGender != null && !searchCriteriaGender.isBlank()) {
-      clientDetails.setGender(searchCriteriaGender);
+      basicDetails.setGender(searchCriteriaGender);
 
       Optional.ofNullable((List<CommonLookupValueDetail>) model.getAttribute("genders"))
               .ifPresent(genderList -> {
@@ -140,26 +152,15 @@ public class ClientBasicDetailsController {
    * @param model The model for the view.
    */
   private void populateDropdowns(Model model) {
-    // Asynchronously fetch titles
-    Mono<CommonLookupDetail> titlesMono = commonLookupService.getContactTitles();
-
-    // Asynchronously fetch countries
-    Mono<CommonLookupDetail> countriesMono = commonLookupService.getCountries();
-
-    // Asynchronously fetch genders
-    Mono<CommonLookupDetail> gendersMono = commonLookupService.getGenders();
-
-    // Asynchronously fetch marital statuses
-    Mono<CommonLookupDetail> maritalStatusMono = commonLookupService.getMaritalStatuses();
-
-    // Zip all Monos and populate the model once all results are available
-    Mono.zip(titlesMono, countriesMono, gendersMono, maritalStatusMono)
-            .doOnNext(tuple -> {
-              model.addAttribute("titles", tuple.getT1().getContent());
-              model.addAttribute("countries", tuple.getT2().getContent());
-              model.addAttribute("genders", tuple.getT3().getContent());
-              model.addAttribute("maritalStatusList", tuple.getT4().getContent());
-            })
-            .block();
+    new DropdownBuilder(model)
+        .addDropdown("titles",
+            commonLookupService.getContactTitles())
+        .addDropdown("countries",
+            commonLookupService.getCountries())
+        .addDropdown("genders",
+            commonLookupService.getGenders())
+        .addDropdown("maritalStatusList",
+            commonLookupService.getMaritalStatuses())
+        .build();
   }
 }

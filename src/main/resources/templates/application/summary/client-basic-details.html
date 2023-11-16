@@ -11,7 +11,7 @@
     <a href="/application/summary/client/details/summary" class="govuk-back-link">Cancel and return to amend client</a>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/summary/client/details/basic}" th:object="${clientDetails}" method="post">
+    <form action="#" th:action="@{/application/summary/client/details/basic}" th:object="${basicDetails}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <span class="govuk-caption-l">Edit your client</span>
       <h1 class="govuk-heading-l">
@@ -24,7 +24,7 @@
         session. Please submit your changes by clicking the '<span class="govuk-!-font-weight-bold">
         Submit Amendments</span>' button on the summary page.
       </p>
-      <div th:replace="~{application/partials/client-fragments :: clientBasicFragment (clientState='edit')}"></div>
+      <div th:replace="~{application/partials/client-fragments :: clientBasicFragment}"></div>
       <div class="govuk-button-group">
         <button type="submit" class="govuk-button" data-module="govuk-button">
           Confirm

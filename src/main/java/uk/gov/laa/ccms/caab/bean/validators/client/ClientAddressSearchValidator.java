@@ -1,37 +1,43 @@
 package uk.gov.laa.ccms.caab.bean.validators.client;
 
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import org.springframework.validation.Validator;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressSearch;
 
 /**
  * Validates the uprn details provided by client address search.
  */
 @Component
-public class ClientAddressSearchValidator extends AbstractClientAddressValidator {
+public class ClientAddressSearchValidator implements Validator {
 
   /**
    * Determines if the Validator supports the provided class.
    *
    * @param clazz The class to check for support.
    * @return {@code true} if the class is assignable from
-   *         {@link uk.gov.laa.ccms.caab.bean.ClientDetails}, {@code false} otherwise.
+   *         {@link uk.gov.laa.ccms.caab.bean.ClientFormDataAddressSearch},
+   *         {@code false} otherwise.
    */
   @Override
   public boolean supports(Class<?> clazz) {
-    return ClientDetails.class.isAssignableFrom(clazz);
+    return ClientFormDataAddressSearch.class.isAssignableFrom(clazz);
   }
 
   /**
    * Validates the client address search details in the
-   * {@link uk.gov.laa.ccms.caab.bean.ClientDetails}.
+   * {@link uk.gov.laa.ccms.caab.bean.ClientFormDataAddressSearch}.
    *
    * @param target The object to be validated.
    * @param errors The Errors object to store validation errors.
    */
   @Override
   public void validate(Object target, Errors errors) {
-    ClientDetails clientDetails = (ClientDetails) target;
-    validateRequiredField("uprn", clientDetails.getUprn(), "Address", errors);
+    ClientFormDataAddressSearch addressSearch = (ClientFormDataAddressSearch) target;
+    if (!StringUtils.hasText(addressSearch.getUprn())) {
+      errors.reject("required.urpn",
+          "Please select an address.");
+    }
   }
 }

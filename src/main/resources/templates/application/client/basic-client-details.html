@@ -9,7 +9,7 @@
         <a href="/application/client/details/cancel" class="govuk-back-link">Cancel and return to client search</a>
     </div>
     <div id="main-content">
-        <form action="#" th:action="@{/application/client/details/basic}" th:object="${clientDetails}" method="post">
+        <form action="#" th:action="@{/application/client/details/basic}" th:object="${basicDetails}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l">About your client</span>
             <h1 class="govuk-heading-l">
@@ -18,7 +18,7 @@
             <p class="govuk-body-l">
                 Please enter the relevant basic details in the fields provided.
             </p>
-            <div th:replace="~{application/partials/client-fragments :: clientBasicFragment (clientState='create')}"></div>
+            <div th:replace="~{application/partials/client-fragments :: clientBasicFragment}"></div>
             <div class="govuk-button-group">
                 <button type="submit" class="govuk-button" data-module="govuk-button">
                     Next

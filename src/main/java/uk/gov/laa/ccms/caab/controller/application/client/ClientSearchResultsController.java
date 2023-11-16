@@ -1,7 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
+import static uk.gov.laa.ccms.caab.constants.ActionConstants.ACTION_CREATE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
@@ -35,7 +37,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
     APPLICATION_FORM_DATA,
     CLIENT_SEARCH_CRITERIA,
     CLIENT_SEARCH_RESULTS,
-    CLIENT_DETAILS})
+    CLIENT_FLOW_FORM_DATA})
 public class ClientSearchResultsController {
 
   private final ClientService clientService;
@@ -103,7 +105,7 @@ public class ClientSearchResultsController {
     applicationFormData.setApplicationCreated(false);
 
     //always make a new client Details session object when clicking the register new client button
-    model.addAttribute(CLIENT_DETAILS, new uk.gov.laa.ccms.caab.bean.ClientDetails());
+    model.addAttribute(CLIENT_FLOW_FORM_DATA, new ClientFlowFormData(ACTION_CREATE)); //TODO work this into the fragment
 
     return "redirect:/application/agreement";
   }
