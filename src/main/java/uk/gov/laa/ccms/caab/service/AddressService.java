@@ -5,7 +5,8 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressSearch;
 import uk.gov.laa.ccms.caab.client.OrdinanceSurveyApiClient;
 import uk.gov.laa.ccms.caab.mapper.ClientAddressResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ClientAddressResultRowDisplay;
@@ -70,11 +71,12 @@ public class AddressService {
    *
    * @param uprn The Unique Property Reference Number (UPRN) for the address.
    * @param results The list of addresses to search the UPRN from.
-   * @param clientDetails The ClientDetails object to which the address will be added.
-   * @return Updated ClientDetails object with the address information added.
+   * @param addressDetails The address details object to which the address will be added.
    */
-  public ClientDetails addAddressToClientDetails(
-      String uprn, ClientAddressResultsDisplay results, ClientDetails clientDetails) {
+  public void addAddressToClientDetails(
+      String uprn,
+      ClientAddressResultsDisplay results,
+      ClientFormDataAddressDetails addressDetails) {
 
     ClientAddressResultRowDisplay clientAddress = (results != null)
         ? results.getContent().stream()
@@ -84,9 +86,10 @@ public class AddressService {
         .orElse(null)
         : null;
 
-    clientAddressResultDisplayMapper.updateClientDetails(clientDetails, clientAddress);
+    clientAddressResultDisplayMapper.updateClientFormDataAddressDetails(
+        addressDetails, clientAddress);
 
-    return clientDetails;
+    addressDetails.setAddressSearch(new ClientFormDataAddressSearch());
   }
 
 }

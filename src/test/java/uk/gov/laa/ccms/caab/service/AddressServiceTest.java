@@ -19,7 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.client.OrdinanceSurveyApiClient;
 import uk.gov.laa.ccms.caab.mapper.ClientAddressResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ClientAddressResultRowDisplay;
@@ -117,37 +117,39 @@ public class AddressServiceTest {
     targetRow.setUprn(uprn);
     results.getContent().add(targetRow);
 
-    ClientDetails clientDetails = buildClientDetails(); // Use the helper method
+    ClientFormDataAddressDetails addressDetails = buildAddressDetails(); // Use the helper method
 
     doAnswer(invocation -> {
-      ClientDetails cd = invocation.getArgument(0);
+      ClientFormDataAddressDetails ad = invocation.getArgument(0);
       ClientAddressResultRowDisplay row = invocation.getArgument(1);
-      cd.setAddressLine1(row.getFullAddress());
-      cd.setHouseNameNumber(row.getHouseNameNumber());
+      ad.setAddressLine1(row.getFullAddress());
+      ad.setHouseNameNumber(row.getHouseNameNumber());
       return null;
-    }).when(clientAddressResultDisplayMapper).updateClientDetails(any(ClientDetails.class), any(ClientAddressResultRowDisplay.class));
+    }).when(clientAddressResultDisplayMapper).updateClientFormDataAddressDetails(
+        any(ClientFormDataAddressDetails.class),
+        any(ClientAddressResultRowDisplay.class));
 
-    ClientDetails updatedClientDetails = addressService.addAddressToClientDetails(uprn, results, clientDetails);
+    addressService.addAddressToClientDetails(uprn, results, addressDetails);
 
-    assertNotNull(updatedClientDetails);
-    assertEquals("TARGET, ADDRESS, DATA", updatedClientDetails.getAddressLine1());
-    assertEquals("100", updatedClientDetails.getHouseNameNumber());
-    assertEquals("GBR", updatedClientDetails.getCountry());
-    assertEquals("SW1A1AA", updatedClientDetails.getPostcode());
-    assertEquals("Westminster", updatedClientDetails.getAddressLine2());
-    assertEquals("London", updatedClientDetails.getCityTown());
-    assertEquals("Greater London", updatedClientDetails.getCounty());
-    assertFalse(updatedClientDetails.getNoFixedAbode());
+    assertNotNull(addressDetails);
+    assertEquals("TARGET, ADDRESS, DATA", addressDetails.getAddressLine1());
+    assertEquals("100", addressDetails.getHouseNameNumber());
+    assertEquals("GBR", addressDetails.getCountry());
+    assertEquals("SW1A1AA", addressDetails.getPostcode());
+    assertEquals("Westminster", addressDetails.getAddressLine2());
+    assertEquals("London", addressDetails.getCityTown());
+    assertEquals("Greater London", addressDetails.getCounty());
+    assertFalse(addressDetails.getNoFixedAbode());
   }
 
   @Test
   void addAddressToClientDetails_DoesNotUpdateClientDetails_WhenResultsAreNull() {
     String uprn = "12345";
-    ClientDetails clientDetails = buildClientDetails();
+    ClientFormDataAddressDetails addressDetails = buildAddressDetails();
 
-    ClientDetails updatedClientDetails = addressService.addAddressToClientDetails(uprn, null, clientDetails);
+    addressService.addAddressToClientDetails(uprn, null, addressDetails);
 
-    assertNotNull(updatedClientDetails);
+    assertNotNull(addressDetails);
   }
 
   private OrdinanceSurveyResponse buildOrdinanceSurveyResponse(){
@@ -191,16 +193,16 @@ public class AddressServiceTest {
     return clientAddressResultsDisplay;
   }
 
-  private ClientDetails buildClientDetails() {
-    ClientDetails clientDetails = new ClientDetails();
-    clientDetails.setNoFixedAbode(false);
-    clientDetails.setCountry("GBR");
-    clientDetails.setHouseNameNumber("123");
-    clientDetails.setPostcode("SW1A1AA");
-    clientDetails.setAddressLine1("10 Downing Street");
-    clientDetails.setAddressLine2("Westminster");
-    clientDetails.setCityTown("London");
-    clientDetails.setCounty("Greater London");
-    return clientDetails;
+  private ClientFormDataAddressDetails buildAddressDetails() {
+    ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
+    addressDetails.setNoFixedAbode(false);
+    addressDetails.setCountry("GBR");
+    addressDetails.setHouseNameNumber("123");
+    addressDetails.setPostcode("SW1A1AA");
+    addressDetails.setAddressLine1("10 Downing Street");
+    addressDetails.setAddressLine2("Westminster");
+    addressDetails.setCityTown("London");
+    addressDetails.setCounty("Greater London");
+    return addressDetails;
   }
 }

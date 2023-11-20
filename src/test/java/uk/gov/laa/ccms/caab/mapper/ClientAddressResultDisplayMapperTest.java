@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.model.ClientAddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.os.DeliveryPointAddress;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResult;
@@ -107,7 +107,22 @@ public class ClientAddressResultDisplayMapperTest {
 
   @Test
   public void testUpdateClientDetails() {
-    ClientDetails clientDetails = new ClientDetails();  // Assuming this is an empty object you want to populate
+    ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();  // Assuming this is an empty object you want to populate
+    ClientAddressResultRowDisplay addressRowDisplay =
+        buildAddressRowDisplay();
+
+    mapper.updateClientFormDataAddressDetails(addressDetails, addressRowDisplay);
+    
+    assertEquals("Example Street", addressDetails.getAddressLine1());
+    assertEquals("ExArea", addressDetails.getAddressLine2());
+    assertEquals("123", addressDetails.getHouseNameNumber());
+    assertEquals("EX1 2YZ", addressDetails.getPostcode());
+    assertEquals("ExCity", addressDetails.getCityTown());
+    assertEquals("ExCounty", addressDetails.getCounty());
+    assertEquals("GBR", addressDetails.getCountry());
+  }
+
+  private static ClientAddressResultRowDisplay buildAddressRowDisplay() {
     ClientAddressResultRowDisplay addressRowDisplay = new ClientAddressResultRowDisplay();
 
     addressRowDisplay.setFullAddress("Full Address, Example Street, ExCity");
@@ -119,17 +134,7 @@ public class ClientAddressResultDisplayMapperTest {
     addressRowDisplay.setCityTown("ExCity");
     addressRowDisplay.setCounty("ExCounty");
     addressRowDisplay.setCountry("GBR");
-
-    mapper.updateClientDetails(clientDetails, addressRowDisplay);
-
-    assertEquals("987654321", clientDetails.getUprn());
-    assertEquals("Example Street", clientDetails.getAddressLine1());
-    assertEquals("ExArea", clientDetails.getAddressLine2());
-    assertEquals("123", clientDetails.getHouseNameNumber());
-    assertEquals("EX1 2YZ", clientDetails.getPostcode());
-    assertEquals("ExCity", clientDetails.getCityTown());
-    assertEquals("ExCounty", clientDetails.getCounty());
-    assertEquals("GBR", clientDetails.getCountry());
+    return addressRowDisplay;
   }
 
 

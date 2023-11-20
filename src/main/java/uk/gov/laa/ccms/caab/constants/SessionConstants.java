@@ -46,10 +46,16 @@ public class SessionConstants {
   public static final String CLIENT_SEARCH_RESULTS = "clientSearchResults";
 
   /**
-   * Session attribute used to keep track of client details during the creation of a new
+   * Session attribute used to keep track of client details through the multiple screens of the
+   * client flows.
+   */
+  public static final String CLIENT_FLOW_FORM_DATA = "clientFlowFormData";
+
+  /**
+   * Session attribute used to keep track of client reference during the creation of a new
    * application.
    */
-  public static final String CLIENT_DETAILS = "clientDetails";
+  public static final String CLIENT_REFERENCE = "clientReference";
 
   /**
    * Session attribute used to keep track of client details during the creation of a new
@@ -83,7 +89,6 @@ public class SessionConstants {
    * Session attribute used to keep track of the application, used for application summary page.
    */
   public static final String APPLICATION_ID = "applicationId";
-
 
   /**
    * Session attribute used to keep track of the active case details, used for application summary

@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_CLIENT;
@@ -15,28 +15,23 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
-import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 /**
  * Controller for handling client summary details during the new application process.
  */
 @Controller
 @Slf4j
-@SessionAttributes({
-    CLIENT_DETAILS
-})
+@SessionAttributes({CLIENT_FLOW_FORM_DATA})
 public class ClientSummaryController extends AbstractClientSummaryController {
 
   /**
@@ -66,10 +61,10 @@ public class ClientSummaryController extends AbstractClientSummaryController {
    */
   @GetMapping("/application/client/details/summary")
   public String clientDetailsSummary(
-      @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
+      @ModelAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       Model model) {
 
-    populateSummaryListLookups(clientDetails, model);
+    populateSummaryListLookups(clientFlowFormData, model);
 
     return "application/client/client-summary-details";
   }
@@ -81,16 +76,16 @@ public class ClientSummaryController extends AbstractClientSummaryController {
    */
   @PostMapping("/application/client/details/summary")
   public String clientDetailsSummary(
-      @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
+      @ModelAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       BindingResult bindingResult,
       HttpSession session) {
 
-    validateClientDetails(clientDetails, bindingResult);
+    validateClientFlowFormData(clientFlowFormData, bindingResult);
 
     ClientCreated response =
         clientService.createClient(
-            clientDetails,
+            clientFlowFormData,
             user).block();
 
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());

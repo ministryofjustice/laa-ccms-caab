@@ -14,7 +14,8 @@ import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 
 @ExtendWith(SpringExtension.class)
 class ClientBasicDetailsValidatorTest {
@@ -22,19 +23,19 @@ class ClientBasicDetailsValidatorTest {
   @InjectMocks
   private ClientBasicDetailsValidator clientBasicDetailsValidator;
 
-  private ClientDetails clientDetails;
+  private ClientFormDataBasicDetails basicDetails;
 
   private Errors errors;
 
   @BeforeEach
   public void setUp() {
-    clientDetails = new ClientDetails();
-    errors = new BeanPropertyBindingResult(clientDetails, "clientDetails");
+    basicDetails = new ClientFormDataBasicDetails();
+    errors = new BeanPropertyBindingResult(basicDetails, "basicDetails");
   }
 
   @Test
   public void supports_ReturnsTrueForApplicationDetailsClass() {
-    assertTrue(clientBasicDetailsValidator.supports(ClientDetails.class));
+    assertTrue(clientBasicDetailsValidator.supports(ClientFormDataBasicDetails.class));
   }
 
   @Test
@@ -44,18 +45,18 @@ class ClientBasicDetailsValidatorTest {
 
   @Test
   public void validate() {
-    clientDetails = buildClientDetails();
-    clientBasicDetailsValidator.validate(clientDetails, errors);
+    basicDetails = buildBasicDetails();
+    clientBasicDetailsValidator.validate(basicDetails, errors);
     assertFalse(errors.hasErrors());
   }
 
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_titleRequired(String title) {
-    clientDetails = buildClientDetails();
-    clientDetails.setTitle(title);
+    basicDetails = buildBasicDetails();
+    basicDetails.setTitle(title);
 
-    clientBasicDetailsValidator.validate(clientDetails, errors);
+    clientBasicDetailsValidator.validate(basicDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("title"));
     assertEquals("required.title", errors.getFieldError("title").getCode());
@@ -64,10 +65,10 @@ class ClientBasicDetailsValidatorTest {
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_surnameRequired(String surname) {
-    clientDetails = buildClientDetails();
-    clientDetails.setSurname(surname);
+    basicDetails = buildBasicDetails();
+    basicDetails.setSurname(surname);
 
-    clientBasicDetailsValidator.validate(clientDetails, errors);
+    clientBasicDetailsValidator.validate(basicDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("surname"));
     assertEquals("required.surname", errors.getFieldError("surname").getCode());
@@ -76,10 +77,10 @@ class ClientBasicDetailsValidatorTest {
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_countryOfOriginRequired(String countryOfOrigin) {
-    clientDetails = buildClientDetails();
-    clientDetails.setCountryOfOrigin(countryOfOrigin);
+    basicDetails = buildBasicDetails();
+    basicDetails.setCountryOfOrigin(countryOfOrigin);
 
-    clientBasicDetailsValidator.validate(clientDetails, errors);
+    clientBasicDetailsValidator.validate(basicDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("countryOfOrigin"));
     assertEquals("required.countryOfOrigin", errors.getFieldError("countryOfOrigin").getCode());
@@ -88,10 +89,10 @@ class ClientBasicDetailsValidatorTest {
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_genderRequired(String gender) {
-    clientDetails = buildClientDetails();
-    clientDetails.setGender(gender);
+    basicDetails = buildBasicDetails();
+    basicDetails.setGender(gender);
 
-    clientBasicDetailsValidator.validate(clientDetails, errors);
+    clientBasicDetailsValidator.validate(basicDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("gender"));
     assertEquals("required.gender", errors.getFieldError("gender").getCode());
@@ -100,23 +101,23 @@ class ClientBasicDetailsValidatorTest {
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_maritalStatusRequired(String maritalStatus) {
-    clientDetails = buildClientDetails();
-    clientDetails.setMaritalStatus(maritalStatus);
+    basicDetails = buildBasicDetails();
+    basicDetails.setMaritalStatus(maritalStatus);
 
-    clientBasicDetailsValidator.validate(clientDetails, errors);
+    clientBasicDetailsValidator.validate(basicDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("maritalStatus"));
     assertEquals("required.maritalStatus", errors.getFieldError("maritalStatus").getCode());
   }
 
-  private ClientDetails buildClientDetails(){
-    ClientDetails clientDetails = new ClientDetails();
-    clientDetails.setTitle("MR");
-    clientDetails.setSurname("TEST");
-    clientDetails.setCountryOfOrigin("UK");
-    clientDetails.setGender("MALE");
-    clientDetails.setMaritalStatus("SINGLE");
-    return clientDetails;
+  private ClientFormDataBasicDetails buildBasicDetails(){
+    ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
+    basicDetails.setTitle("MR");
+    basicDetails.setSurname("TEST");
+    basicDetails.setCountryOfOrigin("UK");
+    basicDetails.setGender("MALE");
+    basicDetails.setMaritalStatus("SINGLE");
+    return basicDetails;
   }
 
 }

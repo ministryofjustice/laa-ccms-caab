@@ -1,7 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_ADDRESS_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -11,13 +13,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsFindAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
+import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
+import uk.gov.laa.ccms.caab.model.ClientAddressResultsDisplay;
+import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 
 /**
  * Controller for handling address client details selection during the new application process.
@@ -25,11 +30,11 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes({
-    CLIENT_DETAILS
-})
+@SessionAttributes({CLIENT_FLOW_FORM_DATA})
 @SuppressWarnings({"unchecked"})
 public class ClientAddressDetailsController {
+
+  private final AddressService addressService;
 
   private final CommonLookupService commonLookupService;
 
@@ -39,26 +44,32 @@ public class ClientAddressDetailsController {
 
   private static final String ACTION_FIND_ADDRESS = "find_address";
 
+  @ModelAttribute("addressDetails")
+  public ClientFormDataAddressDetails getAddressDetails() {
+    return new ClientFormDataAddressDetails();
+  }
+
   /**
    * Handles the GET request for client address details page.
    *
-   * @param clientDetails The details of the client.
+   * @param clientFlowFormData The data for create client flow.
+   * @param addressDetails The address details of the client.
    * @param model The model for the view.
    * @return The view name for the client address details page
    */
   @GetMapping("/application/client/details/address")
   public String clientDetailsAddress(
-          @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
-          Model model,
-          BindingResult bindingResult) {
+          @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
+          @ModelAttribute("addressDetails") ClientFormDataAddressDetails addressDetails,
+          Model model) {
 
     populateDropdowns(model);
+    addressDetails.setVulnerableClient(
+        clientFlowFormData.getBasicDetails().getVulnerableClient());
+    addressDetails.setClientFlowFormAction(clientFlowFormData.getAction());
 
-    //when accessed via the redirect from /application/client/details/address/search
-    if (clientDetails.isNoAddressLookup()) {
-      clientAddressDetailsFindAddressValidator.validate(clientDetails, bindingResult);
-      clientDetails.setNoAddressLookup(false);
-      model.addAttribute(CLIENT_DETAILS, clientDetails);
+    if (clientFlowFormData.getAddressDetails() != null) {
+      model.addAttribute("addressDetails", clientFlowFormData.getAddressDetails());
     }
 
     return "application/client/address-client-details";
@@ -67,30 +78,57 @@ public class ClientAddressDetailsController {
   /**
    * Handles the client address results submission.
    *
-   * @param clientDetails The details of the client.
+   * @param action The button action performed by the user.
+   * @param clientFlowFormData The data for create client flow.
+   * @param addressDetails The address details of the client.
    * @param bindingResult Validation result.
    * @param model The model for the view.
+   * @param session The session data for the endpoint.
    * @return A redirect string to the client equal opportunities monitoring page.
    */
   @PostMapping("/application/client/details/address")
   public String clientDetailsAddress(
       @RequestParam String action,
-      @ModelAttribute(CLIENT_DETAILS) ClientDetails clientDetails,
+      @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
+      @ModelAttribute("addressDetails") ClientFormDataAddressDetails addressDetails,
       BindingResult bindingResult,
-      Model model) {
-    log.info("POST /application/client/details/address");
-
-    model.addAttribute(CLIENT_DETAILS, clientDetails);
+      Model model,
+      HttpSession session) {
 
     if (ACTION_FIND_ADDRESS.equals(action)) {
-      clientAddressDetailsFindAddressValidator.validate(clientDetails, bindingResult);
+      clientAddressDetailsFindAddressValidator.validate(addressDetails, bindingResult);
     } else {
-      clientAddressDetailsValidator.validate(clientDetails, bindingResult);
+      clientAddressDetailsValidator.validate(addressDetails, bindingResult);
     }
 
     if (bindingResult.hasErrors()) {
       populateDropdowns(model);
       return "application/client/address-client-details";
+    }
+
+    clientFlowFormData.setAddressDetails(addressDetails);
+    model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
+
+    if (ACTION_FIND_ADDRESS.equals(action)) {
+      //Search for addresses
+      ClientAddressResultsDisplay clientAddressSearchResults =
+          addressService.getAddresses(clientFlowFormData.getAddressDetails().getPostcode());
+
+      if (clientAddressSearchResults.getContent() == null) {
+        bindingResult.reject(
+            "address.none",
+            "Your input for address details has not returned any results.");
+      } else {
+        clientAddressSearchResults = addressService.filterByHouseNumber(
+            clientFlowFormData.getAddressDetails().getHouseNameNumber(),
+            clientAddressSearchResults);
+        session.setAttribute(CLIENT_ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
+      }
+
+      if (bindingResult.hasErrors()) {
+        populateDropdowns(model);
+        return "application/client/address-client-details";
+      }
     }
 
     return ACTION_FIND_ADDRESS.equals(action)
@@ -99,7 +137,9 @@ public class ClientAddressDetailsController {
   }
 
   private void populateDropdowns(Model model) {
-    Mono<CommonLookupDetail> countriesMono = commonLookupService.getCountries();
-    model.addAttribute("countries", countriesMono.block().getContent());
+    new DropdownBuilder(model)
+        .addDropdown("countries",
+            commonLookupService.getCountries())
+        .build();
   }
 }

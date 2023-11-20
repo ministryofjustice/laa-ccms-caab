@@ -1,13 +1,13 @@
 <!--Client summary fragment-->
-<div th:fragment="clientSummaryFragment(clientState)"
-     th:with="baseLinkUrl=${clientState == 'edit'} ? '/application/summary/client' : '/application/client'"
+<div th:fragment="clientSummaryFragment"
+     th:with="baseLinkUrl=*{action == 'edit'} ? '/application/summary/client' : '/application/client'"
      class="govuk-grid-row">
   <div class="govuk-grid-column-full">
     <div class="govuk-summary-card">
       <div class="govuk-summary-card__title-wrapper">
         <h2 class="govuk-summary-card__title">Basic details</h2>
         <ul class="govuk-summary-card__actions">
-          <li th:if="${clientState == 'edit'}" class="govuk-summary-card__action">
+          <li th:if="*{action == 'edit'}" class="govuk-summary-card__action">
             <a class="govuk-link" th:href="${baseLinkUrl} + '/details/deceased'">
               Report client as deceased
             </a>
@@ -22,19 +22,19 @@
       <div class="govuk-summary-card__content">
         <dl class="govuk-summary-list">
           <div th:replace="~{this :: summaryListDisplay('Title', ${contactTitle.description})}"></div>
-          <div th:replace="~{this :: summaryListDisplay('Surname', *{surname})}"></div>
-          <div th:replace="~{this :: summaryListDisplay('First name', *{firstName})}"></div>
-          <div th:replace="~{this :: summaryListDisplay('Middle name(s)', *{middleNames})}"></div>
-          <div th:replace="~{this :: summaryListDisplay('Surname at birth', *{surnameAtBirth})}"></div>
-          <div th:replace="~{this :: summaryListDisplay('Date of birth', *{dobDay + '/' + dobMonth + '/' + dobYear})}"></div>
-          <div th:replace="~{this :: summaryListDisplay('NI number', *{nationalInsuranceNumber})}"></div>
-          <div th:replace="~{this :: summaryListDisplay('Home office number', *{homeOfficeNumber})}"></div>
+          <div th:replace="~{this :: summaryListDisplay('Surname', *{basicDetails.surname})}"></div>
+          <div th:replace="~{this :: summaryListDisplay('First name', *{basicDetails.firstName})}"></div>
+          <div th:replace="~{this :: summaryListDisplay('Middle name(s)', *{basicDetails.middleNames})}"></div>
+          <div th:replace="~{this :: summaryListDisplay('Surname at birth', *{basicDetails.surnameAtBirth})}"></div>
+          <div th:replace="~{this :: summaryListDisplay('Date of birth', *{basicDetails.dobDay + '/' + basicDetails.dobMonth + '/' + basicDetails.dobYear})}"></div>
+          <div th:replace="~{this :: summaryListDisplay('NI number', *{basicDetails.nationalInsuranceNumber})}"></div>
+          <div th:replace="~{this :: summaryListDisplay('Home office number', *{basicDetails.homeOfficeNumber})}"></div>
           <div th:replace="~{this :: summaryListDisplay('Gender', ${gender.description})}"></div>
           <div th:replace="~{this :: summaryListDisplay('Marital status', ${maritalStatus.description})}"></div>
-          <div th:replace="~{this :: summaryListDisplayYesNo('Vulnerable client', *{vulnerableClient})}"></div>
-          <div th:replace="~{this :: summaryListDisplayYesNo('High profile client', *{highProfileClient})}"></div>
-          <div th:replace="~{this :: summaryListDisplayYesNo('Vexatious litigant', *{vexatiousLitigant})}"></div>
-          <div th:replace="~{this :: summaryListDisplayYesNo('Mental incapacity', *{mentalIncapacity})}"></div>
+          <div th:replace="~{this :: summaryListDisplayYesNo('Vulnerable client', *{basicDetails.vulnerableClient})}"></div>
+          <div th:replace="~{this :: summaryListDisplayYesNo('High profile client', *{basicDetails.highProfileClient})}"></div>
+          <div th:replace="~{this :: summaryListDisplayYesNo('Vexatious litigant', *{basicDetails.vexatiousLitigant})}"></div>
+          <div th:replace="~{this :: summaryListDisplayYesNo('Mental incapacity', *{basicDetails.mentalIncapacity})}"></div>
         </dl>
       </div>
     </div>
@@ -51,21 +51,21 @@
       </div>
       <div class="govuk-summary-card__content">
         <dl class="govuk-summary-list">
-          <div th:replace="~{this :: summaryListDisplayWithVulnerability('Telephone home', *{telephoneHome}, *{vulnerableClient})}"></div>
-          <div th:replace="~{this :: summaryListDisplayWithVulnerability('Telephone work', *{telephoneWork}, *{vulnerableClient})}"></div>
-          <div th:replace="~{this :: summaryListDisplayWithVulnerability('Mobile', *{telephoneMobile}, *{vulnerableClient})}"></div>
-          <div th:replace="~{this :: summaryListDisplayWithVulnerability('E-mail address', *{emailAddress}, *{vulnerableClient})}"></div>
+          <div th:replace="~{this :: summaryListDisplayWithVulnerability('Telephone home', *{contactDetails.telephoneHome}, *{contactDetails.vulnerableClient})}"></div>
+          <div th:replace="~{this :: summaryListDisplayWithVulnerability('Telephone work', *{contactDetails.telephoneWork}, *{contactDetails.vulnerableClient})}"></div>
+          <div th:replace="~{this :: summaryListDisplayWithVulnerability('Mobile', *{contactDetails.telephoneMobile}, *{contactDetails.vulnerableClient})}"></div>
+          <div th:replace="~{this :: summaryListDisplayWithVulnerability('E-mail address', *{contactDetails.emailAddress}, *{contactDetails.vulnerableClient})}"></div>
 
           <!--  Display password differently based off whether you are editing or creating the client  -->
-          <th:block th:if="${clientState == 'create'}">
+          <th:block th:if="*{action == 'create'}">
             <div th:replace="~{this :: summaryListDisplay('Password', '*******')}"></div>
           </th:block>
-          <th:block th:if="${clientState == 'edit'}">
+          <th:block th:if="*{action == 'edit'}">
             <div th:replace="~{this :: summaryListDisplay('Password', 'Please contact the LAA to edit this')}"></div>
           </th:block>
 
-          <div th:replace="~{this :: summaryListDisplay('Password reminder', *{passwordReminder})}"></div>
-          <div th:replace="~{this :: summaryListDisplayWithVulnerability('Correspondence method', ${correspondenceMethod.description}, *{vulnerableClient})}"></div>
+          <div th:replace="~{this :: summaryListDisplay('Password reminder', *{contactDetails.passwordReminder})}"></div>
+          <div th:replace="~{this :: summaryListDisplayWithVulnerability('Correspondence method', ${correspondenceMethod.description}, *{contactDetails.vulnerableClient})}"></div>
 
           <th:block th:if="${correspondenceLanguage}">
             <div th:replace="~{this :: summaryListDisplay('Correspondence language', ${correspondenceLanguage.description})}"></div>
@@ -89,13 +89,13 @@
       </div>
       <div class="govuk-summary-card__content">
         <dl class="govuk-summary-list">
-          <div th:replace="~{this :: summaryListDisplayWithVulnerability('Country', ${country.description}, *{vulnerableClient})}"></div>
-          <div th:replace="~{this :: summaryListDisplayWithVulnerability('House name / number', *{houseNameNumber}, *{vulnerableClient})}"></div>
-          <div th:replace="~{this :: summaryListDisplayWithVulnerability('Postcode', *{postcode}, *{vulnerableClient})}"></div>
-          <div th:replace="~{this :: summaryListDisplayWithVulnerability('Address line 1', *{addressLine1}, *{vulnerableClient})}"></div>
-          <div th:replace="~{this :: summaryListDisplayWithVulnerability('Address line 2', *{addressLine2}, *{vulnerableClient})}"></div>
-          <div th:replace="~{this :: summaryListDisplayWithVulnerability('City / town', *{cityTown}, *{vulnerableClient})}"></div>
-          <div th:replace="~{this :: summaryListDisplayWithVulnerability('County', *{county}, *{vulnerableClient})}"></div>
+          <div th:replace="~{this :: summaryListDisplayWithVulnerability('Country', ${country.description}, *{addressDetails.vulnerableClient})}"></div>
+          <div th:replace="~{this :: summaryListDisplayWithVulnerability('House name / number', *{addressDetails.houseNameNumber}, *{addressDetails.vulnerableClient})}"></div>
+          <div th:replace="~{this :: summaryListDisplayWithVulnerability('Postcode', *{addressDetails.postcode}, *{addressDetails.vulnerableClient})}"></div>
+          <div th:replace="~{this :: summaryListDisplayWithVulnerability('Address line 1', *{addressDetails.addressLine1}, *{addressDetails.vulnerableClient})}"></div>
+          <div th:replace="~{this :: summaryListDisplayWithVulnerability('Address line 2', *{addressDetails.addressLine2}, *{addressDetails.vulnerableClient})}"></div>
+          <div th:replace="~{this :: summaryListDisplayWithVulnerability('City / town', *{addressDetails.cityTown}, *{addressDetails.vulnerableClient})}"></div>
+          <div th:replace="~{this :: summaryListDisplayWithVulnerability('County', *{addressDetails.county}, *{addressDetails.vulnerableClient})}"></div>
         </dl>
       </div>
     </div>
@@ -114,7 +114,7 @@
         <dl class="govuk-summary-list">
           <div th:replace="~{this :: summaryListDisplay('Ethnic origin', ${ethnicity.description})}"></div>
           <div th:replace="~{this :: summaryListDisplay('Disability', ${disability.description})}"></div>
-          <div th:replace="~{this :: summaryListDisplay('Special considerations', ${clientDetails.specialConsiderations})}"></div>
+          <div th:replace="~{this :: summaryListDisplay('Special considerations', *{monitoringDetails.specialConsiderations})}"></div>
         </dl>
       </div>
     </div>
@@ -122,16 +122,19 @@
 </div>
 
 <!--Client basic details fragment-->
-<div th:fragment="clientBasicFragment(clientState)" class="govuk-grid-row">
+<div th:fragment="clientBasicFragment"
+     class="govuk-grid-row">
+  <input type="hidden" id="clientFlowFormAction" name="clientFlowFormAction" th:value="*{clientFlowFormAction}">
   <div class="govuk-grid-column-two-thirds">
     <div th:replace="~{partials/forms :: dropdown('title', 'Title', ${titles}, 'code', 'description', false)}"></div>
     <div th:replace="~{partials/forms :: textInput('surname', 'Surname', 'govuk-input--width-20')}"></div>
 
-    <p th:if="${clientState == 'create'}" class="govuk-body">
+    <p th:if="*{clientFlowFormAction == 'create'}" class="govuk-body">
       <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
           First name
       </span>
-      <span th:text="${clientDetails.firstName}"></span>
+      <span th:text="*{firstName}"></span>
+      <input type="hidden" id="firstName" name="firstName" th:value="*{firstName}">
     </p>
     <th:block th:if="${clientState == 'edit'}">
       <div th:replace="~{partials/forms :: textInput('firstName', 'First name', 'govuk-input--width-20')}"></div>
@@ -142,34 +145,40 @@
       <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
           Surname at birth
       </span>
-      <span th:text="${clientDetails.surnameAtBirth}"></span>
+      <span th:text="*{surnameAtBirth}"></span>
+      <input type="hidden" id="surnameAtBirth" name="surnameAtBirth" th:value="*{surnameAtBirth}">
     </p>
     <p class="govuk-body">
       <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
           Date of birth (DD/MM/YYYY)
       </span>
-      <span th:text="${clientDetails.dobDay} + '/' + ${clientDetails.dobMonth} + '/' + ${clientDetails.dobYear}"></span>
+      <span th:text="*{dobDay} + '/' + *{dobMonth} + '/' + *{dobYear}"></span>
+      <input type="hidden" id="dobDay" name="dobDay" th:value="*{dobDay}">
+      <input type="hidden" id="dobMonth" name="dobMonth" th:value="*{dobMonth}">
+      <input type="hidden" id="dobYear" name="dobYear" th:value="*{dobYear}">
     </p>
 
-    <div th:if="${clientState == 'create'}">
+    <div th:if="*{clientFlowFormAction == 'create'}">
       <div th:replace="~{partials/forms :: dropdown('countryOfOrigin', 'Country of origin', ${countries}, 'code', 'description', false)}"></div>
     </div>
-    <p th:if="${clientState == 'edit'}" class="govuk-body">
+    <p th:if="*{clientFlowFormAction == 'edit'}" class="govuk-body">
       <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
           Country of origin
       </span>
-      <span th:text="${clientDetails.countryOfOrigin}"></span>
+      <span th:text="*{countryOfOrigin}"></span>
+      <input type="hidden" id="countryOfOrigin" name="countryOfOrigin" th:value="*{countryOfOrigin}">
     </p>
 
     <!-- Show paragraph if nationalInsuranceNumber exists -->
-    <p class="govuk-body" th:if="${clientState == 'create' && clientDetails.nationalInsuranceNumber != null && !clientDetails.nationalInsuranceNumber.isEmpty()}" >
+    <p class="govuk-body" th:if="*{clientFlowFormAction == 'create' && nationalInsuranceNumber != null && !nationalInsuranceNumber.isEmpty()}" >
       <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
           National Insurance Number
       </span>
-      <span th:text="${clientDetails.nationalInsuranceNumber}"></span>
+      <span th:text="*{nationalInsuranceNumber}"></span>
+      <input type="hidden" id="nationalInsuranceNumber" name="nationalInsuranceNumber" th:value="*{nationalInsuranceNumber}">
     </p>
 
-    <div class="govuk-form-group" th:if="${clientState == 'edit' || clientDetails.nationalInsuranceNumber == null || clientDetails.nationalInsuranceNumber.isEmpty()}">
+    <div class="govuk-form-group" th:if="*{clientFlowFormAction == 'edit' || nationalInsuranceNumber == null || nationalInsuranceNumber.isEmpty()}">
       <div th:replace="~{partials/forms :: textInput('nationalInsuranceNumber', 'National Insurance Number (optional)', 'govuk-input--width-20')}"></div>
       <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
         <summary class="govuk-details__summary">
@@ -185,15 +194,16 @@
     </div>
 
     <!-- Show paragraph if homeOfficeNumber exists -->
-    <p class="govuk-body" th:if="${clientState == 'create' && clientDetails.homeOfficeNumber != null && !clientDetails.homeOfficeNumber.isEmpty()}">
+    <p class="govuk-body" th:if="*{clientFlowFormAction == 'create' && homeOfficeNumber != null && !homeOfficeNumber.isEmpty()}">
       <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
           Home Office Number
       </span>
-      <span th:text="${clientDetails.homeOfficeNumber}"></span>
+      <span th:text="*{homeOfficeNumber}"></span>
+      <input type="hidden" id="homeOfficeNumber" name="homeOfficeNumber" th:value="*{homeOfficeNumber}">
     </p>
 
     <!-- Show input field if homeOfficeNumber does not exist -->
-    <div class="govuk-form-group" th:if="${clientState == 'edit' || clientDetails.homeOfficeNumber == null || clientDetails.homeOfficeNumber.isEmpty()}">
+    <div class="govuk-form-group" th:if="*{clientFlowFormAction == 'edit' || homeOfficeNumber == null || homeOfficeNumber.isEmpty()}">
       <div th:replace="~{partials/forms :: textInput('homeOfficeNumber', 'Home Office Number (optional)', 'govuk-input--width-20')}"></div>
       <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
         <summary class="govuk-details__summary">
@@ -216,6 +226,7 @@
           Gender
       </span>
       <span th:text="${genderDisplayValue}"></span>
+      <input type="hidden" id="gender" name="gender" th:value="*{gender}">
     </p>
 
     <div th:unless="${genderDisplayValue}">
@@ -269,8 +280,10 @@
 </div>
 
 <!--Client contact details fragment-->
-<th:block th:fragment="clientContactFragment(clientState)">
-  <div class="govuk-grid-row" th:if="${clientDetails.vulnerableClient}">
+<th:block th:fragment="clientContactFragment">
+  <input type="hidden" id="clientFlowFormAction" name="clientFlowFormAction" th:value="*{clientFlowFormAction}">
+  <input type="hidden" id="vulnerableClient" name="vulnerableClient" th:value="*{vulnerableClient}">
+  <div class="govuk-grid-row" th:if="*{vulnerableClient}">
     <div class="govuk-grid-column-two-thirds">
       <p class="govuk-body">
         You have indicated that this client is vulnerable therefore for security reasons the contact details are not applicable.
@@ -326,7 +339,7 @@
     </div>
   </div>
 
-  <div class="govuk-grid-row" th:unless="${clientDetails.vulnerableClient}">
+  <div class="govuk-grid-row" th:unless="*{vulnerableClient}">
     <div class="govuk-grid-column-two-thirds">
       <div th:replace="~{partials/forms :: textInput('telephoneHome', 'Telephone home (optional)', 'govuk-input--width-20')}"></div>
       <div th:replace="~{partials/forms :: textInput('telephoneWork', 'Telephone work (optional)', 'govuk-input--width-20')}"></div>
@@ -336,7 +349,7 @@
   </div>
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
-      <div class="govuk-form-group" th:if="${clientState == 'create'}" th:classappend="${#fields.hasErrors('password')} ? 'govuk-form-group--error' : ''">
+      <div class="govuk-form-group" th:if="*{clientFlowFormAction == 'create'}" th:classappend="${#fields.hasErrors('password')} ? 'govuk-form-group--error' : ''">
         <label class="govuk-label" for="password">
           Password
         </label>
@@ -346,13 +359,13 @@
                name="password"
                type="password"
                data-module="govuk-input"
-               th:field="*{password}">
+               th:value="*{password}">
         <br>
         <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
           <summary class="govuk-details__summary">
-                                  <span class="govuk-details__summary-text">
-                                    Help with Password
-                                  </span>
+            <span class="govuk-details__summary-text">
+              Help with Password
+            </span>
           </summary>
           <div class="govuk-details__text">
             Please enter the LAA password your client has chosen. This password
@@ -377,7 +390,7 @@
       </div>
     </div>
   </div>
-  <div class="govuk-grid-row" th:unless="${clientDetails.vulnerableClient}">
+  <div class="govuk-grid-row" th:unless="*{vulnerableClient}">
     <div class="govuk-grid-column-two-thirds">
       <div th:replace="~{partials/forms :: dropdown('correspondenceMethod', 'Correspondence method', ${correspondenceMethods}, 'code', 'description', false)}"></div>
     </div>
@@ -388,6 +401,237 @@
     </div>
   </div>
 </th:block>
+
+<!--Client address details fragment-->
+<th:block th:fragment="clientAddressFragment">
+  <input type="hidden" id="clientFlowFormAction" name="clientFlowFormAction" th:value="*{clientFlowFormAction}">
+  <input type="hidden" id="vulnerableClient" name="vulnerableClient" th:value="*{vulnerableClient}">
+  <div class="govuk-grid-row" th:if="*{vulnerableClient}">
+    <div class="govuk-grid-column-two-thirds">
+      <p class="govuk-body">
+        You have indicated that this client is vulnerable. For security reasons the
+        main address will not be stored.
+      </p>
+      <h2 class="govuk-heading-m">
+        Main address
+      </h2>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-one-half">
+          <p class="govuk-body">
+            Country
+          </p>
+        </div>
+        <div class="govuk-grid-column-one-half">
+          <p class="govuk-body">
+            Not applicable
+          </p>
+        </div>
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-one-half">
+          <p class="govuk-body">
+            House name / Number
+          </p>
+        </div>
+        <div class="govuk-grid-column-one-half">
+          <p class="govuk-body">
+            Not applicable
+          </p>
+        </div>
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-one-half">
+          <p class="govuk-body">
+            Postcode
+          </p>
+        </div>
+        <div class="govuk-grid-column-one-half">
+          <p class="govuk-body">
+            Not applicable
+          </p>
+        </div>
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-one-half">
+          <p class="govuk-body">
+            Address line 1
+          </p>
+        </div>
+        <div class="govuk-grid-column-one-half">
+          <p class="govuk-body">
+            Not applicable
+          </p>
+        </div>
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-one-half">
+          <p class="govuk-body">
+            Address line 2
+          </p>
+        </div>
+        <div class="govuk-grid-column-one-half">
+          <p class="govuk-body">
+            Not applicable
+          </p>
+        </div>
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-one-half">
+          <p class="govuk-body">
+            City / Town
+          </p>
+        </div>
+        <div class="govuk-grid-column-one-half">
+          <p class="govuk-body">
+            Not applicable
+          </p>
+        </div>
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-one-half">
+          <p class="govuk-body">
+            Country
+          </p>
+        </div>
+        <div class="govuk-grid-column-one-half">
+          <p class="govuk-body">
+            Not applicable
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="govuk-grid-row" th:unless="*{vulnerableClient}">
+    <div class="govuk-grid-column-two-thirds">
+      <h2 class="govuk-heading-m">
+        Main address
+      </h2>
+      <div class="govuk-form-group">
+        <fieldset class="govuk-fieldset">
+          <legend class="govuk-fieldset__legend">
+            <h2 class="govuk-fieldset__heading">
+              Is your client considered to be homeless and/or do they have no permanent residence?
+            </h2>
+            <div id="noFixedAbode-hint" class="govuk-hint">
+              If selecting 'Yes' then do not enter any address details below and click 'Next'
+            </div>
+          </legend>
+          <div class="govuk-radios govuk-radios--inline" data-module="govuk-radios">
+            <div class="govuk-radios__item">
+              <input class="govuk-radios__input" id="noFixedAbode-yes" name="noFixedAbode" type="radio" value="true" th:checked="*{noFixedAbode}">
+              <label class="govuk-label govuk-radios__label" for="noFixedAbode-yes">
+                Yes
+              </label>
+            </div>
+            <div class="govuk-radios__item">
+              <input class="govuk-radios__input" id="noFixedAbode-no" name="noFixedAbode" type="radio" value="false" th:checked="*{!noFixedAbode}">
+              <label class="govuk-label govuk-radios__label" for="noFixedAbode-no">
+                No
+              </label>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+      <div th:replace="~{partials/forms :: dropdown('country', 'Country', ${countries}, 'code', 'description', false)}"></div>
+      <div th:replace="~{partials/forms :: textInput('houseNameNumber', 'House name / number', 'govuk-input--width-20')}"></div>
+      <div th:replace="~{partials/forms :: textInput('postcode', 'Postcode', 'govuk-input--width-20')}"></div>
+      <div class="govuk-form-group">
+        <button type="submit" name="action" value="find_address" class="govuk-button govuk-button--secondary" data-module="govuk-button">
+          Find address
+        </button>
+      </div>
+      <div th:replace="~{partials/forms :: textInput('addressLine1', 'Address line 1', 'govuk-input--width-20')}"></div>
+      <div th:replace="~{partials/forms :: textInput('addressLine2', 'Address line 2 (optional)', 'govuk-input--width-20')}"></div>
+      <div th:replace="~{partials/forms :: textInput('cityTown', 'City / Town', 'govuk-input--width-20')}"></div>
+      <div th:replace="~{partials/forms :: textInput('county', 'County (optional)', 'govuk-input--width-20')}"></div>
+    </div>
+  </div>
+</th:block>
+
+<!--Client address search fragment-->
+
+<!--Client monitoring details fragment-->
+<div th:fragment="clientMonitoringFragment"
+     class="govuk-grid-row" >
+  <input type="hidden" id="clientFlowFormAction" name="clientFlowFormAction" th:value="*{clientFlowFormAction}">
+  <div class="govuk-grid-column-two-thirds">
+    <div class="govuk-form-group">
+      <h2 class="govuk-heading-m">
+        Ethnic monitoring
+      </h2>
+      <div th:replace="~{partials/forms :: dropdown('ethnicOrigin', 'Which ethnicity would your client describe themselves as being?', ${ethnicOrigins}, 'code', 'description', false)}"></div>
+      <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
+        <summary class="govuk-details__summary">
+                <span class="govuk-details__summary-text">
+                  Help with ethnic monitoring
+                </span>
+        </summary>
+        <div class="govuk-details__text">
+          Please select the ethnicity which your client would describe themselves as being.
+          Please inform your client that this section is voluntary, and that any information
+          entered will be treated with the strictest confidence (can only be seen by those
+          directly dealing with your case), and that information will only be used for
+          statistical monitoring and research.
+        </div>
+      </details>
+    </div>
+    <div class="govuk-form-group">
+      <h2 class="govuk-heading-m">
+        Disability monitoring
+      </h2>
+      <div th:replace="~{partials/forms :: dropdown('disability', 'Would your client describe themselves as being disabled?', ${disabilities}, 'code', 'description', false)}"></div>
+      <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
+        <summary class="govuk-details__summary">
+                <span class="govuk-details__summary-text">
+                  Help with disability monitoring
+                </span>
+        </summary>
+        <div class="govuk-details__text">
+          The Disability Discrimination Act defines disability as: a physical or mental
+          impairment which has a substantial and long-term adverse effect on a person's
+          ability to carry out normal day-to-day activities. If a client considers himself or
+          herself to have a disability please select the most appropriate definition. If the
+          client has multiple disabilities please select the definition that reflects the
+          predominant disability. Please inform your client that this section is voluntary,
+          and that any information entered will be treated with the strictest confidence (can
+          only be seen by those directly dealing with your case), and that information will
+          only be used for statistical monitoring and research.
+        </div>
+      </details>
+    </div>
+    <div class="govuk-form-group">
+      <h2 class="govuk-heading-m">
+        Special considerations
+      </h2>
+      <fieldset class="govuk-fieldset">
+        <label class="govuk-label" for="specialConsiderations">
+          What special requirements may your client have? (optional)
+        </label>
+        <textarea
+                class="govuk-textarea govuk-!-margin-bottom-2"
+                id="specialConsiderations"
+                name="specialConsiderations"
+                th:text="*{specialConsiderations}"
+                rows="5"
+                maxlength="2000">
+              </textarea>
+      </fieldset>
+      <details class="govuk-details" data-module="govuk-details">
+        <summary class="govuk-details__summary">
+                <span class="govuk-details__summary-text">
+                  Help with special considerations
+                </span>
+        </summary>
+        <div class="govuk-details__text">
+          Enter any special requirements your client may have, and any other needs that
+          should be considered when dealing with the LAA.
+          <br>
+          Maximum 2000 characters allowed.
+        </div>
+      </details>
+    </div>
+  </div>
+</div>
 
 <!--Simple fragment for repeated summary list rows -->
 <div class="govuk-summary-list__row" th:fragment="summaryListDisplay(label, value)">
@@ -409,7 +653,6 @@
   <dd class="govuk-summary-list__value" th:unless="${checked}">
     No
   </dd>
-</div>
 </div>
 
 <!--Simple fragment for repeated summary list rows with an isVulnerable? check -->

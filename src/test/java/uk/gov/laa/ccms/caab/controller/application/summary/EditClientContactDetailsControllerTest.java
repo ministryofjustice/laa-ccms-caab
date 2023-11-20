@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application.client;
+package uk.gov.laa.ccms.caab.controller.application.summary;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -27,12 +27,13 @@ import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
+import uk.gov.laa.ccms.caab.controller.application.client.ClientContactDetailsController;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 @ExtendWith(MockitoExtension.class)
-public class ClientContactDetailsControllerTest {
+public class EditClientContactDetailsControllerTest {
 
   @Mock
   private CommonLookupService commonLookupService;
@@ -41,7 +42,7 @@ public class ClientContactDetailsControllerTest {
   private ClientContactDetailsValidator clientContactDetailsValidator;
 
   @InjectMocks
-  private ClientContactDetailsController clientContactDetailsController;
+  private EditClientContactDetailsController editClientContactDetailsController;
 
   private MockMvc mockMvc;
 
@@ -56,15 +57,17 @@ public class ClientContactDetailsControllerTest {
 
   @BeforeEach
   public void setup() {
-    mockMvc = standaloneSetup(clientContactDetailsController).build();
+    mockMvc = standaloneSetup(editClientContactDetailsController).build();
 
     basicDetails = new ClientFormDataBasicDetails();
     basicDetails.setVulnerableClient(false);
-    clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
-    clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
 
     contactDetails = new ClientFormDataContactDetails();
-
+    
+    clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
+    clientFlowFormData.setBasicDetails(basicDetails);
+    clientFlowFormData.setContactDetails(contactDetails);
+    
     correspondenceMethodLookupDetail = new CommonLookupDetail();
     correspondenceMethodLookupDetail.addContentItem(new CommonLookupValueDetail());
     correspondenceLanguageLookupDetail = new CommonLookupDetail();
@@ -79,23 +82,23 @@ public class ClientContactDetailsControllerTest {
     when(commonLookupService.getCorrespondenceLanguages()).thenReturn(
         Mono.just(correspondenceLanguageLookupDetail));
 
-    this.mockMvc.perform(get("/application/client/details/contact")
+    this.mockMvc.perform(get("/application/summary/client/details/contact")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("contactDetails", contactDetails))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/client/contact-client-details"))
+        .andExpect(view().name("application/summary/client-contact-details"))
         .andExpect(model().attributeExists("correspondenceMethods", "correspondenceLanguages"));
 
   }
   @Test
   void testClientDetailsContactPost() throws Exception {
 
-    mockMvc.perform(post("/application/client/details/contact")
+    mockMvc.perform(post("/application/summary/client/details/contact")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("contactDetails", contactDetails))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/client/details/address"));
+        .andExpect(redirectedUrl("/application/summary/client/details/summary"));
   }
 
 
@@ -116,12 +119,12 @@ public class ClientContactDetailsControllerTest {
     when(commonLookupService.getCorrespondenceLanguages()).thenReturn(
         Mono.just(correspondenceLanguageLookupDetail));
 
-    this.mockMvc.perform(post("/application/client/details/contact")
+    this.mockMvc.perform(post("/application/summary/client/details/contact")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("contactDetails", contactDetails))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/client/contact-client-details"))
+        .andExpect(view().name("application/summary/client-contact-details"))
         .andExpect(model().attributeExists("correspondenceMethods", "correspondenceLanguages"));
   }
 }

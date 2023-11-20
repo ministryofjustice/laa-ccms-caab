@@ -7,7 +7,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.model.ClientAddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ClientAddressResultsDisplay;
 import uk.gov.laa.ccms.caab.model.os.DeliveryPointAddress;
@@ -25,11 +25,11 @@ public interface ClientAddressResultDisplayMapper {
    * Updates the ClientDetails object with information from the ClientAddressResultRowDisplay
    * object.
    *
-   * @param clientDetails Target ClientDetails object to update.
+   * @param addressDetails Target address details object to update.
    * @param clientAddressResultRowDisplay Source object containing the address details.
    */
-  void updateClientDetails(
-      @MappingTarget ClientDetails clientDetails,
+  void updateClientFormDataAddressDetails(
+      @MappingTarget ClientFormDataAddressDetails addressDetails,
       ClientAddressResultRowDisplay clientAddressResultRowDisplay);
 
   /**

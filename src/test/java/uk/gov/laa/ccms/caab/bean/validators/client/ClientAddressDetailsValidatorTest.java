@@ -16,7 +16,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 
 @ExtendWith(SpringExtension.class)
 class ClientAddressDetailsValidatorTest {
@@ -25,19 +25,19 @@ class ClientAddressDetailsValidatorTest {
   private ClientAddressDetailsValidator clientAddressDetailsValidator;
 
   @Mock
-  private ClientDetails clientDetails;
+  private ClientFormDataAddressDetails addressDetails;
 
   private Errors errors;
 
   @BeforeEach
   public void setUp() {
-    clientDetails = buildClientDetails();
-    errors = new BeanPropertyBindingResult(clientDetails, "clientDetails");
+    addressDetails = buildClientFormDataAddressDetails();
+    errors = new BeanPropertyBindingResult(addressDetails, "addressDetails");
   }
 
   @Test
-  public void supports_ReturnsTrueForClientDetailsClass() {
-    assertTrue(clientAddressDetailsValidator.supports(ClientDetails.class));
+  public void supports_ReturnsTrueForClientFormDataAddressDetailsClass() {
+    assertTrue(clientAddressDetailsValidator.supports(ClientFormDataAddressDetails.class));
   }
 
   @Test
@@ -47,7 +47,7 @@ class ClientAddressDetailsValidatorTest {
 
   @Test
   public void validate() {
-    clientAddressDetailsValidator.validate(clientDetails, errors);
+    clientAddressDetailsValidator.validate(addressDetails, errors);
     assertFalse(errors.hasErrors());
   }
 
@@ -63,27 +63,27 @@ class ClientAddressDetailsValidatorTest {
       "county, test, 1"
   })
   public void validate_noFixedAbode_invalid(String field, String value, int numberOfErrors) {
-    clientDetails = new ClientDetails();
-    clientDetails.setNoFixedAbode(true);
-    clientDetails.setVulnerableClient(true);
+    addressDetails = new ClientFormDataAddressDetails();
+    addressDetails.setNoFixedAbode(true);
+    addressDetails.setVulnerableClient(true);
 
     if (field.equals("country")) {
-      clientDetails.setCountry(value);
+      addressDetails.setCountry(value);
     } else if (field.equals("houseNameNumber")) {
-      clientDetails.setHouseNameNumber(value);
+      addressDetails.setHouseNameNumber(value);
     } else if (field.equals("postcode")) {
-      clientDetails.setPostcode(value);
+      addressDetails.setPostcode(value);
     } else if (field.equals("addressLine1")) {
-      clientDetails.setAddressLine1(value);
+      addressDetails.setAddressLine1(value);
     } else if (field.equals("addressLine2")) {
-      clientDetails.setAddressLine2(value);
+      addressDetails.setAddressLine2(value);
     } else if (field.equals("cityTown")) {
-      clientDetails.setCityTown(value);
+      addressDetails.setCityTown(value);
     } else if (field.equals("county")) {
-      clientDetails.setCounty(value);
+      addressDetails.setCounty(value);
     }
 
-    clientAddressDetailsValidator.validate(clientDetails, errors);
+    clientAddressDetailsValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
     assertEquals(numberOfErrors, errors.getErrorCount());
   }
@@ -91,8 +91,8 @@ class ClientAddressDetailsValidatorTest {
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_countryRequired(String country) {
-    clientDetails.setCountry(country);
-    clientAddressDetailsValidator.validate(clientDetails, errors);
+    addressDetails.setCountry(country);
+    clientAddressDetailsValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("country"));
     assertEquals("required.country", errors.getFieldError("country").getCode());
@@ -102,8 +102,8 @@ class ClientAddressDetailsValidatorTest {
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_houseNameNumberRequired(String houseNameNumber) {
-    clientDetails.setHouseNameNumber(houseNameNumber);
-    clientAddressDetailsValidator.validate(clientDetails, errors);
+    addressDetails.setHouseNameNumber(houseNameNumber);
+    clientAddressDetailsValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("houseNameNumber"));
     assertEquals("required.houseNameNumber", errors.getFieldError("houseNameNumber").getCode());
@@ -113,8 +113,8 @@ class ClientAddressDetailsValidatorTest {
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_addressLine1Required(String addressLine1) {
-    clientDetails.setAddressLine1(addressLine1);
-    clientAddressDetailsValidator.validate(clientDetails, errors);
+    addressDetails.setAddressLine1(addressLine1);
+    clientAddressDetailsValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("addressLine1"));
     assertEquals("required.addressLine1", errors.getFieldError("addressLine1").getCode());
@@ -124,8 +124,8 @@ class ClientAddressDetailsValidatorTest {
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_cityTownRequired(String cityTown) {
-    clientDetails.setCityTown(cityTown);
-    clientAddressDetailsValidator.validate(clientDetails, errors);
+    addressDetails.setCityTown(cityTown);
+    clientAddressDetailsValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("cityTown"));
     assertEquals("required.cityTown", errors.getFieldError("cityTown").getCode());
@@ -136,9 +136,9 @@ class ClientAddressDetailsValidatorTest {
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_postcodeRequired_UK(String postcode) {
-    clientDetails.setCountry("GBR");
-    clientDetails.setPostcode(postcode);
-    clientAddressDetailsValidator.validate(clientDetails, errors);
+    addressDetails.setCountry("GBR");
+    addressDetails.setPostcode(postcode);
+    clientAddressDetailsValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("postcode"));
     assertEquals("required.postcode", errors.getFieldError("postcode").getCode());
@@ -151,24 +151,24 @@ class ClientAddressDetailsValidatorTest {
       "GBR"
   })
   public void validate_validatePostcodeFormat(String country) {
-    clientDetails.setCountry(country);
-    clientDetails.setPostcode("@@@@@@");
-    clientAddressDetailsValidator.validate(clientDetails, errors);
+    addressDetails.setCountry(country);
+    addressDetails.setPostcode("@@@@@@");
+    clientAddressDetailsValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("postcode"));
     assertEquals("invalid.format", errors.getFieldError("postcode").getCode());
     assertEquals(1, errors.getErrorCount());
   }
 
-  private ClientDetails buildClientDetails() {
-    ClientDetails clientDetails = new ClientDetails();
-    clientDetails.setVulnerableClient(false);
-    clientDetails.setNoFixedAbode(false);
-    clientDetails.setCountry("GBR");
-    clientDetails.setHouseNameNumber("1234");
-    clientDetails.setPostcode("SW1A 1AA");
-    clientDetails.setAddressLine1("Address Line 1");
-    clientDetails.setCityTown("CITY");
-    return clientDetails;
+  private ClientFormDataAddressDetails buildClientFormDataAddressDetails() {
+    ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
+    addressDetails.setVulnerableClient(false);
+    addressDetails.setNoFixedAbode(false);
+    addressDetails.setCountry("GBR");
+    addressDetails.setHouseNameNumber("1234");
+    addressDetails.setPostcode("SW1A 1AA");
+    addressDetails.setAddressLine1("Address Line 1");
+    addressDetails.setCityTown("CITY");
+    return addressDetails;
   }
 }

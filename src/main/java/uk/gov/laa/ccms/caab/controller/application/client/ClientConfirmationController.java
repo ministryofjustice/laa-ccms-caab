@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application;
+package uk.gov.laa.ccms.caab.controller.application.client;
 
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;

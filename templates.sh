@@ -16,7 +16,6 @@ rm -rf src/main/resources/static/govuk-frontend-*
 rm -rf govuk_frontend.zip
 rm -rf src/main/resources/static/VERSION.txt
 
-#TODO UPDATE FOR MOJ FRONTEND
 curl -L https://github.com/ministryofjustice/moj-frontend/releases/download/v1.8.0/release-v1.8.0.zip > moj_frontend.zip
 unzip -o moj_frontend.zip -d src/main/resources/static
 mkdir src/main/resources/static/moj-frontend

@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.mapper;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Calendar;
 import java.util.Date;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

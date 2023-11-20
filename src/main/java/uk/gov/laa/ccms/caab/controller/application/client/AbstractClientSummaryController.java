@@ -9,7 +9,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
@@ -40,11 +40,14 @@ public abstract class AbstractClientSummaryController {
 
   protected final ClientDetailMapper clientDetailsMapper;
 
-  protected void validateClientDetails(ClientDetails clientDetails, BindingResult bindingResult) {
-    basicValidator.validate(clientDetails, bindingResult);
-    contactValidator.validate(clientDetails, bindingResult);
-    addressValidator.validate(clientDetails, bindingResult);
-    opportunitiesValidator.validate(clientDetails, bindingResult);
+  protected void validateClientFlowFormData(
+      ClientFlowFormData clientFlowFormData,
+      BindingResult bindingResult) {
+    basicValidator.validate(clientFlowFormData.getBasicDetails(), bindingResult);
+    contactValidator.validate(clientFlowFormData.getContactDetails(), bindingResult);
+    addressValidator.validate(clientFlowFormData.getAddressDetails(), bindingResult);
+    opportunitiesValidator.validate(
+        clientFlowFormData.getMonitoringDetails(), bindingResult);
 
     if (bindingResult.hasErrors()) {
       throw new CaabApplicationException(
@@ -52,35 +55,42 @@ public abstract class AbstractClientSummaryController {
     }
   }
 
-  protected void populateSummaryListLookups(ClientDetails clientDetails, Model model) {
+  protected void populateSummaryListLookups(ClientFlowFormData clientFlowFormData, Model model) {
 
     // Create a list of Mono calls and their respective attribute keys
     List<Pair<String, Mono<CommonLookupValueDetail>>> lookups = List.of(
         Pair.of("contactTitle",
-            commonLookupService.getContactTitle(clientDetails.getTitle())),
+            commonLookupService.getContactTitle(
+                clientFlowFormData.getBasicDetails().getTitle())),
         Pair.of("countryOfOrigin",
-            commonLookupService.getCountry(clientDetails.getCountryOfOrigin())),
+            commonLookupService.getCountry(
+                clientFlowFormData.getBasicDetails().getCountryOfOrigin())),
         Pair.of("maritalStatus",
-            commonLookupService.getMaritalStatus(clientDetails.getMaritalStatus())),
+            commonLookupService.getMaritalStatus(
+                clientFlowFormData.getBasicDetails().getMaritalStatus())),
         Pair.of("gender",
-            commonLookupService.getGender(clientDetails.getGender())),
+            commonLookupService.getGender(
+                clientFlowFormData.getBasicDetails().getGender())),
         Pair.of("correspondenceMethod",
-            commonLookupService.getCorrespondenceMethod(clientDetails.getCorrespondenceMethod())),
+            commonLookupService.getCorrespondenceMethod(
+                clientFlowFormData.getContactDetails().getCorrespondenceMethod())),
         Pair.of("ethnicity",
-            commonLookupService.getEthnicOrigin(clientDetails.getEthnicOrigin())),
+            commonLookupService.getEthnicOrigin(
+                clientFlowFormData.getMonitoringDetails().getEthnicOrigin())),
         Pair.of("disability",
-            commonLookupService.getDisability(clientDetails.getDisability())),
+            commonLookupService.getDisability(
+                clientFlowFormData.getMonitoringDetails().getDisability())),
 
         //Processed differently due to optionality
         Pair.of("country",
-            StringUtils.hasText(clientDetails.getCountry())
+            StringUtils.hasText(clientFlowFormData.getAddressDetails().getCountry())
                 ? commonLookupService.getCountry(
-                clientDetails.getCountry())
+                clientFlowFormData.getAddressDetails().getCountry())
                 : Mono.just(new CommonLookupValueDetail())),
         Pair.of("correspondenceLanguage",
-            StringUtils.hasText(clientDetails.getCorrespondenceLanguage())
+            StringUtils.hasText(clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
                 ? commonLookupService.getCorrespondenceLanguage(
-                clientDetails.getCorrespondenceLanguage())
+                clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
                 : Mono.just(new CommonLookupValueDetail()))
     );
 

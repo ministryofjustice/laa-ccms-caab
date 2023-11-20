@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
@@ -77,16 +78,19 @@ public class ClientService {
   /**
    * Creates a client based on a given client details.
    *
-   * @param clientDetails         The client's details.
+   * @param clientFlowFormData    The client's details.
    * @param user                  The user.
    * @return A Mono wrapping the ClientCreated transaction id.
    */
   public Mono<ClientCreated> createClient(
-      uk.gov.laa.ccms.caab.bean.ClientDetails clientDetails,
+      ClientFlowFormData clientFlowFormData,
       UserDetail user) {
 
-    ReflectionUtils.nullifyStrings(clientDetails);
-    ClientDetail clientDetail = clientDetailsMapper.toSoaClientDetail(clientDetails);
+    ReflectionUtils.nullifyStrings(clientFlowFormData.getBasicDetails());
+    ReflectionUtils.nullifyStrings(clientFlowFormData.getContactDetails());
+    ReflectionUtils.nullifyStrings(clientFlowFormData.getAddressDetails());
+    ReflectionUtils.nullifyStrings(clientFlowFormData.getMonitoringDetails());
+    ClientDetail clientDetail = clientDetailsMapper.toClientDetail(clientFlowFormData);
 
     return soaApiClient.postClient(
         clientDetail.getDetails(),
@@ -97,16 +101,19 @@ public class ClientService {
   /**
    * Updates a client based on a given client details.
    *
-   * @param clientDetails         The client's details.
+   * @param clientFlowFormData    The client's details
    * @param user                  The user.
    * @return A Mono wrapping the ClientCreated transaction id.
    */
   public Mono<ClientCreated> updateClient(
-      uk.gov.laa.ccms.caab.bean.ClientDetails clientDetails,
+      ClientFlowFormData clientFlowFormData,
       UserDetail user) {
 
-    ReflectionUtils.nullifyStrings(clientDetails);
-    ClientDetail clientDetail = clientDetailsMapper.toSoaClientDetail(clientDetails);
+    ReflectionUtils.nullifyStrings(clientFlowFormData.getBasicDetails());
+    ReflectionUtils.nullifyStrings(clientFlowFormData.getContactDetails());
+    ReflectionUtils.nullifyStrings(clientFlowFormData.getAddressDetails());
+    ReflectionUtils.nullifyStrings(clientFlowFormData.getMonitoringDetails());
+    ClientDetail clientDetail = clientDetailsMapper.toClientDetail(clientFlowFormData);
 
     return soaApiClient.postClient(
         clientDetail.getDetails(),

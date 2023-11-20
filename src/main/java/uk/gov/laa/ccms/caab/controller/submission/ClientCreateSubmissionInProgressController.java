@@ -1,7 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_INFORMATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_REFERENCE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
 
 /**
@@ -47,19 +46,13 @@ public class ClientCreateSubmissionInProgressController {
         user.getLoginId(),
         user.getUserType()).block();
 
-    if (StringUtils.hasText(clientStatus.getClientReferenceNumber())) {
-
-      ClientDetail clientInformation = clientService.getClient(
-          clientStatus.getClientReferenceNumber(),
-          user.getLoginId(),
-          user.getUserType()).block();
-
-      session.setAttribute(CLIENT_INFORMATION, clientInformation);
+    if (clientStatus != null && StringUtils.hasText(clientStatus.getClientReferenceNumber())) {
+      session.setAttribute(CLIENT_REFERENCE, clientStatus.getClientReferenceNumber());
 
       //Do some session tidy up
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
       session.removeAttribute(CLIENT_SEARCH_CRITERIA);
-      session.removeAttribute(CLIENT_DETAILS);
+      session.removeAttribute(CLIENT_FLOW_FORM_DATA);
 
       return "redirect:/submissions/client-create/confirmed";
     }

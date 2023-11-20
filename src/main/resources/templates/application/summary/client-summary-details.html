@@ -11,7 +11,7 @@
     <a href="/application/summary" class="govuk-back-link">Cancel and return to create application</a>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/summary/client/details/summary}" th:object="${clientDetails}" method="post">
+    <form action="#" th:action="@{/application/summary/client/details/summary}" th:object="${clientFlowFormData}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <span class="govuk-caption-l">Edit your client</span>
       <h1 class="govuk-heading-l">
@@ -27,7 +27,7 @@
           registered in the system until you have done this.
         </span>
       </p>
-      <div th:replace="~{application/partials/client-fragments :: clientSummaryFragment (clientState='edit')}"></div>
+      <div th:replace="~{application/partials/client-fragments :: clientSummaryFragment}"></div>
       <div class="govuk-button-group">
         <button type="submit" class="govuk-button" data-module="govuk-button">
           Submit amendments
