@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.controller.application.client;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -11,6 +10,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_ADDRESS_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +23,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressSearch;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressSearchValidator;
 import uk.gov.laa.ccms.caab.model.ClientAddressResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
@@ -40,53 +43,40 @@ public class ClientAddressDetailsSearchControllerTest {
 
   private MockMvc mockMvc;
 
+  private ClientFormDataAddressSearch addressSearch;
+  private ClientAddressResultsDisplay searchResults;
+  private ClientFlowFormData clientFlowFormData;
+
   @BeforeEach
   public void setup() {
     mockMvc = standaloneSetup(clientAddressDetailsSearchController).build();
+
+    addressSearch = new ClientFormDataAddressSearch();
+    searchResults = new ClientAddressResultsDisplay();
+    searchResults.setContent(new ArrayList<>());
+    clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
+
   }
 
   @Test
   void testClientDetailsAddressSearch() throws Exception {
-    ClientDetails clientDetails = new ClientDetails();
-    ClientAddressResultsDisplay searchResults = new ClientAddressResultsDisplay();
-    searchResults.setContent(new ArrayList<>());
-
-    when(addressService.getAddresses(any())).thenReturn(searchResults);
-
-    when(addressService.filterByHouseNumber(any(), any(ClientAddressResultsDisplay.class)))
-        .thenReturn(searchResults);
 
     mockMvc.perform(get("/application/client/details/address/search")
-            .sessionAttr("clientDetails", clientDetails))
+            .sessionAttr(CLIENT_ADDRESS_SEARCH_RESULTS, searchResults)
+            .flashAttr("addressSearch", addressSearch))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/address-client-search-results"))
-        .andExpect(model().attributeExists("clientAddressSearchResults"));
+        .andExpect(model().attributeExists("addressSearch"));
   }
 
   @Test
-  void testClientDetailsAddressSearch_NoResults() throws Exception {
-    ClientDetails clientDetails = new ClientDetails();
-    ClientAddressResultsDisplay searchResults = new ClientAddressResultsDisplay();
-    searchResults.setContent(null);
-
-    when(addressService.getAddresses(any())).thenReturn(searchResults);
-
-    mockMvc.perform(get("/application/client/details/address/search")
-            .sessionAttr("clientDetails", clientDetails))
-        .andDo(print())
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/client/details/address"));
-  }
-
-  @Test
-  void testClientDetailsAddressSearchPost_Success() throws Exception {
-    ClientDetails clientDetails = new ClientDetails();
-    ClientAddressResultsDisplay searchResults = new ClientAddressResultsDisplay();
+  void testClientDetailsAddressSearchPost() throws Exception {
 
     mockMvc.perform(post("/application/client/details/address/search")
-            .sessionAttr("clientDetails", clientDetails)
-            .sessionAttr("clientAddressSearchResults", searchResults))
+            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+            .sessionAttr(CLIENT_ADDRESS_SEARCH_RESULTS, searchResults)
+            .flashAttr("addressSearch", addressSearch))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/client/details/address"));
@@ -94,8 +84,6 @@ public class ClientAddressDetailsSearchControllerTest {
 
   @Test
   void testClientDetailsAddressSearchPost_ValidationError() throws Exception {
-    ClientDetails clientDetails = new ClientDetails();
-    ClientAddressResultsDisplay searchResults = new ClientAddressResultsDisplay();
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
@@ -104,11 +92,12 @@ public class ClientAddressDetailsSearchControllerTest {
     }).when(clientAddressSearchValidator).validate(any(), any());
 
     mockMvc.perform(post("/application/client/details/address/search")
-            .sessionAttr("clientDetails", clientDetails)
-            .sessionAttr("clientAddressSearchResults", searchResults))
+            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+            .sessionAttr(CLIENT_ADDRESS_SEARCH_RESULTS, searchResults)
+            .flashAttr("addressSearch", addressSearch))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/address-client-search-results"))
-        .andExpect(model().attributeExists("clientAddressSearchResults"));
+        .andExpect(model().attributeExists("addressSearch", CLIENT_ADDRESS_SEARCH_RESULTS));
   }
 }

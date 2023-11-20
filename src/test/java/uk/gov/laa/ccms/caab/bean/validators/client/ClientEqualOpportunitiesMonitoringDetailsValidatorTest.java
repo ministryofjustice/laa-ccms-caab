@@ -13,7 +13,7 @@ import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataMonitoringDetails;
 
 @ExtendWith(SpringExtension.class)
 class ClientEqualOpportunitiesMonitoringDetailsValidatorTest {
@@ -21,19 +21,19 @@ class ClientEqualOpportunitiesMonitoringDetailsValidatorTest {
   @InjectMocks
   private ClientEqualOpportunitiesMonitoringDetailsValidator validator;
 
-  private ClientDetails clientDetails;
+  private ClientFormDataMonitoringDetails monitoringDetails;
 
   private Errors errors;
 
   @BeforeEach
   public void setUp() {
-    clientDetails = buildClientDetails();
-    errors = new BeanPropertyBindingResult(clientDetails, "clientDetails");
+    monitoringDetails = buildClientDetails();
+    errors = new BeanPropertyBindingResult(monitoringDetails, "monitoringDetails");
   }
 
   @Test
   public void supports_ReturnsTrueForApplicationDetailsClass() {
-    assertTrue(validator.supports(ClientDetails.class));
+    assertTrue(validator.supports(ClientFormDataMonitoringDetails.class));
   }
 
   @Test
@@ -43,15 +43,15 @@ class ClientEqualOpportunitiesMonitoringDetailsValidatorTest {
 
   @Test
   public void validate() {
-    validator.validate(clientDetails, errors);
+    validator.validate(monitoringDetails, errors);
     assertFalse(errors.hasErrors());
   }
 
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_ethnicOrigin(String ethnicity) {
-    clientDetails.setEthnicOrigin(ethnicity);
-    validator.validate(clientDetails, errors);
+    monitoringDetails.setEthnicOrigin(ethnicity);
+    validator.validate(monitoringDetails, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
     assertEquals("required.ethnicOrigin",errors.getAllErrors().get(0).getCode());
@@ -60,18 +60,18 @@ class ClientEqualOpportunitiesMonitoringDetailsValidatorTest {
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_disability(String disability) {
-    clientDetails.setDisability(disability);
-    validator.validate(clientDetails, errors);
+    monitoringDetails.setDisability(disability);
+    validator.validate(monitoringDetails, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
     assertEquals("required.disability",errors.getAllErrors().get(0).getCode());
   }
 
-  private ClientDetails buildClientDetails(){
-    ClientDetails clientDetails = new ClientDetails();
-    clientDetails.setEthnicOrigin("TEST");
-    clientDetails.setDisability("TEST");
-    return clientDetails;
+  private ClientFormDataMonitoringDetails buildClientDetails(){
+    ClientFormDataMonitoringDetails monitoringDetails1 = new ClientFormDataMonitoringDetails();
+    monitoringDetails1.setEthnicOrigin("TEST");
+    monitoringDetails1.setDisability("TEST");
+    return monitoringDetails1;
   }
 
 }

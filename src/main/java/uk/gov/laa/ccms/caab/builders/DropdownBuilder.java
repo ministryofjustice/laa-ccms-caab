@@ -1,13 +1,16 @@
 package uk.gov.laa.ccms.caab.builders;
 
 import java.util.LinkedHashMap;
-import reactor.core.publisher.Mono;
-import reactor.core.publisher.Flux;
-import org.springframework.ui.Model;
 import java.util.Map;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import org.springframework.ui.Model;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 
+
+/**
+ * A builder used to populate controllers dropdown options, performing them asynchronously.
+ */
 public class DropdownBuilder {
 
   private final Model model;
@@ -24,6 +27,9 @@ public class DropdownBuilder {
     return this;
   }
 
+  /**
+   * Build method to collect the added monos added to the map and perform them asynchronously.
+   */
   public void build() {
     Flux.fromIterable(monoMap.entrySet())
         .flatMap(entry -> entry.getValue()

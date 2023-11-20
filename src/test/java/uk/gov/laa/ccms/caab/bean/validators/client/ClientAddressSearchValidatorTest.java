@@ -11,7 +11,7 @@ import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressSearch;
 
 @ExtendWith(SpringExtension.class)
 class ClientAddressSearchValidatorTest {
@@ -19,20 +19,20 @@ class ClientAddressSearchValidatorTest {
   @InjectMocks
   private ClientAddressSearchValidator clientAddressSearchValidator;
 
-  private ClientDetails clientDetails;
+  private ClientFormDataAddressSearch addressSearch;
 
   private Errors errors;
 
   @BeforeEach
   public void setUp() {
-    clientDetails =
-        new ClientDetails(); // Assuming that the default constructor sets all fields to null.
-    errors = new BeanPropertyBindingResult(clientDetails, "clientDetails");
+    addressSearch =
+        new ClientFormDataAddressSearch(); // Assuming that the default constructor sets all fields to null.
+    errors = new BeanPropertyBindingResult(addressSearch, "clientDetails");
   }
 
   @Test
   public void supports_ReturnsTrueForApplicationDetailsClass() {
-    assertTrue(clientAddressSearchValidator.supports(ClientDetails.class));
+    assertTrue(clientAddressSearchValidator.supports(ClientFormDataAddressSearch.class));
   }
 
   @Test
@@ -42,7 +42,7 @@ class ClientAddressSearchValidatorTest {
 
   @Test
   public void validate_errors() {
-    clientAddressSearchValidator.validate(clientDetails, errors);
+    clientAddressSearchValidator.validate(addressSearch, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
     assertEquals("required.uprn",errors.getAllErrors().get(0).getCode());
@@ -50,8 +50,8 @@ class ClientAddressSearchValidatorTest {
 
   @Test
   public void validate() {
-    clientDetails.setUprn("12345");
-    clientAddressSearchValidator.validate(clientDetails, errors);
+    addressSearch.setUprn("12345");
+    clientAddressSearchValidator.validate(addressSearch, errors);
     assertFalse(errors.hasErrors());
   }
 

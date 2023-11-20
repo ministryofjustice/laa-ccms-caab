@@ -98,23 +98,26 @@ public class ClientService {
         user.getUserType());
   }
 
-//  /**
-//   * Updates a client based on a given client details.
-//   *
-//   * @param clientDetails         The client's details.
-//   * @param user                  The user.
-//   * @return A Mono wrapping the ClientCreated transaction id.
-//   */
-//  public Mono<ClientCreated> updateClient(
-//      uk.gov.laa.ccms.caab.bean.ClientDetails clientDetails,
-//      UserDetail user) {
-//
-//    ReflectionUtils.nullifyStrings(clientDetails);
-//    ClientDetail clientDetail = clientDetailsMapper.toClientDetail(clientDetails);
-//
-//    return soaApiClient.postClient(
-//        clientDetail.getDetails(),
-//        user.getLoginId(),
-//        user.getUserType());
-//  }
+  /**
+   * Updates a client based on a given client details.
+   *
+   * @param clientFlowFormData    The client's details
+   * @param user                  The user.
+   * @return A Mono wrapping the ClientCreated transaction id.
+   */
+  public Mono<ClientCreated> updateClient(
+      ClientFlowFormData clientFlowFormData,
+      UserDetail user) {
+
+    ReflectionUtils.nullifyStrings(clientFlowFormData.getBasicDetails());
+    ReflectionUtils.nullifyStrings(clientFlowFormData.getContactDetails());
+    ReflectionUtils.nullifyStrings(clientFlowFormData.getAddressDetails());
+    ReflectionUtils.nullifyStrings(clientFlowFormData.getMonitoringDetails());
+    ClientDetail clientDetail = clientDetailsMapper.toClientDetail(clientFlowFormData);
+
+    return soaApiClient.postClient(
+        clientDetail.getDetails(),
+        user.getLoginId(),
+        user.getUserType());
+  }
 }

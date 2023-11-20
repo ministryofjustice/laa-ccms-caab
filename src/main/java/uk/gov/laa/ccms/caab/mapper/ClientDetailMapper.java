@@ -134,14 +134,24 @@ public interface ClientDetailMapper {
       qualifiedByName = "mapListToString")
   @Mapping(target = "monitoringDetails.specialConsiderations",
       source = "specialConsiderations")
-
   ClientFlowFormData toClientFlowFormData(ClientDetailDetails clientDetailDetails);
 
+  /**
+   * Adds the basic details to the client flow form data from soa client details, using nameDetails
+   * and personal information.
+   *
+   * @param clientFlowFormData The client flow form data with basic details to be amended.
+   * @param clientDetailDetails The returned soa client details to map from.
+   */
   @BeforeMapping
-  default void addClientFormDataBasicDetails(@MappingTarget ClientFlowFormData clientFlowFormData, ClientDetailDetails clientDetailDetails){
+  default void addClientFormDataBasicDetails(
+      @MappingTarget ClientFlowFormData clientFlowFormData,
+      ClientDetailDetails clientDetailDetails) {
     clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
-    addClientFormDataBasicDetailsFromNameDetail(clientFlowFormData.getBasicDetails(),clientDetailDetails.getName());
-    addClientFormDataBasicDetailsFromClientPersonalDetail(clientFlowFormData.getBasicDetails(), clientDetailDetails.getPersonalInformation());
+    addClientFormDataBasicDetailsFromNameDetail(clientFlowFormData.getBasicDetails(),
+        clientDetailDetails.getName());
+    addClientFormDataBasicDetailsFromClientPersonalDetail(clientFlowFormData.getBasicDetails(),
+        clientDetailDetails.getPersonalInformation());
   }
 
   @Mapping(target = "basicDetails.dobDay", source = "personalInformation.dateOfBirth",
@@ -150,15 +160,18 @@ public interface ClientDetailMapper {
       qualifiedByName = "mapMonthFromDate")
   @Mapping(target = "basicDetails.dobYear", source = "personalInformation.dateOfBirth",
       qualifiedByName = "mapYearFromDate")
-  void addClientFormDataBasicDetailsFromClientPersonalDetail(@MappingTarget ClientFormDataBasicDetails basicDetails,  ClientPersonalDetail personalInformation);
+  @Mapping(target = "basicDetails.mentalIncapacity",
+      source = "personalInformation.mentalCapacityInd")
+  void addClientFormDataBasicDetailsFromClientPersonalDetail(
+      @MappingTarget ClientFormDataBasicDetails basicDetails,
+      ClientPersonalDetail personalInformation);
 
   @Mapping(target = "middleNames", source = "name.middleName")
-  void addClientFormDataBasicDetailsFromNameDetail(@MappingTarget ClientFormDataBasicDetails basicDetails,  NameDetail name);
+  void addClientFormDataBasicDetailsFromNameDetail(
+      @MappingTarget ClientFormDataBasicDetails basicDetails,  NameDetail name);
 
   @Mapping(target = "telephoneMobile",
       source = "mobileNumber")
-  @Mapping(target = "password",
-      constant = "Please contact the LAA to edit this")
   ClientFormDataContactDetails toClientFormDataContactDetails(ContactDetail contacts);
 
   @Mapping(target = "houseNameNumber", source = "house")

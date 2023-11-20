@@ -54,7 +54,7 @@ public class ClientEqualOpportunitiesMonitoringDetailsController {
     populateDropdowns(model);
     monitoringDetails.setClientFlowFormAction(clientFlowFormData.getAction());
 
-    if(clientFlowFormData.getMonitoringDetails() != null){
+    if (clientFlowFormData.getMonitoringDetails() != null) {
       model.addAttribute("monitoringDetails",
           clientFlowFormData.getMonitoringDetails());
     }

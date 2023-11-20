@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,6 +11,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataMonitoringDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
@@ -102,7 +108,16 @@ public class ClientServiceTest {
     ClientDetailDetails clientDetailDetails = new ClientDetailDetails();
     clientDetail.setDetails(clientDetailDetails);
 
-    uk.gov.laa.ccms.caab.bean.ClientDetails clientDetails = new uk.gov.laa.ccms.caab.bean.ClientDetails();
+    ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
+    ClientFormDataContactDetails contactDetails = new ClientFormDataContactDetails();
+    ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
+    ClientFormDataMonitoringDetails monitoringDetails = new ClientFormDataMonitoringDetails();
+    ClientFlowFormData clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
+    clientFlowFormData.setBasicDetails(basicDetails);
+    clientFlowFormData.setContactDetails(contactDetails);
+    clientFlowFormData.setAddressDetails(addressDetails);
+    clientFlowFormData.setMonitoringDetails(monitoringDetails);
+
     String loginId = "user1";
     String userType = "userType";
 
@@ -111,14 +126,14 @@ public class ClientServiceTest {
     userDetail.setLoginId(loginId);
     userDetail.setUserType(userType);
 
-    when(clientDetailMapper.toSoaClientDetail(any()))
+    when(clientDetailMapper.toClientDetail(any()))
         .thenReturn(clientDetail);
 
     when(soaApiClient.postClient(clientDetailDetails, loginId, userType))
         .thenReturn(Mono.just(mockClientCreated));
 
     Mono<ClientCreated> clientCreatedMono =
-        clientService.createClient(clientDetails, userDetail);
+        clientService.createClient(clientFlowFormData, userDetail);
 
     StepVerifier.create(clientCreatedMono)
         .expectNextMatches(clientCreated -> clientCreated == mockClientCreated)

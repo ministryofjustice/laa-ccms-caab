@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -9,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_INFORMATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_REFERENCE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
@@ -27,8 +29,14 @@ import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.ClientService;
+import uk.gov.laa.ccms.data.model.BaseOffice;
+import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetailRecordHistory;
+import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -39,7 +47,10 @@ public class ClientCreateSubmissionConfirmedControllerTest {
   private HttpSession httpSession;
 
   @Mock
-  private ApplicationService applicationService;;
+  private ApplicationService applicationService;
+
+  @Mock
+  private ClientService clientService;
 
   @InjectMocks
   private ClientCreateSubmissionConfirmedController clientCreateSubmissionConfirmedController;
@@ -57,19 +68,51 @@ public class ClientCreateSubmissionConfirmedControllerTest {
   @Test
   void testSubmissionsConfirmed() throws Exception {
     ApplicationFormData mockApplicationFormData = new ApplicationFormData(); // Assuming you have a constructor or a mock object
-    UserDetail mockUserDetail = new UserDetail(); // Similarly, create or mock
-    ClientDetail mockClientDetail = new ClientDetail();
+    UserDetail user = buildUser();
+    String clientReferenceNumber = "TEST-REF";
+    ClientDetail clientInformation = buildClientInformation();
 
-    when(applicationService.createApplication(eq(mockApplicationFormData), eq(mockClientDetail), eq(mockUserDetail))).thenReturn(Mono.empty());
+
+    when(clientService.getClient(clientReferenceNumber, user.getLoginId(),
+        user.getUserType())).thenReturn(Mono.just(clientInformation));
+
+    when(applicationService.createApplication(eq(mockApplicationFormData), eq(clientInformation), eq(user)))
+        .thenReturn(Mono.empty());
 
     mockMvc.perform(
             post("/submissions/client-create/confirmed")
                 .sessionAttr(APPLICATION_FORM_DATA, mockApplicationFormData)
-                .sessionAttr(USER_DETAILS, mockUserDetail)
-                .sessionAttr(CLIENT_INFORMATION, mockClientDetail)
+                .sessionAttr(USER_DETAILS, user)
+                .sessionAttr(CLIENT_REFERENCE, clientReferenceNumber)
         )
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/summary"));
+  }
+
+  private UserDetail buildUser() {
+    return new UserDetail()
+        .userId(1)
+        .userType("testUserType")
+        .loginId("testLoginId")
+        .provider(buildProvider());
+  }
+
+  private BaseProvider buildProvider() {
+    return new BaseProvider()
+        .id(123)
+        .addOfficesItem(
+            new BaseOffice()
+                .id(1)
+                .name("Office 1"));
+  }
+
+  public ClientDetail buildClientInformation() {
+    String clientReferenceNumber = "12345";
+    return new ClientDetail()
+        .clientReferenceNumber(clientReferenceNumber)
+        .details(new ClientDetailDetails()
+            .name(new NameDetail()))
+        .recordHistory(new ClientDetailRecordHistory());
   }
 }

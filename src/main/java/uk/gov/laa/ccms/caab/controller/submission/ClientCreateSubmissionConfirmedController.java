@@ -62,6 +62,4 @@ public class ClientCreateSubmissionConfirmedController {
         })
         .thenReturn("redirect:/application/summary").block();
   }
-
-
 }

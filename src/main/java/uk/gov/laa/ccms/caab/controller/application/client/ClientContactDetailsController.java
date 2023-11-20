@@ -58,7 +58,7 @@ public class ClientContactDetailsController {
         clientFlowFormData.getBasicDetails().getVulnerableClient());
     contactDetails.setClientFlowFormAction(clientFlowFormData.getAction());
 
-    if(clientFlowFormData.getContactDetails() != null){
+    if (clientFlowFormData.getContactDetails() != null) {
       model.addAttribute("contactDetails", clientFlowFormData.getContactDetails());
     }
 

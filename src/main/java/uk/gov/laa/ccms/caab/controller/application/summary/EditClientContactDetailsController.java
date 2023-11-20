@@ -73,17 +73,18 @@ public class EditClientContactDetailsController {
       BindingResult bindingResult,
       Model model) {
 
+    contactDetails.setPassword(clientFlowFormData.getContactDetails().getPassword());
     clientContactDetailsValidator.validate(contactDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {
       populateDropdowns(model);
-      return "application/client/contact-client-details";
+      return "application/summary/client-contact-details";
     }
 
     clientFlowFormData.setContactDetails(contactDetails);
     model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
-    return "redirect:/application/client/details/address";
+    return "redirect:/application/summary/client/details/summary";
   }
 
   /**

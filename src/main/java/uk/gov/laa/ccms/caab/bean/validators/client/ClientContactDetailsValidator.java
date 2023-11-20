@@ -3,7 +3,6 @@ package uk.gov.laa.ccms.caab.bean.validators.client;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
@@ -21,12 +20,12 @@ public class ClientContactDetailsValidator extends AbstractValidator {
    *
    * @param clazz The class to check for support.
    * @return {@code true} if the class is assignable from
-   *         {@link uk.gov.laa.ccms.caab.bean.ClientFlowFormData},
+   *         {@link uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails},
    *         {@code false} otherwise.
    */
   @Override
   public boolean supports(Class<?> clazz) {
-    return ClientFlowFormData.class.isAssignableFrom(clazz);
+    return ClientFormDataContactDetails.class.isAssignableFrom(clazz);
   }
 
   /**
@@ -95,7 +94,8 @@ public class ClientContactDetailsValidator extends AbstractValidator {
    * @param contactDetails The object to be validated.
    * @param errors The Errors object to store validation errors.
    */
-  private void validatePasswordNeedsReminder(ClientFormDataContactDetails contactDetails, Errors errors) {
+  private void validatePasswordNeedsReminder(
+      ClientFormDataContactDetails contactDetails, Errors errors) {
     if (StringUtils.hasText(contactDetails.getPassword())) {
       if (contactDetails.getPassword().equalsIgnoreCase(contactDetails.getPasswordReminder())) {
         errors.rejectValue("password", "same.passwordReminder",

@@ -59,17 +59,16 @@ public class ClientAddressDetailsController {
    */
   @GetMapping("/application/client/details/address")
   public String clientDetailsAddress(
-      @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
-      @ModelAttribute("addressDetails") ClientFormDataAddressDetails addressDetails,
-      Model model
-      ) {
+          @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
+          @ModelAttribute("addressDetails") ClientFormDataAddressDetails addressDetails,
+          Model model) {
 
     populateDropdowns(model);
     addressDetails.setVulnerableClient(
         clientFlowFormData.getBasicDetails().getVulnerableClient());
     addressDetails.setClientFlowFormAction(clientFlowFormData.getAction());
 
-    if (clientFlowFormData.getAddressDetails() != null){
+    if (clientFlowFormData.getAddressDetails() != null) {
       model.addAttribute("addressDetails", clientFlowFormData.getAddressDetails());
     }
 
@@ -121,7 +120,8 @@ public class ClientAddressDetailsController {
             "Your input for address details has not returned any results.");
       } else {
         clientAddressSearchResults = addressService.filterByHouseNumber(
-            clientFlowFormData.getAddressDetails().getHouseNameNumber(), clientAddressSearchResults);
+            clientFlowFormData.getAddressDetails().getHouseNameNumber(),
+            clientAddressSearchResults);
         session.setAttribute(CLIENT_ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
       }
 

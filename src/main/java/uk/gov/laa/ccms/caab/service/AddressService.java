@@ -72,10 +72,11 @@ public class AddressService {
    * @param uprn The Unique Property Reference Number (UPRN) for the address.
    * @param results The list of addresses to search the UPRN from.
    * @param addressDetails The address details object to which the address will be added.
-   * @return Updated ClientDetails object with the address information added.
    */
   public void addAddressToClientDetails(
-      String uprn, ClientAddressResultsDisplay results, ClientFormDataAddressDetails addressDetails) {
+      String uprn,
+      ClientAddressResultsDisplay results,
+      ClientFormDataAddressDetails addressDetails) {
 
     ClientAddressResultRowDisplay clientAddress = (results != null)
         ? results.getContent().stream()
@@ -85,7 +86,8 @@ public class AddressService {
         .orElse(null)
         : null;
 
-    clientAddressResultDisplayMapper.updateClientFormDataAddressDetails(addressDetails, clientAddress);
+    clientAddressResultDisplayMapper.updateClientFormDataAddressDetails(
+        addressDetails, clientAddress);
 
     addressDetails.setAddressSearch(new ClientFormDataAddressSearch());
   }

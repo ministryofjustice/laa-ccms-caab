@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
-import static uk.gov.laa.ccms.caab.constants.ActionConstants.ACTION_EDIT;
+import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_EDIT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;

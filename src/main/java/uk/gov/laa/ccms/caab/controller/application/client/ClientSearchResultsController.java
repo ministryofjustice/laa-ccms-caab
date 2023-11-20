@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
-import static uk.gov.laa.ccms.caab.constants.ActionConstants.ACTION_CREATE;
+import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
@@ -105,7 +105,7 @@ public class ClientSearchResultsController {
     applicationFormData.setApplicationCreated(false);
 
     //always make a new client Details session object when clicking the register new client button
-    model.addAttribute(CLIENT_FLOW_FORM_DATA, new ClientFlowFormData(ACTION_CREATE)); //TODO work this into the fragment
+    model.addAttribute(CLIENT_FLOW_FORM_DATA, new ClientFlowFormData(ACTION_CREATE));
 
     return "redirect:/application/agreement";
   }

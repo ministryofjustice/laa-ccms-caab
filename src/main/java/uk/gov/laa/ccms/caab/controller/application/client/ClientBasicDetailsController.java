@@ -65,7 +65,7 @@ public class ClientBasicDetailsController {
     populateDropdowns(model);
     basicDetails.setClientFlowFormAction(clientFlowFormData.getAction());
 
-    if(clientFlowFormData.getBasicDetails() != null){
+    if (clientFlowFormData.getBasicDetails() != null) {
       model.addAttribute("basicDetails", clientFlowFormData.getBasicDetails());
       populateFields(clientSearchCriteria, clientFlowFormData.getBasicDetails(), model);
     } else {

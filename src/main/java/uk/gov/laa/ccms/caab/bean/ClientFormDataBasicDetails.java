@@ -3,6 +3,9 @@ package uk.gov.laa.ccms.caab.bean;
 import lombok.Data;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
+/**
+ * Represents the client basic details form.
+ */
 @Data
 public class ClientFormDataBasicDetails {
 

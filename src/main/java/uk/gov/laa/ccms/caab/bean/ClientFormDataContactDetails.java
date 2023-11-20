@@ -2,8 +2,10 @@ package uk.gov.laa.ccms.caab.bean;
 
 import lombok.Data;
 
+/**
+ * Represents the client contact details form.
+ */
 @Data
-
 public class ClientFormDataContactDetails {
 
   private String telephoneHome;

@@ -16,7 +16,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
 
 @ExtendWith(SpringExtension.class)
 class ClientContactDetailsValidatorTest {
@@ -25,19 +25,19 @@ class ClientContactDetailsValidatorTest {
   private ClientContactDetailsValidator clientContactDetailsValidator;
 
   @Mock
-  private ClientDetails clientDetails;
+  private ClientFormDataContactDetails contactDetails;
 
   private Errors errors;
 
   @BeforeEach
   public void setUp() {
-    clientDetails = buildClientDetails();
-    errors = new BeanPropertyBindingResult(clientDetails, "clientDetails");
+    contactDetails = buildContactDetails();
+    errors = new BeanPropertyBindingResult(contactDetails, "contactDetails");
   }
 
   @Test
-  public void supports_ReturnsTrueForApplicationDetailsClass() {
-    assertTrue(clientContactDetailsValidator.supports(ClientDetails.class));
+  public void supports_ReturnsTrueForClientFormDataContactDetailsClass() {
+    assertTrue(clientContactDetailsValidator.supports(ClientFormDataContactDetails.class));
   }
 
   @Test
@@ -47,16 +47,16 @@ class ClientContactDetailsValidatorTest {
 
   @Test
   public void validate() {
-    clientContactDetailsValidator.validate(clientDetails, errors);
+    clientContactDetailsValidator.validate(contactDetails, errors);
     assertFalse(errors.hasErrors());
   }
 
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_passwordRequired(String password) {
-    clientDetails.setPassword(password);
+    contactDetails.setPassword(password);
 
-    clientContactDetailsValidator.validate(clientDetails, errors);
+    clientContactDetailsValidator.validate(contactDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("password"));
     assertEquals("required.password", errors.getFieldError("password").getCode());
@@ -65,9 +65,9 @@ class ClientContactDetailsValidatorTest {
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_passwordReminderRequired(String passwordReminder) {
-    clientDetails.setPasswordReminder(passwordReminder);
+    contactDetails.setPasswordReminder(passwordReminder);
 
-    clientContactDetailsValidator.validate(clientDetails, errors);
+    clientContactDetailsValidator.validate(contactDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("passwordReminder"));
     assertEquals("required.passwordReminder", errors.getFieldError("passwordReminder").getCode());
@@ -75,10 +75,10 @@ class ClientContactDetailsValidatorTest {
 
   @Test
   public void validate_validatePasswordNeedsReminder() {
-    clientDetails.setPassword("Test");
-    clientDetails.setPasswordReminder("Test");
+    contactDetails.setPassword("Test");
+    contactDetails.setPasswordReminder("Test");
 
-    clientContactDetailsValidator.validate(clientDetails, errors);
+    clientContactDetailsValidator.validate(contactDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("password"));
     assertEquals("same.passwordReminder", errors.getFieldError("password").getCode());
@@ -87,10 +87,10 @@ class ClientContactDetailsValidatorTest {
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_validateEmailField(String emailAddress) {
-    clientDetails.setEmailAddress(emailAddress);
-    clientDetails.setCorrespondenceMethod("E-mail");
+    contactDetails.setEmailAddress(emailAddress);
+    contactDetails.setCorrespondenceMethod("E-mail");
 
-    clientContactDetailsValidator.validate(clientDetails, errors);
+    clientContactDetailsValidator.validate(contactDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("emailAddress"));
     assertEquals("required.emailAddress", errors.getFieldError("emailAddress").getCode());
@@ -99,12 +99,12 @@ class ClientContactDetailsValidatorTest {
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_validateTelephones(String telephone) {
-    clientDetails.setVulnerableClient(false);
-    clientDetails.setTelephoneHome(telephone);
-    clientDetails.setTelephoneWork(telephone);
-    clientDetails.setTelephoneMobile(telephone);
+    contactDetails.setVulnerableClient(false);
+    contactDetails.setTelephoneHome(telephone);
+    contactDetails.setTelephoneWork(telephone);
+    contactDetails.setTelephoneMobile(telephone);
 
-    clientContactDetailsValidator.validate(clientDetails, errors);
+    clientContactDetailsValidator.validate(contactDetails, errors);
     assertTrue(errors.hasErrors());
   }
 
@@ -118,16 +118,16 @@ class ClientContactDetailsValidatorTest {
       "telephoneMobile, @£$",
   })
   public void validate_validateTelephoneField_invalidCharacters(String type, String telephone) {
-    clientDetails.setVulnerableClient(false);
+    contactDetails.setVulnerableClient(false);
 
     if (type.equals("telephoneHome"))
-      clientDetails.setTelephoneHome(telephone);
+      contactDetails.setTelephoneHome(telephone);
     if (type.equals("telephoneWork"))
-      clientDetails.setTelephoneWork(telephone);
+      contactDetails.setTelephoneWork(telephone);
     if (type.equals("telephoneMobile"))
-      clientDetails.setTelephoneMobile(telephone);
+      contactDetails.setTelephoneMobile(telephone);
 
-    clientContactDetailsValidator.validate(clientDetails, errors);
+    clientContactDetailsValidator.validate(contactDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError(type));
     assertEquals("invalid." + type, errors.getFieldError(type).getCode());
@@ -143,33 +143,33 @@ class ClientContactDetailsValidatorTest {
       "telephoneMobile, 123",
   })
   public void validate_validateTelephoneField_invalidLength(String type, String telephone) {
-    clientDetails.setVulnerableClient(false);
+    contactDetails.setVulnerableClient(false);
 
     if (type.equals("telephoneHome"))
-      clientDetails.setTelephoneHome(telephone);
+      contactDetails.setTelephoneHome(telephone);
     if (type.equals("telephoneWork"))
-      clientDetails.setTelephoneWork(telephone);
+      contactDetails.setTelephoneWork(telephone);
     if (type.equals("telephoneMobile"))
-      clientDetails.setTelephoneMobile(telephone);
+      contactDetails.setTelephoneMobile(telephone);
 
-    clientContactDetailsValidator.validate(clientDetails, errors);
+    clientContactDetailsValidator.validate(contactDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError(type));
     assertEquals("length." + type, errors.getFieldError(type).getCode());
   }
 
 
-  private ClientDetails buildClientDetails(){
-    ClientDetails clientDetails = new ClientDetails();
-    clientDetails.setTelephoneHome("1111111111");
-    clientDetails.setTelephoneWork("2222222222");
-    clientDetails.setTelephoneMobile("3333333333");
-    clientDetails.setEmailAddress("test@test.com");
-    clientDetails.setPassword("password");
-    clientDetails.setPasswordReminder("reminder");
-    clientDetails.setCorrespondenceMethod("LETTER");
-    clientDetails.setCorrespondenceLanguage("GBR");
-    return clientDetails;
+  private ClientFormDataContactDetails buildContactDetails(){
+    ClientFormDataContactDetails contactDetails1 = new ClientFormDataContactDetails();
+    contactDetails1.setTelephoneHome("1111111111");
+    contactDetails1.setTelephoneWork("2222222222");
+    contactDetails1.setTelephoneMobile("3333333333");
+    contactDetails1.setEmailAddress("test@test.com");
+    contactDetails1.setPassword("password");
+    contactDetails1.setPasswordReminder("reminder");
+    contactDetails1.setCorrespondenceMethod("LETTER");
+    contactDetails1.setCorrespondenceLanguage("GBR");
+    return contactDetails1;
   }
 
 

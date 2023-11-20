@@ -53,10 +53,7 @@ public class ClientCreateSubmissionInProgressControllerTest {
     ClientStatus clientStatus = new ClientStatus();
     clientStatus.setClientReferenceNumber("123456");
 
-    ClientDetail clientDetail = new ClientDetail();
-
     when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
-    when(clientService.getClient(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientDetail));
 
     mockMvc.perform(
             get("/submissions/client-create")
