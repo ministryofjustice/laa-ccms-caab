@@ -8,7 +8,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public abstract class ClientAbstractFormData {
+public abstract class AbstractClientFormData {
 
   //Required for validation
   protected Boolean vulnerableClient = false;

@@ -8,7 +8,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class ClientFormDataMonitoringDetails extends ClientAbstractFormData {
+public class ClientFormDataMonitoringDetails extends AbstractClientFormData {
 
   private String ethnicOrigin;
   private String disability;

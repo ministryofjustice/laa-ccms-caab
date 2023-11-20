@@ -2,14 +2,13 @@ package uk.gov.laa.ccms.caab.bean;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 /**
  * Represents the client basic details form.
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class ClientFormDataBasicDetails extends ClientAbstractFormData {
+public class ClientFormDataBasicDetails extends AbstractClientFormData {
 
   private String title;
   private String surname;

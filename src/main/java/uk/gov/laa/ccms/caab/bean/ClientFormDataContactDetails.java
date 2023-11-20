@@ -8,7 +8,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class ClientFormDataContactDetails extends ClientAbstractFormData {
+public class ClientFormDataContactDetails extends AbstractClientFormData {
 
   private String telephoneHome;
   private String telephoneWork;
