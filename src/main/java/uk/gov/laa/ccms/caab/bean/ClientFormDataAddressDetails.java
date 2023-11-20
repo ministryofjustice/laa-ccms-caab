@@ -8,7 +8,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class ClientFormDataAddressDetails extends ClientAbstractFormData{
+public class ClientFormDataAddressDetails extends ClientAbstractFormData {
 
   private Boolean noFixedAbode = false;
   private String country;
