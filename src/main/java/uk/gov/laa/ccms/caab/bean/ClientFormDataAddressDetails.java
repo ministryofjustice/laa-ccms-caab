@@ -1,12 +1,14 @@
 package uk.gov.laa.ccms.caab.bean;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * Represents the client address details form.
  */
 @Data
-public class ClientFormDataAddressDetails {
+@EqualsAndHashCode(callSuper = false)
+public class ClientFormDataAddressDetails extends ClientAbstractFormData{
 
   private Boolean noFixedAbode = false;
   private String country;
@@ -19,13 +21,5 @@ public class ClientFormDataAddressDetails {
 
   //Required for address searching
   private ClientFormDataAddressSearch addressSearch;
-
-  //Required for validation
-  private Boolean vulnerableClient = false;
-
-  //Required for template rendering
-  private String clientFlowFormAction;
-
-
 
 }

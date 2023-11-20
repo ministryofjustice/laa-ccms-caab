@@ -1,13 +1,15 @@
 package uk.gov.laa.ccms.caab.bean;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 /**
  * Represents the client basic details form.
  */
 @Data
-public class ClientFormDataBasicDetails {
+@EqualsAndHashCode(callSuper = false)
+public class ClientFormDataBasicDetails extends ClientAbstractFormData {
 
   private String title;
   private String surname;
@@ -23,11 +25,7 @@ public class ClientFormDataBasicDetails {
   private String homeOfficeNumber;
   private String gender;
   private String maritalStatus;
-  private Boolean vulnerableClient = false;
   private Boolean highProfileClient = false;
   private Boolean vexatiousLitigant = false;
   private Boolean mentalIncapacity = false;
-
-  //Required for template rendering
-  private String clientFlowFormAction;
 }
