@@ -44,7 +44,7 @@ public class EditClientContactDetailsController {
    * @return The view name for the client basic details page
    */
   @GetMapping("/application/summary/client/details/contact")
-  public String getClientDetailsBasic(
+  public String getClientDetailsContact(
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       Model model) {
 
@@ -67,7 +67,7 @@ public class EditClientContactDetailsController {
    * @return A redirect string to the agreement page.
    */
   @PostMapping("/application/summary/client/details/contact")
-  public String postClientDetailsBasic(
+  public String postClientDetailsContact(
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @ModelAttribute("contactDetails") ClientFormDataContactDetails contactDetails,
       BindingResult bindingResult,
