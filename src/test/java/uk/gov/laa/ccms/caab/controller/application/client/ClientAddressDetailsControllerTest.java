@@ -12,7 +12,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
-import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_EDIT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import java.util.ArrayList;
@@ -30,7 +29,6 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsFindAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
-import uk.gov.laa.ccms.caab.controller.application.summary.EditClientAddressDetailsController;
 import uk.gov.laa.ccms.caab.model.ClientAddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ClientAddressResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
@@ -72,7 +70,7 @@ public class ClientAddressDetailsControllerTest {
 
     basicDetails = new ClientFormDataBasicDetails();
     basicDetails.setVulnerableClient(false);
-    clientFlowFormData = new ClientFlowFormData(ACTION_EDIT);
+    clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
     clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
 
     addressDetails = new ClientFormDataAddressDetails();

@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
+import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_EDIT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import java.util.ArrayList;
@@ -74,7 +75,7 @@ class EditClientAddressDetailsControllerTest {
     addressDetails = new ClientFormDataAddressDetails();
     addressDetails.setVulnerableClient(false);
 
-    clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
+    clientFlowFormData = new ClientFlowFormData(ACTION_EDIT);
     clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
     clientFlowFormData.setAddressDetails(addressDetails);
 
