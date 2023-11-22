@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>LAA CCMS - Create application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+      <a href="/application/summary/client/details/summary" class="govuk-back-link">Cancel and return to client search</a>
+  </div>
+  <div id="main-content">
+    <form action="#" th:action="@{/application/client/details/equal-opportunities-monitoring}" th:object="${monitoringDetails}" method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <span class="govuk-caption-l">Edit your client</span>
+      <h1 class="govuk-heading-l">
+          Equal opportunities monitoring
+      </h1>
+      <p class="govuk-body-l">
+          Please provide information to reflect how your client would describe themselves.
+      </p>
+      <div th:replace="~{application/partials/client-fragments :: clientMonitoringFragment}"></div>
+      <div class="govuk-button-group">
+        <button type="submit" name="action" value="next" class="govuk-button" data-module="govuk-button">
+          Confirm
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>
