@@ -52,19 +52,20 @@ public class ClientDeceasedDetailsValidator extends AbstractValidator {
     validateNumericField("dodMonth", deceasedDetails.getDodMonth(), "the month", errors);
     validateNumericField("dodYear", deceasedDetails.getDodYear(), "the year", errors);
 
-    if (StringUtils.hasText(deceasedDetails.getDodDay())
-        || StringUtils.hasText(deceasedDetails.getDodMonth())
-        || StringUtils.hasText(deceasedDetails.getDodYear())) {
-      dateHasValue = true;
-    }
+    if (!errors.hasErrors()) {
+      if (StringUtils.hasText(deceasedDetails.getDodDay())
+          || StringUtils.hasText(deceasedDetails.getDodMonth())
+          || StringUtils.hasText(deceasedDetails.getDodYear())) {
+        dateHasValue = true;
+      }
 
-    if (dateHasValue && !errors.hasErrors()) {
-      deceasedDetails.setDateOfDeath(
-          buildDateString(
-            deceasedDetails.getDodDay(),
-            deceasedDetails.getDodMonth(),
-            deceasedDetails.getDodYear()));
-      if (StringUtils.hasText(deceasedDetails.getDateOfDeath())) {
+      if (dateHasValue && !errors.hasErrors()) {
+        deceasedDetails.setDateOfDeath(
+            buildDateString(
+                deceasedDetails.getDodDay(),
+                deceasedDetails.getDodMonth(),
+                deceasedDetails.getDodYear()));
+
         Date date = validateValidDateField(
             deceasedDetails.getDateOfDeath(),
             "dateOfDeath",
@@ -76,8 +77,6 @@ public class ClientDeceasedDetailsValidator extends AbstractValidator {
 
   private String buildDateString(String day, String month,
       String year) {
-    return day + "/"
-        + month + "/"
-        + year;
+    return String.format("%s/%s/%s", day, month, year);
   }
 }
