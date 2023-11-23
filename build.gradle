@@ -45,7 +45,7 @@ if (file('secrets.gradle').exists()) {
 	gitPackageKey = project.ext.gitPackageKey
 } else {
 	gitPackageUser = 'laa-ccms-caab-ui'
-	gitPackageKey = System.getenv('GIT_PACKAGE_KEY')
+	gitPackageKey = System.getenv('CAAB_SERVICE_TOKEN')
 }
 
 repositories {
