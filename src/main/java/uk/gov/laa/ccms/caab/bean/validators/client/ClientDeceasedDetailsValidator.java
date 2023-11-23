@@ -46,32 +46,23 @@ public class ClientDeceasedDetailsValidator extends AbstractValidator {
 
   private void validateDateFieldFormats(
       ClientFormDataDeceasedDetails deceasedDetails, Errors errors) {
-    boolean dateHasValue = false;
 
     validateNumericField("dodDay", deceasedDetails.getDodDay(), "the day", errors);
     validateNumericField("dodMonth", deceasedDetails.getDodMonth(), "the month", errors);
     validateNumericField("dodYear", deceasedDetails.getDodYear(), "the year", errors);
 
     if (!errors.hasErrors()) {
-      if (StringUtils.hasText(deceasedDetails.getDodDay())
-          || StringUtils.hasText(deceasedDetails.getDodMonth())
-          || StringUtils.hasText(deceasedDetails.getDodYear())) {
-        dateHasValue = true;
-      }
+      deceasedDetails.setDateOfDeath(
+          buildDateString(
+              deceasedDetails.getDodDay(),
+              deceasedDetails.getDodMonth(),
+              deceasedDetails.getDodYear()));
 
-      if (dateHasValue && !errors.hasErrors()) {
-        deceasedDetails.setDateOfDeath(
-            buildDateString(
-                deceasedDetails.getDodDay(),
-                deceasedDetails.getDodMonth(),
-                deceasedDetails.getDodYear()));
-
-        Date date = validateValidDateField(
-            deceasedDetails.getDateOfDeath(),
-            "dateOfDeath",
-            SOA_DATE_FORMAT, errors);
-        validateDateInPast(date, "dateOfDeath", "date of death", errors);
-      }
+      Date date = validateValidDateField(
+          deceasedDetails.getDateOfDeath(),
+          "dateOfDeath",
+          SOA_DATE_FORMAT, errors);
+      validateDateInPast(date, "dateOfDeath", "date of death", errors);
     }
   }
 
