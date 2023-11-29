@@ -12,19 +12,24 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuple3;
 import reactor.util.function.Tuple4;
+import reactor.util.function.Tuple7;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.builders.ApplicationBuilder;
@@ -36,19 +41,15 @@ import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
-import uk.gov.laa.ccms.caab.model.CaseOutcome;
-import uk.gov.laa.ccms.caab.model.CostEntry;
-import uk.gov.laa.ccms.caab.model.DevolvedPowers;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
-import uk.gov.laa.ccms.caab.model.Opponent;
-import uk.gov.laa.ccms.caab.model.PriorAuthority;
-import uk.gov.laa.ccms.caab.model.Proceeding;
-import uk.gov.laa.ccms.caab.model.ProceedingOutcome;
-import uk.gov.laa.ccms.caab.model.ReferenceDataItem;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -59,13 +60,16 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
+import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
+import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.AssessmentResult;
@@ -76,8 +80,7 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
-import uk.gov.laa.ccms.soa.gateway.model.OtherParty;
-import uk.gov.laa.ccms.soa.gateway.model.OutcomeDetail;
+import uk.gov.laa.ccms.soa.gateway.model.CostLimitation;
 import uk.gov.laa.ccms.soa.gateway.model.PriorAuthorityAttribute;
 import uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ScopeLimitation;
@@ -130,7 +133,8 @@ public class ApplicationService {
   public Mono<ApplicationDetail> getCase(String caseReferenceNumber, String loginId,
       String userType) {
     return soaApiClient.getCase(caseReferenceNumber, loginId, userType)
-        .map(this::mapSoaCaseToApplication);
+            .flatMap(this::buildApplicationMappingContext)
+            .map(applicationMapper::toApplicationDetail);
   }
 
 
@@ -304,200 +308,6 @@ public class ApplicationService {
         });
   }
 
-  protected ApplicationDetail mapSoaCaseToApplication(CaseDetail soaCase) {
-    uk.gov.laa.ccms.soa.gateway.model.ApplicationDetails soaApplicationDetails =
-        soaCase.getApplicationDetails();
-
-    // Retrieve the relevant Application Type detail from EbsApi.
-    CommonLookupValueDetail applicationTypeValue =
-        Optional.ofNullable(lookupService.getApplicationType(soaCase.getCertificateType()).block())
-            .orElseThrow(() -> new CaabApplicationException(
-                String.format("Failed to find ApplicationType: %s", soaCase.getCertificateType())));
-
-    // Retrieve full details of the Case's related Provider.
-    uk.gov.laa.ccms.soa.gateway.model.ProviderDetail soaProvider =
-        soaApplicationDetails.getProviderDetails();
-
-    ProviderDetail ebsProvider = getEbsProvider(Integer.valueOf(soaProvider.getProviderFirmId()));
-
-    // Find the correct office
-    OfficeDetail providerOffice = getProviderOffice(
-        soaProvider.getProviderOfficeId(),
-        ebsProvider);
-
-    // Get the Fee Earners for the relevant office, and Map them by contact id.
-    Map<Integer, ContactDetail> feeEarnerById =
-        providerOffice.getFeeEarners().stream().collect(
-            Collectors.toMap(ContactDetail::getId, Function.identity()));
-
-    // Get the correct Supervisor and Fee Earner for this Provider.
-    ContactDetail supervisorContact = feeEarnerById.get(Integer.valueOf(
-        soaProvider.getSupervisorContactId()));
-    ContactDetail feeEarnerContact = feeEarnerById.get(Integer.valueOf(
-        soaProvider.getFeeEarnerContactId()));
-
-    // Map what we can based on the ebsCase
-    ApplicationDetail caabApplication = applicationMapper.toApplicationDetail(
-        soaCase,
-        applicationTypeValue,
-        ebsProvider,
-        providerOffice,
-        supervisorContact,
-        feeEarnerContact
-    );
-
-    CategoryOfLaw categoryOfLaw = soaApplicationDetails.getCategoryOfLaw();
-    if (categoryOfLaw.getCostLimitations() != null && categoryOfLaw.getTotalPaidToDate() != null) {
-      // Add the total amount billed across all cost entries.
-      BigDecimal totalProviderAmount = caabApplication.getCosts().getCostEntries().stream()
-          .map(CostEntry::getAmountBilled)
-          .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-      caabApplication.getCosts().setCurrentProviderBilledAmount(
-          categoryOfLaw.getTotalPaidToDate().subtract(totalProviderAmount));
-    }
-
-    convertProceedings(soaApplicationDetails.getProceedings(), caabApplication);
-
-    caabApplication.setMeansAssessment(convertAssessment(
-        soaApplicationDetails.getMeansAssesments()));
-    caabApplication.setMeritsAssessment(convertAssessment(
-        soaApplicationDetails.getMeritsAssesments()));
-
-    caabApplication.setOpponents(convertOpponents(soaApplicationDetails.getOtherParties()));
-
-    boolean isDevolvedPowers = APP_TYPE_EMERGENCY_DEVOLVED_POWERS.equalsIgnoreCase(
-        soaApplicationDetails.getApplicationAmendmentType())
-        || APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS.equalsIgnoreCase(
-        soaApplicationDetails.getApplicationAmendmentType());
-
-    caabApplication.getApplicationType().setDevolvedPowers(
-        new DevolvedPowers()
-            .used(isDevolvedPowers)
-            .dateUsed(isDevolvedPowers ? soaApplicationDetails.getDevolvedPowersDate() : null));
-
-    if (soaCase.getPriorAuthorities() != null) {
-      caabApplication.setPriorAuthorities(convertPriorAuthorities(soaCase.getPriorAuthorities()));
-    }
-
-
-    caabApplication.setCaseOutcome(convertCaseOutcome(soaCase, caabApplication));
-
-    return caabApplication;
-  }
-
-  protected List<PriorAuthority> convertPriorAuthorities(
-      List<uk.gov.laa.ccms.soa.gateway.model.PriorAuthority> soaPriorAuthorities) {
-    // Look up all prior auth types
-    List<PriorAuthorityTypeDetail> priorAuthorityTypesLookup =
-        Optional.ofNullable(lookupService.getPriorAuthorityTypes().block())
-            .map(PriorAuthorityTypeDetails::getContent)
-            .orElseThrow(() ->
-                new CaabApplicationException("Failed to retrieve PriorAuthorityTypes"));
-
-    Map<String, PriorAuthorityTypeDetail> priorAuthTypes =
-        priorAuthorityTypesLookup.stream().collect(
-            Collectors.toMap(PriorAuthorityTypeDetail::getCode, Function.identity()));
-
-    List<PriorAuthority> caabPriorAuthorities = new ArrayList<>();
-    for (uk.gov.laa.ccms.soa.gateway.model.PriorAuthority soaPriorAuthority : soaPriorAuthorities) {
-      caabPriorAuthorities.add(convertPriorAuthority(
-          soaPriorAuthority,
-          priorAuthTypes));
-    }
-
-    return caabPriorAuthorities;
-  }
-
-  protected void convertProceedings(final List<ProceedingDetail> soaProceedings,
-      final ApplicationDetail application) {
-    // Build Maps of the lookup values required to fill in missing display values in the
-    // SOA-returned data.
-    Map<String, CommonLookupValueDetail> matterTypes = toCommonValueMap(
-        lookupService.getMatterTypes().block());
-    Map<String, CommonLookupValueDetail> levelsOfService = toCommonValueMap(
-        lookupService.getLevelsOfService().block());
-    Map<String, CommonLookupValueDetail> clientInvolvementTypes = toCommonValueMap(
-        lookupService.getClientInvolvementTypes().block());
-    Map<String, CommonLookupValueDetail> statuses = toCommonValueMap(
-        lookupService.getProceedingStatuses().block());
-
-    // Check whether all soa proceedings are at status DRAFT
-    boolean caseWithOnlyDraftProceedings = soaProceedings.stream().allMatch(proceedingDetail ->
-        STATUS_DRAFT.equalsIgnoreCase(proceedingDetail.getStatus()));
-    application.setSubmitted(caseWithOnlyDraftProceedings);
-
-    for (ProceedingDetail soaProceeding : soaProceedings) {
-      Proceeding caabProceeding = convertProceeding(
-          soaProceeding,
-          matterTypes,
-          levelsOfService,
-          clientInvolvementTypes,
-          statuses,
-          application);
-
-      // Add the proceeding to the amendment proceedings if it is of type
-      // draft and the case has live proceedings (not only drafts)
-      if (STATUS_DRAFT.equalsIgnoreCase(caabProceeding.getStatus().getId())
-          && !caseWithOnlyDraftProceedings) {
-        application.addAmendmentProceedingsInEbsItem(caabProceeding);
-      } else {
-        application.addProceedingsItem(caabProceeding);
-      }
-    }
-  }
-
-  protected Proceeding convertProceeding(ProceedingDetail soaProceeding,
-      Map<String, CommonLookupValueDetail> matterTypes,
-      Map<String, CommonLookupValueDetail> levelsOfService,
-      Map<String, CommonLookupValueDetail> clientInvolvementTypes,
-      Map<String, CommonLookupValueDetail> statuses,
-      ApplicationDetail applicationDetail
-  ) {
-    // Look up the Proceeding info from the EbsApi
-    uk.gov.laa.ccms.data.model.ProceedingDetail ebsProceeding =
-        ebsApiClient.getProceeding(soaProceeding.getProceedingType()).block();
-
-    CommonLookupValueDetail matterType =
-        matterTypes.get(soaProceeding.getMatterType());
-    CommonLookupValueDetail levelOfService =
-        levelsOfService.get(soaProceeding.getLevelOfService());
-    CommonLookupValueDetail clientInvolvementType =
-        clientInvolvementTypes.get(soaProceeding.getClientInvolvementType());
-    CommonLookupValueDetail proceedingStatus =
-        statuses.get(soaProceeding.getStatus());
-
-    if (proceedingStatus == null) {
-      proceedingStatus = new CommonLookupValueDetail()
-          .code(soaProceeding.getStatus())
-          .description(soaProceeding.getStatus());
-    }
-
-    Proceeding caabProceeding = applicationMapper.toProceeding(
-        soaProceeding,
-        ebsProceeding,
-        matterType,
-        levelOfService,
-        clientInvolvementType,
-        proceedingStatus);
-
-    Map<String, CommonLookupValueDetail> scopeLimitationLookups =
-        toCommonValueMap(lookupService.getScopeLimitations().block());
-    for (ScopeLimitation soaScopeLimitation : soaProceeding.getScopeLimitations()) {
-      caabProceeding.addScopeLimitationsItem(
-          applicationMapper.toScopeLimitation(
-              soaScopeLimitation,
-              scopeLimitationLookups.get(soaScopeLimitation.getScopeLimitation())));
-    }
-
-    calculateProceedingCostLimitation(caabProceeding, applicationDetail);
-
-    caabProceeding.setOutcome(convertProceedingOutcome(
-        caabProceeding, soaProceeding.getOutcome()));
-
-    return caabProceeding;
-  }
-
   public ApplicationFormData getApplicationTypeFormData(final String id) {
     return caabApiClient.getApplicationType(id)
         .map(applicationFormDataMapper::toApplicationTypeFormData).block();
@@ -588,30 +398,413 @@ public class ApplicationService {
 
   }
 
-  private void calculateProceedingCostLimitation(Proceeding proceeding,
-      ApplicationDetail applicationDetail) {
-    if (applicationDetail.getCategoryOfLaw().getId() != null
-        && proceeding.getMatterType().getId() != null
-        && proceeding.getProceedingType().getId() != null
-        && proceeding.getLevelOfService().getId() != null
+  /**
+   * Before a CaseDetail can be mapped to a CAAB ApplicationDetail further lookup
+   * data and calculations need to be performed. This method builds a wrapper object to
+   * hold all the required data for the mapping.
+   *
+   * @param soaCase - the SOA CaseDetail.
+   * @return a Mono containing an ApplicationMappingContext for the CaseDetail.
+   */
+  protected Mono<ApplicationMappingContext> buildApplicationMappingContext(CaseDetail soaCase) {
+    uk.gov.laa.ccms.soa.gateway.model.ApplicationDetails soaApplicationDetails =
+        soaCase.getApplicationDetails();
+
+    uk.gov.laa.ccms.soa.gateway.model.ProviderDetail soaProvider =
+        soaApplicationDetails.getProviderDetails();
+
+    Mono<Tuple7<CommonLookupValueDetail,
+                ProviderDetail,
+                CommonLookupDetail,
+                CommonLookupDetail,
+                CommonLookupDetail,
+                CommonLookupDetail,
+                PriorAuthorityTypeDetails>> combinedResult =
+        Mono.zip(lookupService.getApplicationType(soaCase.getCertificateType()),
+            providerService.getProvider(Integer.parseInt(soaProvider.getProviderFirmId())),
+            lookupService.getMatterTypes(),
+            lookupService.getLevelsOfService(),
+            lookupService.getClientInvolvementTypes(),
+            lookupService.getScopeLimitations(),
+            lookupService.getPriorAuthorityTypes());
+
+    return combinedResult.map(tuple -> {
+              CommonLookupValueDetail applicationType = tuple.getT1();
+              ProviderDetail providerDetail = tuple.getT2();
+              Map<String, CommonLookupValueDetail> matterTypes =
+                  toCommonValueMap(tuple.getT3());
+              Map<String, CommonLookupValueDetail> levelsOfService =
+                  toCommonValueMap(tuple.getT4());
+              Map<String, CommonLookupValueDetail> clientInvolvementTypes =
+                  toCommonValueMap(tuple.getT5());
+              Map<String, CommonLookupValueDetail> scopeLimitations =
+                  toCommonValueMap(tuple.getT6());
+              PriorAuthorityTypeDetails priorAuthorityTypes = tuple.getT7();
+
+              // Find the correct provider office.
+              OfficeDetail providerOffice = providerDetail.getOffices().stream()
+                  .filter(officeDetail -> soaProvider.getProviderOfficeId().equals(
+                      String.valueOf(officeDetail.getId())))
+                  .findAny()
+                  .orElseThrow(() -> new CaabApplicationException(
+                      String.format("Failed to find Office with id: %s",
+                          soaProvider.getProviderOfficeId())));
+
+              // Get the Fee Earners for the relevant office, and Map them by contact id.
+              Map<Integer, ContactDetail> feeEarnerById =
+                  providerOffice.getFeeEarners().stream().collect(
+                      Collectors.toMap(ContactDetail::getId, Function.identity()));
+
+              // Get the correct Supervisor and Fee Earner for this Provider.
+              ContactDetail supervisorContact = feeEarnerById.get(Integer.valueOf(
+                  soaProvider.getSupervisorContactId()));
+
+              ContactDetail feeEarnerContact = feeEarnerById.get(Integer.valueOf(
+                  soaProvider.getFeeEarnerContactId()));
+
+              // Determine whether all the proceedings in the soaCase are at status DRAFT
+              boolean caseWithOnlyDraftProceedings =
+                  soaApplicationDetails.getProceedings() != null
+                      && soaApplicationDetails.getProceedings().stream().allMatch(
+                          proceedingDetail -> STATUS_DRAFT.equalsIgnoreCase(
+                              proceedingDetail.getStatus()));
+
+              // Set the DevolvedPowers for the Application based on the ApplicationAmendmentType.
+              boolean isDevolvedPowers =
+                  APP_TYPE_EMERGENCY_DEVOLVED_POWERS.equalsIgnoreCase(
+                      soaApplicationDetails.getApplicationAmendmentType())
+                  || APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS.equalsIgnoreCase(
+                      soaApplicationDetails.getApplicationAmendmentType());
+              Pair<Boolean, Date> devolvedPowersInfo = Pair.of(
+                  isDevolvedPowers,
+                  isDevolvedPowers ? soaApplicationDetails.getDevolvedPowersDate() : null);
+
+              // Calculate the CurrentProviderBilledAmount for the Application's Costs.
+              BigDecimal currentProviderBilledAmount = BigDecimal.ZERO;
+              CategoryOfLaw categoryOfLaw = soaApplicationDetails.getCategoryOfLaw();
+              if (categoryOfLaw.getCostLimitations() != null
+                  && categoryOfLaw.getTotalPaidToDate() != null) {
+                // Add the total amount billed across all cost entries.
+                BigDecimal totalProviderAmount = categoryOfLaw.getCostLimitations().stream()
+                    .map(CostLimitation::getPaidToDate)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                currentProviderBilledAmount =
+                    categoryOfLaw.getTotalPaidToDate().subtract(totalProviderAmount);
+              }
+
+              /*
+               * Split the proceeding list based on status, and build a ProceedingMappingContext
+               * for each to hold the necessary lookup data.
+               */
+              List<ProceedingMappingContext> amendmentProceedingsInEbs =
+                  soaApplicationDetails.getProceedings() != null ?
+                      soaApplicationDetails.getProceedings().stream()
+                      .filter(proceedingDetail -> !caseWithOnlyDraftProceedings
+                          && STATUS_DRAFT.equalsIgnoreCase(proceedingDetail.getStatus()))
+                      .map(proceedingDetail -> Optional.ofNullable(
+                          buildProceedingMappingContext(
+                              proceedingDetail,
+                              soaCase,
+                              matterTypes,
+                              levelsOfService,
+                              clientInvolvementTypes,
+                              scopeLimitations).block())
+                          .orElseThrow(() -> new CaabApplicationException(
+                              "Failed to build mapping context")))
+                      .toList() : Collections.emptyList();
+
+              List<ProceedingMappingContext> proceedings =
+                  soaApplicationDetails.getProceedings() != null ?
+                      soaApplicationDetails.getProceedings().stream()
+                      .filter(proceedingDetail -> caseWithOnlyDraftProceedings
+                          || !STATUS_DRAFT.equalsIgnoreCase(proceedingDetail.getStatus()))
+                      .map(proceedingDetail -> Optional.ofNullable(
+                          buildProceedingMappingContext(
+                              proceedingDetail,
+                              soaCase,
+                              matterTypes,
+                              levelsOfService,
+                              clientInvolvementTypes,
+                              scopeLimitations).block())
+                          .orElseThrow(() -> new CaabApplicationException(
+                              "Failed to build mapping context")))
+                      .toList() : Collections.emptyList();
+
+              // Build a mapping context for each Prior Authority in the application
+              List<PriorAuthorityMappingContext> priorAuthorities =
+                  soaCase.getPriorAuthorities() != null ?
+                    soaCase.getPriorAuthorities().stream()
+                      .map(priorAuthority ->
+                          buildPriorAuthorityMappingContext(priorAuthority, priorAuthorityTypes))
+                      .toList() : Collections.emptyList();
+
+              // Build a mapping context for the case outcome
+              CaseOutcomeMappingContext caseOutcomeMappingContext = buildCaseOutcomeMappingContext(
+                  soaCase,
+                  Stream.concat(amendmentProceedingsInEbs.stream(), proceedings.stream()).toList());
+
+              // Find the most recent Assessments
+              AssessmentResult meansAssessment = getMostRecentAssessment(
+                  soaApplicationDetails.getMeansAssesments());
+
+              AssessmentResult meritsAssessment = getMostRecentAssessment(
+                  soaApplicationDetails.getMeritsAssesments());
+
+              return ApplicationMappingContext.builder()
+                  .soaCaseDetail(soaCase)
+                  .applicationType(applicationType)
+                  .providerDetail(providerDetail)
+                  .providerOffice(providerOffice)
+                  .supervisorContact(supervisorContact)
+                  .feeEarnerContact(feeEarnerContact)
+                  .caseWithOnlyDraftProceedings(caseWithOnlyDraftProceedings)
+                  .devolvedPowers(devolvedPowersInfo)
+                  .amendmentProceedingsInEbs(amendmentProceedingsInEbs)
+                  .proceedings(proceedings)
+                  .meansAssessment(meansAssessment)
+                  .meritsAssessment(meritsAssessment)
+                  .priorAuthorities(priorAuthorities)
+                  .caseOutcome(caseOutcomeMappingContext)
+                  .currentProviderBilledAmount(currentProviderBilledAmount)
+                  .build();
+    });
+  }
+
+  protected Mono<ProceedingMappingContext> buildProceedingMappingContext(
+      ProceedingDetail soaProceeding,
+      CaseDetail soaCase,
+      Map<String, CommonLookupValueDetail> matterTypeLookups,
+      Map<String, CommonLookupValueDetail> levelOfServiceLookups,
+      Map<String, CommonLookupValueDetail> clientInvolvementLookups,
+      Map<String, CommonLookupValueDetail> scopeLimitationLookups) {
+
+    Mono<Tuple2<uk.gov.laa.ccms.data.model.ProceedingDetail,
+                CommonLookupValueDetail>> combinedResult =
+        Mono.zip(ebsApiClient.getProceeding(soaProceeding.getProceedingType()),
+            lookupService.getProceedingStatus(soaProceeding.getStatus()));
+
+    return combinedResult.map(tuple -> {
+      // Look up the Proceeding info from the EbsApi
+      uk.gov.laa.ccms.data.model.ProceedingDetail proceedingLookup = tuple.getT1();
+
+      // Look up the Proceeding Status display info
+      CommonLookupValueDetail proceedingStatusLookup = tuple.getT2();
+
+      // Calculate the overall cost limitation for this proceeding
+      BigDecimal proceedingCostLimitation =
+        this.calculateProceedingCostLimitation(soaProceeding, soaCase);
+
+      // Build a List of pairs of Scope Limitation and associated lookup
+      List<Pair<ScopeLimitation, CommonLookupValueDetail>> scopeLimitations =
+          soaProceeding.getScopeLimitations().stream()
+              .map(scopeLimitation -> Pair.of(
+                  scopeLimitation,
+                  scopeLimitationLookups.get(scopeLimitation.getScopeLimitation())))
+              .toList();
+
+      ProceedingMappingContext.ProceedingMappingContextBuilder contextBuilder =
+          ProceedingMappingContext.builder()
+              .soaProceeding(soaProceeding)
+              .proceedingLookup(proceedingLookup)
+              .proceedingStatusLookup(proceedingStatusLookup)
+              .proceedingCostLimitation(proceedingCostLimitation)
+              .matterType(matterTypeLookups.get(soaProceeding.getMatterType()))
+              .levelOfService(levelOfServiceLookups.get(soaProceeding.getLevelOfService()))
+              .clientInvolvement(clientInvolvementLookups.get(soaProceeding.getClientInvolvementType()))
+              .scopeLimitations(scopeLimitations);
+
+      this.addProceedingOutcomeContext(contextBuilder, soaProceeding);
+
+      return contextBuilder.build();
+    });
+  }
+
+  protected void addProceedingOutcomeContext(
+      ProceedingMappingContext.ProceedingMappingContextBuilder contextBuilder,
+      ProceedingDetail soaProceeding) {
+
+    if (soaProceeding.getOutcome() == null) {
+      return; // Nothing to add
+    }
+
+    // Lookup extra data relating to the Proceeding Outcome
+    Tuple3<CommonLookupDetail,
+        OutcomeResultLookupDetail,
+        StageEndLookupDetail> combinedOutcomeResults = Optional.ofNullable(Mono.zip(
+            lookupService.getCourts(
+                soaProceeding.getOutcome().getCourtCode()),
+            lookupService.getOutcomeResults(soaProceeding.getProceedingType(),
+                soaProceeding.getOutcome().getResult()),
+            lookupService.getStageEnds(soaProceeding.getProceedingType(),
+                soaProceeding.getOutcome().getStageEnd())).block())
+        .orElseThrow(() -> new CaabApplicationException("Failed to query lookup data"));
+
+    /*
+     * Only use the looked up Court data if we got a single match.
+     * Otherwise, default to the court code for display.
+     */
+    CommonLookupValueDetail courtLookup = combinedOutcomeResults.getT1().getTotalElements() == 1 ?
+        combinedOutcomeResults.getT1().getContent().get(0) :
+        new CommonLookupValueDetail()
+            .code(soaProceeding.getOutcome().getCourtCode())
+            .description(soaProceeding.getOutcome().getCourtCode());
+
+    // Use the outcome result display data, if we have it.
+    OutcomeResultLookupValueDetail outcomeResultLookup =
+        combinedOutcomeResults.getT2().getTotalElements() > 0
+        ? combinedOutcomeResults.getT2().getContent().get(0) : null;
+
+    // Lookup the stage end display value.
+    StageEndLookupValueDetail stageEndLookup =
+        combinedOutcomeResults.getT3().getTotalElements() > 0
+        ? combinedOutcomeResults.getT3().getContent().get(0) : null;
+
+    // Update the builder with outcome-related lookup data
+    contextBuilder.courtLookup(courtLookup)
+        .outcomeResultLookup(outcomeResultLookup)
+        .stageEndLookup(stageEndLookup);
+  }
+
+  /**
+   * Build a mapping context to hold a SOA PriorAuthority and associated
+   * lookup data.
+   *
+   * @param soaPriorAuthority - the PriorAuthority to map.
+   * @param priorAuthorityTypes - all PriorAuthorityTypes.
+   * @return a PriorAuthorityMappingContext containing all data to support mapping
+   *    to a CAAB PriorAuthority.
+   */
+  protected PriorAuthorityMappingContext buildPriorAuthorityMappingContext(
+      uk.gov.laa.ccms.soa.gateway.model.PriorAuthority soaPriorAuthority,
+      PriorAuthorityTypeDetails priorAuthorityTypes) {
+
+    // Find the correct PriorAuthorityType lookup
+    PriorAuthorityTypeDetail priorAuthorityType =
+        priorAuthorityTypes.getContent().stream()
+        .filter(priorAuthorityTypeDetail -> priorAuthorityTypeDetail.getCode().equals(
+            soaPriorAuthority.getPriorAuthorityType()))
+        .findFirst()
+        .orElseThrow(() -> new CaabApplicationException(
+            String.format("Failed to find PriorAuthorityType with code: %s",
+                soaPriorAuthority.getPriorAuthorityType())));
+
+    // Build a Map of PriorAuthorityDetail keyed on code
+    Map<String, PriorAuthorityDetail> priorAuthDetailMap =
+        priorAuthorityType.getPriorAuthorities().stream().collect(
+            Collectors.toMap(PriorAuthorityDetail::getCode, Function.identity()));
+
+    // Build a List of priorAuthorityDetails paired with the common lookup for display info.
+    List<Pair<PriorAuthorityDetail, CommonLookupValueDetail>> priorAuthorityDetails =
+        soaPriorAuthority.getDetails().stream()
+            .map(priorAuthorityAttribute -> {
+              PriorAuthorityDetail priorAuthorityDetail =
+                  priorAuthDetailMap.get(priorAuthorityAttribute.getName());
+              return Pair.of(
+                  priorAuthorityDetail,
+                  getPriorAuthLookup(priorAuthorityDetail, priorAuthorityAttribute));
+            })
+            .toList();
+
+      return PriorAuthorityMappingContext.builder()
+          .soaPriorAuthority(soaPriorAuthority)
+          .priorAuthorityTypeLookup(priorAuthorityType)
+          .items(priorAuthorityDetails)
+          .build();
+  }
+
+  private CommonLookupValueDetail getPriorAuthLookup(
+      PriorAuthorityDetail priorAuthorityDetail,
+      PriorAuthorityAttribute priorAuthorityAttribute) {
+    String description;
+
+    // If this attribute is of type LOV, lookup the corresponding LOV record to get the
+    // display value.
+    if (priorAuthorityDetail != null
+        && REFERENCE_DATA_ITEM_TYPE_LOV.equals(priorAuthorityDetail.getDataType())) {
+      description = Optional.ofNullable(lookupService.getCommonValue(
+          priorAuthorityDetail.getLovCode(), priorAuthorityAttribute.getValue()).block())
+          .map(CommonLookupValueDetail::getDescription)
+          .orElseThrow(() -> new CaabApplicationException(
+              String.format("Failed to find common value with code: %s",
+                  priorAuthorityAttribute.getValue())));
+    } else {
+      description = priorAuthorityAttribute.getValue();
+    }
+
+    return new CommonLookupValueDetail()
+        .code(priorAuthorityAttribute.getValue())
+        .description(description);
+  }
+
+  protected CaseOutcomeMappingContext buildCaseOutcomeMappingContext(CaseDetail soaCase,
+      List<ProceedingMappingContext> proceedingMappingContexts) {
+    // Look up all Award Types and map by their code
+    Map<String, AwardTypeLookupValueDetail> awardTypes =
+        Optional.ofNullable(lookupService.getAwardTypes().block())
+            .map(AwardTypeLookupDetail::getContent)
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve AwardTypes"))
+            .stream().collect(
+                Collectors.toMap(AwardTypeLookupValueDetail::getCode, Function.identity()));
+
+    // Split the soa Awards into separate lists based on their award type.
+    List<Award> costAwards = null;
+    List<Award> financialAwards = null;
+    List<Award> landAwards = null;
+    List<Award> otherAssetAwards = null;
+
+    if (soaCase.getAwards() != null) {
+      costAwards = soaCase.getAwards().stream()
+          .filter(award -> AWARD_TYPE_COST.equals(findAwardType(awardTypes, award)))
+          .toList();
+
+      financialAwards = soaCase.getAwards().stream()
+          .filter(award -> AWARD_TYPE_FINANCIAL.equals(findAwardType(awardTypes, award)))
+          .toList();
+
+      landAwards = soaCase.getAwards().stream()
+          .filter(award -> AWARD_TYPE_LAND.equals(findAwardType(awardTypes, award)))
+          .toList();
+
+      otherAssetAwards = soaCase.getAwards().stream()
+          .filter(award -> AWARD_TYPE_OTHER_ASSET.equals(findAwardType(awardTypes, award)))
+          .toList();
+    }
+
+    return CaseOutcomeMappingContext.builder()
+        .soaCase(soaCase)
+        .costAwards(costAwards)
+        .financialAwards(financialAwards)
+        .landAwards(landAwards)
+        .otherAssetAwards(otherAssetAwards)
+        .proceedingOutcomes(proceedingMappingContexts)
+        .build();
+  }
+
+  protected BigDecimal calculateProceedingCostLimitation(ProceedingDetail proceeding,
+      CaseDetail soaCase) {
+    BigDecimal maxCostLimitation = BigDecimal.ZERO;
+    if (soaCase.getApplicationDetails().getCategoryOfLaw() != null
+        && proceeding.getMatterType() != null
+        && proceeding.getProceedingType() != null
+        && proceeding.getLevelOfService() != null
         && proceeding.getScopeLimitations() != null
         && !proceeding.getScopeLimitations().isEmpty()) {
 
-      BigDecimal maxCostLimitation = new BigDecimal(0);
-      final String applicationType = applicationDetail.getApplicationType().getId();
+      final String applicationType = soaCase.getApplicationDetails().getApplicationAmendmentType();
       boolean isEmergency = APP_TYPE_EMERGENCY.equalsIgnoreCase(applicationType)
           || APP_TYPE_EMERGENCY_DEVOLVED_POWERS.equalsIgnoreCase(applicationType);
 
       ScopeLimitationDetail searchCriteria = new ScopeLimitationDetail()
-          .categoryOfLaw(applicationDetail.getCategoryOfLaw().getId())
-          .matterType(proceeding.getMatterType().getId())
-          .proceedingCode(proceeding.getProceedingType().getId())
-          .levelOfService(proceeding.getLevelOfService().getId())
+          .categoryOfLaw(soaCase.getApplicationDetails().getCategoryOfLaw().getCategoryOfLawCode())
+          .matterType(proceeding.getMatterType())
+          .proceedingCode(proceeding.getProceedingType())
+          .levelOfService(proceeding.getLevelOfService())
           .emergency(isEmergency);
 
-      for (uk.gov.laa.ccms.caab.model.ScopeLimitation limitation :
+      for (ScopeLimitation limitation :
           proceeding.getScopeLimitations()) {
-        searchCriteria.setScopeLimitations(limitation.getScopeLimitation().getId());
+        searchCriteria.setScopeLimitations(limitation.getScopeLimitation());
         BigDecimal costLimitation = lookupService.getScopeLimitationDetails(searchCriteria)
             .map(scopeLimitationDetails -> scopeLimitationDetails.getContent().stream()
                 .findFirst()
@@ -623,200 +816,9 @@ public class ApplicationService {
 
         maxCostLimitation = maxCostLimitation.max(costLimitation);
       }
-
-      proceeding.setCostLimitation(maxCostLimitation);
-    }
-  }
-
-  private ProceedingOutcome convertProceedingOutcome(
-      final Proceeding caabProceeding, final OutcomeDetail soaOutcome) {
-    /*
-     * Lookup the name of the Court for this proceeding
-     * - only use the result if we got a single match.
-     */
-    CommonLookupValueDetail courtLookup =
-        Optional.ofNullable(lookupService.getCourts(soaOutcome.getCourtCode()).block())
-            .map(commonLookupDetail -> commonLookupDetail.getTotalElements() == 1
-                ? commonLookupDetail.getContent().get(0) : null)
-            .orElse(null);
-
-    /*
-     * Lookup the outcome result display value.
-     */
-    OutcomeResultLookupValueDetail outcomeResultLookup =
-        Optional.ofNullable(lookupService.getOutcomeResults(
-                caabProceeding.getProceedingType().getId(), soaOutcome.getResult()).block())
-            .map(outcomeResultsLookupDetail -> outcomeResultsLookupDetail.getTotalElements() > 0
-                ? outcomeResultsLookupDetail.getContent().get(0) : null)
-            .orElse(null);
-
-    /*
-     * Lookup the stage end display value.
-     */
-    StageEndLookupValueDetail stageEndLookup =
-        Optional.ofNullable(lookupService.getStageEnds(caabProceeding.getProceedingType().getId(),
-                soaOutcome.getStageEnd()).block())
-            .map(stageEndLookupDetail -> stageEndLookupDetail.getTotalElements() > 0
-                ? stageEndLookupDetail.getContent().get(0) : null)
-            .orElse(null);
-
-    return applicationMapper.toProceedingOutcome(
-        caabProceeding,
-        soaOutcome,
-        courtLookup,
-        outcomeResultLookup,
-        stageEndLookup);
-  }
-
-  /**
-   * Convert an AssessmentResult from SOA to CAAB model. The structure of these models is actually
-   * identical, so it's a like-for-like mapping.
-   * <p/>
-   * If there are multiple assessments results, the most recent is returned. If none of the
-   * AssessmentResults have a date then we take the first in the List.
-   *
-   * @param assessmentResults list with assesment results.
-   * @return most recent AssessmentResult
-   */
-  private uk.gov.laa.ccms.caab.model.AssessmentResult convertAssessment(
-      final List<AssessmentResult> assessmentResults) {
-    return assessmentResults != null ? assessmentResults.stream()
-        .max(Comparator.comparing(AssessmentResult::getDate,
-            Comparator.nullsFirst(Comparator.naturalOrder())))
-        .map(applicationMapper::toAssessmentResult)
-        .orElse(null) : null;
-  }
-
-  private PriorAuthority convertPriorAuthority(
-      uk.gov.laa.ccms.soa.gateway.model.PriorAuthority soaPriorAuthority,
-      Map<String, PriorAuthorityTypeDetail> priorAuthTypes) {
-    PriorAuthority priorAuthority = applicationMapper.toPriorAuthority(
-        soaPriorAuthority,
-        priorAuthTypes.get(soaPriorAuthority.getPriorAuthorityType()));
-
-    // Build a Map of ReferenceDataItem keyed on code
-    Map<String, ReferenceDataItem> referenceDataItemMap =
-        priorAuthority.getItems().stream().collect(
-            Collectors.toMap(referenceDataItem -> referenceDataItem.getCode().getId(),
-                Function.identity()));
-
-    // Now set the value for each item
-    for (PriorAuthorityAttribute attribElementType : soaPriorAuthority.getDetails()) {
-      ReferenceDataItem item = referenceDataItemMap.get(attribElementType.getName());
-      if (item != null) {
-        item.setValue(new StringDisplayValue().id(attribElementType.getValue()));
-
-        // If this item is of type LOV, lookup the corresponding LOV record to get the
-        // display value.
-        if (REFERENCE_DATA_ITEM_TYPE_LOV.equals(item.getType())) {
-          CommonLookupValueDetail lovLookup =
-              Optional.ofNullable(lookupService.getCommonValue(
-                      item.getLovLookUp(), attribElementType.getValue()).block())
-                  .orElse(new CommonLookupValueDetail());
-
-          item.getValue().setDisplayValue(lovLookup.getDescription());
-        }
-      }
     }
 
-    return priorAuthority;
-  }
-
-  protected List<Opponent> convertOpponents(List<OtherParty> otherParties) {
-    List<Opponent> opponents = new ArrayList<>();
-
-    if (otherParties != null) {
-      for (OtherParty otherParty : otherParties) {
-        opponents.add(
-            otherParty.getPerson() != null
-                ? applicationMapper.toIndividualOpponent(otherParty) :
-                applicationMapper.toOrganisationOpponent(otherParty));
-      }
-    }
-
-    return opponents;
-  }
-
-
-  /**
-   * Convert a CaseOutcome.
-   *
-   * @param soaCaseDetails - the Soa Case Details to convert.
-   * @return a converted CaseOutcome.
-   */
-  protected CaseOutcome convertCaseOutcome(final CaseDetail soaCaseDetails,
-      final ApplicationDetail caabApplication) {
-    CaseOutcome outcome = applicationMapper.toCaseOutcome(soaCaseDetails);
-
-    List<Award> soaAwards = soaCaseDetails.getAwards();
-    if (soaAwards != null) {
-      convertAwards(soaAwards, outcome);
-    }
-
-    /*
-     * Copy the ProceedingOutcome for each Proceeding into a flat List in the CaseOutcome
-     */
-    if (caabApplication.getProceedings() != null) {
-      for (Proceeding proceeding : caabApplication.getProceedings()) {
-        if (proceeding.getOutcome() != null) {
-          outcome.addProceedingOutcomesItem(proceeding.getOutcome());
-        }
-      }
-    }
-
-
-    return outcome;
-  }
-
-  private void convertAwards(List<Award> soaAwards, CaseOutcome caabCaseOutcome) {
-    // Look up all Award Types
-    List<AwardTypeLookupValueDetail> awardTypesLookup =
-        Optional.ofNullable(lookupService.getAwardTypes().block())
-            .map(AwardTypeLookupDetail::getContent)
-            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve AwardTypes"));
-
-    Map<String, AwardTypeLookupValueDetail> awardTypeMap =
-        awardTypesLookup.stream().collect(
-            Collectors.toMap(AwardTypeLookupValueDetail::getCode, Function.identity()));
-
-    for (Award award : soaAwards) {
-      String awardType =
-          Optional.ofNullable(awardTypeMap.get(award.getAwardType()))
-              .map(AwardTypeLookupValueDetail::getAwardType)
-              .orElseThrow(() -> new CaabApplicationException(
-                  String.format("Failed to find AwardType with code: %s", award.getAwardType())));
-
-      switch (awardType) {
-        case AWARD_TYPE_COST -> caabCaseOutcome.addCostAwardsItem(
-            applicationMapper.toCostAward(award));
-        case AWARD_TYPE_FINANCIAL -> caabCaseOutcome.addFinancialAwardsItem(
-            applicationMapper.toFinancialAward(award));
-        case AWARD_TYPE_LAND -> caabCaseOutcome.addLandAwardsItem(
-            applicationMapper.toLandAward(award));
-        case AWARD_TYPE_OTHER_ASSET -> caabCaseOutcome.addOtherAssetAwardsItem(
-            applicationMapper.toOtherAssetAward(award));
-        default -> log.warn("Unknown AwardType: " + awardType);
-      }
-    }
-  }
-
-  private ProviderDetail getEbsProvider(
-      Integer providerFirmId) {
-    return Optional.ofNullable(
-            providerService.getProvider(providerFirmId).block())
-        .orElseThrow(() ->
-            new CaabApplicationException(
-                String.format("Failed to retrieve Provider with id: %s", providerFirmId)));
-  }
-
-  private OfficeDetail getProviderOffice(
-      String providerOfficeId, ProviderDetail ebsProvider) {
-    return ebsProvider.getOffices().stream()
-        .filter(officeDetail -> providerOfficeId.equals(String.valueOf(officeDetail.getId())))
-        .findAny()
-        .orElseThrow(() ->
-            new CaabApplicationException(
-                String.format("Failed to find Office with id: %s", providerOfficeId)));
+    return maxCostLimitation;
   }
 
   private Map<String, CommonLookupValueDetail> toCommonValueMap(
@@ -827,5 +829,20 @@ public class ApplicationService {
 
     return commonLookupDetail.getContent().stream().collect(
         Collectors.toMap(CommonLookupValueDetail::getCode, Function.identity()));
+  }
+
+  private AssessmentResult getMostRecentAssessment(final List<AssessmentResult> assessmentResults) {
+    return assessmentResults != null ? assessmentResults.stream()
+        .max(Comparator.comparing(uk.gov.laa.ccms.soa.gateway.model.AssessmentResult::getDate,
+            Comparator.nullsFirst(Comparator.naturalOrder())))
+        .orElse(null) : null;
+  }
+
+  private String findAwardType(
+      Map<String, AwardTypeLookupValueDetail> awardTypes, Award award) {
+    return Optional.ofNullable(awardTypes.get(award.getAwardType()))
+        .map(AwardTypeLookupValueDetail::getAwardType)
+        .orElseThrow(() -> new CaabApplicationException(
+            String.format("Failed to find AwardType with code: %s", award.getAwardType())));
   }
 }
