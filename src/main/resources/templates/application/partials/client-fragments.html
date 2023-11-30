@@ -136,11 +136,11 @@
       <span th:text="*{firstName}"></span>
       <input type="hidden" id="firstName" name="firstName" th:value="*{firstName}">
     </p>
-    <th:block th:if="${clientState == 'edit'}">
-      <div th:replace="~{partials/forms :: textInput('firstName', 'First name', 'govuk-input--width-20')}"></div>
-    </th:block>
     <div th:replace="~{partials/forms :: textInput('middleNames', 'Middle name(s) (optional)', 'govuk-input--width-20')}"></div>
 
+    <th:block th:if="*{clientFlowFormAction == 'edit'}">
+      <div th:replace="~{partials/forms :: textInput('firstName', 'First name', 'govuk-input--width-20')}"></div>
+    </th:block>
     <p class="govuk-body">
       <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
           Surname at birth
@@ -241,7 +241,27 @@
           Which types apply to your client?
         </legend>
         <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
-          <div th:replace="~{this :: checkbox('vulnerableClient', 'Vulnerable client')}"></div>
+          <th:block th:if="*{clientFlowFormAction == 'edit'}">
+            <th:block th:if="*{vulnerableClient == true}">
+              <input type="hidden" name="vulnerableClient" th:value="*{vulnerableClient}">
+              <div class="govuk-checkboxes__item">
+                <input class="govuk-checkboxes__input"
+                       th:id="${'vulnerableClient'}"
+                       th:name="${'vulnerableClient'}"
+                       type="checkbox"
+                       th:checked="*{__${'vulnerableClient'}__}" disabled/>
+                <label class="govuk-label govuk-checkboxes__label" th:for="${'vulnerableClient'}" th:text="${'Vulnerable client'}">
+                </label>
+                <input type="hidden" th:name="${'_' + 'vulnerableClient'}" value="on">
+              </div>
+            </th:block>
+            <th:block th:if="*{vulnerableClient == false}">
+              <div th:replace="~{this :: checkbox('vulnerableClient', 'Vulnerable client')}"></div>
+            </th:block>
+          </th:block>
+          <th:block th:if="*{clientFlowFormAction == 'create'}">
+            <div th:replace="~{this :: checkbox('vulnerableClient', 'Vulnerable client')}"></div>
+          </th:block>
           <div th:replace="~{this :: checkbox('highProfileClient', 'High profile client')}"></div>
           <div th:replace="~{this :: checkbox('vexatiousLitigant', 'Vexatious litigant')}"></div>
           <div th:replace="~{this :: checkbox('mentalIncapacity', 'Mental incapacity')}"></div>
@@ -675,7 +695,7 @@
          th:id="${id}"
          th:name="${id}"
          type="checkbox"
-         th:checked="*{__${id}__}" />
+         th:checked="*{__${id}__}"/>
   <label class="govuk-label govuk-checkboxes__label" th:for="${id}" th:text="${label}">
   </label>
   <input type="hidden" th:name="${'_' + id}" value="on">

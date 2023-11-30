@@ -5,7 +5,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
-import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_EDIT;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_UPDATE_CLIENT;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
@@ -28,8 +29,8 @@ import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 /**
  * Controller for handling edits to client summary details during the application summary process.
@@ -89,8 +90,6 @@ public class EditClientSummaryController extends AbstractClientSummaryController
     }
 
     populateSummaryListLookups(clientFlowFormData, model);
-
-    model.addAttribute(activeCase);
     model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
     return "application/summary/client-summary-details";
@@ -105,20 +104,21 @@ public class EditClientSummaryController extends AbstractClientSummaryController
   public String postClientDetailsSummary(
       @ModelAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @SessionAttribute(USER_DETAILS) UserDetail user,
+      @SessionAttribute(ACTIVE_CASE) ActiveCase activeCase,
       BindingResult bindingResult,
       HttpSession session) {
 
     validateClientFlowFormData(clientFlowFormData, bindingResult);
 
-    //TODO AMEND TO UPDATE CLIENT - Not Completed for this story
-    ClientCreated response =
-        clientService.createClient(
+    ClientTransactionResponse response =
+        clientService.updateClient(
+            activeCase.getClientReferenceNumber(),
             clientFlowFormData,
             user).block();
 
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
 
-    return String.format("redirect:/submissions/%s", SUBMISSION_CREATE_EDIT);
+    return String.format("redirect:/submissions/%s", SUBMISSION_UPDATE_CLIENT);
   }
 
 }

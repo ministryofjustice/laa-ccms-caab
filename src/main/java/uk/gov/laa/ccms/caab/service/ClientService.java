@@ -10,11 +10,10 @@ import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
+import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 /**
  * Service class to handle Clients.
@@ -82,7 +81,7 @@ public class ClientService {
    * @param user                  The user.
    * @return A Mono wrapping the ClientCreated transaction id.
    */
-  public Mono<ClientCreated> createClient(
+  public Mono<ClientTransactionResponse> createClient(
       ClientFlowFormData clientFlowFormData,
       UserDetail user) {
 
@@ -105,7 +104,8 @@ public class ClientService {
    * @param user                  The user.
    * @return A Mono wrapping the ClientCreated transaction id.
    */
-  public Mono<ClientCreated> updateClient(
+  public Mono<ClientTransactionResponse> updateClient(
+      String clientReferenceNumber,
       ClientFlowFormData clientFlowFormData,
       UserDetail user) {
 
@@ -115,7 +115,8 @@ public class ClientService {
     ReflectionUtils.nullifyStrings(clientFlowFormData.getMonitoringDetails());
     ClientDetail clientDetail = clientDetailsMapper.toClientDetail(clientFlowFormData);
 
-    return soaApiClient.postClient(
+    return soaApiClient.putClient(
+        clientReferenceNumber,
         clientDetail.getDetails(),
         user.getLoginId(),
         user.getUserType());

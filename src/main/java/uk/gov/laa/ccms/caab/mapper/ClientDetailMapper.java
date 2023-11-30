@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.BeforeMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -152,6 +153,24 @@ public interface ClientDetailMapper {
         clientDetailDetails.getName());
     addClientFormDataBasicDetailsFromClientPersonalDetail(clientFlowFormData.getBasicDetails(),
         clientDetailDetails.getPersonalInformation());
+  }
+
+  /**
+   * Adds address details to the client flow form data, overriding the vulnerable client state.
+   *
+   * @param clientFlowFormData The client flow form data with basic details to be amended.
+   * @param clientDetailDetails The returned soa client details to map from.
+   */
+  @AfterMapping
+  default void setAddressDetailsIfNull(
+      @MappingTarget ClientFlowFormData clientFlowFormData,
+      ClientDetailDetails clientDetailDetails) {
+    if (clientFlowFormData.getAddressDetails() == null) {
+      ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
+      addressDetails.setVulnerableClient(
+          clientFlowFormData.getBasicDetails().getVulnerableClient());
+      clientFlowFormData.setAddressDetails(addressDetails);
+    }
   }
 
   @Mapping(target = "basicDetails.dobDay", source = "personalInformation.dateOfBirth",

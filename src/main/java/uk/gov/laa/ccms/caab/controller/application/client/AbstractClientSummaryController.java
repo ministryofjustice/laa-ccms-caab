@@ -80,17 +80,18 @@ public abstract class AbstractClientSummaryController {
         Pair.of("disability",
             commonLookupService.getDisability(
                 clientFlowFormData.getMonitoringDetails().getDisability())),
-
         //Processed differently due to optionality
         Pair.of("country",
-            StringUtils.hasText(clientFlowFormData.getAddressDetails().getCountry())
-                ? commonLookupService.getCountry(
+            clientFlowFormData.getAddressDetails() != null && StringUtils.hasText(
                 clientFlowFormData.getAddressDetails().getCountry())
+                ? commonLookupService.getCountry(
+                    clientFlowFormData.getAddressDetails().getCountry())
                 : Mono.just(new CommonLookupValueDetail())),
         Pair.of("correspondenceLanguage",
-            StringUtils.hasText(clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
-                ? commonLookupService.getCorrespondenceLanguage(
+            clientFlowFormData.getContactDetails() != null && StringUtils.hasText(
                 clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
+                ? commonLookupService.getCorrespondenceLanguage(
+                    clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
                 : Mono.just(new CommonLookupValueDetail()))
     );
 

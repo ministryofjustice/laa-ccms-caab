@@ -51,20 +51,16 @@ public class ApplicationTypeSectionController {
    * Handles the GET request for the application type section of application summary.
    *
    * @param applicationId The id of the application
-   * @param activeCase The active case details to display in the header
    * @param model The model for the view.
    * @return The view name for the application summary page.
    */
   @GetMapping("/application/summary/application-type")
   public String applicationSummaryApplicationType(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
-      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       Model model) {
 
     applicationFormData = applicationService.getApplicationTypeFormData(applicationId);
-
-    model.addAttribute(ACTIVE_CASE, activeCase);
     model.addAttribute(APPLICATION_FORM_DATA, applicationFormData);
 
     return "application/summary/application-type-section";
@@ -74,7 +70,6 @@ public class ApplicationTypeSectionController {
    * Processes the user's delegated functions selection and redirects accordingly.
    *
    * @param applicationId The id of the application
-   * @param activeCase The active case details to display in the header
    * @param user The details of the active user
    * @param applicationFormData The details of the current application.
    * @param bindingResult Validation result for the delegated functions form.
@@ -84,14 +79,10 @@ public class ApplicationTypeSectionController {
   @PostMapping("/application/summary/application-type")
   public String delegatedFunction(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
-      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
-      BindingResult bindingResult,
-      Model model) throws ParseException {
+      BindingResult bindingResult) throws ParseException {
     delegatedFunctionsValidator.validate(applicationFormData, bindingResult);
-
-    model.addAttribute("activeCase", activeCase);
 
     if (!applicationFormData.isDelegatedFunctions()) {
       applicationFormData.setDelegatedFunctionUsedDay(null);

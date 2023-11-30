@@ -19,14 +19,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.controller.submission.ClientCreateSubmissionInProgressController;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
 
 @ExtendWith(MockitoExtension.class)
-public class ClientCreateSubmissionInProgressControllerTest {
+public class ClientSubmissionsInProgressControllerTest {
 
   @Mock
   private ClientService clientService;
@@ -35,7 +33,7 @@ public class ClientCreateSubmissionInProgressControllerTest {
   private HttpSession session;
 
   @InjectMocks
-  private ClientCreateSubmissionInProgressController controller;
+  private ClientSubmissionsInProgressController controller;
 
   private MockMvc mockMvc;
 

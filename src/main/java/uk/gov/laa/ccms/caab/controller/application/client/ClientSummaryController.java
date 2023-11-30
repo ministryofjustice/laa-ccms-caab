@@ -24,7 +24,7 @@ import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.CommonLookupService;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
+import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 /**
  * Controller for handling client summary details during the new application process.
@@ -83,7 +83,7 @@ public class ClientSummaryController extends AbstractClientSummaryController {
 
     validateClientFlowFormData(clientFlowFormData, bindingResult);
 
-    ClientCreated response =
+    ClientTransactionResponse response =
         clientService.createClient(
             clientFlowFormData,
             user).block();

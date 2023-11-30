@@ -13,10 +13,10 @@ import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
-import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
+import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
@@ -140,8 +140,21 @@ class SoaApiClientErrorHandlerTest {
     String fullName = "John Doe";
     Throwable throwable = new RuntimeException("Error");
 
-    Mono<ClientCreated> result =
+    Mono<ClientTransactionResponse> result =
         soaApiClientErrorHandler.handleClientCreatedError(fullName, throwable);
+
+    StepVerifier.create(result)
+        .expectNextCount(0)
+        .verifyComplete();
+  }
+
+  @Test
+  public void testHandleClientUpdatedError() {
+    String fullName = "John Doe";
+    Throwable throwable = new RuntimeException("Error");
+
+    Mono<ClientTransactionResponse> result =
+        soaApiClientErrorHandler.handleClientUpdatedError(fullName, throwable);
 
     StepVerifier.create(result)
         .expectNextCount(0)

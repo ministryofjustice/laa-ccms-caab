@@ -16,11 +16,11 @@ import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
-import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
+import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
@@ -187,8 +187,10 @@ public class SoaApiClient {
    * @param userType              Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientCreated transaction id.
    */
-  public Mono<ClientCreated> postClient(ClientDetailDetails clientDetails, String loginId,
-                                        String userType) {
+  public Mono<ClientTransactionResponse> postClient(
+      ClientDetailDetails clientDetails,
+      String loginId,
+      String userType) {
     return soaApiWebClient
         .post()
         .uri("/clients")
@@ -197,7 +199,7 @@ public class SoaApiClient {
         .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
         .bodyValue(clientDetails)
         .retrieve()
-        .bodyToMono(ClientCreated.class)
+        .bodyToMono(ClientTransactionResponse.class)
         .onErrorResume(e -> soaApiClientErrorHandler
             .handleClientCreatedError(clientDetails.getName().getFullName(), e));
   }
@@ -205,24 +207,28 @@ public class SoaApiClient {
   /**
    * Updates a client based on a given client details.
    *
+   * @param clientReferenceNumber The client's reference number.
    * @param clientDetails         The client's details.
    * @param loginId               The login identifier for the user.
    * @param userType              Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientCreated transaction id.
    */
-  public Mono<ClientCreated> putClient(ClientDetailDetails clientDetails, String loginId,
-                                        String userType) {
+  public Mono<ClientTransactionResponse> putClient(
+      String clientReferenceNumber,
+      ClientDetailDetails clientDetails,
+      String loginId,
+      String userType) {
     return soaApiWebClient
         .put()
-        .uri("/clients")
+        .uri("/clients/{clientReferenceNumber}", clientReferenceNumber)
         .header("SoaGateway-User-Login-Id", loginId)
         .header("SoaGateway-User-Role", userType)
         .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
         .bodyValue(clientDetails)
         .retrieve()
-        .bodyToMono(ClientCreated.class)
+        .bodyToMono(ClientTransactionResponse.class)
         .onErrorResume(e -> soaApiClientErrorHandler
-            .handleClientCreatedError(clientDetails.getName().getFullName(), e));
+            .handleClientUpdatedError(clientDetails.getName().getFullName(), e));
   }
 
   /**

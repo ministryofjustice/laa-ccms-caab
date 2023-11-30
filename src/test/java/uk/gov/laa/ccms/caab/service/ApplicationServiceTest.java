@@ -50,9 +50,9 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetailRecordHistory;
-import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
+import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
+import uk.gov.laa.ccms.soa.gateway.model.RecordHistory;
 
 @ExtendWith(MockitoExtension.class)
 class ApplicationServiceTest {
@@ -417,7 +417,7 @@ class ApplicationServiceTest {
         .clientReferenceNumber(clientReferenceNumber)
         .details(new ClientDetailDetails()
             .name(new NameDetail()))
-        .recordHistory(new ClientDetailRecordHistory());
+        .recordHistory(new RecordHistory());
   }
 
 }
