@@ -70,6 +70,7 @@ import uk.gov.laa.ccms.data.model.BaseOffice;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
@@ -246,8 +247,8 @@ class ApplicationServiceTest {
     // Mocking dependencies
     CaseReferenceSummary caseReferenceSummary =
         new CaseReferenceSummary().caseReferenceNumber("REF123");
-    CommonLookupDetail categoryOfLawLookupDetail = new CommonLookupDetail();
-    categoryOfLawLookupDetail.addContentItem(new CommonLookupValueDetail().code("CAT1").description("DESC1"));
+    CategoryOfLawLookupValueDetail categoryOfLawValue = new CategoryOfLawLookupValueDetail()
+        .code(applicationFormData.getCategoryOfLawId()).matterTypeDescription("DESC1");
     ContractDetails contractDetails = new ContractDetails();
 
     AmendmentTypeLookupValueDetail amendmentType = new AmendmentTypeLookupValueDetail()
@@ -262,8 +263,8 @@ class ApplicationServiceTest {
         Mono.just(caseReferenceSummary));
     when(soaApiClient.getContractDetails(anyInt(), anyInt(), anyString(),
         anyString())).thenReturn(Mono.just(contractDetails));
-    when(lookupService.getCategoriesOfLaw()).thenReturn(
-        Mono.just(categoryOfLawLookupDetail));
+    when(lookupService.getCategoryOfLaw(applicationFormData.getCategoryOfLawId())).thenReturn(
+        Mono.just(categoryOfLawValue));
     when(ebsApiClient.getAmendmentTypes(any())).thenReturn(Mono.just(amendmentTypes));
     when(caabApiClient.createApplication(anyString(), any())).thenReturn(Mono.empty());
 
@@ -274,7 +275,7 @@ class ApplicationServiceTest {
         .verifyComplete();
 
     verify(soaApiClient).getCaseReference(user.getLoginId(), user.getUserType());
-    verify(lookupService).getCategoriesOfLaw();
+    verify(lookupService).getCategoryOfLaw(applicationFormData.getCategoryOfLawId());
     verify(soaApiClient).getContractDetails(anyInt(), anyInt(), anyString(), anyString());
     verify(ebsApiClient).getAmendmentTypes(any());
     verify(caabApiClient).createApplication(anyString(), any());

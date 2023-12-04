@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.service;
 
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
@@ -30,10 +29,13 @@ import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
@@ -64,15 +66,6 @@ public class LookupService {
    */
   public Mono<CommonLookupValueDetail> getApplicationType(String code) {
     return getCommonValue(COMMON_VALUE_APPLICATION_TYPE, code);
-  }
-
-  /**
-   * Get a list of Category Of Law Common Values.
-   *
-   * @return CommonLookupDetail containing the common lookup values.
-   */
-  public Mono<CommonLookupDetail> getCategoriesOfLaw() {
-    return ebsApiClient.getCommonValues(COMMON_VALUE_CATEGORY_OF_LAW);
   }
 
   /**
@@ -410,6 +403,36 @@ public class LookupService {
   public Mono<AwardTypeLookupDetail> getAwardTypes(
       final String code, final String awardType) {
     return ebsApiClient.getAwardTypes(code, awardType);
+  }
+
+  /**
+   * Get a list of all Category Of Law Lookup Values.
+   *
+   * @return CategoryOfLawLookupDetail containing the category of law values.
+   */
+  public Mono<CategoryOfLawLookupDetail> getCategoriesOfLaw() {
+    return ebsApiClient.getCategoriesOfLaw(null, null, null);
+  }
+
+  /**
+   * Get the Category Of Law Lookup Value with the specified code.
+   *
+   * @return Mono containing the category of law or null if not found.
+   */
+  public Mono<CategoryOfLawLookupValueDetail> getCategoryOfLaw(String code) {
+    return ebsApiClient.getCategoriesOfLaw(code, null, null)
+        .mapNotNull(categoryOfLawLookupDetail -> categoryOfLawLookupDetail.getContent().stream()
+            .findFirst()
+            .orElse(null));
+  }
+
+  /**
+   * Get a list of all Person Relationship To Case Lookup Values.
+   *
+   * @return Mono containing all relationship lookup values or null if an error occurs.
+   */
+  public Mono<RelationshipToCaseLookupDetail> getPersonToCaseRelationships() {
+    return ebsApiClient.getPersonToCaseRelationships(null, null);
   }
 
   /**

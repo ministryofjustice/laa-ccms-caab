@@ -6,6 +6,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
@@ -107,6 +108,19 @@ public class EbsApiClientErrorHandler {
    */
   public static String AWARD_TYPE_ERROR_MESSAGE =
       "Failed to retrieve award types with code: %s and awardType: %s";
+
+  /**
+   * The error message for category of law.
+   */
+  public static String CATEGORIES_OF_LAW_ERROR_MESSAGE =
+      "Failed to retrieve categories of law with code: %s, "
+          + "matterTypeDescription: %s and copyCostLimit: %s";
+
+  /**
+   * The error message for person relationship to case.
+   */
+  public static String PERSON_RELATIONSHIP_TO_CASE_ERROR_MESSAGE =
+      "Failed to retrieve person relationship to case with code: %s, description: %s";
 
   /**
    * Handles errors related to user data retrieval.
@@ -309,6 +323,43 @@ public class EbsApiClientErrorHandler {
     return Mono.error(new EbsApiClientException(msg, e));
   }
 
+  /**
+   * Handles errors related to category of law retrieval.
+   *
+   * @param code the category of law code.
+   * @param matterTypeDescription the matter type description.
+   * @param  copyCostLimit the copy cost limit flag.
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<CategoryOfLawLookupDetail> handleCategoriesOfLawError(
+      String code,
+      String matterTypeDescription,
+      Boolean copyCostLimit,
+      Throwable e) {
+    final String msg = String.format(CATEGORIES_OF_LAW_ERROR_MESSAGE, code, matterTypeDescription,
+        copyCostLimit);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to person to case relationship retrieval.
+   *
+   * @param code the relationship code.
+   * @param description the description.
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<RelationshipToCaseLookupDetail> handlePersonToCaseRelationshipError(
+      String code,
+      String description,
+      Throwable e) {
+    final String msg = String.format(PERSON_RELATIONSHIP_TO_CASE_ERROR_MESSAGE,
+        code, description);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
 
   /**
    * Handles errors related to users by provider data retrieval.

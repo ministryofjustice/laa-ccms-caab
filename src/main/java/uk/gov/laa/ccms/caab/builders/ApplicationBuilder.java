@@ -1,23 +1,11 @@
 package uk.gov.laa.ccms.caab.builders;
 
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS_DISPLAY;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DISPLAY;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING_DISPLAY;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS_DISPLAY;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DISPLAY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Optional;
-import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.Client;
@@ -27,8 +15,7 @@ import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.BaseOffice;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -109,19 +96,15 @@ public class ApplicationBuilder {
    * Sets the category of law.
    *
    * @param categoryOfLawId           The category of law ID.
-   * @param categoryOfLawValues The category of law lookup values.
+   * @param categoryOfLawLookup The category of law lookup value.
    * @return The builder instance.
    */
   public ApplicationBuilder categoryOfLaw(
           final String categoryOfLawId,
-          final CommonLookupDetail categoryOfLawValues) {
-    String categoryOfLawDisplayValue = categoryOfLawValues
-            .getContent()
-            .stream()
-            .filter(category -> categoryOfLawId.equals(category.getCode()))
-            .map(CommonLookupValueDetail::getDescription)
-            .findFirst()
-            .orElse(null);
+          final CategoryOfLawLookupValueDetail categoryOfLawLookup) {
+    String categoryOfLawDisplayValue = Optional.ofNullable(categoryOfLawLookup)
+        .map(CategoryOfLawLookupValueDetail::getMatterTypeDescription)
+        .orElse(categoryOfLawId);
 
     StringDisplayValue categoryOfLaw = new StringDisplayValue()
             .id(categoryOfLawId)

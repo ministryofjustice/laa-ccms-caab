@@ -22,32 +22,32 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 public class ApplicationMappingContext {
 
   /**
-   * The CaseDetail which will be mapped to an ApplicationDetail
+   * The CaseDetail which will be mapped to an ApplicationDetail.
    */
   CaseDetail soaCaseDetail;
 
   /**
-   * Lookup of additional application type data for this Case
+   * Lookup of additional application type data for this Case.
    */
   CommonLookupValueDetail applicationType;
 
   /**
-   * Lookup of additional provider data for this Case
+   * Lookup of additional provider data for this Case.
    */
   ProviderDetail providerDetail;
 
   /**
-   * Lookup of provider Office
+   * Lookup of provider Office.
    */
   OfficeDetail providerOffice;
 
   /**
-   * Lookup of the contact details for the Supervisor
+   * Lookup of the contact details for the Supervisor.
    */
   ContactDetail supervisorContact;
 
   /**
-   * Lookup of the contact details for the Fee Earner
+   * Lookup of the contact details for the Fee Earner.
    */
   ContactDetail feeEarnerContact;
 
@@ -90,7 +90,7 @@ public class ApplicationMappingContext {
   Pair<Boolean, Date> devolvedPowers;
 
   /**
-   * A calculation of currentProviderBilledAmount - totalProviderAmount
+   * A calculation of currentProviderBilledAmount - totalProviderAmount.
    */
   BigDecimal currentProviderBilledAmount;
 

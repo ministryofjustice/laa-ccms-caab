@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.service;
 
 import static org.mockito.Mockito.when;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
@@ -28,6 +27,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
@@ -43,7 +44,6 @@ public class LookupServiceTest {
   private static Stream<Arguments> getCommonLookupArguments() {
     return Stream.of(
         Arguments.of("getApplicationTypes", COMMON_VALUE_APPLICATION_TYPE),
-        Arguments.of("getCategoriesOfLaw", COMMON_VALUE_CATEGORY_OF_LAW),
         Arguments.of("getGenders", COMMON_VALUE_GENDER),
         Arguments.of("getUniqueIdentifierTypes", COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE),
         Arguments.of("getContactTitles", COMMON_VALUE_CONTACT_TITLE),
@@ -149,5 +149,40 @@ public class LookupServiceTest {
         .verifyComplete();
   }
 
+  @Test
+  public void getCategoriesOfLaw_returnsData() {
+    CategoryOfLawLookupValueDetail commonValue = new CategoryOfLawLookupValueDetail().code("CAT1");
+    CategoryOfLawLookupDetail commonValues =
+        new CategoryOfLawLookupDetail().addContentItem(commonValue);
+
+    when(ebsApiClient.getCategoriesOfLaw(null, null, null))
+        .thenReturn(Mono.just(commonValues));
+
+    Mono<CategoryOfLawLookupDetail> commonLookupDetailMono = lookupService.getCategoriesOfLaw();
+    StepVerifier.create(commonLookupDetailMono)
+        .expectNextMatches(result -> result == commonValues)
+        .verifyComplete();
+  }
+
+  @Test
+  public void getCategoryOfLaw_returnsData() {
+    CategoryOfLawLookupValueDetail commonValue = new CategoryOfLawLookupValueDetail()
+        .code("CAT1")
+        .matterTypeDescription("DESC")
+        .copyCostLimit(Boolean.TRUE);
+    CategoryOfLawLookupDetail commonValues =
+        new CategoryOfLawLookupDetail().addContentItem(commonValue);
+
+    when(ebsApiClient.getCategoriesOfLaw(commonValue.getCode(),
+        null,
+        null))
+        .thenReturn(Mono.just(commonValues));
+
+    Mono<CategoryOfLawLookupValueDetail> commonLookupDetailMono =
+        lookupService.getCategoryOfLaw(commonValue.getCode());
+    StepVerifier.create(commonLookupDetailMono)
+        .expectNextMatches(result -> result == commonValue)
+        .verifyComplete();
+  }
 
 }

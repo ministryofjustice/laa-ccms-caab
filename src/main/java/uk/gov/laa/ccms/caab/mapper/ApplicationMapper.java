@@ -570,6 +570,14 @@ public interface ApplicationMapper {
   @Mapping(target = "timeRelatedRecoveryDetails", source = "otherDetails")
   TimeRecovery toTimeRecovery(TimeRelatedAward timeRelatedAward);
 
+  @Mapping(target = "id", source = "id")
+  @Mapping(target = "displayValue", source = "name")
+  IntDisplayValue toIntDisplayValue(OfficeDetail officeDetail);
+
+  @Mapping(target = "id", source = "id")
+  @Mapping(target = "displayValue", source = "name")
+  IntDisplayValue toIntDisplayValue(ProviderDetail providerDetail);
+
   @Mapping(target = "id", source = "code")
   @Mapping(target = "displayValue", source = "code")
   StringDisplayValue toStringDisplayValue(String code);
@@ -585,14 +593,6 @@ public interface ApplicationMapper {
   @Mapping(target = "id", source = "userLoginId")
   @Mapping(target = "displayValue", source = "userName")
   StringDisplayValue toStringDisplayValue(UserDetail userDetail);
-
-  @Mapping(target = "id", source = "id")
-  @Mapping(target = "displayValue", source = "name")
-  IntDisplayValue toIntDisplayValue(OfficeDetail officeDetail);
-
-  @Mapping(target = "id", source = "id")
-  @Mapping(target = "displayValue", source = "name")
-  IntDisplayValue toIntDisplayValue(ProviderDetail providerDetail);
 
   @Mapping(target = "id", source = "actualCaseStatus")
   @Mapping(target = "displayValue", source = "displayCaseStatus")
@@ -629,6 +629,12 @@ public interface ApplicationMapper {
   @Mapping(target = "contractFlag", ignore = true)
   DevolvedPowers toDevolvedPowers(Pair<Boolean, Date> devolvedPowersInfo);
 
+  /**
+   * Map a List of OtherParty conditionally to an Individual or Organisation Opponent.
+   *
+   * @param otherParties - List of OtherParty.
+   * @return Mapped List of Opponent.
+   */
   default List<Opponent> convertOpponents(List<OtherParty> otherParties) {
     return otherParties != null ? otherParties.stream()
         .map(otherParty -> otherParty.getPerson() != null

@@ -42,8 +42,8 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.data.model.BaseOffice;
 import uk.gov.laa.ccms.data.model.BaseProvider;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(SpringExtension.class)
@@ -71,7 +71,7 @@ public class CategoryOfLawControllerTest {
 
   private ApplicationFormData applicationFormData;
 
-  private CommonLookupDetail categoriesOfLaw;
+  private CategoryOfLawLookupDetail categoriesOfLaw;
 
   @BeforeEach
   public void setup() {
@@ -82,9 +82,12 @@ public class CategoryOfLawControllerTest {
     applicationFormData = new ApplicationFormData();
     applicationFormData.setOfficeId(345);
 
-    categoriesOfLaw = new CommonLookupDetail();
-    categoriesOfLaw.addContentItem(new CommonLookupValueDetail().code("CAT1").description("Category 1"));
-    categoriesOfLaw.addContentItem(new CommonLookupValueDetail().code("CAT2").description("Category 2"));
+    categoriesOfLaw = new CategoryOfLawLookupDetail()
+        .addContentItem(new CategoryOfLawLookupValueDetail()
+            .code("CAT1").matterTypeDescription("Category 1"))
+        .addContentItem(new CategoryOfLawLookupValueDetail()
+            .code("CAT2")
+            .matterTypeDescription("Category 2"));
   }
 
   @Test
@@ -150,9 +153,11 @@ public class CategoryOfLawControllerTest {
 
     verify(lookupService).getCategoriesOfLaw();
 
-    BindingResult bindingResult = (BindingResult) result.getModelAndView().getModel().get("org.springframework.validation.BindingResult.applicationFormData");
+    BindingResult bindingResult = (BindingResult) result.getModelAndView().getModel()
+        .get("org.springframework.validation.BindingResult.applicationFormData");
     assertEquals(1, bindingResult.getFieldErrors("categoryOfLawId").size());
-    assertEquals("no.categoriesOfLaw", bindingResult.getFieldError("categoryOfLawId").getCode());
+    assertEquals("no.categoriesOfLaw", bindingResult.getFieldError("categoryOfLawId")
+        .getCode());
   }
 
   @Test

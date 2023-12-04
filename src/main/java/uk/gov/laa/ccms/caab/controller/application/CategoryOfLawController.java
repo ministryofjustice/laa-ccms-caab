@@ -23,8 +23,8 @@ import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.CategoryOfLawValidator;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -114,9 +114,9 @@ public class CategoryOfLawController {
       Model model,
       BindingResult bindingResult) {
 
-    List<CommonLookupValueDetail> categoriesOfLaw =
+    List<CategoryOfLawLookupValueDetail> categoriesOfLaw =
         Optional.ofNullable(lookupService.getCategoriesOfLaw().block())
-            .orElse(new CommonLookupDetail())
+            .orElse(new CategoryOfLawLookupDetail())
             .getContent();
 
     if (!applicationFormData.isExceptionalFunding()) {

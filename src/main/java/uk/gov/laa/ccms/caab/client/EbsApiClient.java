@@ -9,6 +9,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
@@ -383,6 +384,57 @@ public class EbsApiClient {
         .bodyToMono(AwardTypeLookupDetail.class)
         .onErrorResume(e -> ebsApiClientErrorHandler.handleAwardTypeError(code,
             awardType, e));
+  }
+
+  /**
+   * Retrieves category of law lookup detail based on the provided code,
+   * matter type description, and copy cost limit values.
+   *
+   * @param code - the category of law code.
+   * @param matterTypeDescription - the matter type description value.
+   * @param copyCostLimit - the copy cost limit flag.
+   * @return A Mono containing the CategoryOfLawLookupDetail or an error handler if an error occurs.
+   */
+  public Mono<CategoryOfLawLookupDetail> getCategoriesOfLaw(String code,
+      String matterTypeDescription, Boolean copyCostLimit) {
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/lookup/categories-of-law")
+            .queryParamIfPresent("code",
+                Optional.ofNullable(code))
+            .queryParamIfPresent("matter-type-description",
+                Optional.ofNullable(matterTypeDescription))
+            .queryParamIfPresent("copy-cost-limit",
+                Optional.ofNullable(copyCostLimit))
+            .build())
+        .retrieve()
+        .bodyToMono(CategoryOfLawLookupDetail.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleCategoriesOfLawError(code,
+            matterTypeDescription, copyCostLimit, e));
+  }
+
+  /**
+   * Retrieves person to case relationship lookup detail based on the provided code
+   * and description values.
+   *
+   * @param code - the relationship code.
+   * @param description - the relationship description value.
+   * @return A Mono containing RelationshipToCaseLookupDetail or error handler if an error occurs.
+   */
+  public Mono<RelationshipToCaseLookupDetail> getPersonToCaseRelationships(String code,
+      String description) {
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/lookup/person-to-case-relationships")
+            .queryParamIfPresent("code",
+                Optional.ofNullable(code))
+            .queryParamIfPresent("description",
+                Optional.ofNullable(description))
+            .build())
+        .retrieve()
+        .bodyToMono(RelationshipToCaseLookupDetail.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handlePersonToCaseRelationshipError(code,
+            description, e));
   }
 }
 
