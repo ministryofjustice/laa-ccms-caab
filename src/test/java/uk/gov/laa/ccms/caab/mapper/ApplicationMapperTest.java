@@ -92,7 +92,7 @@ public class ApplicationMapperTest {
         buildApplicationMappingContext(
             soaCaseDetail,
             true,
-            new Date());
+            soaCaseDetail.getApplicationDetails().getDevolvedPowersDate());
     ApplicationDetail result = applicationMapper.toApplicationDetail(applicationMappingContext);
 
     assertNotNull(result);
