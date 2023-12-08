@@ -7,6 +7,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_COS
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FINANCIAL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_LAND;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTHER_ASSET;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 
@@ -241,11 +242,11 @@ public class ApplicationService {
     });
   }
 
-  private ApplicationDetail copyCaseAttributes(ApplicationDetail application,
+  protected ApplicationDetail copyCaseAttributes(ApplicationDetail application,
       String copyCaseReferenceNumber,
       UserDetail user) {
     // Retrieve the CaseDetail to be copied.
-    ApplicationDetail copyApplication = Optional.ofNullable(this.getCase(
+    ApplicationDetail applicationToCopy = Optional.ofNullable(this.getCase(
             copyCaseReferenceNumber,
             user.getLoginId(),
             user.getUserType()).block())
@@ -256,38 +257,53 @@ public class ApplicationService {
     // Check whether the cost limit should be copied for the case's category of law
     Boolean copyCostLimit =
         Optional.ofNullable(
-            lookupService.getCategoryOfLaw(copyApplication.getCategoryOfLaw().getId()).block())
+            lookupService.getCategoryOfLaw(applicationToCopy.getCategoryOfLaw().getId()).block())
             .map(CategoryOfLawLookupValueDetail::getCopyCostLimit)
             .orElse(false);
 
     BigDecimal requestedCostLimitation =
-        copyCostLimit ? copyApplication.getCosts().getRequestedCostLimitation() : BigDecimal.ZERO;
+        copyCostLimit ? applicationToCopy.getCosts().getRequestedCostLimitation() : BigDecimal.ZERO;
 
 
     // Find the max cost limitation across the Proceedings, and set this as the
     // default cost limitation for the application.
     BigDecimal defaultCostLimitation = BigDecimal.ZERO;
-    if (copyApplication.getProceedings() != null) {
-      defaultCostLimitation = copyApplication.getProceedings().stream()
+    if (applicationToCopy.getProceedings() != null) {
+      defaultCostLimitation = applicationToCopy.getProceedings().stream()
               .map(Proceeding::getCostLimitation)
               .max(Comparator.comparingDouble(BigDecimal::doubleValue))
               .orElse(BigDecimal.ZERO);
     }
 
-    List<RelationshipToCaseLookupValueDetail> copyPartyRelationships = Optional.ofNullable(
-        lookupService.getPersonToCaseRelationships().block())
+    // Use a mapper to copy the relevant attributes
+    application = copyApplicationMapper.copyApplication(
+        application,
+        applicationToCopy,
+        requestedCostLimitation,
+        defaultCostLimitation);
+
+    // Get a Map of RelationshipToCase by code, filtered for those with the 'copyParty'
+    // flag set.
+    Map<String, RelationshipToCaseLookupValueDetail> copyPartyRelationships = Optional.ofNullable(
+            lookupService.getPersonToCaseRelationships().block())
         .map(RelationshipToCaseLookupDetail::getContent)
         .orElseThrow(() -> new CaabApplicationException(
             "Failed to retrieve person to case relationships"))
         .stream().filter(RelationshipToCaseLookupValueDetail::getCopyParty)
-        .toList();
+        .collect(Collectors.toMap(
+            RelationshipToCaseLookupValueDetail::getCode, Function.identity()));
 
-    return copyApplicationMapper.copyApplication(
-        application,
-        copyApplication,
-        requestedCostLimitation,
-        defaultCostLimitation,
-        copyPartyRelationships);
+    // Clear the ebsId for an opponent if it is of type INDIVIDUAL AND it is NOT shared AND
+    // the relationship to case for the opponent is of type Copy Party.
+    if (application.getOpponents() != null) {
+      application.getOpponents().stream()
+          .filter(opponent -> OPPONENT_TYPE_INDIVIDUAL.equalsIgnoreCase(opponent.getType())
+              && copyPartyRelationships.containsKey(opponent.getRelationshipToCase())
+              && !opponent.getSharedInd())
+          .forEach(opponent -> opponent.setEbsId(null));
+    }
+
+    return application;
   }
 
   /**

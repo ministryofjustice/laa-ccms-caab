@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_COST;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_COST_DESCRIPTION;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FINANCIAL;
@@ -13,9 +15,28 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_LAN
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTHER_ASSET;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_ORGANISATION;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildPriorAuthorityDetail;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildPriorAuthorityTypeDetail;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildAddressDetail;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildAssessmentResult;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildBaseClient;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCaseDetail;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCostAward;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCostLimitation;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildFinancialAward;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildLandAward;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildLinkedCase;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildOtherAssetAward;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildOtherPartyOrganisation;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildOtherPartyPerson;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildPriorAuthority;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildProceedingDetail;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildRecovery;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildScopeLimitation;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildTimeRelatedAward;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import org.apache.commons.lang3.tuple.Pair;
@@ -49,42 +70,16 @@ import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ApplicationDetails;
-import uk.gov.laa.ccms.soa.gateway.model.AssessmentScreen;
 import uk.gov.laa.ccms.soa.gateway.model.Award;
 import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
-import uk.gov.laa.ccms.soa.gateway.model.CaseDoc;
-import uk.gov.laa.ccms.soa.gateway.model.CaseStatus;
-import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
-import uk.gov.laa.ccms.soa.gateway.model.ContactDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CostLimitation;
-import uk.gov.laa.ccms.soa.gateway.model.Discharge;
-import uk.gov.laa.ccms.soa.gateway.model.ExternalResource;
-import uk.gov.laa.ccms.soa.gateway.model.LandAward;
-import uk.gov.laa.ccms.soa.gateway.model.LarDetails;
-import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
-import uk.gov.laa.ccms.soa.gateway.model.OfferedAmount;
-import uk.gov.laa.ccms.soa.gateway.model.OpaAttribute;
-import uk.gov.laa.ccms.soa.gateway.model.OpaEntity;
-import uk.gov.laa.ccms.soa.gateway.model.OpaGoal;
-import uk.gov.laa.ccms.soa.gateway.model.OpaInstance;
-import uk.gov.laa.ccms.soa.gateway.model.OtherAsset;
 import uk.gov.laa.ccms.soa.gateway.model.OtherParty;
-import uk.gov.laa.ccms.soa.gateway.model.OtherPartyOrganisation;
-import uk.gov.laa.ccms.soa.gateway.model.OtherPartyPerson;
 import uk.gov.laa.ccms.soa.gateway.model.OutcomeDetail;
-import uk.gov.laa.ccms.soa.gateway.model.PriorAuthorityAttribute;
 import uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ProviderDetail;
-import uk.gov.laa.ccms.soa.gateway.model.RecordHistory;
-import uk.gov.laa.ccms.soa.gateway.model.RecoveredAmount;
 import uk.gov.laa.ccms.soa.gateway.model.Recovery;
-import uk.gov.laa.ccms.soa.gateway.model.RecoveryAmount;
 import uk.gov.laa.ccms.soa.gateway.model.ScopeLimitation;
-import uk.gov.laa.ccms.soa.gateway.model.ServiceAddress;
 import uk.gov.laa.ccms.soa.gateway.model.TimeRelatedAward;
-import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.Valuation;
 
 public class ApplicationMapperTest {
 
@@ -92,7 +87,7 @@ public class ApplicationMapperTest {
 
   @Test
   void testToApplicationDetailDevolvedPowers() {
-    CaseDetail soaCaseDetail = buildCaseDetail();
+    CaseDetail soaCaseDetail = buildCaseDetail(APP_TYPE_EMERGENCY_DEVOLVED_POWERS);
     ApplicationMappingContext applicationMappingContext =
         buildApplicationMappingContext(
             soaCaseDetail,
@@ -190,7 +185,7 @@ public class ApplicationMapperTest {
   void testToApplicationDetailNonDevolvedPowers() {
     ApplicationMappingContext applicationMappingContext =
         buildApplicationMappingContext(
-            buildCaseDetail(),
+            buildCaseDetail(APP_TYPE_EMERGENCY),
             false,
             null);
 
@@ -205,7 +200,7 @@ public class ApplicationMapperTest {
   void testToCorrespondenceAddress() {
     ApplicationMappingContext applicationMappingContext =
         buildApplicationMappingContext(
-            buildCaseDetail(),
+            buildCaseDetail(APP_TYPE_EMERGENCY),
             false,
             null);
     ApplicationDetails soaApplicationDetails =
@@ -251,7 +246,7 @@ public class ApplicationMapperTest {
 
   @Test
   void testToProceeding() {
-    ProceedingDetail soaProceeding = buildProceedingDetail();
+    ProceedingDetail soaProceeding = buildProceedingDetail(STATUS_DRAFT);
     ProceedingMappingContext proceedingMappingContext =
         buildProceedingMappingContext(soaProceeding);
 
@@ -316,7 +311,7 @@ public class ApplicationMapperTest {
 
   @Test
   void testToScopeLimitation() {
-    ScopeLimitation soaScopeLimitation = buildScopeLimitation();
+    ScopeLimitation soaScopeLimitation = buildScopeLimitation("");
     CommonLookupValueDetail scopeLimitationLookup = new CommonLookupValueDetail()
         .code("scopecode")
         .description("scopedesc");
@@ -341,7 +336,7 @@ public class ApplicationMapperTest {
 
   @Test
   void testToProceedingOutcome() {
-    ProceedingDetail soaProceeding = buildProceedingDetail();
+    ProceedingDetail soaProceeding = buildProceedingDetail(STATUS_DRAFT);
     ProceedingMappingContext proceedingMappingContext =
         buildProceedingMappingContext(soaProceeding);
     OutcomeDetail soaOutcomeDetail = soaProceeding.getOutcome();
@@ -621,7 +616,7 @@ public class ApplicationMapperTest {
 
   @Test
   void testToReferenceDataItem() {
-    PriorAuthorityDetail priorAuthorityDetail = buildPriorAuthorityDetail();
+    PriorAuthorityDetail priorAuthorityDetail = buildPriorAuthorityDetail("dataType");
     CommonLookupValueDetail priorAuthLookup = new CommonLookupValueDetail();
 
     ReferenceDataItem result = applicationMapper.toReferenceDataItem(
@@ -637,7 +632,7 @@ public class ApplicationMapperTest {
 
   @Test
   void testToCaseOutcome() {
-    CaseDetail soaCaseDetail = buildCaseDetail();
+    CaseDetail soaCaseDetail = buildCaseDetail(APP_TYPE_EMERGENCY);
     CaseOutcomeMappingContext caseOutcomeMappingContext = buildCaseOutcomeMappingContext(soaCaseDetail);
 
     CaseOutcome result = applicationMapper.toCaseOutcome(caseOutcomeMappingContext);
@@ -996,7 +991,7 @@ public class ApplicationMapperTest {
             .code("procCode")
             .name("procName")
             .larScope("procLarScope"))
-        .scopeLimitations(Collections.singletonList(Pair.of(buildScopeLimitation(),
+        .scopeLimitations(Collections.singletonList(Pair.of(buildScopeLimitation(""),
             new CommonLookupValueDetail()
                 .code("scopeLimitCode")
                 .description("scopeLimitDescr"))))
@@ -1031,478 +1026,15 @@ public class ApplicationMapperTest {
       uk.gov.laa.ccms.soa.gateway.model.PriorAuthority soaPriorAuthority) {
     return PriorAuthorityMappingContext.builder()
         .soaPriorAuthority(soaPriorAuthority)
-        .priorAuthorityTypeLookup(buildPriorAuthorityTypeDetail())
-        .items(Collections.singletonList(Pair.of(buildPriorAuthorityDetail(),
+        .priorAuthorityTypeLookup(buildPriorAuthorityTypeDetail("dataType"))
+        .items(Collections.singletonList(Pair.of(buildPriorAuthorityDetail("dataType"),
             new CommonLookupValueDetail()
                 .code("priorAuthCode")
                 .description("priorAuthDesc"))))
         .build();
   }
 
-  private BaseClient buildBaseClient() {
-    return new BaseClient()
-        .clientReferenceNumber("clientref")
-        .firstName("firstname")
-        .surname("surn");
-  }
 
-  private uk.gov.laa.ccms.soa.gateway.model.PriorAuthority buildPriorAuthority() {
-    return new uk.gov.laa.ccms.soa.gateway.model.PriorAuthority()
-        .assessedAmount(BigDecimal.TEN)
-        .decisionStatus("dstat")
-        .description("descr")
-        .addDetailsItem(
-            new PriorAuthorityAttribute()
-                .name("attname")
-                .value("attval"))
-        .priorAuthorityType("prauthtype")
-        .reasonForRequest("requestreason")
-        .requestAmount(BigDecimal.ONE);
-  }
 
-  private PriorAuthorityDetail buildPriorAuthorityDetail() {
-    return new PriorAuthorityDetail()
-        .code("thecode")
-        .lovCode("lov")
-        .dataType("type")
-        .description("descr");
-  }
-
-  private PriorAuthorityTypeDetail buildPriorAuthorityTypeDetail() {
-    return new PriorAuthorityTypeDetail()
-        .code("acode")
-        .description("adesc")
-        .valueRequired(Boolean.TRUE)
-        .addPriorAuthoritiesItem(buildPriorAuthorityDetail());
-  }
-
-  private CaseDetail buildCaseDetail() {
-    return new CaseDetail()
-        .applicationDetails(
-            new ApplicationDetails()
-                .applicationAmendmentType("appType")
-                .categoryOfLaw(
-                    new CategoryOfLaw()
-                        .categoryOfLawCode("cat1")
-                        .categoryOfLawDescription("cat 1")
-                        .addCostLimitationsItem(buildCostLimitation("cat"))
-                        .grantedAmount(BigDecimal.ZERO)
-                        .requestedAmount(BigDecimal.ONE)
-                        .totalPaidToDate(BigDecimal.TEN))
-                .certificateType("certtype")
-                .client(buildBaseClient())
-                .correspondenceAddress(buildAddressDetail("corr"))
-                .dateOfFirstAttendance(new Date())
-                .dateOfHearing(new Date())
-                .devolvedPowersDate(new Date())
-                .addExternalResourcesItem(
-                    new ExternalResource()
-                        .costCeiling(Arrays.asList(
-                            buildCostLimitation("ext1"),
-                            buildCostLimitation("ext2"))))
-                .fixedHearingDateInd(Boolean.TRUE)
-                .highProfileCaseInd(Boolean.TRUE)
-                .larDetails(
-                    new LarDetails()
-                        .larScopeFlag(Boolean.TRUE)
-                        .legalHelpUfn("ufn")
-                        .legalHelpOfficeCode("off1"))
-                .addMeansAssesmentsItem(buildAssessmentResult("means"))
-                .addMeritsAssesmentsItem(buildAssessmentResult("merits"))
-                .otherParties(Arrays.asList(buildOtherPartyPerson(), buildOtherPartyOrganisation()))
-                .preferredAddress("prefadd")
-                .addProceedingsItem(buildProceedingDetail())
-                .providerDetails(
-                    new ProviderDetail()
-                        .contactDetails(buildContactDetail("prov"))
-                        .providerOfficeId("off1")
-                        .contactUserId(buildUserDetail("contact"))
-                        .providerFirmId("12345") // Defined as String, but data is numeric in db!
-                        .providerCaseReferenceNumber("provcaseref123")
-                        .feeEarnerContactId("fee1")
-                        .supervisorContactId("sup1"))
-                .purposeOfApplication("purposeA")
-                .purposeOfHearing("purposeH"))
-        .availableFunctions(Arrays.asList("func1", "func2"))
-        .awards(Arrays.asList(
-            buildCostAward(),
-            buildFinancialAward(),
-            buildLandAward(),
-            buildOtherAssetAward()))
-        .addCaseDocsItem(
-            new CaseDoc()
-                .ccmsDocumentId("docId")
-                .documentSubject("thesub"))
-        .caseReferenceNumber("caseref")
-        .caseStatus(new CaseStatus()
-            .actualCaseStatus("actualstat")
-            .displayCaseStatus("displaystat")
-            .statusUpdateInd(Boolean.TRUE))
-        .certificateDate(new Date())
-        .certificateType("certtype")
-        .dischargeStatus(
-            new Discharge()
-                .clientContinuePvtInd(Boolean.TRUE)
-                .otherDetails("dotherdets")
-                .reason("dreason"))
-        .legalHelpCosts(BigDecimal.TEN)
-        .addLinkedCasesItem(buildLinkedCase())
-        .preCertificateCosts(BigDecimal.ONE)
-        .addPriorAuthoritiesItem(buildPriorAuthority())
-        .recordHistory(
-            new RecordHistory()
-                .createdBy(buildUserDetail("creator"))
-                .dateCreated(new Date())
-                .dateLastUpdated(new Date())
-                .lastUpdatedBy(buildUserDetail("lastUpd")))
-        .undertakingAmount(BigDecimal.TEN);
-
-  }
-
-  private ProceedingDetail buildProceedingDetail() {
-    return new ProceedingDetail()
-        .availableFunctions(Arrays.asList("pavfuncs1", "pavfuncs2"))
-        .clientInvolvementType("citype")
-        .dateApplied(new Date())
-        .dateCostsValid(new Date())
-        .dateDevolvedPowersUsed(new Date())
-        .dateGranted(new Date())
-        .devolvedPowersInd(Boolean.TRUE)
-        .leadProceedingIndicator(Boolean.TRUE)
-        .levelOfService("levofsvc")
-        .matterType("pmattype")
-        .orderType("ordtype")
-        .outcome(buildOutcomeDetail())
-        .outcomeCourtCaseNumber("occn")
-        .proceedingCaseId("pcid")
-        .proceedingDescription("procdescr")
-        .proceedingType("proctype")
-        .scopeLimitationApplied("scopelimapp")
-        .addScopeLimitationsItem(buildScopeLimitation())
-        .stage("stg")
-        .status("stat");
-  }
-
-  private ScopeLimitation buildScopeLimitation() {
-    return new ScopeLimitation()
-        .delegatedFunctionsApply(Boolean.TRUE)
-        .scopeLimitation("scopelim")
-        .scopeLimitationId("scopelimid")
-        .scopeLimitationWording("slwording");
-  }
-
-  private OutcomeDetail buildOutcomeDetail() {
-    return new OutcomeDetail()
-        .additionalResultInfo("addresinfo")
-        .altAcceptanceReason("altaccreason")
-        .altDisputeResolution("altdispres")
-        .courtCode("courtcode")
-        .finalWorkDate(new Date())
-        .issueDate(new Date())
-        .outcomeCourtCaseNumber("outccn")
-        .resolutionMethod("resmeth")
-        .result("res")
-        .stageEnd("se")
-        .widerBenefits("widerbens");
-  }
-
-  private OtherParty buildOtherPartyPerson() {
-    return new OtherParty()
-        .otherPartyId("opid")
-        .person(
-            new OtherPartyPerson()
-                .address(buildAddressDetail("opp"))
-                .assessedAssets(BigDecimal.TEN)
-                .assessedIncome(BigDecimal.ONE)
-                .assessedIncomeFrequency("often")
-                .assessmentDate(new Date())
-                .certificateNumber("certnum")
-                .contactDetails(buildContactDetail("opp"))
-                .contactName("conname")
-                .courtOrderedMeansAssesment(Boolean.TRUE)
-                .dateOfBirth(new Date())
-                .employersName("employer")
-                .employmentStatus("empstat")
-                .name(buildNameDetail())
-                .niNumber("ni123456")
-                .organizationAddress("orgaddr")
-                .organizationName("orgname")
-                .otherInformation("otherinf")
-                .partyLegalAidedInd(Boolean.TRUE)
-                .publicFundingAppliedInd(Boolean.TRUE)
-                .relationToCase("reltocase")
-                .relationToClient("reltoclient"))
-        .sharedInd(Boolean.TRUE);
-  }
-
-  private OtherParty buildOtherPartyOrganisation() {
-    return new OtherParty()
-        .otherPartyId("opid")
-        .organisation(
-            new OtherPartyOrganisation()
-                .address(buildAddressDetail("opo"))
-                .contactDetails(buildContactDetail("op"))
-                .contactName("name")
-                .currentlyTrading("curtrad")
-                .relationToCase("reltocase")
-                .organizationName("orgname")
-                .organizationType("orgtype")
-                .otherInformation("otherinf")
-                .relationToClient("relclient"))
-        .sharedInd(Boolean.TRUE);
-  }
-
-  private NameDetail buildNameDetail() {
-    return new NameDetail()
-        .firstName("firstname")
-        .surname("thesurname")
-        .fullName("thefullname")
-        .middleName("mid")
-        .surnameAtBirth("surbirth")
-        .title("mr");
-  }
-
-  private uk.gov.laa.ccms.soa.gateway.model.LinkedCase buildLinkedCase() {
-    return new uk.gov.laa.ccms.soa.gateway.model.LinkedCase()
-        .caseReferenceNumber("lcaseref")
-        .caseStatus("lcasestat")
-        .categoryOfLawCode("lcat1")
-        .categoryOfLawDesc("linked cat 1")
-        .client(
-            new BaseClient()
-                .firstName("lfirstname")
-                .surname("lsurname")
-                .clientReferenceNumber("lclientref"))
-        .feeEarnerId("lfeeearner")
-        .feeEarnerName("lname")
-        .linkType("ltype")
-        .providerReferenceNumber("lprovrefnum")
-        .publicFundingAppliedInd(Boolean.TRUE);
-  }
-
-  private AddressDetail buildAddressDetail(String prefix) {
-    return new AddressDetail()
-        .addressId(prefix + "address1")
-        .addressLine1(prefix + "addline1")
-        .addressLine2(prefix + "addline2")
-        .addressLine3(prefix + "addline3")
-        .addressLine4(prefix + "addline4")
-        .careOfName(prefix + "cofname")
-        .city(prefix + "thecity")
-        .country(prefix + "thecountry")
-        .county(prefix + "thecounty")
-        .house(prefix + "thehouse")
-        .postalCode(prefix + "pc")
-        .province(prefix + "prov")
-        .state(prefix + "st");
-  }
-
-  private ContactDetail buildContactDetail(String prefix) {
-    return new ContactDetail()
-        .correspondenceLanguage(prefix + "lang")
-        .emailAddress(prefix + "email")
-        .fax(prefix + "123765")
-        .correspondenceMethod(prefix + "method")
-        .password(prefix + "pass")
-        .mobileNumber(prefix + "mobil123")
-        .passwordReminder(prefix + "remember")
-        .telephoneHome(prefix + "tel123")
-        .telephoneWork(prefix + "telwork123");
-  }
-
-  private CostLimitation buildCostLimitation(String prefix) {
-    return new CostLimitation()
-        .costLimitId(prefix + "costid")
-        .costCategory(prefix + "costcat1")
-        .amount(BigDecimal.TEN)
-        .paidToDate(BigDecimal.ONE)
-        .billingProviderId(prefix + "billprovid")
-        .billingProviderName(prefix + "billprovname");
-  }
-
-  private uk.gov.laa.ccms.soa.gateway.model.AssessmentResult buildAssessmentResult(
-      String prefix) {
-    return new uk.gov.laa.ccms.soa.gateway.model.AssessmentResult()
-        .defaultInd(Boolean.TRUE)
-        .date(new Date())
-        .assessmentId(prefix + "assessid")
-        .addResultsItem(
-            new OpaGoal()
-                .attributeValue(prefix + "val")
-                .attribute(prefix + "att"))
-        .addAssessmentDetailsItem(
-            new AssessmentScreen()
-                .caption(prefix + "cap")
-                .screenName(prefix + "name")
-                .addEntityItem(
-                    new OpaEntity()
-                        .sequenceNumber(1)
-                        .entityName(prefix + "thentity")
-                        .caption(prefix + "capt")
-                        .addInstancesItem(
-                            new OpaInstance()
-                                .caption(prefix + "capti")
-                                .instanceLabel(prefix + "label")
-                                .addAttributesItem(
-                                    new OpaAttribute()
-                                        .userDefinedInd(Boolean.TRUE)
-                                        .attribute(prefix + "attt")
-                                        .responseText(prefix + "response")
-                                        .responseType(prefix + "restype")
-                                        .responseValue(prefix + "resval")
-                                        .caption(prefix + "caption")))));
-  }
-
-  private Award buildCostAward() {
-    return new Award()
-        .deleteAllowed(Boolean.TRUE)
-        .updateAllowed(Boolean.TRUE)
-        .costAward(
-            new uk.gov.laa.ccms.soa.gateway.model.CostAward()
-                .serviceAddress(
-                    new ServiceAddress()
-                        .addressLine1("add1")
-                        .addressLine2("add2")
-                        .addressLine3("add3"))
-                .recovery(buildRecovery())
-                .awardedBy("me")
-                .liableParties(Arrays.asList("a", "b", "c"))
-                .orderDate(new Date())
-                .orderDateServed(new Date())
-                .otherDetails("otherDets")
-                .certificateCostRateLsc(BigDecimal.ONE)
-                .certificateCostRateMarket(BigDecimal.ZERO)
-                .preCertificateAwardLsc(BigDecimal.TEN)
-                .preCertificateAwardOth(BigDecimal.ONE)
-                .courtAssessmentStatus("assessstate")
-                .interestAwardedRate(BigDecimal.TEN)
-                .interestAwardedStartDate(new Date()));
-  }
-
-  private Award buildFinancialAward() {
-    return new Award()
-        .deleteAllowed(Boolean.TRUE)
-        .updateAllowed(Boolean.TRUE)
-        .financialAward(
-            new uk.gov.laa.ccms.soa.gateway.model.FinancialAward()
-                .serviceAddress(
-                    new ServiceAddress()
-                        .addressLine1("add1")
-                        .addressLine2("add2")
-                        .addressLine3("add3"))
-                .recovery(buildRecovery())
-                .awardedBy("me")
-                .interimAward(BigDecimal.TEN)
-                .amount(BigDecimal.ONE)
-                .awardJustifications("justified")
-                .liableParties(Arrays.asList("a", "b", "c"))
-                .orderDate(new Date())
-                .orderDateServed(new Date())
-                .otherDetails("otherDets")
-                .statutoryChangeReason("statreason"));
-  }
-
-  private Award buildLandAward() {
-    return new Award()
-        .deleteAllowed(Boolean.TRUE)
-        .updateAllowed(Boolean.TRUE)
-        .landAward(
-            new LandAward()
-                .orderDate(new Date())
-                .description("descr")
-                .titleNo("title")
-                .propertyAddress(
-                    new ServiceAddress()
-                        .addressLine1("add1")
-                        .addressLine2("add2")
-                        .addressLine3("add3"))
-                .valuation(
-                    new Valuation()
-                        .amount(BigDecimal.TEN)
-                        .criteria("crit")
-                        .date(new Date()))
-                .disputedPercentage(BigDecimal.ZERO)
-                .awardedPercentage(BigDecimal.TEN)
-                .mortgageAmountDue(BigDecimal.ONE)
-                .equity("shouldn't be used")
-                .awardedBy("me")
-                .recovery("recov")
-                .noRecoveryDetails("none")
-                .statChargeExemptReason("exempt")
-                .landChargeRegistration("landChargeReg")
-                .registrationRef("regRef")
-                .otherProprietors(Arrays.asList("a", "b", "c"))
-                .timeRelatedAward(buildTimeRelatedAward()));
-  }
-
-  private Award buildOtherAssetAward() {
-    return new Award()
-        .otherAsset(
-            new OtherAsset()
-                .awardedBy("me")
-                .description("descr")
-                .awardedAmount(BigDecimal.ONE)
-                .recoveredAmount(BigDecimal.ZERO)
-                .disputedAmount(BigDecimal.TEN)
-                .heldBy(Arrays.asList("A", "B", "C"))
-                .awardedPercentage(BigDecimal.TEN)
-                .recoveredPercentage(BigDecimal.ONE)
-                .disputedPercentage(BigDecimal.ZERO)
-                .noRecoveryDetails("none")
-                .orderDate(new Date())
-                .recovery("recov")
-                .statChargeExemptReason("exempt")
-                .timeRelatedAward(buildTimeRelatedAward())
-                .valuation(
-                    new Valuation()
-                        .amount(BigDecimal.TEN)
-                        .criteria("crit")
-                        .date(new Date())));
-  }
-
-  private TimeRelatedAward buildTimeRelatedAward() {
-    return new TimeRelatedAward()
-        .awardDate(new Date())
-        .amount(BigDecimal.TEN)
-        .awardType("type")
-        .description("desc1")
-        .awardTriggeringEvent("theevent")
-        .otherDetails("otherdets");
-  }
-
-  private Recovery buildRecovery() {
-    return new Recovery()
-        .awardValue(BigDecimal.ONE)
-        .leaveOfCourtReqdInd(Boolean.TRUE)
-        .offeredAmount(
-            new OfferedAmount()
-                .amount(BigDecimal.TEN)
-                .conditionsOfOffer("cond1"))
-        .recoveredAmount(
-            new RecoveredAmount()
-                .client(
-                    new RecoveryAmount()
-                        .amount(BigDecimal.ONE)
-                        .dateReceived(new Date())
-                        .paidToLsc(BigDecimal.ZERO))
-                .court(
-                    new RecoveryAmount()
-                        .amount(BigDecimal.TEN)
-                        .dateReceived(new Date())
-                        .paidToLsc(BigDecimal.ONE))
-                .solicitor(
-                    new RecoveryAmount()
-                        .amount(BigDecimal.ZERO)
-                        .dateReceived(new Date())
-                        .paidToLsc(BigDecimal.TEN)))
-        .unRecoveredAmount(BigDecimal.ZERO);
-  }
-
-  private UserDetail buildUserDetail(String prefix) {
-    return new UserDetail()
-        .userType(prefix + "type1")
-        .userLoginId(prefix + "login1")
-        .userName(prefix + "username");
-  }
 
 }
