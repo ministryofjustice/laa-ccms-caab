@@ -3,7 +3,6 @@ package uk.gov.laa.ccms.caab.builders;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 
-import java.text.ParseException;
 import java.util.List;
 import java.util.Optional;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -143,7 +142,7 @@ public class ApplicationBuilder {
    */
   public ApplicationBuilder contractualDevolvedPower(
       final List<ContractDetail> contractDetails,
-      final String categoryOfLawId) throws ParseException {
+      final String categoryOfLawId) {
 
     String contractualDevolvedPower = contractDetails != null ? contractDetails.stream()
         .filter(contract -> categoryOfLawId

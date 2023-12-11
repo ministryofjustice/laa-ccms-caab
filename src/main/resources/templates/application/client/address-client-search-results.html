@@ -6,10 +6,10 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a href="/application/client/details/address?" class="govuk-back-link">Cancel and return to address details</a>
+        <a href="/application/client/details/address" class="govuk-back-link">Cancel and return to address details</a>
     </div>
     <div id="main-content">
-        <form action="#" th:action="@{/application/client/details/address/search}" th:object="${clientDetails}" method="post">
+        <form action="#" th:action="@{/application/client/details/address/search}" th:object="${addressSearch}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l">About your client</span>
             <h1 class="govuk-heading-l">

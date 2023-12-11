@@ -11,7 +11,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -45,9 +48,22 @@ public class ClientContactDetailsControllerTest {
   private CommonLookupDetail correspondenceMethodLookupDetail;
   private CommonLookupDetail correspondenceLanguageLookupDetail;
 
+  private ClientFlowFormData clientFlowFormData;
+
+  private ClientFormDataContactDetails contactDetails;
+
+  private ClientFormDataBasicDetails basicDetails;
+
   @BeforeEach
   public void setup() {
     mockMvc = standaloneSetup(clientContactDetailsController).build();
+
+    basicDetails = new ClientFormDataBasicDetails();
+    basicDetails.setVulnerableClient(false);
+    clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
+    clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
+
+    contactDetails = new ClientFormDataContactDetails();
 
     correspondenceMethodLookupDetail = new CommonLookupDetail();
     correspondenceMethodLookupDetail.addContentItem(new CommonLookupValueDetail());
@@ -57,7 +73,6 @@ public class ClientContactDetailsControllerTest {
 
   @Test
   void testClientDetailsContact() throws Exception {
-    ClientDetails clientDetails = new ClientDetails();
 
     when(lookupService.getCorrespondenceMethods()).thenReturn(
         Mono.just(correspondenceMethodLookupDetail));
@@ -65,7 +80,8 @@ public class ClientContactDetailsControllerTest {
         Mono.just(correspondenceLanguageLookupDetail));
 
     this.mockMvc.perform(get("/application/client/details/contact")
-            .flashAttr(CLIENT_DETAILS, clientDetails))
+            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+            .flashAttr("contactDetails", contactDetails))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/contact-client-details"))
@@ -74,10 +90,10 @@ public class ClientContactDetailsControllerTest {
   }
   @Test
   void testClientDetailsContactPost() throws Exception {
-    ClientDetails clientDetails = new ClientDetails();
 
     mockMvc.perform(post("/application/client/details/contact")
-            .sessionAttr(CLIENT_DETAILS, clientDetails))
+            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+            .flashAttr("contactDetails", contactDetails))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/client/details/address"));
   }
@@ -85,10 +101,9 @@ public class ClientContactDetailsControllerTest {
 
   @Test
   void testClientDetailsContactPostValidationError() throws Exception {
-    ClientDetails clientDetails = new ClientDetails();
-    clientDetails.setTelephoneHome("0123456789");
-    clientDetails.setPasswordReminder("test");
-    clientDetails.setCorrespondenceMethod("test");
+    contactDetails.setTelephoneHome("0123456789");
+    contactDetails.setPasswordReminder("test");
+    contactDetails.setCorrespondenceMethod("test");
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
@@ -102,7 +117,8 @@ public class ClientContactDetailsControllerTest {
         Mono.just(correspondenceLanguageLookupDetail));
 
     this.mockMvc.perform(post("/application/client/details/contact")
-            .flashAttr(CLIENT_DETAILS, clientDetails))
+            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+            .flashAttr("contactDetails", contactDetails))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/contact-client-details"))

@@ -6,10 +6,10 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a href="/application/client/details/cancel?" class="govuk-back-link">Cancel and return to client search</a>
+        <a href="/application/client/details/cancel" class="govuk-back-link">Cancel and return to client search</a>
     </div>
     <div id="main-content">
-        <form action="#" th:action="@{/application/client/details/contact}" th:object="${clientDetails}" method="post">
+        <form action="#" th:action="@{/application/client/details/contact}" th:object="${contactDetails}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l">About your client</span>
             <h1 class="govuk-heading-l">
@@ -18,213 +18,16 @@
             <p class="govuk-body-l">
                 Please enter the contact details for your client in the fields provided. When you have finished, click 'Next' to continue.
             </p>
-            <div class="govuk-grid-row" th:if="${clientDetails.vulnerableClient}">
-                <div class="govuk-grid-column-two-thirds">
-                    <p class="govuk-body">
-                        You have indicated that this client is vulnerable therefore for security reasons the contact details are not applicable.
-                    </p>
-                    <div class="govuk-grid-row">
-                        <div class="govuk-grid-column-one-half">
-                            <p class="govuk-body">
-                                Telephone home
-                            </p>
-                        </div>
-                        <div class="govuk-grid-column-one-half">
-                            <p class="govuk-body">
-                                Not applicable
-                            </p>
-                        </div>
-                    </div>
-                    <div class="govuk-grid-row">
-                        <div class="govuk-grid-column-one-half">
-                            <p class="govuk-body">
-                                Telephone work
-                            </p>
-                        </div>
-                        <div class="govuk-grid-column-one-half">
-                            <p class="govuk-body">
-                                Not applicable
-                            </p>
-                        </div>
-                    </div>
-                    <div class="govuk-grid-row">
-                        <div class="govuk-grid-column-one-half">
-                            <p class="govuk-body">
-                                Mobile
-                            </p>
-                        </div>
-                        <div class="govuk-grid-column-one-half">
-                            <p class="govuk-body">
-                                Not applicable
-                            </p>
-                        </div>
-                    </div>
-                    <div class="govuk-grid-row">
-                        <div class="govuk-grid-column-one-half">
-                            <p class="govuk-body">
-                                Email address
-                            </p>
-                        </div>
-                        <div class="govuk-grid-column-one-half">
-                            <p class="govuk-body">
-                                Not applicable
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="govuk-grid-row" th:unless="${clientDetails.vulnerableClient}">
-                <div class="govuk-grid-column-two-thirds">
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('telephoneHome')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="telephoneHome">
-                            Telephone home (optional)
-                        </label>
-                        <input th:errorclass="govuk-input--error"
-                               class="govuk-input govuk-input--width-20"
-                               id="telephoneHome"
-                               name="telephoneHome"
-                               type="text"
-                               data-module="govuk-input"
-                               th:field="*{telephoneHome}">
-                    </div>
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('telephoneWork')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="telephoneWork">
-                            Telephone work (optional)
-                        </label>
-                        <input th:errorclass="govuk-input--error"
-                               class="govuk-input govuk-input--width-20"
-                               id="telephoneWork"
-                               name="telephoneWork"
-                               type="text"
-                               data-module="govuk-input"
-                               th:field="*{telephoneWork}">
-                    </div>
-                        <div class="govuk-form-group" th:classappend="${#fields.hasErrors('telephoneMobile')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="telephoneMobile">
-                            Mobile (optional)
-                        </label>
-                        <input th:errorclass="govuk-input--error"
-                               class="govuk-input govuk-input--width-20"
-                               id="telephoneMobile"
-                               name="telephoneMobile"
-                               type="text"
-                               data-module="govuk-input"
-                               th:field="*{telephoneMobile}">
-                    </div>
-                    <div class="govuk-form-group">
-                        <label class="govuk-label" for="emailAddress">
-                            E-mail address (optional)
-                        </label>
-                        <input th:errorclass="govuk-input--error"
-                               class="govuk-input govuk-input--width-20"
-                               id="emailAddress"
-                               name="emailAddress"
-                               type="text"
-                               data-module="govuk-input"
-                               th:field="*{emailAddress}">
-                    </div>
-                </div>
-            </div>
-            <div class="govuk-grid-row">
-                <div class="govuk-grid-column-two-thirds">
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('password')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="password">
-                            Password
-                        </label>
-                        <input th:errorclass="govuk-input--error"
-                               class="govuk-input govuk-input--width-20"
-                               id="password"
-                               name="password"
-                               type="password"
-                               data-module="govuk-input"
-                               th:field="*{password}">
-                        <br>
-                        <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
-                            <summary class="govuk-details__summary">
-                                <span class="govuk-details__summary-text">
-                                  Help with Password
-                                </span>
-                            </summary>
-                            <div class="govuk-details__text">
-                                Please enter the LAA password your client has chosen. This password
-                                will be used to verify your client's identity if they ever need to
-                                contact us. If your client cannot provide their password, the
-                                password reminder will be used as a prompt.
-                            </div>
-                        </details>
-                    </div>
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('passwordReminder')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="passwordReminder">
-                            Password reminder
-                        </label>
-                        <input th:errorclass="govuk-input--error"
-                               class="govuk-input govuk-input--width-20"
-                               id="passwordReminder"
-                               name="passwordReminder"
-                               type="text"
-                               data-module="govuk-input"
-                               th:field="*{passwordReminder}">
-                        <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
-                            <summary class="govuk-details__summary">
-                                <span class="govuk-details__summary-text">
-                                  Help with Password reminder
-                                </span>
-                            </summary>
-                            <div class="govuk-details__text">
-                                Please enter a prompt which can be used as a password reminder.
-                            </div>
-                        </details>
-                    </div>
-                </div>
-            </div>
-            <div class="govuk-grid-row" th:unless="${clientDetails.vulnerableClient}">
-                <div class="govuk-grid-column-two-thirds">
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('correspondenceMethod')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="correspondenceMethod">
-                            Correspondence method
-                        </label>
-                        <span th:if="${#fields.hasErrors('correspondenceMethod')}" th:errors="*{correspondenceMethod}" class="govuk-error-message"></span>
-                        <select class="govuk-select"
-                                data-module="govuk-select"
-                                th:field="*{correspondenceMethod}"
-                                th:errorclass="govuk-select--error"
-                                id="correspondenceMethod"
-                                name="correspondenceMethod">
-                            <option value="">Please Select</option>
-                            <option th:each="method : ${correspondenceMethods}" th:value="${method.code}" th:text="${method.description}"></option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="govuk-grid-row">
-                <div class="govuk-grid-column-two-thirds">
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('correspondenceLanguage')} ? 'govuk-form-group--error' : ''">
-                        <label class="govuk-label" for="correspondenceLanguage">
-                            Correspondence language (optional)
-                        </label>
-                        <span th:if="${#fields.hasErrors('correspondenceLanguage')}" th:errors="*{correspondenceLanguage}" class="govuk-error-message"></span>
-                        <select class="govuk-select"
-                                data-module="govuk-select"
-                                th:field="*{correspondenceLanguage}"
-                                th:errorclass="govuk-select--error"
-                                id="correspondenceLanguage"
-                                name="correspondenceLanguage">
-                            <option value="">Please Select</option>
-                            <option th:each="language : ${correspondenceLanguages}" th:value="${language.code}" th:text="${language.description}"></option>
-                        </select>
-                    </div>
-                    <div class="govuk-button-group">
-                        <button type="submit" class="govuk-button" data-module="govuk-button">
-                            Next
-                        </button>
-                        <a class="govuk-button govuk-button--secondary"
-                           data-module="govuk-button"
-                           href="/application/client/details/basic">
-                            Back
-                        </a>
-                    </div>
-                </div>
+            <div th:replace="~{application/partials/client-fragments :: clientContactFragment}"></div>
+            <div class="govuk-button-group">
+                <button type="submit" class="govuk-button" data-module="govuk-button">
+                    Next
+                </button>
+                <a class="govuk-button govuk-button--secondary"
+                   data-module="govuk-button"
+                   href="/application/client/details/basic">
+                    Back
+                </a>
             </div>
         </form>
     </div>

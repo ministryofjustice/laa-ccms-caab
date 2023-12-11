@@ -45,58 +45,16 @@
           For example, 27 3 2007
         </div>
         <p id="delegated-function-used-error" class="govuk-error-message">
-                              <span th:each="error : ${#fields.detailedErrors()}">
-                                  <span th:inline="text" th:if="${error.fieldName == 'delegatedFunctionUsedDay' || error.fieldName == 'delegatedFunctionUsedMonth' || error.fieldName == 'delegatedFunctionUsedYear'}">
-                                      <span th:utext="${error.message + '<br>'}"></span>
-                                  </span>
-                              </span>
+          <span th:each="error : ${#fields.detailedErrors()}">
+              <span th:inline="text" th:if="${error.fieldName == 'delegatedFunctionUsedDay' || error.fieldName == 'delegatedFunctionUsedMonth' || error.fieldName == 'delegatedFunctionUsedYear'}">
+                  <span th:utext="${error.message + '<br>'}"></span>
+              </span>
+          </span>
         </p>
         <div class="govuk-date-input" id="delegated-function-used">
-          <div class="govuk-date-input__item">
-            <div class="govuk-form-group">
-              <label class="govuk-label govuk-date-input__label" for="delegatedFunctionUsedDay">
-                Day
-              </label>
-              <input th:classappend="${#fields.hasErrors('delegatedFunctionUsedDay')} ? 'govuk-input--error' : ''"
-                     class="govuk-input govuk-date-input__input govuk-input--width-2"
-                     id="delegatedFunctionUsedDay"
-                     name="delegatedFunctionUsedDay"
-                     type="text"
-                     inputmode="numeric"
-                     maxlength="2"
-                     th:value="${applicationFormData.delegatedFunctionUsedDay}">
-            </div>
-          </div>
-          <div class="govuk-date-input__item">
-            <div class="govuk-form-group">
-              <label class="govuk-label govuk-date-input__label" for="delegatedFunctionUsedMonth">
-                Month
-              </label>
-              <input th:classappend="${#fields.hasErrors('delegatedFunctionUsedMonth')} ? 'govuk-input--error' : ''"
-                     class="govuk-input govuk-date-input__input govuk-input--width-2"
-                     id="delegatedFunctionUsedMonth"
-                     name="delegatedFunctionUsedMonth"
-                     type="text"
-                     inputmode="numeric"
-                     maxlength="2"
-                     th:value="${applicationFormData.delegatedFunctionUsedMonth}">
-            </div>
-          </div>
-          <div class="govuk-date-input__item">
-            <div class="govuk-form-group">
-              <label class="govuk-label govuk-date-input__label" for="delegatedFunctionUsedYear">
-                Year
-              </label>
-              <input th:classappend="${#fields.hasErrors('delegatedFunctionUsedYear')} ? 'govuk-input--error' : ''"
-                     class="govuk-input govuk-date-input__input govuk-input--width-4"
-                     id="delegatedFunctionUsedYear"
-                     name="delegatedFunctionUsedYear"
-                     type="text"
-                     inputmode="numeric"
-                     maxlength="4"
-                     th:value="${applicationFormData.delegatedFunctionUsedYear}">
-            </div>
-          </div>
+          <div th:replace="partials/forms::numericInput('delegatedFunctionUsedDay', 'Day', '2')"></div>
+          <div th:replace="partials/forms::numericInput('delegatedFunctionUsedMonth', 'Month', '2')"></div>
+          <div th:replace="partials/forms::numericInput('delegatedFunctionUsedYear', 'Year', '4')"></div>
         </div>
       </fieldset>
     </div>

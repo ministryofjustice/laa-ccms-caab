@@ -10,8 +10,11 @@ import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildScopeLimitation;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 import org.junit.jupiter.api.Test;
+import uk.gov.laa.ccms.caab.builders.ApplicationBuilder;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ScopeLimitation;
@@ -29,14 +32,13 @@ public class CopyApplicationMapperTest {
     ApplicationDetail copyApplication = buildApplicationDetail(2, true, sharedDate);
 
     // Build and update the expected application in line with the expected mappings.
-    ApplicationDetail expectedApplication = buildApplicationDetail(1, false, sharedDate);
+    ApplicationDetail expectedApplication = new ApplicationBuilder().build();
     applyApplicationMappingUpdates(expectedApplication,
         copyApplication,
         requestedCostLimitation,
         defaultCostLimitation);
 
     ApplicationDetail result = copyApplicationMapper.copyApplication(
-        buildApplicationDetail(1, false, sharedDate),
         copyApplication,
         requestedCostLimitation,
         defaultCostLimitation);
@@ -95,9 +97,12 @@ public class CopyApplicationMapperTest {
     expectedApplication.setCategoryOfLaw(copyApplication.getCategoryOfLaw());
     expectedApplication.setCorrespondenceAddress(copyApplication.getCorrespondenceAddress());
     expectedApplication.setLarScopeFlag(copyApplication.getLarScopeFlag());
+    expectedApplication.setCosts(new CostStructure());
     expectedApplication.getCosts().setRequestedCostLimitation(requestedCostLimitation);
     expectedApplication.getCosts().setDefaultCostLimitation(defaultCostLimitation);
+    expectedApplication.setProceedings(List.copyOf(copyApplication.getProceedings()));
     expectedApplication.getProceedings().forEach(this::applyProceedingMappingUpdates);
+    expectedApplication.setOpponents(List.copyOf(copyApplication.getOpponents()));
     applyOpponentMappingUpdates(expectedApplication.getOpponents().get(0));
   }
 

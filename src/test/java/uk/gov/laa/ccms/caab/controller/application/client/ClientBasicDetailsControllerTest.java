@@ -12,7 +12,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER;
 
@@ -26,7 +27,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -52,9 +54,17 @@ public class ClientBasicDetailsControllerTest {
   private CommonLookupDetail genderLookupDetail;
   private CommonLookupDetail maritalStatusLookupDetail;
 
+  private ClientFlowFormData clientFlowFormData;
+
+  private ClientFormDataBasicDetails basicDetails;
+
   @BeforeEach
   public void setup() {
     mockMvc = standaloneSetup(clientBasicDetailsController).build();
+
+    clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
+
+    basicDetails = new ClientFormDataBasicDetails();
 
     titleLookupDetail = new CommonLookupDetail();
     titleLookupDetail.addContentItem(new CommonLookupValueDetail());
@@ -69,7 +79,6 @@ public class ClientBasicDetailsControllerTest {
   @Test
   void testClientDetailsBasic() throws Exception {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
-    ClientDetails clientDetails = new ClientDetails();
 
     when(lookupService.getContactTitles()).thenReturn(
         Mono.just(titleLookupDetail));
@@ -82,7 +91,8 @@ public class ClientBasicDetailsControllerTest {
 
     this.mockMvc.perform(get("/application/client/details/basic")
             .sessionAttr(CLIENT_SEARCH_CRITERIA, clientSearchCriteria)
-            .flashAttr(CLIENT_DETAILS, clientDetails)
+            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+            .flashAttr("basicDetails", basicDetails)
             .flashAttr("genders", Collections.emptyList())
             .flashAttr("maritalStatusList", Collections.emptyList()))
         .andDo(print())
@@ -107,20 +117,20 @@ public class ClientBasicDetailsControllerTest {
 
     mockMvc.perform(get("/application/client/details/basic")
             .sessionAttr(CLIENT_SEARCH_CRITERIA, clientSearchCriteria)
-            .flashAttr(CLIENT_DETAILS, new ClientDetails())
+            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+            .flashAttr("basicDetails", basicDetails)
             .flashAttr("genders", Collections.emptyList())
             .flashAttr("maritalStatusList", Collections.emptyList()))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/basic-client-details"))
         .andExpect(model().attributeExists("titles", "countries", "genders", "maritalStatusList"))
-        .andExpect(model().attribute("clientDetails", notNullValue()));
+        .andExpect(model().attribute("basicDetails", notNullValue()));
   }
 
   @Test
   void testClientDetailsBasicGetCountries() throws Exception {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
-    ClientDetails clientDetails = new ClientDetails();
 
     countryLookupDetail.addContentItem(
         new CommonLookupValueDetail().code("USA").description("United States"));
@@ -138,7 +148,8 @@ public class ClientBasicDetailsControllerTest {
 
     this.mockMvc.perform(get("/application/client/details/basic")
             .sessionAttr(CLIENT_SEARCH_CRITERIA, clientSearchCriteria)
-            .flashAttr(CLIENT_DETAILS, clientDetails)
+            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+            .flashAttr("basicDetails", basicDetails)
             .flashAttr("genders", Collections.emptyList())
             .flashAttr("maritalStatusList", Collections.emptyList()))
         .andDo(print())
@@ -151,11 +162,11 @@ public class ClientBasicDetailsControllerTest {
   @Test
   void testClientDetailsBasicPost() throws Exception {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
-    ClientDetails clientDetails = new ClientDetails();
 
     mockMvc.perform(post("/application/client/details/basic")
             .sessionAttr(CLIENT_SEARCH_CRITERIA, clientSearchCriteria)
-            .flashAttr(CLIENT_DETAILS, clientDetails)
+            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+            .flashAttr("basicDetails", basicDetails)
             .flashAttr("genders", Collections.emptyList())
             .flashAttr("maritalStatusList", Collections.emptyList()))
         .andExpect(status().is3xxRedirection())
@@ -165,7 +176,6 @@ public class ClientBasicDetailsControllerTest {
   @Test
   void testClientDetailsBasicPostValidationError() throws Exception {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
-    ClientDetails clientDetails = new ClientDetails();
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
@@ -184,13 +194,14 @@ public class ClientBasicDetailsControllerTest {
 
     mockMvc.perform(post("/application/client/details/basic")
             .sessionAttr(CLIENT_SEARCH_CRITERIA, clientSearchCriteria)
-            .flashAttr(CLIENT_DETAILS, clientDetails)
+            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+            .flashAttr("basicDetails", basicDetails)
             .flashAttr("genders", Collections.emptyList())
             .flashAttr("maritalStatusList", Collections.emptyList()))
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/basic-client-details"))
         .andExpect(model().attributeExists("titles", "countries", "genders", "maritalStatusList",
-            "clientDetails"));
+            "basicDetails"));
   }
 
   private ClientSearchCriteria buildClientSearchCriteria() {

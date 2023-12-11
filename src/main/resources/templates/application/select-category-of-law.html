@@ -27,20 +27,7 @@
             </div>
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('categoryOfLawId')} ? 'govuk-form-group--error' : ''">
-                        <fieldset class="govuk-fieldset">
-                            <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
-                                <h2 class="govuk-fieldset__heading">
-                                    Which Category Of Law applies to this application?
-                                </h2>
-                            </legend>
-                            <span th:if="${#fields.hasErrors('categoryOfLawId')}" th:errors="*{categoryOfLawId}" class="govuk-error-message"></span>
-                            <select class="govuk-select" data-module="govuk-select" th:field="*{categoryOfLawId}" th:errorclass="govuk-select--error" id="categoryOfLawId" name="categoryOfLawId">
-                                <option value="">Please Select</option>
-                                <option th:each="category : ${categoriesOfLaw}" th:value="${category.code}" th:text="${category.description}"></option>
-                            </select>
-                        </fieldset>
-                    </div>
+                    <div th:replace="~{partials/forms :: dropdown('categoryOfLawId', 'Which Category Of Law applies to this application?', ${categoriesOfLaw}, 'code', 'description', true)}"></div>
                     <button class="govuk-button" data-module="govuk-button">
                         Continue
                     </button>

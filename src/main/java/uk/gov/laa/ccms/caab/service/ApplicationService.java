@@ -168,7 +168,26 @@ public class ApplicationService {
   public Mono<String> createApplication(ApplicationFormData applicationFormData,
                                         ClientDetail clientDetail, UserDetail user)
       throws ParseException {
+    Mono<ApplicationDetail> applicationMono;
 
+    if (StringUtils.hasText(applicationFormData.getCopyCaseReferenceNumber())) {
+      applicationMono = this.getCase(
+          applicationFormData.getCopyCaseReferenceNumber(),
+          user.getLoginId(),
+          user.getUserType()).flatMap(this::copyApplication);
+    } else {
+      applicationMono = buildNewApplication(applicationFormData, clientDetail, user);
+    }
+
+    return applicationMono
+        .flatMap(applicationDetail -> caabApiClient.createApplication(
+            user.getLoginId(), applicationDetail));
+  }
+
+  protected Mono<ApplicationDetail> buildNewApplication(
+      ApplicationFormData applicationFormData,
+      ClientDetail clientDetail,
+      UserDetail user) throws ParseException {
     ApplicationType applicationType = new ApplicationTypeBuilder()
         .applicationType(
             applicationFormData.getApplicationTypeCategory(),
@@ -180,130 +199,104 @@ public class ApplicationService {
             applicationFormData.getDelegatedFunctionUsedYear())
         .build();
 
-    //need to do this first in order to get amendment types
-    ApplicationDetail baseApplication = new ApplicationBuilder()
-        .applicationType(applicationType)
-        .build();
-
     // get case reference Number, category of law value, contractual devolved powers,
     // amendment types
     Mono<Tuple4<CaseReferenceSummary,
         CategoryOfLawLookupValueDetail,
         ContractDetails,
         AmendmentTypeLookupDetail>> combinedResult =
-          Mono.zip(
-              this.getCaseReference(user.getLoginId(), user.getUserType()),
-              lookupService.getCategoryOfLaw(applicationFormData.getCategoryOfLawId()),
-              soaApiClient.getContractDetails(
-                  user.getProvider().getId(),
-                  applicationFormData.getOfficeId(),
-                  user.getLoginId(),
-                  user.getUserType()
-              ),
-              ebsApiClient.getAmendmentTypes(baseApplication.getApplicationType().getId())
-          );
+        Mono.zip(
+            this.getCaseReference(user.getLoginId(), user.getUserType()),
+            lookupService.getCategoryOfLaw(applicationFormData.getCategoryOfLawId()),
+            soaApiClient.getContractDetails(
+                user.getProvider().getId(),
+                applicationFormData.getOfficeId(),
+                user.getLoginId(),
+                user.getUserType()
+            ),
+            ebsApiClient.getAmendmentTypes(applicationType.getId())
+        );
 
-    return combinedResult.flatMap(tuple -> {
+    return combinedResult.map(tuple -> {
       CaseReferenceSummary caseReferenceSummary = tuple.getT1();
       CategoryOfLawLookupValueDetail categoryOfLawLookup = tuple.getT2();
       ContractDetails contractDetails = tuple.getT3();
       AmendmentTypeLookupDetail amendmentTypes = tuple.getT4();
 
-      ApplicationDetail application;
-      try {
-
-        application = new ApplicationBuilder(baseApplication)
-            .caseReference(caseReferenceSummary)
-            .provider(user)
-            .client(clientDetail)
-            .categoryOfLaw(applicationFormData.getCategoryOfLawId(), categoryOfLawLookup)
-            .office(
-                applicationFormData.getOfficeId(),
-                user.getProvider().getOffices())
-            .contractualDevolvedPower(
-                contractDetails.getContracts(),
-                applicationFormData.getCategoryOfLawId())
-            .larScopeFlag(amendmentTypes)
-            .status()
-            .build();
-
-        if (StringUtils.hasText(applicationFormData.getCopyCaseReferenceNumber())) {
-          application = copyCaseAttributes(
-              application,
-              applicationFormData.getCopyCaseReferenceNumber(),
-              user);
-        }
-      } catch (ParseException e) {
-        return Mono.error(new RuntimeException(e));
-      }
-
-      // Create the application and block until it's done
-      return caabApiClient.createApplication(user.getLoginId(), application);
+      return new ApplicationBuilder()
+          .applicationType(applicationType)
+          .caseReference(caseReferenceSummary)
+          .provider(user)
+          .client(clientDetail)
+          .categoryOfLaw(applicationFormData.getCategoryOfLawId(), categoryOfLawLookup)
+          .office(
+              applicationFormData.getOfficeId(),
+              user.getProvider().getOffices())
+          .contractualDevolvedPower(
+              contractDetails.getContracts(),
+              applicationFormData.getCategoryOfLawId())
+          .larScopeFlag(amendmentTypes)
+          .status()
+          .build();
     });
   }
 
-  protected ApplicationDetail copyCaseAttributes(ApplicationDetail application,
-      String copyCaseReferenceNumber,
-      UserDetail user) {
-    // Retrieve the CaseDetail to be copied.
-    ApplicationDetail applicationToCopy = Optional.ofNullable(this.getCase(
-            copyCaseReferenceNumber,
-            user.getLoginId(),
-            user.getUserType()).block())
-        .orElseThrow(() -> new CaabApplicationException(
-            String.format("Failed to retrieve Case for copyCaseReferenceNumber: %s",
-                copyCaseReferenceNumber)));
+  protected Mono<ApplicationDetail> copyApplication(ApplicationDetail applicationToCopy) {
+    // get case reference Number, category of law value, contractual devolved powers,
+    // amendment types
+    Mono<Tuple2<CategoryOfLawLookupValueDetail,
+        RelationshipToCaseLookupDetail>> combinedResult =
+        Mono.zip(
+            lookupService.getCategoryOfLaw(applicationToCopy.getCategoryOfLaw().getId()),
+            lookupService.getPersonToCaseRelationships());
 
-    // Check whether the cost limit should be copied for the case's category of law
-    Boolean copyCostLimit =
-        Optional.ofNullable(
-            lookupService.getCategoryOfLaw(applicationToCopy.getCategoryOfLaw().getId()).block())
-            .map(CategoryOfLawLookupValueDetail::getCopyCostLimit)
-            .orElse(false);
+    return combinedResult.map(tuple -> {
+      // Check whether the cost limit should be copied for the case's category of law
+      Boolean copyCostLimit = tuple.getT1().getCopyCostLimit();
+      BigDecimal requestedCostLimitation =
+          Boolean.TRUE.equals(copyCostLimit)
+              ? applicationToCopy.getCosts().getRequestedCostLimitation() : BigDecimal.ZERO;
 
-    BigDecimal requestedCostLimitation =
-        copyCostLimit ? applicationToCopy.getCosts().getRequestedCostLimitation() : BigDecimal.ZERO;
+      // Get a Map of RelationshipToCase by code, filtered for those with the 'copyParty'
+      // flag set.
+      RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+          tuple.getT2();
+      Map<String, RelationshipToCaseLookupValueDetail> copyPartyRelationships =
+          relationshipToCaseLookupDetail.getContent() != null
+              ? relationshipToCaseLookupDetail.getContent().stream()
+              .filter(RelationshipToCaseLookupValueDetail::getCopyParty)
+              .collect(Collectors.toMap(
+                  RelationshipToCaseLookupValueDetail::getCode, Function.identity()))
+              : Collections.emptyMap();
 
+      // Find the max cost limitation across the Proceedings, and set this as the
+      // default cost limitation for the application.
+      BigDecimal defaultCostLimitation = BigDecimal.ZERO;
+      if (applicationToCopy.getProceedings() != null) {
+        defaultCostLimitation = applicationToCopy.getProceedings().stream()
+            .map(Proceeding::getCostLimitation)
+            .max(Comparator.comparingDouble(BigDecimal::doubleValue))
+            .orElse(BigDecimal.ZERO);
+      }
 
-    // Find the max cost limitation across the Proceedings, and set this as the
-    // default cost limitation for the application.
-    BigDecimal defaultCostLimitation = BigDecimal.ZERO;
-    if (applicationToCopy.getProceedings() != null) {
-      defaultCostLimitation = applicationToCopy.getProceedings().stream()
-              .map(Proceeding::getCostLimitation)
-              .max(Comparator.comparingDouble(BigDecimal::doubleValue))
-              .orElse(BigDecimal.ZERO);
-    }
+      // Use a mapper to copy the relevant attributes
+      ApplicationDetail application = copyApplicationMapper.copyApplication(
+          applicationToCopy,
+          requestedCostLimitation,
+          defaultCostLimitation);
 
-    // Use a mapper to copy the relevant attributes
-    application = copyApplicationMapper.copyApplication(
-        application,
-        applicationToCopy,
-        requestedCostLimitation,
-        defaultCostLimitation);
+      // Clear the ebsId for an opponent if it is of type INDIVIDUAL AND it is NOT shared AND
+      // the relationship to case for the opponent is of type Copy Party.
+      if (application.getOpponents() != null) {
+        application.getOpponents().stream()
+            .filter(opponent -> OPPONENT_TYPE_INDIVIDUAL.equalsIgnoreCase(opponent.getType())
+                && copyPartyRelationships.containsKey(opponent.getRelationshipToCase())
+                && !opponent.getSharedInd())
+            .forEach(opponent -> opponent.setEbsId(null));
+      }
 
-    // Get a Map of RelationshipToCase by code, filtered for those with the 'copyParty'
-    // flag set.
-    Map<String, RelationshipToCaseLookupValueDetail> copyPartyRelationships = Optional.ofNullable(
-            lookupService.getPersonToCaseRelationships().block())
-        .map(RelationshipToCaseLookupDetail::getContent)
-        .orElseThrow(() -> new CaabApplicationException(
-            "Failed to retrieve person to case relationships"))
-        .stream().filter(RelationshipToCaseLookupValueDetail::getCopyParty)
-        .collect(Collectors.toMap(
-            RelationshipToCaseLookupValueDetail::getCode, Function.identity()));
-
-    // Clear the ebsId for an opponent if it is of type INDIVIDUAL AND it is NOT shared AND
-    // the relationship to case for the opponent is of type Copy Party.
-    if (application.getOpponents() != null) {
-      application.getOpponents().stream()
-          .filter(opponent -> OPPONENT_TYPE_INDIVIDUAL.equalsIgnoreCase(opponent.getType())
-              && copyPartyRelationships.containsKey(opponent.getRelationshipToCase())
-              && !opponent.getSharedInd())
-          .forEach(opponent -> opponent.setEbsId(null));
-    }
-
-    return application;
+      return application;
+    });
   }
 
   /**
@@ -362,6 +355,8 @@ public class ApplicationService {
               .clientFullName(
                   application.getClient().getFirstName(),
                   application.getClient().getSurname())
+              .clientReferenceNumber(
+                  application.getClient().getReference())
               .caseReferenceNumber(
                   application.getCaseReferenceNumber())
               .providerCaseReferenceNumber(

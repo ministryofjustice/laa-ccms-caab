@@ -1,11 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -14,9 +10,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
-import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,21 +21,22 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ClientDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataMonitoringDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 @ExtendWith(MockitoExtension.class)
 public class ClientSummaryControllerTest {
@@ -79,6 +76,8 @@ public class ClientSummaryControllerTest {
   private CommonLookupValueDetail correspondenceMethodLookupValueDetail;
   private CommonLookupValueDetail correspondenceLanguageLookupValueDetail;
 
+  private ClientFlowFormData clientFlowFormData;
+
   private static final UserDetail userDetails = new UserDetail()
       .userId(1)
       .userType("testUserType")
@@ -87,6 +86,12 @@ public class ClientSummaryControllerTest {
   @BeforeEach
   public void setup() {
     mockMvc = MockMvcBuilders.standaloneSetup(clientSummaryController).build();
+
+    clientFlowFormData = new ClientFlowFormData("create");
+    clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
+    clientFlowFormData.setContactDetails(new ClientFormDataContactDetails());
+    clientFlowFormData.setAddressDetails(new ClientFormDataAddressDetails());
+    clientFlowFormData.setMonitoringDetails(new ClientFormDataMonitoringDetails());
 
     titleLookupValueDetail = new CommonLookupValueDetail();
     countryLookupValueDetail = new CommonLookupValueDetail();
@@ -100,7 +105,6 @@ public class ClientSummaryControllerTest {
 
   @Test
   void testClientDetailsSummary_Get() throws Exception {
-    ClientDetails clientDetails = new ClientDetails();
 
     when(lookupService.getContactTitle(any())).thenReturn(
         Mono.just(titleLookupValueDetail));
@@ -118,7 +122,7 @@ public class ClientSummaryControllerTest {
         Mono.just(correspondenceMethodLookupValueDetail));
 
     mockMvc.perform(get("/application/client/details/summary")
-            .flashAttr("clientDetails", clientDetails))
+            .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/client-summary-details"));
 
@@ -134,8 +138,7 @@ public class ClientSummaryControllerTest {
 
   @Test
   void testClientDetailsSummary_Get_withCorrespondenceLanguage() throws Exception {
-    ClientDetails clientDetails = new ClientDetails();
-    clientDetails.setCorrespondenceLanguage("TEST");
+    clientFlowFormData.getContactDetails().setCorrespondenceLanguage("TEST");
 
     when(lookupService.getContactTitle(any())).thenReturn(
         Mono.just(titleLookupValueDetail));
@@ -156,7 +159,7 @@ public class ClientSummaryControllerTest {
         Mono.just(correspondenceLanguageLookupValueDetail));
 
     mockMvc.perform(get("/application/client/details/summary")
-            .flashAttr("clientDetails", clientDetails))
+            .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/client-summary-details"));
 
@@ -172,17 +175,14 @@ public class ClientSummaryControllerTest {
 
   @Test
   void testClientDetailsSummary_Post() throws Exception {
-    ClientDetails clientDetails = new ClientDetails();
+    ClientFlowFormData clientFlowFormData = new ClientFlowFormData("create");
 
-    when(clientDetailsMapper.toSoaClientDetail(clientDetails)).thenReturn(
-        new ClientDetail());
-
-    when(clientService.postClient(any(), any(), any())).thenReturn(
+    when(clientService.createClient(any(), any())).thenReturn(
         Mono.just(new ClientCreated()));
 
     mockMvc.perform(post("/application/client/details/summary")
             .sessionAttr(USER_DETAILS, userDetails)
-            .flashAttr("clientDetails", clientDetails))
+            .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/submissions/client-create"));
 
@@ -191,26 +191,6 @@ public class ClientSummaryControllerTest {
     verify(addressValidator).validate(any(), any());
     verify(opportunitiesValidator).validate(any(), any());
 
-    verify(clientDetailsMapper).toSoaClientDetail(clientDetails);
-    verify(clientService).postClient(any(), any(), any());
-  }
-
-  @Test
-  void testClientDetailsSummary_PostWithErrors() throws Exception {
-    ClientDetails clientDetails = new ClientDetails();
-
-    doAnswer(invocation -> {
-      Errors errors = (Errors) invocation.getArguments()[1];
-      errors.rejectValue("title", "required.title", "Please complete 'Title'.");
-      return null;
-    }).when(basicValidator).validate(any(), any());
-
-    Exception exception = assertThrows(ServletException.class, () ->
-        this.mockMvc.perform(post("/application/client/details/summary")
-            .sessionAttr(USER_DETAILS, userDetails)
-            .flashAttr("clientDetails", clientDetails)));
-
-    assertInstanceOf(CaabApplicationException.class, exception.getCause());
-    assertEquals("Client submission containing missing or invalid client details.", exception.getCause().getMessage());
+    verify(clientService).createClient(any(), any());
   }
 }

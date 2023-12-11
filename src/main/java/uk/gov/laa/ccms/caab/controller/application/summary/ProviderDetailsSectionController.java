@@ -3,11 +3,8 @@ package uk.gov.laa.ccms.caab.controller.application.summary;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
-import jakarta.servlet.http.HttpSession;
-import java.text.ParseException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;

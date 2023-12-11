@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.mapper;
 
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -48,9 +49,8 @@ public interface ApplicationFormDataMapper {
   @Named("mapDevolvedPowersDay")
   default String mapDevolvedPowersDay(Date dateUsed) {
     if (dateUsed != null) {
-      Calendar calendar = Calendar.getInstance();
-      calendar.setTime(dateUsed);
-      return String.valueOf(calendar.get(Calendar.DAY_OF_MONTH));
+      LocalDate localDate = dateUsed.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+      return Integer.toString(localDate.getDayOfMonth());
     }
     return null;
   }
@@ -64,9 +64,8 @@ public interface ApplicationFormDataMapper {
   @Named("mapDevolvedPowersMonth")
   default String mapDevolvedPowersMonth(Date dateUsed) {
     if (dateUsed != null) {
-      Calendar calendar = Calendar.getInstance();
-      calendar.setTime(dateUsed);
-      return String.valueOf(calendar.get(Calendar.MONTH) + 1);  // Calendar.MONTH is 0-based
+      LocalDate localDate = dateUsed.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+      return Integer.toString(localDate.getMonthValue());
     }
     return null;
   }
@@ -80,12 +79,9 @@ public interface ApplicationFormDataMapper {
   @Named("mapDevolvedPowersYear")
   default String mapDevolvedPowersYear(Date dateUsed) {
     if (dateUsed != null) {
-      Calendar calendar = Calendar.getInstance();
-      calendar.setTime(dateUsed);
-      return String.valueOf(calendar.get(Calendar.YEAR));
+      LocalDate localDate = dateUsed.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+      return Integer.toString(localDate.getYear());
     }
     return null;
   }
-
-
 }

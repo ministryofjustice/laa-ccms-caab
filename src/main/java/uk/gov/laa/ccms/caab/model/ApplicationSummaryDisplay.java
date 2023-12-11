@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.model;
 
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * Represents the Summary display values for the application summary screen.
@@ -11,8 +10,9 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ApplicationSummaryDisplay {
 
-  private String caseReferenceNumber;
   private String clientFullName;
+  private String clientReferenceNumber;
+  private String caseReferenceNumber;
   private String providerCaseReferenceNumber;
 
   @Builder.Default

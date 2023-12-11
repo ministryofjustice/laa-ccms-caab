@@ -8,7 +8,6 @@ import java.util.List;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.Proceeding;
@@ -34,7 +33,7 @@ public interface CopyApplicationMapper {
   @Mapping(target = "opponents", source = "applicationToCopy.opponents")
   @Mapping(target = "costs.requestedCostLimitation", source = "requestedCostLimitation")
   @Mapping(target = "costs.defaultCostLimitation", source = "defaultCostLimitation")
-  ApplicationDetail copyApplication(@MappingTarget ApplicationDetail application,
+  ApplicationDetail copyApplication(
       ApplicationDetail applicationToCopy,
       BigDecimal requestedCostLimitation,
       BigDecimal defaultCostLimitation);

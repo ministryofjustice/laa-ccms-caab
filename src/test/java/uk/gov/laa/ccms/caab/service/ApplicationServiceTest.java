@@ -259,31 +259,22 @@ class ApplicationServiceTest {
 
   }
 
-  @ParameterizedTest
-  @CsvSource({"true, 1, 10, other, false, false, false",
-      "true, 10, 1, false, other, false, false, false",
-      "false, 10, 1, other, false, false, false",
-      "false, 10, 1, other, false, true, false",
-      "false, 10, 1, " + OPPONENT_TYPE_INDIVIDUAL + ", true, true, false",
-      "false, 10, 1, " + OPPONENT_TYPE_INDIVIDUAL + ", false, true, true"})
-  void testCopyCaseAttributes(
-      Boolean copyCostLimit,
-      BigDecimal costLimit1,
-      BigDecimal costLimit2,
-      String opponentType,
-      Boolean opponentShared,
-      Boolean opponentRelCopyParty,
-      Boolean opponentEbsIdCleared) {
+  @Test
+  void createApplication_Copy_success() throws ParseException {
+    String copyCaseReference = "1111";
+
+    ApplicationFormData applicationFormData = buildApplicationFormData();
+    applicationFormData.setCopyCaseReferenceNumber(copyCaseReference);
+    ClientDetail clientInformation = buildClientInformation();
+    UserDetail user = buildUserDetail();
+
     // Mock everything that is needed to look up the copy Case and map it
     // to an ApplicationDetail.
-    String copyCaseReference = "1111";
     CaseDetail soaCase = buildCaseDetail(APP_TYPE_EMERGENCY);
     soaCase.setCaseReferenceNumber(copyCaseReference);
     // Reduce down to a single Proceeding for this test
     soaCase.getApplicationDetails().getProceedings().remove(
         soaCase.getApplicationDetails().getProceedings().size() - 1);
-
-    UserDetail user = buildUserDetail();
 
     when(soaApiClient.getCase(copyCaseReference, user.getLoginId(), user.getUserType()))
         .thenReturn(Mono.just(soaCase));
@@ -396,9 +387,49 @@ class ApplicationServiceTest {
 
     /* END of mapping contexts */
 
+    ApplicationDetail applicationToCopy = buildApplicationDetail(1, true, new Date());
+    when(applicationMapper.toApplicationDetail(any(ApplicationMappingContext.class)))
+        .thenReturn(applicationToCopy);
+
+    // Mock out the additional calls for copying the application
+    when(lookupService.getCategoryOfLaw(applicationToCopy.getCategoryOfLaw().getId()))
+        .thenReturn(Mono.just(new CategoryOfLawLookupValueDetail()));
+    when(lookupService.getPersonToCaseRelationships()).thenReturn(
+        Mono.just(new RelationshipToCaseLookupDetail()));
+    when(copyApplicationMapper.copyApplication(
+        eq(applicationToCopy), any(BigDecimal.class), any(BigDecimal.class)))
+        .thenReturn(applicationToCopy);
+
+    when(caabApiClient.createApplication(anyString(), any())).thenReturn(Mono.empty());
+
+    // Call the method under test
+    Mono<String> applicationMono = applicationService.createApplication(
+        applicationFormData, clientInformation, user);
+
+    StepVerifier.create(applicationMono)
+        .verifyComplete();
+
+    verify(copyApplicationMapper).copyApplication(
+        eq(applicationToCopy), any(BigDecimal.class), any(BigDecimal.class));
+  }
+
+
+  @ParameterizedTest
+  @CsvSource({"true, 1, 10, other, false, false, false",
+      "true, 10, 1, false, other, false, false, false",
+      "false, 10, 1, other, false, false, false",
+      "false, 10, 1, other, false, true, false",
+      "false, 10, 1, " + OPPONENT_TYPE_INDIVIDUAL + ", true, true, false",
+      "false, 10, 1, " + OPPONENT_TYPE_INDIVIDUAL + ", false, true, true"})
+  void testCopyCaseAttributes(
+      Boolean copyCostLimit,
+      BigDecimal costLimit1,
+      BigDecimal costLimit2,
+      String opponentType,
+      Boolean opponentShared,
+      Boolean opponentRelCopyParty,
+      Boolean opponentEbsIdCleared) {
     // Now add mocks for the actual copying.
-    // Build an ApplicationDetail that is going to have attributes copied into it.
-    ApplicationDetail application = buildApplicationDetail(1, Boolean.TRUE, new Date());
 
     // Build the application to copy from
     ApplicationDetail applicationToCopy = buildApplicationDetail(2, Boolean.FALSE, new Date());
@@ -410,9 +441,8 @@ class ApplicationServiceTest {
     applicationToCopy.getOpponents().get(0).setType(opponentType);
     applicationToCopy.getOpponents().get(0).setSharedInd(opponentShared);
 
-
-    when(applicationMapper.toApplicationDetail(any(ApplicationMappingContext.class)))
-        .thenReturn(applicationToCopy);
+//    when(applicationMapper.toApplicationDetail(any(ApplicationMappingContext.class)))
+//        .thenReturn(applicationToCopy);
 
     CategoryOfLawLookupValueDetail categoryOfLawLookupValueDetail =
         buildCategoryOfLawLookupValueDetail(copyCostLimit);
@@ -439,23 +469,23 @@ class ApplicationServiceTest {
     BigDecimal expectedDefaultCostLimit = costLimit1.max(costLimit2);
 
     when(copyApplicationMapper.copyApplication(
-        application, applicationToCopy, expectedRequestedCostLimit, expectedDefaultCostLimit))
+        applicationToCopy, expectedRequestedCostLimit, expectedDefaultCostLimit))
         .thenReturn(applicationToCopy);
 
 
     /* Call the method under test */
-    ApplicationDetail result =
-        applicationService.copyCaseAttributes(application, copyCaseReference, user);
-
-    verify(copyApplicationMapper).copyApplication(
-        application, applicationToCopy, expectedRequestedCostLimit, expectedDefaultCostLimit);
-
-    assertNotNull(result);
+    Mono<ApplicationDetail> result =
+        applicationService.copyApplication(applicationToCopy);
 
     // If the opponent is an INDIVIDUAL, it is not shared, and the opponents relationship
     // to the case is set to 'Copy Party' then the ebsId should be null.
-    assertEquals(opponentEbsIdCleared, result.getOpponents().get(0).getEbsId() == null);
+    StepVerifier.create(result)
+        .expectNextMatches(applicationDetail ->
+            opponentEbsIdCleared == (applicationDetail.getOpponents().get(0).getEbsId() == null))
+        .verifyComplete();
 
+    verify(copyApplicationMapper).copyApplication(
+        applicationToCopy, expectedRequestedCostLimit, expectedDefaultCostLimit);
   }
 
   @Test
