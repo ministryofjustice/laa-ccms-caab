@@ -29,7 +29,8 @@ import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildRelationshipToCaseLoo
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildAwardTypeLookupDetail;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCaseDetail;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildClientInformation;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCaseReferenceSummary;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildClientDetail;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildPriorAuthority;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildProceedingDetail;
 
@@ -218,7 +219,7 @@ class ApplicationServiceTest {
   @Test
   void createApplication_success() throws ParseException {
     ApplicationFormData applicationFormData = buildApplicationFormData();
-    ClientDetail clientInformation = buildClientInformation();
+    ClientDetail clientInformation = buildClientDetail();
     UserDetail user = buildUserDetail();
 
     // Mocking dependencies
@@ -265,7 +266,8 @@ class ApplicationServiceTest {
 
     ApplicationFormData applicationFormData = buildApplicationFormData();
     applicationFormData.setCopyCaseReferenceNumber(copyCaseReference);
-    ClientDetail clientInformation = buildClientInformation();
+    ClientDetail clientDetail = buildClientDetail();
+    CaseReferenceSummary caseReferenceSummary = buildCaseReferenceSummary();
     UserDetail user = buildUserDetail();
 
     // Mock everything that is needed to look up the copy Case and map it
@@ -278,6 +280,9 @@ class ApplicationServiceTest {
 
     when(soaApiClient.getCase(copyCaseReference, user.getLoginId(), user.getUserType()))
         .thenReturn(Mono.just(soaCase));
+
+    when(soaApiClient.getCaseReference(user.getLoginId(), user.getUserType()))
+        .thenReturn(Mono.just(caseReferenceSummary));
 
     /* START ApplicationMappingContext */
     CommonLookupValueDetail applicationTypeLookup = new CommonLookupValueDetail();
@@ -397,20 +402,22 @@ class ApplicationServiceTest {
     when(lookupService.getPersonToCaseRelationships()).thenReturn(
         Mono.just(new RelationshipToCaseLookupDetail()));
     when(copyApplicationMapper.copyApplication(
-        eq(applicationToCopy), any(BigDecimal.class), any(BigDecimal.class)))
+        eq(applicationToCopy), eq(caseReferenceSummary),
+        eq(clientDetail), any(BigDecimal.class), any(BigDecimal.class)))
         .thenReturn(applicationToCopy);
 
     when(caabApiClient.createApplication(anyString(), any())).thenReturn(Mono.empty());
 
     // Call the method under test
     Mono<String> applicationMono = applicationService.createApplication(
-        applicationFormData, clientInformation, user);
+        applicationFormData, clientDetail, user);
 
     StepVerifier.create(applicationMono)
         .verifyComplete();
 
     verify(copyApplicationMapper).copyApplication(
-        eq(applicationToCopy), any(BigDecimal.class), any(BigDecimal.class));
+        eq(applicationToCopy), eq(caseReferenceSummary),
+        eq(clientDetail), any(BigDecimal.class), any(BigDecimal.class));
   }
 
 
@@ -421,7 +428,7 @@ class ApplicationServiceTest {
       "false, 10, 1, other, false, true, false",
       "false, 10, 1, " + OPPONENT_TYPE_INDIVIDUAL + ", true, true, false",
       "false, 10, 1, " + OPPONENT_TYPE_INDIVIDUAL + ", false, true, true"})
-  void testCopyCaseAttributes(
+  void testCopyApplication(
       Boolean copyCostLimit,
       BigDecimal costLimit1,
       BigDecimal costLimit2,
@@ -433,6 +440,11 @@ class ApplicationServiceTest {
 
     // Build the application to copy from
     ApplicationDetail applicationToCopy = buildApplicationDetail(2, Boolean.FALSE, new Date());
+    UserDetail userDetail = buildUserDetail();
+
+    ClientDetail clientDetail = buildClientDetail();
+    CaseReferenceSummary caseReferenceSummary = buildCaseReferenceSummary();
+
     // Update the cost limitations for this test
     applicationToCopy.getProceedings().get(0).setCostLimitation(costLimit1);
     applicationToCopy.getProceedings().get(1).setCostLimitation(costLimit2);
@@ -441,8 +453,8 @@ class ApplicationServiceTest {
     applicationToCopy.getOpponents().get(0).setType(opponentType);
     applicationToCopy.getOpponents().get(0).setSharedInd(opponentShared);
 
-//    when(applicationMapper.toApplicationDetail(any(ApplicationMappingContext.class)))
-//        .thenReturn(applicationToCopy);
+    when(soaApiClient.getCaseReference(userDetail.getLoginId(), userDetail.getUserType()))
+        .thenReturn(Mono.just(caseReferenceSummary));
 
     CategoryOfLawLookupValueDetail categoryOfLawLookupValueDetail =
         buildCategoryOfLawLookupValueDetail(copyCostLimit);
@@ -469,13 +481,14 @@ class ApplicationServiceTest {
     BigDecimal expectedDefaultCostLimit = costLimit1.max(costLimit2);
 
     when(copyApplicationMapper.copyApplication(
-        applicationToCopy, expectedRequestedCostLimit, expectedDefaultCostLimit))
+        applicationToCopy, caseReferenceSummary, clientDetail,
+        expectedRequestedCostLimit, expectedDefaultCostLimit))
         .thenReturn(applicationToCopy);
 
 
     /* Call the method under test */
     Mono<ApplicationDetail> result =
-        applicationService.copyApplication(applicationToCopy);
+        applicationService.copyApplication(applicationToCopy, clientDetail, userDetail);
 
     // If the opponent is an INDIVIDUAL, it is not shared, and the opponents relationship
     // to the case is set to 'Copy Party' then the ebsId should be null.
@@ -485,7 +498,8 @@ class ApplicationServiceTest {
         .verifyComplete();
 
     verify(copyApplicationMapper).copyApplication(
-        applicationToCopy, expectedRequestedCostLimit, expectedDefaultCostLimit);
+        applicationToCopy, caseReferenceSummary, clientDetail,
+        expectedRequestedCostLimit, expectedDefaultCostLimit);
   }
 
   @Test
@@ -958,7 +972,7 @@ class ApplicationServiceTest {
         .thenReturn(Mono.just(courts));
 
     // Call the method under test
-    Mono<ProceedingMappingContext> proceedingMappingContextMono =
+   ProceedingMappingContext result =
         applicationService.buildProceedingMappingContext(
           soaProceeding,
           soaCase,
@@ -967,8 +981,8 @@ class ApplicationServiceTest {
           clientInvolvementLookups,
           scopeLimitationLookups);
 
-    StepVerifier.create(proceedingMappingContextMono)
-        .expectNextMatches(result -> {
+//    StepVerifier.create(proceedingMappingContextMono)
+//        .expectNextMatches(result -> {
           assertNotNull(result);
           assertEquals(soaProceeding, result.getSoaProceeding());
           assertEquals(clientInvLookup, result.getClientInvolvement());
@@ -993,9 +1007,9 @@ class ApplicationServiceTest {
           assertEquals(outcomeResults.getContent().get(0), result.getOutcomeResultLookup());
           assertEquals(stageEnds.getContent().get(0), result.getStageEndLookup());
           assertEquals(courts.getContent().get(0), result.getCourtLookup());
-          return true; // Return true to indicate the match is successful
-        })
-        .verifyComplete();
+//          return true; // Return true to indicate the match is successful
+//        })
+//        .verifyComplete();
   }
 
   @Test
@@ -1118,11 +1132,11 @@ class ApplicationServiceTest {
         new AwardTypeLookupDetail()
             .addContentItem(new AwardTypeLookupValueDetail())));
 
-    Mono<ApplicationMappingContext> resultMono =
+    ApplicationMappingContext result =
         applicationService.buildApplicationMappingContext(soaCase);
 
-    StepVerifier.create(resultMono)
-        .expectNextMatches(result -> {
+//    StepVerifier.create(resultMono)
+//        .expectNextMatches(result -> {
           assertNotNull(result);
           assertEquals(soaCase, result.getSoaCaseDetail());
           assertEquals(applicationTypeLookup, result.getApplicationType());
@@ -1154,9 +1168,9 @@ class ApplicationServiceTest {
           assertNotNull(result.getMeritsAssessment());
 
           assertTrue(result.getPriorAuthorities().isEmpty());
-          return true;
-        })
-        .verifyComplete();
+//          return true;
+//        })
+//        .verifyComplete();
   }
 
   @Test
@@ -1223,11 +1237,11 @@ class ApplicationServiceTest {
         new AwardTypeLookupDetail()
             .addContentItem(new AwardTypeLookupValueDetail())));
 
-    Mono<ApplicationMappingContext> resultMono =
+    ApplicationMappingContext result =
         applicationService.buildApplicationMappingContext(soaCase);
 
-    StepVerifier.create(resultMono)
-        .expectNextMatches(result -> {
+//    StepVerifier.create(resultMono)
+//        .expectNextMatches(result -> {
           assertNotNull(result);
 
           assertFalse(result.getCaseWithOnlyDraftProceedings());
@@ -1237,9 +1251,9 @@ class ApplicationServiceTest {
           // Proceedings should be split between the two lists
           assertEquals(1, result.getAmendmentProceedingsInEbs().size());
           assertEquals(1, result.getProceedings().size());
-          return true;
-        })
-        .verifyComplete();
+//          return true;
+//        })
+//        .verifyComplete();
   }
 
   private ApplicationFormData buildApplicationFormData() {

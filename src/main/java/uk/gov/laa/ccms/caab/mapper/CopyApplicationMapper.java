@@ -9,9 +9,12 @@ import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.Client;
 import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ScopeLimitation;
+import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 /**
  * Mapper class to copy a subset of attributes from one CAAB ApplicationDetail to another.
@@ -20,6 +23,7 @@ import uk.gov.laa.ccms.caab.model.ScopeLimitation;
 public interface CopyApplicationMapper {
 
   @BeanMapping(ignoreByDefault = true)
+  @Mapping(target = "caseReferenceNumber", source = "caseReferenceSummary.caseReferenceNumber")
   @Mapping(target = "applicationType", source = "applicationToCopy.applicationType")
   @Mapping(target = "provider", source = "applicationToCopy.provider")
   @Mapping(target = "office", source = "applicationToCopy.office")
@@ -31,10 +35,13 @@ public interface CopyApplicationMapper {
   @Mapping(target = "larScopeFlag", source = "applicationToCopy.larScopeFlag")
   @Mapping(target = "proceedings", source = "applicationToCopy.proceedings")
   @Mapping(target = "opponents", source = "applicationToCopy.opponents")
+  @Mapping(target = "client", source = "clientDetail")
   @Mapping(target = "costs.requestedCostLimitation", source = "requestedCostLimitation")
   @Mapping(target = "costs.defaultCostLimitation", source = "defaultCostLimitation")
   ApplicationDetail copyApplication(
       ApplicationDetail applicationToCopy,
+      CaseReferenceSummary caseReferenceSummary,
+      ClientDetail clientDetail,
       BigDecimal requestedCostLimitation,
       BigDecimal defaultCostLimitation);
 
@@ -62,4 +69,9 @@ public interface CopyApplicationMapper {
   @Mapping(target = "appMode", constant = "true")
   @Mapping(target = "award", constant = "false")
   Opponent copyOpponent(Opponent opponentToCopy);
+
+  @Mapping(target = "firstName", source = "details.name.firstName")
+  @Mapping(target = "surname", source = "details.name.surname")
+  @Mapping(target = "reference", source = "clientReferenceNumber")
+  Client copyClient(ClientDetail soaClient);
 }

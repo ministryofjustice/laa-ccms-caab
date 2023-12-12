@@ -80,7 +80,7 @@ public class CommonValueConstants {
   /**
    * Type used to retrieve the proceeding status values.
    */
-  public static final String COMMON_VALUE_PROCEEDING_STATUS = "XXCCMS_PROCEEDING_STATUS";
+  public static final String COMMON_VALUE_PROCEEDING_STATUS = "XXCCMS_PROCEEDING_DISP_STATUS";
 
   /**
    * Type used to retrieve the courts values.

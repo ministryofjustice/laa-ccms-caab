@@ -7,6 +7,8 @@ import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildProceeding;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildScopeLimitation;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCaseReferenceSummary;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildClientDetail;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -14,10 +16,13 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.builders.ApplicationBuilder;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.Client;
 import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ScopeLimitation;
+import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 public class CopyApplicationMapperTest {
 
@@ -31,15 +36,23 @@ public class CopyApplicationMapperTest {
 
     ApplicationDetail copyApplication = buildApplicationDetail(2, true, sharedDate);
 
+    ClientDetail soaClient = buildClientDetail();
+
+    CaseReferenceSummary soaCaseReference = buildCaseReferenceSummary();
+
     // Build and update the expected application in line with the expected mappings.
     ApplicationDetail expectedApplication = new ApplicationBuilder().build();
     applyApplicationMappingUpdates(expectedApplication,
         copyApplication,
+        soaCaseReference,
+        soaClient,
         requestedCostLimitation,
         defaultCostLimitation);
 
     ApplicationDetail result = copyApplicationMapper.copyApplication(
         copyApplication,
+        soaCaseReference,
+        soaClient,
         requestedCostLimitation,
         defaultCostLimitation);
 
@@ -86,8 +99,12 @@ public class CopyApplicationMapperTest {
   }
 
   private void applyApplicationMappingUpdates(ApplicationDetail expectedApplication,
-      ApplicationDetail copyApplication, BigDecimal requestedCostLimitation,
+      ApplicationDetail copyApplication,
+      CaseReferenceSummary caseReferenceSummary,
+      ClientDetail clientDetail,
+      BigDecimal requestedCostLimitation,
       BigDecimal defaultCostLimitation) {
+    expectedApplication.setCaseReferenceNumber(caseReferenceSummary.getCaseReferenceNumber());
     expectedApplication.setApplicationType(copyApplication.getApplicationType());
     expectedApplication.setProvider(copyApplication.getProvider());
     expectedApplication.setOffice(copyApplication.getOffice());
@@ -103,6 +120,10 @@ public class CopyApplicationMapperTest {
     expectedApplication.setProceedings(List.copyOf(copyApplication.getProceedings()));
     expectedApplication.getProceedings().forEach(this::applyProceedingMappingUpdates);
     expectedApplication.setOpponents(List.copyOf(copyApplication.getOpponents()));
+    expectedApplication.setClient(new Client()
+        .firstName(clientDetail.getDetails().getName().getFirstName())
+        .surname(clientDetail.getDetails().getName().getSurname())
+        .reference(clientDetail.getClientReferenceNumber()));
     applyOpponentMappingUpdates(expectedApplication.getOpponents().get(0));
   }
 
