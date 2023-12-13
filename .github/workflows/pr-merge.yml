@@ -46,12 +46,16 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Obtain service account token
-        run: |
-          npm install -g obtain-github-app-installation-access-token
-          TOKEN="$(npx obtain-github-app-installation-access-token ci ${{ secrets.GH_APP_CREDENTIALS_TOKEN }})"
-          echo "::add-mask::$TOKEN"
-          echo "CAAB_SERVICE_TOKEN=$TOKEN" >> $GITHUB_ENV
+#      - name: Obtain service account token
+#        run: |
+#          npm install -g obtain-github-app-installation-access-token
+#          TOKEN="$(npx obtain-github-app-installation-access-token ci ${{ secrets.GH_APP_CREDENTIALS_TOKEN }})"
+#          echo "::add-mask::$TOKEN"
+#          echo "CAAB_SERVICE_TOKEN=$TOKEN" >> $GITHUB_ENV
+      - name: Set up environment variables
+        env:
+          REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
+        run: echo "CAAB_SERVICE_TOKEN=${REPO_TOKEN}" >> $GITHUB_ENV
 
       - name: Build with Gradle
         uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629
@@ -119,12 +123,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: development
     steps:
-      - name: Obtain service account token
-        run: |
-          npm install -g obtain-github-app-installation-access-token
-          TOKEN="$(npx obtain-github-app-installation-access-token ci ${{ secrets.GH_APP_CREDENTIALS_TOKEN }})"
-          echo "::add-mask::$TOKEN"
-          echo "CAAB_SERVICE_TOKEN=$TOKEN" >> $GITHUB_ENV
+#      - name: Obtain service account token
+#        run: |
+#          npm install -g obtain-github-app-installation-access-token
+#          TOKEN="$(npx obtain-github-app-installation-access-token ci ${{ secrets.GH_APP_CREDENTIALS_TOKEN }})"
+#          echo "::add-mask::$TOKEN"
+#          echo "CAAB_SERVICE_TOKEN=$TOKEN" >> $GITHUB_ENV
 
       - name: Checkout charts repo
         uses: actions/checkout@v3
@@ -132,7 +136,7 @@ jobs:
           repository: ministryofjustice/laa-ccms-caab-helm-charts
           ref: development
           path: laa-ccms-caab-helm-charts
-          token: ${{ env.CAAB_SERVICE_TOKEN }}
+          token: ${{ secrets.REPO_TOKEN }}
 
       - name: update helm chart
         env:
