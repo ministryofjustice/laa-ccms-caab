@@ -64,7 +64,7 @@ public class LookupService {
    * @param code - the code for the application type
    * @return CommonLookupDetail containing the common lookup values.
    */
-  public Mono<CommonLookupValueDetail> getApplicationType(String code) {
+  public Mono<CommonLookupValueDetail> getApplicationType(final String code) {
     return getCommonValue(COMMON_VALUE_APPLICATION_TYPE, code);
   }
 
@@ -83,7 +83,7 @@ public class LookupService {
    * @param code The code of the common lookup values.
    * @return CommonLookupValueDetail containing the common lookup value.
    */
-  public Mono<CommonLookupValueDetail> getGender(String code) {
+  public Mono<CommonLookupValueDetail> getGender(final String code) {
     return getCommonValue(COMMON_VALUE_GENDER, code);
   }
 
@@ -108,10 +108,10 @@ public class LookupService {
   /**
    * Get a Contact Title Common Value.
    *
-   * @param code The code of the common lookup values
-   * @return CommonLookupDetail containing the common lookup values.
+   * @param code The contact title code
+   * @return CommonLookupDetail containing the contact title lookup
    */
-  public Mono<CommonLookupValueDetail> getContactTitle(String code) {
+  public Mono<CommonLookupValueDetail> getContactTitle(final String code) {
     return getCommonValue(COMMON_VALUE_CONTACT_TITLE, code);
   }
 
@@ -127,10 +127,10 @@ public class LookupService {
   /**
    * Get a Marital Status Common Value.
    *
-   * @param code The code of the common lookup values
+   * @param code The marital status code.
    * @return CommonLookupDetail containing the common lookup values.
    */
-  public Mono<CommonLookupValueDetail> getMaritalStatus(String code) {
+  public Mono<CommonLookupValueDetail> getMaritalStatus(final String code) {
     return getCommonValue(COMMON_VALUE_MARITAL_STATUS, code);
   }
 
@@ -159,10 +159,10 @@ public class LookupService {
   /**
    * Get a Country Common Value.
    *
-   * @param code The code of the common lookup values
+   * @param code The country code to look up
    * @return CommonLookupValueDetail containing the common lookup value.
    */
-  public Mono<CommonLookupValueDetail> getCountry(String code) {
+  public Mono<CommonLookupValueDetail> getCountry(final String code) {
     return getCountries()
         .flatMap(commonLookupDetail -> {
           Optional<CommonLookupValueDetail> country = commonLookupDetail
@@ -186,12 +186,12 @@ public class LookupService {
   }
 
   /**
-   * Get a Correspondence Method Common Values.
+   * Get a Correspondence Method Common Value.
    *
-   * @param code The code of the common lookup values
+   * @param code The correspondende method code
    * @return CommonLookupValueDetail containing the common lookup value.
    */
-  public Mono<CommonLookupValueDetail> getCorrespondenceMethod(String code) {
+  public Mono<CommonLookupValueDetail> getCorrespondenceMethod(final String code) {
     return getCommonValue(COMMON_VALUE_CORRESPONDENCE_METHOD, code);
   }
 
@@ -207,10 +207,11 @@ public class LookupService {
   /**
    * Get a Correspondence Language Common Values.
    *
-   * @param code The code of the common lookup values
+   * @param code The correspondence language code.
    * @return CommonLookupValueDetail containing the common lookup value.
    */
-  public Mono<CommonLookupValueDetail> getCorrespondenceLanguage(String code) {
+  public Mono<CommonLookupValueDetail> getCorrespondenceLanguage(
+      final String code) {
     return getCommonValue(COMMON_VALUE_CORRESPONDENCE_LANGUAGE, code);
   }
 
@@ -226,10 +227,10 @@ public class LookupService {
   /**
    * Get an Ethnic Origin Common Values.
    *
-   * @param code The code of the common lookup values
+   * @param code The ethnic origin code.
    * @return CommonLookupValueDetail containing the common lookup value.
    */
-  public Mono<CommonLookupValueDetail> getEthnicOrigin(String code) {
+  public Mono<CommonLookupValueDetail> getEthnicOrigin(final String code) {
     return getCommonValue(COMMON_VALUE_ETHNIC_ORIGIN, code);
   }
 
@@ -245,10 +246,10 @@ public class LookupService {
   /**
    * Get a Disability Common Values.
    *
-   * @param code The code of the common lookup values
+   * @param code The disability code.
    * @return CommonLookupValueDetail containing the common lookup value.
    */
-  public Mono<CommonLookupValueDetail> getDisability(String code) {
+  public Mono<CommonLookupValueDetail> getDisability(final String code) {
     return getCommonValue(COMMON_VALUE_DISABILITY, code);
   }
 
@@ -291,30 +292,24 @@ public class LookupService {
   }
 
   /**
-   * Get a list of Scope Limitation Detail.
+   * Get a list of Scope Limitation Detail based on the search criteria.
    *
+   * @param searchCriteria - the criteria to search for Scope Limitation Details.
    * @return ScopeLimitationDetails containing the scope limitation details.
    */
   public Mono<ScopeLimitationDetails> getScopeLimitationDetails(
-      ScopeLimitationDetail searchCriteria) {
+      final ScopeLimitationDetail searchCriteria) {
     return ebsApiClient.getScopeLimitations(searchCriteria);
-  }
-
-  /**
-   * Get a list of Proceeding Status Lookup Values.
-   *
-   * @return CommonLookupDetail containing the common lookup values.
-   */
-  public Mono<CommonLookupDetail> getProceedingStatuses() {
-    return ebsApiClient.getCommonValues(COMMON_VALUE_PROCEEDING_STATUS);
   }
 
   /**
    * Get a single Proceeding Status Lookup Value by code.
    *
+   * @param code - the proceeding status code.
    * @return CommonLookupValueDetail containing the status value.
    */
-  public Mono<CommonLookupValueDetail> getProceedingStatus(String code) {
+  public Mono<CommonLookupValueDetail> getProceedingStatus(
+      final String code) {
     return getCommonValue(COMMON_VALUE_PROCEEDING_STATUS, code);
   }
 
@@ -323,9 +318,12 @@ public class LookupService {
    * A wildcard match is performed for both courtCode and description to return all Courts
    * which contain the provided values.
    *
+   * @param courtCode - the court code value.
+   * @param description - the court description.
    * @return A Mono containing the CommonLookupDetail or an error handler if an error occurs.
    */
-  public Mono<CommonLookupDetail> getCourts(String courtCode, String description) {
+  public Mono<CommonLookupDetail> getCourts(
+      final String courtCode, final String description) {
     return ebsApiClient.getCommonValues(
         COMMON_VALUE_COURTS,
         StringUtils.hasText(courtCode) ? String.format("*%s*", courtCode) : null,
@@ -337,29 +335,37 @@ public class LookupService {
    * A wildcard match is performed for courtCode to return all Courts
    * which contain the provided value.
    *
+   * @param courtCode - the court code.
    * @return A Mono containing the CommonLookupDetail or an error handler if an error occurs.
    */
-  public Mono<CommonLookupDetail> getCourts(String courtCode) {
+  public Mono<CommonLookupDetail> getCourts(
+      final String courtCode) {
     return this.getCourts(courtCode, null);
   }
 
   /**
    * Retrieves outcome results data based on the supplied proceedingCode and outcomeResult value.
    *
+   * @param proceedingCode - the proceeding code.
+   * @param outcomeResult - the outcome result.
    * @return A Mono containing the OutcomeResultLookupDetail or an error handler if an error occurs.
    */
-  public Mono<OutcomeResultLookupDetail> getOutcomeResults(String proceedingCode,
-      String outcomeResult) {
+  public Mono<OutcomeResultLookupDetail> getOutcomeResults(
+      final String proceedingCode,
+      final String outcomeResult) {
     return ebsApiClient.getOutcomeResults(proceedingCode, outcomeResult);
   }
 
   /**
    * Retrieves stage end data based on the supplied proceedingCode and stageEnd value.
    *
+   * @param proceedingCode - the proceeding code.
+   * @param stageEnd - the stage end value.
    * @return A Mono containing the StageEndLookupDetail or an error handler if an error occurs.
    */
-  public Mono<StageEndLookupDetail> getStageEnds(String proceedingCode,
-      String stageEnd) {
+  public Mono<StageEndLookupDetail> getStageEnds(
+      final String proceedingCode,
+      final String stageEnd) {
     return ebsApiClient.getStageEnds(proceedingCode, stageEnd);
   }
 
@@ -376,6 +382,8 @@ public class LookupService {
   /**
    * Retrieves prior authority types matching the specified code and valueRequired flag.
    *
+   * @param code - the prior authority code.
+   * @param valueRequired - the value required flag.
    * @return A Mono containing the PriorAuthorityLookupDetail
    *     or an error handler if an error occurs.
    */
@@ -397,6 +405,8 @@ public class LookupService {
   /**
    * Retrieves award types matching the specified code and awardType values.
    *
+   * @param code - the award type code.
+   * @param awardType - the award type value.
    * @return A Mono containing the AwardTypeLookupDetail
    *     or an error handler if an error occurs.
    */
@@ -417,9 +427,10 @@ public class LookupService {
   /**
    * Get the Category Of Law Lookup Value with the specified code.
    *
+   * @param code - the category of law code.
    * @return Mono containing the category of law or null if not found.
    */
-  public Mono<CategoryOfLawLookupValueDetail> getCategoryOfLaw(String code) {
+  public Mono<CategoryOfLawLookupValueDetail> getCategoryOfLaw(final String code) {
     return ebsApiClient.getCategoriesOfLaw(code, null, null)
         .mapNotNull(categoryOfLawLookupDetail -> categoryOfLawLookupDetail.getContent().stream()
             .findFirst()
@@ -443,7 +454,8 @@ public class LookupService {
    * @return a Mono containing the CommonLookupValueDetail
    *     or an error handler if an error occurs.
    */
-  public Mono<CommonLookupValueDetail> getCommonValue(String type, String code) {
+  public Mono<CommonLookupValueDetail> getCommonValue(
+      final String type, final String code) {
     return ebsApiClient.getCommonValues(type, code)
         .mapNotNull(commonLookupDetail -> commonLookupDetail
             .getContent().stream()

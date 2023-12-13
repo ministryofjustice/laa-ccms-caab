@@ -328,7 +328,7 @@ public class ApplicationMapperTest {
     assertEquals(soaScopeLimitation.getScopeLimitationWording(),
         result.getScopeLimitationWording());
     assertEquals(soaScopeLimitation.isDelegatedFunctionsApply(),
-        Boolean.parseBoolean(result.getDelegatedFuncApplyInd().getFlag()));
+        result.getDelegatedFuncApplyInd().getFlag());
     assertNull(result.getDefaultInd());
     assertNull(result.getNonDefaultWordingReqd());
     assertNull(result.getStage());
@@ -476,9 +476,9 @@ public class ApplicationMapperTest {
     assertEquals(OPPONENT_TYPE_INDIVIDUAL, result.getType());
     assertEquals(soaOtherParty.getOtherPartyId(), result.getEbsId());
     assertEquals(soaOtherParty.getPerson().isCourtOrderedMeansAssesment(),
-        Boolean.parseBoolean(result.getCourtOrderedMeansAssessment()));
+        result.getCourtOrderedMeansAssessment());
     assertEquals(soaOtherParty.getPerson().getOrganizationAddress(),
-        result.getEmploymentAddress());
+        result.getEmployerAddress());
     assertEquals(soaOtherParty.getPerson().getOrganizationName(),
         result.getEmployerName());
     assertEquals(soaOtherParty.getPerson().isPartyLegalAidedInd(),
@@ -559,7 +559,7 @@ public class ApplicationMapperTest {
         result.getRelationshipToCase());
     assertFalse(result.getDeleteInd());
 
-    assertEquals(soaOtherParty.getOrganisation().getCurrentlyTrading(),
+    assertEquals(Boolean.parseBoolean(soaOtherParty.getOrganisation().getCurrentlyTrading()),
         result.getCurrentlyTrading());
     assertEquals(soaOtherParty.getOrganisation().getOtherInformation(),
         result.getOtherInformation());
@@ -581,9 +581,12 @@ public class ApplicationMapperTest {
 
     assertNotNull(result);
     assertEquals(soaLinkedCase.getCaseReferenceNumber(), result.getLscCaseReference());
-    assertEquals(soaLinkedCase.getClient().getClientReferenceNumber(), result.getClientReference());
-    assertEquals(soaLinkedCase.getClient().getFirstName(), result.getClientFirstName());
-    assertEquals(soaLinkedCase.getClient().getSurname(), result.getClientSurname());
+    assertEquals(soaLinkedCase.getClient().getClientReferenceNumber(),
+        result.getClient().getReference());
+    assertEquals(soaLinkedCase.getClient().getFirstName(),
+        result.getClient().getFirstName());
+    assertEquals(soaLinkedCase.getClient().getSurname(),
+        result.getClient().getSurname());
     assertEquals(soaLinkedCase.getCategoryOfLawDesc(), result.getCategoryOfLaw());
     assertEquals(soaLinkedCase.getProviderReferenceNumber(), result.getProviderCaseReference());
     assertEquals(soaLinkedCase.getFeeEarnerName(), result.getFeeEarner());
@@ -648,7 +651,7 @@ public class ApplicationMapperTest {
     assertEquals(soaCaseDetail.getDischargeStatus().getReason(),
         result.getDischargeReason());
     assertEquals(soaCaseDetail.getDischargeStatus().isClientContinuePvtInd(),
-        Boolean.parseBoolean(result.getClientContinueInd()));
+        result.getClientContinueInd());
   }
 
 
@@ -757,7 +760,7 @@ public class ApplicationMapperTest {
     assertEquals(soaAward.getCostAward().getServiceAddress().getAddressLine3(),
         result.getAddressLine3());
     assertEquals(soaAward.getCostAward().getCertificateCostRateMarket(),
-        result.getCertificateCostRateMarket());
+        result.getCertificateCostMarket());
     assertEquals(soaAward.getCostAward().getCourtAssessmentStatus(),
         result.getCourtAssessmentStatus());
     assertEquals(soaAward.getCostAward().getOrderDateServed(),

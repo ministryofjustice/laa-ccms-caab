@@ -130,6 +130,7 @@ public interface ApplicationMapper {
   @Mapping(target = "noFixedAbode", constant = "false")
   @Mapping(target = "preferredAddress",
       source = "soaCaseDetail.applicationDetails.preferredAddress")
+  @Mapping(target = "auditTrail", ignore = true)
   Address toCorrespondenceAddress(ApplicationMappingContext mappingContext);
 
 
@@ -174,6 +175,7 @@ public interface ApplicationMapper {
   @Mapping(target = "ebsId", source = "costLimitId")
   @Mapping(target = "newEntry", constant = "false")
   @Mapping(target = "submitted", ignore = true)
+  @Mapping(target = "auditTrail", ignore = true)
   CostEntry toCostEntry(CostLimitation costLimitation);
 
   @Mapping(target = "ebsId", source = "key.scopeLimitationId")
@@ -183,6 +185,7 @@ public interface ApplicationMapper {
   @Mapping(target = "defaultInd", ignore = true)
   @Mapping(target = "nonDefaultWordingReqd", ignore = true)
   @Mapping(target = "stage", ignore = true)
+  @Mapping(target = "auditTrail", ignore = true)
   uk.gov.laa.ccms.caab.model.ScopeLimitation toScopeLimitation(
       Pair<ScopeLimitation, CommonLookupValueDetail> scopeLimitation);
 
@@ -211,6 +214,7 @@ public interface ApplicationMapper {
   @Mapping(target = "postcode", source = "postalCode")
   @Mapping(target = "noFixedAbode", constant = "false")
   @Mapping(target = "preferredAddress", ignore = true)
+  @Mapping(target = "auditTrail", ignore = true)
   Address toAddress(AddressDetail soaAddress);
 
   @Mapping(target = "reference", source = "clientReferenceNumber")
@@ -220,7 +224,7 @@ public interface ApplicationMapper {
   @Mapping(target = "ebsId", source = "otherPartyId")
   @Mapping(target = ".", source = "person")
   @Mapping(target = "courtOrderedMeansAssessment", source = "person.courtOrderedMeansAssesment")
-  @Mapping(target = "employmentAddress", source = "person.organizationAddress")
+  @Mapping(target = "employerAddress", source = "person.organizationAddress")
   @Mapping(target = "employerName", source = "person.organizationName")
   @Mapping(target = ".", source = "person.name")
   @Mapping(target = "middleNames", source = "person.name.middleName")
@@ -277,7 +281,7 @@ public interface ApplicationMapper {
   @Mapping(target = "legalAided", ignore = true)
   @Mapping(target = "firstName", ignore = true)
   @Mapping(target = "employmentStatus", ignore = true)
-  @Mapping(target = "employmentAddress", ignore = true)
+  @Mapping(target = "employerAddress", ignore = true)
   @Mapping(target = "employerName", ignore = true)
   @Mapping(target = "displayName", ignore = true)
   @Mapping(target = "displayAddress", ignore = true)
@@ -290,14 +294,12 @@ public interface ApplicationMapper {
   Opponent toOrganisationOpponent(OtherParty otherParty);
 
   @Mapping(target = "lscCaseReference", source = "caseReferenceNumber")
-  @Mapping(target = "clientReference", source = "client.clientReferenceNumber")
-  @Mapping(target = "clientFirstName", source = "client.firstName")
-  @Mapping(target = "clientSurname", source = "client.surname")
   @Mapping(target = "categoryOfLaw", source = "categoryOfLawDesc")
   @Mapping(target = "providerCaseReference", source = "providerReferenceNumber")
   @Mapping(target = "feeEarner", source = "feeEarnerName")
   @Mapping(target = "status", source = "caseStatus")
   @Mapping(target = "relationToCase", source = "linkType")
+  @Mapping(target = "auditTrail", ignore = true)
   LinkedCase toLinkedCase(uk.gov.laa.ccms.soa.gateway.model.LinkedCase soaLinkedCase);
 
   @Mapping(target = "status", source = "soaPriorAuthority.decisionStatus")
@@ -345,7 +347,7 @@ public interface ApplicationMapper {
       source = "costAward.preCertificateAwardOth", defaultValue = "0.00")
   @Mapping(target = "certificateCostLsc",
       source = "costAward.certificateCostRateLsc", defaultValue = "0.00")
-  @Mapping(target = "certificateCostRateMarket",
+  @Mapping(target = "certificateCostMarket",
       source = "costAward.certificateCostRateMarket", defaultValue = "0.00")
   @Mapping(target = "orderServedDate", source = "costAward.orderDateServed")
   @Mapping(target = "interestStartDate", source = "costAward.interestAwardedStartDate")
@@ -355,13 +357,10 @@ public interface ApplicationMapper {
   @Mapping(target = "recovery", source = "costAward.recovery")
   @Mapping(target = "liableParties", source = "costAward.liableParties")
   @Mapping(target = "auditTrail", ignore = true)
-  @Mapping(target = "opponentId", ignore = true)
   @Mapping(target = "opponentsToSelect", ignore = true)
   @Mapping(target = "costOrFinancial", ignore = true)
   @Mapping(target = "effectiveDate", ignore = true)
-  @Mapping(target = "timeRelatedRecoveryDetails", ignore = true)
   @Mapping(target = "totalCertCostsAwarded", ignore = true)
-  @Mapping(target = "triggeringEvent", ignore = true)
   @Mapping(target = "awardAmount", ignore = true)
   CostAward toCostAward(Award soaAward);
 
@@ -379,7 +378,7 @@ public interface ApplicationMapper {
 
     // Calculate the total costs awarded by summing LSC and Market
     costAward.setTotalCertCostsAwarded(costAward.getCertificateCostLsc()
-        .add(costAward.getCertificateCostRateMarket()));
+        .add(costAward.getCertificateCostMarket()));
   }
 
   @Mapping(target = "ebsId", source = "awardId")
@@ -398,12 +397,9 @@ public interface ApplicationMapper {
   @Mapping(target = "recovery", source = "financialAward.recovery")
   @Mapping(target = "liableParties", source = "financialAward.liableParties")
   @Mapping(target = "auditTrail", ignore = true)
-  @Mapping(target = "opponentId", ignore = true)
   @Mapping(target = "opponentsToSelect", ignore = true)
   @Mapping(target = "costOrFinancial", ignore = true)
   @Mapping(target = "effectiveDate", ignore = true)
-  @Mapping(target = "timeRelatedRecoveryDetails", ignore = true)
-  @Mapping(target = "triggeringEvent", ignore = true)
   FinancialAward toFinancialAward(Award soaAward);
 
   /**
@@ -440,13 +436,10 @@ public interface ApplicationMapper {
   @Mapping(target = "liableParties", source = "landAward.otherProprietors")
   @Mapping(target = "equity", ignore = true)
   @Mapping(target = "awardAmount", ignore = true)
-  @Mapping(target = "opponentId", ignore = true)
   @Mapping(target = "opponentsToSelect", ignore = true)
   @Mapping(target = "costOrFinancial", ignore = true)
   @Mapping(target = "effectiveDate", ignore = true)
   @Mapping(target = "recoveryOfAwardTimeRelated", ignore = true)
-  @Mapping(target = "timeRelatedRecoveryDetails", ignore = true)
-  @Mapping(target = "triggeringEvent", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
   LandAward toLandAward(Award soaAward);
 
@@ -482,11 +475,8 @@ public interface ApplicationMapper {
   @Mapping(target = "auditTrail", ignore = true)
   @Mapping(target = "costOrFinancial", ignore = true)
   @Mapping(target = "effectiveDate", ignore = true)
-  @Mapping(target = "opponentId", ignore = true)
   @Mapping(target = "opponentsToSelect", ignore = true)
   @Mapping(target = "recoveryOfAwardTimeRelated", ignore = true)
-  @Mapping(target = "timeRelatedRecoveryDetails", ignore = true)
-  @Mapping(target = "triggeringEvent", ignore = true)
   OtherAssetAward toOtherAssetAward(Award soaAward);
 
   /**

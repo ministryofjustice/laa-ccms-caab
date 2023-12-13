@@ -137,8 +137,10 @@ public class ApplicationService {
    * @param userType            Type of the user (e.g., admin, user).
    * @return A Mono wrapping the CaseDetails.
    */
-  public ApplicationDetail getCase(String caseReferenceNumber, String loginId,
-      String userType) {
+  public ApplicationDetail getCase(
+      final String caseReferenceNumber,
+      final String loginId,
+      final String userType) {
     CaseDetail soaCase = Optional.ofNullable(
         soaApiClient.getCase(caseReferenceNumber, loginId, userType).block())
         .orElseThrow(() -> new CaabApplicationException(
@@ -491,7 +493,7 @@ public class ApplicationService {
    * @param soaCase - the SOA CaseDetail.
    * @return a Mono containing an ApplicationMappingContext for the CaseDetail.
    */
-  protected ApplicationMappingContext buildApplicationMappingContext(CaseDetail soaCase) {
+  protected ApplicationMappingContext buildApplicationMappingContext(final CaseDetail soaCase) {
     uk.gov.laa.ccms.soa.gateway.model.ApplicationDetails soaApplicationDetails =
         soaCase.getApplicationDetails();
 
@@ -659,12 +661,12 @@ public class ApplicationService {
   }
 
   protected ProceedingMappingContext buildProceedingMappingContext(
-      ProceedingDetail soaProceeding,
-      CaseDetail soaCase,
-      Map<String, CommonLookupValueDetail> matterTypeLookups,
-      Map<String, CommonLookupValueDetail> levelOfServiceLookups,
-      Map<String, CommonLookupValueDetail> clientInvolvementLookups,
-      Map<String, CommonLookupValueDetail> scopeLimitationLookups) {
+      final ProceedingDetail soaProceeding,
+      final CaseDetail soaCase,
+      final Map<String, CommonLookupValueDetail> matterTypeLookups,
+      final Map<String, CommonLookupValueDetail> levelOfServiceLookups,
+      final Map<String, CommonLookupValueDetail> clientInvolvementLookups,
+      final Map<String, CommonLookupValueDetail> scopeLimitationLookups) {
 
     Tuple2<uk.gov.laa.ccms.data.model.ProceedingDetail,
                 CommonLookupValueDetail> lookupTuple = Optional.ofNullable(
@@ -765,8 +767,8 @@ public class ApplicationService {
    *     to a CAAB PriorAuthority.
    */
   protected PriorAuthorityMappingContext buildPriorAuthorityMappingContext(
-      uk.gov.laa.ccms.soa.gateway.model.PriorAuthority soaPriorAuthority,
-      PriorAuthorityTypeDetails priorAuthorityTypes) {
+      final uk.gov.laa.ccms.soa.gateway.model.PriorAuthority soaPriorAuthority,
+      final PriorAuthorityTypeDetails priorAuthorityTypes) {
 
     // Find the correct PriorAuthorityType lookup
     PriorAuthorityTypeDetail priorAuthorityType =
@@ -803,8 +805,8 @@ public class ApplicationService {
   }
 
   private CommonLookupValueDetail getPriorAuthLookup(
-      PriorAuthorityDetail priorAuthorityDetail,
-      PriorAuthorityAttribute priorAuthorityAttribute) {
+      final PriorAuthorityDetail priorAuthorityDetail,
+      final PriorAuthorityAttribute priorAuthorityAttribute) {
     String description;
 
     // If this attribute is of type LOV, lookup the corresponding LOV record to get the
@@ -826,8 +828,9 @@ public class ApplicationService {
         .description(description);
   }
 
-  protected CaseOutcomeMappingContext buildCaseOutcomeMappingContext(CaseDetail soaCase,
-      List<ProceedingMappingContext> proceedingMappingContexts) {
+  protected CaseOutcomeMappingContext buildCaseOutcomeMappingContext(
+      final CaseDetail soaCase,
+      final List<ProceedingMappingContext> proceedingMappingContexts) {
     // Look up all Award Types and map by their code
     Map<String, AwardTypeLookupValueDetail> awardTypes =
         Optional.ofNullable(lookupService.getAwardTypes().block())
@@ -870,8 +873,9 @@ public class ApplicationService {
         .build();
   }
 
-  protected BigDecimal calculateProceedingCostLimitation(ProceedingDetail proceeding,
-      CaseDetail soaCase) {
+  protected BigDecimal calculateProceedingCostLimitation(
+      final ProceedingDetail proceeding,
+      final CaseDetail soaCase) {
     BigDecimal maxCostLimitation = BigDecimal.ZERO;
     if (soaCase.getApplicationDetails().getCategoryOfLaw() != null
         && proceeding.getMatterType() != null

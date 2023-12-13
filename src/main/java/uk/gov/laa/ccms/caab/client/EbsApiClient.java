@@ -40,7 +40,7 @@ public class EbsApiClient {
    * @param loginId The login ID of the user.
    * @return A Mono containing the UserDetail or an error handler if an error occurs.
    */
-  public Mono<UserDetail> getUser(String loginId) {
+  public Mono<UserDetail> getUser(final String loginId) {
 
     return ebsApiWebClient
             .get()
@@ -56,7 +56,7 @@ public class EbsApiClient {
    * @param providerId The ID of the provider.
    * @return A Mono containing the ProviderDetail or an error handler if an error occurs.
    */
-  public Mono<ProviderDetail> getProvider(Integer providerId) {
+  public Mono<ProviderDetail> getProvider(final Integer providerId) {
     return ebsApiWebClient
         .get()
         .uri("/providers/{providerId}", String.valueOf(providerId))
@@ -74,8 +74,8 @@ public class EbsApiClient {
    * @param sort The sort criteria for the common lookup values. Can be null.
    * @return A Mono containing the CommonLookupDetail or an error handler if an error occurs.
    */
-  public Mono<CommonLookupDetail> getCommonValues(String type, String code,
-      String description, String sort) {
+  public Mono<CommonLookupDetail> getCommonValues(final String type, final String code,
+      final String description, final String sort) {
 
     return ebsApiWebClient
         .get()
@@ -99,7 +99,8 @@ public class EbsApiClient {
    * @param description The description for the common lookup values. Can be null.
    * @return A Mono containing the CommonLookupDetail or an error handler if an error occurs.
    */
-  public Mono<CommonLookupDetail> getCommonValues(String type, String code, String description) {
+  public Mono<CommonLookupDetail> getCommonValues(final String type, final String code,
+      final String description) {
     return this.getCommonValues(type, code, description, null);
   }
 
@@ -110,7 +111,7 @@ public class EbsApiClient {
    * @param code The code of the common lookup values. Can be null.
    * @return A Mono containing the CommonLookupDetail or an error handler if an error occurs.
    */
-  public Mono<CommonLookupDetail> getCommonValues(String type, String code) {
+  public Mono<CommonLookupDetail> getCommonValues(final String type, final String code) {
     return this.getCommonValues(type, code, null);
   }
 
@@ -120,7 +121,7 @@ public class EbsApiClient {
    * @param type The type of the common lookup values. Can be null.
    * @return A Mono containing the CommonLookupDetail or an error handler if an error occurs.
    */
-  public Mono<CommonLookupDetail> getCommonValues(String type) {
+  public Mono<CommonLookupDetail> getCommonValues(final String type) {
     return this.getCommonValues(type, null);
   }
 
@@ -166,7 +167,8 @@ public class EbsApiClient {
    * @param copyAllowed A boolean flag indicating whether copying is allowed.
    * @return A Mono containing the CaseStatusLookupDetail or an error handler if an error occurs.
    */
-  public Mono<CaseStatusLookupDetail> getCaseStatusValues(Boolean copyAllowed) {
+  public Mono<CaseStatusLookupDetail> getCaseStatusValues(
+      final Boolean copyAllowed) {
 
     return ebsApiWebClient
             .get()
@@ -185,7 +187,8 @@ public class EbsApiClient {
    * @param applicationType The application type to retrieve amendment types for.
    * @return A Mono containing the AmendmentTypeLookupDetail or an error handler if an error occurs.
    */
-  public Mono<AmendmentTypeLookupDetail> getAmendmentTypes(String applicationType) {
+  public Mono<AmendmentTypeLookupDetail> getAmendmentTypes(
+      final String applicationType) {
     return ebsApiWebClient
             .get()
             .uri(builder -> builder.path("/lookup/amendment-types")
@@ -219,8 +222,9 @@ public class EbsApiClient {
    *
    * @return A Mono containing the PriorAuthorityTypeDetails or an error handler if an error occurs.
    */
-  public Mono<PriorAuthorityTypeDetails> getPriorAuthorityTypes(String code,
-      Boolean valueRequired) {
+  public Mono<PriorAuthorityTypeDetails> getPriorAuthorityTypes(
+      final String code,
+      final Boolean valueRequired) {
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/prior-authority-types")
@@ -256,11 +260,12 @@ public class EbsApiClient {
   }
 
   /**
-   * Retrieves proceeding detail.
+   * Retrieves proceeding detail for the supplied proceeding code.
    *
+   * @param proceedingCode - the proceeding code.
    * @return A Mono containing the ProceedingDetail or an error handler if an error occurs.
    */
-  public Mono<ProceedingDetail> getProceeding(String proceedingCode) {
+  public Mono<ProceedingDetail> getProceeding(final String proceedingCode) {
     return ebsApiWebClient
         .get()
         .uri("/proceedings/{proceeding-code}", proceedingCode)
@@ -272,10 +277,11 @@ public class EbsApiClient {
   /**
    * Retrieves scope limitation details which match the provided example ScopeLimitationDetail.
    *
+   * @param scopeLimitationDetail - the scope limitation search criteria.
    * @return A Mono containing the ScopeLimitationDetails or an error handler if an error occurs.
    */
   public Mono<ScopeLimitationDetails> getScopeLimitations(
-      ScopeLimitationDetail scopeLimitationDetail) {
+      final ScopeLimitationDetail scopeLimitationDetail) {
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/scope-limitations")
@@ -322,8 +328,9 @@ public class EbsApiClient {
    * @param outcomeResult - the outcome result value.
    * @return A Mono containing the ProceedingDetail or an error handler if an error occurs.
    */
-  public Mono<OutcomeResultLookupDetail> getOutcomeResults(String proceedingCode,
-      String outcomeResult) {
+  public Mono<OutcomeResultLookupDetail> getOutcomeResults(
+      final String proceedingCode,
+      final String outcomeResult) {
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/lookup/outcome-results")
@@ -346,8 +353,9 @@ public class EbsApiClient {
    * @param stageEnd - the stage end value.
    * @return A Mono containing the StageEndLookupDetail or an error handler if an error occurs.
    */
-  public Mono<StageEndLookupDetail> getStageEnds(String proceedingCode,
-      String stageEnd) {
+  public Mono<StageEndLookupDetail> getStageEnds(
+      final String proceedingCode,
+      final String stageEnd) {
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/lookup/stage-ends")
@@ -370,8 +378,9 @@ public class EbsApiClient {
    * @param awardType - the award type value.
    * @return A Mono containing the AwardTypeLookupDetail or an error handler if an error occurs.
    */
-  public Mono<AwardTypeLookupDetail> getAwardTypes(String code,
-      String awardType) {
+  public Mono<AwardTypeLookupDetail> getAwardTypes(
+      final String code,
+      final String awardType) {
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/lookup/award-types")
@@ -395,8 +404,10 @@ public class EbsApiClient {
    * @param copyCostLimit - the copy cost limit flag.
    * @return A Mono containing the CategoryOfLawLookupDetail or an error handler if an error occurs.
    */
-  public Mono<CategoryOfLawLookupDetail> getCategoriesOfLaw(String code,
-      String matterTypeDescription, Boolean copyCostLimit) {
+  public Mono<CategoryOfLawLookupDetail> getCategoriesOfLaw(
+      final String code,
+      final String matterTypeDescription,
+      final Boolean copyCostLimit) {
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/lookup/categories-of-law")
@@ -421,8 +432,9 @@ public class EbsApiClient {
    * @param description - the relationship description value.
    * @return A Mono containing RelationshipToCaseLookupDetail or error handler if an error occurs.
    */
-  public Mono<RelationshipToCaseLookupDetail> getPersonToCaseRelationships(String code,
-      String description) {
+  public Mono<RelationshipToCaseLookupDetail> getPersonToCaseRelationships(
+      final String code,
+      final String description) {
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/lookup/person-to-case-relationships")
