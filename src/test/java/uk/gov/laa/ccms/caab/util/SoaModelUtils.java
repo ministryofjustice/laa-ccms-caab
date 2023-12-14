@@ -25,7 +25,6 @@ import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetailsDisabilityMonitoring;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetailRecordHistory;
 import uk.gov.laa.ccms.soa.gateway.model.ClientPersonalDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContactDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
@@ -555,7 +554,7 @@ public class SoaModelUtils {
                 .vexatiousLitigant(Boolean.FALSE)
                 .vulnerableClient(Boolean.FALSE))
             .specialConsiderations("special"))
-        .recordHistory(new ClientDetailRecordHistory());
+        .recordHistory(new uk.gov.laa.ccms.soa.gateway.model.RecordHistory());
   }
 
   public static AwardTypeLookupDetail buildAwardTypeLookupDetail(CaseDetail soaCase) {

@@ -35,7 +35,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -48,7 +48,7 @@ class EditClientSummaryControllerTest {
   private ClientService clientService;
 
   @Mock
-  private CommonLookupService commonLookupService;
+  private LookupService lookupService;
 
   @Mock
   private ClientBasicDetailsValidator basicValidator;
@@ -113,19 +113,19 @@ class EditClientSummaryControllerTest {
   @Test
   void testGetClientDetailsSummary_withFormDataInSession() throws Exception {
 
-    when(commonLookupService.getContactTitle(any())).thenReturn(
+    when(lookupService.getContactTitle(any())).thenReturn(
         Mono.just(titleLookupValueDetail));
-    when(commonLookupService.getCountry(any())).thenReturn(
+    when(lookupService.getCountry(any())).thenReturn(
         Mono.just(countryLookupValueDetail));
-    when(commonLookupService.getGender(any())).thenReturn(
+    when(lookupService.getGender(any())).thenReturn(
         Mono.just(genderLookupValueDetail));
-    when(commonLookupService.getMaritalStatus(any())).thenReturn(
+    when(lookupService.getMaritalStatus(any())).thenReturn(
         Mono.just(maritalStatusLookupValueDetail));
-    when(commonLookupService.getEthnicOrigin(any())).thenReturn(
+    when(lookupService.getEthnicOrigin(any())).thenReturn(
         Mono.just(ethnicityLookupValueDetail));
-    when(commonLookupService.getDisability(any())).thenReturn(
+    when(lookupService.getDisability(any())).thenReturn(
         Mono.just(disabilityLookupValueDetail));
-    when(commonLookupService.getCorrespondenceMethod(any())).thenReturn(
+    when(lookupService.getCorrespondenceMethod(any())).thenReturn(
         Mono.just(correspondenceMethodLookupValueDetail));
 
 
@@ -136,14 +136,14 @@ class EditClientSummaryControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/summary/client-summary-details"));
 
-    verify(commonLookupService, atLeastOnce()).getContactTitle(any());
-    verify(commonLookupService, atLeastOnce()).getCountry(any());
-    verify(commonLookupService, atLeastOnce()).getGender(any());
-    verify(commonLookupService, atLeastOnce()).getMaritalStatus(any());
-    verify(commonLookupService, atLeastOnce()).getEthnicOrigin(any());
-    verify(commonLookupService, atLeastOnce()).getDisability(any());
-    verify(commonLookupService, atLeastOnce()).getCorrespondenceMethod(any());
-    verify(commonLookupService, never()).getCorrespondenceLanguage(any());
+    verify(lookupService, atLeastOnce()).getContactTitle(any());
+    verify(lookupService, atLeastOnce()).getCountry(any());
+    verify(lookupService, atLeastOnce()).getGender(any());
+    verify(lookupService, atLeastOnce()).getMaritalStatus(any());
+    verify(lookupService, atLeastOnce()).getEthnicOrigin(any());
+    verify(lookupService, atLeastOnce()).getDisability(any());
+    verify(lookupService, atLeastOnce()).getCorrespondenceMethod(any());
+    verify(lookupService, never()).getCorrespondenceLanguage(any());
 
     verify(clientService, never()).getClient(any(),any(),any());
     verify(clientDetailsMapper, never()).toClientFlowFormData(any());
@@ -152,19 +152,19 @@ class EditClientSummaryControllerTest {
   @Test
   void testGetClientDetailsSummary_withoutFormDataInSession() throws Exception {
 
-    when(commonLookupService.getContactTitle(any())).thenReturn(
+    when(lookupService.getContactTitle(any())).thenReturn(
         Mono.just(titleLookupValueDetail));
-    when(commonLookupService.getCountry(any())).thenReturn(
+    when(lookupService.getCountry(any())).thenReturn(
         Mono.just(countryLookupValueDetail));
-    when(commonLookupService.getGender(any())).thenReturn(
+    when(lookupService.getGender(any())).thenReturn(
         Mono.just(genderLookupValueDetail));
-    when(commonLookupService.getMaritalStatus(any())).thenReturn(
+    when(lookupService.getMaritalStatus(any())).thenReturn(
         Mono.just(maritalStatusLookupValueDetail));
-    when(commonLookupService.getEthnicOrigin(any())).thenReturn(
+    when(lookupService.getEthnicOrigin(any())).thenReturn(
         Mono.just(ethnicityLookupValueDetail));
-    when(commonLookupService.getDisability(any())).thenReturn(
+    when(lookupService.getDisability(any())).thenReturn(
         Mono.just(disabilityLookupValueDetail));
-    when(commonLookupService.getCorrespondenceMethod(any())).thenReturn(
+    when(lookupService.getCorrespondenceMethod(any())).thenReturn(
         Mono.just(correspondenceMethodLookupValueDetail));
 
     when(clientService.getClient(any(),any(),any())).thenReturn(
@@ -179,14 +179,14 @@ class EditClientSummaryControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/summary/client-summary-details"));
 
-    verify(commonLookupService, atLeastOnce()).getContactTitle(any());
-    verify(commonLookupService, atLeastOnce()).getCountry(any());
-    verify(commonLookupService, atLeastOnce()).getGender(any());
-    verify(commonLookupService, atLeastOnce()).getMaritalStatus(any());
-    verify(commonLookupService, atLeastOnce()).getEthnicOrigin(any());
-    verify(commonLookupService, atLeastOnce()).getDisability(any());
-    verify(commonLookupService, atLeastOnce()).getCorrespondenceMethod(any());
-    verify(commonLookupService, never()).getCorrespondenceLanguage(any());
+    verify(lookupService, atLeastOnce()).getContactTitle(any());
+    verify(lookupService, atLeastOnce()).getCountry(any());
+    verify(lookupService, atLeastOnce()).getGender(any());
+    verify(lookupService, atLeastOnce()).getMaritalStatus(any());
+    verify(lookupService, atLeastOnce()).getEthnicOrigin(any());
+    verify(lookupService, atLeastOnce()).getDisability(any());
+    verify(lookupService, atLeastOnce()).getCorrespondenceMethod(any());
+    verify(lookupService, never()).getCorrespondenceLanguage(any());
 
     verify(clientService, atLeastOnce()).getClient(any(),any(),any());
     verify(clientDetailsMapper, atLeastOnce()).toClientFlowFormData(any());
