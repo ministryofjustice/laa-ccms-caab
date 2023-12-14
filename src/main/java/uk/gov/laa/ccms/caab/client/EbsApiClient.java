@@ -220,6 +220,8 @@ public class EbsApiClient {
   /**
    * Retrieves prior authority types by code and valueRequired flag.
    *
+   * @param code - the prior authority type code
+   * @param valueRequired - the value required flag
    * @return A Mono containing the PriorAuthorityTypeDetails or an error handler if an error occurs.
    */
   public Mono<PriorAuthorityTypeDetails> getPriorAuthorityTypes(

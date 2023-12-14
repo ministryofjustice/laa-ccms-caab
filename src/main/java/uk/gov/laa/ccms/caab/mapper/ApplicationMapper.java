@@ -316,9 +316,8 @@ public interface ApplicationMapper {
   @Mapping(target = "code.displayValue", source = "key.description")
   @Mapping(target = "type", source = "key.dataType")
   @Mapping(target = "lovLookUp", source = "key.lovCode")
+  @Mapping(target = "mandatory", source = "key.mandatoryFlag")
   @Mapping(target = "value", source = "value")
-  //  @Mapping(target = "mandatory", source = "mandatoryFlag")
-  @Mapping(target = "mandatory", ignore = true)
   ReferenceDataItem toReferenceDataItem(
       Pair<PriorAuthorityDetail, CommonLookupValueDetail> priorAuthorityDetail);
 
@@ -487,8 +486,7 @@ public interface ApplicationMapper {
   @AfterMapping
   default void finaliseOtherAssetAward(@MappingTarget OtherAssetAward otherAssetAward) {
     TimeRecovery timeRecovery = otherAssetAward.getTimeRecovery();
-    /* TODO: To be changed once api updated */
-    otherAssetAward.setRecoveryOfAwardTimeRelated(timeRecovery != null ? "true" : "false");
+    otherAssetAward.setRecoveryOfAwardTimeRelated(timeRecovery != null);
     if (timeRecovery != null) {
       timeRecovery.setAwardType(AWARD_TYPE_OTHER_ASSET);
     }

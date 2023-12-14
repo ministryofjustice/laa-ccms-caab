@@ -124,8 +124,12 @@ public class ApplicationService {
    * @param size                   The size or number of records per page.
    * @return A Mono wrapping the CaseDetails.
    */
-  public Mono<CaseDetails> getCases(CopyCaseSearchCriteria copyCaseSearchCriteria, String loginId,
-      String userType, Integer page, Integer size) {
+  public Mono<CaseDetails> getCases(
+      final CopyCaseSearchCriteria copyCaseSearchCriteria,
+      final String loginId,
+      final String userType,
+      final Integer page,
+      final Integer size) {
     return soaApiClient.getCases(copyCaseSearchCriteria, loginId, userType, page, size);
   }
 
@@ -157,8 +161,7 @@ public class ApplicationService {
    * @param userType Type of the user (e.g., admin, user).
    * @return A Mono wrapping the CaseReferenceSummary.
    */
-  public Mono<CaseReferenceSummary> getCaseReference(String loginId,
-      String userType) {
+  public Mono<CaseReferenceSummary> getCaseReference(final String loginId, final String userType) {
     return soaApiClient.getCaseReference(loginId, userType);
   }
 
@@ -170,8 +173,10 @@ public class ApplicationService {
    * @param user - The related User.
    * @return a String containing the id of the application
    */
-  public Mono<String> createApplication(ApplicationFormData applicationFormData,
-                                        ClientDetail clientDetail, UserDetail user)
+  public Mono<String> createApplication(
+      final ApplicationFormData applicationFormData,
+      final ClientDetail clientDetail,
+      final UserDetail user)
       throws ParseException {
     Mono<ApplicationDetail> applicationMono;
 
@@ -192,9 +197,9 @@ public class ApplicationService {
   }
 
   protected Mono<ApplicationDetail> buildNewApplication(
-      ApplicationFormData applicationFormData,
-      ClientDetail clientDetail,
-      UserDetail user) throws ParseException {
+      final ApplicationFormData applicationFormData,
+      final ClientDetail clientDetail,
+      final UserDetail user) throws ParseException {
     ApplicationType applicationType = new ApplicationTypeBuilder()
         .applicationType(
             applicationFormData.getApplicationTypeCategory(),
@@ -248,9 +253,10 @@ public class ApplicationService {
     });
   }
 
-  protected Mono<ApplicationDetail> copyApplication(ApplicationDetail applicationToCopy,
-      ClientDetail clientDetail,
-      UserDetail user) {
+  protected Mono<ApplicationDetail> copyApplication(
+      final ApplicationDetail applicationToCopy,
+      final ClientDetail clientDetail,
+      final UserDetail user) {
 
     // get case reference Number, category of law value, contractual devolved powers,
     // amendment types
@@ -321,7 +327,7 @@ public class ApplicationService {
    * @param copyAllowed A boolean flag indicating whether copying is allowed.
    * @return A Mono containing the CaseStatusLookupDetail or an error handler if an error occurs.
    */
-  public Mono<CaseStatusLookupDetail> getCaseStatusValues(Boolean copyAllowed) {
+  public Mono<CaseStatusLookupDetail> getCaseStatusValues(final Boolean copyAllowed) {
     return ebsApiClient.getCaseStatusValues(copyAllowed);
   }
 
@@ -711,8 +717,8 @@ public class ApplicationService {
   }
 
   protected void addProceedingOutcomeContext(
-      ProceedingMappingContext.ProceedingMappingContextBuilder contextBuilder,
-      ProceedingDetail soaProceeding) {
+      final ProceedingMappingContext.ProceedingMappingContextBuilder contextBuilder,
+      final ProceedingDetail soaProceeding) {
 
     if (soaProceeding.getOutcome() == null) {
       return; // Nothing to add
@@ -917,7 +923,7 @@ public class ApplicationService {
   }
 
   private Map<String, CommonLookupValueDetail> toCommonValueMap(
-      CommonLookupDetail commonLookupDetail) {
+      final CommonLookupDetail commonLookupDetail) {
     if (commonLookupDetail == null) {
       throw new CaabApplicationException("Failed to lookup common values");
     }
@@ -934,7 +940,7 @@ public class ApplicationService {
   }
 
   private String findAwardType(
-      Map<String, AwardTypeLookupValueDetail> awardTypes, Award award) {
+      final Map<String, AwardTypeLookupValueDetail> awardTypes, final Award award) {
     return Optional.ofNullable(awardTypes.get(award.getAwardType()))
         .map(AwardTypeLookupValueDetail::getAwardType)
         .orElseThrow(() -> new CaabApplicationException(
