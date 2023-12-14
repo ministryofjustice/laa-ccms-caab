@@ -17,7 +17,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 
 @ExtendWith(SpringExtension.class)
 class ClientAddressDetailsFindAddressValidatorTest {
@@ -65,7 +64,7 @@ class ClientAddressDetailsFindAddressValidatorTest {
   }
 
   @Test
-  public void validate_countryNotUnitedKingdom() {;
+  public void validate_countryNotUnitedKingdom() {
     addressDetails.setCountry("USA");
     clientAddressDetailsFindAddressValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());

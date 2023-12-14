@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.service;
 
 import static org.mockito.Mockito.when;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CATEGORY_OF_LAW;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
@@ -28,22 +27,23 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 @SuppressWarnings({"unchecked"})
 @ExtendWith(MockitoExtension.class)
-public class CommonLookupServiceTest {
+public class LookupServiceTest {
   @Mock
   private EbsApiClient ebsApiClient;
 
   @InjectMocks
-  private CommonLookupService commonLookupService;
+  private LookupService lookupService;
 
   private static Stream<Arguments> getCommonLookupArguments() {
     return Stream.of(
         Arguments.of("getApplicationTypes", COMMON_VALUE_APPLICATION_TYPE),
-        Arguments.of("getCategoriesOfLaw", COMMON_VALUE_CATEGORY_OF_LAW),
         Arguments.of("getGenders", COMMON_VALUE_GENDER),
         Arguments.of("getUniqueIdentifierTypes", COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE),
         Arguments.of("getContactTitles", COMMON_VALUE_CONTACT_TITLE),
@@ -62,7 +62,7 @@ public class CommonLookupServiceTest {
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
 
     // Retrieve the method with its argument types if any
-    Method method = commonLookupService.getClass().getDeclaredMethod(methodCall);
+    Method method = lookupService.getClass().getDeclaredMethod(methodCall);
     CommonLookupDetail commonValues = new CommonLookupDetail();
 
     // Mock the behavior
@@ -70,7 +70,7 @@ public class CommonLookupServiceTest {
 
     // Invoke the method on the correct instance
     Mono<CommonLookupDetail> commonLookupDetailMono =
-        (Mono<CommonLookupDetail>) method.invoke(commonLookupService);
+        (Mono<CommonLookupDetail>) method.invoke(lookupService);
 
     // Verify
     StepVerifier.create(commonLookupDetailMono)
@@ -110,11 +110,11 @@ public class CommonLookupServiceTest {
     when(ebsApiClient.getCommonValues(constantValue, code)).thenReturn(Mono.just(commonValues));
 
     // Retrieve the method using reflection
-    Method method = commonLookupService.getClass().getMethod(methodCall, String.class);
+    Method method = lookupService.getClass().getMethod(methodCall, String.class);
 
     // Invoke the method
     Mono<CommonLookupValueDetail> commonLookupDetailMono =
-        (Mono<CommonLookupValueDetail>) method.invoke(commonLookupService, code);
+        (Mono<CommonLookupValueDetail>) method.invoke(lookupService, code);
 
     StepVerifier.create(commonLookupDetailMono)
         .expectNextMatches(result -> code.equals(result.getCode())
@@ -130,7 +130,7 @@ public class CommonLookupServiceTest {
 
     when(ebsApiClient.getCountries()).thenReturn(Mono.just(commonValues));
 
-    Mono<CommonLookupDetail> commonLookupDetailMono = commonLookupService.getCountries();
+    Mono<CommonLookupDetail> commonLookupDetailMono = lookupService.getCountries();
     StepVerifier.create(commonLookupDetailMono)
         .expectNext(commonValues)
         .verifyComplete();
@@ -143,11 +143,46 @@ public class CommonLookupServiceTest {
 
     when(ebsApiClient.getCountries()).thenReturn(Mono.just(commonValues));
 
-    Mono<CommonLookupValueDetail> commonLookupDetailMono = commonLookupService.getCountry("GBR");
+    Mono<CommonLookupValueDetail> commonLookupDetailMono = lookupService.getCountry("GBR");
     StepVerifier.create(commonLookupDetailMono)
         .expectNextMatches(result -> "GBR".equals(result.getCode()))
         .verifyComplete();
   }
 
+  @Test
+  public void getCategoriesOfLaw_returnsData() {
+    CategoryOfLawLookupValueDetail commonValue = new CategoryOfLawLookupValueDetail().code("CAT1");
+    CategoryOfLawLookupDetail commonValues =
+        new CategoryOfLawLookupDetail().addContentItem(commonValue);
+
+    when(ebsApiClient.getCategoriesOfLaw(null, null, null))
+        .thenReturn(Mono.just(commonValues));
+
+    Mono<CategoryOfLawLookupDetail> commonLookupDetailMono = lookupService.getCategoriesOfLaw();
+    StepVerifier.create(commonLookupDetailMono)
+        .expectNextMatches(result -> result == commonValues)
+        .verifyComplete();
+  }
+
+  @Test
+  public void getCategoryOfLaw_returnsData() {
+    CategoryOfLawLookupValueDetail commonValue = new CategoryOfLawLookupValueDetail()
+        .code("CAT1")
+        .matterTypeDescription("DESC")
+        .copyCostLimit(Boolean.TRUE);
+    CategoryOfLawLookupDetail commonValues =
+        new CategoryOfLawLookupDetail().addContentItem(commonValue);
+
+    when(ebsApiClient.getCategoriesOfLaw(commonValue.getCode(),
+        null,
+        null))
+        .thenReturn(Mono.just(commonValues));
+
+    Mono<CategoryOfLawLookupValueDetail> commonLookupDetailMono =
+        lookupService.getCategoryOfLaw(commonValue.getCode());
+    StepVerifier.create(commonLookupDetailMono)
+        .expectNextMatches(result -> result == commonValue)
+        .verifyComplete();
+  }
 
 }

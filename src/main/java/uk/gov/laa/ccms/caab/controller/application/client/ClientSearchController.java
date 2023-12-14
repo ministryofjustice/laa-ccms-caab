@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientSearchCriteriaValidator;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 
 /**
@@ -28,7 +28,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 @SessionAttributes(value = {APPLICATION_FORM_DATA, CLIENT_SEARCH_CRITERIA})
 public class ClientSearchController {
 
-  private final CommonLookupService commonLookupService;
+  private final LookupService lookupService;
 
   private final ClientSearchCriteriaValidator clientSearchCriteriaValidator;
 
@@ -93,12 +93,12 @@ public class ClientSearchController {
    */
   private void populateDropdowns(Model model) {
     CommonLookupDetail genders =
-        Optional.ofNullable(commonLookupService.getGenders().block())
+        Optional.ofNullable(lookupService.getGenders().block())
             .orElse(new CommonLookupDetail());
     model.addAttribute("genders", genders.getContent());
 
     CommonLookupDetail uniqueIdentifierTypes =
-        Optional.ofNullable(commonLookupService.getUniqueIdentifierTypes().block())
+        Optional.ofNullable(lookupService.getUniqueIdentifierTypes().block())
             .orElse(new CommonLookupDetail());
     model.addAttribute("uniqueIdentifierTypes", uniqueIdentifierTypes.getContent());
   }

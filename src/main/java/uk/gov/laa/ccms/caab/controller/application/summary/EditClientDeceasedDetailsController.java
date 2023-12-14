@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientDeceasedDetailsValidator;
 
 /**

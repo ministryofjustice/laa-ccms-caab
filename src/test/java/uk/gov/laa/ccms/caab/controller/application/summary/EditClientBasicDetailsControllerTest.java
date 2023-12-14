@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
-import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
@@ -12,11 +11,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
-import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_EDIT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
-import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER;
 
 import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,7 +29,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
@@ -40,7 +37,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 class EditClientBasicDetailsControllerTest {
 
   @Mock
-  private CommonLookupService commonLookupService;
+  private LookupService lookupService;
   @Mock
   private ClientBasicDetailsValidator clientBasicDetailsValidator;
   @InjectMocks
@@ -74,13 +71,13 @@ class EditClientBasicDetailsControllerTest {
 
   @Test
   void testClientDetailsBasic() throws Exception {
-    when(commonLookupService.getContactTitles()).thenReturn(
+    when(lookupService.getContactTitles()).thenReturn(
         Mono.just(titleLookupDetail));
-    when(commonLookupService.getCountries()).thenReturn(
+    when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
-    when(commonLookupService.getGenders()).thenReturn(
+    when(lookupService.getGenders()).thenReturn(
         Mono.just(genderLookupDetail));
-    when(commonLookupService.getMaritalStatuses()).thenReturn(
+    when(lookupService.getMaritalStatuses()).thenReturn(
         Mono.just(maritalStatusLookupDetail));
 
     this.mockMvc.perform(get("/application/summary/client/details/basic")
@@ -118,13 +115,13 @@ class EditClientBasicDetailsControllerTest {
       return null;
     }).when(clientBasicDetailsValidator).validate(any(), any());
 
-    when(commonLookupService.getContactTitles()).thenReturn(
+    when(lookupService.getContactTitles()).thenReturn(
         Mono.just(titleLookupDetail));
-    when(commonLookupService.getCountries()).thenReturn(
+    when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
-    when(commonLookupService.getGenders()).thenReturn(
+    when(lookupService.getGenders()).thenReturn(
         Mono.just(genderLookupDetail));
-    when(commonLookupService.getMaritalStatuses()).thenReturn(
+    when(lookupService.getMaritalStatuses()).thenReturn(
         Mono.just(maritalStatusLookupDetail));
 
     mockMvc.perform(post("/application/summary/client/details/basic")

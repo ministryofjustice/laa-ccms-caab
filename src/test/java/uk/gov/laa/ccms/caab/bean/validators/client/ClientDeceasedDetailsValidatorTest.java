@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,7 +15,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 @ExtendWith(SpringExtension.class)
 class ClientDeceasedDetailsValidatorTest {

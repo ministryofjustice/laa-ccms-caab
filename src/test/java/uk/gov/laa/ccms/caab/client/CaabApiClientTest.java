@@ -1,29 +1,24 @@
 package uk.gov.laa.ccms.caab.client;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Map;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
-import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -142,4 +137,25 @@ public class CaabApiClientTest {
     });
   }
 
+  @Test
+  void getProviderDetails_success() {
+
+    String id = "123";
+    String expectedUri = "/applications/{id}/provider-details";
+
+    ApplicationProviderDetails mockProvider = new ApplicationProviderDetails();
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, id)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(ApplicationProviderDetails.class)).thenReturn(
+        Mono.just(mockProvider));
+
+    Mono<ApplicationProviderDetails> applicationProviderDetailsMono
+        = caabApiClient.getProviderDetails(id);
+
+    StepVerifier.create(applicationProviderDetailsMono)
+        .expectNext(mockProvider)
+        .verifyComplete();
+  }
 }

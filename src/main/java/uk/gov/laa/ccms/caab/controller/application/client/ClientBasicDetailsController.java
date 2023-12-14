@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE;
@@ -18,15 +17,12 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 /**
@@ -39,7 +35,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @SuppressWarnings({"unchecked"})
 public class ClientBasicDetailsController {
 
-  private final CommonLookupService commonLookupService;
+  private final LookupService lookupService;
 
   private final ClientBasicDetailsValidator clientBasicDetailsValidator;
 
@@ -154,13 +150,13 @@ public class ClientBasicDetailsController {
   private void populateDropdowns(Model model) {
     new DropdownBuilder(model)
         .addDropdown("titles",
-            commonLookupService.getContactTitles())
+            lookupService.getContactTitles())
         .addDropdown("countries",
-            commonLookupService.getCountries())
+            lookupService.getCountries())
         .addDropdown("genders",
-            commonLookupService.getGenders())
+            lookupService.getGenders())
         .addDropdown("maritalStatusList",
-            commonLookupService.getMaritalStatuses())
+            lookupService.getMaritalStatuses())
         .build();
   }
 }

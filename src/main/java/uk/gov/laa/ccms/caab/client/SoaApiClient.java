@@ -14,6 +14,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
+import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
@@ -263,6 +264,28 @@ public class SoaApiClient {
         .bodyToMono(CaseDetails.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleCaseDetailsError(
             copyCaseSearchCriteria, e));
+
+  }
+
+  /**
+   * Retrieves the full detail of a single case based on the provided case reference.
+   *
+   * @param caseReferenceNumber    The reference number for the case to fetch.
+   * @param loginId                The login identifier for the user.
+   * @param userType               Type of the user (e.g., admin, user).
+   * @return A Mono wrapping the CaseDetail.
+   */
+  public Mono<CaseDetail> getCase(String caseReferenceNumber, String loginId,
+      String userType) {
+    return soaApiWebClient
+        .get()
+        .uri(builder -> builder.path("/cases/{case-ref}").build(caseReferenceNumber))
+        .header("SoaGateway-User-Login-Id", loginId)
+        .header("SoaGateway-User-Role", userType)
+        .retrieve()
+        .bodyToMono(CaseDetail.class)
+        .onErrorResume(e -> soaApiClientErrorHandler.handleCaseDetailError(
+            caseReferenceNumber, e));
 
   }
 

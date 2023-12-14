@@ -12,14 +12,11 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
-import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.caab.service.LookupService;
 
 /**
  * Controller for handling contact client details selection during the new application process.
@@ -30,7 +27,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 @SessionAttributes({CLIENT_FLOW_FORM_DATA})
 public class ClientContactDetailsController {
 
-  private final CommonLookupService commonLookupService;
+  private final LookupService lookupService;
 
   private final ClientContactDetailsValidator clientContactDetailsValidator;
 
@@ -97,9 +94,9 @@ public class ClientContactDetailsController {
   private void populateDropdowns(Model model) {
     new DropdownBuilder(model)
         .addDropdown("correspondenceMethods",
-            commonLookupService.getCorrespondenceMethods())
+            lookupService.getCorrespondenceMethods())
         .addDropdown("correspondenceLanguages",
-            commonLookupService.getCorrespondenceLanguages())
+            lookupService.getCorrespondenceLanguages())
         .build();
   }
 }

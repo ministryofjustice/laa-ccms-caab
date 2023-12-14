@@ -16,7 +16,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 
 /**
  * Controller for handling edits to client basic details during the application summary process.
@@ -27,7 +27,7 @@ import uk.gov.laa.ccms.caab.service.CommonLookupService;
 @SessionAttributes({CLIENT_FLOW_FORM_DATA})
 public class EditClientBasicDetailsController {
 
-  private final CommonLookupService commonLookupService;
+  private final LookupService lookupService;
 
   private final ClientBasicDetailsValidator clientBasicDetailsValidator;
 
@@ -95,13 +95,13 @@ public class EditClientBasicDetailsController {
 
     builder
         .addDropdown("titles",
-            commonLookupService.getContactTitles())
+            lookupService.getContactTitles())
         .addDropdown("countries",
-            commonLookupService.getCountries())
+            lookupService.getCountries())
         .addDropdown("genders",
-            commonLookupService.getGenders())
+            lookupService.getGenders())
         .addDropdown("maritalStatusList",
-            commonLookupService.getMaritalStatuses())
+            lookupService.getMaritalStatuses())
         .build();
   }
 }

@@ -94,15 +94,17 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
     String type = "testType";
     String code = "testCode";
+    String descr = "testDescr";
     String sort = "testSort";
 
     wiremock.stubFor(get(urlPathMatching("/lookup/common.*"))
         .withQueryParam("type", equalTo(type))
         .withQueryParam("code", equalTo(code))
+        .withQueryParam("description", equalTo(descr))
         .withQueryParam("sort", equalTo(sort))
         .willReturn(okJson(commonValuesJson)));
 
-    Mono<CommonLookupDetail> commonValuesMono = ebsApiClient.getCommonValues(type, code, sort);
+    Mono<CommonLookupDetail> commonValuesMono = ebsApiClient.getCommonValues(type, code, descr, sort);
 
     CommonLookupDetail commonValues = commonValuesMono.block();
 

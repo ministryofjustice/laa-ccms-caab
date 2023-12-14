@@ -27,7 +27,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
@@ -35,7 +35,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 public class ClientContactDetailsControllerTest {
 
   @Mock
-  private CommonLookupService commonLookupService;
+  private LookupService lookupService;
 
   @Mock
   private ClientContactDetailsValidator clientContactDetailsValidator;
@@ -74,9 +74,9 @@ public class ClientContactDetailsControllerTest {
   @Test
   void testClientDetailsContact() throws Exception {
 
-    when(commonLookupService.getCorrespondenceMethods()).thenReturn(
+    when(lookupService.getCorrespondenceMethods()).thenReturn(
         Mono.just(correspondenceMethodLookupDetail));
-    when(commonLookupService.getCorrespondenceLanguages()).thenReturn(
+    when(lookupService.getCorrespondenceLanguages()).thenReturn(
         Mono.just(correspondenceLanguageLookupDetail));
 
     this.mockMvc.perform(get("/application/client/details/contact")
@@ -111,9 +111,9 @@ public class ClientContactDetailsControllerTest {
       return null;
     }).when(clientContactDetailsValidator).validate(any(), any());
 
-    when(commonLookupService.getCorrespondenceMethods()).thenReturn(
+    when(lookupService.getCorrespondenceMethods()).thenReturn(
         Mono.just(correspondenceMethodLookupDetail));
-    when(commonLookupService.getCorrespondenceLanguages()).thenReturn(
+    when(lookupService.getCorrespondenceLanguages()).thenReturn(
         Mono.just(correspondenceLanguageLookupDetail));
 
     this.mockMvc.perform(post("/application/client/details/contact")

@@ -12,7 +12,6 @@ import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
 

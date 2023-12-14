@@ -11,7 +11,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
-import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_EDIT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
@@ -33,7 +32,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator
 import uk.gov.laa.ccms.caab.model.ClientAddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ClientAddressResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
@@ -41,7 +40,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 class EditClientAddressDetailsControllerTest {
 
   @Mock
-  private CommonLookupService commonLookupService;
+  private LookupService lookupService;
 
   @Mock
   private ClientAddressDetailsValidator clientAddressDetailsValidator;
@@ -85,7 +84,7 @@ class EditClientAddressDetailsControllerTest {
 
   @Test
   void testEditClientDetailsAddress() throws Exception {
-    when(commonLookupService.getCountries()).thenReturn(
+    when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
     this.mockMvc.perform(get("/application/summary/client/details/address")
@@ -101,7 +100,7 @@ class EditClientAddressDetailsControllerTest {
     when(addressService.getAddresses(any())).thenReturn(
         new ClientAddressResultsDisplay());
 
-    when(commonLookupService.getCountries()).thenReturn(
+    when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
     this.mockMvc.perform(post("/application/summary/client/details/address")
@@ -157,7 +156,7 @@ class EditClientAddressDetailsControllerTest {
       return null;
     }).when(clientAddressDetailsValidator).validate(any(), any());
 
-    when(commonLookupService.getCountries()).thenReturn(
+    when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
     this.mockMvc.perform(post("/application/summary/client/details/address")
@@ -180,7 +179,7 @@ class EditClientAddressDetailsControllerTest {
       return null;
     }).when(clientAddressDetailsFindAddressValidator).validate(any(), any());
 
-    when(commonLookupService.getCountries()).thenReturn(
+    when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
     this.mockMvc.perform(post("/application/summary/client/details/address")
