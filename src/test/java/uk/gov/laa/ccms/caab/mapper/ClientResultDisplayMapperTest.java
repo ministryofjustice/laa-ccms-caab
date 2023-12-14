@@ -19,7 +19,7 @@ class ClientResultDisplayMapperTest {
   
 
   @Test
-  void testToClientResultRowDisplay_FromClientDetail() {
+  public void testToClientResultRowDisplay_FromClientDetail() {
     NameDetail name = new NameDetail()
         .firstName("John")
         .surname("Doe")

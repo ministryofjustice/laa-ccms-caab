@@ -22,7 +22,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
@@ -38,14 +38,14 @@ public class ClientSummaryController extends AbstractClientSummaryController {
    * Default constructor method implementing the abstract controller's constructor.
    */
   public ClientSummaryController(
-      CommonLookupService commonLookupService,
+      LookupService lookupService,
       ClientService clientService,
       ClientBasicDetailsValidator basicValidator,
       ClientContactDetailsValidator contactValidator,
       ClientAddressDetailsValidator addressValidator,
       ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator,
       ClientDetailMapper clientDetailsMapper) {
-    super(commonLookupService,
+    super(lookupService,
         clientService,
         basicValidator,
         contactValidator,

@@ -1,8 +1,8 @@
 search:
   max-results:
     page: 20
-#    notification-count: 500
-#    notifications: 500
+    #    notification-count: 500
+    #    notifications: 500
     clients: 200
     cases: 300
 #    statement-of-accounts: 400

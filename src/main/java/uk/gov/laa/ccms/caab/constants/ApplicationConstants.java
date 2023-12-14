@@ -77,10 +77,91 @@ public class ApplicationConstants {
   /**
    * The actual value for the status of an unsubmitted application.
    */
-  public static String STATUS_UNSUBMITTED_ACTUAL_VALUE = "UNSUBMITTED";
+  public static final String STATUS_UNSUBMITTED_ACTUAL_VALUE = "UNSUBMITTED";
 
   /**
    * The display value for the status of an unsubmitted application.
    */
-  public static String STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY = "Unsubmitted";
+  public static final String STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY = "Unsubmitted";
+
+  /**
+   * The status of a draft domain object (used for, for example, proceedings and bills).
+   */
+  public static final String STATUS_DRAFT = "Draft";
+
+  /**
+   * Display value for a Proceeding at status 'outcome'.
+   */
+  public static final String PROCEEDING_STATUS_OUTCOME_DISPLAY = "Outcome";
+
+  /**
+   * Display value for a Proceeding at status 'submitted'.
+   */
+  public static final String PROCEEDING_STATUS_SUBMITTED_DISPLAY = "Submitted";
+
+  /**
+   * Display value for a Proceeding at status 'added'.
+   */
+  public static final String PROCEEDING_STATUS_ADDED_DISPLAY = "Added";
+
+  /**
+   * Display value for a Proceeding at status 'unchanged'.
+   */
+  public static final String PROCEEDING_STATUS_UNCHANGED_DISPLAY = "Unchanged";
+
+  /**
+   * Display value for a Proceeding at status 'updated'.
+   */
+  public static final String PROCEEDING_STATUS_UPDATED_DISPLAY = "Updated";
+
+  /**
+   * Type value for an LOV Reference Data Item.
+   */
+  public static final String REFERENCE_DATA_ITEM_TYPE_LOV = "LOV";
+
+  /**
+   * Type value for an AMOUNT Reference Data Item.
+   */
+  public static final String REFERENCE_DATA_ITEM_TYPE_AMOUNT = "AMT";
+
+  /**
+   * Cost Award Type.
+   */
+  public static final String AWARD_TYPE_COST = "COST";
+
+  /**
+   * Description for Cost Award Type.
+   */
+  public static final String AWARD_TYPE_COST_DESCRIPTION = "Cost";
+
+  /**
+   * Financial Award Type.
+   */
+  public static final String AWARD_TYPE_FINANCIAL = "DAMAGE";
+
+  /**
+   * Description for Cost Award Type.
+   */
+  public static final String AWARD_TYPE_FINANCIAL_DESCRIPTION = "Damage";
+
+  /**
+   * Land Award Type.
+   */
+  public static final String AWARD_TYPE_LAND = "LAND";
+
+  /**
+   * Other Asset Award Type.
+   */
+  public static final String AWARD_TYPE_OTHER_ASSET = "ASSET";
+
+  /**
+   * The individual opponent type.
+   */
+  public static final String OPPONENT_TYPE_INDIVIDUAL = "Individual";
+
+  /**
+   * The organisation opponent type.
+   */
+  public static final String OPPONENT_TYPE_ORGANISATION = "Organisation";
+
 }

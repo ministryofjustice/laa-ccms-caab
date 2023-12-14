@@ -1,22 +1,54 @@
 package uk.gov.laa.ccms.caab.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
+import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCategoryOfLawLookupValueDetail;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildPriorAuthorityTypeDetails;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildProviderDetail;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildRelationshipToCaseLookupDetail;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildAwardTypeLookupDetail;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCaseDetail;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCaseReferenceSummary;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildClientDetail;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildPriorAuthority;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildProceedingDetail;
 
-import java.sql.Date;
+import java.math.BigDecimal;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -27,7 +59,14 @@ import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
+import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
@@ -37,21 +76,32 @@ import uk.gov.laa.ccms.caab.model.Client;
 import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
-import uk.gov.laa.ccms.data.model.BaseOffice;
-import uk.gov.laa.ccms.data.model.BaseProvider;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
+import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
+import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
+import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
+import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
+import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.RecordHistory;
 
 @ExtendWith(MockitoExtension.class)
@@ -66,7 +116,19 @@ class ApplicationServiceTest {
   private EbsApiClient ebsApiClient;
 
   @Mock
+  private LookupService lookupService;
+
+  @Mock
+  private ProviderService providerService;
+
+  @Mock
   private ApplicationFormDataMapper applicationFormDataMapper;
+
+  @Mock
+  private ApplicationMapper applicationMapper;
+
+  @Mock
+  private CopyApplicationMapper copyApplicationMapper;
 
   @InjectMocks
   private ApplicationService applicationService;
@@ -157,15 +219,15 @@ class ApplicationServiceTest {
 
   @Test
   void createApplication_success() throws ParseException {
-    ApplicationFormData applicationFormData = buildApplicationDetails();
-    ClientDetail clientInformation = buildClientInformation();
-    UserDetail user = buildUser();
+    ApplicationFormData applicationFormData = buildApplicationFormData();
+    ClientDetail clientInformation = buildClientDetail();
+    UserDetail user = buildUserDetail();
 
     // Mocking dependencies
     CaseReferenceSummary caseReferenceSummary =
         new CaseReferenceSummary().caseReferenceNumber("REF123");
-    CommonLookupDetail categoryOfLawLookupDetail = new CommonLookupDetail();
-    categoryOfLawLookupDetail.addContentItem(new CommonLookupValueDetail().code("CAT1").description("DESC1"));
+    CategoryOfLawLookupValueDetail categoryOfLawValue = new CategoryOfLawLookupValueDetail()
+        .code(applicationFormData.getCategoryOfLawId()).matterTypeDescription("DESC1");
     ContractDetails contractDetails = new ContractDetails();
 
     AmendmentTypeLookupValueDetail amendmentType = new AmendmentTypeLookupValueDetail()
@@ -178,10 +240,10 @@ class ApplicationServiceTest {
 
     when(soaApiClient.getCaseReference(user.getLoginId(), user.getUserType())).thenReturn(
         Mono.just(caseReferenceSummary));
-    when(ebsApiClient.getCommonValues(anyString())).thenReturn(
-        Mono.just(categoryOfLawLookupDetail));
     when(soaApiClient.getContractDetails(anyInt(), anyInt(), anyString(),
         anyString())).thenReturn(Mono.just(contractDetails));
+    when(lookupService.getCategoryOfLaw(applicationFormData.getCategoryOfLawId())).thenReturn(
+        Mono.just(categoryOfLawValue));
     when(ebsApiClient.getAmendmentTypes(any())).thenReturn(Mono.just(amendmentTypes));
     when(caabApiClient.createApplication(anyString(), any())).thenReturn(Mono.empty());
 
@@ -192,11 +254,253 @@ class ApplicationServiceTest {
         .verifyComplete();
 
     verify(soaApiClient).getCaseReference(user.getLoginId(), user.getUserType());
-    verify(ebsApiClient).getCommonValues(anyString());
+    verify(lookupService).getCategoryOfLaw(applicationFormData.getCategoryOfLawId());
     verify(soaApiClient).getContractDetails(anyInt(), anyInt(), anyString(), anyString());
     verify(ebsApiClient).getAmendmentTypes(any());
     verify(caabApiClient).createApplication(anyString(), any());
 
+  }
+
+  @Test
+  void createApplication_Copy_success() throws ParseException {
+    String copyCaseReference = "1111";
+
+    ApplicationFormData applicationFormData = buildApplicationFormData();
+    applicationFormData.setCopyCaseReferenceNumber(copyCaseReference);
+    ClientDetail clientDetail = buildClientDetail();
+    CaseReferenceSummary caseReferenceSummary = buildCaseReferenceSummary();
+    UserDetail user = buildUserDetail();
+
+    // Mock everything that is needed to look up the copy Case and map it
+    // to an ApplicationDetail.
+    CaseDetail soaCase = buildCaseDetail(APP_TYPE_EMERGENCY);
+    soaCase.setCaseReferenceNumber(copyCaseReference);
+    // Reduce down to a single Proceeding for this test
+    soaCase.getApplicationDetails().getProceedings().remove(
+        soaCase.getApplicationDetails().getProceedings().size() - 1);
+
+    when(soaApiClient.getCase(copyCaseReference, user.getLoginId(), user.getUserType()))
+        .thenReturn(Mono.just(soaCase));
+
+    when(soaApiClient.getCaseReference(user.getLoginId(), user.getUserType()))
+        .thenReturn(Mono.just(caseReferenceSummary));
+
+    /* START ApplicationMappingContext */
+    CommonLookupValueDetail applicationTypeLookup = new CommonLookupValueDetail();
+
+    uk.gov.laa.ccms.data.model.ProviderDetail providerDetail = buildProviderDetail(
+        soaCase.getApplicationDetails().getProviderDetails().getProviderOfficeId(),
+        soaCase.getApplicationDetails().getProviderDetails().getFeeEarnerContactId(),
+        soaCase.getApplicationDetails().getProviderDetails().getSupervisorContactId());
+
+    CommonLookupDetail matterTypeLookups = new CommonLookupDetail()
+        .addContentItem(new CommonLookupValueDetail().code("mat1").description("mat 1"));
+
+    CommonLookupDetail levelOfServiceLookups = new CommonLookupDetail()
+        .addContentItem(new CommonLookupValueDetail().code("los1").description("los 1"));
+
+    CommonLookupDetail clientInvolvementLookups = new CommonLookupDetail()
+        .addContentItem(new CommonLookupValueDetail().code("ci1").description("ci 1"));
+
+    CommonLookupDetail scopeLimitations = new CommonLookupDetail()
+        .addContentItem(new CommonLookupValueDetail().code("sl1").description("sl 1"));
+
+    PriorAuthorityTypeDetails priorAuthorityTypes =
+        buildPriorAuthorityTypeDetails("dataType");
+
+    when(lookupService.getApplicationType(soaCase.getCertificateType()))
+        .thenReturn(Mono.just(applicationTypeLookup));
+
+    when(providerService.getProvider(Integer.parseInt(
+        soaCase.getApplicationDetails().getProviderDetails().getProviderFirmId())))
+        .thenReturn(Mono.just(providerDetail));
+
+    when(lookupService.getMatterTypes()).thenReturn(Mono.just(matterTypeLookups));
+
+    when(lookupService.getLevelsOfService()).thenReturn(Mono.just(levelOfServiceLookups));
+
+    when(lookupService.getClientInvolvementTypes()).thenReturn(Mono.just(clientInvolvementLookups));
+
+    when(lookupService.getScopeLimitations()).thenReturn(Mono.just(scopeLimitations));
+
+    when(lookupService.getPriorAuthorityTypes()).thenReturn(Mono.just(priorAuthorityTypes));
+
+
+    /* START ProceedingMappingContext */
+    ProceedingDetail soaProceeding = soaCase.getApplicationDetails().getProceedings().get(0);
+    uk.gov.laa.ccms.data.model.ProceedingDetail proceedingLookup =
+        new uk.gov.laa.ccms.data.model.ProceedingDetail();
+    when(ebsApiClient.getProceeding(soaProceeding.getProceedingType()))
+        .thenReturn(Mono.just(proceedingLookup));
+
+    CommonLookupValueDetail proceedingStatusLookup =
+        new CommonLookupValueDetail();
+    when(lookupService.getProceedingStatus(soaProceeding.getStatus()))
+        .thenReturn(Mono.just(proceedingStatusLookup));
+
+    // Mock the call for scopeLimitationDetails, used to calculate the max cost limitation.
+    ScopeLimitationDetails scopeLimitationOne = new ScopeLimitationDetails()
+        .totalElements(1)
+        .addContentItem(
+            new ScopeLimitationDetail()
+                .costLimitation(BigDecimal.ZERO)
+                .emergencyCostLimitation(BigDecimal.ZERO));
+
+    ScopeLimitationDetails scopeLimitationTwo = new ScopeLimitationDetails()
+        .totalElements(1)
+        .addContentItem(
+            new ScopeLimitationDetail()
+                .costLimitation(BigDecimal.TEN)
+                .emergencyCostLimitation(BigDecimal.ZERO));
+
+    ScopeLimitationDetails scopeLimitationThree = new ScopeLimitationDetails()
+        .totalElements(1)
+        .addContentItem(
+            new ScopeLimitationDetail()
+                .costLimitation(BigDecimal.ZERO)
+                .emergencyCostLimitation(BigDecimal.ONE));
+
+    when(lookupService.getScopeLimitationDetails(any(ScopeLimitationDetail.class)))
+        .thenReturn(Mono.just(scopeLimitationOne))
+        .thenReturn(Mono.just(scopeLimitationTwo))
+        .thenReturn(Mono.just(scopeLimitationThree));
+
+    // Mock objects for Proceeding Outcome
+    OutcomeResultLookupDetail outcomeResults = new OutcomeResultLookupDetail()
+        .totalElements(1)
+        .addContentItem(new OutcomeResultLookupValueDetail());
+    when(lookupService.getOutcomeResults(soaProceeding.getProceedingType(),
+        soaProceeding.getOutcome().getResult()))
+        .thenReturn(Mono.just(outcomeResults));
+
+    StageEndLookupDetail stageEnds = new StageEndLookupDetail()
+        .totalElements(1)
+        .addContentItem(new StageEndLookupValueDetail());
+    when(lookupService.getStageEnds(soaProceeding.getProceedingType(),
+        soaProceeding.getOutcome().getStageEnd()))
+        .thenReturn(Mono.just(stageEnds));
+
+    CommonLookupDetail courts = new CommonLookupDetail()
+        .totalElements(1)
+        .addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCourts(soaProceeding.getOutcome().getCourtCode()))
+        .thenReturn(Mono.just(courts));
+
+    /* START CaseOutcomeMappingContext */
+    AwardTypeLookupDetail awardTypes = buildAwardTypeLookupDetail(soaCase);
+
+    when(lookupService.getAwardTypes()).thenReturn(Mono.just(awardTypes));
+
+    /* END of mapping contexts */
+
+    ApplicationDetail applicationToCopy = buildApplicationDetail(1, true, new Date());
+    when(applicationMapper.toApplicationDetail(any(ApplicationMappingContext.class)))
+        .thenReturn(applicationToCopy);
+
+    // Mock out the additional calls for copying the application
+    when(lookupService.getCategoryOfLaw(applicationToCopy.getCategoryOfLaw().getId()))
+        .thenReturn(Mono.just(new CategoryOfLawLookupValueDetail()));
+    when(lookupService.getPersonToCaseRelationships()).thenReturn(
+        Mono.just(new RelationshipToCaseLookupDetail()));
+    when(copyApplicationMapper.copyApplication(
+        eq(applicationToCopy), eq(caseReferenceSummary),
+        eq(clientDetail), any(BigDecimal.class), any(BigDecimal.class)))
+        .thenReturn(applicationToCopy);
+
+    when(caabApiClient.createApplication(anyString(), any())).thenReturn(Mono.empty());
+
+    // Call the method under test
+    Mono<String> applicationMono = applicationService.createApplication(
+        applicationFormData, clientDetail, user);
+
+    StepVerifier.create(applicationMono)
+        .verifyComplete();
+
+    verify(copyApplicationMapper).copyApplication(
+        eq(applicationToCopy), eq(caseReferenceSummary),
+        eq(clientDetail), any(BigDecimal.class), any(BigDecimal.class));
+  }
+
+
+  @ParameterizedTest
+  @CsvSource({"true, 1, 10, other, false, false, false",
+      "true, 10, 1, false, other, false, false, false",
+      "false, 10, 1, other, false, false, false",
+      "false, 10, 1, other, false, true, false",
+      "false, 10, 1, " + OPPONENT_TYPE_INDIVIDUAL + ", true, true, false",
+      "false, 10, 1, " + OPPONENT_TYPE_INDIVIDUAL + ", false, true, true"})
+  void testCopyApplication(
+      Boolean copyCostLimit,
+      BigDecimal costLimit1,
+      BigDecimal costLimit2,
+      String opponentType,
+      Boolean opponentShared,
+      Boolean opponentRelCopyParty,
+      Boolean opponentEbsIdCleared) {
+    // Now add mocks for the actual copying.
+
+    // Build the application to copy from
+    ApplicationDetail applicationToCopy = buildApplicationDetail(2, Boolean.FALSE, new Date());
+    UserDetail userDetail = buildUserDetail();
+
+    ClientDetail clientDetail = buildClientDetail();
+    CaseReferenceSummary caseReferenceSummary = buildCaseReferenceSummary();
+
+    // Update the cost limitations for this test
+    applicationToCopy.getProceedings().get(0).setCostLimitation(costLimit1);
+    applicationToCopy.getProceedings().get(1).setCostLimitation(costLimit2);
+
+    // Update the opponent type for this test
+    applicationToCopy.getOpponents().get(0).setType(opponentType);
+    applicationToCopy.getOpponents().get(0).setSharedInd(opponentShared);
+
+    when(soaApiClient.getCaseReference(userDetail.getLoginId(), userDetail.getUserType()))
+        .thenReturn(Mono.just(caseReferenceSummary));
+
+    CategoryOfLawLookupValueDetail categoryOfLawLookupValueDetail =
+        buildCategoryOfLawLookupValueDetail(copyCostLimit);
+    // Update the category of law lookup for this test
+    categoryOfLawLookupValueDetail.setCopyCostLimit(copyCostLimit);
+
+    when(lookupService.getCategoryOfLaw(applicationToCopy.getCategoryOfLaw().getId()))
+        .thenReturn(Mono.just(categoryOfLawLookupValueDetail));
+
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        buildRelationshipToCaseLookupDetail();
+    // Update the relationshipToCase lookup for this test
+    relationshipToCaseLookupDetail.getContent().get(0).setCopyParty(opponentRelCopyParty);
+
+    when(lookupService.getPersonToCaseRelationships()).thenReturn(
+        Mono.just(relationshipToCaseLookupDetail));
+
+    // If the category of law has copyCostLimit set to TRUE the requested cost
+    // limit from the applicationToCopy's costs should be used.
+    BigDecimal expectedRequestedCostLimit =
+        copyCostLimit ? applicationToCopy.getCosts().getRequestedCostLimitation() : BigDecimal.ZERO;
+
+    // Get the max cost limitation
+    BigDecimal expectedDefaultCostLimit = costLimit1.max(costLimit2);
+
+    when(copyApplicationMapper.copyApplication(
+        applicationToCopy, caseReferenceSummary, clientDetail,
+        expectedRequestedCostLimit, expectedDefaultCostLimit))
+        .thenReturn(applicationToCopy);
+
+
+    /* Call the method under test */
+    Mono<ApplicationDetail> result =
+        applicationService.copyApplication(applicationToCopy, clientDetail, userDetail);
+
+    // If the opponent is an INDIVIDUAL, it is not shared, and the opponents relationship
+    // to the case is set to 'Copy Party' then the ebsId should be null.
+    StepVerifier.create(result)
+        .expectNextMatches(applicationDetail ->
+            opponentEbsIdCleared == (applicationDetail.getOpponents().get(0).getEbsId() == null))
+        .verifyComplete();
+
+    verify(copyApplicationMapper).copyApplication(
+        applicationToCopy, caseReferenceSummary, clientDetail,
+        expectedRequestedCostLimit, expectedDefaultCostLimit);
   }
 
   @Test
@@ -380,25 +684,580 @@ class ApplicationServiceTest {
     verify(caabApiClient).patchApplication(eq(id), eq(user.getLoginId()), any(), eq("application-type"));
 
   }
-  
-  private UserDetail buildUser() {
-    return new UserDetail()
-        .userId(1)
-        .userType("testUserType")
-        .loginId("testLoginId")
-        .provider(buildBaseProvider());
+
+  @Test
+  void testBuildCaseOutcomeMappingContext() {
+    CaseDetail soaCase = buildCaseDetail("anytype");
+    List<ProceedingMappingContext> proceedingMappingContexts = Collections.singletonList(
+        ProceedingMappingContext.builder().build());
+
+    AwardTypeLookupDetail awardTypes = buildAwardTypeLookupDetail(soaCase);
+
+    when(lookupService.getAwardTypes()).thenReturn(Mono.just(awardTypes));
+
+    CaseOutcomeMappingContext result = applicationService.buildCaseOutcomeMappingContext(
+        soaCase,
+        proceedingMappingContexts);
+
+    assertNotNull(result);
+    assertEquals(soaCase, result.getSoaCase());
+    assertNotNull(result.getCostAwards());
+    assertNotNull(result.getFinancialAwards());
+    assertNotNull(result.getLandAwards());
+    assertNotNull(result.getOtherAssetAwards());
+    assertEquals(1, result.getCostAwards().size());
+    assertEquals(soaCase.getAwards().get(0), result.getCostAwards().get(0));
+    assertEquals(1, result.getFinancialAwards().size());
+    assertEquals(soaCase.getAwards().get(1), result.getFinancialAwards().get(0));
+    assertEquals(1, result.getLandAwards().size());
+    assertEquals(soaCase.getAwards().get(2), result.getLandAwards().get(0));
+    assertEquals(1, result.getOtherAssetAwards().size());
+    assertEquals(soaCase.getAwards().get(3), result.getOtherAssetAwards().get(0));
+    assertEquals(proceedingMappingContexts, result.getProceedingOutcomes());
   }
 
-  private BaseProvider buildBaseProvider() {
-    return new BaseProvider()
-        .id(123)
-        .addOfficesItem(
-            new BaseOffice()
-                .id(1)
-                .name("Office 1"));
+  @Test
+  void testBuildCaseOutcomeMappingContext_NoAwardTypes() {
+    CaseDetail soaCase = buildCaseDetail("anytype");
+    List<ProceedingMappingContext> proceedingMappingContexts = Collections.singletonList(
+        ProceedingMappingContext.builder().build());
+
+    AwardTypeLookupDetail awardTypes = new AwardTypeLookupDetail();
+
+    when(lookupService.getAwardTypes()).thenReturn(Mono.just(awardTypes));
+
+    assertThrows(CaabApplicationException.class, () ->
+      applicationService.buildCaseOutcomeMappingContext(soaCase, proceedingMappingContexts));
   }
 
-  private ApplicationFormData buildApplicationDetails() {
+  @Test
+  void testBuildCaseOutcomeMappingContext_UnknownAwardType() {
+    CaseDetail soaCase = buildCaseDetail("anytype");
+    List<ProceedingMappingContext> proceedingMappingContexts = Collections.singletonList(
+        ProceedingMappingContext.builder().build());
+
+    AwardTypeLookupDetail awardTypes = buildAwardTypeLookupDetail(soaCase);
+    // Drop out one of the award types
+    awardTypes.getContent().remove(awardTypes.getContent().size() - 1);
+
+    when(lookupService.getAwardTypes()).thenReturn(Mono.just(awardTypes));
+
+    Exception e = assertThrows(CaabApplicationException.class, () ->
+        applicationService.buildCaseOutcomeMappingContext(soaCase, proceedingMappingContexts));
+
+    assertEquals(String.format("Failed to find AwardType with code: %s",
+        soaCase.getAwards().get(3).getAwardType()), e.getMessage());
+  }
+
+  @Test
+  void testBuildPriorAuthorityMappingContext_LovLookup() {
+    PriorAuthority soaPriorAuthority = buildPriorAuthority();
+
+    PriorAuthorityTypeDetails priorAuthorityTypeDetails =
+        buildPriorAuthorityTypeDetails(REFERENCE_DATA_ITEM_TYPE_LOV);
+    PriorAuthorityDetail priorAuthoritiesItem = priorAuthorityTypeDetails.getContent().get(0)
+        .getPriorAuthorities().get(0);
+
+    CommonLookupValueDetail lookup = new CommonLookupValueDetail()
+        .code("thecode")
+        .description("thedescription");
+
+    when(lookupService.getCommonValue(priorAuthoritiesItem.getLovCode(),
+        soaPriorAuthority.getDetails().get(0).getValue()))
+        .thenReturn(Mono.just(lookup));
+
+    PriorAuthorityMappingContext result = applicationService.buildPriorAuthorityMappingContext(
+        soaPriorAuthority,
+        priorAuthorityTypeDetails);
+
+    verify(lookupService).getCommonValue(priorAuthoritiesItem.getLovCode(),
+        soaPriorAuthority.getDetails().get(0).getValue());
+
+    assertNotNull(result);
+    assertEquals(soaPriorAuthority, result.getSoaPriorAuthority());
+    assertNotNull(result.getPriorAuthorityTypeLookup());
+    assertEquals(priorAuthorityTypeDetails.getContent().get(0),
+        result.getPriorAuthorityTypeLookup());
+
+    assertNotNull(result.getItems());
+    assertEquals(1, result.getItems().size());
+    assertEquals(priorAuthoritiesItem, result.getItems().get(0).getKey());
+    assertEquals(soaPriorAuthority.getDetails().get(0).getValue(),
+        result.getItems().get(0).getValue().getCode());
+    assertEquals(lookup.getDescription(),
+        result.getItems().get(0).getValue().getDescription());
+  }
+
+  @Test
+  void testBuildPriorAuthorityMappingContext_NoLovLookup() {
+    PriorAuthority soaPriorAuthority = buildPriorAuthority();
+
+    PriorAuthorityTypeDetails priorAuthorityTypeDetails =
+        buildPriorAuthorityTypeDetails("otherDataType");
+
+    PriorAuthorityMappingContext result = applicationService.buildPriorAuthorityMappingContext(
+        soaPriorAuthority,
+        priorAuthorityTypeDetails);
+
+    verifyNoInteractions(lookupService);
+
+    assertNotNull(result);
+    assertEquals(soaPriorAuthority, result.getSoaPriorAuthority());
+    assertNotNull(result.getPriorAuthorityTypeLookup());
+    assertEquals(priorAuthorityTypeDetails.getContent().get(0),
+        result.getPriorAuthorityTypeLookup());
+
+    assertNotNull(result.getItems());
+    assertEquals(1, result.getItems().size());
+    assertEquals(priorAuthorityTypeDetails.getContent().get(0).getPriorAuthorities().get(0),
+        result.getItems().get(0).getKey());
+    assertEquals(soaPriorAuthority.getDetails().get(0).getValue(),
+        result.getItems().get(0).getValue().getCode());
+    assertEquals(soaPriorAuthority.getDetails().get(0).getValue(),
+        result.getItems().get(0).getValue().getDescription());
+  }
+
+  @Test
+  void testBuildPriorAuthorityMappingContext_UnknownPriorAuthType() {
+    PriorAuthority soaPriorAuthority = buildPriorAuthority();
+
+    PriorAuthorityDetail priorAuthoritiesItem = new PriorAuthorityDetail()
+        .code(soaPriorAuthority.getDetails().get(0).getName())
+        .description("priorAuthItemDesc")
+        .dataType("other");
+
+    PriorAuthorityTypeDetails priorAuthorityTypeDetails = new PriorAuthorityTypeDetails()
+        .addContentItem(new PriorAuthorityTypeDetail()
+            .code("adifferentcode")
+            .description("priorAuthDesc")
+            .addPriorAuthoritiesItem(priorAuthoritiesItem));
+
+    Exception e = assertThrows(CaabApplicationException.class,
+        () -> applicationService.buildPriorAuthorityMappingContext(
+        soaPriorAuthority,
+        priorAuthorityTypeDetails));
+
+    assertEquals(String.format("Failed to find PriorAuthorityType with code: %s",
+        soaPriorAuthority.getPriorAuthorityType()), e.getMessage());
+  }
+
+  @Test
+  void testBuildPriorAuthorityMappingContext_UnknownLookup() {
+    PriorAuthority soaPriorAuthority = buildPriorAuthority();
+
+    PriorAuthorityDetail priorAuthoritiesItem = new PriorAuthorityDetail()
+        .code(soaPriorAuthority.getDetails().get(0).getName())
+        .description("priorAuthItemDesc")
+        .dataType(REFERENCE_DATA_ITEM_TYPE_LOV);
+
+    PriorAuthorityTypeDetails priorAuthorityTypeDetails = new PriorAuthorityTypeDetails()
+        .addContentItem(new PriorAuthorityTypeDetail()
+            .code(soaPriorAuthority.getPriorAuthorityType())
+            .description("priorAuthDesc")
+            .addPriorAuthoritiesItem(priorAuthoritiesItem));
+
+    when(lookupService.getCommonValue(priorAuthoritiesItem.getLovCode(),
+        soaPriorAuthority.getDetails().get(0).getValue()))
+        .thenReturn(Mono.empty());
+
+    Exception e = assertThrows(CaabApplicationException.class,
+        () -> applicationService.buildPriorAuthorityMappingContext(
+        soaPriorAuthority,
+        priorAuthorityTypeDetails));
+
+    assertEquals(String.format("Failed to find common value with code: %s",
+        soaPriorAuthority.getDetails().get(0).getValue()), e.getMessage());
+  }
+
+  @Test
+  void testBuildProceedingMappingContext_Emergency() {
+    ProceedingDetail soaProceeding = buildProceedingDetail(STATUS_DRAFT);
+    CaseDetail soaCase = buildCaseDetail(APP_TYPE_EMERGENCY);
+
+    // Mock out the remaining lookups
+    uk.gov.laa.ccms.data.model.ProceedingDetail proceedingLookup =
+        new uk.gov.laa.ccms.data.model.ProceedingDetail();
+    when(ebsApiClient.getProceeding(soaProceeding.getProceedingType()))
+        .thenReturn(Mono.just(proceedingLookup));
+
+    CommonLookupValueDetail proceedingStatusLookup =
+        new CommonLookupValueDetail();
+    when(lookupService.getProceedingStatus(soaProceeding.getStatus()))
+        .thenReturn(Mono.just(proceedingStatusLookup));
+
+    CommonLookupValueDetail matterTypeLookup = new CommonLookupValueDetail()
+        .code(soaProceeding.getMatterType())
+        .description("the matter type");
+    CommonLookupValueDetail levelOfServiceLookup = new CommonLookupValueDetail()
+        .code(soaProceeding.getLevelOfService())
+        .description("the los");
+    CommonLookupValueDetail clientInvLookup = new CommonLookupValueDetail()
+        .code(soaProceeding.getClientInvolvementType())
+        .description("the involvement");
+    CommonLookupValueDetail scopeLimitationOneLookup = new CommonLookupValueDetail()
+        .code(soaProceeding.getScopeLimitations().get(0).getScopeLimitation())
+        .description("the limitation 1");
+    CommonLookupValueDetail scopeLimitationTwoLookup = new CommonLookupValueDetail()
+        .code(soaProceeding.getScopeLimitations().get(1).getScopeLimitation())
+        .description("the limitation 2");
+    CommonLookupValueDetail scopeLimitationThreeLookup = new CommonLookupValueDetail()
+        .code(soaProceeding.getScopeLimitations().get(2).getScopeLimitation())
+        .description("the limitation 3");
+
+    Map<String, CommonLookupValueDetail> matterTypeLookups = Collections.singletonMap(
+        soaProceeding.getMatterType(),
+        matterTypeLookup);
+
+    Map<String, CommonLookupValueDetail> levelOfServiceLookups = Collections.singletonMap(
+        soaProceeding.getLevelOfService(),
+        levelOfServiceLookup);
+
+    Map<String, CommonLookupValueDetail> clientInvolvementLookups = Collections.singletonMap(
+        soaProceeding.getClientInvolvementType(),
+        clientInvLookup);
+
+    Map<String, CommonLookupValueDetail> scopeLimitationLookups = Stream.of(
+        scopeLimitationOneLookup,
+        scopeLimitationTwoLookup,
+        scopeLimitationThreeLookup)
+        .collect(Collectors.toMap(CommonLookupValueDetail::getCode, Function.identity()));
+
+    // Mock the call for scopeLimitationDetails, used to calculate the max cost limitation.
+    ScopeLimitationDetails scopeLimitationOne = new ScopeLimitationDetails()
+        .totalElements(1)
+        .addContentItem(
+            new ScopeLimitationDetail()
+                .costLimitation(BigDecimal.ZERO)
+                .emergencyCostLimitation(BigDecimal.ZERO));
+
+    ScopeLimitationDetails scopeLimitationTwo = new ScopeLimitationDetails()
+        .totalElements(1)
+        .addContentItem(
+            new ScopeLimitationDetail()
+                .costLimitation(BigDecimal.TEN)
+                .emergencyCostLimitation(BigDecimal.ZERO));
+
+    ScopeLimitationDetails scopeLimitationThree = new ScopeLimitationDetails()
+        .totalElements(1)
+        .addContentItem(
+            new ScopeLimitationDetail()
+                .costLimitation(BigDecimal.ZERO)
+                .emergencyCostLimitation(BigDecimal.ONE));
+
+    when(lookupService.getScopeLimitationDetails(any(ScopeLimitationDetail.class)))
+        .thenReturn(Mono.just(scopeLimitationOne))
+        .thenReturn(Mono.just(scopeLimitationTwo))
+        .thenReturn(Mono.just(scopeLimitationThree));
+
+    BigDecimal expectedCostLimitation = BigDecimal.ONE;
+
+    // Mock objects for Proceeding Outcome
+    OutcomeResultLookupDetail outcomeResults = new OutcomeResultLookupDetail()
+        .totalElements(1)
+        .addContentItem(new OutcomeResultLookupValueDetail());
+    when(lookupService.getOutcomeResults(soaProceeding.getProceedingType(),
+        soaProceeding.getOutcome().getResult()))
+        .thenReturn(Mono.just(outcomeResults));
+
+    StageEndLookupDetail stageEnds = new StageEndLookupDetail()
+        .totalElements(1)
+        .addContentItem(new StageEndLookupValueDetail());
+    when(lookupService.getStageEnds(soaProceeding.getProceedingType(),
+        soaProceeding.getOutcome().getStageEnd()))
+        .thenReturn(Mono.just(stageEnds));
+
+    CommonLookupDetail courts = new CommonLookupDetail()
+        .totalElements(1)
+        .addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCourts(soaProceeding.getOutcome().getCourtCode()))
+        .thenReturn(Mono.just(courts));
+
+    // Call the method under test
+   ProceedingMappingContext result =
+        applicationService.buildProceedingMappingContext(
+          soaProceeding,
+          soaCase,
+          matterTypeLookups,
+          levelOfServiceLookups,
+          clientInvolvementLookups,
+          scopeLimitationLookups);
+
+//    StepVerifier.create(proceedingMappingContextMono)
+//        .expectNextMatches(result -> {
+          assertNotNull(result);
+          assertEquals(soaProceeding, result.getSoaProceeding());
+          assertEquals(clientInvLookup, result.getClientInvolvement());
+          assertEquals(levelOfServiceLookup, result.getLevelOfService());
+          assertEquals(matterTypeLookup, result.getMatterType());
+          assertEquals(expectedCostLimitation, result.getProceedingCostLimitation());
+          assertEquals(proceedingLookup, result.getProceedingLookup());
+          assertEquals(proceedingStatusLookup, result.getProceedingStatusLookup());
+          assertNotNull(result.getScopeLimitations());
+          assertEquals(3, result.getScopeLimitations().size());
+          assertEquals(soaProceeding.getScopeLimitations().get(0),
+              result.getScopeLimitations().get(0).getKey());
+          assertEquals(scopeLimitationOneLookup, result.getScopeLimitations().get(0).getValue());
+          assertEquals(soaProceeding.getScopeLimitations().get(1),
+              result.getScopeLimitations().get(1).getKey());
+          assertEquals(scopeLimitationTwoLookup, result.getScopeLimitations().get(1).getValue());
+          assertEquals(soaProceeding.getScopeLimitations().get(2),
+              result.getScopeLimitations().get(2).getKey());
+          assertEquals(scopeLimitationThreeLookup, result.getScopeLimitations().get(2).getValue());
+
+          // Check the proceeding outcome data
+          assertEquals(outcomeResults.getContent().get(0), result.getOutcomeResultLookup());
+          assertEquals(stageEnds.getContent().get(0), result.getStageEndLookup());
+          assertEquals(courts.getContent().get(0), result.getCourtLookup());
+//          return true; // Return true to indicate the match is successful
+//        })
+//        .verifyComplete();
+  }
+
+  @Test
+  void testCalculateProceedingCostLimitation_NonEmergency() {
+    ProceedingDetail soaProceeding = buildProceedingDetail(STATUS_DRAFT);
+    CaseDetail soaCase = buildCaseDetail(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
+
+    // Mock the call for scopeLimitationDetails, used to calculate the max cost limitation.
+    ScopeLimitationDetails scopeLimitationOne = new ScopeLimitationDetails()
+        .totalElements(1)
+        .addContentItem(
+            new ScopeLimitationDetail()
+                .costLimitation(BigDecimal.ZERO)
+                .emergencyCostLimitation(BigDecimal.ZERO));
+
+    ScopeLimitationDetails scopeLimitationTwo = new ScopeLimitationDetails()
+        .totalElements(1)
+        .addContentItem(
+            new ScopeLimitationDetail()
+                .costLimitation(BigDecimal.TEN)
+                .emergencyCostLimitation(BigDecimal.ZERO));
+
+    ScopeLimitationDetails scopeLimitationThree = new ScopeLimitationDetails()
+        .totalElements(1)
+        .addContentItem(
+            new ScopeLimitationDetail()
+                .costLimitation(BigDecimal.ZERO)
+                .emergencyCostLimitation(BigDecimal.ONE));
+
+    when(lookupService.getScopeLimitationDetails(any(ScopeLimitationDetail.class)))
+        .thenReturn(Mono.just(scopeLimitationOne))
+        .thenReturn(Mono.just(scopeLimitationTwo))
+        .thenReturn(Mono.just(scopeLimitationThree));
+
+    BigDecimal expectedCostLimitation = BigDecimal.TEN;
+
+    // Call the method under test
+    BigDecimal result =
+        applicationService.calculateProceedingCostLimitation(soaProceeding,
+            soaCase);
+
+    verify(lookupService, times(3))
+        .getScopeLimitationDetails(any(ScopeLimitationDetail.class));
+
+    assertEquals(expectedCostLimitation, result);
+  }
+
+  @Test
+  void testAddProceedingOutcomeContext_NullOutcome() {
+    ProceedingDetail soaProceeding = buildProceedingDetail(STATUS_DRAFT);
+    soaProceeding.setOutcome(null);
+
+    applicationService.addProceedingOutcomeContext(
+        ProceedingMappingContext.builder(), soaProceeding);
+
+    verifyNoInteractions(lookupService);
+  }
+
+  @Test
+  void testBuildApplicationMappingContext_DevolvedPowersAllDraftProceedings() {
+    CaseDetail soaCase = buildCaseDetail(APP_TYPE_EMERGENCY_DEVOLVED_POWERS);
+    soaCase.getApplicationDetails().getProceedings().forEach(
+        proceedingDetail -> {
+          // Clear the outcome and scopelimitations from all proceedings - this is tested elsewhere
+          proceedingDetail.setOutcome(null);
+          proceedingDetail.getScopeLimitations().clear();
+
+          // Set status for all proceedings to DRAFT
+          proceedingDetail.setStatus(STATUS_DRAFT);
+        });
+    soaCase.getPriorAuthorities().clear(); // PriorAuthority mapping context tested elsewhere.
+    soaCase.getAwards().clear(); // Awards tested separately.
+
+    CommonLookupValueDetail applicationTypeLookup = new CommonLookupValueDetail();
+
+    uk.gov.laa.ccms.data.model.ProviderDetail providerDetail = buildProviderDetail(
+        soaCase.getApplicationDetails().getProviderDetails().getProviderOfficeId(),
+        soaCase.getApplicationDetails().getProviderDetails().getFeeEarnerContactId(),
+        soaCase.getApplicationDetails().getProviderDetails().getSupervisorContactId());
+
+    CommonLookupDetail matterTypeLookups = new CommonLookupDetail()
+        .addContentItem(new CommonLookupValueDetail().code("mat1").description("mat 1"));
+
+    CommonLookupDetail levelOfServiceLookups = new CommonLookupDetail()
+        .addContentItem(new CommonLookupValueDetail().code("los1").description("los 1"));
+
+    CommonLookupDetail clientInvolvementLookups = new CommonLookupDetail()
+        .addContentItem(new CommonLookupValueDetail().code("ci1").description("ci 1"));
+
+    CommonLookupDetail scopeLimitations = new CommonLookupDetail()
+        .addContentItem(new CommonLookupValueDetail().code("sl1").description("sl 1"));
+
+    PriorAuthorityTypeDetails priorAuthorityTypes =
+        buildPriorAuthorityTypeDetails("dataType");
+
+    when(lookupService.getApplicationType(soaCase.getCertificateType()))
+        .thenReturn(Mono.just(applicationTypeLookup));
+
+    when(providerService.getProvider(Integer.parseInt(
+        soaCase.getApplicationDetails().getProviderDetails().getProviderFirmId())))
+        .thenReturn(Mono.just(providerDetail));
+
+    when(lookupService.getMatterTypes()).thenReturn(Mono.just(matterTypeLookups));
+
+    when(lookupService.getLevelsOfService()).thenReturn(Mono.just(levelOfServiceLookups));
+
+    when(lookupService.getClientInvolvementTypes()).thenReturn(Mono.just(clientInvolvementLookups));
+
+    when(lookupService.getScopeLimitations()).thenReturn(Mono.just(scopeLimitations));
+
+    when(lookupService.getPriorAuthorityTypes()).thenReturn(Mono.just(priorAuthorityTypes));
+
+    // Also need to mock calls for the 'sub' mapping contexts, but we aren't testing their
+    // content here.
+    when(ebsApiClient.getProceeding(any(String.class)))
+        .thenReturn(Mono.just(new uk.gov.laa.ccms.data.model.ProceedingDetail()));
+    when(lookupService.getProceedingStatus(any(String.class)))
+        .thenReturn(Mono.just(new CommonLookupValueDetail()));
+    when(lookupService.getAwardTypes()).thenReturn(Mono.just(
+        new AwardTypeLookupDetail()
+            .addContentItem(new AwardTypeLookupValueDetail())));
+
+    ApplicationMappingContext result =
+        applicationService.buildApplicationMappingContext(soaCase);
+
+//    StepVerifier.create(resultMono)
+//        .expectNextMatches(result -> {
+          assertNotNull(result);
+          assertEquals(soaCase, result.getSoaCaseDetail());
+          assertEquals(applicationTypeLookup, result.getApplicationType());
+          assertEquals(providerDetail, result.getProviderDetail());
+          assertEquals(providerDetail.getOffices().get(2), result.getProviderOffice());
+          assertEquals(providerDetail.getOffices().get(2).getFeeEarners().get(0),
+              result.getFeeEarnerContact());
+          assertEquals(providerDetail.getOffices().get(2).getFeeEarners().get(1),
+              result.getSupervisorContact());
+          assertTrue(result.getCaseWithOnlyDraftProceedings());
+          assertTrue(result.getDevolvedPowers().getKey());
+          assertEquals(soaCase.getApplicationDetails().getDevolvedPowersDate(),
+              result.getDevolvedPowers().getValue());
+
+          // Category of law has an overall totalPaidToDate of 10.
+          // Two cost limitations in the category of law, with a paidToDate of 1 for each.
+          assertEquals(8, result.getCurrentProviderBilledAmount().intValue());
+
+          // Case is draft-only, so amendmentProceedings should be empty.
+          assertTrue(result.getAmendmentProceedingsInEbs().isEmpty());
+          assertEquals(soaCase.getApplicationDetails().getProceedings().size(),
+              result.getProceedings().size());
+
+          assertNotNull(result.getCaseOutcome());
+          assertEquals(soaCase.getApplicationDetails().getProceedings().size(),
+              result.getCaseOutcome().getProceedingOutcomes().size());
+
+          assertNotNull(result.getMeansAssessment());
+          assertNotNull(result.getMeritsAssessment());
+
+          assertTrue(result.getPriorAuthorities().isEmpty());
+//          return true;
+//        })
+//        .verifyComplete();
+  }
+
+  @Test
+  void testBuildApplicationMappingContext_NonDevolvedPowersMixedProceedings() {
+    CaseDetail soaCase = buildCaseDetail(APP_TYPE_EMERGENCY);
+    soaCase.getApplicationDetails().getProceedings().forEach(
+        proceedingDetail -> {
+          // Clear the outcome and scopelimitations from all proceedings - this is tested elsewhere
+          proceedingDetail.setOutcome(null);
+          proceedingDetail.getScopeLimitations().clear();
+        });
+    soaCase.getPriorAuthorities().clear(); // PriorAuthority mapping context tested elsewhere.
+    soaCase.getAwards().clear(); // Awards tested separately.
+
+    CommonLookupValueDetail applicationTypeLookup = new CommonLookupValueDetail();
+
+    uk.gov.laa.ccms.data.model.ProviderDetail providerDetail = buildProviderDetail(
+        soaCase.getApplicationDetails().getProviderDetails().getProviderOfficeId(),
+        soaCase.getApplicationDetails().getProviderDetails().getFeeEarnerContactId(),
+        soaCase.getApplicationDetails().getProviderDetails().getSupervisorContactId());
+
+    CommonLookupDetail matterTypeLookups = new CommonLookupDetail()
+        .addContentItem(new CommonLookupValueDetail().code("mat1").description("mat 1"));
+
+    CommonLookupDetail levelOfServiceLookups = new CommonLookupDetail()
+        .addContentItem(new CommonLookupValueDetail().code("los1").description("los 1"));
+
+    CommonLookupDetail clientInvolvementLookups = new CommonLookupDetail()
+        .addContentItem(new CommonLookupValueDetail().code("ci1").description("ci 1"));
+
+    CommonLookupDetail scopeLimitations = new CommonLookupDetail()
+        .addContentItem(new CommonLookupValueDetail().code("sl1").description("sl 1"));
+
+    PriorAuthorityTypeDetails priorAuthorityTypes = new PriorAuthorityTypeDetails()
+        .addContentItem(new PriorAuthorityTypeDetail()
+            .code("picode")
+            .description("pi desc")
+            .addPriorAuthoritiesItem(new PriorAuthorityDetail()));
+
+    when(lookupService.getApplicationType(soaCase.getCertificateType()))
+        .thenReturn(Mono.just(applicationTypeLookup));
+
+    when(providerService.getProvider(Integer.parseInt(
+        soaCase.getApplicationDetails().getProviderDetails().getProviderFirmId())))
+        .thenReturn(Mono.just(providerDetail));
+
+    when(lookupService.getMatterTypes()).thenReturn(Mono.just(matterTypeLookups));
+
+    when(lookupService.getLevelsOfService()).thenReturn(Mono.just(levelOfServiceLookups));
+
+    when(lookupService.getClientInvolvementTypes()).thenReturn(Mono.just(clientInvolvementLookups));
+
+    when(lookupService.getScopeLimitations()).thenReturn(Mono.just(scopeLimitations));
+
+    when(lookupService.getPriorAuthorityTypes()).thenReturn(Mono.just(priorAuthorityTypes));
+
+    // Also need to mock calls for the 'sub' mapping contexts, but we aren't testing their
+    // content here.
+    when(ebsApiClient.getProceeding(any(String.class)))
+        .thenReturn(Mono.just(new uk.gov.laa.ccms.data.model.ProceedingDetail()));
+    when(lookupService.getProceedingStatus(any(String.class)))
+        .thenReturn(Mono.just(new CommonLookupValueDetail()));
+    when(lookupService.getAwardTypes()).thenReturn(Mono.just(
+        new AwardTypeLookupDetail()
+            .addContentItem(new AwardTypeLookupValueDetail())));
+
+    ApplicationMappingContext result =
+        applicationService.buildApplicationMappingContext(soaCase);
+
+//    StepVerifier.create(resultMono)
+//        .expectNextMatches(result -> {
+          assertNotNull(result);
+
+          assertFalse(result.getCaseWithOnlyDraftProceedings());
+          assertFalse(result.getDevolvedPowers().getKey());
+          assertNull(result.getDevolvedPowers().getValue());
+
+          // Proceedings should be split between the two lists
+          assertEquals(1, result.getAmendmentProceedingsInEbs().size());
+          assertEquals(1, result.getProceedings().size());
+//          return true;
+//        })
+//        .verifyComplete();
+  }
+
+  private ApplicationFormData buildApplicationFormData() {
     ApplicationFormData applicationFormData = new ApplicationFormData();
     applicationFormData.setOfficeId(1);
     applicationFormData.setCategoryOfLawId("COL");

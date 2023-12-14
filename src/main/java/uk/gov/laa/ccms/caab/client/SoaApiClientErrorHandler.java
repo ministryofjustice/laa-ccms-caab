@@ -10,6 +10,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
+import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -97,6 +98,21 @@ public class SoaApiClientErrorHandler {
             copyCaseSearchCriteria.getFeeEarnerId(),
             copyCaseSearchCriteria.getOfficeId(),
             copyCaseSearchCriteria.getClientSurname(), e);
+    return Mono.empty();
+  }
+
+  /**
+   * Handles errors that occur while fetching a CaseDetail.
+   *
+   * @param caseReferenceNumber The requested caseReferenceNumber.
+   * @param e Exception thrown during operation.
+   * @return An empty Mono.
+   */
+  public Mono<CaseDetail> handleCaseDetailError(
+      String caseReferenceNumber, Throwable e) {
+    log.error("Failed to retrieve CaseDetail for "
+            + "caseReferenceNumber: {}",
+        caseReferenceNumber, e);
     return Mono.empty();
   }
 

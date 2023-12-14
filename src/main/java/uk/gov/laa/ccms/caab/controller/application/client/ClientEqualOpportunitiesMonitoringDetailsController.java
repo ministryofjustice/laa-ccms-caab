@@ -16,7 +16,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataMonitoringDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 
 /**
  * Controller for handling equal opportunities monitoring client details selection during the
@@ -28,7 +28,7 @@ import uk.gov.laa.ccms.caab.service.CommonLookupService;
 @SessionAttributes({CLIENT_FLOW_FORM_DATA})
 public class ClientEqualOpportunitiesMonitoringDetailsController {
 
-  private final CommonLookupService commonLookupService;
+  private final LookupService lookupService;
 
   private final ClientEqualOpportunitiesMonitoringDetailsValidator validator;
 
@@ -94,9 +94,9 @@ public class ClientEqualOpportunitiesMonitoringDetailsController {
   private void populateDropdowns(Model model) {
     new DropdownBuilder(model)
         .addDropdown("ethnicOrigins",
-            commonLookupService.getEthnicOrigins())
+            lookupService.getEthnicOrigins())
         .addDropdown("disabilities",
-            commonLookupService.getDisabilities())
+            lookupService.getDisabilities())
         .build();
   }
 }

@@ -22,7 +22,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.model.ClientAddressResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 
 /**
  * Controller for handling address client details selection during the new application process.
@@ -36,7 +36,7 @@ public class ClientAddressDetailsController {
 
   private final AddressService addressService;
 
-  private final CommonLookupService commonLookupService;
+  private final LookupService lookupService;
 
   private final ClientAddressDetailsValidator clientAddressDetailsValidator;
 
@@ -139,7 +139,7 @@ public class ClientAddressDetailsController {
   private void populateDropdowns(Model model) {
     new DropdownBuilder(model)
         .addDropdown("countries",
-            commonLookupService.getCountries())
+            lookupService.getCountries())
         .build();
   }
 }

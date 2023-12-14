@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -120,14 +121,15 @@ public class ProviderService {
    * @return List of contact details representing fee earners.
    */
   public List<ContactDetail> getAllFeeEarners(ProviderDetail provider) {
-    return provider.getOffices().stream()
+    return provider.getOffices() != null ? provider.getOffices().stream()
         .map(OfficeDetail::getFeeEarners)
+        .filter(Objects::nonNull)
         .flatMap(Collection::stream)
         .collect(Collectors.toSet())
         .stream()
         .filter(contactDetail -> contactDetail.getName() != null)
         .sorted(Comparator.comparing(ContactDetail::getName))
-        .collect(Collectors.toList());
+        .collect(Collectors.toList()) : Collections.emptyList();
   }
 
   /**
@@ -138,12 +140,13 @@ public class ProviderService {
    * @return List of contact details representing fee earners for the specified office.
    */
   public List<ContactDetail> getFeeEarnersByOffice(ProviderDetail provider, Integer officeId) {
-    return provider.getOffices().stream()
+    return provider.getOffices() != null ? provider.getOffices().stream()
         .filter(officeDetail -> officeDetail.getId().equals(officeId))
-        .flatMap(officeDetail -> officeDetail.getFeeEarners().stream())
+        .flatMap(officeDetail -> officeDetail.getFeeEarners() != null
+            ? officeDetail.getFeeEarners().stream() : Stream.empty())
         .filter(contactDetail -> contactDetail.getName() != null)
         .sorted(Comparator.comparing(ContactDetail::getName))
-        .collect(Collectors.toList());
+        .collect(Collectors.toList()) : Collections.emptyList();
   }
 
   /**

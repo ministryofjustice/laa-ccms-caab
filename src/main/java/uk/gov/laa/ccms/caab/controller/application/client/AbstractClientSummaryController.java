@@ -17,7 +17,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonit
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 /**
@@ -26,7 +26,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @RequiredArgsConstructor
 public abstract class AbstractClientSummaryController {
 
-  protected final CommonLookupService commonLookupService;
+  protected final LookupService lookupService;
 
   protected final ClientService clientService;
 
@@ -60,38 +60,37 @@ public abstract class AbstractClientSummaryController {
     // Create a list of Mono calls and their respective attribute keys
     List<Pair<String, Mono<CommonLookupValueDetail>>> lookups = List.of(
         Pair.of("contactTitle",
-            commonLookupService.getContactTitle(
+            lookupService.getContactTitle(
                 clientFlowFormData.getBasicDetails().getTitle())),
         Pair.of("countryOfOrigin",
-            commonLookupService.getCountry(
+            lookupService.getCountry(
                 clientFlowFormData.getBasicDetails().getCountryOfOrigin())),
         Pair.of("maritalStatus",
-            commonLookupService.getMaritalStatus(
+            lookupService.getMaritalStatus(
                 clientFlowFormData.getBasicDetails().getMaritalStatus())),
         Pair.of("gender",
-            commonLookupService.getGender(
+            lookupService.getGender(
                 clientFlowFormData.getBasicDetails().getGender())),
         Pair.of("correspondenceMethod",
-            commonLookupService.getCorrespondenceMethod(
+            lookupService.getCorrespondenceMethod(
                 clientFlowFormData.getContactDetails().getCorrespondenceMethod())),
         Pair.of("ethnicity",
-            commonLookupService.getEthnicOrigin(
+            lookupService.getEthnicOrigin(
                 clientFlowFormData.getMonitoringDetails().getEthnicOrigin())),
         Pair.of("disability",
-            commonLookupService.getDisability(
+            lookupService.getDisability(
                 clientFlowFormData.getMonitoringDetails().getDisability())),
+
         //Processed differently due to optionality
         Pair.of("country",
-            clientFlowFormData.getAddressDetails() != null && StringUtils.hasText(
+            StringUtils.hasText(clientFlowFormData.getAddressDetails().getCountry())
+                ? lookupService.getCountry(
                 clientFlowFormData.getAddressDetails().getCountry())
-                ? commonLookupService.getCountry(
-                    clientFlowFormData.getAddressDetails().getCountry())
                 : Mono.just(new CommonLookupValueDetail())),
         Pair.of("correspondenceLanguage",
-            clientFlowFormData.getContactDetails() != null && StringUtils.hasText(
+            StringUtils.hasText(clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
+                ? lookupService.getCorrespondenceLanguage(
                 clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
-                ? commonLookupService.getCorrespondenceLanguage(
-                    clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
                 : Mono.just(new CommonLookupValueDetail()))
     );
 
