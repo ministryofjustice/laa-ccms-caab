@@ -423,7 +423,7 @@ class ApplicationServiceTest {
 
   @ParameterizedTest
   @CsvSource({"true, 1, 10, other, false, false, false",
-      "true, 10, 1, false, other, false, false, false",
+      "true, 10, 1, other, false, false, false",
       "false, 10, 1, other, false, false, false",
       "false, 10, 1, other, false, true, false",
       "false, 10, 1, " + OPPONENT_TYPE_INDIVIDUAL + ", true, true, false",
