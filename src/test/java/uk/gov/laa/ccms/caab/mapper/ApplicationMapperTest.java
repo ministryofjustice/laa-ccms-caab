@@ -630,7 +630,7 @@ public class ApplicationMapperTest {
     assertEquals(priorAuthorityDetail.getDescription(), result.getCode().getDisplayValue());
     assertEquals(priorAuthorityDetail.getDataType(), result.getType());
     assertEquals(priorAuthorityDetail.getLovCode(), result.getLovLookUp());
-//    assertEquals(priorAuthorityDetail.get(), result.getMandatory());
+    assertEquals(priorAuthorityDetail.getMandatoryFlag(), result.getMandatory());
   }
 
   @Test
