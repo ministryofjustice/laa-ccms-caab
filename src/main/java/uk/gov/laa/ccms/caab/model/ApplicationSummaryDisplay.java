@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.model;
 
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * Represents the Summary display values for the application summary screen.

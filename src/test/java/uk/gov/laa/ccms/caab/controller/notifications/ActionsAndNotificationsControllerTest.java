@@ -39,7 +39,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationSearchValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.service.UserService;
@@ -72,7 +72,7 @@ class ActionsAndNotificationsControllerTest {
   @Mock
   private ProviderService providerService;
   @Mock
-  private CommonLookupService commonLookupService;
+  private LookupService lookupService;
   @Mock
   private UserService userService;
   @Mock
@@ -169,7 +169,7 @@ class ActionsAndNotificationsControllerTest {
             .userType("type1")
             .loginId("login1"));
 
-    when(commonLookupService.getNotificationTypes()).thenReturn(Mono.just(notificationTypes));
+    when(lookupService.getNotificationTypes()).thenReturn(Mono.just(notificationTypes));
     when(providerService.getProvider(userDetails.getProvider().getId()))
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
@@ -213,7 +213,7 @@ class ActionsAndNotificationsControllerTest {
             .userType("type1")
             .loginId("login1"));
 
-    when(commonLookupService.getNotificationTypes()).thenReturn(Mono.just(notificationTypes));
+    when(lookupService.getNotificationTypes()).thenReturn(Mono.just(notificationTypes));
     when(providerService.getProvider(userDetails.getProvider().getId()))
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
@@ -260,7 +260,7 @@ class ActionsAndNotificationsControllerTest {
             .loginId("login1")
             .username("login1"));
 
-    when(commonLookupService.getNotificationTypes()).thenReturn(Mono.just(notificationTypes));
+    when(lookupService.getNotificationTypes()).thenReturn(Mono.just(notificationTypes));
     when(providerService.getProvider(userDetails.getProvider().getId()))
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);

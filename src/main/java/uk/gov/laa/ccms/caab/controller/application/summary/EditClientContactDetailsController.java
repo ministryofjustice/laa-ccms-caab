@@ -16,7 +16,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 
 /**
  * Controller for handling edits to client basic details during the application summary process.
@@ -27,7 +27,7 @@ import uk.gov.laa.ccms.caab.service.CommonLookupService;
 @SessionAttributes({CLIENT_FLOW_FORM_DATA})
 public class EditClientContactDetailsController {
 
-  private final CommonLookupService commonLookupService;
+  private final LookupService lookupService;
 
   private final ClientContactDetailsValidator clientContactDetailsValidator;
 
@@ -97,9 +97,9 @@ public class EditClientContactDetailsController {
 
     builder
         .addDropdown("correspondenceMethods",
-            commonLookupService.getCorrespondenceMethods())
+            lookupService.getCorrespondenceMethods())
         .addDropdown("correspondenceLanguages",
-            commonLookupService.getCorrespondenceLanguages())
+            lookupService.getCorrespondenceLanguages())
         .build();
   }
 

@@ -11,7 +11,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
-import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_EDIT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
@@ -28,8 +27,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
-import uk.gov.laa.ccms.caab.controller.application.client.ClientContactDetailsController;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
@@ -37,7 +35,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 public class EditClientContactDetailsControllerTest {
 
   @Mock
-  private CommonLookupService commonLookupService;
+  private LookupService lookupService;
 
   @Mock
   private ClientContactDetailsValidator clientContactDetailsValidator;
@@ -78,9 +76,9 @@ public class EditClientContactDetailsControllerTest {
   @Test
   void testClientDetailsContact() throws Exception {
 
-    when(commonLookupService.getCorrespondenceMethods()).thenReturn(
+    when(lookupService.getCorrespondenceMethods()).thenReturn(
         Mono.just(correspondenceMethodLookupDetail));
-    when(commonLookupService.getCorrespondenceLanguages()).thenReturn(
+    when(lookupService.getCorrespondenceLanguages()).thenReturn(
         Mono.just(correspondenceLanguageLookupDetail));
 
     this.mockMvc.perform(get("/application/summary/client/details/contact")
@@ -115,9 +113,9 @@ public class EditClientContactDetailsControllerTest {
       return null;
     }).when(clientContactDetailsValidator).validate(any(), any());
 
-    when(commonLookupService.getCorrespondenceMethods()).thenReturn(
+    when(lookupService.getCorrespondenceMethods()).thenReturn(
         Mono.just(correspondenceMethodLookupDetail));
-    when(commonLookupService.getCorrespondenceLanguages()).thenReturn(
+    when(lookupService.getCorrespondenceLanguages()).thenReturn(
         Mono.just(correspondenceLanguageLookupDetail));
 
     this.mockMvc.perform(post("/application/summary/client/details/contact")

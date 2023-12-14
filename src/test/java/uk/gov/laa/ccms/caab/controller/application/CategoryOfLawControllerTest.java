@@ -17,18 +17,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
-import com.google.common.base.Verify;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -41,12 +38,12 @@ import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.CategoryOfLawValidator;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.data.model.BaseOffice;
 import uk.gov.laa.ccms.data.model.BaseProvider;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(SpringExtension.class)
@@ -57,7 +54,7 @@ public class CategoryOfLawControllerTest {
   private ProviderService providerService;
 
   @Mock
-  private CommonLookupService commonLookupService;
+  private LookupService lookupService;
 
   @Mock
   private CategoryOfLawValidator categoryOfLawValidator;
@@ -74,7 +71,7 @@ public class CategoryOfLawControllerTest {
 
   private ApplicationFormData applicationFormData;
 
-  private CommonLookupDetail categoriesOfLaw;
+  private CategoryOfLawLookupDetail categoriesOfLaw;
 
   @BeforeEach
   public void setup() {
@@ -85,9 +82,12 @@ public class CategoryOfLawControllerTest {
     applicationFormData = new ApplicationFormData();
     applicationFormData.setOfficeId(345);
 
-    categoriesOfLaw = new CommonLookupDetail();
-    categoriesOfLaw.addContentItem(new CommonLookupValueDetail().code("CAT1").description("Category 1"));
-    categoriesOfLaw.addContentItem(new CommonLookupValueDetail().code("CAT2").description("Category 2"));
+    categoriesOfLaw = new CategoryOfLawLookupDetail()
+        .addContentItem(new CategoryOfLawLookupValueDetail()
+            .code("CAT1").matterTypeDescription("Category 1"))
+        .addContentItem(new CategoryOfLawLookupValueDetail()
+            .code("CAT2")
+            .matterTypeDescription("Category 2"));
   }
 
   @Test
@@ -103,7 +103,7 @@ public class CategoryOfLawControllerTest {
         user.getUserType(),
         Boolean.TRUE)).thenReturn(categoryOfLawCodes);
 
-    when(commonLookupService.getCategoriesOfLaw()).thenReturn(
+    when(lookupService.getCategoriesOfLaw()).thenReturn(
         Mono.just(categoriesOfLaw));
 
     this.mockMvc.perform(get("/application/category-of-law")
@@ -120,7 +120,7 @@ public class CategoryOfLawControllerTest {
         user.getUserType(),
         Boolean.TRUE);
 
-    verify(commonLookupService).getCategoriesOfLaw();
+    verify(lookupService).getCategoriesOfLaw();
   }
 
   @Test
@@ -134,7 +134,7 @@ public class CategoryOfLawControllerTest {
         user.getUserType(),
         Boolean.TRUE)).thenReturn(categoryOfLawCodes);
 
-    when(commonLookupService.getCategoriesOfLaw()).thenReturn(
+    when(lookupService.getCategoriesOfLaw()).thenReturn(
         Mono.just(categoriesOfLaw));
 
     MvcResult result = mockMvc.perform(get("/application/category-of-law")
@@ -151,16 +151,18 @@ public class CategoryOfLawControllerTest {
         user.getUserType(),
         Boolean.TRUE);
 
-    verify(commonLookupService).getCategoriesOfLaw();
+    verify(lookupService).getCategoriesOfLaw();
 
-    BindingResult bindingResult = (BindingResult) result.getModelAndView().getModel().get("org.springframework.validation.BindingResult.applicationFormData");
+    BindingResult bindingResult = (BindingResult) result.getModelAndView().getModel()
+        .get("org.springframework.validation.BindingResult.applicationFormData");
     assertEquals(1, bindingResult.getFieldErrors("categoryOfLawId").size());
-    assertEquals("no.categoriesOfLaw", bindingResult.getFieldError("categoryOfLawId").getCode());
+    assertEquals("no.categoriesOfLaw", bindingResult.getFieldError("categoryOfLawId")
+        .getCode());
   }
 
   @Test
   public void testGetCategoryOfLaw_ExceptionFundingReturnsAllCodes() throws Exception {
-    when(commonLookupService.getCategoriesOfLaw()).thenReturn(
+    when(lookupService.getCategoriesOfLaw()).thenReturn(
         Mono.just(categoriesOfLaw));
 
     this.mockMvc.perform(get("/application/category-of-law?exceptional_funding=true")
@@ -174,7 +176,7 @@ public class CategoryOfLawControllerTest {
 
     assertTrue(applicationFormData.isExceptionalFunding());
     verifyNoInteractions(providerService);
-    verify(commonLookupService).getCategoriesOfLaw();
+    verify(lookupService).getCategoriesOfLaw();
   }
 
   @Test
@@ -190,7 +192,7 @@ public class CategoryOfLawControllerTest {
         user.getUserType(),
         Boolean.TRUE)).thenReturn(categoryOfLawCodes);
 
-    when(commonLookupService.getCategoriesOfLaw()).thenReturn(
+    when(lookupService.getCategoriesOfLaw()).thenReturn(
         Mono.just(categoriesOfLaw));
 
     doAnswer(invocation -> {
@@ -220,7 +222,7 @@ public class CategoryOfLawControllerTest {
         .andExpect(redirectedUrl("/application/application-type"));
 
     verifyNoInteractions(providerService);
-    verifyNoInteractions(commonLookupService);
+    verifyNoInteractions(lookupService);
   }
 
   @Test
@@ -235,7 +237,7 @@ public class CategoryOfLawControllerTest {
         .andExpect(redirectedUrl("/application/client/search"));
 
     verifyNoInteractions(providerService);
-    verifyNoInteractions(commonLookupService);
+    verifyNoInteractions(lookupService);
   }
 
 

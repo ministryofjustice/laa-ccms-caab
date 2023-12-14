@@ -4,10 +4,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
+import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
+import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
+import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
+import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
 
@@ -62,6 +70,57 @@ public class EbsApiClientErrorHandler {
    */
   public static String RELATIONSHIP_TO_CASE_ERROR_MESSAGE =
       "Failed to retrieve relationship to case";
+
+  /**
+   * The error message for Proceeding-related errors.
+   */
+  public static String PROCEEDING_ERROR_MESSAGE =
+      "Failed to retrieve Proceeding: (code: %s)";
+
+  /**
+   * The error message for Scope Limitations-related errors.
+   */
+  public static String SCOPE_LIMITATIONS_ERROR_MESSAGE =
+      "Failed to retrieve ScopeLimitationsDetails with search criteria: %s";
+
+  /**
+   * The error message for Outcome Results-related errors.
+   */
+  public static String OUTCOME_RESULTS_ERROR_MESSAGE =
+      "Failed to retrieve OutcomeResultDetails with search criteria: "
+          + "proceedingCode=%s, outcomeResult=%s";
+
+  /**
+   * The error message for Stage End-related errors.
+   */
+  public static String STAGE_END_ERROR_MESSAGE =
+      "Failed to retrieve StageEndLookupDetails with search criteria: "
+          + "proceedingCode=%s, stageEnd=%s";
+
+  /**
+   * The error message for prior authority type.
+   */
+  public static String PRIOR_AUTHORITY_TYPE_ERROR_MESSAGE =
+      "Failed to retrieve prior authority types with code: %s and valueRequired: %s";
+
+  /**
+   * The error message for award type.
+   */
+  public static String AWARD_TYPE_ERROR_MESSAGE =
+      "Failed to retrieve award types with code: %s and awardType: %s";
+
+  /**
+   * The error message for category of law.
+   */
+  public static String CATEGORIES_OF_LAW_ERROR_MESSAGE =
+      "Failed to retrieve categories of law with code: %s, "
+          + "matterTypeDescription: %s and copyCostLimit: %s";
+
+  /**
+   * The error message for person relationship to case.
+   */
+  public static String PERSON_RELATIONSHIP_TO_CASE_ERROR_MESSAGE =
+      "Failed to retrieve person relationship to case with code: %s, description: %s";
 
   /**
    * Handles errors related to user data retrieval.
@@ -165,6 +224,142 @@ public class EbsApiClientErrorHandler {
     return Mono.error(new EbsApiClientException(msg, e));
   }
 
+  /**
+   * Handles errors related to proceeding data retrieval.
+   *
+   * @param proceedingCode the code of the proceeding
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<ProceedingDetail> handleProceedingError(
+      String proceedingCode,
+      Throwable e) {
+    final String msg = String.format(PROCEEDING_ERROR_MESSAGE, proceedingCode);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to scope limitations data retrieval.
+   *
+   * @param scopeLimitationDetail the scope limitation params
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<ScopeLimitationDetails> handleScopeLimitationsError(
+      ScopeLimitationDetail scopeLimitationDetail,
+      Throwable e) {
+    final String msg = String.format(SCOPE_LIMITATIONS_ERROR_MESSAGE,
+        scopeLimitationDetail.toString());
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to outcome results data retrieval.
+   *
+   * @param proceedingCode the proceeding code.
+   * @param outcomeResult the outcome result value.
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<OutcomeResultLookupDetail> handleOutcomeResultsError(
+      String proceedingCode,
+      String outcomeResult,
+      Throwable e) {
+    final String msg = String.format(OUTCOME_RESULTS_ERROR_MESSAGE, proceedingCode, outcomeResult);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to stage end data retrieval.
+   *
+   * @param proceedingCode the proceeding code.
+   * @param stageEnd the stage end value.
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<StageEndLookupDetail> handleStageEndError(
+      String proceedingCode,
+      String stageEnd,
+      Throwable e) {
+    final String msg = String.format(STAGE_END_ERROR_MESSAGE, proceedingCode, stageEnd);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to prior authority type retrieval.
+   *
+   * @param code the prior auth type code.
+   * @param valueRequired the value required flag.
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<PriorAuthorityTypeDetails> handlePriorAuthorityTypeError(
+      String code,
+      Boolean valueRequired,
+      Throwable e) {
+    final String msg = String.format(PRIOR_AUTHORITY_TYPE_ERROR_MESSAGE, code, valueRequired);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to award type retrieval.
+   *
+   * @param code the award type code.
+   * @param awardType the award type value.
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<AwardTypeLookupDetail> handleAwardTypeError(
+      String code,
+      String awardType,
+      Throwable e) {
+    final String msg = String.format(AWARD_TYPE_ERROR_MESSAGE, code, awardType);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to category of law retrieval.
+   *
+   * @param code the category of law code.
+   * @param matterTypeDescription the matter type description.
+   * @param  copyCostLimit the copy cost limit flag.
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<CategoryOfLawLookupDetail> handleCategoriesOfLawError(
+      String code,
+      String matterTypeDescription,
+      Boolean copyCostLimit,
+      Throwable e) {
+    final String msg = String.format(CATEGORIES_OF_LAW_ERROR_MESSAGE, code, matterTypeDescription,
+        copyCostLimit);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to person to case relationship retrieval.
+   *
+   * @param code the relationship code.
+   * @param description the description.
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<RelationshipToCaseLookupDetail> handlePersonToCaseRelationshipError(
+      String code,
+      String description,
+      Throwable e) {
+    final String msg = String.format(PERSON_RELATIONSHIP_TO_CASE_ERROR_MESSAGE,
+        code, description);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
 
   /**
    * Handles errors related to users by provider data retrieval.

@@ -26,7 +26,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonit
 import uk.gov.laa.ccms.caab.controller.application.client.AbstractClientSummaryController;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -43,14 +43,14 @@ public class EditClientSummaryController extends AbstractClientSummaryController
    * Default constructor method implementing the abstract controller's constructor.
    */
   public EditClientSummaryController(
-      CommonLookupService commonLookupService,
+      LookupService lookupService,
       ClientService clientService,
       ClientBasicDetailsValidator basicValidator,
       ClientContactDetailsValidator contactValidator,
       ClientAddressDetailsValidator addressValidator,
       ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator,
       ClientDetailMapper clientDetailsMapper) {
-    super(commonLookupService,
+    super(lookupService,
         clientService,
         basicValidator,
         contactValidator,

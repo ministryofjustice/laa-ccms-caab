@@ -25,7 +25,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataMonitoringDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
-import uk.gov.laa.ccms.caab.service.CommonLookupService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
@@ -34,7 +34,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 public class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
 
   @Mock
-  private CommonLookupService commonLookupService;
+  private LookupService lookupService;
 
   @Mock
   private ClientEqualOpportunitiesMonitoringDetailsValidator validator;
@@ -67,10 +67,10 @@ public class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
 
   @Test
   public void testClientEqualOpportunitiesMonitoringGet() throws Exception {
-    when(commonLookupService.getEthnicOrigins()).thenReturn(
+    when(lookupService.getEthnicOrigins()).thenReturn(
         Mono.just(ethnicityLookupDetail));
 
-    when(commonLookupService.getDisabilities()).thenReturn(
+    when(lookupService.getDisabilities()).thenReturn(
         Mono.just(disabilityLookupDetail));
 
     mockMvc.perform(get("/application/client/details/equal-opportunities-monitoring")
@@ -90,10 +90,10 @@ public class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
       return null;
     }).when(validator).validate(any(), any());
 
-    when(commonLookupService.getEthnicOrigins()).thenReturn(
+    when(lookupService.getEthnicOrigins()).thenReturn(
         Mono.just(ethnicityLookupDetail));
 
-    when(commonLookupService.getDisabilities()).thenReturn(
+    when(lookupService.getDisabilities()).thenReturn(
         Mono.just(disabilityLookupDetail));
 
     mockMvc.perform(post("/application/client/details/equal-opportunities-monitoring")
