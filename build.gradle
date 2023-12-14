@@ -45,7 +45,7 @@ if (file('secrets.gradle').exists()) {
 	gitPackageKey = project.ext.gitPackageKey
 } else {
 	gitPackageUser = 'laa-ccms-caab-ui'
-	gitPackageKey = System.getenv('GIT_PACKAGE_KEY')
+	gitPackageKey = System.getenv('CAAB_SERVICE_TOKEN')
 }
 
 repositories {
@@ -72,9 +72,9 @@ repositories {
 }
 
 dependencies {
-	implementation 'uk.gov.laa.ccms.data:data-api:0.0.2'
+	implementation 'uk.gov.laa.ccms.data:data-api:0.0.3'
 	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.6'
-	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.5'
+	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.6'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -103,10 +103,10 @@ dependencies {
 
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.mockito:mockito-core:5.5.0'
+	testImplementation 'org.mockito:mockito-core:5.8.0'
 	testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
 	testImplementation 'org.springframework.security:spring-security-test'
-	testImplementation 'io.projectreactor:reactor-test:3.5.9'
+	testImplementation 'io.projectreactor:reactor-test:3.6.1'
 
 	integrationTestImplementation "com.github.tomakehurst:wiremock:3.0.1"
 
