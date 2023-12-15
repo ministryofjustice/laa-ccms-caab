@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.BeforeMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -80,7 +81,7 @@ public interface ClientDetailMapper {
    * @return Translated singleton list.
    */
   @Named("mapStringToList")
-  default List<String> mapStringToList(String value) {
+  default List<String> mapStringToList(final String value) {
     if (value != null) {
       return Collections.singletonList(value);
     }
@@ -94,8 +95,8 @@ public interface ClientDetailMapper {
    * @return Translated String of full name details.
    */
   @Named("mapFullName")
-  default String mapFullName(ClientFormDataBasicDetails basicDetails) {
-    String fullName = Stream.of(
+  default String mapFullName(final ClientFormDataBasicDetails basicDetails) {
+    final String fullName = Stream.of(
             basicDetails.getFirstName(),
             basicDetails.getMiddleNames(),
             basicDetails.getSurname()
@@ -113,13 +114,13 @@ public interface ClientDetailMapper {
    * @return Translated Date for date of birth.
    */
   @Named("mapDateOfBirth")
-  default Date mapDateOfBirth(ClientFormDataBasicDetails basicDetails) {
+  default Date mapDateOfBirth(final ClientFormDataBasicDetails basicDetails) {
     if (basicDetails != null) {
-      int day = Integer.parseInt(basicDetails.getDobDay());
-      int month = Integer.parseInt(basicDetails.getDobMonth());
-      int year = Integer.parseInt(basicDetails.getDobYear());
+      final int day = Integer.parseInt(basicDetails.getDobDay());
+      final int month = Integer.parseInt(basicDetails.getDobMonth());
+      final int year = Integer.parseInt(basicDetails.getDobYear());
 
-      LocalDate localDate = LocalDate.of(year, month, day);
+      final LocalDate localDate = LocalDate.of(year, month, day);
       return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
     }
     return null;
@@ -145,13 +146,31 @@ public interface ClientDetailMapper {
    */
   @BeforeMapping
   default void addClientFormDataBasicDetails(
-      @MappingTarget ClientFlowFormData clientFlowFormData,
-      ClientDetailDetails clientDetailDetails) {
+      @MappingTarget final ClientFlowFormData clientFlowFormData,
+      final ClientDetailDetails clientDetailDetails) {
     clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
     addClientFormDataBasicDetailsFromNameDetail(clientFlowFormData.getBasicDetails(),
         clientDetailDetails.getName());
     addClientFormDataBasicDetailsFromClientPersonalDetail(clientFlowFormData.getBasicDetails(),
         clientDetailDetails.getPersonalInformation());
+  }
+
+  /**
+   * Adds address details to the client flow form data, overriding the vulnerable client state.
+   *
+   * @param clientFlowFormData The client flow form data with basic details to be amended.
+   * @param clientDetailDetails The returned soa client details to map from.
+   */
+  @AfterMapping
+  default void setAddressDetailsIfNull(
+      @MappingTarget final ClientFlowFormData clientFlowFormData,
+      final ClientDetailDetails clientDetailDetails) {
+    if (clientFlowFormData.getAddressDetails() == null) {
+      final ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
+      addressDetails.setVulnerableClient(
+          clientFlowFormData.getBasicDetails().getVulnerableClient());
+      clientFlowFormData.setAddressDetails(addressDetails);
+    }
   }
 
   @Mapping(target = "basicDetails.dobDay", source = "personalInformation.dateOfBirth",
@@ -202,7 +221,7 @@ public interface ClientDetailMapper {
   @Named("mapDayFromDate")
   default String mapDayFromDate(Date date) {
     if (date != null) {
-      LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+      final LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
       return Integer.toString(localDate.getDayOfMonth());
     }
     return null;
@@ -217,7 +236,7 @@ public interface ClientDetailMapper {
   @Named("mapMonthFromDate")
   default String mapMonthFromDate(Date date) {
     if (date != null) {
-      LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+      final LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
       return Integer.toString(localDate.getMonthValue());
     }
     return null;
@@ -232,7 +251,7 @@ public interface ClientDetailMapper {
   @Named("mapYearFromDate")
   default String mapYearFromDate(Date date) {
     if (date != null) {
-      LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+      final LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
       return Integer.toString(localDate.getYear());
     }
     return null;

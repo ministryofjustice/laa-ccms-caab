@@ -40,6 +40,7 @@ jobs:
           REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
         run: echo "CAAB_SERVICE_TOKEN=${REPO_TOKEN}" >> $GITHUB_ENV
 
+
       - name: Build with Gradle
         uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629
         with:

@@ -39,8 +39,8 @@ import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetailRecordHistory;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
+import uk.gov.laa.ccms.soa.gateway.model.RecordHistory;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -170,6 +170,6 @@ class ClientConfirmationControllerTest {
         .clientReferenceNumber(clientReferenceNumber)
         .details(new ClientDetailDetails()
             .name(new NameDetail()))
-        .recordHistory(new ClientDetailRecordHistory());
+        .recordHistory(new RecordHistory());
   }
 }

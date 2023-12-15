@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
@@ -45,8 +47,8 @@ public class EditClientBasicDetailsController {
    */
   @GetMapping("/application/summary/client/details/basic")
   public String getClientDetailsBasic(
-      @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
-      Model model) {
+      @SessionAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
+      final Model model) {
 
     populateDropdowns(model);
     ClientFormDataBasicDetails basicDetails = clientFlowFormData.getBasicDetails();
@@ -67,10 +69,10 @@ public class EditClientBasicDetailsController {
    */
   @PostMapping("/application/summary/client/details/basic")
   public String postClientDetailsBasic(
-      @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
-      @ModelAttribute("basicDetails") ClientFormDataBasicDetails basicDetails,
-      BindingResult bindingResult,
-      Model model) {
+      @SessionAttribute(CLIENT_FLOW_FORM_DATA)final  ClientFlowFormData clientFlowFormData,
+      @ModelAttribute("basicDetails") final ClientFormDataBasicDetails basicDetails,
+      final BindingResult bindingResult,
+      final Model model) {
 
     clientBasicDetailsValidator.validate(basicDetails, bindingResult);
 
@@ -90,8 +92,8 @@ public class EditClientBasicDetailsController {
    *
    * @param model The model for the view.
    */
-  private void populateDropdowns(Model model) {
-    DropdownBuilder builder = new DropdownBuilder(model);
+  private void populateDropdowns(final Model model) {
+    final DropdownBuilder builder = new DropdownBuilder(model);
 
     builder
         .addDropdown("titles",

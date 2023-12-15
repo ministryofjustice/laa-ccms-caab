@@ -32,13 +32,14 @@ import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetailRecordHistory;
+import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
+import uk.gov.laa.ccms.soa.gateway.model.RecordHistory;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class ClientCreateSubmissionConfirmedControllerTest {
+public class ClientSubmissionsConfirmedControllerTest {
 
   @Mock
   private HttpSession httpSession;
@@ -50,7 +51,7 @@ public class ClientCreateSubmissionConfirmedControllerTest {
   private ClientService clientService;
 
   @InjectMocks
-  private ClientCreateSubmissionConfirmedController clientCreateSubmissionConfirmedController;
+  private ClientSubmissionsConfirmedController clientSubmissionsConfirmedController;
 
   private MockMvc mockMvc;
 
@@ -59,7 +60,7 @@ public class ClientCreateSubmissionConfirmedControllerTest {
 
   @BeforeEach
   public void setup() {
-    mockMvc = MockMvcBuilders.standaloneSetup(clientCreateSubmissionConfirmedController).build();
+    mockMvc = MockMvcBuilders.standaloneSetup(clientSubmissionsConfirmedController).build();
   }
 
   @Test
@@ -110,6 +111,6 @@ public class ClientCreateSubmissionConfirmedControllerTest {
         .clientReferenceNumber(clientReferenceNumber)
         .details(new ClientDetailDetails()
             .name(new NameDetail()))
-        .recordHistory(new ClientDetailRecordHistory());
+        .recordHistory(new RecordHistory());
   }
 }

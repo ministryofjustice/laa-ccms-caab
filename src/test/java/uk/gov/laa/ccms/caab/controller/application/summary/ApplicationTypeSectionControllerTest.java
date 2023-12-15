@@ -83,7 +83,6 @@ public class ApplicationTypeSectionControllerTest {
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/summary/application-type-section"))
-        .andExpect(model().attribute("activeCase", activeCase))
         .andExpect(model().attribute("applicationFormData", applicationFormData));
   }
 
@@ -123,7 +122,6 @@ public class ApplicationTypeSectionControllerTest {
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/summary/application-type-section"))
-        .andExpect(model().attribute("activeCase", activeCase))
         .andExpect(model().hasErrors());
 
     verify(applicationService, never()).patchApplicationType(eq("123"), any(ApplicationFormData.class), any(UserDetail.class));

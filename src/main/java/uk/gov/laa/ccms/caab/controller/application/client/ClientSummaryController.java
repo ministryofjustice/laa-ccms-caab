@@ -24,7 +24,7 @@ import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
+import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 /**
  * Controller for handling client summary details during the new application process.
@@ -38,13 +38,13 @@ public class ClientSummaryController extends AbstractClientSummaryController {
    * Default constructor method implementing the abstract controller's constructor.
    */
   public ClientSummaryController(
-      LookupService lookupService,
-      ClientService clientService,
-      ClientBasicDetailsValidator basicValidator,
-      ClientContactDetailsValidator contactValidator,
-      ClientAddressDetailsValidator addressValidator,
-      ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator,
-      ClientDetailMapper clientDetailsMapper) {
+      final LookupService lookupService,
+      final ClientService clientService,
+      final ClientBasicDetailsValidator basicValidator,
+      final ClientContactDetailsValidator contactValidator,
+      final ClientAddressDetailsValidator addressValidator,
+      final ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator,
+      final ClientDetailMapper clientDetailsMapper) {
     super(lookupService,
         clientService,
         basicValidator,
@@ -61,8 +61,8 @@ public class ClientSummaryController extends AbstractClientSummaryController {
    */
   @GetMapping("/application/client/details/summary")
   public String clientDetailsSummary(
-      @ModelAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
-      Model model) {
+      @ModelAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
+      final Model model) {
 
     populateSummaryListLookups(clientFlowFormData, model);
 
@@ -76,14 +76,14 @@ public class ClientSummaryController extends AbstractClientSummaryController {
    */
   @PostMapping("/application/client/details/summary")
   public String clientDetailsSummary(
-      @ModelAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
-      @SessionAttribute(USER_DETAILS) UserDetail user,
-      BindingResult bindingResult,
-      HttpSession session) {
+      @ModelAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final BindingResult bindingResult,
+      final HttpSession session) {
 
     validateClientFlowFormData(clientFlowFormData, bindingResult);
 
-    ClientCreated response =
+    ClientTransactionResponse response =
         clientService.createClient(
             clientFlowFormData,
             user).block();

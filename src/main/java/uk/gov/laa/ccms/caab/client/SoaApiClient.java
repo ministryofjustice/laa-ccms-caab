@@ -17,11 +17,11 @@ import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
-import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
+import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
@@ -50,7 +50,9 @@ public class SoaApiClient {
    * @param userType Type of the user (e.g., admin, user).
    * @return A Mono wrapping the NotificationSummary for the specified user.
    */
-  public Mono<NotificationSummary> getNotificationsSummary(String loginId, String userType) {
+  public Mono<NotificationSummary> getNotificationsSummary(
+      final String loginId,
+      final String userType) {
     return soaApiWebClient
         .get()
         .uri("/users/{loginId}/notifications/summary", loginId)
@@ -71,8 +73,11 @@ public class SoaApiClient {
    * @param userType       Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ContractDetails.
    */
-  public Mono<ContractDetails> getContractDetails(Integer providerFirmId, Integer officeId,
-      String loginId, String userType) {
+  public Mono<ContractDetails> getContractDetails(
+      final Integer providerFirmId,
+      final Integer officeId,
+      final String loginId,
+      final String userType) {
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/contract-details")
@@ -98,11 +103,11 @@ public class SoaApiClient {
    * @return A Mono wrapping the ClientDetails.
    */
   public Mono<ClientDetails> getClients(
-      ClientSearchCriteria clientSearchCriteria,
-      String loginId,
-      String userType,
-      Integer page,
-      Integer size) {
+      final ClientSearchCriteria clientSearchCriteria,
+      final String loginId,
+      final String userType,
+      final Integer page,
+      final Integer size) {
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/clients")
@@ -144,8 +149,10 @@ public class SoaApiClient {
    * @param userType              Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientDetail.
    */
-  public Mono<ClientDetail> getClient(String clientReferenceNumber, String loginId,
-      String userType) {
+  public Mono<ClientDetail> getClient(
+      final String clientReferenceNumber,
+      final  String loginId,
+      final String userType) {
     return soaApiWebClient
         .get()
         .uri("/clients/{clientReferenceNumber}", clientReferenceNumber)
@@ -166,8 +173,10 @@ public class SoaApiClient {
    * @param userType              Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientDetail.
    */
-  public Mono<ClientStatus> getClientStatus(String transactionId, String loginId,
-                                            String userType) {
+  public Mono<ClientStatus> getClientStatus(
+      final String transactionId,
+      final String loginId,
+      final String userType) {
     return soaApiWebClient
         .get()
         .uri("/clients/status/{transactionId}", transactionId)
@@ -188,8 +197,10 @@ public class SoaApiClient {
    * @param userType              Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientCreated transaction id.
    */
-  public Mono<ClientCreated> postClient(ClientDetailDetails clientDetails, String loginId,
-                                        String userType) {
+  public Mono<ClientTransactionResponse> postClient(
+      final ClientDetailDetails clientDetails,
+      final String loginId,
+      final String userType) {
     return soaApiWebClient
         .post()
         .uri("/clients")
@@ -198,7 +209,7 @@ public class SoaApiClient {
         .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
         .bodyValue(clientDetails)
         .retrieve()
-        .bodyToMono(ClientCreated.class)
+        .bodyToMono(ClientTransactionResponse.class)
         .onErrorResume(e -> soaApiClientErrorHandler
             .handleClientCreatedError(clientDetails.getName().getFullName(), e));
   }
@@ -206,24 +217,28 @@ public class SoaApiClient {
   /**
    * Updates a client based on a given client details.
    *
+   * @param clientReferenceNumber The client's reference number.
    * @param clientDetails         The client's details.
    * @param loginId               The login identifier for the user.
    * @param userType              Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientCreated transaction id.
    */
-  public Mono<ClientCreated> putClient(ClientDetailDetails clientDetails, String loginId,
-                                        String userType) {
+  public Mono<ClientTransactionResponse> putClient(
+      final String clientReferenceNumber,
+      final ClientDetailDetails clientDetails,
+      final String loginId,
+      final String userType) {
     return soaApiWebClient
         .put()
-        .uri("/clients")
+        .uri("/clients/{clientReferenceNumber}", clientReferenceNumber)
         .header("SoaGateway-User-Login-Id", loginId)
         .header("SoaGateway-User-Role", userType)
         .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
         .bodyValue(clientDetails)
         .retrieve()
-        .bodyToMono(ClientCreated.class)
+        .bodyToMono(ClientTransactionResponse.class)
         .onErrorResume(e -> soaApiClientErrorHandler
-            .handleClientCreatedError(clientDetails.getName().getFullName(), e));
+            .handleClientUpdatedError(clientDetails.getName().getFullName(), e));
   }
 
   /**
@@ -236,8 +251,12 @@ public class SoaApiClient {
    * @param size                   The size or number of records per page.
    * @return A Mono wrapping the CaseDetails.
    */
-  public Mono<CaseDetails> getCases(CopyCaseSearchCriteria copyCaseSearchCriteria, String loginId,
-      String userType, Integer page, Integer size) {
+  public Mono<CaseDetails> getCases(
+      final CopyCaseSearchCriteria copyCaseSearchCriteria,
+      final String loginId,
+      final String userType,
+      final Integer page,
+      final Integer size) {
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/cases")
@@ -275,8 +294,10 @@ public class SoaApiClient {
    * @param userType               Type of the user (e.g., admin, user).
    * @return A Mono wrapping the CaseDetail.
    */
-  public Mono<CaseDetail> getCase(String caseReferenceNumber, String loginId,
-      String userType) {
+  public Mono<CaseDetail> getCase(
+      final String caseReferenceNumber,
+      final String loginId,
+      final String userType) {
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/cases/{case-ref}").build(caseReferenceNumber))
@@ -296,8 +317,9 @@ public class SoaApiClient {
    * @param userType Type of the user (e.g., admin, user).
    * @return A Mono wrapping the CaseReferenceSummary.
    */
-  public Mono<CaseReferenceSummary> getCaseReference(String loginId,
-      String userType) {
+  public Mono<CaseReferenceSummary> getCaseReference(
+      final String loginId,
+      final String userType) {
     return soaApiWebClient
         .get()
         .uri("/case-reference")
@@ -317,8 +339,10 @@ public class SoaApiClient {
    * @param size     The size or number of records per page.
    * @return A Mono wrapping the Notifications
    */
-  public Mono<Notifications> getNotifications(NotificationSearchCriteria criteria,
-      Integer page, Integer size) {
+  public Mono<Notifications> getNotifications(
+      final NotificationSearchCriteria criteria,
+      final Integer page,
+      final Integer size) {
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/notifications")
