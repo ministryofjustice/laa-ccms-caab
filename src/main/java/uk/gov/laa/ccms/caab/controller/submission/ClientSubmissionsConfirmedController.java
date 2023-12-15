@@ -41,13 +41,13 @@ public class ClientSubmissionsConfirmedController {
    */
   @PostMapping("/submissions/client-create/confirmed")
   public String clientCreateSubmitted(
-      @SessionAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
-      @SessionAttribute(USER_DETAILS) UserDetail user,
-      @SessionAttribute(CLIENT_REFERENCE) String clientReference,
+      @SessionAttribute(APPLICATION_FORM_DATA) final ApplicationFormData applicationFormData,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(CLIENT_REFERENCE) final String clientReference,
       HttpSession session
   ) throws ParseException {
 
-    ClientDetail clientInformation = clientService.getClient(
+    final ClientDetail clientInformation = clientService.getClient(
         clientReference,
         user.getLoginId(),
         user.getUserType()).block();

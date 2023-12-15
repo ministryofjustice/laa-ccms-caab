@@ -79,9 +79,9 @@ public class ApplicationTypeSectionController {
   @PostMapping("/application/summary/application-type")
   public String delegatedFunction(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
-      @SessionAttribute(USER_DETAILS) UserDetail user,
-      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
-      BindingResult bindingResult) throws ParseException {
+      final @SessionAttribute(USER_DETAILS) UserDetail user,
+      final @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
+      final BindingResult bindingResult) throws ParseException {
     delegatedFunctionsValidator.validate(applicationFormData, bindingResult);
 
     if (!applicationFormData.isDelegatedFunctions()) {

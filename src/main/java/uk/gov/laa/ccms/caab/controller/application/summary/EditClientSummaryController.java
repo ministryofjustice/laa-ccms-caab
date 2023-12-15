@@ -44,13 +44,13 @@ public class EditClientSummaryController extends AbstractClientSummaryController
    * Default constructor method implementing the abstract controller's constructor.
    */
   public EditClientSummaryController(
-      LookupService lookupService,
-      ClientService clientService,
-      ClientBasicDetailsValidator basicValidator,
-      ClientContactDetailsValidator contactValidator,
-      ClientAddressDetailsValidator addressValidator,
-      ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator,
-      ClientDetailMapper clientDetailsMapper) {
+      final LookupService lookupService,
+      final ClientService clientService,
+      final ClientBasicDetailsValidator basicValidator,
+      final ClientContactDetailsValidator contactValidator,
+      final ClientAddressDetailsValidator addressValidator,
+      final ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator,
+      final ClientDetailMapper clientDetailsMapper) {
     super(lookupService,
         clientService,
         basicValidator,
@@ -67,18 +67,18 @@ public class EditClientSummaryController extends AbstractClientSummaryController
    */
   @GetMapping("/application/summary/client/details/summary")
   public String getClientDetailsSummary(
-      @SessionAttribute(USER_DETAILS) UserDetail user,
-      @SessionAttribute(ACTIVE_CASE) ActiveCase activeCase,
-      Model model,
-      HttpSession session) {
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
+      final Model model,
+      final HttpSession session) {
 
-    ClientFlowFormData clientFlowFormData;
+    final ClientFlowFormData clientFlowFormData;
 
     if (session.getAttribute(CLIENT_FLOW_FORM_DATA) != null) {
       clientFlowFormData = (ClientFlowFormData) session.getAttribute(CLIENT_FLOW_FORM_DATA);
     } else {
       //if session contains clientDetails
-      ClientDetail clientInformation = clientService.getClient(
+      final ClientDetail clientInformation = clientService.getClient(
           activeCase.getClientReferenceNumber(),
           user.getLoginId(),
           user.getUserType()).block();
@@ -102,11 +102,11 @@ public class EditClientSummaryController extends AbstractClientSummaryController
    */
   @PostMapping("/application/summary/client/details/summary")
   public String postClientDetailsSummary(
-      @ModelAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
-      @SessionAttribute(USER_DETAILS) UserDetail user,
-      @SessionAttribute(ACTIVE_CASE) ActiveCase activeCase,
-      BindingResult bindingResult,
-      HttpSession session) {
+      final @ModelAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
+      final @SessionAttribute(USER_DETAILS) UserDetail user,
+      final @SessionAttribute(ACTIVE_CASE) ActiveCase activeCase,
+      final BindingResult bindingResult,
+      final HttpSession session) {
 
     validateClientFlowFormData(clientFlowFormData, bindingResult);
 

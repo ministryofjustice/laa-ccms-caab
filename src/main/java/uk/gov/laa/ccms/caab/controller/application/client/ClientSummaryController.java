@@ -38,13 +38,13 @@ public class ClientSummaryController extends AbstractClientSummaryController {
    * Default constructor method implementing the abstract controller's constructor.
    */
   public ClientSummaryController(
-      LookupService lookupService,
-      ClientService clientService,
-      ClientBasicDetailsValidator basicValidator,
-      ClientContactDetailsValidator contactValidator,
-      ClientAddressDetailsValidator addressValidator,
-      ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator,
-      ClientDetailMapper clientDetailsMapper) {
+      final LookupService lookupService,
+      final ClientService clientService,
+      final ClientBasicDetailsValidator basicValidator,
+      final ClientContactDetailsValidator contactValidator,
+      final ClientAddressDetailsValidator addressValidator,
+      final ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator,
+      final ClientDetailMapper clientDetailsMapper) {
     super(lookupService,
         clientService,
         basicValidator,
@@ -61,8 +61,8 @@ public class ClientSummaryController extends AbstractClientSummaryController {
    */
   @GetMapping("/application/client/details/summary")
   public String clientDetailsSummary(
-      @ModelAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
-      Model model) {
+      @ModelAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
+      final Model model) {
 
     populateSummaryListLookups(clientFlowFormData, model);
 
@@ -76,10 +76,10 @@ public class ClientSummaryController extends AbstractClientSummaryController {
    */
   @PostMapping("/application/client/details/summary")
   public String clientDetailsSummary(
-      @ModelAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
-      @SessionAttribute(USER_DETAILS) UserDetail user,
-      BindingResult bindingResult,
-      HttpSession session) {
+      @ModelAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final BindingResult bindingResult,
+      final HttpSession session) {
 
     validateClientFlowFormData(clientFlowFormData, bindingResult);
 

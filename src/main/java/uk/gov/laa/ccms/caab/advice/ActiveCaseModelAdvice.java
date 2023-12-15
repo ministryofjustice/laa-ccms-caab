@@ -42,7 +42,7 @@ public class ActiveCaseModelAdvice {
    * @param session the session data
    */
   @ModelAttribute
-  public void addActiveCaseToModel(Model model, final HttpSession session) {
+  public void addActiveCaseToModel(final Model model, final HttpSession session) {
     if (session.getAttribute(ACTIVE_CASE) != null) {
       model.addAttribute(session.getAttribute(ACTIVE_CASE));
     }

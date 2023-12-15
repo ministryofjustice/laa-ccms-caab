@@ -20,14 +20,14 @@ public class ClientFlowFormData {
 
   private ClientFormDataMonitoringDetails monitoringDetails;
 
-  public ClientFlowFormData(String action) {
+  public ClientFlowFormData(final String action) {
     this.action = action;
   }
 
   /**
    * Overrides the Default setter, so we can set the vulnerable clients for other child objects.
    */
-  public void setBasicDetails(ClientFormDataBasicDetails basicDetails) {
+  public void setBasicDetails(final ClientFormDataBasicDetails basicDetails) {
     this.basicDetails = basicDetails;
     if (this.contactDetails != null) {
       this.contactDetails.setVulnerableClient(basicDetails.getVulnerableClient());

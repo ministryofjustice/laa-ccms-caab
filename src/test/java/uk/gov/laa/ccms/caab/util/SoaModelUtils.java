@@ -554,7 +554,7 @@ public class SoaModelUtils {
                 .vexatiousLitigant(Boolean.FALSE)
                 .vulnerableClient(Boolean.FALSE))
             .specialConsiderations("special"))
-        .recordHistory(new uk.gov.laa.ccms.soa.gateway.model.RecordHistory());
+        .recordHistory(new RecordHistory());
   }
 
   public static AwardTypeLookupDetail buildAwardTypeLookupDetail(CaseDetail soaCase) {

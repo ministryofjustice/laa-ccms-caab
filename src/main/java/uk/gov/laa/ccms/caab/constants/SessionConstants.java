@@ -96,4 +96,9 @@ public class SessionConstants {
    */
   public static final String ACTIVE_CASE = "activeCase";
 
+  /**
+   * Session attribute used to keep track of the submission poll counts.
+   */
+  public static final String SUBMISSION_POLL_COUNT = "submissionPollCount";
+
 }

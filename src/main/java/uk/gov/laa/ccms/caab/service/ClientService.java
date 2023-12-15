@@ -37,11 +37,11 @@ public class ClientService {
    * @return A Mono wrapping the ClientDetails.
    */
   public Mono<ClientDetails> getClients(
-      ClientSearchCriteria clientSearchCriteria,
-      String loginId,
-      String userType,
-      Integer page,
-      Integer size) {
+      final ClientSearchCriteria clientSearchCriteria,
+      final String loginId,
+      final String userType,
+      final Integer page,
+      final Integer size) {
     log.debug("SOA Clients to get using criteria: {}", clientSearchCriteria);
     return soaApiClient.getClients(clientSearchCriteria, loginId, userType, page, size);
   }
@@ -54,8 +54,10 @@ public class ClientService {
    * @param userType              Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientDetail.
    */
-  public Mono<ClientDetail> getClient(String clientReferenceNumber, String loginId,
-      String userType) {
+  public Mono<ClientDetail> getClient(
+      final String clientReferenceNumber,
+      final String loginId,
+      final String userType) {
     log.debug("SOA Client to get using reference: {}", clientReferenceNumber);
     return soaApiClient.getClient(clientReferenceNumber, loginId, userType);
   }
@@ -68,8 +70,10 @@ public class ClientService {
    * @param userType              Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientDetail.
    */
-  public Mono<ClientStatus> getClientStatus(String transactionId, String loginId,
-                                            String userType) {
+  public Mono<ClientStatus> getClientStatus(
+      final String transactionId,
+      final String loginId,
+      final String userType) {
     log.debug("SOA Client Status to get using transaction Id: {}", transactionId);
     return soaApiClient.getClientStatus(transactionId, loginId, userType);
   }
@@ -82,14 +86,14 @@ public class ClientService {
    * @return A Mono wrapping the ClientCreated transaction id.
    */
   public Mono<ClientTransactionResponse> createClient(
-      ClientFlowFormData clientFlowFormData,
-      UserDetail user) {
+      final ClientFlowFormData clientFlowFormData,
+      final UserDetail user) {
 
     ReflectionUtils.nullifyStrings(clientFlowFormData.getBasicDetails());
     ReflectionUtils.nullifyStrings(clientFlowFormData.getContactDetails());
     ReflectionUtils.nullifyStrings(clientFlowFormData.getAddressDetails());
     ReflectionUtils.nullifyStrings(clientFlowFormData.getMonitoringDetails());
-    ClientDetail clientDetail = clientDetailsMapper.toClientDetail(clientFlowFormData);
+    final ClientDetail clientDetail = clientDetailsMapper.toClientDetail(clientFlowFormData);
 
     return soaApiClient.postClient(
         clientDetail.getDetails(),
@@ -105,15 +109,15 @@ public class ClientService {
    * @return A Mono wrapping the ClientCreated transaction id.
    */
   public Mono<ClientTransactionResponse> updateClient(
-      String clientReferenceNumber,
-      ClientFlowFormData clientFlowFormData,
-      UserDetail user) {
+      final String clientReferenceNumber,
+      final ClientFlowFormData clientFlowFormData,
+      final UserDetail user) {
 
     ReflectionUtils.nullifyStrings(clientFlowFormData.getBasicDetails());
     ReflectionUtils.nullifyStrings(clientFlowFormData.getContactDetails());
     ReflectionUtils.nullifyStrings(clientFlowFormData.getAddressDetails());
     ReflectionUtils.nullifyStrings(clientFlowFormData.getMonitoringDetails());
-    ClientDetail clientDetail = clientDetailsMapper.toClientDetail(clientFlowFormData);
+    final ClientDetail clientDetail = clientDetailsMapper.toClientDetail(clientFlowFormData);
 
     return soaApiClient.putClient(
         clientReferenceNumber,
