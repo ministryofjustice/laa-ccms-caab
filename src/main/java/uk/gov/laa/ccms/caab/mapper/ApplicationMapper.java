@@ -16,6 +16,7 @@ import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.springframework.data.domain.Page;
 import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
@@ -24,6 +25,7 @@ import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AssessmentResult;
+import uk.gov.laa.ccms.caab.model.BaseApplication;
 import uk.gov.laa.ccms.caab.model.BaseAward;
 import uk.gov.laa.ccms.caab.model.BooleanDisplayValue;
 import uk.gov.laa.ccms.caab.model.CaseOutcome;
@@ -58,7 +60,9 @@ import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
 import uk.gov.laa.ccms.soa.gateway.model.Award;
 import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
+import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseStatus;
+import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
 import uk.gov.laa.ccms.soa.gateway.model.CostLimitation;
 import uk.gov.laa.ccms.soa.gateway.model.OtherParty;
@@ -71,7 +75,16 @@ import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
  */
 @Mapper(componentModel = "spring")
 public interface ApplicationMapper {
-  
+
+  Page<BaseApplication> toBaseApplicationPage(CaseDetails soaCaseDetails);
+
+  @Mapping(target = "clientReferenceNumber", source = "client.clientReferenceNumber")
+  @Mapping(target = "clientFirstName", source = "client.firstName")
+  @Mapping(target = "clientSurname", source = "client.surname")
+  @Mapping(target = "feeEarnerName", source = "feeEarnerName")
+  @Mapping(target = "caseStatus", source = "caseStatusDisplay")
+  BaseApplication toBaseApplication(CaseSummary soaCaseSummary);
+
   @Mapping(target = ".", source = "soaCaseDetail")
   @Mapping(target = "certificate", source = "soaCaseDetail.certificateType")
   @Mapping(target = "applicationType", source = "applicationMappingContext")

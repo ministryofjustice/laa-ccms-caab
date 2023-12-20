@@ -22,8 +22,8 @@ import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
@@ -245,13 +245,13 @@ class SoaApiClientTest {
   @Test
   void getCases_ReturnsCaseDetails_Successful() {
 
-    CopyCaseSearchCriteria copyCaseSearchCriteria = new CopyCaseSearchCriteria();
-    copyCaseSearchCriteria.setCaseReference("123");
-    copyCaseSearchCriteria.setProviderCaseReference("456");
-    copyCaseSearchCriteria.setActualStatus("appl");
-    copyCaseSearchCriteria.setFeeEarnerId(789);
-    copyCaseSearchCriteria.setOfficeId(999);
-    copyCaseSearchCriteria.setClientSurname("asurname");
+    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    caseSearchCriteria.setCaseReference("123");
+    caseSearchCriteria.setProviderCaseReference("456");
+    caseSearchCriteria.setStatus("appl");
+    caseSearchCriteria.setFeeEarnerId(789);
+    caseSearchCriteria.setOfficeId(999);
+    caseSearchCriteria.setClientSurname("asurname");
     String loginId = "user1";
     String userType = "userType";
     int page = 0;
@@ -265,12 +265,12 @@ class SoaApiClientTest {
             "client-surname=%s&" +
             "page=%s&" +
             "size=%s",
-        copyCaseSearchCriteria.getCaseReference(),
-        copyCaseSearchCriteria.getProviderCaseReference(),
-        copyCaseSearchCriteria.getActualStatus(),
-        copyCaseSearchCriteria.getFeeEarnerId(),
-        copyCaseSearchCriteria.getOfficeId(),
-        copyCaseSearchCriteria.getClientSurname(),
+        caseSearchCriteria.getCaseReference(),
+        caseSearchCriteria.getProviderCaseReference(),
+        caseSearchCriteria.getStatus(),
+        caseSearchCriteria.getFeeEarnerId(),
+        caseSearchCriteria.getOfficeId(),
+        caseSearchCriteria.getClientSurname(),
         page,
         size);
 
@@ -288,7 +288,7 @@ class SoaApiClientTest {
     when(responseMock.bodyToMono(CaseDetails.class)).thenReturn(Mono.just(mockCaseDetails));
 
     Mono<CaseDetails> caseDetailsMono =
-        soaApiClient.getCases(copyCaseSearchCriteria, loginId, userType, page, size);
+        soaApiClient.getCases(caseSearchCriteria, loginId, userType, page, size);
 
     StepVerifier.create(caseDetailsMono)
         .expectNextMatches(caseDetails -> caseDetails == mockCaseDetails)

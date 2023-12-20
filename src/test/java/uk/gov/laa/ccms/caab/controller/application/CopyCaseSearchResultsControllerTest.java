@@ -13,7 +13,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
-import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
 import jakarta.servlet.ServletException;
@@ -31,8 +30,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
-import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
+import uk.gov.laa.ccms.caab.controller.application.search.CopyCaseSearchResultsController;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
@@ -77,16 +77,16 @@ public class CopyCaseSearchResultsControllerTest {
     when(applicationService.getCases(any(), any(), any(), any(), any())).thenReturn(
         Mono.just(caseDetails));
 
-    CopyCaseSearchCriteria copyCaseSearchCriteria = new CopyCaseSearchCriteria();
+    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     this.mockMvc.perform(get("/application/copy-case/results")
             .sessionAttr("user", user)
-            .sessionAttr("copyCaseSearchCriteria", copyCaseSearchCriteria))
+            .sessionAttr("caseSearchCriteria", caseSearchCriteria))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-copy-case-search-no-results"));
 
     verify(applicationService).getCopyCaseStatus();
-    verify(applicationService).getCases(eq(copyCaseSearchCriteria), any(), any(), any(), any());
-    assertNull(copyCaseSearchCriteria.getActualStatus());
+    verify(applicationService).getCases(eq(caseSearchCriteria), any(), any(), any(), any());
+    assertNull(caseSearchCriteria.getStatus());
   }
 
   @Test
@@ -100,16 +100,16 @@ public class CopyCaseSearchResultsControllerTest {
     when(applicationService.getCopyCaseStatus()).thenReturn(
         new CaseStatusLookupValueDetail().code(COPY_STATUS_CODE));
 
-    CopyCaseSearchCriteria copyCaseSearchCriteria = new CopyCaseSearchCriteria();
+    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     this.mockMvc.perform(get("/application/copy-case/results")
             .sessionAttr("user", user)
-            .sessionAttr("copyCaseSearchCriteria", copyCaseSearchCriteria))
+            .sessionAttr("caseSearchCriteria", caseSearchCriteria))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-copy-case-search-no-results"));
 
     verify(applicationService).getCopyCaseStatus();
-    verify(applicationService).getCases(eq(copyCaseSearchCriteria), any(), any(), any(), any());
-    assertEquals(COPY_STATUS_CODE, copyCaseSearchCriteria.getActualStatus());
+    verify(applicationService).getCases(eq(caseSearchCriteria), any(), any(), any(), any());
+    assertEquals(COPY_STATUS_CODE, caseSearchCriteria.getStatus());
   }
 
   @Test
@@ -123,7 +123,7 @@ public class CopyCaseSearchResultsControllerTest {
 
     this.mockMvc.perform(get("/application/copy-case/results")
             .sessionAttr("user", user)
-            .sessionAttr("copyCaseSearchCriteria", new CopyCaseSearchCriteria()))
+            .sessionAttr("copyCaseSearchCriteria", new CaseSearchCriteria()))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-copy-case-search-too-many-results"));
   }
@@ -139,7 +139,7 @@ public class CopyCaseSearchResultsControllerTest {
 
     this.mockMvc.perform(get("/application/copy-case/results")
             .sessionAttr("user", user)
-            .sessionAttr("copyCaseSearchCriteria", new CopyCaseSearchCriteria()))
+            .sessionAttr("copyCaseSearchCriteria", new CaseSearchCriteria()))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-copy-case-search-results"));
   }

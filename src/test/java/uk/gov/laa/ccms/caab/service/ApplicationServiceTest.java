@@ -55,7 +55,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
-import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
@@ -152,13 +152,13 @@ class ApplicationServiceTest {
 
   @Test
   void getCases_ReturnsCaseDetails_Successful() {
-    CopyCaseSearchCriteria copyCaseSearchCriteria = new CopyCaseSearchCriteria();
-    copyCaseSearchCriteria.setCaseReference("123");
-    copyCaseSearchCriteria.setProviderCaseReference("456");
-    copyCaseSearchCriteria.setActualStatus("appl");
-    copyCaseSearchCriteria.setFeeEarnerId(789);
-    copyCaseSearchCriteria.setOfficeId(999);
-    copyCaseSearchCriteria.setClientSurname("asurname");
+    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    caseSearchCriteria.setCaseReference("123");
+    caseSearchCriteria.setProviderCaseReference("456");
+    caseSearchCriteria.setStatus("appl");
+    caseSearchCriteria.setFeeEarnerId(789);
+    caseSearchCriteria.setOfficeId(999);
+    caseSearchCriteria.setClientSurname("asurname");
     String loginId = "user1";
     String userType = "userType";
     int page = 0;
@@ -166,11 +166,11 @@ class ApplicationServiceTest {
 
     CaseDetails mockCaseDetails = new CaseDetails();
 
-    when(soaApiClient.getCases(copyCaseSearchCriteria, loginId, userType, page, size))
+    when(soaApiClient.getCases(caseSearchCriteria, loginId, userType, page, size))
         .thenReturn(Mono.just(mockCaseDetails));
 
     Mono<CaseDetails> caseDetailsMono =
-        applicationService.getCases(copyCaseSearchCriteria, loginId, userType, page, size);
+        applicationService.getCases(caseSearchCriteria, loginId, userType, page, size);
 
     StepVerifier.create(caseDetailsMono)
         .expectNextMatches(clientDetails -> clientDetails == mockCaseDetails)

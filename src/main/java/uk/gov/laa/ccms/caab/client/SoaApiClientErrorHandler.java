@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
@@ -79,12 +79,12 @@ public class SoaApiClientErrorHandler {
   /**
    * Handles errors that occur while fetching CaseDetails.
    *
-   * @param copyCaseSearchCriteria Criteria for copying the case.
+   * @param caseSearchCriteria Criteria for copying the case.
    * @param e Exception thrown during operation.
    * @return An empty Mono.
    */
   public Mono<CaseDetails> handleCaseDetailsError(
-          CopyCaseSearchCriteria copyCaseSearchCriteria, Throwable e) {
+          CaseSearchCriteria caseSearchCriteria, Throwable e) {
     log.error("Failed to retrieve CaseDetails for "
                     + "caseReferenceNumber: {}, "
                     + "providerCaseReference: {}, "
@@ -92,12 +92,12 @@ public class SoaApiClientErrorHandler {
                     + "feeEarnerId: {}, "
                     + "officeId: {}, "
                     + "clientSurname: {}",
-            copyCaseSearchCriteria.getCaseReference(),
-            copyCaseSearchCriteria.getProviderCaseReference(),
-            copyCaseSearchCriteria.getActualStatus(),
-            copyCaseSearchCriteria.getFeeEarnerId(),
-            copyCaseSearchCriteria.getOfficeId(),
-            copyCaseSearchCriteria.getClientSurname(), e);
+            caseSearchCriteria.getCaseReference(),
+            caseSearchCriteria.getProviderCaseReference(),
+            caseSearchCriteria.getStatus(),
+            caseSearchCriteria.getFeeEarnerId(),
+            caseSearchCriteria.getOfficeId(),
+            caseSearchCriteria.getClientSurname(), e);
     return Mono.empty();
   }
 

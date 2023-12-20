@@ -3,25 +3,25 @@ package uk.gov.laa.ccms.caab.bean.validators.application;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**
- * Validator component responsible for validating {@link CopyCaseSearchCriteria} objects.
+ * Validator component responsible for validating {@link CaseSearchCriteria} objects.
  */
 @Component
-public class CopyCaseSearchCriteriaValidator extends AbstractValidator {
+public class CaseSearchCriteriaValidator extends AbstractValidator {
 
   /**
    * Determines if the Validator supports the provided class.
    *
    * @param clazz The class to check for support.
-   * @return {@code true} if the class is assignable from {@link CopyCaseSearchCriteria},
+   * @return {@code true} if the class is assignable from {@link CaseSearchCriteria},
    *         {@code false} otherwise.
    */
   @Override
   public boolean supports(Class<?> clazz) {
-    return CopyCaseSearchCriteria.class.isAssignableFrom(clazz);
+    return CaseSearchCriteria.class.isAssignableFrom(clazz);
   }
 
   /**
@@ -36,20 +36,20 @@ public class CopyCaseSearchCriteriaValidator extends AbstractValidator {
   }
 
   /**
-   * Validates that at least one search criteria is provided in the {@link CopyCaseSearchCriteria}.
+   * Validates that at least one search criteria is provided in the {@link CaseSearchCriteria}.
    *
    * @param target The target object to be validated.
    * @param errors The Errors object to store validation errors.
    */
   public void validateAtLeastOneSearchCriteria(Object target, Errors errors) {
-    CopyCaseSearchCriteria searchCriteria = (CopyCaseSearchCriteria) target;
+    CaseSearchCriteria searchCriteria = (CaseSearchCriteria) target;
 
     if (StringUtils.isBlank(searchCriteria.getCaseReference())
             && StringUtils.isBlank(searchCriteria.getClientSurname())
             && StringUtils.isBlank(searchCriteria.getProviderCaseReference())
             && searchCriteria.getFeeEarnerId() == null
             && searchCriteria.getOfficeId() == null
-    ) {
+            && StringUtils.isBlank(searchCriteria.getStatus())) {
       errors.rejectValue(null, "required.atLeastOneSearchCriteria",
               "You must provide at least one search criteria below. Please amend your entry.");
     }

@@ -11,8 +11,8 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
@@ -229,30 +229,30 @@ public class SoaApiClient {
   /**
    * Searches and retrieves case details based on provided search criteria.
    *
-   * @param copyCaseSearchCriteria The search criteria to use when fetching cases.
+   * @param caseSearchCriteria The search criteria to use when fetching cases.
    * @param loginId                The login identifier for the user.
    * @param userType               Type of the user (e.g., admin, user).
    * @param page                   The page number for pagination.
    * @param size                   The size or number of records per page.
    * @return A Mono wrapping the CaseDetails.
    */
-  public Mono<CaseDetails> getCases(CopyCaseSearchCriteria copyCaseSearchCriteria, String loginId,
+  public Mono<CaseDetails> getCases(CaseSearchCriteria caseSearchCriteria, String loginId,
       String userType, Integer page, Integer size) {
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/cases")
             .queryParamIfPresent(CASE_REFERENCE_NUMBER, Optional.ofNullable(
-                copyCaseSearchCriteria.getCaseReference()))
+                caseSearchCriteria.getCaseReference()))
             .queryParamIfPresent("provider-case-reference", Optional.ofNullable(
-                copyCaseSearchCriteria.getProviderCaseReference()))
+                caseSearchCriteria.getProviderCaseReference()))
             .queryParamIfPresent("case-status",
-                Optional.ofNullable(copyCaseSearchCriteria.getActualStatus()))
+                Optional.ofNullable(caseSearchCriteria.getStatus()))
             .queryParamIfPresent("fee-earner-id",
-                Optional.ofNullable(copyCaseSearchCriteria.getFeeEarnerId()))
+                Optional.ofNullable(caseSearchCriteria.getFeeEarnerId()))
             .queryParamIfPresent("office-id",
-                Optional.ofNullable(copyCaseSearchCriteria.getOfficeId()))
+                Optional.ofNullable(caseSearchCriteria.getOfficeId()))
             .queryParamIfPresent("client-surname",
-                Optional.ofNullable(copyCaseSearchCriteria.getClientSurname()))
+                Optional.ofNullable(caseSearchCriteria.getClientSurname()))
             .queryParamIfPresent("page",
                 Optional.ofNullable(page))
             .queryParamIfPresent("size",
@@ -263,7 +263,7 @@ public class SoaApiClient {
         .retrieve()
         .bodyToMono(CaseDetails.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleCaseDetailsError(
-            copyCaseSearchCriteria, e));
+            caseSearchCriteria, e));
 
   }
 

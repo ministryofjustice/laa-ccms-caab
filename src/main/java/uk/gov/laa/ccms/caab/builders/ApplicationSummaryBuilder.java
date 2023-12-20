@@ -50,18 +50,40 @@ public class ApplicationSummaryBuilder {
         .build();
   }
 
+//  /**
+//   * Builder method for clients full name.
+//   *
+//   * @param firstName the application's clients first name
+//   * @param lastName the application's client's last name
+//   * @return the builder with amended clientFullName details.
+//   */
+//  public ApplicationSummaryBuilder clientFullName(final String firstName, final String lastName) {
+//    String fullName = (firstName != null ? firstName : "")
+//        + " "
+//        + (lastName != null ? lastName : "");
+//    applicationSummary.setClientFullName(fullName.trim());
+//    return this;
+//  }
+
   /**
-   * Builder method for clients full name.
+   * Builder method for clients first name.
    *
    * @param firstName the application's clients first name
-   * @param lastName the application's client's last name
-   * @return the builder with amended clientFullName details.
+   * @return the builder with amended clientFirstName details.
    */
-  public ApplicationSummaryBuilder clientFullName(final String firstName, final String lastName) {
-    String fullName = (firstName != null ? firstName : "")
-        + " "
-        + (lastName != null ? lastName : "");
-    applicationSummary.setClientFullName(fullName.trim());
+  public ApplicationSummaryBuilder clientFirstName(final String firstName) {
+    applicationSummary.setClientFirstName(firstName);
+    return this;
+  }
+
+  /**
+   * Builder method for clients surname.
+   *
+   * @param surname the application's clients surname
+   * @return the builder with amended clientSurname details.
+   */
+  public ApplicationSummaryBuilder clientSurname(final String surname) {
+    applicationSummary.setClientSurname(surname);
     return this;
   }
 

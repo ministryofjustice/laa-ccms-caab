@@ -17,7 +17,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
-import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
@@ -102,7 +102,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     String userType = USER_TYPE;
     int page = 0;
     int size = 20;
-    CopyCaseSearchCriteria searchCriteria = buildCopyCaseSearchCriteria();
+    CaseSearchCriteria searchCriteria = buildCopyCaseSearchCriteria();
     CaseDetails caseDetails = buildCaseDetails();
     String caseDetailsJson = objectMapper.writeValueAsString(caseDetails);
 
@@ -116,7 +116,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
             "size=%s",
         searchCriteria.getCaseReference(),
         searchCriteria.getProviderCaseReference(),
-        searchCriteria.getActualStatus(),
+        searchCriteria.getStatus(),
         searchCriteria.getFeeEarnerId(),
         searchCriteria.getOfficeId(),
         searchCriteria.getClientSurname(),
@@ -233,11 +233,11 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
             .categoryOfLaw("CAT1"));
   }
 
-  private CopyCaseSearchCriteria buildCopyCaseSearchCriteria() {
-    CopyCaseSearchCriteria searchCriteria = new CopyCaseSearchCriteria();
+  private CaseSearchCriteria buildCopyCaseSearchCriteria() {
+    CaseSearchCriteria searchCriteria = new CaseSearchCriteria();
     searchCriteria.setCaseReference("123");
     searchCriteria.setProviderCaseReference("456");
-    searchCriteria.setActualStatus("caseStat");
+    searchCriteria.setStatus("caseStat");
     searchCriteria.setFeeEarnerId(678);
     searchCriteria.setOfficeId(345);
     searchCriteria.setClientSurname("clientSurname");

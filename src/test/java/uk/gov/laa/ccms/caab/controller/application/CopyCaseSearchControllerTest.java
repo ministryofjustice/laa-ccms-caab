@@ -14,7 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.COPY_CASE_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.ArrayList;
@@ -32,8 +32,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.validators.application.CopyCaseSearchCriteriaValidator;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
+import uk.gov.laa.ccms.caab.controller.application.search.CopyCaseSearchController;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.data.model.BaseOffice;
@@ -47,7 +48,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @WebAppConfiguration
 public class CopyCaseSearchControllerTest {
   @Mock
-  private CopyCaseSearchCriteriaValidator validator;
+  private CaseSearchCriteriaValidator validator;
 
   @Mock
   private ProviderService providerService;
@@ -133,7 +134,7 @@ public class CopyCaseSearchControllerTest {
 
     this.mockMvc.perform(post("/application/copy-case/search")
             .sessionAttr("user", user)
-            .flashAttr(COPY_CASE_SEARCH_CRITERIA, new CopyCaseSearchCriteria()))
+            .flashAttr(CASE_SEARCH_CRITERIA, new CaseSearchCriteria()))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/copy-case/results"));

@@ -22,14 +22,14 @@ public class SessionConstants {
   /**
    * Session attribute used to keep track of search criteria when copying a case.
    */
-  public static final String COPY_CASE_SEARCH_CRITERIA = "copyCaseSearchCriteria";
+  public static final String CASE_SEARCH_CRITERIA = "caseSearchCriteria";
 
   /**
    * Session attribute used to keep track of copy case search results during the creation of a new
    * application.
    * Used when returning to copy case results screen to prepopulate table of results
    */
-  public static final String COPY_CASE_SEARCH_RESULTS = "copyCaseSearchResults";
+  public static final String CASE_SEARCH_RESULTS = "caseSearchResults";
 
   /**
    * Session attribute used to keep track of client search criteria during the creation of a new
