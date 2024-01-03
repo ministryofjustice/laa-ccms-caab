@@ -15,7 +15,7 @@
             <h1 class="govuk-heading-l">
                 Client address search results
             </h1>
-            <p class="govuk-body-l" th:text="${'Your address check has found ' + #lists.size(clientAddressSearchResults.content) + ' possible results. Please select the correct address for your client. If the address is not listed then cancel and return to address details and enter the address manually'}"></p>
+            <p class="govuk-body-l" th:text="${'Your address check has found ' + #lists.size(addressSearchResults.content) + ' possible results. Please select the correct address for your client. If the address is not listed then cancel and return to address details and enter the address manually'}"></p>
             <div class="govuk-form-group">
                 <fieldset class="govuk-fieldset" aria-describedby="address-hint">
                     <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
@@ -27,7 +27,7 @@
                         Select one option.
                     </div>
                     <div class="govuk-radios" data-module="govuk-radios">
-                        <div class="govuk-radios__item" th:each="result : ${clientAddressSearchResults.content}">
+                        <div class="govuk-radios__item" th:each="result : ${addressSearchResults.content}">
                             <input class="govuk-radios__input" th:id="${result.uprn}" name="uprn" type="radio" th:value="${result.uprn}">
                             <label class="govuk-label govuk-radios__label"
                                    th:for="${result.uprn}"

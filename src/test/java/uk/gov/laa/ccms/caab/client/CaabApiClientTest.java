@@ -16,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
@@ -116,6 +117,27 @@ public class CaabApiClientTest {
   }
 
   @Test
+  void getCorrespondenceAddress_success() {
+
+    String id = "123";
+    String expectedUri = "/applications/{id}/correspondence-address";
+
+    Address mockApplication = new Address();
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, id)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Address.class)).thenReturn(Mono.just(mockApplication));
+
+    Mono<Address> addressMono
+        = caabApiClient.getCorrespondenceAddress(id);
+
+    StepVerifier.create(addressMono)
+        .expectNext(mockApplication)
+        .verifyComplete();
+  }
+
+  @Test
   void patchApplication_applicationType_success() {
     String loginId = "user1";
     String id = "123";
@@ -124,7 +146,7 @@ public class CaabApiClientTest {
 
     ApplicationType applicationType = new ApplicationType();
 
-    when(caabApiWebClient.patch()).thenReturn(requestBodyUriMock);
+    when(caabApiWebClient.put()).thenReturn(requestBodyUriMock);
     when(requestBodyUriMock.uri(expectedUri, id)).thenReturn(requestBodyMock);
     when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
     when(requestBodyMock.contentType(any(MediaType.class))).thenReturn(requestBodyMock);
@@ -133,7 +155,29 @@ public class CaabApiClientTest {
     when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
 
     assertDoesNotThrow(() -> {
-      caabApiClient.patchApplication(id, loginId, applicationType, type).block();
+      caabApiClient.putApplication(id, loginId, applicationType, type).block();
+    });
+  }
+
+  @Test
+  void patchApplication_correspondenceAddress_success() {
+    String loginId = "user1";
+    String id = "123";
+    String type = "correspondence-address";
+    String expectedUri = String.format("/applications/{id}/%s", type);
+
+    Address correspondenceAddress = new Address();
+
+    when(caabApiWebClient.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri, id)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(any(MediaType.class))).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(Address.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    assertDoesNotThrow(() -> {
+      caabApiClient.putApplication(id, loginId, correspondenceAddress, type).block();
     });
   }
 

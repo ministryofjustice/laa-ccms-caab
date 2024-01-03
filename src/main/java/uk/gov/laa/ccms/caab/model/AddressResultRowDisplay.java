@@ -6,7 +6,7 @@ import lombok.Data;
  * Represents the display details for a single client address result row.
  */
 @Data
-public class ClientAddressResultRowDisplay {
+public class AddressResultRowDisplay {
 
   private String fullAddress;
 

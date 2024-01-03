@@ -6,6 +6,6 @@ import lombok.Data;
  * Represents the client address search form.
  */
 @Data
-public class ClientFormDataAddressSearch {
+public class AddressSearchFormData {
   private String uprn;
 }

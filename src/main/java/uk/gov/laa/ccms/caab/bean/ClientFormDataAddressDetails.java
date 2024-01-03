@@ -20,6 +20,6 @@ public class ClientFormDataAddressDetails extends AbstractClientFormData {
   private String county;
 
   //Required for address searching
-  private ClientFormDataAddressSearch addressSearch;
+  private AddressSearchFormData addressSearch;
 
 }

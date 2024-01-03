@@ -6,6 +6,7 @@ import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
@@ -61,6 +62,18 @@ class CaabApiClientErrorHandlerTest {
     StepVerifier.create(result)
         .verifyErrorMatches(e -> e instanceof CaabApiClientException
             && e.getMessage().equals("Failed to retrieve provider details")
+            && e.getCause() == throwable);
+  }
+
+  @Test
+  public void testHandleGetCorrespondenceAddressError() {
+    Throwable throwable = new RuntimeException("Error");
+
+    Mono<Address> result = caabApiClientErrorHandler.handleGetCorrespondenceAddressError(throwable);
+
+    StepVerifier.create(result)
+        .verifyErrorMatches(e -> e instanceof CaabApiClientException
+            && e.getMessage().equals("Failed to retrieve correspondence address")
             && e.getCause() == throwable);
   }
 

@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_ADDRESS_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import jakarta.servlet.http.HttpSession;
@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
-import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressSearch;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressSearchValidator;
-import uk.gov.laa.ccms.caab.model.ClientAddressResultsDisplay;
+import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
+import uk.gov.laa.ccms.caab.model.AddressResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
 
 /**
@@ -32,11 +32,11 @@ public class EditClientAddressDetailsSearchController {
 
   private final AddressService addressService;
 
-  private final ClientAddressSearchValidator clientAddressSearchValidator;
+  private final AddressSearchValidator addressSearchValidator;
 
   @ModelAttribute("addressSearch")
-  public ClientFormDataAddressSearch getAddressSearch() {
-    return new ClientFormDataAddressSearch();
+  public AddressSearchFormData getAddressSearch() {
+    return new AddressSearchFormData();
   }
 
   /**
@@ -49,12 +49,12 @@ public class EditClientAddressDetailsSearchController {
    */
   @GetMapping("/application/summary/client/details/address/search")
   public String clientDetailsAddressSearch(
-      @SessionAttribute(CLIENT_ADDRESS_SEARCH_RESULTS)
-        ClientAddressResultsDisplay clientAddressSearchResults,
-      @ModelAttribute("addressSearch") ClientFormDataAddressSearch addressSearch,
+      @SessionAttribute(ADDRESS_SEARCH_RESULTS)
+      AddressResultsDisplay clientAddressSearchResults,
+      @ModelAttribute("addressSearch") AddressSearchFormData addressSearch,
       Model model) {
 
-    model.addAttribute(CLIENT_ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
+    model.addAttribute(ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
 
     return "application/summary/client-address-search-results";
   }
@@ -72,18 +72,18 @@ public class EditClientAddressDetailsSearchController {
    */
   @PostMapping("/application/summary/client/details/address/search")
   public String clientDetailsAddressSearch(
-      @SessionAttribute(CLIENT_ADDRESS_SEARCH_RESULTS) ClientAddressResultsDisplay
+      @SessionAttribute(ADDRESS_SEARCH_RESULTS) AddressResultsDisplay
           clientAddressSearchResults,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
-      @ModelAttribute("addressSearch") ClientFormDataAddressSearch addressSearch,
+      @ModelAttribute("addressSearch") AddressSearchFormData addressSearch,
       Model model,
       BindingResult bindingResult,
       HttpSession session) {
 
     //validate if an address is selected
-    clientAddressSearchValidator.validate(addressSearch, bindingResult);
+    addressSearchValidator.validate(addressSearch, bindingResult);
     if (bindingResult.hasErrors()) {
-      model.addAttribute(CLIENT_ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
+      model.addAttribute(ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
       return "application/summary/client-address-search-results";
     }
 
@@ -94,7 +94,7 @@ public class EditClientAddressDetailsSearchController {
         clientFlowFormData.getAddressDetails());
 
     //Cleanup
-    session.removeAttribute(CLIENT_ADDRESS_SEARCH_RESULTS);
+    session.removeAttribute(ADDRESS_SEARCH_RESULTS);
 
     return "redirect:/application/summary/client/details/address";
   }
