@@ -78,14 +78,14 @@ class CaabApiClientErrorHandlerTest {
   }
 
   @Test
-  public void testHandlePatchApplicationError() {
+  public void testHandleUpdateApplicationError() {
     Throwable throwable = new RuntimeException("Error");
 
-    Mono<Void> result = caabApiClientErrorHandler.handlePatchApplicationError(throwable, "type");
+    Mono<Void> result = caabApiClientErrorHandler.handleUpdateApplicationError(throwable, "type");
 
     StepVerifier.create(result)
         .verifyErrorMatches(e -> e instanceof CaabApiClientException
-            && e.getMessage().equals("Failed to patch application - type")
+            && e.getMessage().equals("Failed to update application - type")
             && e.getCause() == throwable);
   }
 }

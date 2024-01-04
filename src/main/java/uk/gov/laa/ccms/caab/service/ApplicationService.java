@@ -119,6 +119,10 @@ public class ApplicationService {
 
   private final LookupService lookupService;
 
+  private static final String UPDATE_APPLICATION_APPLICATION_TYPE = "application-type";
+  private static final String UPDATE_APPLICATION_CORRESPONDENCE_ADDRESS = "correspondence-address";
+  private static final String UPDATE_APPLICATION_PROVIDER_DETAILS = "provider-details";
+
   /**
    * Searches and retrieves case details based on provided search criteria.
    *
@@ -436,7 +440,10 @@ public class ApplicationService {
     final Address correspondenceAddress = addressFormDataMapper.toAddress(addressFormData);
 
     caabApiClient.putApplication(
-        id, user.getLoginId(), correspondenceAddress, "correspondence-address").block();
+        id,
+        user.getLoginId(),
+        correspondenceAddress,
+        UPDATE_APPLICATION_CORRESPONDENCE_ADDRESS).block();
   }
 
   /**
@@ -466,7 +473,7 @@ public class ApplicationService {
         .build();
 
     caabApiClient.putApplication(
-        id, user.getLoginId(), applicationType, "application-type").block();
+        id, user.getLoginId(), applicationType, UPDATE_APPLICATION_APPLICATION_TYPE).block();
   }
 
   /**
@@ -515,7 +522,7 @@ public class ApplicationService {
         .providerCaseReference(applicationFormData.getProviderCaseReference());
 
     caabApiClient.putApplication(
-        id, user.getLoginId(), providerDetails, "provider-details").block();
+        id, user.getLoginId(), providerDetails, UPDATE_APPLICATION_PROVIDER_DETAILS).block();
 
   }
 

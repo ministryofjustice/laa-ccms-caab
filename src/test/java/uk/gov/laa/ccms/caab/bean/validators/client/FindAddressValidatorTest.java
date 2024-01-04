@@ -54,7 +54,7 @@ class FindAddressValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_countryRequired(String country) {
+  public void validate_countryRequired(final String country) {
     addressDetails.setCountry(country);
     findAddressValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());

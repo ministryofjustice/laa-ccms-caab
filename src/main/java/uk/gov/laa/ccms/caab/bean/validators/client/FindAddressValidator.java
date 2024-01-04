@@ -61,13 +61,13 @@ public class FindAddressValidator extends AbstractClientAddressValidator {
     }
     validateRequiredField("country", country,
         "Country", errors);
-    if (StringUtils.hasText(country)) {
-      if (!country.equals("GBR")) {
-        errors.rejectValue("country", "required.GBR",
-            "The address lookup system is not available for the country you have "
-                + "selected. Please enter the address manually.");
-      }
+
+    if (StringUtils.hasText(country) && !country.equals("GBR")) {
+      errors.rejectValue("country", "required.GBR",
+          "The address lookup system is not available for the country you have "
+              + "selected. Please enter the address manually.");
     }
+
     validateRequiredField("houseNameNumber", houseNameNumber,
         "House name / number", errors);
     validatePostcodeFormat(country, postcode, errors);

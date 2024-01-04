@@ -77,13 +77,13 @@ public class CaabApiClientErrorHandler {
   }
 
   /**
-   * Handles errors encountered during patching of an application.
+   * Handles errors encountered during updating an application.
    *
    * @param e the encountered error
    * @return a Mono signaling the error wrapped in a {@code CaabApiServiceException}
    */
-  public Mono<Void> handlePatchApplicationError(Throwable e, String type) {
-    final String msg = String.format("Failed to patch application - %s", type);
+  public Mono<Void> handleUpdateApplicationError(Throwable e, String type) {
+    final String msg = String.format("Failed to update application - %s", type);
     log.error(msg, e);
     return Mono.error(new CaabApiClientException(msg, e));
   }

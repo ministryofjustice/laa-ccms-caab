@@ -143,6 +143,6 @@ public class CaabApiClient {
         .bodyValue(data)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> caabApiClientErrorHandler.handlePatchApplicationError(e, type));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleUpdateApplicationError(e, type));
   }
 }

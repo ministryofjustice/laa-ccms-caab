@@ -3,7 +3,7 @@ package uk.gov.laa.ccms.caab.bean;
 import lombok.Data;
 
 /**
- * Represents the client address search form.
+ * Represents the address search form.
  */
 @Data
 public class AddressSearchFormData {
