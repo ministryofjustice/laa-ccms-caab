@@ -8,8 +8,8 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
-import uk.gov.laa.ccms.caab.model.ClientAddressResultRowDisplay;
-import uk.gov.laa.ccms.caab.model.ClientAddressResultsDisplay;
+import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.AddressResultsDisplay;
 import uk.gov.laa.ccms.caab.model.os.DeliveryPointAddress;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResponse;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResult;
@@ -26,11 +26,11 @@ public interface ClientAddressResultDisplayMapper {
    * object.
    *
    * @param addressDetails Target address details object to update.
-   * @param clientAddressResultRowDisplay Source object containing the address details.
+   * @param addressResultRowDisplay Source object containing the address details.
    */
   void updateClientFormDataAddressDetails(
       @MappingTarget ClientFormDataAddressDetails addressDetails,
-      ClientAddressResultRowDisplay clientAddressResultRowDisplay);
+      AddressResultRowDisplay addressResultRowDisplay);
 
   /**
    * Transforms an OrdinanceSurveyResponse into a ClientAddressResultsDisplay object.
@@ -39,7 +39,7 @@ public interface ClientAddressResultDisplayMapper {
    * @return Mapped ClientAddressResultsDisplay object.
    */
   @Mapping(target = "content", source = "results")
-  ClientAddressResultsDisplay toClientAddressResultsDisplay(
+  AddressResultsDisplay toClientAddressResultsDisplay(
       OrdinanceSurveyResponse ordinanceSurveyResponse);
 
   /**
@@ -62,7 +62,7 @@ public interface ClientAddressResultDisplayMapper {
   @Mapping(target = "postcode", source = "deliveryPointAddress.postcode")
   @Mapping(target = "cityTown", source = "deliveryPointAddress.postTown")
   @Mapping(target = "country", constant = "GBR")
-  ClientAddressResultRowDisplay toClientAddressResultRowDisplay(
+  AddressResultRowDisplay toClientAddressResultRowDisplay(
       OrdinanceSurveyResult ordinanceSurveyResult);
 
   /**

@@ -27,11 +27,11 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsFindAddressValidator;
+import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
+import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.AddressResultsDisplay;
 import uk.gov.laa.ccms.caab.service.LookupService;
-import uk.gov.laa.ccms.caab.model.ClientAddressResultRowDisplay;
-import uk.gov.laa.ccms.caab.model.ClientAddressResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -46,7 +46,7 @@ public class ClientAddressDetailsControllerTest {
   private ClientAddressDetailsValidator clientAddressDetailsValidator;
 
   @Mock
-  private ClientAddressDetailsFindAddressValidator clientAddressDetailsFindAddressValidator;
+  private FindAddressValidator findAddressValidator;
 
   @Mock
   private AddressService addressService;
@@ -96,7 +96,7 @@ public class ClientAddressDetailsControllerTest {
   @Test
   void testClientDetailsAddressPostFindAddress_NoAddresses() throws Exception {
     when(addressService.getAddresses(any())).thenReturn(
-        new ClientAddressResultsDisplay());
+        new AddressResultsDisplay());
 
     when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
@@ -112,9 +112,9 @@ public class ClientAddressDetailsControllerTest {
 
   @Test
   void testClientDetailsAddressPostFindAddress_WithAddresses() throws Exception {
-    ClientAddressResultsDisplay addressResults = new ClientAddressResultsDisplay();
+    AddressResultsDisplay addressResults = new AddressResultsDisplay();
     addressResults.setContent(new ArrayList<>());
-    addressResults.getContent().add(new ClientAddressResultRowDisplay());
+    addressResults.getContent().add(new AddressResultRowDisplay());
 
     when(addressService.getAddresses(any())).thenReturn(
         addressResults);
@@ -175,7 +175,7 @@ public class ClientAddressDetailsControllerTest {
       Errors errors = (Errors) invocation.getArguments()[1];
       errors.rejectValue("country", "required.country", "Please complete 'Country'.");
       return null;
-    }).when(clientAddressDetailsFindAddressValidator).validate(any(), any());
+    }).when(findAddressValidator).validate(any(), any());
 
     when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));

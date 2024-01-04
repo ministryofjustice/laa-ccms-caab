@@ -48,6 +48,11 @@ public class CommonValueConstants {
   public static final String COMMON_VALUE_CORRESPONDENCE_LANGUAGE = "XXCCMS_PREF_LANGUAGE";
 
   /**
+   * Type used to retrieve the case address option values for correspondence address details.
+   */
+  public static final String COMMON_VALUE_CASE_ADDRESS_OPTION = "XXCCMS_CASE_ADDRESS_OPTION";
+
+  /**
    * Type used to retrieve the ethnic origin values for equal opportunity monitoring details.
    */
   public static final String COMMON_VALUE_ETHNIC_ORIGIN = "XXCCMS_ETHNICITY";

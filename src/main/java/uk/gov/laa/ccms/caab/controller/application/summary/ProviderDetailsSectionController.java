@@ -94,7 +94,7 @@ public class ProviderDetailsSectionController {
       return "application/summary/provider-details-section";
     }
 
-    applicationService.patchProviderDetails(applicationId, applicationFormData, user);
+    applicationService.updateProviderDetails(applicationId, applicationFormData, user);
 
     return "redirect:/application/summary";
   }

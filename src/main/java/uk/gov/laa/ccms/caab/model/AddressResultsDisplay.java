@@ -7,7 +7,7 @@ import lombok.Data;
  * Represents the display details for client address results.
  */
 @Data
-public class ClientAddressResultsDisplay {
+public class AddressResultsDisplay {
 
-  private List<ClientAddressResultRowDisplay> content;
+  private List<AddressResultRowDisplay> content;
 }

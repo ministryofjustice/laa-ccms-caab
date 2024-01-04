@@ -32,6 +32,7 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
 import reactor.util.function.Tuple4;
 import reactor.util.function.Tuple6;
+import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.builders.ApplicationBuilder;
@@ -41,6 +42,7 @@ import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper;
@@ -48,6 +50,7 @@ import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
+import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
@@ -108,11 +111,17 @@ public class ApplicationService {
 
   private final ApplicationFormDataMapper applicationFormDataMapper;
 
+  private final AddressFormDataMapper addressFormDataMapper;
+
   private final ApplicationMapper applicationMapper;
 
   private final CopyApplicationMapper copyApplicationMapper;
 
   private final LookupService lookupService;
+
+  private static final String UPDATE_APPLICATION_APPLICATION_TYPE = "application-type";
+  private static final String UPDATE_APPLICATION_CORRESPONDENCE_ADDRESS = "correspondence-address";
+  private static final String UPDATE_APPLICATION_PROVIDER_DETAILS = "provider-details";
 
   /**
    * Searches and retrieves case details based on provided search criteria.
@@ -411,6 +420,32 @@ public class ApplicationService {
         .map(applicationFormDataMapper::toApplicationProviderDetailsFormData).block();
   }
 
+  public AddressFormData getCorrespondenceAddressFormData(final String id) {
+    return caabApiClient.getCorrespondenceAddress(id)
+        .map(addressFormDataMapper::toAddressFormData).block();
+  }
+
+  /**
+   * Patches an application's correspondence address in the CAAB's Transient Data Store.
+   *
+   * @param id the ID associated with the application
+   * @param addressFormData the details of the Application to amend
+   * @param user the related User.
+   */
+  public void updateCorrespondenceAddress(
+      final String id,
+      final AddressFormData addressFormData,
+      final UserDetail user) {
+
+    final Address correspondenceAddress = addressFormDataMapper.toAddress(addressFormData);
+
+    caabApiClient.putApplication(
+        id,
+        user.getLoginId(),
+        correspondenceAddress,
+        UPDATE_APPLICATION_CORRESPONDENCE_ADDRESS).block();
+  }
+
   /**
    * Patches an application's application type in the CAAB's Transient Data Store.
    *
@@ -418,13 +453,13 @@ public class ApplicationService {
    * @param applicationFormData the details of the Application to amend
    * @param user the related User.
    */
-  public void patchApplicationType(
+  public void updateApplicationType(
       final String id,
       final ApplicationFormData applicationFormData,
       final UserDetail user)
       throws ParseException {
 
-    ApplicationType applicationType = new ApplicationTypeBuilder()
+    final ApplicationType applicationType = new ApplicationTypeBuilder()
         .applicationType(
             applicationFormData.getApplicationTypeCategory(),
             applicationFormData.isDelegatedFunctions())
@@ -437,8 +472,8 @@ public class ApplicationService {
             applicationFormData.getDevolvedPowersContractFlag())
         .build();
 
-    caabApiClient.patchApplication(
-        id, user.getLoginId(), applicationType, "application-type").block();
+    caabApiClient.putApplication(
+        id, user.getLoginId(), applicationType, UPDATE_APPLICATION_APPLICATION_TYPE).block();
   }
 
   /**
@@ -448,7 +483,7 @@ public class ApplicationService {
    * @param applicationFormData the details of the Application to amend
    * @param user the related User.
    */
-  public void patchProviderDetails(
+  public void updateProviderDetails(
       final String id,
       final ApplicationFormData applicationFormData,
       final UserDetail user) {
@@ -486,8 +521,8 @@ public class ApplicationService {
             .displayValue(contactName.getName()))
         .providerCaseReference(applicationFormData.getProviderCaseReference());
 
-    caabApiClient.patchApplication(
-        id, user.getLoginId(), providerDetails, "provider-details").block();
+    caabApiClient.putApplication(
+        id, user.getLoginId(), providerDetails, UPDATE_APPLICATION_PROVIDER_DETAILS).block();
 
   }
 
