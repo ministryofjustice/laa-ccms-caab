@@ -678,12 +678,12 @@ class ApplicationServiceTest {
 
     ApplicationType mockApplicationType = new ApplicationType();
 
-    when(caabApiClient.patchApplication(eq(id), eq(user.getLoginId()), any(), eq("application-type")))
+    when(caabApiClient.putApplication(eq(id), eq(user.getLoginId()), any(), eq("application-type")))
         .thenReturn(Mono.empty());
 
-    applicationService.patchApplicationType(id, applicationFormData, user);
+    applicationService.updateApplicationType(id, applicationFormData, user);
 
-    verify(caabApiClient).patchApplication(eq(id), eq(user.getLoginId()), any(), eq("application-type"));
+    verify(caabApiClient).putApplication(eq(id), eq(user.getLoginId()), any(), eq("application-type"));
 
   }
 

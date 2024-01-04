@@ -935,7 +935,7 @@ public class ApplicationMapperTest {
         result.getStatChargeExemptReason());
 
     // afterMapping
-    assertTrue(result.getRecoveryOfAwardTimeRelated());
+    assertTrue(Boolean.parseBoolean(result.getRecoveryOfAwardTimeRelated()));
     assertEquals(AWARD_TYPE_OTHER_ASSET, result.getTimeRecovery().getAwardType());
 
     // afterMapping (baseAward)

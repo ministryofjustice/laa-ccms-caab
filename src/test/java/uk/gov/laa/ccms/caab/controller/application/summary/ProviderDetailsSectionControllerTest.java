@@ -145,7 +145,7 @@ public class ProviderDetailsSectionControllerTest {
         .andExpect(redirectedUrl("/application/summary"));
 
     verify(providerDetailsValidator, times(1)).validate(any(), any());
-    verify(applicationService, times(1)).patchProviderDetails(any(), any(), any());
+    verify(applicationService, times(1)).updateProviderDetails(any(), any(), any());
     verifyNoInteractions(providerService);
   }
 }

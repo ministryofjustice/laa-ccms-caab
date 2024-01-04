@@ -5,12 +5,14 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import uk.gov.laa.ccms.caab.bean.AddressFormData;
+import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
-import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressSearch;
 import uk.gov.laa.ccms.caab.client.OrdinanceSurveyApiClient;
+import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ClientAddressResultDisplayMapper;
-import uk.gov.laa.ccms.caab.model.ClientAddressResultRowDisplay;
-import uk.gov.laa.ccms.caab.model.ClientAddressResultsDisplay;
+import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.AddressResultsDisplay;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResponse;
 
 /**
@@ -25,6 +27,8 @@ public class AddressService {
 
   private final ClientAddressResultDisplayMapper clientAddressResultDisplayMapper;
 
+  private final AddressFormDataMapper addressFormDataMapper;
+
 
   /**
    * Fetches addresses based on the given postcode by using the Ordinance Survey API.
@@ -34,12 +38,13 @@ public class AddressService {
    * @return ClientAddressResultsDisplay containing a list of addresses associated with the given
    *         postcode.Returns an empty ClientAddressResultsDisplay if no results are found.
    */
-  public ClientAddressResultsDisplay getAddresses(String postcode) {
-    OrdinanceSurveyResponse response = ordinanceSurveyApiClient.getAddresses(postcode).block();
+  public AddressResultsDisplay getAddresses(final String postcode) {
+    final OrdinanceSurveyResponse response =
+        ordinanceSurveyApiClient.getAddresses(postcode).block();
 
     return response.getResults() != null
         ? clientAddressResultDisplayMapper.toClientAddressResultsDisplay(response)
-        : new ClientAddressResultsDisplay();
+        : new AddressResultsDisplay();
   }
 
   /**
@@ -50,16 +55,16 @@ public class AddressService {
    * @return ClientAddressResultsDisplay containing a filtered list of addresses.
    *         Returns the original list if no addresses match the filter.
    */
-  public ClientAddressResultsDisplay filterByHouseNumber(
-      String houseNameNumber, ClientAddressResultsDisplay results) {
+  public AddressResultsDisplay filterByHouseNumber(
+      final String houseNameNumber, final AddressResultsDisplay results) {
 
-    List<ClientAddressResultRowDisplay> filteredAddressList =
+    final List<AddressResultRowDisplay> filteredAddressList =
         results.getContent().stream()
         .filter(address -> address.getHouseNameNumber()
             .equalsIgnoreCase(houseNameNumber))
         .collect(Collectors.toList());
 
-    ClientAddressResultsDisplay filteredResults = new ClientAddressResultsDisplay();
+    final AddressResultsDisplay filteredResults = new AddressResultsDisplay();
     filteredResults.setContent(filteredAddressList);
 
     return filteredAddressList.isEmpty() ? results : filteredResults;
@@ -74,11 +79,11 @@ public class AddressService {
    * @param addressDetails The address details object to which the address will be added.
    */
   public void addAddressToClientDetails(
-      String uprn,
-      ClientAddressResultsDisplay results,
-      ClientFormDataAddressDetails addressDetails) {
+      final String uprn,
+      final AddressResultsDisplay results,
+      final ClientFormDataAddressDetails addressDetails) {
 
-    ClientAddressResultRowDisplay clientAddress = (results != null)
+    final AddressResultRowDisplay clientAddress = (results != null)
         ? results.getContent().stream()
         .filter(result -> uprn
             .equals(result.getUprn()))
@@ -89,7 +94,31 @@ public class AddressService {
     clientAddressResultDisplayMapper.updateClientFormDataAddressDetails(
         addressDetails, clientAddress);
 
-    addressDetails.setAddressSearch(new ClientFormDataAddressSearch());
+    addressDetails.setAddressSearch(new AddressSearchFormData());
   }
+
+  /**
+   * Adds the address associated with the given UPRN (Unique Property Reference Number)
+   * to the addressFormData Object.
+   *
+   * @param uprn The Unique Property Reference Number (UPRN) for the address.
+   * @param results The list of addresses to search the UPRN from.
+   */
+  public void filterAndUpdateAddressFormData(
+      final String uprn,
+      final AddressResultsDisplay results,
+      final AddressFormData addressFormData) {
+
+    final AddressResultRowDisplay addressResultRowDisplay = (results != null)
+        ? results.getContent().stream()
+        .filter(result -> uprn
+            .equals(result.getUprn()))
+        .findFirst()
+        .orElse(null)
+        : null;
+
+    addressFormDataMapper.updateAddressFormData(addressFormData, addressResultRowDisplay);
+  }
+
 
 }

@@ -64,11 +64,11 @@ public class SessionConstants {
   public static final String CLIENT_INFORMATION = "clientInformation";
 
   /**
-   * Session attribute used to keep track of client address search results during the creation of a
-   * new application.
-   * Used when returning to client details address screen to prepopulate the results
+   * Session attribute used to keep track of address search results.
+   * Used when returning to client details address screen to prepopulate the results.
+   * Used for client and correspondence address search results.
    */
-  public static final String CLIENT_ADDRESS_SEARCH_RESULTS = "clientAddressSearchResults";
+  public static final String ADDRESS_SEARCH_RESULTS = "addressSearchResults";
 
   /**
    * Session attribute used to keep track of submission transactions.

@@ -76,6 +76,7 @@ dependencies {
 	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.7'
 	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.8'
 
+
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
@@ -125,6 +126,7 @@ task integrationTest(type: Test) {
 }
 
 jacocoTestReport {
+	sourceDirectories.from files('build/generated/sources/annotationProcessor/java/main')
 
 	afterEvaluate {
 		classDirectories.setFrom(files(classDirectories.files.collect {
