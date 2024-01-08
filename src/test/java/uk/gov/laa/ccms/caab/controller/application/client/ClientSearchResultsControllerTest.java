@@ -26,7 +26,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
-import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
+import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ClientResultsDisplay;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -41,7 +41,7 @@ public class ClientSearchResultsControllerTest {
   private ClientService clientService;
 
   @Mock
-  private ClientResultDisplayMapper clientResultDisplayMapper;
+  private ResultDisplayMapper resultDisplayMapper;
 
   @Mock
   private SearchConstants searchConstants;

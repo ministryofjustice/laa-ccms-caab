@@ -20,7 +20,8 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
-import uk.gov.laa.ccms.caab.model.AddressResultsDisplay;
+import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 
@@ -57,13 +58,12 @@ public class EditClientAddressDetailsController {
    */
   @GetMapping("/application/summary/client/details/address")
   public String getEditClientDetailsAddress(
-          @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
-          Model model) {
+          @SessionAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
+          final Model model) {
 
     populateDropdowns(model);
 
-
-    ClientFormDataAddressDetails addressDetails = clientFlowFormData.getAddressDetails();
+    final ClientFormDataAddressDetails addressDetails = clientFlowFormData.getAddressDetails();
     addressDetails.setClientFlowFormAction(clientFlowFormData.getAction());
 
     model.addAttribute("addressDetails", addressDetails);
@@ -84,12 +84,12 @@ public class EditClientAddressDetailsController {
    */
   @PostMapping("/application/summary/client/details/address")
   public String postEditClientDetailsAddress(
-      @RequestParam String action,
-      @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
-      @ModelAttribute("addressDetails") ClientFormDataAddressDetails addressDetails,
-      BindingResult bindingResult,
-      Model model,
-      HttpSession session) {
+      @RequestParam final String action,
+      @SessionAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
+      @ModelAttribute("addressDetails") final ClientFormDataAddressDetails addressDetails,
+      final BindingResult bindingResult,
+      final Model model,
+      final HttpSession session) {
 
     if (ACTION_FIND_ADDRESS.equals(action)) {
       findAddressValidator.validate(addressDetails, bindingResult);
@@ -107,7 +107,7 @@ public class EditClientAddressDetailsController {
 
     if (ACTION_FIND_ADDRESS.equals(action)) {
       //Search for addresses
-      AddressResultsDisplay clientAddressSearchResults =
+      ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults =
           addressService.getAddresses(clientFlowFormData.getAddressDetails().getPostcode());
 
       if (clientAddressSearchResults.getContent() == null) {
@@ -132,7 +132,7 @@ public class EditClientAddressDetailsController {
         : "redirect:/application/summary/client/details/summary";
   }
 
-  private void populateDropdowns(Model model) {
+  private void populateDropdowns(final Model model) {
     new DropdownBuilder(model)
         .addDropdown("countries",
             lookupService.getCountries())

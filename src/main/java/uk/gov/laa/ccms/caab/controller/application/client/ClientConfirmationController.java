@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
-import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
+import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -43,7 +43,7 @@ public class ClientConfirmationController {
 
   private final ApplicationService applicationService;
 
-  private final ClientResultDisplayMapper clientResultDisplayMapper;
+  private final ResultDisplayMapper resultDisplayMapper;
 
   /**
    * Handles the GET request for client confirmation page.
@@ -67,7 +67,7 @@ public class ClientConfirmationController {
 
     session.setAttribute(CLIENT_INFORMATION, clientInformation);
     model.addAttribute("clientReferenceNumber", clientReferenceNumber);
-    model.addAttribute("client", clientResultDisplayMapper
+    model.addAttribute("client", resultDisplayMapper
             .toClientResultRowDisplay(clientInformation));
 
     return "application/application-client-confirmation";

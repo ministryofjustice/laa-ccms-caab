@@ -300,6 +300,7 @@ public interface ApplicationMapper {
   @Mapping(target = "status", source = "caseStatus")
   @Mapping(target = "relationToCase", source = "linkType")
   @Mapping(target = "auditTrail", ignore = true)
+  @Mapping(target = "id", ignore = true)
   LinkedCase toLinkedCase(uk.gov.laa.ccms.soa.gateway.model.LinkedCase soaLinkedCase);
 
   @Mapping(target = "status", source = "soaPriorAuthority.decisionStatus")
@@ -486,7 +487,7 @@ public interface ApplicationMapper {
   @AfterMapping
   default void finaliseOtherAssetAward(@MappingTarget OtherAssetAward otherAssetAward) {
     final TimeRecovery timeRecovery = otherAssetAward.getTimeRecovery();
-    otherAssetAward.setRecoveryOfAwardTimeRelated(String.valueOf(timeRecovery != null));
+    //TODO otherAssetAward.setRecoveryOfAwardTimeRelated(String.valueOf(timeRecovery != null));
     if (timeRecovery != null) {
       timeRecovery.setAwardType(AWARD_TYPE_OTHER_ASSET);
     }

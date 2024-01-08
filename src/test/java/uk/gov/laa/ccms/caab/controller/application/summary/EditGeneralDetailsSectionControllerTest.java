@@ -15,7 +15,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -34,12 +33,11 @@ import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
-import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.CorrespondenceAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
-import uk.gov.laa.ccms.caab.model.AddressResultsDisplay;
+import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -184,7 +182,7 @@ class EditGeneralDetailsSectionControllerTest {
     final String applicationId = "123";
     final UserDetail user = new UserDetail();
     final AddressFormData addressDetails = new AddressFormData();
-    final AddressResultsDisplay addressSearchResults = new AddressResultsDisplay();
+    final ResultsDisplay<AddressResultRowDisplay> addressSearchResults = new ResultsDisplay<AddressResultRowDisplay>();
 
     addressSearchResults.setContent(Collections.singletonList(new AddressResultRowDisplay()));
 
@@ -208,7 +206,7 @@ class EditGeneralDetailsSectionControllerTest {
     final String applicationId = "123";
     final UserDetail user = new UserDetail();
     final AddressFormData addressDetails = new AddressFormData();
-    final AddressResultsDisplay addressSearchResults = new AddressResultsDisplay();
+    final ResultsDisplay<AddressResultRowDisplay> addressSearchResults = new ResultsDisplay<AddressResultRowDisplay>();
 
     when(addressService.getAddresses(addressDetails.getPostcode())).thenReturn(addressSearchResults);
 
@@ -232,7 +230,7 @@ class EditGeneralDetailsSectionControllerTest {
 
   @Test
   public void testCorrespondenceAddressSearchGet() throws Exception {
-    final AddressResultsDisplay results = new AddressResultsDisplay();
+    final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<AddressResultRowDisplay>();
 
     this.mockMvc.perform(get("/application/summary/correspondence-address/search")
             .sessionAttr(ADDRESS_SEARCH_RESULTS, results))
@@ -246,7 +244,7 @@ class EditGeneralDetailsSectionControllerTest {
 
   @Test
   public void testCorrespondenceAddressSearchPost_successful() throws Exception {
-    final AddressResultsDisplay results = new AddressResultsDisplay();
+    final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<AddressResultRowDisplay>();
 
     this.mockMvc.perform(post("/application/summary/correspondence-address/search")
             .sessionAttr(ADDRESS_SEARCH_RESULTS, results)
@@ -261,7 +259,7 @@ class EditGeneralDetailsSectionControllerTest {
 
   @Test
   public void testCorrespondenceAddressSearchPost_handlesValidationError() throws Exception {
-    final AddressResultsDisplay results = new AddressResultsDisplay();
+    final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<AddressResultRowDisplay>();
 
     doAnswer(invocation -> {
       final Errors errors = (Errors) invocation.getArguments()[1];

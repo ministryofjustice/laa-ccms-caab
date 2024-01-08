@@ -1,7 +1,10 @@
 package uk.gov.laa.ccms.caab.client;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -11,6 +14,7 @@ import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.model.LinkedCase;
 
 /**
  * Client responsible for interactions with the CAAB API.
@@ -117,6 +121,70 @@ public class CaabApiClient {
         .retrieve()
         .bodyToMono(Address.class)
         .onErrorResume(caabApiClientErrorHandler::handleGetCorrespondenceAddressError);
+  }
+
+  /**
+   * Retrieves a list of linked cases associated with a given application ID.
+   *
+   * @param id the ID of the application for which linked cases are to be retrieved
+   * @return a Mono containing a list of LinkedCase objects associated with the application
+   */
+  public Mono<List<LinkedCase>> getLinkedCases(
+      final String id) {
+    return caabApiWebClient
+        .get()
+        .uri("/applications/{id}/linked-cases", id)
+        .retrieve()
+        .bodyToMono(new ParameterizedTypeReference<List<LinkedCase>>() {})
+        .onErrorResume(caabApiClientErrorHandler::handleGetLinkedCasesError);
+  }
+
+  /**
+   * Removes a linked case from the CAAB API for a given application.
+   *
+   * @param applicationId the ID of the application to remove the linked case from
+   * @param linkedCaseId the ID of the linked case to be removed
+   * @param loginId the login ID of the user performing the removal
+   * @return a Mono indicating completion of the removal operation
+   */
+  public Mono<Void> removeLinkedCase(
+      final String applicationId,
+      final String linkedCaseId,
+      final String loginId) {
+    return caabApiWebClient
+        .delete()
+        .uri("/applications/{applicationId}/linked-cases/{linkedCaseId}",
+            applicationId, linkedCaseId)
+        .header("Caab-User-Login-Id", loginId)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleDeleteLinkedCaseError(e, linkedCaseId));
+  }
+
+  /**
+   * Updates a linked case in the CAAB API for a given application.
+   *
+   * @param applicationId the ID of the application to update the linked case for
+   * @param linkedCaseId the ID of the linked case to be updated
+   * @param data the new data for the linked case
+   * @param loginId the login ID of the user performing the update
+   * @return a Mono indicating completion of the update operation
+   */
+  public Mono<Void> updateLinkedCase(
+      final String applicationId,
+      final String linkedCaseId,
+      final LinkedCase data,
+      final String loginId) {
+    return caabApiWebClient
+        .patch()
+        .uri("/applications/{applicationId}/linked-cases/{linkedCaseId}",
+            applicationId, linkedCaseId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(data)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleUpdateLinkedCaseError(e, linkedCaseId));
   }
 
   /**

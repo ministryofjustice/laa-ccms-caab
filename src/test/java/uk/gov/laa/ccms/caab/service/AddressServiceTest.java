@@ -23,7 +23,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.client.OrdinanceSurveyApiClient;
 import uk.gov.laa.ccms.caab.mapper.ClientAddressResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
-import uk.gov.laa.ccms.caab.model.AddressResultsDisplay;
+import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.os.DeliveryPointAddress;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResponse;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResult;
@@ -50,11 +50,11 @@ public class AddressServiceTest {
     OrdinanceSurveyResponse mockResponse = new OrdinanceSurveyResponse();
     Mono<OrdinanceSurveyResponse> mockResponseMono = Mono.just(mockResponse);
 
-    AddressResultsDisplay mockDisplay = new AddressResultsDisplay();
+    ResultsDisplay<AddressResultRowDisplay> mockDisplay = new ResultsDisplay<AddressResultRowDisplay>();
 
     when(ordinanceSurveyApiClient.getAddresses(postcode)).thenReturn(mockResponseMono);
 
-    AddressResultsDisplay result = addressService.getAddresses(postcode);
+    ResultsDisplay<AddressResultRowDisplay> result = addressService.getAddresses(postcode);
 
     assertNotNull(result);
     assertNull(result.getContent());
@@ -67,12 +67,12 @@ public class AddressServiceTest {
     OrdinanceSurveyResponse mockResponse = buildOrdinanceSurveyResponse();
     Mono<OrdinanceSurveyResponse> mockResponseMono = Mono.just(mockResponse);
 
-    AddressResultsDisplay mockDisplay = buildClientAddressResultsDisplay();
+    ResultsDisplay<AddressResultRowDisplay> mockDisplay = buildClientAddressResultsDisplay();
 
     when(ordinanceSurveyApiClient.getAddresses(postcode)).thenReturn(mockResponseMono);
     when(clientAddressResultDisplayMapper.toClientAddressResultsDisplay(mockResponse)).thenReturn(mockDisplay);
 
-    AddressResultsDisplay result = addressService.getAddresses(postcode);
+    ResultsDisplay<AddressResultRowDisplay> result = addressService.getAddresses(postcode);
 
     assertNotNull(result);
     assertEquals(MAX_RESULTS, result.getContent().size());
@@ -86,9 +86,9 @@ public class AddressServiceTest {
     row.setFullAddress("TEST, ADDRESS, DATA");
     row.setHouseNameNumber(houseNameNumber);
 
-    AddressResultsDisplay initialResults = buildClientAddressResultsDisplay();
+    ResultsDisplay<AddressResultRowDisplay> initialResults = buildClientAddressResultsDisplay();
 
-    AddressResultsDisplay
+    ResultsDisplay<AddressResultRowDisplay>
         filteredResults = addressService.filterByHouseNumber(houseNameNumber, initialResults);
 
     assertNotNull(filteredResults);
@@ -98,9 +98,9 @@ public class AddressServiceTest {
   @Test
   void filterByHouseNumber_ReturnsOriginalResults_WhenNoAddressesMatchFilter() {
     String houseNameNumber = "nonexistent";
-    AddressResultsDisplay initialResults = buildClientAddressResultsDisplay();
+    ResultsDisplay<AddressResultRowDisplay> initialResults = buildClientAddressResultsDisplay();
 
-    AddressResultsDisplay
+    ResultsDisplay<AddressResultRowDisplay>
         filteredResults = addressService.filterByHouseNumber(houseNameNumber, initialResults);
 
     assertNotNull(filteredResults);
@@ -111,7 +111,7 @@ public class AddressServiceTest {
   @Test
   void addAddressToClientDetails_UpdatesClientDetails() {
     String uprn = "12345";
-    AddressResultsDisplay results = buildClientAddressResultsDisplay();
+    ResultsDisplay<AddressResultRowDisplay> results = buildClientAddressResultsDisplay();
 
     AddressResultRowDisplay targetRow = new AddressResultRowDisplay();
     targetRow.setFullAddress("TARGET, ADDRESS, DATA");
@@ -179,8 +179,8 @@ public class AddressServiceTest {
     return dpa;
   }
 
-  private AddressResultsDisplay buildClientAddressResultsDisplay(){
-    AddressResultsDisplay addressResultsDisplay = new AddressResultsDisplay();
+  private ResultsDisplay<AddressResultRowDisplay> buildClientAddressResultsDisplay(){
+    ResultsDisplay<AddressResultRowDisplay> addressResultsDisplay = new ResultsDisplay<AddressResultRowDisplay>();
 
     List<AddressResultRowDisplay> content = new ArrayList<>();
     for (int i = 0; i < MAX_RESULTS; i++){

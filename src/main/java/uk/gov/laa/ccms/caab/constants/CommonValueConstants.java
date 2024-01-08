@@ -96,4 +96,16 @@ public class CommonValueConstants {
    * Type used to retrieve the Notification Types for the Notification search.
    */
   public static final String COMMON_VALUE_NOTIFICATION_TYPE = "XXCCMS_NOTIFICATION_TYPES";
+
+  /**
+   * Type used to retrieve the Case links for an application's linked cases.
+   */
+  public static final String COMMON_VALUE_CASE_LINK_TYPE = "XXCCMS_CASE_LINK_TYPES";
+
+  /**
+   * Type used to retrieve the Case/application status.
+   */
+  public static final String COMMON_VALUE_APPLICATION_STATUS = "XXCCMS_APP_CASE_STATUS";
+
+
 }

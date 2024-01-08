@@ -88,8 +88,8 @@ public class CopyCaseSearchController {
     return "redirect:/application/copy-case/results";
   }
 
-  private void populateDropdowns(UserDetail user, Model model) {
-    ProviderDetail provider = providerService.getProvider(user.getProvider().getId()).block();
+  private void populateDropdowns(final UserDetail user, final Model model) {
+    final ProviderDetail provider = providerService.getProvider(user.getProvider().getId()).block();
     if (provider == null) {
       throw new CaabApplicationException(
           String.format("Failed to retrieve Provider with id: %s",

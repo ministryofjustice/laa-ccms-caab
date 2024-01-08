@@ -31,7 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
-import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
+import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.BaseOffice;
@@ -57,7 +57,7 @@ class ClientConfirmationControllerTest {
   private ApplicationService applicationService;
 
   @Mock
-  private ClientResultDisplayMapper clientResultDisplayMapper;
+  private ResultDisplayMapper resultDisplayMapper;
 
   @InjectMocks
   private ClientConfirmationController clientConfirmationController;
