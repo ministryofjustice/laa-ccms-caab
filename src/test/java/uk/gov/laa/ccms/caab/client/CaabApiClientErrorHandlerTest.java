@@ -6,6 +6,7 @@ import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
@@ -65,14 +66,26 @@ class CaabApiClientErrorHandlerTest {
   }
 
   @Test
-  public void testHandlePatchApplicationError() {
+  public void testHandleGetCorrespondenceAddressError() {
     Throwable throwable = new RuntimeException("Error");
 
-    Mono<Void> result = caabApiClientErrorHandler.handlePatchApplicationError(throwable, "type");
+    Mono<Address> result = caabApiClientErrorHandler.handleGetCorrespondenceAddressError(throwable);
 
     StepVerifier.create(result)
         .verifyErrorMatches(e -> e instanceof CaabApiClientException
-            && e.getMessage().equals("Failed to patch application - type")
+            && e.getMessage().equals("Failed to retrieve correspondence address")
+            && e.getCause() == throwable);
+  }
+
+  @Test
+  public void testHandleUpdateApplicationError() {
+    Throwable throwable = new RuntimeException("Error");
+
+    Mono<Void> result = caabApiClientErrorHandler.handleUpdateApplicationError(throwable, "type");
+
+    StepVerifier.create(result)
+        .verifyErrorMatches(e -> e instanceof CaabApiClientException
+            && e.getMessage().equals("Failed to update application - type")
             && e.getCause() == throwable);
   }
 }

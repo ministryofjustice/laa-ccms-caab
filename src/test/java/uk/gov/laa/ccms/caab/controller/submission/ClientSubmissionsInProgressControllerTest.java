@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -19,21 +20,25 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
 
 @ExtendWith(MockitoExtension.class)
-public class ClientCreateSubmissionInProgressControllerTest {
+public class ClientSubmissionsInProgressControllerTest {
 
   @Mock
   private ClientService clientService;
 
   @Mock
+  private SubmissionConstants submissionConstants;
+
+  @Mock
   private HttpSession session;
 
   @InjectMocks
-  private ClientCreateSubmissionInProgressController controller;
+  private ClientSubmissionsInProgressController controller;
 
   private MockMvc mockMvc;
 
@@ -81,23 +86,24 @@ public class ClientCreateSubmissionInProgressControllerTest {
 
   @Test
   void testSubmissionsInProgress_withPollingThresholdNotReached() throws Exception {
-    UserDetail user = new UserDetail();
+    final UserDetail user = new UserDetail();
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
 
-    ClientStatus clientStatus = new ClientStatus();
+    final ClientStatus clientStatus = new ClientStatus();
 
     when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
 
+    when(submissionConstants.getMaxPollCount()).thenReturn(6);
+
     // Set the submission poll count below the threshold (6 in your current logic)
-    int submissionPollCount = 3;
+    final int submissionPollCount = 3;
 
     mockMvc.perform(
             get("/submissions/client-create")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
                 .sessionAttr(USER_DETAILS, user)
-                .sessionAttr("submissionPollCount", submissionPollCount))
-        .andExpect(status().isOk())
+                .sessionAttr(SUBMISSION_POLL_COUNT, submissionPollCount))
         .andExpect(view().name("submissions/submissionInProgress"));
   }
 

@@ -20,11 +20,11 @@ import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
+import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 @ExtendWith(MockitoExtension.class)
 public class ClientServiceTest {
@@ -121,7 +121,7 @@ public class ClientServiceTest {
     String loginId = "user1";
     String userType = "userType";
 
-    ClientCreated mockClientCreated = new ClientCreated();
+    ClientTransactionResponse mockClientCreated = new ClientTransactionResponse();
     UserDetail userDetail = new UserDetail();
     userDetail.setLoginId(loginId);
     userDetail.setUserType(userType);
@@ -132,11 +132,50 @@ public class ClientServiceTest {
     when(soaApiClient.postClient(clientDetailDetails, loginId, userType))
         .thenReturn(Mono.just(mockClientCreated));
 
-    Mono<ClientCreated> clientCreatedMono =
+    Mono<ClientTransactionResponse> clientCreatedMono =
         clientService.createClient(clientFlowFormData, userDetail);
 
     StepVerifier.create(clientCreatedMono)
         .expectNextMatches(clientCreated -> clientCreated == mockClientCreated)
+        .verifyComplete();
+  }
+
+  @Test
+  void updateClient_ReturnsTransactionId_Successful() {
+    ClientDetail clientDetail = new ClientDetail();
+    ClientDetailDetails clientDetailDetails = new ClientDetailDetails();
+    clientDetail.setDetails(clientDetailDetails);
+
+    ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
+    ClientFormDataContactDetails contactDetails = new ClientFormDataContactDetails();
+    ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
+    ClientFormDataMonitoringDetails monitoringDetails = new ClientFormDataMonitoringDetails();
+    ClientFlowFormData clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
+    clientFlowFormData.setBasicDetails(basicDetails);
+    clientFlowFormData.setContactDetails(contactDetails);
+    clientFlowFormData.setAddressDetails(addressDetails);
+    clientFlowFormData.setMonitoringDetails(monitoringDetails);
+
+    String loginId = "user1";
+    String userType = "userType";
+    String clientReferenceNumber = "1234";
+
+    ClientTransactionResponse mockClientUpdated = new ClientTransactionResponse();
+    UserDetail userDetail = new UserDetail();
+    userDetail.setLoginId(loginId);
+    userDetail.setUserType(userType);
+
+    when(clientDetailMapper.toClientDetail(any()))
+        .thenReturn(clientDetail);
+
+    when(soaApiClient.putClient(clientReferenceNumber, clientDetailDetails, loginId, userType))
+        .thenReturn(Mono.just(mockClientUpdated));
+
+    Mono<ClientTransactionResponse> clientUpdatedMono =
+        clientService.updateClient(clientReferenceNumber, clientFlowFormData, userDetail);
+
+    StepVerifier.create(clientUpdatedMono)
+        .expectNextMatches(clientUpdated -> clientUpdated == mockClientUpdated)
         .verifyComplete();
   }
 }

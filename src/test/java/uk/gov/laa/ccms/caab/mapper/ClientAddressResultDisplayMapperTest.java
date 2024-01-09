@@ -9,7 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
-import uk.gov.laa.ccms.caab.model.ClientAddressResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.os.DeliveryPointAddress;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResult;
 
@@ -95,7 +95,7 @@ public class ClientAddressResultDisplayMapperTest {
 
     surveyResult.setDeliveryPointAddress(deliveryPointAddress);
 
-    ClientAddressResultRowDisplay resultRowDisplay = mapper.toClientAddressResultRowDisplay(surveyResult);
+    AddressResultRowDisplay resultRowDisplay = mapper.toClientAddressResultRowDisplay(surveyResult);
 
     assertEquals("123456789", resultRowDisplay.getUprn());
     assertEquals("10,Some Building", resultRowDisplay.getAddressLine1());
@@ -108,7 +108,7 @@ public class ClientAddressResultDisplayMapperTest {
   @Test
   public void testUpdateClientDetails() {
     ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();  // Assuming this is an empty object you want to populate
-    ClientAddressResultRowDisplay addressRowDisplay =
+    AddressResultRowDisplay addressRowDisplay =
         buildAddressRowDisplay();
 
     mapper.updateClientFormDataAddressDetails(addressDetails, addressRowDisplay);
@@ -122,8 +122,8 @@ public class ClientAddressResultDisplayMapperTest {
     assertEquals("GBR", addressDetails.getCountry());
   }
 
-  private static ClientAddressResultRowDisplay buildAddressRowDisplay() {
-    ClientAddressResultRowDisplay addressRowDisplay = new ClientAddressResultRowDisplay();
+  private static AddressResultRowDisplay buildAddressRowDisplay() {
+    AddressResultRowDisplay addressRowDisplay = new AddressResultRowDisplay();
 
     addressRowDisplay.setFullAddress("Full Address, Example Street, ExCity");
     addressRowDisplay.setUprn("987654321");

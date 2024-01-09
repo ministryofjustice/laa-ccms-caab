@@ -99,9 +99,12 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
+import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.PriorAuthority;
 import uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail;
+import uk.gov.laa.ccms.soa.gateway.model.RecordHistory;
 
 @ExtendWith(MockitoExtension.class)
 class ApplicationServiceTest {
@@ -675,12 +678,12 @@ class ApplicationServiceTest {
 
     ApplicationType mockApplicationType = new ApplicationType();
 
-    when(caabApiClient.patchApplication(eq(id), eq(user.getLoginId()), any(), eq("application-type")))
+    when(caabApiClient.putApplication(eq(id), eq(user.getLoginId()), any(), eq("application-type")))
         .thenReturn(Mono.empty());
 
-    applicationService.patchApplicationType(id, applicationFormData, user);
+    applicationService.updateApplicationType(id, applicationFormData, user);
 
-    verify(caabApiClient).patchApplication(eq(id), eq(user.getLoginId()), any(), eq("application-type"));
+    verify(caabApiClient).putApplication(eq(id), eq(user.getLoginId()), any(), eq("application-type"));
 
   }
 
@@ -1269,5 +1272,13 @@ class ApplicationServiceTest {
     return applicationFormData;
   }
 
+  public ClientDetail buildClientInformation() {
+    String clientReferenceNumber = "12345";
+    return new ClientDetail()
+        .clientReferenceNumber(clientReferenceNumber)
+        .details(new ClientDetailDetails()
+            .name(new NameDetail()))
+        .recordHistory(new RecordHistory());
+  }
 
 }

@@ -2,14 +2,19 @@ package uk.gov.laa.ccms.caab.service;
 
 import static org.mockito.Mockito.when;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DISABILITY;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ETHNIC_ORIGIN;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_LEVEL_OF_SERVICE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MATTER_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_NOTIFICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
 
 import java.lang.reflect.InvocationTargetException;
@@ -50,9 +55,14 @@ public class LookupServiceTest {
         Arguments.of("getMaritalStatuses", COMMON_VALUE_MARITAL_STATUS),
         Arguments.of("getCorrespondenceMethods", COMMON_VALUE_CORRESPONDENCE_METHOD),
         Arguments.of("getCorrespondenceLanguages", COMMON_VALUE_CORRESPONDENCE_LANGUAGE),
+        Arguments.of("getCaseAddressOptions", COMMON_VALUE_CASE_ADDRESS_OPTION),
         Arguments.of("getEthnicOrigins", COMMON_VALUE_ETHNIC_ORIGIN),
         Arguments.of("getDisabilities", COMMON_VALUE_DISABILITY),
-        Arguments.of("getNotificationTypes", COMMON_VALUE_NOTIFICATION_TYPE)
+        Arguments.of("getNotificationTypes", COMMON_VALUE_NOTIFICATION_TYPE),
+        Arguments.of("getLevelsOfService", COMMON_VALUE_LEVEL_OF_SERVICE),
+        Arguments.of("getMatterTypes", COMMON_VALUE_MATTER_TYPES),
+        Arguments.of("getClientInvolvementTypes", COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES),
+        Arguments.of("getScopeLimitations", COMMON_VALUE_SCOPE_LIMITATIONS)
     );
   }
 

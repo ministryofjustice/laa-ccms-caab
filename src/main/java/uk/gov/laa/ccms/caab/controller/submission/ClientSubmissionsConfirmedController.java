@@ -24,7 +24,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-public class ClientCreateSubmissionConfirmedController {
+public class ClientSubmissionsConfirmedController {
 
   private final ApplicationService applicationService;
 
@@ -40,14 +40,14 @@ public class ClientCreateSubmissionConfirmedController {
    * @return The view name for a client creation submission page.
    */
   @PostMapping("/submissions/client-create/confirmed")
-  public String submissionConfirmed(
-      @SessionAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
-      @SessionAttribute(USER_DETAILS) UserDetail user,
-      @SessionAttribute(CLIENT_REFERENCE) String clientReference,
+  public String clientCreateSubmitted(
+      @SessionAttribute(APPLICATION_FORM_DATA) final ApplicationFormData applicationFormData,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(CLIENT_REFERENCE) final String clientReference,
       HttpSession session
   ) throws ParseException {
 
-    ClientDetail clientInformation = clientService.getClient(
+    final ClientDetail clientInformation = clientService.getClient(
         clientReference,
         user.getLoginId(),
         user.getUserType()).block();
@@ -61,5 +61,10 @@ public class ClientCreateSubmissionConfirmedController {
           session.setAttribute(APPLICATION_ID, applicationId);
         })
         .thenReturn("redirect:/application/summary").block();
+  }
+
+  @PostMapping("/submissions/client-update/confirmed")
+  public String clientUpdateSubmitted() {
+    return "redirect:/application/summary";
   }
 }

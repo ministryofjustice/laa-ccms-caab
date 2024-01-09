@@ -1,6 +1,6 @@
-package uk.gov.laa.ccms.caab.controller.application.client;
+package uk.gov.laa.ccms.caab.controller.application.summary;
 
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -22,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
@@ -36,10 +38,11 @@ import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 @ExtendWith(MockitoExtension.class)
-public class ClientSummaryControllerTest {
+class EditClientSummaryControllerTest {
 
   @Mock
   private ClientService clientService;
@@ -63,7 +66,7 @@ public class ClientSummaryControllerTest {
   private ClientDetailMapper clientDetailsMapper;
 
   @InjectMocks
-  private ClientSummaryController clientSummaryController;
+  private EditClientSummaryController editClientSummaryController;
 
   private MockMvc mockMvc;
 
@@ -78,6 +81,8 @@ public class ClientSummaryControllerTest {
 
   private ClientFlowFormData clientFlowFormData;
 
+  private ActiveCase activeCase;
+
   private static final UserDetail userDetails = new UserDetail()
       .userId(1)
       .userType("testUserType")
@@ -85,9 +90,9 @@ public class ClientSummaryControllerTest {
 
   @BeforeEach
   public void setup() {
-    mockMvc = MockMvcBuilders.standaloneSetup(clientSummaryController).build();
+    mockMvc = MockMvcBuilders.standaloneSetup(editClientSummaryController).build();
 
-    clientFlowFormData = new ClientFlowFormData("create");
+    clientFlowFormData = new ClientFlowFormData("edit");
     clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
     clientFlowFormData.setContactDetails(new ClientFormDataContactDetails());
     clientFlowFormData.setAddressDetails(new ClientFormDataAddressDetails());
@@ -101,10 +106,12 @@ public class ClientSummaryControllerTest {
     disabilityLookupValueDetail = new CommonLookupValueDetail();
     correspondenceMethodLookupValueDetail = new CommonLookupValueDetail();
     correspondenceLanguageLookupValueDetail = new CommonLookupValueDetail();
+
+    activeCase = ActiveCase.builder().build();
   }
 
   @Test
-  void testClientDetailsSummary_Get() throws Exception {
+  void testGetClientDetailsSummary_withFormDataInSession() throws Exception {
 
     when(lookupService.getContactTitle(any())).thenReturn(
         Mono.just(titleLookupValueDetail));
@@ -121,10 +128,13 @@ public class ClientSummaryControllerTest {
     when(lookupService.getCorrespondenceMethod(any())).thenReturn(
         Mono.just(correspondenceMethodLookupValueDetail));
 
-    mockMvc.perform(get("/application/client/details/summary")
-            .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+
+    mockMvc.perform(get("/application/summary/client/details/summary")
+            .sessionAttr(USER_DETAILS, userDetails)
+            .sessionAttr(ACTIVE_CASE, activeCase)
+            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().isOk())
-        .andExpect(view().name("application/client/client-summary-details"));
+        .andExpect(view().name("application/summary/client-summary-details"));
 
     verify(lookupService, atLeastOnce()).getContactTitle(any());
     verify(lookupService, atLeastOnce()).getCountry(any());
@@ -134,11 +144,13 @@ public class ClientSummaryControllerTest {
     verify(lookupService, atLeastOnce()).getDisability(any());
     verify(lookupService, atLeastOnce()).getCorrespondenceMethod(any());
     verify(lookupService, never()).getCorrespondenceLanguage(any());
+
+    verify(clientService, never()).getClient(any(),any(),any());
+    verify(clientDetailsMapper, never()).toClientFlowFormData(any());
   }
 
   @Test
-  void testClientDetailsSummary_Get_withCorrespondenceLanguage() throws Exception {
-    clientFlowFormData.getContactDetails().setCorrespondenceLanguage("TEST");
+  void testGetClientDetailsSummary_withoutFormDataInSession() throws Exception {
 
     when(lookupService.getContactTitle(any())).thenReturn(
         Mono.just(titleLookupValueDetail));
@@ -155,13 +167,17 @@ public class ClientSummaryControllerTest {
     when(lookupService.getCorrespondenceMethod(any())).thenReturn(
         Mono.just(correspondenceMethodLookupValueDetail));
 
-    when(lookupService.getCorrespondenceLanguage(any())).thenReturn(
-        Mono.just(correspondenceLanguageLookupValueDetail));
+    when(clientService.getClient(any(),any(),any())).thenReturn(
+        Mono.just(new ClientDetail()));
 
-    mockMvc.perform(get("/application/client/details/summary")
-            .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+    when(clientDetailsMapper.toClientFlowFormData(any())).thenReturn(
+        clientFlowFormData);
+
+    mockMvc.perform(get("/application/summary/client/details/summary")
+            .sessionAttr(USER_DETAILS, userDetails)
+            .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk())
-        .andExpect(view().name("application/client/client-summary-details"));
+        .andExpect(view().name("application/summary/client-summary-details"));
 
     verify(lookupService, atLeastOnce()).getContactTitle(any());
     verify(lookupService, atLeastOnce()).getCountry(any());
@@ -170,27 +186,32 @@ public class ClientSummaryControllerTest {
     verify(lookupService, atLeastOnce()).getEthnicOrigin(any());
     verify(lookupService, atLeastOnce()).getDisability(any());
     verify(lookupService, atLeastOnce()).getCorrespondenceMethod(any());
-    verify(lookupService, atLeastOnce()).getCorrespondenceLanguage(any());
+    verify(lookupService, never()).getCorrespondenceLanguage(any());
+
+    verify(clientService, atLeastOnce()).getClient(any(),any(),any());
+    verify(clientDetailsMapper, atLeastOnce()).toClientFlowFormData(any());
   }
 
   @Test
-  void testClientDetailsSummary_Post() throws Exception {
-    ClientFlowFormData clientFlowFormData = new ClientFlowFormData("create");
+  void testPostClientDetailsSummary() throws Exception {
+    ClientFlowFormData clientFlowFormData = new ClientFlowFormData("edit");
 
-    when(clientService.createClient(any(), any())).thenReturn(
+    when(clientService.updateClient(any(), any(), any())).thenReturn(
         Mono.just(new ClientTransactionResponse()));
 
-    mockMvc.perform(post("/application/client/details/summary")
+    mockMvc.perform(post("/application/summary/client/details/summary")
             .sessionAttr(USER_DETAILS, userDetails)
+            .sessionAttr(ACTIVE_CASE, activeCase)
             .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/submissions/client-create"));
+        .andExpect(redirectedUrl("/submissions/client-update"));
 
     verify(basicValidator).validate(any(), any());
     verify(contactValidator).validate(any(), any());
     verify(addressValidator).validate(any(), any());
     verify(opportunitiesValidator).validate(any(), any());
 
-    verify(clientService).createClient(any(), any());
+    verify(clientService).updateClient(any(), any(), any());
   }
+
 }

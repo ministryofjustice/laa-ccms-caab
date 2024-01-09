@@ -498,8 +498,8 @@ public interface ApplicationMapper {
    */
   @AfterMapping
   default void finaliseOtherAssetAward(@MappingTarget OtherAssetAward otherAssetAward) {
-    TimeRecovery timeRecovery = otherAssetAward.getTimeRecovery();
-    otherAssetAward.setRecoveryOfAwardTimeRelated(timeRecovery != null);
+    final TimeRecovery timeRecovery = otherAssetAward.getTimeRecovery();
+    otherAssetAward.setRecoveryOfAwardTimeRelated(String.valueOf(timeRecovery != null));
     if (timeRecovery != null) {
       timeRecovery.setAwardType(AWARD_TYPE_OTHER_ASSET);
     }

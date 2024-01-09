@@ -13,10 +13,10 @@ import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
-import uk.gov.laa.ccms.soa.gateway.model.ClientCreated;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
+import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
@@ -35,7 +35,9 @@ public class SoaApiClientErrorHandler {
    * @param e Exception thrown during operation.
    * @return An empty Mono.
    */
-  public Mono<NotificationSummary> handleNotificationSummaryError(String loginId, Throwable e) {
+  public Mono<NotificationSummary> handleNotificationSummaryError(
+      final String loginId,
+      final Throwable e) {
     log.error("Failed to retrieve Notification count for loginId: {}", loginId, e);
     return Mono.empty();
   }
@@ -49,7 +51,9 @@ public class SoaApiClientErrorHandler {
    * @return An empty Mono.
    */
   public Mono<ContractDetails> handleContractDetailsError(
-          Integer providerFirmId, Integer officeId, Throwable e) {
+      final  Integer providerFirmId,
+      final Integer officeId,
+      final Throwable e) {
     log.error("Failed to retrieve ContractDetails for providerFirmId: {}, officeId: {}",
             providerFirmId, officeId, e);
     return Mono.empty();
@@ -63,7 +67,8 @@ public class SoaApiClientErrorHandler {
    * @return An empty Mono.
    */
   public Mono<ClientDetails> handleClientDetailsError(
-          ClientSearchCriteria clientSearchCriteria, Throwable e) {
+      final ClientSearchCriteria clientSearchCriteria,
+      final Throwable e) {
     log.error("Failed to retrieve ClientDetails for firstName: {}, surname: {}, dob: {}, "
                     + "homeOfficeReference: {}, nationalInsuranceNumber: {}, "
                     + "caseReferenceNumber: {}",
@@ -84,7 +89,8 @@ public class SoaApiClientErrorHandler {
    * @return An empty Mono.
    */
   public Mono<CaseDetails> handleCaseDetailsError(
-          CaseSearchCriteria caseSearchCriteria, Throwable e) {
+      final CaseSearchCriteria caseSearchCriteria,
+      final Throwable e) {
     log.error("Failed to retrieve CaseDetails for "
                     + "caseReferenceNumber: {}, "
                     + "providerCaseReference: {}, "
@@ -109,7 +115,8 @@ public class SoaApiClientErrorHandler {
    * @return An empty Mono.
    */
   public Mono<CaseDetail> handleCaseDetailError(
-      String caseReferenceNumber, Throwable e) {
+      final String caseReferenceNumber,
+      final Throwable e) {
     log.error("Failed to retrieve CaseDetail for "
             + "caseReferenceNumber: {}",
         caseReferenceNumber, e);
@@ -124,7 +131,8 @@ public class SoaApiClientErrorHandler {
    * @return An empty Mono.
    */
   public Mono<ClientDetail> handleClientDetailError(
-          String clientReferenceNumber, Throwable e) {
+      final String clientReferenceNumber,
+      final Throwable e) {
     log.error("Failed to retrieve ClientDetail for clientReferenceNumber: {}",
             clientReferenceNumber,
             e);
@@ -138,7 +146,9 @@ public class SoaApiClientErrorHandler {
    * @param e Exception thrown during operation.
    * @return An empty Mono.
    */
-  public Mono<ClientStatus> handleClientStatusError(String transactionId, Throwable e) {
+  public Mono<ClientStatus> handleClientStatusError(
+      final String transactionId,
+      final Throwable e) {
     log.error("Failed to retrieve Client Status for: {}",
         transactionId,
         e);
@@ -146,14 +156,32 @@ public class SoaApiClientErrorHandler {
   }
 
   /**
-   * Handles errors that occur while fetching Client Status.
+   * Handles errors that occur while fetching Client create Status.
    *
    * @param fullName client full name.
    * @param e Exception thrown during operation.
    * @return An empty Mono.
    */
-  public Mono<ClientCreated> handleClientCreatedError(String fullName, Throwable e) {
+  public Mono<ClientTransactionResponse> handleClientCreatedError(
+      final String fullName,
+      final Throwable e) {
     log.error("Failed to create Client: {}",
+        fullName,
+        e);
+    return Mono.empty();
+  }
+
+  /**
+   * Handles errors that occur while fetching Client update Status.
+   *
+   * @param fullName client full name.
+   * @param e Exception thrown during operation.
+   * @return An empty Mono.
+   */
+  public Mono<ClientTransactionResponse> handleClientUpdatedError(
+      final String fullName,
+      final Throwable e) {
+    log.error("Failed to update Client: {}",
         fullName,
         e);
     return Mono.empty();
@@ -165,7 +193,8 @@ public class SoaApiClientErrorHandler {
    * @param e Exception thrown during operation.
    * @return An empty Mono.
    */
-  public Mono<CaseReferenceSummary> handleCaseReferenceError(Throwable e) {
+  public Mono<CaseReferenceSummary> handleCaseReferenceError(
+      final Throwable e) {
     log.error("Failed to retrieve CaseReferenceSummary", e);
     return Mono.empty();
   }
@@ -177,7 +206,8 @@ public class SoaApiClientErrorHandler {
    * @param e Exception thrown during operation.
    * @return and empty Mono.
    */
-  public Mono<Notifications> handleNotificationsError(NotificationSearchCriteria criteria,
+  public Mono<Notifications> handleNotificationsError(
+      final NotificationSearchCriteria criteria,
       Throwable e) {
     log.error("Failed to retrieve Notifications for "
             + "caseReferenceNumber: {}, "

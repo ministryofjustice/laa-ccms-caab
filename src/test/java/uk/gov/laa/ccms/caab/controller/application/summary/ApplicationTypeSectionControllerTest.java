@@ -31,7 +31,6 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
-import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.DelegatedFunctionsValidator;
@@ -83,7 +82,6 @@ public class ApplicationTypeSectionControllerTest {
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/summary/application-type-section"))
-        .andExpect(model().attribute("activeCase", activeCase))
         .andExpect(model().attribute("applicationFormData", applicationFormData));
   }
 
@@ -100,8 +98,8 @@ public class ApplicationTypeSectionControllerTest {
         .andDo(print())
         .andExpect(redirectedUrl("/application/summary"));
 
-    verify(applicationService).patchApplicationType(eq("123"), any(ApplicationFormData.class), any(UserDetail.class));
-    verify(applicationService).patchApplicationType(eq("123"), any(ApplicationFormData.class), any(UserDetail.class));
+    verify(applicationService).updateApplicationType(eq("123"), any(ApplicationFormData.class), any(UserDetail.class));
+    verify(applicationService).updateApplicationType(eq("123"), any(ApplicationFormData.class), any(UserDetail.class));
   }
 
   @Test
@@ -123,10 +121,9 @@ public class ApplicationTypeSectionControllerTest {
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/summary/application-type-section"))
-        .andExpect(model().attribute("activeCase", activeCase))
         .andExpect(model().hasErrors());
 
-    verify(applicationService, never()).patchApplicationType(eq("123"), any(ApplicationFormData.class), any(UserDetail.class));
+    verify(applicationService, never()).updateApplicationType(eq("123"), any(ApplicationFormData.class), any(UserDetail.class));
   }
 
   private UserDetail buildUser() {

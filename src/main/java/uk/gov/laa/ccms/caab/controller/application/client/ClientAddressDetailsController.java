@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_ADDRESS_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import jakarta.servlet.http.HttpSession;
@@ -17,10 +17,10 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsFindAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
-import uk.gov.laa.ccms.caab.model.ClientAddressResultsDisplay;
+import uk.gov.laa.ccms.caab.model.AddressResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 
@@ -40,7 +40,7 @@ public class ClientAddressDetailsController {
 
   private final ClientAddressDetailsValidator clientAddressDetailsValidator;
 
-  private final ClientAddressDetailsFindAddressValidator clientAddressDetailsFindAddressValidator;
+  private final FindAddressValidator findAddressValidator;
 
   private static final String ACTION_FIND_ADDRESS = "find_address";
 
@@ -96,7 +96,7 @@ public class ClientAddressDetailsController {
       HttpSession session) {
 
     if (ACTION_FIND_ADDRESS.equals(action)) {
-      clientAddressDetailsFindAddressValidator.validate(addressDetails, bindingResult);
+      findAddressValidator.validate(addressDetails, bindingResult);
     } else {
       clientAddressDetailsValidator.validate(addressDetails, bindingResult);
     }
@@ -111,7 +111,7 @@ public class ClientAddressDetailsController {
 
     if (ACTION_FIND_ADDRESS.equals(action)) {
       //Search for addresses
-      ClientAddressResultsDisplay clientAddressSearchResults =
+      AddressResultsDisplay clientAddressSearchResults =
           addressService.getAddresses(clientFlowFormData.getAddressDetails().getPostcode());
 
       if (clientAddressSearchResults.getContent() == null) {
@@ -122,7 +122,7 @@ public class ClientAddressDetailsController {
         clientAddressSearchResults = addressService.filterByHouseNumber(
             clientFlowFormData.getAddressDetails().getHouseNameNumber(),
             clientAddressSearchResults);
-        session.setAttribute(CLIENT_ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
+        session.setAttribute(ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
       }
 
       if (bindingResult.hasErrors()) {

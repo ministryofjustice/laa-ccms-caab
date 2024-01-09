@@ -22,8 +22,8 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.client.OrdinanceSurveyApiClient;
 import uk.gov.laa.ccms.caab.mapper.ClientAddressResultDisplayMapper;
-import uk.gov.laa.ccms.caab.model.ClientAddressResultRowDisplay;
-import uk.gov.laa.ccms.caab.model.ClientAddressResultsDisplay;
+import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.AddressResultsDisplay;
 import uk.gov.laa.ccms.caab.model.os.DeliveryPointAddress;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResponse;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResult;
@@ -50,11 +50,11 @@ public class AddressServiceTest {
     OrdinanceSurveyResponse mockResponse = new OrdinanceSurveyResponse();
     Mono<OrdinanceSurveyResponse> mockResponseMono = Mono.just(mockResponse);
 
-    ClientAddressResultsDisplay mockDisplay = new ClientAddressResultsDisplay();
+    AddressResultsDisplay mockDisplay = new AddressResultsDisplay();
 
     when(ordinanceSurveyApiClient.getAddresses(postcode)).thenReturn(mockResponseMono);
 
-    ClientAddressResultsDisplay result = addressService.getAddresses(postcode);
+    AddressResultsDisplay result = addressService.getAddresses(postcode);
 
     assertNotNull(result);
     assertNull(result.getContent());
@@ -67,12 +67,12 @@ public class AddressServiceTest {
     OrdinanceSurveyResponse mockResponse = buildOrdinanceSurveyResponse();
     Mono<OrdinanceSurveyResponse> mockResponseMono = Mono.just(mockResponse);
 
-    ClientAddressResultsDisplay mockDisplay = buildClientAddressResultsDisplay();
+    AddressResultsDisplay mockDisplay = buildClientAddressResultsDisplay();
 
     when(ordinanceSurveyApiClient.getAddresses(postcode)).thenReturn(mockResponseMono);
     when(clientAddressResultDisplayMapper.toClientAddressResultsDisplay(mockResponse)).thenReturn(mockDisplay);
 
-    ClientAddressResultsDisplay result = addressService.getAddresses(postcode);
+    AddressResultsDisplay result = addressService.getAddresses(postcode);
 
     assertNotNull(result);
     assertEquals(MAX_RESULTS, result.getContent().size());
@@ -82,13 +82,14 @@ public class AddressServiceTest {
   @CsvSource({"0","1","2","3","4","5","6","7","8","9"})
   void filterByHouseNumber_ReturnsFilteredAddresses(String houseNameNumber) {
 
-    ClientAddressResultRowDisplay row = new ClientAddressResultRowDisplay();
+    AddressResultRowDisplay row = new AddressResultRowDisplay();
     row.setFullAddress("TEST, ADDRESS, DATA");
     row.setHouseNameNumber(houseNameNumber);
 
-    ClientAddressResultsDisplay initialResults = buildClientAddressResultsDisplay();
+    AddressResultsDisplay initialResults = buildClientAddressResultsDisplay();
 
-    ClientAddressResultsDisplay filteredResults = addressService.filterByHouseNumber(houseNameNumber, initialResults);
+    AddressResultsDisplay
+        filteredResults = addressService.filterByHouseNumber(houseNameNumber, initialResults);
 
     assertNotNull(filteredResults);
     assertEquals(Collections.singletonList(row), filteredResults.getContent());
@@ -97,9 +98,10 @@ public class AddressServiceTest {
   @Test
   void filterByHouseNumber_ReturnsOriginalResults_WhenNoAddressesMatchFilter() {
     String houseNameNumber = "nonexistent";
-    ClientAddressResultsDisplay initialResults = buildClientAddressResultsDisplay();
+    AddressResultsDisplay initialResults = buildClientAddressResultsDisplay();
 
-    ClientAddressResultsDisplay filteredResults = addressService.filterByHouseNumber(houseNameNumber, initialResults);
+    AddressResultsDisplay
+        filteredResults = addressService.filterByHouseNumber(houseNameNumber, initialResults);
 
     assertNotNull(filteredResults);
     assertEquals(initialResults.getContent(), filteredResults.getContent());
@@ -109,9 +111,9 @@ public class AddressServiceTest {
   @Test
   void addAddressToClientDetails_UpdatesClientDetails() {
     String uprn = "12345";
-    ClientAddressResultsDisplay results = buildClientAddressResultsDisplay();
+    AddressResultsDisplay results = buildClientAddressResultsDisplay();
 
-    ClientAddressResultRowDisplay targetRow = new ClientAddressResultRowDisplay();
+    AddressResultRowDisplay targetRow = new AddressResultRowDisplay();
     targetRow.setFullAddress("TARGET, ADDRESS, DATA");
     targetRow.setHouseNameNumber("100");
     targetRow.setUprn(uprn);
@@ -121,13 +123,13 @@ public class AddressServiceTest {
 
     doAnswer(invocation -> {
       ClientFormDataAddressDetails ad = invocation.getArgument(0);
-      ClientAddressResultRowDisplay row = invocation.getArgument(1);
+      AddressResultRowDisplay row = invocation.getArgument(1);
       ad.setAddressLine1(row.getFullAddress());
       ad.setHouseNameNumber(row.getHouseNameNumber());
       return null;
     }).when(clientAddressResultDisplayMapper).updateClientFormDataAddressDetails(
         any(ClientFormDataAddressDetails.class),
-        any(ClientAddressResultRowDisplay.class));
+        any(AddressResultRowDisplay.class));
 
     addressService.addAddressToClientDetails(uprn, results, addressDetails);
 
@@ -177,20 +179,20 @@ public class AddressServiceTest {
     return dpa;
   }
 
-  private ClientAddressResultsDisplay buildClientAddressResultsDisplay(){
-    ClientAddressResultsDisplay clientAddressResultsDisplay = new ClientAddressResultsDisplay();
+  private AddressResultsDisplay buildClientAddressResultsDisplay(){
+    AddressResultsDisplay addressResultsDisplay = new AddressResultsDisplay();
 
-    List<ClientAddressResultRowDisplay> content = new ArrayList<>();
+    List<AddressResultRowDisplay> content = new ArrayList<>();
     for (int i = 0; i < MAX_RESULTS; i++){
-      ClientAddressResultRowDisplay result = new ClientAddressResultRowDisplay();
+      AddressResultRowDisplay result = new AddressResultRowDisplay();
       result.setFullAddress("TEST, ADDRESS, DATA");
       result.setHouseNameNumber(String.valueOf(i));
       content.add(result);
     }
 
-    clientAddressResultsDisplay.setContent(content);
+    addressResultsDisplay.setContent(content);
 
-    return clientAddressResultsDisplay;
+    return addressResultsDisplay;
   }
 
   private ClientFormDataAddressDetails buildAddressDetails() {

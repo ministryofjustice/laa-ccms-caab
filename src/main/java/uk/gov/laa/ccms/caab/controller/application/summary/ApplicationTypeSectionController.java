@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -17,10 +16,8 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.DelegatedFunctionsValidator;
-import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -51,20 +48,16 @@ public class ApplicationTypeSectionController {
    * Handles the GET request for the application type section of application summary.
    *
    * @param applicationId The id of the application
-   * @param activeCase The active case details to display in the header
    * @param model The model for the view.
    * @return The view name for the application summary page.
    */
   @GetMapping("/application/summary/application-type")
   public String applicationSummaryApplicationType(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
-      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       Model model) {
 
     applicationFormData = applicationService.getApplicationTypeFormData(applicationId);
-
-    model.addAttribute(ACTIVE_CASE, activeCase);
     model.addAttribute(APPLICATION_FORM_DATA, applicationFormData);
 
     return "application/summary/application-type-section";
@@ -74,7 +67,6 @@ public class ApplicationTypeSectionController {
    * Processes the user's delegated functions selection and redirects accordingly.
    *
    * @param applicationId The id of the application
-   * @param activeCase The active case details to display in the header
    * @param user The details of the active user
    * @param applicationFormData The details of the current application.
    * @param bindingResult Validation result for the delegated functions form.
@@ -84,14 +76,10 @@ public class ApplicationTypeSectionController {
   @PostMapping("/application/summary/application-type")
   public String delegatedFunction(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
-      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
-      @SessionAttribute(USER_DETAILS) UserDetail user,
-      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
-      BindingResult bindingResult,
-      Model model) throws ParseException {
+      final @SessionAttribute(USER_DETAILS) UserDetail user,
+      final @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
+      final BindingResult bindingResult) throws ParseException {
     delegatedFunctionsValidator.validate(applicationFormData, bindingResult);
-
-    model.addAttribute("activeCase", activeCase);
 
     if (!applicationFormData.isDelegatedFunctions()) {
       applicationFormData.setDelegatedFunctionUsedDay(null);
@@ -103,7 +91,7 @@ public class ApplicationTypeSectionController {
       return "application/summary/application-type-section";
     }
 
-    applicationService.patchApplicationType(applicationId, applicationFormData, user);
+    applicationService.updateApplicationType(applicationId, applicationFormData, user);
 
     return "redirect:/application/summary";
   }
