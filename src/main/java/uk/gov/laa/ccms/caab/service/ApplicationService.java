@@ -191,16 +191,14 @@ public class ApplicationService {
     return PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), searchResults);
   }
 
-  public Page<BaseApplication> getTdsApplications(
+  public uk.gov.laa.ccms.caab.model.ApplicationDetails getTdsApplications(
       final CaseSearchCriteria caseSearchCriteria,
       final Integer page,
       final Integer size) {
 
-    ApplicationDetails applicationDetails = Optional.ofNullable(
+    return Optional.ofNullable(
         caabApiClient.getApplications(caseSearchCriteria, page, size).block())
         .orElseThrow(() -> new CaabApplicationException("Failed to query for applications"));
-
-    return applicationDetails.getContent().stream.map(applicationMapper::toBaseApplication);
   }
 
   /**
@@ -435,20 +433,19 @@ public class ApplicationService {
           ApplicationDetail application = tuple.getT3();
 
           return new ApplicationSummaryBuilder(application.getAuditTrail())
-              .clientFirstName(
-                  application.getClient().getFirstName())
-              .clientSurname(
+              .clientFullName(
+                  application.getClient().getFirstName(),
                   application.getClient().getSurname())
               .clientReferenceNumber(
                   application.getClient().getReference())
               .caseReferenceNumber(
                   application.getCaseReferenceNumber())
               .providerCaseReferenceNumber(
-                  application.getProviderCaseReference())
+                  application.getProviderDetails().getProviderCaseReference())
               .applicationType(
                   application.getApplicationType())
               .providerDetails(
-                  application.getProviderContact())
+                  application.getProviderDetails().getProviderContact())
               .generalDetails(
                   application.getCorrespondenceAddress())
               .proceedingsAndCosts(

@@ -12,8 +12,8 @@ import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
+import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 
 /**
  * Service class to handle Clients.
@@ -68,9 +68,9 @@ public class ClientService {
    * @param transactionId         The transaction id for the client create transaction in soa.
    * @param loginId               The login identifier for the user.
    * @param userType              Type of the user (e.g., admin, user).
-   * @return A Mono wrapping the ClientDetail.
+   * @return A Mono wrapping the TransactionStatus.
    */
-  public Mono<ClientStatus> getClientStatus(
+  public Mono<TransactionStatus> getClientStatus(
       final String transactionId,
       final String loginId,
       final String userType) {

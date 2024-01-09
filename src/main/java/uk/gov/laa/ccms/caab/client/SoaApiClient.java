@@ -20,11 +20,11 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
+import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 
 /**
  * Client class responsible for interactions with the Service-Oriented Architecture (SOA) Api.
@@ -171,9 +171,9 @@ public class SoaApiClient {
    * @param transactionId         The transaction id for the client create transaction in soa.
    * @param loginId               The login identifier for the user.
    * @param userType              Type of the user (e.g., admin, user).
-   * @return A Mono wrapping the ClientDetail.
+   * @return A Mono wrapping the TransactionStatus.
    */
-  public Mono<ClientStatus> getClientStatus(
+  public Mono<TransactionStatus> getClientStatus(
       final String transactionId,
       final String loginId,
       final String userType) {
@@ -183,7 +183,7 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
-        .bodyToMono(ClientStatus.class)
+        .bodyToMono(TransactionStatus.class)
         .onErrorResume(e -> soaApiClientErrorHandler
             .handleClientStatusError(transactionId, e));
 

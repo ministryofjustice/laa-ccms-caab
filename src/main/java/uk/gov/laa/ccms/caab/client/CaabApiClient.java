@@ -11,6 +11,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 
@@ -106,7 +107,7 @@ public class CaabApiClient {
             .build())
         .retrieve()
         .bodyToMono(ApplicationDetails.class)
-        .onErrorResume(caabApiClientErrorHandler::handleGetApplicationError);
+        .onErrorResume(caabApiClientErrorHandler::handleGetApplicationsError);
   }
 
   /**

@@ -25,11 +25,16 @@ public interface CopyApplicationMapper {
   @BeanMapping(ignoreByDefault = true)
   @Mapping(target = "caseReferenceNumber", source = "caseReferenceSummary.caseReferenceNumber")
   @Mapping(target = "applicationType", source = "applicationToCopy.applicationType")
-  @Mapping(target = "provider", source = "applicationToCopy.provider")
-  @Mapping(target = "office", source = "applicationToCopy.office")
-  @Mapping(target = "supervisor", source = "applicationToCopy.supervisor")
-  @Mapping(target = "feeEarner", source = "applicationToCopy.feeEarner")
-  @Mapping(target = "providerContact", source = "applicationToCopy.providerContact")
+  @Mapping(target = "providerDetails.provider",
+      source = "applicationToCopy.providerDetails.provider")
+  @Mapping(target = "providerDetails.office",
+      source = "applicationToCopy.providerDetails.office")
+  @Mapping(target = "providerDetails.supervisor",
+      source = "applicationToCopy.providerDetails.supervisor")
+  @Mapping(target = "providerDetails.feeEarner",
+      source = "applicationToCopy.providerDetails.feeEarner")
+  @Mapping(target = "providerDetails.providerContact",
+      source = "applicationToCopy.providerDetails.providerContact")
   @Mapping(target = "categoryOfLaw", source = "applicationToCopy.categoryOfLaw")
   @Mapping(target = "correspondenceAddress", source = "applicationToCopy.correspondenceAddress")
   @Mapping(target = "larScopeFlag", source = "applicationToCopy.larScopeFlag")
