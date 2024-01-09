@@ -221,16 +221,16 @@ public class LookupService {
    *
    * @return CommonLookupDetail containing the common lookup values.
    */
-  public Mono<CommonLookupDetail> getCaseLinkOptions() {
+  public Mono<CommonLookupDetail> getCaseLinkTypes() {
     return ebsApiClient.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE);
   }
 
   /**
-   * Get a list of Case/application status types Common Values.
+   * Get a list of Case/application statuses Common Values.
    *
    * @return CommonLookupDetail containing the common lookup values.
    */
-  public Mono<CommonLookupDetail> getApplicationStatusOptions() {
+  public Mono<CommonLookupDetail> getApplicationStatuses() {
     return ebsApiClient.getCommonValues(COMMON_VALUE_APPLICATION_STATUS);
   }
 

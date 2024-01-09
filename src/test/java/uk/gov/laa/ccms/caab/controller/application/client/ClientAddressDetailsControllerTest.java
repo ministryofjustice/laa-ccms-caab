@@ -35,6 +35,7 @@ import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.Page;
 
 @ExtendWith(MockitoExtension.class)
 public class ClientAddressDetailsControllerTest {

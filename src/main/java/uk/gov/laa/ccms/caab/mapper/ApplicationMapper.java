@@ -370,7 +370,7 @@ public interface ApplicationMapper {
    * @param costAward - the target for extra mapping.
    */
   @AfterMapping
-  default void finaliseCostAward(@MappingTarget CostAward costAward) {
+  default void finaliseCostAward(@MappingTarget final CostAward costAward) {
     if (costAward.getRecovery() != null) {
       costAward.getRecovery().setAwardType(AWARD_TYPE_COST);
       costAward.getRecovery().setDescription(AWARD_TYPE_COST_DESCRIPTION);
@@ -408,7 +408,7 @@ public interface ApplicationMapper {
    * @param financialAward - the target for extra mapping.
    */
   @AfterMapping
-  default void finaliseFinancialAward(@MappingTarget FinancialAward financialAward) {
+  default void finaliseFinancialAward(@MappingTarget final FinancialAward financialAward) {
     if (financialAward.getRecovery() != null) {
       financialAward.getRecovery().setAwardType(AWARD_TYPE_FINANCIAL);
       financialAward.getRecovery().setDescription(AWARD_TYPE_FINANCIAL_DESCRIPTION);
@@ -449,8 +449,8 @@ public interface ApplicationMapper {
    * @param landAward - the mapping target
    */
   @AfterMapping
-  default void finaliseLandAward(@MappingTarget LandAward landAward) {
-    TimeRecovery timeRecovery = landAward.getTimeRecovery();
+  default void finaliseLandAward(@MappingTarget final LandAward landAward) {
+    final TimeRecovery timeRecovery = landAward.getTimeRecovery();
     landAward.setRecoveryOfAwardTimeRelated(timeRecovery != null);
     if (timeRecovery != null) {
       timeRecovery.setAwardType(AWARD_TYPE_LAND);
@@ -485,9 +485,9 @@ public interface ApplicationMapper {
    * @param otherAssetAward - the mapping target
    */
   @AfterMapping
-  default void finaliseOtherAssetAward(@MappingTarget OtherAssetAward otherAssetAward) {
+  default void finaliseOtherAssetAward(@MappingTarget final OtherAssetAward otherAssetAward) {
     final TimeRecovery timeRecovery = otherAssetAward.getTimeRecovery();
-    //TODO otherAssetAward.setRecoveryOfAwardTimeRelated(String.valueOf(timeRecovery != null));
+    otherAssetAward.setRecoveryOfAwardTimeRelated(timeRecovery != null);
     if (timeRecovery != null) {
       timeRecovery.setAwardType(AWARD_TYPE_OTHER_ASSET);
     }
@@ -499,7 +499,7 @@ public interface ApplicationMapper {
    * @param baseAward - the mapping target
    */
   @AfterMapping
-  default void finaliseAward(@MappingTarget BaseAward baseAward) {
+  default void finaliseAward(@MappingTarget final BaseAward baseAward) {
     baseAward.getLiableParties().forEach(
         liableParty -> liableParty.setAwardType(baseAward.getAwardType()));
   }
@@ -541,7 +541,7 @@ public interface ApplicationMapper {
    * @param recovery - the mapping target
    */
   @AfterMapping
-  default void finaliseRecovery(@MappingTarget Recovery recovery) {
+  default void finaliseRecovery(@MappingTarget final Recovery recovery) {
     // Set the total recovered amount to be a sum of solicitor, court and client.
     recovery.setRecoveredAmount(
         recovery.getSolicitorRecoveryAmount()
@@ -624,7 +624,7 @@ public interface ApplicationMapper {
    * @param otherParties - List of OtherParty.
    * @return Mapped List of Opponent.
    */
-  default List<Opponent> convertOpponents(List<OtherParty> otherParties) {
+  default List<Opponent> convertOpponents(final List<OtherParty> otherParties) {
     return otherParties != null ? otherParties.stream()
         .map(otherParty -> otherParty.getPerson() != null
             ? toIndividualOpponent(otherParty) :

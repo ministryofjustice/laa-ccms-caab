@@ -360,7 +360,7 @@ public class EditGeneralDetailsSectionController {
   private void populateLinkedCasesConfirmDropdowns(final Model model) {
     new DropdownBuilder(model)
         .addDropdown("caseLinkOptions",
-            lookupService.getCaseLinkOptions())
+            lookupService.getCaseLinkTypes())
         .build();
   }
 
@@ -380,7 +380,7 @@ public class EditGeneralDetailsSectionController {
 
     new DropdownBuilder(model)
         .addDropdown("Status",
-            lookupService.getApplicationStatusOptions())
+            lookupService.getApplicationStatuses())
         .build();
 
     model.addAttribute("feeEarners", providerService.getAllFeeEarners(provider));

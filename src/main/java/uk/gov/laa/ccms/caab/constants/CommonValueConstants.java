@@ -98,7 +98,7 @@ public class CommonValueConstants {
   public static final String COMMON_VALUE_NOTIFICATION_TYPE = "XXCCMS_NOTIFICATION_TYPES";
 
   /**
-   * Type used to retrieve the Case links for an application's linked cases.
+   * Type used to retrieve the Case link types for an application's linked cases.
    */
   public static final String COMMON_VALUE_CASE_LINK_TYPE = "XXCCMS_CASE_LINK_TYPES";
 

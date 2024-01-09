@@ -435,17 +435,17 @@ public class ApplicationService {
   }
 
   /**
-   * Retrieves linked cases associated with a specific ID.
+   * Retrieves linked cases associated with a specific application id.
    * This method fetches a list of linked cases, transforms them into a
    * {@code ResultsDisplay<LinkedCaseResultRowDisplay>} format, and returns the result.
    *
-   * @param id The unique identifier for the cases to be retrieved.
+   * @param applicationId The unique identifier for the cases to be retrieved.
    * @return A {@code ResultsDisplay<LinkedCaseResultRowDisplay>} containing the linked cases.
    */
-  public ResultsDisplay<LinkedCaseResultRowDisplay> getLinkedCases(final String id) {
+  public ResultsDisplay<LinkedCaseResultRowDisplay> getLinkedCases(final String applicationId) {
     final ResultsDisplay<LinkedCaseResultRowDisplay> results = new ResultsDisplay<>();
 
-    return caabApiClient.getLinkedCases(id)
+    return caabApiClient.getLinkedCases(applicationId)
         .flatMapMany(Flux::fromIterable) // Convert to Flux<LinkedCase>
         .map(resultDisplayMapper::toLinkedCaseResultRowDisplay) // Map to ResultRowDisplay
         .collectList() // Collect into a List
@@ -460,12 +460,15 @@ public class ApplicationService {
    * This method communicates with the CAAB API client to un-link a case identified by
    * {@code linkedCaseId} from a primary case identified by {@code id}.
    *
-   * @param id           The ID of the primary case from which the linked case will be removed.
+   * @param applicationId The id of the application for which linked cases should be retrieved
    * @param linkedCaseId The ID of the linked case to be removed.
    * @param user         The user performing the operation, identified by {@code UserDetail}.
    */
-  public void removeLinkedCase(final String id, final String linkedCaseId, final UserDetail user) {
-    caabApiClient.removeLinkedCase(id, linkedCaseId, user.getLoginId()).block();
+  public void removeLinkedCase(
+      final String applicationId,
+      final String linkedCaseId,
+      final UserDetail user) {
+    caabApiClient.removeLinkedCase(applicationId, linkedCaseId, user.getLoginId()).block();
   }
 
   /**
@@ -474,20 +477,24 @@ public class ApplicationService {
    * the linked case identified by {@code linkedCaseId} in relation to the primary case
    * identified by {@code id}.
    *
-   * @param id           The ID of the primary case related to the linked case.
+   * @param applicationId The ID of the case related to the linked case.
    * @param linkedCaseId The ID of the linked case to be updated.
    * @param data         The new data for the linked case, encapsulated in
    *                     {@code LinkedCaseResultRowDisplay}.
    * @param user         The user performing the update, identified by {@code UserDetail}.
    */
   public void updateLinkedCase(
-      final String id,
+      final String applicationId,
       final String linkedCaseId,
       final LinkedCaseResultRowDisplay data,
       final UserDetail user) {
 
     final LinkedCase linkedCase = resultDisplayMapper.toLinkedCase(data);
-    caabApiClient.updateLinkedCase(id, linkedCaseId, linkedCase, user.getLoginId()).block();
+    caabApiClient.updateLinkedCase(
+        applicationId,
+        linkedCaseId,
+        linkedCase, 
+        user.getLoginId()).block();
   }
 
   /**

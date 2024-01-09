@@ -11,10 +11,19 @@ import lombok.Data;
 @Data
 public class ResultsDisplay<T> {
 
+  /** List of elements in the current results display. */
   private List<T> content;
+
+  /** Total number of pages available. */
   private Integer totalPages;
+
+  /** Total number of elements across all pages. */
   private Integer totalElements;
+
+  /** Current page number. */
   private Integer number;
+
+  /** Number of elements per page. */
   private Integer size;
 
 }
