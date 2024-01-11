@@ -2,9 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application.search;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -18,12 +16,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
-import jakarta.servlet.ServletException;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +35,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
@@ -49,9 +44,11 @@ import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplication;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.data.model.BaseOffice;
 import uk.gov.laa.ccms.data.model.BaseProvider;
+import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
@@ -60,12 +57,15 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class CopyCaseSearchControllerTest {
+public class ApplicationSearchControllerTest {
   @Mock
   private CaseSearchCriteriaValidator validator;
 
   @Mock
   private ProviderService providerService;
+
+  @Mock
+  private LookupService lookupService;
 
   @Mock
   private ApplicationService applicationService;
@@ -77,7 +77,7 @@ public class CopyCaseSearchControllerTest {
   private SearchConstants searchConstants;
 
   @InjectMocks
-  private CopyCaseSearchController copyCaseSearchController;
+  private ApplicationSearchController applicationSearchController;
 
   private MockMvc mockMvc;
 
@@ -88,51 +88,61 @@ public class CopyCaseSearchControllerTest {
 
   @BeforeEach
   public void setup() {
-    mockMvc = standaloneSetup(copyCaseSearchController).build();
+    mockMvc = standaloneSetup(applicationSearchController).build();
     this.user = buildUser();
 
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(200);
   }
 
   @Test
-  public void testGetCopyCaseSearchAddsFeeEarnersToModel() throws Exception {
+  public void testGetApplicationSearch_PopulatesDropdowns() throws Exception {
     ProviderDetail providerDetail = new ProviderDetail();
     List<ContactDetail> feeEarners = buildFeeEarners();
+    CaseStatusLookupDetail caseStatuses = new CaseStatusLookupDetail()
+        .addContentItem(new CaseStatusLookupValueDetail());
 
     when(providerService.getProvider(user.getProvider().getId()))
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
+    when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(caseStatuses));
 
-    this.mockMvc.perform(get("/application/copy-case/search")
+    this.mockMvc.perform(get("/application/search")
             .sessionAttr("user", user))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/application-copy-case-search"))
+        .andExpect(view().name("application/application-search"))
         .andExpect(model().attribute("feeEarners", feeEarners))
-        .andExpect(model().attribute("offices", user.getProvider().getOffices()));
+        .andExpect(model().attribute("offices", user.getProvider().getOffices()))
+        .andExpect(model().attribute("statuses", caseStatuses.getContent()));
   }
 
   @Test
-  public void testGetCopyCaseSearchNoFeeEarners() {
+  public void testGetApplicationSearch_HandlesMissingLookupData() {
     when(providerService.getProvider(user.getProvider().getId()))
+        .thenReturn(Mono.empty());
+    when(lookupService.getCaseStatusValues())
         .thenReturn(Mono.empty());
 
     Exception exception = assertThrows(Exception.class, () ->
-        this.mockMvc.perform(get("/application/copy-case/search")
+        this.mockMvc.perform(get("/application/search")
             .sessionAttr(USER_DETAILS, user)));
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
-    assertEquals(String.format("Failed to retrieve Provider with id: %s", user.getProvider().getId()), exception.getCause().getMessage());
+    assertEquals("Failed to retrieve lookup data",
+        exception.getCause().getMessage());
   }
 
   @Test
-  public void testPostCopyCaseSearchHandlesValidationFailure() throws Exception {
+  public void testPostApplicationSearchHandlesValidationFailure() throws Exception {
     ProviderDetail providerDetail = new ProviderDetail();
     List<ContactDetail> feeEarners = buildFeeEarners();
+    CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail()
+        .addContentItem(new CaseStatusLookupValueDetail());
 
     when(providerService.getProvider(user.getProvider().getId()))
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
+    when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(caseStatusLookupDetail));
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
@@ -141,85 +151,60 @@ public class CopyCaseSearchControllerTest {
       return null;
     }).when(validator).validate(any(), any());
 
-    this.mockMvc.perform(post("/application/copy-case/search")
+    this.mockMvc.perform(post("/application/search")
             .sessionAttr(USER_DETAILS, user))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/application-copy-case-search"))
+        .andExpect(view().name("application/application-search"))
         .andExpect(model().attribute("feeEarners", feeEarners))
-        .andExpect(model().attribute("offices", user.getProvider().getOffices()));
+        .andExpect(model().attribute("offices", user.getProvider().getOffices()))
+        .andExpect(model().attribute("statuses", caseStatusLookupDetail.getContent()));
   }
 
   @Test
-  public void testPostCopyCaseSearch_NoCopyCaseStatus() throws Exception {
+  public void testPostApplicationSearch_NoResults() throws Exception {
     List<BaseApplication> baseApplications = new ArrayList<>();
 
     when(applicationService.getCases(any(), any(), any())).thenReturn(baseApplications);
 
     CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
-    this.mockMvc.perform(post("/application/copy-case/search")
-            .sessionAttr(USER_DETAILS, user)
-            .sessionAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/application-copy-case-search-no-results"));
-
-    verify(applicationService).getCopyCaseStatus();
-    verify(applicationService).getCases(eq(caseSearchCriteria), any(), any());
-    // No copy case status, so search criteria shouldn't have been updated
-    assertNull(caseSearchCriteria.getStatus());
-  }
-
-  @Test
-  public void testPostCopyCaseSearch_NoResults() throws Exception {
-    List<BaseApplication> baseApplications = new ArrayList<>();
-
-    when(applicationService.getCases(any(), any(), any())).thenReturn(baseApplications);
-
-    String COPY_STATUS_CODE = "APP";
-    when(applicationService.getCopyCaseStatus()).thenReturn(
-        new CaseStatusLookupValueDetail().code(COPY_STATUS_CODE));
-
-    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
-    this.mockMvc.perform(post("/application/copy-case/search")
+    this.mockMvc.perform(post("/application/search")
             .sessionAttr(USER_DETAILS, user)
             .sessionAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
         .andExpect(status().isOk())
-        .andExpect(view().name("application/application-copy-case-search-no-results"));
+        .andExpect(view().name("application/application-search-no-results"));
 
-    verify(applicationService).getCopyCaseStatus();
     verify(applicationService).getCases(eq(caseSearchCriteria), any(), any());
-    assertEquals(COPY_STATUS_CODE, caseSearchCriteria.getStatus());
   }
 
   @Test
-  public void testPostCopyCaseSearch_WithTooManyResults() throws Exception {
+  public void testPostApplicationSearch_WithTooManyResults() throws Exception {
     when(applicationService.getCases(any(), any(), any())).thenThrow(
         new TooManyResultsException(""));
 
-    this.mockMvc.perform(post("/application/copy-case/search")
+    this.mockMvc.perform(post("/application/search")
             .sessionAttr(USER_DETAILS, user)
             .sessionAttr(CASE_SEARCH_CRITERIA, new CaseSearchCriteria()))
         .andExpect(status().isOk())
         .andExpect(view().name(
-            "application/application-copy-case-search-too-many-results"));
+            "application/application-search-too-many-results"));
   }
 
   @Test
-  public void testPostCopyCaseSearch_WithResults() throws Exception {
+  public void testPostApplicationSearch_WithResults() throws Exception {
     List<BaseApplication> caseSearchResults = List.of(new BaseApplication());
 
     when(applicationService.getCases(any(), any(), any())).thenReturn(caseSearchResults);
 
-    this.mockMvc.perform(post("/application/copy-case/search")
+    this.mockMvc.perform(post("/application/search")
             .sessionAttr(USER_DETAILS, user)
             .sessionAttr(CASE_SEARCH_CRITERIA, new CaseSearchCriteria()))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/copy-case/results"));
+        .andExpect(redirectedUrl("/application/search/results"));
   }
 
   @Test
-  public void testGetCopyCaseSearchResults_PaginatesResults() throws Exception {
+  public void testGetApplicationSearchResults_PaginatesResults() throws Exception {
     List<BaseApplication> caseSearchResults = List.of(
         new BaseApplication(),
         new BaseApplication());
@@ -227,46 +212,15 @@ public class CopyCaseSearchControllerTest {
     when(applicationMapper.toApplicationDetails(any()))
         .thenReturn(new ApplicationDetails());
 
-    this.mockMvc.perform(get("/application/copy-case/results")
+    this.mockMvc.perform(get("/application/search/results")
             .param("page", "0")
             .param("size", "1")
             .sessionAttr(USER_DETAILS, user)
             .sessionAttr(CASE_SEARCH_RESULTS, caseSearchResults))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/application-copy-case-search-results"))
+        .andExpect(view().name("application/application-search-results"))
         .andExpect(model().attributeExists(CopyCaseSearchController.CASE_RESULTS_PAGE));
-  }
-
-
-  @Test
-  public void testSelectCopyCaseReferenceNumber_InvalidCaseRef() {
-    Exception exception = assertThrows(ServletException.class, () ->
-        this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm", "123")
-            .sessionAttr(CASE_SEARCH_RESULTS, new ArrayList<BaseApplication>())
-            .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())));
-
-    assertInstanceOf(CaabApplicationException.class, exception.getCause());
-
-    String expectedMessage = "Invalid copyCaseReferenceNumber supplied";
-    String actualMessage = exception.getMessage();
-
-    assertTrue(actualMessage.contains(expectedMessage));
-  }
-
-  @Test
-  public void testSelectCopyCaseReferenceNumber_ValidCaseRef() throws Exception {
-    List<BaseApplication> caseSearchResults =
-        List.of(new BaseApplication().caseReferenceNumber("123"));
-
-    ApplicationFormData applicationFormData = new ApplicationFormData();
-    this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm", "123")
-            .sessionAttr(CASE_SEARCH_RESULTS, caseSearchResults)
-            .sessionAttr(APPLICATION_FORM_DATA, applicationFormData))
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/client/search"));
-
-    assertEquals("123", applicationFormData.getCopyCaseReferenceNumber());
   }
 
   private UserDetail buildUser() {

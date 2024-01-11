@@ -6,9 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULT
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
@@ -49,6 +48,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
     CASE_SEARCH_CRITERIA,
     CASE_SEARCH_RESULTS})
 public class CopyCaseSearchController {
+
   private final ProviderService providerService;
 
   private final ApplicationService applicationService;
@@ -56,6 +56,9 @@ public class CopyCaseSearchController {
   private final ApplicationMapper applicationMapper;
 
   private final CaseSearchCriteriaValidator searchCriteriaValidator;
+
+  protected static final String CURRENT_URL = "currentUrl";
+  protected static final String CASE_RESULTS_PAGE = "caseResultsPage";
 
   /**
    * Provides an instance of {@link CaseSearchCriteria} for use in the model.
@@ -90,46 +93,25 @@ public class CopyCaseSearchController {
   /**
    * Processes the search form submission for copy cases.
    *
-   * @param searchCriteria The criteria used to search for copy cases.
-   * @param userDetails    The details of the currently authenticated user.
+   * @param caseSearchCriteria The criteria used to search for copy cases.
+   * @param user    The details of the currently authenticated user.
    * @param bindingResult  Validation result of the search criteria form.
    * @param model          The model used to pass data to the view.
    * @return Either redirects to the search results or reloads the form with validation errors.
    */
   @PostMapping("/application/copy-case/search")
   public String copyCaseSearch(
-      @ModelAttribute(CASE_SEARCH_CRITERIA) CaseSearchCriteria searchCriteria,
-      @SessionAttribute(USER_DETAILS) UserDetail userDetails,
-      BindingResult bindingResult,
-      Model model) {
-
-    searchCriteriaValidator.validate(searchCriteria, bindingResult);
-    if (bindingResult.hasErrors()) {
-      populateDropdowns(userDetails, model);
-      return "application/application-copy-case-search";
-    }
-    return "redirect:/application/copy-case/results";
-  }
-
-  /**
-   * Displays the search results of copy cases.
-   *
-   * @param page Page number for pagination.
-   * @param size Size of results per page.
-   * @param caseSearchCriteria Criteria used for the search.
-   * @param user Current logged in user.
-   * @param request The HTTP request.
-   * @param model Model to store attributes for the view.
-   * @return The appropriate view based on the search results.
-   */
-  @GetMapping("/application/copy-case/results")
-  public String copyCaseSearchResults(
-      @RequestParam(value = "page", defaultValue = "0") int page,
-      @RequestParam(value = "size", defaultValue = "10") int size,
       @ModelAttribute(CASE_SEARCH_CRITERIA) CaseSearchCriteria caseSearchCriteria,
       @SessionAttribute(USER_DETAILS) UserDetail user,
-      HttpServletRequest request,
+      BindingResult bindingResult,
+      RedirectAttributes redirectAttributes,
       Model model) {
+
+    searchCriteriaValidator.validate(caseSearchCriteria, bindingResult);
+    if (bindingResult.hasErrors()) {
+      populateDropdowns(user, model);
+      return "application/application-copy-case-search";
+    }
 
     // Get the Copy Case Status
     CaseStatusLookupValueDetail copyCaseStatus = applicationService.getCopyCaseStatus();
@@ -137,8 +119,8 @@ public class CopyCaseSearchController {
       caseSearchCriteria.setStatus(copyCaseStatus.getCode());
     }
 
+    // Call the service to query for Cases
     List<BaseApplication> searchResults;
-
     try {
       searchResults = applicationService.getCases(caseSearchCriteria,
           user.getLoginId(),
@@ -151,13 +133,35 @@ public class CopyCaseSearchController {
       return "application/application-copy-case-search-too-many-results";
     }
 
-    // Now paginate the list, and convert to the Page wrapper object for display
-    ApplicationDetails searchResultsPage = applicationMapper.toApplicationDetails(
-        PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), searchResults));
+    redirectAttributes.addFlashAttribute(CASE_SEARCH_RESULTS, searchResults);
 
-    String currentUrl = request.getRequestURL().toString();
-    model.addAttribute("currentUrl", currentUrl);
-    model.addAttribute(CASE_SEARCH_RESULTS, searchResultsPage);
+    return "redirect:/application/copy-case/results";
+  }
+
+  /**
+   * Displays the search results of copy cases.
+   *
+   * @param page Page number for pagination.
+   * @param size Size of results per page.
+   * @param caseSearchResults The full un-paginated search results list..
+   * @param request The HTTP request.
+   * @param model Model to store attributes for the view.
+   * @return The appropriate view based on the search results.
+   */
+  @GetMapping("/application/copy-case/results")
+  public String copyCaseSearchResults(
+      @RequestParam(value = "page", defaultValue = "0") int page,
+      @RequestParam(value = "size", defaultValue = "10") int size,
+      @ModelAttribute(CASE_SEARCH_RESULTS) List<BaseApplication> caseSearchResults,
+      HttpServletRequest request,
+      Model model) {
+
+    // Paginate the results list, and convert to the Page wrapper object for display
+    ApplicationDetails searchResultsPage = applicationMapper.toApplicationDetails(
+        PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), caseSearchResults));
+
+    model.addAttribute(CURRENT_URL, request.getRequestURL().toString());
+    model.addAttribute(CASE_RESULTS_PAGE, searchResultsPage);
     return "application/application-copy-case-search-results";
   }
 
@@ -165,20 +169,19 @@ public class CopyCaseSearchController {
    * Validates and selects a specific copy case reference number from the search results.
    *
    * @param copyCaseReferenceNumber The reference number of the selected copy case.
-   * @param searchResults Search results containing copy cases.
+   * @param caseSearchResults Search results containing copy cases.
    * @param applicationFormData Details of the current application.
    * @return Redirects to the client search page after storing the selected case reference number.
    */
   @GetMapping("/application/copy-case/{case-reference-number}/confirm")
   public String selectCopyCaseReferenceNumber(
       @PathVariable("case-reference-number") String copyCaseReferenceNumber,
-      @SessionAttribute(CASE_SEARCH_RESULTS) ApplicationDetails searchResults,
+      @SessionAttribute(CASE_SEARCH_RESULTS) List<BaseApplication> caseSearchResults,
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData) {
 
     // Validate that the supplied caseRef is one from the search results in the session
-    boolean validCaseRef = Optional.ofNullable(searchResults.getContent())
-        .orElse(Collections.emptyList())
-        .stream().anyMatch(
+    boolean validCaseRef =
+        caseSearchResults.stream().anyMatch(
             application -> application.getCaseReferenceNumber().equals(copyCaseReferenceNumber));
 
     if (!validCaseRef) {

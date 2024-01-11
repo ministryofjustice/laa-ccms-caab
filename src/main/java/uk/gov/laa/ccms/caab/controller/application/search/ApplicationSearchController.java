@@ -24,6 +24,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
@@ -147,12 +148,11 @@ public class ApplicationSearchController {
       HttpServletRequest request,
       Model model) {
 
-    String currentUrl = request.getRequestURL().toString();
-    model.addAttribute("currentUrl", currentUrl);
-
     // Paginate the results list, and convert to the Page wrapper object for display
     ApplicationDetails applicationDetails = applicationMapper.toApplicationDetails(
         PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), caseSearchResults));
+
+    model.addAttribute("currentUrl",  request.getRequestURL().toString());
     model.addAttribute("caseResultsPage", applicationDetails);
     return "application/application-search-results";
   }
@@ -163,7 +163,7 @@ public class ApplicationSearchController {
         Optional.ofNullable(Mono.zip(
             providerService.getProvider(user.getProvider().getId()),
             lookupService.getCaseStatusValues()).block()).orElseThrow(
-                () -> new RuntimeException("Failed to retrieve lookup data"));
+                () -> new CaabApplicationException("Failed to retrieve lookup data"));
 
     ProviderDetail providerDetail = combinedResults.getT1();
     CaseStatusLookupDetail caseStatusLookupDetail = combinedResults.getT2();

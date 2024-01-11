@@ -14,7 +14,7 @@
             Application search - results
         </h1>
         <p class="govuk-body-l">
-            Your search has returned <span th:text="${caseSearchResults.totalElements}"></span> results.
+            Your search has returned <span th:text="${caseResultsPage.totalElements}"></span> results.
         </p>
         <p class="govuk-body-l">
             To select an application or case displayed in the results table, click on the
@@ -33,7 +33,7 @@
                 </tr>
             </thead>
             <tbody class="govuk-table__body">
-                <tr class="govuk-table__row" th:each="case , rowStat : ${caseSearchResults.content}">
+                <tr class="govuk-table__row" th:each="case , rowStat : ${caseResultsPage.content}">
                     <td class="govuk-table__cell">
                         <a th:href="@{/application/copy-case/{id}/confirm(id=${case.caseReferenceNumber})}"
                            class="govuk-link" th:text="${case.caseReferenceNumber}"></a>
@@ -46,7 +46,7 @@
                 </tr>
             </tbody>
         </table>
-        <nav th:replace="~{partials/pagination :: pagination(page=${caseSearchResults})}"></nav>
+        <nav th:replace="~{partials/pagination :: pagination(page=${caseResultsPage})}"></nav>
     </div>
 </div>
 </body>

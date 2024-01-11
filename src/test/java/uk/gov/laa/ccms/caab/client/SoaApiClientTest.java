@@ -539,7 +539,7 @@ class SoaApiClientTest {
   }
 
   @Test
-  void getTransactionStatus_Successful() {
+  void getClientStatus_Successful() {
     String transactionId = "123";
     String loginId = "user1";
     String userType = "userType";
@@ -565,7 +565,7 @@ class SoaApiClientTest {
   }
 
   @Test
-  void getTransactionStatus_Error() {
+  void getClientStatus_Error() {
     String transactionId = "123";
     String loginId = "user1";
     String userType = "userType";

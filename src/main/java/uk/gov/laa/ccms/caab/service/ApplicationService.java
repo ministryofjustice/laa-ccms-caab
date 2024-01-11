@@ -148,11 +148,8 @@ public class ApplicationService {
 
     List<BaseApplication> searchResults = new ArrayList<>();
 
-    // Only search for SOA Cases if the user hasn't selected a particular status,
-    // or they have selected something other than 'UNSUBMITTED'
-    if (!StringUtils.hasText(caseSearchCriteria.getStatus())
-        || !STATUS_UNSUBMITTED_ACTUAL_VALUE.equals(caseSearchCriteria.getStatus())) {
-
+    // Only search for SOA Cases if the user hasn't selected status 'UNSUBMITTED'.
+    if (!STATUS_UNSUBMITTED_ACTUAL_VALUE.equals(caseSearchCriteria.getStatus())) {
       // Set page and size to min and max respectively. Because we are combining 2 searches
       // we will have to return all records for pagination by the caller.
       CaseDetails caseDetails = Optional.ofNullable(
@@ -174,8 +171,7 @@ public class ApplicationService {
           .toList());
     }
 
-    // now retrieve applications for the logged in user from Transient
-    // Data Store
+    // Now retrieve applications from the Transient Data Store
     List<BaseApplication> tdsApplications = this.getTdsApplications(
         caseSearchCriteria,
         0,
@@ -189,11 +185,17 @@ public class ApplicationService {
 
     // Remove any duplicates (remove the TDS applications as they are amendments, keep the cases)
     tdsApplications.removeIf(
-        app -> searchResults.stream().noneMatch(
+        app -> searchResults.stream().anyMatch(
                 soaCase -> soaCase.getCaseReferenceNumber().equals(app.getCaseReferenceNumber())));
 
     // Now add the remaining TDS applications into the list
     searchResults.addAll(tdsApplications);
+
+    // Final check of the number of results now that the two searches have been combined.
+    if (searchResults.size() > searchConstants.getMaxSearchResultsCases()) {
+      throw new TooManyResultsException(
+          String.format("Case Search returned %s results", searchResults.size()));
+    }
 
     // Sort the combined list by Case Reference
     searchResults.sort(Comparator.comparing(BaseApplication::getCaseReferenceNumber));
