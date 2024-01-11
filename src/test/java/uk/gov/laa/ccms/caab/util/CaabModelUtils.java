@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AssessmentResult;
 import uk.gov.laa.ccms.caab.model.AuditDetail;
@@ -28,11 +29,17 @@ import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 public class CaabModelUtils {
 
   public static ApplicationDetail buildApplicationDetail(Integer id, Boolean flag, java.util.Date date) {
-    return new ApplicationDetail(
-        id + "",
-        new StringDisplayValue().id(id + "cat1").displayValue(id + "catoflaw1"),
-        new Client().firstName(id + "firstname"),
-        new IntDisplayValue().id(id).displayValue("Client " + id))
+    return new ApplicationDetail()
+        .caseReferenceNumber(id + "")
+        .categoryOfLaw(new StringDisplayValue().id(id + "cat1").displayValue(id + "catoflaw1"))
+        .client(new Client().firstName(id + "firstname"))
+        .providerDetails(new ApplicationProviderDetails()
+            .provider(new IntDisplayValue().id(id).displayValue("Client " + id))
+            .feeEarner(new StringDisplayValue().id("fee" + id).displayValue("Fee " + id))
+            .supervisor(new StringDisplayValue().id("sup" + id).displayValue("super " + id))
+            .office(new IntDisplayValue().id(id).displayValue("Office " + id))
+            .providerCaseReference("provcaseref" + id)
+            .providerContact(new StringDisplayValue().id("prov" + id).displayValue("provcontact " + id)))
         .allSectionsComplete(flag)
         .amendment(flag)
         .addAmendmentProceedingsInEbsItem(buildProceeding(date, BigDecimal.ONE))
@@ -69,7 +76,6 @@ public class CaabModelUtils {
             .requestedCostLimitation(BigDecimal.TEN))
         .dateCreated(date)
         .editProceedingsAndCostsAllowed(flag)
-        .feeEarner(new StringDisplayValue().id("fee" + id).displayValue("Fee " + id))
         .larScopeFlag(flag)
         .leadProceedingChanged(flag)
         .linkedCases(new ArrayList<>(Collections.singletonList(new LinkedCase())))
@@ -80,20 +86,16 @@ public class CaabModelUtils {
         .meritsAssessmentAmended(flag)
         .meritsAssessmentStatus("merStat" + id)
         .meritsReassessmentRequired(flag)
-        .office(new IntDisplayValue().id(id).displayValue("Office " + id))
         .opponentAppliedForFunding(flag)
         .opponentMode("mode" + id)
         .addOpponentsItem(buildOpponent(date))
         .addPriorAuthoritiesItem(new PriorAuthority())
         .addProceedingsItem(buildProceeding(date, BigDecimal.ONE))
         .addProceedingsItem(buildProceeding(date, BigDecimal.TEN))
-        .providerCaseReference("provcaseref" + id)
-        .providerContact(new StringDisplayValue().id("prov" + id).displayValue("provcontact " + id))
         .quickEditType("quicktype" + id)
         .relationToLinkedCase("rel" + id)
         .status(new StringDisplayValue().id("st" + id).displayValue("status " + id))
-        .submitted(flag)
-        .supervisor(new StringDisplayValue().id("sup" + id).displayValue("super " + id));
+        .submitted(flag);
   }
 
   public static Proceeding buildProceeding(java.util.Date date, BigDecimal costLimitation) {

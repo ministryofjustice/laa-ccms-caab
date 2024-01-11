@@ -59,6 +59,7 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
@@ -68,10 +69,12 @@ import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AuditDetail;
+import uk.gov.laa.ccms.caab.model.BaseApplication;
 import uk.gov.laa.ccms.caab.model.Client;
 import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
@@ -98,6 +101,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
+import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
@@ -131,6 +135,9 @@ class ApplicationServiceTest {
 
   @Mock
   private CopyApplicationMapper copyApplicationMapper;
+
+  @Mock
+  private SearchConstants searchConstants;
 
   @InjectMocks
   private ApplicationService applicationService;
@@ -167,32 +174,22 @@ class ApplicationServiceTest {
     int page = 0;
     int size = 10;
 
-    CaseDetails mockCaseDetails = new CaseDetails();
+    CaseDetails mockCaseDetails = new CaseDetails()
+        .totalElements(1)
+        .size(1)
+        .addContentItem(new CaseSummary());
+    ApplicationDetails mockApplicationDetails = new ApplicationDetails();
 
     when(soaApiClient.getCases(caseSearchCriteria, loginId, userType, page, size))
         .thenReturn(Mono.just(mockCaseDetails));
+    when(caabApiClient.getApplications(caseSearchCriteria, page, size))
+        .thenReturn(Mono.just(mockApplicationDetails));
+    when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
 
-    Mono<CaseDetails> caseDetailsMono =
-        applicationService.getCases(caseSearchCriteria, loginId, userType, page, size);
+    List<BaseApplication> result =
+        applicationService.getCases(caseSearchCriteria, loginId, userType);
 
-    StepVerifier.create(caseDetailsMono)
-        .expectNextMatches(clientDetails -> clientDetails == mockCaseDetails)
-        .verifyComplete();
-  }
-
-  @Test
-  void getCaseStatusValuesCopyAllowed_returnsData() {
-    CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail();
-
-    when(ebsApiClient.getCaseStatusValues(Boolean.TRUE)).thenReturn(
-        Mono.just(caseStatusLookupDetail));
-
-    Mono<CaseStatusLookupDetail> lookupDetailMono =
-        applicationService.getCaseStatusValues(true);
-
-    StepVerifier.create(lookupDetailMono)
-        .expectNext(caseStatusLookupDetail)
-        .verifyComplete();
+    assertNotNull(result);
   }
 
   @Test
@@ -200,7 +197,7 @@ class ApplicationServiceTest {
     CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail();
     caseStatusLookupDetail.addContentItem(new CaseStatusLookupValueDetail());
 
-    when(ebsApiClient.getCaseStatusValues(Boolean.TRUE)).thenReturn(
+    when(lookupService.getCaseStatusValues(Boolean.TRUE)).thenReturn(
         Mono.just(caseStatusLookupDetail));
 
     CaseStatusLookupValueDetail lookupValue = applicationService.getCopyCaseStatus();
@@ -212,7 +209,7 @@ class ApplicationServiceTest {
   @Test
   void getCopyCaseStatus_handlesNullResponse() {
 
-    when(ebsApiClient.getCaseStatusValues(Boolean.TRUE)).thenReturn(Mono.empty());
+    when(lookupService.getCaseStatusValues(Boolean.TRUE)).thenReturn(Mono.empty());
 
     CaseStatusLookupValueDetail lookupValue = applicationService.getCopyCaseStatus();
 
@@ -531,7 +528,8 @@ class ApplicationServiceTest {
     applicationType.id("test 123");
     applicationType.setDisplayValue("testing123");
 
-    ApplicationDetail mockApplicationDetail = new ApplicationDetail(null, null, null, null);
+    ApplicationDetail mockApplicationDetail = new ApplicationDetail();
+    mockApplicationDetail.setProviderDetails(new ApplicationProviderDetails());
     mockApplicationDetail.setAuditTrail(auditDetail);
     mockApplicationDetail.setClient(client);
     mockApplicationDetail.setApplicationType(applicationType);
@@ -597,7 +595,8 @@ class ApplicationServiceTest {
     applicationType.id("test 123");
     applicationType.setDisplayValue("testing123");
 
-    ApplicationDetail mockApplicationDetail = new ApplicationDetail(null, null, null, null);
+    ApplicationDetail mockApplicationDetail = new ApplicationDetail();
+    mockApplicationDetail.setProviderDetails(new ApplicationProviderDetails());
     mockApplicationDetail.setAuditTrail(auditDetail);
     mockApplicationDetail.setClient(client);
     mockApplicationDetail.setApplicationType(applicationType);

@@ -16,6 +16,7 @@ import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.springframework.data.domain.Page;
 import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
@@ -61,7 +62,6 @@ import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
 import uk.gov.laa.ccms.soa.gateway.model.Award;
 import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
-import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseStatus;
 import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
@@ -77,9 +77,7 @@ import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
 @Mapper(componentModel = "spring")
 public interface ApplicationMapper {
 
-  ApplicationDetails toApplicationDetails(CaseDetails soaCaseDetails);
-
-  List<BaseApplication> toBaseApplicationList(List<CaseSummary> soaCaseSummaryList);
+  ApplicationDetails toApplicationDetails(Page<BaseApplication> applicationPage);
 
   @Mapping(target = "status", source = "caseStatusDisplay")
   @Mapping(target = "providerDetails", source = ".")

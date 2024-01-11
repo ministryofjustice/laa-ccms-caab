@@ -29,7 +29,7 @@ public class ApplicationBuilder {
   private final ApplicationDetail application;
 
   public ApplicationBuilder() {
-    this.application = new ApplicationDetail();
+    this.application = new ApplicationDetail().providerDetails(new ApplicationProviderDetails());
   }
 
   public ApplicationBuilder(ApplicationDetail application) {
@@ -70,10 +70,6 @@ public class ApplicationBuilder {
    * @return The builder instance.
    */
   public ApplicationBuilder provider(final UserDetail user) {
-    if (application.getProviderDetails() == null) {
-      application.setProviderDetails(new ApplicationProviderDetails());
-    }
-
     IntDisplayValue provider = new IntDisplayValue()
         .id(user.getProvider().getId())
         .displayValue(user.getProvider().getName());
@@ -125,10 +121,6 @@ public class ApplicationBuilder {
    * @return The builder instance.
    */
   public ApplicationBuilder office(final Integer officeId, final List<BaseOffice> offices) {
-    if (application.getProviderDetails() == null) {
-      application.setProviderDetails(new ApplicationProviderDetails());
-    }
-
     String officeDisplayValue = offices.stream()
             .filter(office -> officeId.equals(office.getId()))
             .map(BaseOffice::getName)

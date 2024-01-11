@@ -1,8 +1,8 @@
-package uk.gov.laa.ccms.caab.controller.application;
+package uk.gov.laa.ccms.caab.controller.application.search;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
@@ -34,7 +34,7 @@ import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
-import uk.gov.laa.ccms.caab.controller.application.search.CopyCaseSearchController;
+import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.data.model.BaseOffice;
@@ -53,6 +53,9 @@ public class CopyCaseSearchControllerTest {
   @Mock
   private ProviderService providerService;
 
+  @Mock
+  private SearchConstants searchConstants;
+
   @InjectMocks
   private CopyCaseSearchController copyCaseSearchController;
 
@@ -64,6 +67,8 @@ public class CopyCaseSearchControllerTest {
   @BeforeEach
   public void setup() {
     mockMvc = standaloneSetup(copyCaseSearchController).build();
+
+    when(searchConstants.getMaxSearchResultsCases()).thenReturn(200);
   }
 
   @Test
@@ -97,7 +102,7 @@ public class CopyCaseSearchControllerTest {
         this.mockMvc.perform(get("/application/copy-case/search")
             .sessionAttr(USER_DETAILS, user)));
 
-    assertTrue(exception.getCause() instanceof CaabApplicationException);
+    assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals(String.format("Failed to retrieve Provider with id: %s", user.getProvider().getId()), exception.getCause().getMessage());
   }
 

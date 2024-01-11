@@ -106,32 +106,33 @@ public class ApplicationMapperTest {
         result.getDateCreated());
     assertEquals(
         soaCaseDetail.getApplicationDetails().getProviderDetails().getProviderCaseReferenceNumber(),
-        result.getProviderCaseReference());
+        result.getProviderDetails().getProviderCaseReference());
     assertEquals(
         applicationMappingContext.getProviderDetail().getId(),
-        result.getProvider().getId());
+        result.getProviderDetails().getProvider().getId());
     assertEquals(
         applicationMappingContext.getProviderDetail().getName(),
-        result.getProvider().getDisplayValue());
+        result.getProviderDetails().getProvider().getDisplayValue());
     assertEquals(
         soaCaseDetail.getApplicationDetails().getProviderDetails()
             .getContactUserId().getUserLoginId(),
-        result.getProviderContact().getId());
+        result.getProviderDetails().getProviderContact().getId());
     assertEquals(
         soaCaseDetail.getApplicationDetails().getProviderDetails()
             .getContactUserId().getUserName(),
-        result.getProviderContact().getDisplayValue());
-    assertEquals(applicationMappingContext.getProviderOffice().getId(), result.getOffice().getId());
+        result.getProviderDetails().getProviderContact().getDisplayValue());
+    assertEquals(applicationMappingContext.getProviderOffice().getId(),
+        result.getProviderDetails().getOffice().getId());
     assertEquals(applicationMappingContext.getProviderOffice().getName(),
-        result.getOffice().getDisplayValue());
+        result.getProviderDetails().getOffice().getDisplayValue());
     assertEquals(applicationMappingContext.getSupervisorContact().getId().toString(),
-        result.getSupervisor().getId());
+        result.getProviderDetails().getSupervisor().getId());
     assertEquals(applicationMappingContext.getSupervisorContact().getName(),
-        result.getSupervisor().getDisplayValue());
+        result.getProviderDetails().getSupervisor().getDisplayValue());
     assertEquals(applicationMappingContext.getFeeEarnerContact().getId().toString(),
-        result.getFeeEarner().getId());
+        result.getProviderDetails().getFeeEarner().getId());
     assertEquals(applicationMappingContext.getFeeEarnerContact().getName(),
-        result.getFeeEarner().getDisplayValue());
+        result.getProviderDetails().getFeeEarner().getDisplayValue());
     assertNotNull(result.getCorrespondenceAddress());  // Detail tested in specific test case
     assertNotNull(result.getClient()); // Detail tested in specific test case
     assertEquals(
@@ -935,7 +936,7 @@ public class ApplicationMapperTest {
         result.getStatChargeExemptReason());
 
     // afterMapping
-    assertTrue(Boolean.parseBoolean(result.getRecoveryOfAwardTimeRelated()));
+    assertTrue(result.getRecoveryOfAwardTimeRelated());
     assertEquals(AWARD_TYPE_OTHER_ASSET, result.getTimeRecovery().getAwardType());
 
     // afterMapping (baseAward)

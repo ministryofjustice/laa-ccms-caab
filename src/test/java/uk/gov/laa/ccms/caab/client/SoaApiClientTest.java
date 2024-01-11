@@ -31,7 +31,7 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
+import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
@@ -539,13 +539,13 @@ class SoaApiClientTest {
   }
 
   @Test
-  void getClientStatus_Successful() {
+  void getTransactionStatus_Successful() {
     String transactionId = "123";
     String loginId = "user1";
     String userType = "userType";
     String expectedUri = "/clients/status/{transactionId}";
 
-    ClientStatus mockClientStatus = new ClientStatus();
+    TransactionStatus mockTransactionStatus = new TransactionStatus();
 
     when(soaApiWebClientMock.get()).thenReturn(requestHeadersUriMock);
     when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(
@@ -555,17 +555,17 @@ class SoaApiClientTest {
     when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(
         requestHeadersMock);
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(ClientStatus.class)).thenReturn(Mono.just(mockClientStatus));
+    when(responseMock.bodyToMono(TransactionStatus.class)).thenReturn(Mono.just(mockTransactionStatus));
 
-    Mono<ClientStatus> clientStatusMono = soaApiClient.getClientStatus(transactionId, loginId, userType);
+    Mono<TransactionStatus> transactionStatusMono = soaApiClient.getClientStatus(transactionId, loginId, userType);
 
-    StepVerifier.create(clientStatusMono)
-        .expectNextMatches(clientStatus -> clientStatus == mockClientStatus)
+    StepVerifier.create(transactionStatusMono)
+        .expectNextMatches(transactionStatus -> transactionStatus == mockTransactionStatus)
         .verifyComplete();
   }
 
   @Test
-  void getClientStatus_Error() {
+  void getTransactionStatus_Error() {
     String transactionId = "123";
     String loginId = "user1";
     String userType = "userType";
@@ -579,15 +579,15 @@ class SoaApiClientTest {
     when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(
         requestHeadersMock);
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(ClientStatus.class)).thenReturn(Mono.error(
+    when(responseMock.bodyToMono(TransactionStatus.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
     when(soaApiClientErrorHandler.handleClientStatusError(eq(transactionId),
         any(WebClientResponseException.class))).thenReturn(Mono.empty());
 
-    Mono<ClientStatus> clientStatusMono = soaApiClient.getClientStatus(transactionId, loginId, userType);
+    Mono<TransactionStatus> transactionStatusMono = soaApiClient.getClientStatus(transactionId, loginId, userType);
 
-    StepVerifier.create(clientStatusMono)
+    StepVerifier.create(transactionStatusMono)
         .verifyComplete();
   }
 

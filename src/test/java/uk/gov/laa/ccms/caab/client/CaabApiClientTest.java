@@ -53,7 +53,7 @@ public class CaabApiClientTest {
   void createApplication_success() {
     String loginId = "user1";
     ApplicationDetail application =
-        new ApplicationDetail(null, null, null, null); // Populate as needed
+        new ApplicationDetail(); // Populate as needed
     String expectedUri = "/applications";
     String locationId = "123"; // Replace with your expected location header
 
@@ -80,7 +80,7 @@ public class CaabApiClientTest {
     String id = "123";
     String expectedUri = "/applications/{id}";
 
-    ApplicationDetail mockApplication = new ApplicationDetail(null, null,null, null);
+    ApplicationDetail mockApplication = new ApplicationDetail();
 
     when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
     when(requestHeadersUriMock.uri(expectedUri, id)).thenReturn(requestHeadersMock);

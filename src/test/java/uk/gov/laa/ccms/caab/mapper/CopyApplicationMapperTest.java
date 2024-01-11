@@ -16,6 +16,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.builders.ApplicationBuilder;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.Client;
 import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.Opponent;
@@ -106,11 +107,19 @@ public class CopyApplicationMapperTest {
       BigDecimal defaultCostLimitation) {
     expectedApplication.setCaseReferenceNumber(caseReferenceSummary.getCaseReferenceNumber());
     expectedApplication.setApplicationType(copyApplication.getApplicationType());
-    expectedApplication.setProvider(copyApplication.getProvider());
-    expectedApplication.setOffice(copyApplication.getOffice());
-    expectedApplication.setSupervisor(copyApplication.getSupervisor());
-    expectedApplication.setFeeEarner(copyApplication.getFeeEarner());
-    expectedApplication.setProviderContact(copyApplication.getProviderContact());
+    if (expectedApplication.getProviderDetails() == null) {
+      expectedApplication.setProviderDetails(new ApplicationProviderDetails());
+    }
+    expectedApplication.getProviderDetails().setProvider(
+        copyApplication.getProviderDetails().getProvider());
+    expectedApplication.getProviderDetails().setOffice(
+        copyApplication.getProviderDetails().getOffice());
+    expectedApplication.getProviderDetails().setSupervisor(
+        copyApplication.getProviderDetails().getSupervisor());
+    expectedApplication.getProviderDetails().setFeeEarner(
+        copyApplication.getProviderDetails().getFeeEarner());
+    expectedApplication.getProviderDetails().setProviderContact(
+        copyApplication.getProviderDetails().getProviderContact());
     expectedApplication.setCategoryOfLaw(copyApplication.getCategoryOfLaw());
     expectedApplication.setCorrespondenceAddress(copyApplication.getCorrespondenceAddress());
     expectedApplication.setLarScopeFlag(copyApplication.getLarScopeFlag());

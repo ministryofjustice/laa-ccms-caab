@@ -27,8 +27,6 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
@@ -65,7 +63,6 @@ import uk.gov.laa.ccms.caab.model.BaseApplication;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
-import uk.gov.laa.ccms.caab.util.PaginationUtil;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
@@ -136,32 +133,28 @@ public class ApplicationService {
 
 
   /**
-   * Searches and retrieves case details from SOA based on provided search criteria.
-   * Each CaseSummary is mapped to a BaseApplication to summarise the details.
+   * Performs a combined search of SOA cases and TDS applications based on provided search criteria.
+   * Each result is mapped to a BaseApplication to summarise the details.
    *
    * @param caseSearchCriteria The search criteria to use when fetching cases.
    * @param loginId                The login identifier for the user.
    * @param userType               Type of the user (e.g., admin, user).
-   * @param page                   The page number for pagination.
-   * @param size                   The size or number of records per page.
-   * @return A Page of BaseApplication.
+   * @return A List of BaseApplication.
    */
-  public Page<BaseApplication> getCases(
+  public List<BaseApplication> getCases(
       final CaseSearchCriteria caseSearchCriteria,
       final String loginId,
-      final String userType,
-      final Integer page,
-      final Integer size) throws TooManyResultsException {
+      final String userType) throws TooManyResultsException {
 
     List<BaseApplication> searchResults = new ArrayList<>();
 
     // Only search for SOA Cases if the user hasn't selected a particular status,
     // or they have selected something other than 'UNSUBMITTED'
-    if (StringUtils.hasText(caseSearchCriteria.getStatus()) ||
-        !STATUS_UNSUBMITTED_ACTUAL_VALUE.equals(caseSearchCriteria.getStatus())) {
+    if (!StringUtils.hasText(caseSearchCriteria.getStatus())
+        || !STATUS_UNSUBMITTED_ACTUAL_VALUE.equals(caseSearchCriteria.getStatus())) {
 
-      // Don't pass the supplied page and size. Because we are combining 2 searches
-      // we will have to return all from this call, combine and then paginate after.
+      // Set page and size to min and max respectively. Because we are combining 2 searches
+      // we will have to return all records for pagination by the caller.
       CaseDetails caseDetails = Optional.ofNullable(
               soaApiClient.getCases(
                   caseSearchCriteria,
@@ -182,15 +175,40 @@ public class ApplicationService {
     }
 
     // now retrieve applications for the logged in user from Transient
-    // Data Store and add to caseList
-    searchResults.addAll(this.getTdsApplications(
+    // Data Store
+    List<BaseApplication> tdsApplications = this.getTdsApplications(
         caseSearchCriteria,
         0,
-        searchConstants.getMaxSearchResultsCases()).getContent());
+        searchConstants.getMaxSearchResultsCases()).getContent();
 
-    return PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), searchResults);
+    /*
+     * TODO: Exclude (and remove) any Pending Applications where the SOA
+     *  transaction has now completed.
+     */
+    // tdsApplications = pollPendingApplications(tdsApplications, data, ccmsUser);
+
+    // Remove any duplicates (remove the TDS applications as they are amendments, keep the cases)
+    tdsApplications.removeIf(
+        app -> searchResults.stream().noneMatch(
+                soaCase -> soaCase.getCaseReferenceNumber().equals(app.getCaseReferenceNumber())));
+
+    // Now add the remaining TDS applications into the list
+    searchResults.addAll(tdsApplications);
+
+    // Sort the combined list by Case Reference
+    searchResults.sort(Comparator.comparing(BaseApplication::getCaseReferenceNumber));
+
+    return searchResults;
   }
 
+  /**
+   * Query for Applications in the TDS based on the supplied search criteria.
+   *
+   * @param caseSearchCriteria - the search criteria
+   * @param page - the page number
+   * @param size - the page size
+   * @return ApplicationDetails containing a List of BaseApplication.
+   */
   public uk.gov.laa.ccms.caab.model.ApplicationDetails getTdsApplications(
       final CaseSearchCriteria caseSearchCriteria,
       final Integer page,
