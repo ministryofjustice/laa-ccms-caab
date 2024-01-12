@@ -21,6 +21,7 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDoc;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CaseStatus;
+import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
@@ -587,5 +588,15 @@ public class SoaModelUtils {
   public static CaseReferenceSummary buildCaseReferenceSummary() {
     return new CaseReferenceSummary()
         .caseReferenceNumber(UUID.randomUUID().toString());
+  }
+
+  public static CaseSummary buildCaseSummary() {
+    return new CaseSummary()
+        .caseReferenceNumber("caseref")
+        .caseStatusDisplay("the status")
+        .categoryOfLaw("CAT")
+        .client(buildBaseClient())
+        .feeEarnerName("feeearner")
+        .providerCaseReferenceNumber("prov");
   }
 }

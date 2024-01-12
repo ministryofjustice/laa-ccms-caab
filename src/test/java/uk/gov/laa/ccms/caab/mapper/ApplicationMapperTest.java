@@ -16,12 +16,14 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTH
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_ORGANISATION;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
+import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildBaseApplication;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildPriorAuthorityDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildPriorAuthorityTypeDetail;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildAddressDetail;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildAssessmentResult;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildBaseClient;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCaseDetail;
+import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCaseSummary;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCostAward;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCostLimitation;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildFinancialAward;
@@ -39,8 +41,10 @@ import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildTimeRelatedAward;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
 import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
@@ -48,6 +52,7 @@ import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
 import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.AssessmentResult;
+import uk.gov.laa.ccms.caab.model.BaseApplication;
 import uk.gov.laa.ccms.caab.model.CaseOutcome;
 import uk.gov.laa.ccms.caab.model.Client;
 import uk.gov.laa.ccms.caab.model.CostAward;
@@ -73,6 +78,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ApplicationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.Award;
 import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
+import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CostLimitation;
 import uk.gov.laa.ccms.soa.gateway.model.OtherParty;
 import uk.gov.laa.ccms.soa.gateway.model.OutcomeDetail;
@@ -942,6 +948,39 @@ public class ApplicationMapperTest {
     // afterMapping (baseAward)
     result.getLiableParties().forEach(
         liableParty -> assertEquals(AWARD_TYPE_OTHER_ASSET, liableParty.getAwardType()));
+  }
+
+  @Test
+  public void testToApplicationDetails() {
+    List<BaseApplication> baseApplicationList = List.of(
+        buildBaseApplication(1),
+        buildBaseApplication(2));
+
+    uk.gov.laa.ccms.caab.model.ApplicationDetails result =
+        applicationMapper.toApplicationDetails(new PageImpl<>(baseApplicationList));
+
+    assertNotNull(result);
+    assertEquals(2, result.getSize());
+    assertNotNull(result.getContent());
+    assertEquals(baseApplicationList, result.getContent());
+  }
+
+  @Test
+  public void testToBaseApplication() {
+    CaseSummary soaCaseSummary = buildCaseSummary();
+
+    BaseApplication result = applicationMapper.toBaseApplication(soaCaseSummary);
+
+    assertNotNull(result);
+    assertEquals(soaCaseSummary.getCaseReferenceNumber(), result.getCaseReferenceNumber());
+    assertEquals(soaCaseSummary.getCaseStatusDisplay(), result.getStatus().getDisplayValue());
+    assertEquals(soaCaseSummary.getCategoryOfLaw(), result.getCategoryOfLaw().getDisplayValue());
+    assertEquals(soaCaseSummary.getClient().getClientReferenceNumber(), result.getClient().getReference());
+    assertEquals(soaCaseSummary.getClient().getFirstName(), result.getClient().getFirstName());
+    assertEquals(soaCaseSummary.getClient().getSurname(), result.getClient().getSurname());
+    assertNotNull(result.getProviderDetails());
+    assertEquals(soaCaseSummary.getFeeEarnerName(), result.getProviderDetails().getFeeEarner().getDisplayValue());
+    assertEquals(soaCaseSummary.getProviderCaseReferenceNumber(), result.getProviderDetails().getProviderCaseReference());
   }
 
   private ApplicationMappingContext buildApplicationMappingContext(

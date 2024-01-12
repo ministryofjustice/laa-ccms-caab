@@ -10,6 +10,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AssessmentResult;
 import uk.gov.laa.ccms.caab.model.AuditDetail;
+import uk.gov.laa.ccms.caab.model.BaseApplication;
 import uk.gov.laa.ccms.caab.model.BooleanDisplayValue;
 import uk.gov.laa.ccms.caab.model.CaseOutcome;
 import uk.gov.laa.ccms.caab.model.Client;
@@ -27,6 +28,21 @@ import uk.gov.laa.ccms.caab.model.ScopeLimitation;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 
 public class CaabModelUtils {
+
+  public static BaseApplication buildBaseApplication(Integer id) {
+    return new BaseApplication()
+        .caseReferenceNumber(id + "")
+        .categoryOfLaw(new StringDisplayValue().id(id + "cat1").displayValue(id + "catoflaw1"))
+        .client(new Client().firstName(id + "firstname"))
+        .providerDetails(new ApplicationProviderDetails()
+            .provider(new IntDisplayValue().id(id).displayValue("Client " + id))
+            .feeEarner(new StringDisplayValue().id("fee" + id).displayValue("Fee " + id))
+            .supervisor(new StringDisplayValue().id("sup" + id).displayValue("super " + id))
+            .office(new IntDisplayValue().id(id).displayValue("Office " + id))
+            .providerCaseReference("provcaseref" + id)
+            .providerContact(new StringDisplayValue().id("prov" + id).displayValue("provcontact " + id)))
+        .status(new StringDisplayValue().id("st" + id).displayValue("status " + id));
+  }
 
   public static ApplicationDetail buildApplicationDetail(Integer id, Boolean flag, java.util.Date date) {
     return new ApplicationDetail()
