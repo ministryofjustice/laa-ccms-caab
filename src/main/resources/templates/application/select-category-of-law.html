@@ -27,7 +27,7 @@
             </div>
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
-                    <div th:replace="~{partials/forms :: dropdown('categoryOfLawId', 'Which Category Of Law applies to this application?', ${categoriesOfLaw}, 'code', 'description', true)}"></div>
+                    <div th:replace="~{partials/forms :: dropdown('categoryOfLawId', 'Which Category Of Law applies to this application?', ${categoriesOfLaw}, 'code', 'matterTypeDescription', true)}"></div>
                     <button class="govuk-button" data-module="govuk-button">
                         Continue
                     </button>
