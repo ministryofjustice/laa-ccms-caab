@@ -11,28 +11,28 @@ import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.validators.application.CopyCaseSearchCriteriaValidator;
+import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
 
 @ExtendWith(SpringExtension.class)
-public class CopyCaseSearchCriteriaValidatorTest {
+public class CaseSearchCriteriaValidatorTest {
 
   @InjectMocks
-  private CopyCaseSearchCriteriaValidator validator;
+  private CaseSearchCriteriaValidator validator;
 
-  private CopyCaseSearchCriteria searchCriteria;
+  private CaseSearchCriteria searchCriteria;
 
   private Errors errors;
 
   @BeforeEach
   public void setUp() {
     searchCriteria =
-        new CopyCaseSearchCriteria(); // Assuming that the default constructor sets all fields to null.
+        new CaseSearchCriteria(); // Assuming that the default constructor sets all fields to null.
     errors = new BeanPropertyBindingResult(searchCriteria, "applicationSearchCriteria");
   }
   
   @Test
   public void supports_ReturnsTrueForSupportedClass() {
-    assertTrue(validator.supports(CopyCaseSearchCriteria.class));
+    assertTrue(validator.supports(CaseSearchCriteria.class));
   }
 
   @Test

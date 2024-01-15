@@ -9,6 +9,7 @@ import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.Client;
 import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.Proceeding;
@@ -25,11 +26,7 @@ public interface CopyApplicationMapper {
   @BeanMapping(ignoreByDefault = true)
   @Mapping(target = "caseReferenceNumber", source = "caseReferenceSummary.caseReferenceNumber")
   @Mapping(target = "applicationType", source = "applicationToCopy.applicationType")
-  @Mapping(target = "provider", source = "applicationToCopy.provider")
-  @Mapping(target = "office", source = "applicationToCopy.office")
-  @Mapping(target = "supervisor", source = "applicationToCopy.supervisor")
-  @Mapping(target = "feeEarner", source = "applicationToCopy.feeEarner")
-  @Mapping(target = "providerContact", source = "applicationToCopy.providerContact")
+  @Mapping(target = "providerDetails", source = "applicationToCopy.providerDetails")
   @Mapping(target = "categoryOfLaw", source = "applicationToCopy.categoryOfLaw")
   @Mapping(target = "correspondenceAddress", source = "applicationToCopy.correspondenceAddress")
   @Mapping(target = "larScopeFlag", source = "applicationToCopy.larScopeFlag")
@@ -44,6 +41,10 @@ public interface CopyApplicationMapper {
       ClientDetail clientDetail,
       BigDecimal requestedCostLimitation,
       BigDecimal defaultCostLimitation);
+
+  @Mapping(target = "providerCaseReference", ignore = true)
+  ApplicationProviderDetails copyApplicationProviderDetails(
+      ApplicationProviderDetails providerDetailsToCopy);
 
   List<Proceeding> copyProceedingList(List<Proceeding> proceedingList);
 

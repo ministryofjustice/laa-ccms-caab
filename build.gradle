@@ -73,8 +73,8 @@ repositories {
 
 dependencies {
 	implementation 'uk.gov.laa.ccms.data:data-api:0.0.4'
-	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.7'
-	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.9-6f4cfef-SNAPSHOT'
+	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.8'
+	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.10'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'

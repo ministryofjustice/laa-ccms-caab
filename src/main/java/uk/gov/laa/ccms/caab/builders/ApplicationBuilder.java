@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMI
 import java.util.List;
 import java.util.Optional;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.Client;
 import uk.gov.laa.ccms.caab.model.DevolvedPowers;
@@ -28,7 +29,7 @@ public class ApplicationBuilder {
   private final ApplicationDetail application;
 
   public ApplicationBuilder() {
-    this.application = new ApplicationDetail(null, null, null, null);
+    this.application = new ApplicationDetail().providerDetails(new ApplicationProviderDetails());
   }
 
   public ApplicationBuilder(ApplicationDetail application) {
@@ -72,7 +73,7 @@ public class ApplicationBuilder {
     IntDisplayValue provider = new IntDisplayValue()
         .id(user.getProvider().getId())
         .displayValue(user.getProvider().getName());
-    application.setProvider(provider);
+    application.getProviderDetails().setProvider(provider);
     return this;
   }
 
@@ -129,7 +130,7 @@ public class ApplicationBuilder {
     IntDisplayValue office = new IntDisplayValue()
             .id(officeId)
             .displayValue(officeDisplayValue);
-    application.setOffice(office);
+    application.getProviderDetails().setOffice(office);
     return this;
   }
 

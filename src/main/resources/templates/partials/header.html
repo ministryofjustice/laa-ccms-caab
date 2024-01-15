@@ -23,7 +23,7 @@
                         </a>
                     </li>
                     <li class="govuk-header__navigation-item" th:classappend="${pageCategory == 'cases'} ? 'govuk-header__navigation-item--active'">
-                        <a class="govuk-header__link" href="#TODO">
+                        <a class="govuk-header__link" th:href="@{/application/search}">
                             Cases and applications
                         </a>
                     </li>

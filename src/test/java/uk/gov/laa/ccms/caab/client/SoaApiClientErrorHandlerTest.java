@@ -8,19 +8,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
-import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
+import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
+import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 
 @ExtendWith(MockitoExtension.class)
 class SoaApiClientErrorHandlerTest {
@@ -80,18 +80,18 @@ class SoaApiClientErrorHandlerTest {
 
   @Test
   public void testHandleCaseDetailsError() {
-    CopyCaseSearchCriteria copyCaseSearchCriteria = new CopyCaseSearchCriteria();
-    copyCaseSearchCriteria.setCaseReference("caseRef123");
-    copyCaseSearchCriteria.setProviderCaseReference("provCaseRef456");
-    copyCaseSearchCriteria.setActualStatus("status1");
-    copyCaseSearchCriteria.setFeeEarnerId(123);
-    copyCaseSearchCriteria.setOfficeId(456);
-    copyCaseSearchCriteria.setClientSurname("Doe");
+    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    caseSearchCriteria.setCaseReference("caseRef123");
+    caseSearchCriteria.setProviderCaseReference("provCaseRef456");
+    caseSearchCriteria.setStatus("status1");
+    caseSearchCriteria.setFeeEarnerId(123);
+    caseSearchCriteria.setOfficeId(456);
+    caseSearchCriteria.setClientSurname("Doe");
 
     Throwable throwable = new RuntimeException("Error");
 
     Mono<CaseDetails> result =
-        soaApiClientErrorHandler.handleCaseDetailsError(copyCaseSearchCriteria, throwable);
+        soaApiClientErrorHandler.handleCaseDetailsError(caseSearchCriteria, throwable);
 
     StepVerifier.create(result)
         .expectNextCount(0)
@@ -140,7 +140,7 @@ class SoaApiClientErrorHandlerTest {
     String transactionId = "testTransactionId";
     Throwable throwable = new RuntimeException("Error");
 
-    Mono<ClientStatus> result =
+    Mono<TransactionStatus> result =
         soaApiClientErrorHandler.handleClientStatusError(transactionId, throwable);
 
     StepVerifier.create(result)

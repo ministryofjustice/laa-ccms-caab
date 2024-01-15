@@ -4,15 +4,21 @@ import java.io.Serializable;
 import lombok.Data;
 
 /**
- * Represents the criteria to search for an application.
+ * Represents the criteria to search for a Case or Application.
  */
 @Data
-public class CopyCaseSearchCriteria implements Serializable {
+public class CaseSearchCriteria implements Serializable {
 
   /**
    * The LAA Application/Case Reference.
    */
   private String caseReference;
+
+  /**
+   * The client reference.
+   */
+  private String clientReference;
+
   /**
    * The client surname.
    */
@@ -34,8 +40,8 @@ public class CopyCaseSearchCriteria implements Serializable {
   private Integer officeId;
 
   /**
-   * The actual status value for the Application.
+   * The status value for the Case or Application.
    */
-  private String actualStatus;
+  private String status;
 }
 

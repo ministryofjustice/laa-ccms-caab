@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 
-import java.text.ParseException;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,7 +46,7 @@ class ApplicationBuilderTest {
     userDetail.setProvider(provider);
 
     ApplicationDetail detail = builder.provider(userDetail).build();
-    assertEquals("PROVIDERNAME", detail.getProvider().getDisplayValue());
+    assertEquals("PROVIDERNAME", detail.getProviderDetails().getProvider().getDisplayValue());
   }
 
   @Test
@@ -63,7 +62,7 @@ class ApplicationBuilderTest {
   }
 
   @Test
-  void testContractualDevolvedPower() throws ParseException {
+  void testContractualDevolvedPower() {
 
     ApplicationType applicationType = new ApplicationType();
     // Create a mock ContractDetail object
@@ -93,8 +92,8 @@ class ApplicationBuilderTest {
     List<BaseOffice> baseOffices = Collections.singletonList(baseOffice);
 
     ApplicationDetail detail = builder.office(officeId, baseOffices).build();
-    assertEquals(officeId, detail.getOffice().getId());
-    assertEquals("OfficeName", detail.getOffice().getDisplayValue());
+    assertEquals(officeId, detail.getProviderDetails().getOffice().getId());
+    assertEquals("OfficeName", detail.getProviderDetails().getOffice().getDisplayValue());
   }
 
   @Test

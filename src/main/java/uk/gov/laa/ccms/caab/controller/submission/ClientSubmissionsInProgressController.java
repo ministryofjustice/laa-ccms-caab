@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
+import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 
 /**
  * Controller for client creation submissions in progress.
@@ -48,13 +48,13 @@ public class ClientSubmissionsInProgressController {
 
     model.addAttribute("submissionType", SUBMISSION_CREATE_CLIENT);
 
-    final ClientStatus clientStatus = clientService.getClientStatus(
+    final TransactionStatus clientStatus = clientService.getClientStatus(
         transactionId,
         user.getLoginId(),
         user.getUserType()).block();
 
-    if (clientStatus != null && StringUtils.hasText(clientStatus.getClientReferenceNumber())) {
-      session.setAttribute(CLIENT_REFERENCE, clientStatus.getClientReferenceNumber());
+    if (clientStatus != null && StringUtils.hasText(clientStatus.getReferenceNumber())) {
+      session.setAttribute(CLIENT_REFERENCE, clientStatus.getReferenceNumber());
 
       //Do some session tidy up
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
@@ -80,12 +80,12 @@ public class ClientSubmissionsInProgressController {
 
     model.addAttribute("submissionType", SUBMISSION_UPDATE_CLIENT);
 
-    final ClientStatus clientStatus = clientService.getClientStatus(
+    final TransactionStatus clientStatus = clientService.getClientStatus(
         transactionId,
         user.getLoginId(),
         user.getUserType()).block();
 
-    if (clientStatus != null && StringUtils.hasText(clientStatus.getClientReferenceNumber())) {
+    if (clientStatus != null && StringUtils.hasText(clientStatus.getReferenceNumber())) {
       //Do some session tidy up
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
       session.removeAttribute(CLIENT_FLOW_FORM_DATA);

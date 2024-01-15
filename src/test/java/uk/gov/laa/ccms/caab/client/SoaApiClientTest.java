@@ -22,8 +22,8 @@ import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
@@ -31,7 +31,7 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
+import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
@@ -245,13 +245,13 @@ class SoaApiClientTest {
   @Test
   void getCases_ReturnsCaseDetails_Successful() {
 
-    CopyCaseSearchCriteria copyCaseSearchCriteria = new CopyCaseSearchCriteria();
-    copyCaseSearchCriteria.setCaseReference("123");
-    copyCaseSearchCriteria.setProviderCaseReference("456");
-    copyCaseSearchCriteria.setActualStatus("appl");
-    copyCaseSearchCriteria.setFeeEarnerId(789);
-    copyCaseSearchCriteria.setOfficeId(999);
-    copyCaseSearchCriteria.setClientSurname("asurname");
+    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    caseSearchCriteria.setCaseReference("123");
+    caseSearchCriteria.setProviderCaseReference("456");
+    caseSearchCriteria.setStatus("appl");
+    caseSearchCriteria.setFeeEarnerId(789);
+    caseSearchCriteria.setOfficeId(999);
+    caseSearchCriteria.setClientSurname("asurname");
     String loginId = "user1";
     String userType = "userType";
     int page = 0;
@@ -265,12 +265,12 @@ class SoaApiClientTest {
             "client-surname=%s&" +
             "page=%s&" +
             "size=%s",
-        copyCaseSearchCriteria.getCaseReference(),
-        copyCaseSearchCriteria.getProviderCaseReference(),
-        copyCaseSearchCriteria.getActualStatus(),
-        copyCaseSearchCriteria.getFeeEarnerId(),
-        copyCaseSearchCriteria.getOfficeId(),
-        copyCaseSearchCriteria.getClientSurname(),
+        caseSearchCriteria.getCaseReference(),
+        caseSearchCriteria.getProviderCaseReference(),
+        caseSearchCriteria.getStatus(),
+        caseSearchCriteria.getFeeEarnerId(),
+        caseSearchCriteria.getOfficeId(),
+        caseSearchCriteria.getClientSurname(),
         page,
         size);
 
@@ -288,7 +288,7 @@ class SoaApiClientTest {
     when(responseMock.bodyToMono(CaseDetails.class)).thenReturn(Mono.just(mockCaseDetails));
 
     Mono<CaseDetails> caseDetailsMono =
-        soaApiClient.getCases(copyCaseSearchCriteria, loginId, userType, page, size);
+        soaApiClient.getCases(caseSearchCriteria, loginId, userType, page, size);
 
     StepVerifier.create(caseDetailsMono)
         .expectNextMatches(caseDetails -> caseDetails == mockCaseDetails)
@@ -545,7 +545,7 @@ class SoaApiClientTest {
     String userType = "userType";
     String expectedUri = "/clients/status/{transactionId}";
 
-    ClientStatus mockClientStatus = new ClientStatus();
+    TransactionStatus mockTransactionStatus = new TransactionStatus();
 
     when(soaApiWebClientMock.get()).thenReturn(requestHeadersUriMock);
     when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(
@@ -555,12 +555,12 @@ class SoaApiClientTest {
     when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(
         requestHeadersMock);
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(ClientStatus.class)).thenReturn(Mono.just(mockClientStatus));
+    when(responseMock.bodyToMono(TransactionStatus.class)).thenReturn(Mono.just(mockTransactionStatus));
 
-    Mono<ClientStatus> clientStatusMono = soaApiClient.getClientStatus(transactionId, loginId, userType);
+    Mono<TransactionStatus> transactionStatusMono = soaApiClient.getClientStatus(transactionId, loginId, userType);
 
-    StepVerifier.create(clientStatusMono)
-        .expectNextMatches(clientStatus -> clientStatus == mockClientStatus)
+    StepVerifier.create(transactionStatusMono)
+        .expectNextMatches(transactionStatus -> transactionStatus == mockTransactionStatus)
         .verifyComplete();
   }
 
@@ -579,15 +579,15 @@ class SoaApiClientTest {
     when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(
         requestHeadersMock);
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(ClientStatus.class)).thenReturn(Mono.error(
+    when(responseMock.bodyToMono(TransactionStatus.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
     when(soaApiClientErrorHandler.handleClientStatusError(eq(transactionId),
         any(WebClientResponseException.class))).thenReturn(Mono.empty());
 
-    Mono<ClientStatus> clientStatusMono = soaApiClient.getClientStatus(transactionId, loginId, userType);
+    Mono<TransactionStatus> transactionStatusMono = soaApiClient.getClientStatus(transactionId, loginId, userType);
 
-    StepVerifier.create(clientStatusMono)
+    StepVerifier.create(transactionStatusMono)
         .verifyComplete();
   }
 
