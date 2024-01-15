@@ -58,6 +58,10 @@ public class ApplicationSearchController {
 
   private final CaseSearchCriteriaValidator searchCriteriaValidator;
 
+  protected static final String CURRENT_URL = "currentUrl";
+
+  protected static final String CASE_RESULTS_PAGE = "caseResultsPage";
+
   /**
    * Provides an instance of {@link CaseSearchCriteria} for use in the model.
    *
@@ -152,8 +156,8 @@ public class ApplicationSearchController {
     ApplicationDetails applicationDetails = applicationMapper.toApplicationDetails(
         PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), caseSearchResults));
 
-    model.addAttribute("currentUrl",  request.getRequestURL().toString());
-    model.addAttribute("caseResultsPage", applicationDetails);
+    model.addAttribute(CURRENT_URL,  request.getRequestURL().toString());
+    model.addAttribute(CASE_RESULTS_PAGE, applicationDetails);
     return "application/application-search-results";
   }
 
