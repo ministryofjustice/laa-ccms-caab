@@ -135,8 +135,8 @@ public class ClientSubmissionsInProgressControllerTest {
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
 
-    final ClientStatus clientStatus = new ClientStatus();
-    clientStatus.setClientReferenceNumber("123456");
+    final TransactionStatus clientStatus = new TransactionStatus();
+    clientStatus.setReferenceNumber("123456");
 
     when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
 
@@ -154,7 +154,7 @@ public class ClientSubmissionsInProgressControllerTest {
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
 
-    final ClientStatus clientStatus = new ClientStatus();
+    final TransactionStatus clientStatus = new TransactionStatus();
 
     when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
 
