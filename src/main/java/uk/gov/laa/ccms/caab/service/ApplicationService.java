@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
@@ -50,18 +51,23 @@ import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
 import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplication;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
+import uk.gov.laa.ccms.caab.model.LinkedCase;
+import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.Proceeding;
+import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -124,7 +130,10 @@ public class ApplicationService {
 
   private final LookupService lookupService;
 
+  private final ResultDisplayMapper resultDisplayMapper;
+
   private final SearchConstants searchConstants;
+
 
   private static final String UPDATE_APPLICATION_APPLICATION_TYPE = "application-type";
   private static final String UPDATE_APPLICATION_CORRESPONDENCE_ADDRESS = "correspondence-address";
@@ -207,11 +216,11 @@ public class ApplicationService {
    * Query for Applications in the TDS based on the supplied search criteria.
    *
    * @param caseSearchCriteria - the search criteria
-   * @param page - the page number
-   * @param size - the page size
+   * @param page               - the page number
+   * @param size               - the page size
    * @return ApplicationDetails containing a List of BaseApplication.
    */
-  public uk.gov.laa.ccms.caab.model.ApplicationDetails getTdsApplications(
+  public ApplicationDetails getTdsApplications(
       final CaseSearchCriteria caseSearchCriteria,
       final Integer page,
       final Integer size) {
@@ -493,6 +502,69 @@ public class ApplicationService {
   public AddressFormData getCorrespondenceAddressFormData(final String id) {
     return caabApiClient.getCorrespondenceAddress(id)
         .map(addressFormDataMapper::toAddressFormData).block();
+  }
+
+  /**
+   * Retrieves linked cases associated with a specific application id.
+   * This method fetches a list of linked cases, transforms them into a
+   * {@code ResultsDisplay<LinkedCaseResultRowDisplay>} format, and returns the result.
+   *
+   * @param applicationId The unique identifier for the cases to be retrieved.
+   * @return A {@code ResultsDisplay<LinkedCaseResultRowDisplay>} containing the linked cases.
+   */
+  public ResultsDisplay<LinkedCaseResultRowDisplay> getLinkedCases(final String applicationId) {
+    final ResultsDisplay<LinkedCaseResultRowDisplay> results = new ResultsDisplay<>();
+
+    return caabApiClient.getLinkedCases(applicationId)
+        .flatMapMany(Flux::fromIterable) // Convert to Flux<LinkedCase>
+        .map(resultDisplayMapper::toLinkedCaseResultRowDisplay) // Map to ResultRowDisplay
+        .collectList() // Collect into a List
+        .map(list -> {
+          results.setContent(list); // Set the content of ResultsDisplay
+          return results; // Return the populated ResultsDisplay
+        }).block();
+  }
+
+  /**
+   * Removes a linked case from a primary case.
+   * This method communicates with the CAAB API client to un-link a case identified by
+   * {@code linkedCaseId} from a primary case identified by {@code id}.
+   *
+   * @param applicationId The id of the application for which linked cases should be retrieved
+   * @param linkedCaseId The ID of the linked case to be removed.
+   * @param user         The user performing the operation, identified by {@code UserDetail}.
+   */
+  public void removeLinkedCase(
+      final String applicationId,
+      final String linkedCaseId,
+      final UserDetail user) {
+    caabApiClient.removeLinkedCase(applicationId, linkedCaseId, user.getLoginId()).block();
+  }
+
+  /**
+   * Updates a specific linked case with new data.
+   * This method maps the provided {@code data} to a {@code LinkedCase} object and updates
+   * the linked case identified by {@code linkedCaseId} in relation to the primary case
+   * identified by {@code id}.
+   *
+   * @param applicationId The ID of the case related to the linked case.
+   * @param linkedCaseId The ID of the linked case to be updated.
+   * @param data         The new data for the linked case, encapsulated in
+   *                     {@code LinkedCaseResultRowDisplay}.
+   * @param user         The user performing the update, identified by {@code UserDetail}.
+   */
+  public void updateLinkedCase(
+      final String applicationId,
+      final String linkedCaseId,
+      final LinkedCaseResultRowDisplay data,
+      final UserDetail user) {
+
+    final LinkedCase linkedCase = resultDisplayMapper.toLinkedCase(data);
+    caabApiClient.updateLinkedCase(
+        applicationId,
+        linkedCaseId,
+        linkedCase, 
+        user.getLoginId()).block();
   }
 
   /**

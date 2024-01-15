@@ -129,4 +129,42 @@ public class ClientSubmissionsInProgressControllerTest {
         .andExpect(redirectedUrl("/submissions/client-create/failed"));
   }
 
+  @Test
+  void testClientUpdateSubmission_withClientReferenceNumber() throws Exception {
+    final UserDetail user = new UserDetail();
+    user.setLoginId("testLogin");
+    user.setUserType("testUserType");
+
+    final TransactionStatus clientStatus = new TransactionStatus();
+    clientStatus.setReferenceNumber("123456");
+
+    when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
+
+    mockMvc.perform(
+            get("/submissions/client-update")
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
+                .sessionAttr(USER_DETAILS, user))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/submissions/client-update/confirmed"));
+  }
+
+  @Test
+  void testClientUpdateSubmission_withoutClientReferenceNumber() throws Exception {
+    final UserDetail user = new UserDetail();
+    user.setLoginId("testLogin");
+    user.setUserType("testUserType");
+
+    final TransactionStatus clientStatus = new TransactionStatus();
+
+    when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
+
+    mockMvc.perform(
+            get("/submissions/client-update")
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
+                .sessionAttr(USER_DETAILS, user))
+        .andExpect(status().isOk())
+        .andExpect(view().name("submissions/submissionInProgress"));
+  }
+
+
 }

@@ -158,9 +158,9 @@ public class ProviderService {
    * @return List of contact details representing fee earners for the specified office.
    */
   public ContactDetail getFeeEarnerByOfficeAndId(
-      ProviderDetail provider,
-      Integer officeId,
-      Integer feeEarnerId) {
+      final ProviderDetail provider,
+      final Integer officeId,
+      final Integer feeEarnerId) {
 
     return getFeeEarnersByOffice(provider, officeId)
         .stream()

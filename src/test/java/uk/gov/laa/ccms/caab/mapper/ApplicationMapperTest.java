@@ -89,7 +89,8 @@ import uk.gov.laa.ccms.soa.gateway.model.TimeRelatedAward;
 
 public class ApplicationMapperTest {
 
-  private final ApplicationMapper applicationMapper = new ApplicationMapperImpl();
+  private final ApplicationMapper applicationMapper = new ApplicationMapperImpl() {
+  };
 
   @Test
   void testToApplicationDetailDevolvedPowers() {

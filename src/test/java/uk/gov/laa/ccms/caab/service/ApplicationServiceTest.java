@@ -39,12 +39,14 @@ import java.math.BigDecimal;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,6 +57,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
@@ -63,13 +66,16 @@ import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
+import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
+import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
@@ -79,6 +85,9 @@ import uk.gov.laa.ccms.caab.model.AuditDetail;
 import uk.gov.laa.ccms.caab.model.BaseApplication;
 import uk.gov.laa.ccms.caab.model.Client;
 import uk.gov.laa.ccms.caab.model.CostStructure;
+import uk.gov.laa.ccms.caab.model.LinkedCase;
+import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
@@ -135,6 +144,12 @@ class ApplicationServiceTest {
 
   @Mock
   private ApplicationMapper applicationMapper;
+
+  @Mock
+  private AddressFormDataMapper addressFormDataMapper;
+
+  @Mock
+  private ResultDisplayMapper resultDisplayMapper;
 
   @Mock
   private CopyApplicationMapper copyApplicationMapper;
@@ -824,9 +839,9 @@ class ApplicationServiceTest {
 
   @Test
   void testGetApplicationTypeFormData() {
-    String id = "12345";
-    ApplicationFormData mockApplicationFormData = new ApplicationFormData();
-    ApplicationType applicationType = new ApplicationType();
+    final String id = "12345";
+    final ApplicationFormData mockApplicationFormData = new ApplicationFormData();
+    final ApplicationType applicationType = new ApplicationType();
     // Set up any necessary mocks for caabApiClient.getApplicationType
 
     when(caabApiClient.getApplicationType(id))
@@ -834,34 +849,127 @@ class ApplicationServiceTest {
     when(applicationFormDataMapper.toApplicationTypeFormData(applicationType))
         .thenReturn(mockApplicationFormData);
 
-    ApplicationFormData result = applicationService.getApplicationTypeFormData(id);
+    final ApplicationFormData result = applicationService.getApplicationTypeFormData(id);
 
     assertEquals(mockApplicationFormData, result);
   }
 
   @Test
   void testGetProviderDetailsFormData() {
-    String id = "12345";
-    ApplicationFormData mockApplicationFormData = new ApplicationFormData();
-    ApplicationProviderDetails providerDetails = new ApplicationProviderDetails();
+    final String id = "12345";
+    final ApplicationFormData mockApplicationFormData = new ApplicationFormData();
+    final ApplicationProviderDetails providerDetails = new ApplicationProviderDetails();
 
     when(caabApiClient.getProviderDetails(id))
         .thenReturn(Mono.just(providerDetails));
     when(applicationFormDataMapper.toApplicationProviderDetailsFormData(providerDetails))
         .thenReturn(mockApplicationFormData);
 
-    ApplicationFormData result = applicationService.getProviderDetailsFormData(id);
+    final ApplicationFormData result = applicationService.getProviderDetailsFormData(id);
 
     assertEquals(mockApplicationFormData, result);
   }
 
   @Test
-  void testPatchApplicationType() throws ParseException {
-    String id = "12345";
-    ApplicationFormData applicationFormData = new ApplicationFormData();
-    UserDetail user = new UserDetail().loginId("TEST123");
+  void testGetCorrespondenceAddressFormData() {
+    final String id = "12345";
+    final Address mockAddress = new Address();
+    final AddressFormData expectedAddressFormData = new AddressFormData();
 
-    ApplicationType mockApplicationType = new ApplicationType();
+    when(caabApiClient.getCorrespondenceAddress(id)).thenReturn(Mono.just(mockAddress));
+
+    when(addressFormDataMapper.toAddressFormData(mockAddress)).thenReturn(expectedAddressFormData);
+
+    final AddressFormData result = applicationService.getCorrespondenceAddressFormData(id);
+
+    assertNotNull(result);
+    assertEquals(expectedAddressFormData, result);
+
+    verify(caabApiClient).getCorrespondenceAddress(id);
+    verify(addressFormDataMapper).toAddressFormData(mockAddress);
+  }
+
+  @Test
+  void testGetLinkedCases() {
+    final String id = "12345";
+    final List<LinkedCase> mockLinkedCases = Arrays.asList(new LinkedCase(), new LinkedCase());
+    final List<LinkedCaseResultRowDisplay> expectedLinkedCaseDisplays = Arrays.asList(
+        new LinkedCaseResultRowDisplay(), new LinkedCaseResultRowDisplay());
+
+    when(caabApiClient.getLinkedCases(id)).thenReturn(Mono.just(mockLinkedCases));
+
+    IntStream.range(0, mockLinkedCases.size())
+        .forEach(i -> when(resultDisplayMapper.toLinkedCaseResultRowDisplay(mockLinkedCases.get(i)))
+            .thenReturn(expectedLinkedCaseDisplays.get(i)));
+
+    final ResultsDisplay<LinkedCaseResultRowDisplay> result = applicationService.getLinkedCases(id);
+
+    assertNotNull(result);
+    assertEquals(expectedLinkedCaseDisplays, result.getContent());
+
+    verify(caabApiClient).getLinkedCases(id);
+  }
+
+  @Test
+  void removeLinkedCase_success() {
+    final String primaryCaseId = "12345";
+    final String linkedCaseId = "67890";
+    final UserDetail user = new UserDetail().loginId("userLoginId");
+
+    when(caabApiClient.removeLinkedCase(primaryCaseId, linkedCaseId, user.getLoginId()))
+        .thenReturn(Mono.empty());
+
+    applicationService.removeLinkedCase(primaryCaseId, linkedCaseId, user);
+
+    verify(caabApiClient).removeLinkedCase(primaryCaseId, linkedCaseId, user.getLoginId());
+  }
+
+  @Test
+  void updateLinkedCase_success() {
+    final String id = "primaryCaseId";
+    final String linkedCaseId = "linkedCaseId";
+    final LinkedCaseResultRowDisplay data = new LinkedCaseResultRowDisplay();
+    final UserDetail user = new UserDetail().loginId("userLoginId");
+    final LinkedCase linkedCase = new LinkedCase();
+
+    when(resultDisplayMapper.toLinkedCase(data)).thenReturn(linkedCase);
+    when(caabApiClient.updateLinkedCase(id, linkedCaseId, linkedCase, user.getLoginId())).thenReturn(Mono.empty());
+
+    applicationService.updateLinkedCase(id, linkedCaseId, data, user);
+
+    verify(resultDisplayMapper).toLinkedCase(data);
+    verify(caabApiClient).updateLinkedCase(id, linkedCaseId, linkedCase, user.getLoginId());
+  }
+
+  @Test
+  void updateCorrespondenceAddress_success() {
+    final String id = "applicationId";
+    final AddressFormData addressFormData = new AddressFormData();
+    final UserDetail user = new UserDetail().loginId("userLoginId");
+    final Address correspondenceAddress = new Address();
+
+    when(addressFormDataMapper.toAddress(addressFormData)).thenReturn(correspondenceAddress);
+    when(caabApiClient.putApplication(
+        id,
+        user.getLoginId(),
+        correspondenceAddress,
+        "correspondence-address")).thenReturn(Mono.empty());
+
+    applicationService.updateCorrespondenceAddress(id, addressFormData, user);
+
+    verify(addressFormDataMapper).toAddress(addressFormData);
+    verify(caabApiClient).putApplication(
+        id,
+        user.getLoginId(),
+        correspondenceAddress,
+        "correspondence-address");
+  }
+
+  @Test
+  void testPatchApplicationType() throws ParseException {
+    final String id = "12345";
+    final ApplicationFormData applicationFormData = new ApplicationFormData();
+    final UserDetail user = new UserDetail().loginId("TEST123");
 
     when(caabApiClient.putApplication(eq(id), eq(user.getLoginId()), any(), eq("application-type")))
         .thenReturn(Mono.empty());
@@ -874,15 +982,15 @@ class ApplicationServiceTest {
 
   @Test
   void testBuildCaseOutcomeMappingContext() {
-    CaseDetail soaCase = buildCaseDetail("anytype");
-    List<ProceedingMappingContext> proceedingMappingContexts = Collections.singletonList(
+    final CaseDetail soaCase = buildCaseDetail("anytype");
+    final List<ProceedingMappingContext> proceedingMappingContexts = Collections.singletonList(
         ProceedingMappingContext.builder().build());
 
-    AwardTypeLookupDetail awardTypes = buildAwardTypeLookupDetail(soaCase);
+    final AwardTypeLookupDetail awardTypes = buildAwardTypeLookupDetail(soaCase);
 
     when(lookupService.getAwardTypes()).thenReturn(Mono.just(awardTypes));
 
-    CaseOutcomeMappingContext result = applicationService.buildCaseOutcomeMappingContext(
+    final CaseOutcomeMappingContext result = applicationService.buildCaseOutcomeMappingContext(
         soaCase,
         proceedingMappingContexts);
 
@@ -1247,7 +1355,7 @@ class ApplicationServiceTest {
 
   @Test
   void testAddProceedingOutcomeContext_NullOutcome() {
-    ProceedingDetail soaProceeding = buildProceedingDetail(STATUS_DRAFT);
+    final ProceedingDetail soaProceeding = buildProceedingDetail(STATUS_DRAFT);
     soaProceeding.setOutcome(null);
 
     applicationService.addProceedingOutcomeContext(
@@ -1258,7 +1366,7 @@ class ApplicationServiceTest {
 
   @Test
   void testBuildApplicationMappingContext_DevolvedPowersAllDraftProceedings() {
-    CaseDetail soaCase = buildCaseDetail(APP_TYPE_EMERGENCY_DEVOLVED_POWERS);
+    final CaseDetail soaCase = buildCaseDetail(APP_TYPE_EMERGENCY_DEVOLVED_POWERS);
     soaCase.getApplicationDetails().getProceedings().forEach(
         proceedingDetail -> {
           // Clear the outcome and scopelimitations from all proceedings - this is tested elsewhere
@@ -1323,42 +1431,37 @@ class ApplicationServiceTest {
     ApplicationMappingContext result =
         applicationService.buildApplicationMappingContext(soaCase);
 
-//    StepVerifier.create(resultMono)
-//        .expectNextMatches(result -> {
-          assertNotNull(result);
-          assertEquals(soaCase, result.getSoaCaseDetail());
-          assertEquals(applicationTypeLookup, result.getApplicationType());
-          assertEquals(providerDetail, result.getProviderDetail());
-          assertEquals(providerDetail.getOffices().get(2), result.getProviderOffice());
-          assertEquals(providerDetail.getOffices().get(2).getFeeEarners().get(0),
-              result.getFeeEarnerContact());
-          assertEquals(providerDetail.getOffices().get(2).getFeeEarners().get(1),
-              result.getSupervisorContact());
-          assertTrue(result.getCaseWithOnlyDraftProceedings());
-          assertTrue(result.getDevolvedPowers().getKey());
-          assertEquals(soaCase.getApplicationDetails().getDevolvedPowersDate(),
-              result.getDevolvedPowers().getValue());
+    assertNotNull(result);
+    assertEquals(soaCase, result.getSoaCaseDetail());
+    assertEquals(applicationTypeLookup, result.getApplicationType());
+    assertEquals(providerDetail, result.getProviderDetail());
+    assertEquals(providerDetail.getOffices().get(2), result.getProviderOffice());
+    assertEquals(providerDetail.getOffices().get(2).getFeeEarners().get(0),
+        result.getFeeEarnerContact());
+    assertEquals(providerDetail.getOffices().get(2).getFeeEarners().get(1),
+        result.getSupervisorContact());
+    assertTrue(result.getCaseWithOnlyDraftProceedings());
+    assertTrue(result.getDevolvedPowers().getKey());
+    assertEquals(soaCase.getApplicationDetails().getDevolvedPowersDate(),
+        result.getDevolvedPowers().getValue());
 
-          // Category of law has an overall totalPaidToDate of 10.
-          // Two cost limitations in the category of law, with a paidToDate of 1 for each.
-          assertEquals(8, result.getCurrentProviderBilledAmount().intValue());
+    // Category of law has an overall totalPaidToDate of 10.
+    // Two cost limitations in the category of law, with a paidToDate of 1 for each.
+    assertEquals(8, result.getCurrentProviderBilledAmount().intValue());
 
-          // Case is draft-only, so amendmentProceedings should be empty.
-          assertTrue(result.getAmendmentProceedingsInEbs().isEmpty());
-          assertEquals(soaCase.getApplicationDetails().getProceedings().size(),
-              result.getProceedings().size());
+    // Case is draft-only, so amendmentProceedings should be empty.
+    assertTrue(result.getAmendmentProceedingsInEbs().isEmpty());
+    assertEquals(soaCase.getApplicationDetails().getProceedings().size(),
+        result.getProceedings().size());
 
-          assertNotNull(result.getCaseOutcome());
-          assertEquals(soaCase.getApplicationDetails().getProceedings().size(),
-              result.getCaseOutcome().getProceedingOutcomes().size());
+    assertNotNull(result.getCaseOutcome());
+    assertEquals(soaCase.getApplicationDetails().getProceedings().size(),
+        result.getCaseOutcome().getProceedingOutcomes().size());
 
-          assertNotNull(result.getMeansAssessment());
-          assertNotNull(result.getMeritsAssessment());
+    assertNotNull(result.getMeansAssessment());
+    assertNotNull(result.getMeritsAssessment());
 
-          assertTrue(result.getPriorAuthorities().isEmpty());
-//          return true;
-//        })
-//        .verifyComplete();
+    assertTrue(result.getPriorAuthorities().isEmpty());
   }
 
   @Test
@@ -1425,27 +1528,23 @@ class ApplicationServiceTest {
         new AwardTypeLookupDetail()
             .addContentItem(new AwardTypeLookupValueDetail())));
 
-    ApplicationMappingContext result =
+    final ApplicationMappingContext result =
         applicationService.buildApplicationMappingContext(soaCase);
 
-//    StepVerifier.create(resultMono)
-//        .expectNextMatches(result -> {
-          assertNotNull(result);
+    assertNotNull(result);
 
-          assertFalse(result.getCaseWithOnlyDraftProceedings());
-          assertFalse(result.getDevolvedPowers().getKey());
-          assertNull(result.getDevolvedPowers().getValue());
+    assertFalse(result.getCaseWithOnlyDraftProceedings());
+    assertFalse(result.getDevolvedPowers().getKey());
+    assertNull(result.getDevolvedPowers().getValue());
 
-          // Proceedings should be split between the two lists
-          assertEquals(1, result.getAmendmentProceedingsInEbs().size());
-          assertEquals(1, result.getProceedings().size());
-//          return true;
-//        })
-//        .verifyComplete();
+    // Proceedings should be split between the two lists
+    assertEquals(1, result.getAmendmentProceedingsInEbs().size());
+    assertEquals(1, result.getProceedings().size());
+
   }
 
   private ApplicationFormData buildApplicationFormData() {
-    ApplicationFormData applicationFormData = new ApplicationFormData();
+    final ApplicationFormData applicationFormData = new ApplicationFormData();
     applicationFormData.setOfficeId(1);
     applicationFormData.setCategoryOfLawId("COL");
     applicationFormData.setExceptionalFunding(false);
@@ -1458,7 +1557,7 @@ class ApplicationServiceTest {
   }
 
   public ClientDetail buildClientInformation() {
-    String clientReferenceNumber = "12345";
+    final String clientReferenceNumber = "12345";
     return new ClientDetail()
         .clientReferenceNumber(clientReferenceNumber)
         .details(new ClientDetailDetails()

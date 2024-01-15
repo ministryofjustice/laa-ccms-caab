@@ -22,7 +22,7 @@ import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
-import uk.gov.laa.ccms.caab.mapper.ClientResultDisplayMapper;
+import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
@@ -42,7 +42,7 @@ public class ClientSearchResultsController {
 
   private final ClientService clientService;
 
-  private final ClientResultDisplayMapper clientResultDisplayMapper;
+  private final ResultDisplayMapper resultDisplayMapper;
 
   private final SearchConstants searchConstants;
 
@@ -81,7 +81,7 @@ public class ClientSearchResultsController {
       model.addAttribute("currentUrl", currentUrl);
 
       model.addAttribute(CLIENT_SEARCH_RESULTS,
-              clientResultDisplayMapper.toClientResultsDisplay(clientSearchResults));
+              resultDisplayMapper.toClientResultsDisplay(clientSearchResults));
 
       return "application/application-client-search-results";
     } else {

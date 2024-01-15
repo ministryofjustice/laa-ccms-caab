@@ -12,7 +12,7 @@ import uk.gov.laa.ccms.caab.client.OrdinanceSurveyApiClient;
 import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ClientAddressResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
-import uk.gov.laa.ccms.caab.model.AddressResultsDisplay;
+import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResponse;
 
 /**
@@ -38,13 +38,13 @@ public class AddressService {
    * @return ClientAddressResultsDisplay containing a list of addresses associated with the given
    *         postcode.Returns an empty ClientAddressResultsDisplay if no results are found.
    */
-  public AddressResultsDisplay getAddresses(final String postcode) {
+  public ResultsDisplay<AddressResultRowDisplay> getAddresses(final String postcode) {
     final OrdinanceSurveyResponse response =
         ordinanceSurveyApiClient.getAddresses(postcode).block();
 
     return response.getResults() != null
         ? clientAddressResultDisplayMapper.toClientAddressResultsDisplay(response)
-        : new AddressResultsDisplay();
+        : new ResultsDisplay<AddressResultRowDisplay>();
   }
 
   /**
@@ -55,8 +55,8 @@ public class AddressService {
    * @return ClientAddressResultsDisplay containing a filtered list of addresses.
    *         Returns the original list if no addresses match the filter.
    */
-  public AddressResultsDisplay filterByHouseNumber(
-      final String houseNameNumber, final AddressResultsDisplay results) {
+  public ResultsDisplay<AddressResultRowDisplay> filterByHouseNumber(
+      final String houseNameNumber, final ResultsDisplay<AddressResultRowDisplay> results) {
 
     final List<AddressResultRowDisplay> filteredAddressList =
         results.getContent().stream()
@@ -64,7 +64,8 @@ public class AddressService {
             .equalsIgnoreCase(houseNameNumber))
         .collect(Collectors.toList());
 
-    final AddressResultsDisplay filteredResults = new AddressResultsDisplay();
+    final ResultsDisplay<AddressResultRowDisplay> filteredResults =
+        new ResultsDisplay<>();
     filteredResults.setContent(filteredAddressList);
 
     return filteredAddressList.isEmpty() ? results : filteredResults;
@@ -80,7 +81,7 @@ public class AddressService {
    */
   public void addAddressToClientDetails(
       final String uprn,
-      final AddressResultsDisplay results,
+      final ResultsDisplay<AddressResultRowDisplay> results,
       final ClientFormDataAddressDetails addressDetails) {
 
     final AddressResultRowDisplay clientAddress = (results != null)
@@ -106,7 +107,7 @@ public class AddressService {
    */
   public void filterAndUpdateAddressFormData(
       final String uprn,
-      final AddressResultsDisplay results,
+      final ResultsDisplay<AddressResultRowDisplay> results,
       final AddressFormData addressFormData) {
 
     final AddressResultRowDisplay addressResultRowDisplay = (results != null)

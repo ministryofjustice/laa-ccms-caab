@@ -12,19 +12,26 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
+import uk.gov.laa.ccms.caab.bean.validators.application.LinkedCaseValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.CorrespondenceAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
-import uk.gov.laa.ccms.caab.model.AddressResultsDisplay;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.service.ProviderService;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -38,10 +45,12 @@ public class EditGeneralDetailsSectionController {
   private final ApplicationService applicationService;
   private final AddressService addressService;
   private final LookupService lookupService;
+  private final ProviderService providerService;
 
   private final FindAddressValidator findAddressValidator;
   private final AddressSearchValidator addressSearchValidator;
   private final CorrespondenceAddressValidator correspondenceAddressValidator;
+  private final LinkedCaseValidator linkedCaseValidator;
 
   private static final String ACTION_FIND_ADDRESS = "find_address";
 
@@ -69,7 +78,7 @@ public class EditGeneralDetailsSectionController {
       model.addAttribute("addressDetails", addressDetails);
     }
 
-    populateDropdowns(model);
+    populateCorrespondenceAddressDropdowns(model);
 
     return "application/summary/correspondence-address-details";
   }
@@ -104,13 +113,13 @@ public class EditGeneralDetailsSectionController {
     }
 
     if (bindingResult.hasErrors()) {
-      populateDropdowns(model);
+      populateCorrespondenceAddressDropdowns(model);
       session.setAttribute("addressDetails", addressDetails);
       return "application/summary/correspondence-address-details";
     }
 
     if (ACTION_FIND_ADDRESS.equals(action)) {
-      AddressResultsDisplay addressSearchResults =
+      ResultsDisplay<AddressResultRowDisplay> addressSearchResults =
           addressService.getAddresses(addressDetails.getPostcode());
 
       if (addressSearchResults.getContent() == null) {
@@ -125,7 +134,7 @@ public class EditGeneralDetailsSectionController {
       }
 
       if (bindingResult.hasErrors()) {
-        populateDropdowns(model);
+        populateCorrespondenceAddressDropdowns(model);
         session.setAttribute("addressDetails", addressDetails);
         return "application/summary/correspondence-address-details";
       }
@@ -141,6 +150,15 @@ public class EditGeneralDetailsSectionController {
     }
   }
 
+  private void populateCorrespondenceAddressDropdowns(final Model model) {
+    new DropdownBuilder(model)
+        .addDropdown("countries",
+            lookupService.getCountries())
+        .addDropdown("caseAddressOptions",
+            lookupService.getCaseAddressOptions())
+        .build();
+  }
+
   /**
    * Handles the GET request for edit correspondence address search page.
    *
@@ -152,7 +170,7 @@ public class EditGeneralDetailsSectionController {
   @GetMapping("/application/summary/correspondence-address/search")
   public String correspondenceAddressGet(
       @SessionAttribute(ADDRESS_SEARCH_RESULTS)
-      final AddressResultsDisplay addressResultsDisplay,
+      final ResultsDisplay<AddressResultRowDisplay> addressResultsDisplay,
       @ModelAttribute("addressSearch") final AddressSearchFormData addressSearch,
       final Model model) {
 
@@ -177,7 +195,7 @@ public class EditGeneralDetailsSectionController {
    */
   @PostMapping("/application/summary/correspondence-address/search")
   public String correspondenceAddressSearchPost(
-      @SessionAttribute(ADDRESS_SEARCH_RESULTS) final AddressResultsDisplay
+      @SessionAttribute(ADDRESS_SEARCH_RESULTS) final ResultsDisplay<AddressResultRowDisplay>
           addressResultsDisplay,
       @SessionAttribute("addressDetails") final AddressFormData addressDetails,
       @ModelAttribute("addressSearch") final AddressSearchFormData addressSearch,
@@ -206,12 +224,167 @@ public class EditGeneralDetailsSectionController {
     return "redirect:/application/summary/correspondence-address";
   }
 
-  private void populateDropdowns(final Model model) {
+  /**
+   * Handles the GET request for retrieving linked cases associated with an application.
+   *
+   * @param applicationId the ID of the application, retrieved from the session attribute
+   * @param model the Spring Model to pass attributes to the view
+   * @param session the HttpSession object
+   * @return the path to the linked cases summary view
+   */
+  @GetMapping("/application/summary/linked-cases")
+  public String linkedCasesGet(
+      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      final Model model,
+      final HttpSession session) {
+
+
+    final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases =
+        applicationService.getLinkedCases(applicationId);
+
+    model.addAttribute("linkedCases", linkedCases);
+    session.setAttribute("linkedCases", linkedCases);
+
+    return "application/summary/application-linked-case-summary";
+  }
+
+  /**
+   * Handles the GET request for displaying the page to remove a linked case.
+   *
+   * @param linkedCaseId the ID of the linked case to remove
+   * @param linkedCases the ResultsDisplay object containing linked case information
+   * @param model the Spring Model to pass attributes to the view
+   * @return the path to the linked case removal view
+   */
+  @GetMapping("/application/summary/linked-cases/{linked-case-id}/remove")
+  public String removeLinkedCaseGet(
+      @PathVariable("linked-case-id") final Integer linkedCaseId,
+      @SessionAttribute("linkedCases") final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases,
+      final Model model) {
+
+    final LinkedCaseResultRowDisplay linkedCase = linkedCases.getContent() == null ? null :
+        linkedCases.getContent().stream()
+            .filter(lc -> linkedCaseId.equals(lc.getId()))
+            .findFirst()
+            .orElse(null);
+
+    model.addAttribute("linkedCase", linkedCase);
+
+    return "application/summary/application-linked-case-remove";
+  }
+
+  /**
+   * Handles the POST request for removing a linked case.
+   *
+   * @param linkedCaseId the ID of the linked case to remove
+   * @param applicationId the application ID from the session attribute
+   * @param user the user details from the session attribute
+   * @return a redirect path to the linked cases summary
+   */
+  @PostMapping("/application/summary/linked-cases/{linked-case-id}/remove")
+  public String removeLinkedCasePost(
+      @PathVariable("linked-case-id") final String linkedCaseId,
+      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @SessionAttribute(USER_DETAILS) final UserDetail user) {
+
+    applicationService.removeLinkedCase(applicationId, linkedCaseId, user);
+
+    return "redirect:/application/summary/linked-cases";
+  }
+
+  /**
+   * Handles the GET request for displaying the page to confirm details of a linked case.
+   *
+   * @param linkedCaseId the ID of the linked case to confirm
+   * @param linkedCases the ResultsDisplay object containing linked case information
+   * @param model the Spring Model to pass attributes to the view
+   * @return the path to the linked case confirmation view
+   */
+  @GetMapping("/application/summary/linked-cases/{linked-case-id}/confirm")
+  public String confirmLinkedCaseGet(
+      @PathVariable("linked-case-id") final Integer linkedCaseId,
+      @SessionAttribute("linkedCases") final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases,
+      final Model model) {
+
+    final LinkedCaseResultRowDisplay linkedCase = linkedCases.getContent() == null ? null :
+        linkedCases.getContent().stream()
+            .filter(lc -> linkedCaseId.equals(lc.getId()))
+            .findFirst()
+            .orElse(null);
+
+    model.addAttribute("linkedCase", linkedCase);
+
+    populateLinkedCasesConfirmDropdowns(model);
+
+    return "application/summary/application-linked-case-confirm";
+  }
+
+  /**
+   * Handles the POST request for confirming details of a linked case.
+   *
+   * @param linkedCaseId the ID of the linked case to confirm
+   * @param applicationId the application ID from the session attribute
+   * @param user the user details from the session attribute
+   * @param linkedCase the LinkedCaseResultRowDisplay object containing linked case details
+   * @param bindingResult the BindingResult to capture validation errors
+   * @param model the Spring Model to pass attributes to the view
+   * @return a redirect path to the linked cases summary or the confirmation view on error
+   */
+  @PostMapping("/application/summary/linked-cases/{linked-case-id}/confirm")
+  public String confirmLinkedCasePost(
+      @PathVariable("linked-case-id") final String linkedCaseId,
+      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @ModelAttribute("linkedCase") final LinkedCaseResultRowDisplay linkedCase,
+      final BindingResult bindingResult,
+      final Model model) {
+
+    linkedCaseValidator.validate(linkedCase, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      model.addAttribute("linkedCase", linkedCase);
+      populateLinkedCasesConfirmDropdowns(model);
+      return "application/summary/application-linked-case-confirm";
+    }
+
+    applicationService.updateLinkedCase(applicationId, linkedCaseId, linkedCase, user);
+
+    return "redirect:/application/summary/linked-cases";
+  }
+
+  /**
+   * Populates the model with dropdown options for confirming a linked case.
+   *
+   * @param model the Spring Model to pass attributes for dropdowns
+   */
+  private void populateLinkedCasesConfirmDropdowns(final Model model) {
     new DropdownBuilder(model)
-        .addDropdown("countries",
-            lookupService.getCountries())
-        .addDropdown("caseAddressOptions",
-            lookupService.getCaseAddressOptions())
+        .addDropdown("caseLinkOptions",
+            lookupService.getCaseLinkTypes())
         .build();
   }
+
+  /**
+   * Populates the model with dropdown options and additional attributes for linked case search.
+   *
+   * @param user the user details containing provider information
+   * @param model the Spring Model to pass attributes for dropdowns and additional data
+   */
+  private void populateLinkedCasesSearchDropdowns(final UserDetail user, final Model model) {
+    final ProviderDetail provider = providerService.getProvider(user.getProvider().getId()).block();
+    if (provider == null) {
+      throw new CaabApplicationException(
+          String.format("Failed to retrieve Provider with id: %s",
+              user.getProvider().getId()));
+    }
+
+    new DropdownBuilder(model)
+        .addDropdown("Status",
+            lookupService.getApplicationStatuses())
+        .build();
+
+    model.addAttribute("feeEarners", providerService.getAllFeeEarners(provider));
+    model.addAttribute("offices", user.getProvider().getOffices());
+  }
+
 }

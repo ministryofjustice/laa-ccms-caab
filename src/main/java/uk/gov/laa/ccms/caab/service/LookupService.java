@@ -1,7 +1,9 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_LINK_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
@@ -214,6 +216,25 @@ public class LookupService {
   public Mono<CommonLookupDetail> getCaseAddressOptions() {
     return ebsApiClient.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION);
   }
+
+  /**
+   * Get a list of Case link types Common Values.
+   *
+   * @return CommonLookupDetail containing the common lookup values.
+   */
+  public Mono<CommonLookupDetail> getCaseLinkTypes() {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE);
+  }
+
+  /**
+   * Get a list of Case/application statuses Common Values.
+   *
+   * @return CommonLookupDetail containing the common lookup values.
+   */
+  public Mono<CommonLookupDetail> getApplicationStatuses() {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_APPLICATION_STATUS);
+  }
+
 
   /**
    * Get a Correspondence Language Common Values.

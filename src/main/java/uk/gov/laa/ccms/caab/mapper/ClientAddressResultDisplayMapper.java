@@ -9,7 +9,7 @@ import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
-import uk.gov.laa.ccms.caab.model.AddressResultsDisplay;
+import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.os.DeliveryPointAddress;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResponse;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResult;
@@ -39,7 +39,7 @@ public interface ClientAddressResultDisplayMapper {
    * @return Mapped ClientAddressResultsDisplay object.
    */
   @Mapping(target = "content", source = "results")
-  AddressResultsDisplay toClientAddressResultsDisplay(
+  ResultsDisplay<AddressResultRowDisplay> toClientAddressResultsDisplay(
       OrdinanceSurveyResponse ordinanceSurveyResponse);
 
   /**

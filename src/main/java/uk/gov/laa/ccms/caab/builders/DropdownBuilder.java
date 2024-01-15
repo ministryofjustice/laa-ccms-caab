@@ -17,12 +17,14 @@ public class DropdownBuilder {
 
   private final Map<String, Mono<CommonLookupDetail>> monoMap;
 
-  public DropdownBuilder(Model model) {
+  public DropdownBuilder(final Model model) {
     this.model = model;
     this.monoMap = new LinkedHashMap<>();
   }
 
-  public DropdownBuilder addDropdown(String attributeName, Mono<CommonLookupDetail> mono) {
+  public DropdownBuilder addDropdown(
+      final String attributeName,
+      final Mono<CommonLookupDetail> mono) {
     monoMap.put(attributeName, mono);
     return this;
   }

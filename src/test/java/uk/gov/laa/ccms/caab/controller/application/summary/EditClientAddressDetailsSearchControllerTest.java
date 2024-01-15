@@ -23,10 +23,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
-import uk.gov.laa.ccms.caab.model.AddressResultsDisplay;
+import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,7 +45,7 @@ class EditClientAddressDetailsSearchControllerTest {
   private MockMvc mockMvc;
 
   private AddressSearchFormData addressSearch;
-  private AddressResultsDisplay searchResults;
+  private ResultsDisplay<AddressResultRowDisplay> searchResults;
   private ClientFlowFormData clientFlowFormData;
 
 
@@ -54,7 +55,7 @@ class EditClientAddressDetailsSearchControllerTest {
 
     addressSearch = new AddressSearchFormData();
 
-    searchResults = new AddressResultsDisplay();
+    searchResults = new ResultsDisplay<AddressResultRowDisplay>();
     searchResults.setContent(new ArrayList<>());
 
     clientFlowFormData = new ClientFlowFormData(ACTION_EDIT);

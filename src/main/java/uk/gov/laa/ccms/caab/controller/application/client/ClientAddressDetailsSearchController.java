@@ -17,7 +17,8 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
-import uk.gov.laa.ccms.caab.model.AddressResultsDisplay;
+import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
 
 /**
@@ -49,7 +50,7 @@ public class ClientAddressDetailsSearchController {
   @GetMapping("/application/client/details/address/search")
   public String clientDetailsAddressSearch(
       @SessionAttribute(ADDRESS_SEARCH_RESULTS)
-      AddressResultsDisplay clientAddressSearchResults,
+      ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults,
       @ModelAttribute("addressSearch") AddressSearchFormData addressSearch,
       Model model) {
 
@@ -71,7 +72,7 @@ public class ClientAddressDetailsSearchController {
    */
   @PostMapping("/application/client/details/address/search")
   public String clientDetailsAddressSearch(
-      @SessionAttribute(ADDRESS_SEARCH_RESULTS) AddressResultsDisplay
+      @SessionAttribute(ADDRESS_SEARCH_RESULTS) ResultsDisplay<AddressResultRowDisplay>
           clientAddressSearchResults,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @ModelAttribute("addressSearch") AddressSearchFormData addressSearch,

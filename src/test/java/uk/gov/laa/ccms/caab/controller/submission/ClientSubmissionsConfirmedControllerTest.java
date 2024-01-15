@@ -65,10 +65,10 @@ public class ClientSubmissionsConfirmedControllerTest {
 
   @Test
   void testSubmissionsConfirmed() throws Exception {
-    ApplicationFormData mockApplicationFormData = new ApplicationFormData(); // Assuming you have a constructor or a mock object
-    UserDetail user = buildUser();
-    String clientReferenceNumber = "TEST-REF";
-    ClientDetail clientInformation = buildClientInformation();
+    final ApplicationFormData mockApplicationFormData = new ApplicationFormData(); // Assuming you have a constructor or a mock object
+    final UserDetail user = buildUser();
+    final String clientReferenceNumber = "TEST-REF";
+    final ClientDetail clientInformation = buildClientInformation();
 
 
     when(clientService.getClient(clientReferenceNumber, user.getLoginId(),
@@ -83,6 +83,14 @@ public class ClientSubmissionsConfirmedControllerTest {
                 .sessionAttr(USER_DETAILS, user)
                 .sessionAttr(CLIENT_REFERENCE, clientReferenceNumber)
         )
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/summary"));
+  }
+
+  @Test
+  void testClientUpdateSubmitted() throws Exception {
+    mockMvc.perform(post("/submissions/client-update/confirmed"))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/summary"));
@@ -106,7 +114,7 @@ public class ClientSubmissionsConfirmedControllerTest {
   }
 
   public ClientDetail buildClientInformation() {
-    String clientReferenceNumber = "12345";
+    final String clientReferenceNumber = "12345";
     return new ClientDetail()
         .clientReferenceNumber(clientReferenceNumber)
         .details(new ClientDetailDetails()
