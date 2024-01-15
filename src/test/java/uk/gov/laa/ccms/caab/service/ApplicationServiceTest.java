@@ -21,6 +21,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBST
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCategoryOfLawLookupValueDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildPriorAuthorityTypeDetails;
@@ -55,11 +56,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
-import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper;
@@ -68,12 +71,15 @@ import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AuditDetail;
+import uk.gov.laa.ccms.caab.model.BaseApplication;
 import uk.gov.laa.ccms.caab.model.Client;
 import uk.gov.laa.ccms.caab.model.CostStructure;
+import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -98,6 +104,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
+import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
@@ -132,6 +139,9 @@ class ApplicationServiceTest {
   @Mock
   private CopyApplicationMapper copyApplicationMapper;
 
+  @Mock
+  private SearchConstants searchConstants;
+
   @InjectMocks
   private ApplicationService applicationService;
 
@@ -154,45 +164,218 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void getCases_ReturnsCaseDetails_Successful() {
-    CopyCaseSearchCriteria copyCaseSearchCriteria = new CopyCaseSearchCriteria();
-    copyCaseSearchCriteria.setCaseReference("123");
-    copyCaseSearchCriteria.setProviderCaseReference("456");
-    copyCaseSearchCriteria.setActualStatus("appl");
-    copyCaseSearchCriteria.setFeeEarnerId(789);
-    copyCaseSearchCriteria.setOfficeId(999);
-    copyCaseSearchCriteria.setClientSurname("asurname");
+  void getCases_UnSubmittedStatusDoesNotQuerySOA() {
+    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    caseSearchCriteria.setCaseReference("123");
+    caseSearchCriteria.setProviderCaseReference("456");
+    caseSearchCriteria.setFeeEarnerId(789);
+    caseSearchCriteria.setOfficeId(999);
+    caseSearchCriteria.setClientSurname("asurname");
+
+    caseSearchCriteria.setStatus(STATUS_UNSUBMITTED_ACTUAL_VALUE);
+
     String loginId = "user1";
     String userType = "userType";
     int page = 0;
     int size = 10;
 
-    CaseDetails mockCaseDetails = new CaseDetails();
+    ApplicationDetails mockApplicationDetails = new ApplicationDetails()
+        .addContentItem(new BaseApplication());
 
-    when(soaApiClient.getCases(copyCaseSearchCriteria, loginId, userType, page, size))
-        .thenReturn(Mono.just(mockCaseDetails));
+    when(caabApiClient.getApplications(caseSearchCriteria, page, size))
+        .thenReturn(Mono.just(mockApplicationDetails));
+    when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
 
-    Mono<CaseDetails> caseDetailsMono =
-        applicationService.getCases(copyCaseSearchCriteria, loginId, userType, page, size);
+    List<BaseApplication> results =
+        applicationService.getCases(caseSearchCriteria, loginId, userType);
 
-    StepVerifier.create(caseDetailsMono)
-        .expectNextMatches(clientDetails -> clientDetails == mockCaseDetails)
-        .verifyComplete();
+    verifyNoInteractions(soaApiClient);
+    verify(caabApiClient).getApplications(caseSearchCriteria, page, size);
+
+    assertNotNull(results);
+    assertEquals(mockApplicationDetails.getContent(), results);
   }
 
   @Test
-  void getCaseStatusValuesCopyAllowed_returnsData() {
-    CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail();
+  void getCases_DraftStatusQueriesSOAAndTDS() {
+    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    caseSearchCriteria.setCaseReference("123");
+    caseSearchCriteria.setProviderCaseReference("456");
+    caseSearchCriteria.setFeeEarnerId(789);
+    caseSearchCriteria.setOfficeId(999);
+    caseSearchCriteria.setClientSurname("asurname");
 
-    when(ebsApiClient.getCaseStatusValues(Boolean.TRUE)).thenReturn(
-        Mono.just(caseStatusLookupDetail));
+    caseSearchCriteria.setStatus(STATUS_DRAFT);
 
-    Mono<CaseStatusLookupDetail> lookupDetailMono =
-        applicationService.getCaseStatusValues(true);
+    String loginId = "user1";
+    String userType = "userType";
+    int page = 0;
+    int size = 10;
 
-    StepVerifier.create(lookupDetailMono)
-        .expectNext(caseStatusLookupDetail)
-        .verifyComplete();
+    CaseDetails mockCaseDetails = new CaseDetails()
+        .totalElements(1)
+        .size(1)
+        .addContentItem(new CaseSummary().caseReferenceNumber("2"));
+
+    BaseApplication mockSoaApplication = new BaseApplication()
+            .caseReferenceNumber("2");
+
+    ApplicationDetails mockTdsApplicationDetails = new ApplicationDetails()
+        .totalElements(1)
+        .size(1)
+        .addContentItem(new BaseApplication()
+            .caseReferenceNumber("1"));
+
+    // expected result, sorted by case reference
+    List<BaseApplication> expectedResult = List.of(mockTdsApplicationDetails.getContent().get(0),
+        mockSoaApplication);
+
+    when(soaApiClient.getCases(caseSearchCriteria, loginId, userType, page, size))
+        .thenReturn(Mono.just(mockCaseDetails));
+    when(applicationMapper.toBaseApplication(mockCaseDetails.getContent().get(0)))
+        .thenReturn(mockSoaApplication);
+    when(caabApiClient.getApplications(caseSearchCriteria, page, size))
+        .thenReturn(Mono.just(mockTdsApplicationDetails));
+    when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
+
+    List<BaseApplication> result =
+        applicationService.getCases(caseSearchCriteria, loginId, userType);
+
+    verify(soaApiClient).getCases(caseSearchCriteria, loginId, userType, page, size);
+    verify(caabApiClient).getApplications(caseSearchCriteria, page, size);
+
+    assertNotNull(result);
+    assertEquals(expectedResult, result);
+  }
+
+  @Test
+  void getCases_RemovesDuplicates_RetainingSoaCase() {
+    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    caseSearchCriteria.setCaseReference("123");
+    caseSearchCriteria.setProviderCaseReference("456");
+    caseSearchCriteria.setFeeEarnerId(789);
+    caseSearchCriteria.setOfficeId(999);
+    caseSearchCriteria.setClientSurname("asurname");
+
+    caseSearchCriteria.setStatus(STATUS_DRAFT);
+
+    String loginId = "user1";
+    String userType = "userType";
+    int page = 0;
+    int size = 10;
+
+    CaseSummary soaCaseSummary = new CaseSummary()
+        .caseReferenceNumber("1")
+        .caseStatusDisplay("the soa one");
+
+    BaseApplication mockSoaApplication = new BaseApplication()
+        .caseReferenceNumber(soaCaseSummary.getCaseReferenceNumber())
+        .status(new StringDisplayValue().displayValue(soaCaseSummary.getCaseStatusDisplay()));
+
+    BaseApplication mockTdsApplication = new BaseApplication()
+        .caseReferenceNumber("1")
+        .status(new StringDisplayValue().displayValue("the tds one"));
+
+    CaseDetails mockCaseDetails = new CaseDetails()
+        .totalElements(1)
+        .size(1)
+        .addContentItem(soaCaseSummary);
+
+    ApplicationDetails mockTdsApplicationDetails = new ApplicationDetails()
+        .totalElements(1)
+        .size(1)
+        .addContentItem(mockTdsApplication);
+
+    // expected result, only the soa case retained
+    List<BaseApplication> expectedResult = List.of(mockSoaApplication);
+
+    when(soaApiClient.getCases(caseSearchCriteria, loginId, userType, page, size))
+        .thenReturn(Mono.just(mockCaseDetails));
+    when(applicationMapper.toBaseApplication(mockCaseDetails.getContent().get(0)))
+        .thenReturn(mockSoaApplication);
+    when(caabApiClient.getApplications(caseSearchCriteria, page, size))
+        .thenReturn(Mono.just(mockTdsApplicationDetails));
+    when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
+
+    List<BaseApplication> result =
+        applicationService.getCases(caseSearchCriteria, loginId, userType);
+
+    verify(soaApiClient).getCases(caseSearchCriteria, loginId, userType, page, size);
+    verify(caabApiClient).getApplications(caseSearchCriteria, page, size);
+
+    assertNotNull(result);
+    assertEquals(expectedResult, result);
+  }
+
+  @Test
+  void getCases_TooManySoaResults_ThrowsException() {
+    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    caseSearchCriteria.setCaseReference("123");
+    caseSearchCriteria.setProviderCaseReference("456");
+    caseSearchCriteria.setFeeEarnerId(789);
+    caseSearchCriteria.setOfficeId(999);
+    caseSearchCriteria.setClientSurname("asurname");
+    String loginId = "user1";
+    String userType = "userType";
+    int page = 0;
+    int size = 1;
+
+    caseSearchCriteria.setStatus(STATUS_DRAFT);
+
+    CaseDetails mockCaseDetails = new CaseDetails()
+        .totalElements(2)
+        .size(2)
+        .addContentItem(new CaseSummary())
+        .addContentItem(new CaseSummary());
+
+    when(soaApiClient.getCases(caseSearchCriteria, loginId, userType, page, size))
+        .thenReturn(Mono.just(mockCaseDetails));
+    when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
+
+    assertThrows(TooManyResultsException.class, () ->
+        applicationService.getCases(caseSearchCriteria, loginId, userType));
+  }
+
+  @Test
+  void getCases_TooManyOverallResults_ThrowsException() {
+    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    caseSearchCriteria.setCaseReference("123");
+    caseSearchCriteria.setProviderCaseReference("456");
+    caseSearchCriteria.setFeeEarnerId(789);
+    caseSearchCriteria.setOfficeId(999);
+    caseSearchCriteria.setClientSurname("asurname");
+    String loginId = "user1";
+    String userType = "userType";
+    int page = 0;
+    int size = 2;
+
+    caseSearchCriteria.setStatus(STATUS_DRAFT);
+
+    CaseDetails mockCaseDetails = new CaseDetails()
+        .totalElements(2)
+        .size(2)
+        .addContentItem(new CaseSummary().caseReferenceNumber("1"))
+        .addContentItem(new CaseSummary().caseReferenceNumber("2"));
+
+    ApplicationDetails mockTdsApplicationDetails = new ApplicationDetails()
+        .totalElements(1)
+        .size(1)
+        .addContentItem(new BaseApplication().caseReferenceNumber("3"));
+
+    when(soaApiClient.getCases(caseSearchCriteria, loginId, userType, page, size))
+        .thenReturn(Mono.just(mockCaseDetails));
+    when(applicationMapper.toBaseApplication(mockCaseDetails.getContent().get(0)))
+        .thenReturn(new BaseApplication()
+            .caseReferenceNumber(mockCaseDetails.getContent().get(0).getCaseReferenceNumber()));
+    when(applicationMapper.toBaseApplication(mockCaseDetails.getContent().get(1)))
+        .thenReturn(new BaseApplication()
+            .caseReferenceNumber(mockCaseDetails.getContent().get(1).getCaseReferenceNumber()));
+    when(caabApiClient.getApplications(caseSearchCriteria, page, size))
+        .thenReturn(Mono.just(mockTdsApplicationDetails));
+    when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
+
+    assertThrows(TooManyResultsException.class, () ->
+        applicationService.getCases(caseSearchCriteria, loginId, userType));
   }
 
   @Test
@@ -200,7 +383,7 @@ class ApplicationServiceTest {
     CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail();
     caseStatusLookupDetail.addContentItem(new CaseStatusLookupValueDetail());
 
-    when(ebsApiClient.getCaseStatusValues(Boolean.TRUE)).thenReturn(
+    when(lookupService.getCaseStatusValues(Boolean.TRUE)).thenReturn(
         Mono.just(caseStatusLookupDetail));
 
     CaseStatusLookupValueDetail lookupValue = applicationService.getCopyCaseStatus();
@@ -212,7 +395,7 @@ class ApplicationServiceTest {
   @Test
   void getCopyCaseStatus_handlesNullResponse() {
 
-    when(ebsApiClient.getCaseStatusValues(Boolean.TRUE)).thenReturn(Mono.empty());
+    when(lookupService.getCaseStatusValues(Boolean.TRUE)).thenReturn(Mono.empty());
 
     CaseStatusLookupValueDetail lookupValue = applicationService.getCopyCaseStatus();
 
@@ -531,7 +714,8 @@ class ApplicationServiceTest {
     applicationType.id("test 123");
     applicationType.setDisplayValue("testing123");
 
-    ApplicationDetail mockApplicationDetail = new ApplicationDetail(null, null, null, null);
+    ApplicationDetail mockApplicationDetail = new ApplicationDetail();
+    mockApplicationDetail.setProviderDetails(new ApplicationProviderDetails());
     mockApplicationDetail.setAuditTrail(auditDetail);
     mockApplicationDetail.setClient(client);
     mockApplicationDetail.setApplicationType(applicationType);
@@ -597,7 +781,8 @@ class ApplicationServiceTest {
     applicationType.id("test 123");
     applicationType.setDisplayValue("testing123");
 
-    ApplicationDetail mockApplicationDetail = new ApplicationDetail(null, null, null, null);
+    ApplicationDetail mockApplicationDetail = new ApplicationDetail();
+    mockApplicationDetail.setProviderDetails(new ApplicationProviderDetails());
     mockApplicationDetail.setAuditTrail(auditDetail);
     mockApplicationDetail.setClient(client);
     mockApplicationDetail.setApplicationType(applicationType);

@@ -7,19 +7,19 @@ import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQU
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
+import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 
 /**
  * Provides error handling capabilities for the SoaApiClient.
@@ -84,12 +84,12 @@ public class SoaApiClientErrorHandler {
   /**
    * Handles errors that occur while fetching CaseDetails.
    *
-   * @param copyCaseSearchCriteria Criteria for copying the case.
+   * @param caseSearchCriteria Criteria for copying the case.
    * @param e Exception thrown during operation.
    * @return An empty Mono.
    */
   public Mono<CaseDetails> handleCaseDetailsError(
-      final CopyCaseSearchCriteria copyCaseSearchCriteria,
+      final CaseSearchCriteria caseSearchCriteria,
       final Throwable e) {
     log.error("Failed to retrieve CaseDetails for "
                     + "caseReferenceNumber: {}, "
@@ -98,12 +98,12 @@ public class SoaApiClientErrorHandler {
                     + "feeEarnerId: {}, "
                     + "officeId: {}, "
                     + "clientSurname: {}",
-            copyCaseSearchCriteria.getCaseReference(),
-            copyCaseSearchCriteria.getProviderCaseReference(),
-            copyCaseSearchCriteria.getActualStatus(),
-            copyCaseSearchCriteria.getFeeEarnerId(),
-            copyCaseSearchCriteria.getOfficeId(),
-            copyCaseSearchCriteria.getClientSurname(), e);
+            caseSearchCriteria.getCaseReference(),
+            caseSearchCriteria.getProviderCaseReference(),
+            caseSearchCriteria.getStatus(),
+            caseSearchCriteria.getFeeEarnerId(),
+            caseSearchCriteria.getOfficeId(),
+            caseSearchCriteria.getClientSurname(), e);
     return Mono.empty();
   }
 
@@ -146,7 +146,7 @@ public class SoaApiClientErrorHandler {
    * @param e Exception thrown during operation.
    * @return An empty Mono.
    */
-  public Mono<ClientStatus> handleClientStatusError(
+  public Mono<TransactionStatus> handleClientStatusError(
       final String transactionId,
       final Throwable e) {
     log.error("Failed to retrieve Client Status for: {}",

@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>LAA CCMS - Start new application</title>
+    <title>LAA CCMS - Search for an application</title>
 </head>
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a href="/application/copy-case/search" class="govuk-back-link">Return to Case and Application Search</a>
+        <a href="/application/search" class="govuk-back-link">Return to Case and Application Search</a>
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l">Copy an existing case</span>
+        <span class="govuk-caption-l">Search for an application or case</span>
         <h1 class="govuk-heading-l">
             Application search - results
         </h1>
@@ -17,7 +17,7 @@
             Your search has returned <span th:text="${caseResultsPage.totalElements}"></span> results.
         </p>
         <p class="govuk-body-l">
-            To select an application or case displayed in the results table, click on the
+            To view an application or case displayed in the results table, click on the
             'LAA Application / Case Ref.' number. If the application or case you are searching for is
             not shown, please review your search criteria and search again.
         </p>
@@ -35,7 +35,7 @@
             <tbody class="govuk-table__body">
                 <tr class="govuk-table__row" th:each="case , rowStat : ${caseResultsPage.content}">
                     <td class="govuk-table__cell">
-                        <a th:href="@{/application/copy-case/{id}/confirm(id=${case.caseReferenceNumber})}"
+                        <a th:href="@{/application/{id}/summary(id=${case.caseReferenceNumber})}"
                            class="govuk-link" th:text="${case.caseReferenceNumber}"></a>
                     </td>
                     <td class="govuk-table__cell" th:text="${case.providerDetails.providerCaseReference}"></td>

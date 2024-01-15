@@ -1,14 +1,17 @@
 package uk.gov.laa.ccms.caab.client;
 
 import java.net.URI;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 
@@ -69,6 +72,42 @@ public class CaabApiClient {
         .retrieve()
         .bodyToMono(ApplicationDetail.class)
         .onErrorResume(caabApiClientErrorHandler::handleGetApplicationError);
+  }
+
+  /**
+   * Query for applications using the CAAB API.
+   *
+   * @return a Mono containing applications detail
+   */
+  public Mono<ApplicationDetails> getApplications(
+      final CaseSearchCriteria caseSearchCriteria,
+      final Integer page,
+      final Integer size) {
+    return caabApiWebClient
+        .get()
+        .uri(builder -> builder.path("/applications")
+            .queryParamIfPresent("case-reference-number",
+                Optional.ofNullable(caseSearchCriteria.getCaseReference()))
+            .queryParamIfPresent("provider-case-ref",
+                Optional.ofNullable(caseSearchCriteria.getProviderCaseReference()))
+            .queryParamIfPresent("client-surname",
+                Optional.ofNullable(caseSearchCriteria.getClientSurname()))
+            .queryParamIfPresent("client-reference",
+                Optional.ofNullable(caseSearchCriteria.getClientReference()))
+            .queryParamIfPresent("fee-earner",
+                Optional.ofNullable(caseSearchCriteria.getFeeEarnerId()))
+            .queryParamIfPresent("office-id",
+                Optional.ofNullable(caseSearchCriteria.getOfficeId()))
+            .queryParamIfPresent("status",
+                Optional.ofNullable(caseSearchCriteria.getStatus()))
+            .queryParamIfPresent("page",
+                Optional.ofNullable(page))
+            .queryParamIfPresent("size",
+                Optional.ofNullable(size))
+            .build())
+        .retrieve()
+        .bodyToMono(ApplicationDetails.class)
+        .onErrorResume(caabApiClientErrorHandler::handleGetApplicationsError);
   }
 
   /**

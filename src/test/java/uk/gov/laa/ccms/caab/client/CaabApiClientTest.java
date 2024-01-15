@@ -1,23 +1,30 @@
 package uk.gov.laa.ccms.caab.client;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.net.URI;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriBuilder;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 
@@ -53,7 +60,7 @@ public class CaabApiClientTest {
   void createApplication_success() {
     String loginId = "user1";
     ApplicationDetail application =
-        new ApplicationDetail(null, null, null, null); // Populate as needed
+        new ApplicationDetail(); // Populate as needed
     String expectedUri = "/applications";
     String locationId = "123"; // Replace with your expected location header
 
@@ -80,7 +87,7 @@ public class CaabApiClientTest {
     String id = "123";
     String expectedUri = "/applications/{id}";
 
-    ApplicationDetail mockApplication = new ApplicationDetail(null, null,null, null);
+    ApplicationDetail mockApplication = new ApplicationDetail();
 
     when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
     when(requestHeadersUriMock.uri(expectedUri, id)).thenReturn(requestHeadersMock);
@@ -93,6 +100,57 @@ public class CaabApiClientTest {
     StepVerifier.create(applicationDetailMono)
         .expectNext(mockApplication)
         .verifyComplete();
+  }
+
+  @Test
+  void getApplications_success() {
+
+    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    caseSearchCriteria.setCaseReference("123");
+    caseSearchCriteria.setClientReference("cliref");
+    caseSearchCriteria.setProviderCaseReference("456");
+    caseSearchCriteria.setFeeEarnerId(789);
+    caseSearchCriteria.setOfficeId(999);
+    caseSearchCriteria.setClientSurname("asurname");
+    caseSearchCriteria.setStatus("thestatus");
+
+    int page = 0;
+    int size = 2;
+
+    String expectedUri = String.format(
+        "/applications?case-reference-number=%s&provider-case-ref=%s&client-surname=%s&client-reference=%s&fee-earner=%s&office-id=%s&status=%s&page=%s&size=%s",
+        caseSearchCriteria.getCaseReference(),
+        caseSearchCriteria.getProviderCaseReference(),
+        caseSearchCriteria.getClientSurname(),
+        caseSearchCriteria.getClientReference(),
+        caseSearchCriteria.getFeeEarnerId(),
+        caseSearchCriteria.getOfficeId(),
+        caseSearchCriteria.getStatus(),
+        page,
+        size);
+
+    ApplicationDetails mockApplicationDetails = new ApplicationDetails();
+
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(ApplicationDetails.class))
+        .thenReturn(Mono.just(mockApplicationDetails));
+
+    Mono<ApplicationDetails> applicationDetailsMono
+        = caabApiClient.getApplications(caseSearchCriteria, page, size);
+
+    StepVerifier.create(applicationDetailsMono)
+        .expectNext(mockApplicationDetails)
+        .verifyComplete();
+
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    // Assert the URI
+    assertEquals(expectedUri, actualUri.toString());
   }
 
   @Test

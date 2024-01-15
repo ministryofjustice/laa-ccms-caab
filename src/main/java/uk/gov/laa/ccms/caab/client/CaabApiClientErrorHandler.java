@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 
@@ -35,6 +36,18 @@ public class CaabApiClientErrorHandler {
    * @return a Mono signaling the error wrapped in a {@code CaabApiServiceException}
    */
   public Mono<ApplicationDetail> handleGetApplicationError(Throwable e) {
+    final String msg = "Failed to retrieve application";
+    log.error(msg, e);
+    return Mono.error(new CaabApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors encountered during retrieval of applications.
+   *
+   * @param e the encountered error
+   * @return a Mono signaling the error wrapped in a {@code CaabApiServiceException}
+   */
+  public Mono<ApplicationDetails> handleGetApplicationsError(Throwable e) {
     final String msg = "Failed to retrieve application";
     log.error(msg, e);
     return Mono.error(new CaabApiClientException(msg, e));

@@ -16,14 +16,18 @@ import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.springframework.data.domain.Page;
 import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
 import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationDetails;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AssessmentResult;
+import uk.gov.laa.ccms.caab.model.BaseApplication;
 import uk.gov.laa.ccms.caab.model.BaseAward;
 import uk.gov.laa.ccms.caab.model.BooleanDisplayValue;
 import uk.gov.laa.ccms.caab.model.CaseOutcome;
@@ -59,6 +63,7 @@ import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
 import uk.gov.laa.ccms.soa.gateway.model.Award;
 import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
 import uk.gov.laa.ccms.soa.gateway.model.CaseStatus;
+import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
 import uk.gov.laa.ccms.soa.gateway.model.CostLimitation;
 import uk.gov.laa.ccms.soa.gateway.model.OtherParty;
@@ -71,19 +76,33 @@ import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
  */
 @Mapper(componentModel = "spring")
 public interface ApplicationMapper {
-  
+
+  ApplicationDetails toApplicationDetails(Page<BaseApplication> applicationPage);
+
+  @Mapping(target = "status", source = "caseStatusDisplay")
+  @Mapping(target = "providerDetails", source = ".")
+  BaseApplication toBaseApplication(CaseSummary soaCaseSummary);
+
+  @Mapping(target = "providerCaseReference", source = "providerCaseReferenceNumber")
+  @Mapping(target = "feeEarner.displayValue", source = "feeEarnerName")
+  @Mapping(target = "provider", ignore = true)
+  @Mapping(target = "office", ignore = true)
+  @Mapping(target = "supervisor", ignore = true)
+  @Mapping(target = "providerContact", ignore = true)
+  ApplicationProviderDetails toApplicationProviderDetails(CaseSummary soaCaseSummary);
+
   @Mapping(target = ".", source = "soaCaseDetail")
   @Mapping(target = "certificate", source = "soaCaseDetail.certificateType")
   @Mapping(target = "applicationType", source = "applicationMappingContext")
   @Mapping(target = "dateCreated", source = "soaCaseDetail.recordHistory.dateCreated")
-  @Mapping(target = "providerCaseReference",
+  @Mapping(target = "providerDetails.providerCaseReference",
       source = "soaCaseDetail.applicationDetails.providerDetails.providerCaseReferenceNumber")
-  @Mapping(target = "provider", source = "providerDetail")
-  @Mapping(target = "providerContact",
+  @Mapping(target = "providerDetails.provider", source = "providerDetail")
+  @Mapping(target = "providerDetails.providerContact",
       source = "soaCaseDetail.applicationDetails.providerDetails.contactUserId")
-  @Mapping(target = "office", source = "providerOffice")
-  @Mapping(target = "supervisor", source = "supervisorContact")
-  @Mapping(target = "feeEarner", source = "feeEarnerContact")
+  @Mapping(target = "providerDetails.office", source = "providerOffice")
+  @Mapping(target = "providerDetails.supervisor", source = "supervisorContact")
+  @Mapping(target = "providerDetails.feeEarner", source = "feeEarnerContact")
   @Mapping(target = "correspondenceAddress", source = "applicationMappingContext")
   @Mapping(target = "client", source = "soaCaseDetail.applicationDetails.client")
   @Mapping(target = "categoryOfLaw", source = "soaCaseDetail.applicationDetails.categoryOfLaw")
@@ -486,7 +505,7 @@ public interface ApplicationMapper {
   @AfterMapping
   default void finaliseOtherAssetAward(@MappingTarget OtherAssetAward otherAssetAward) {
     final TimeRecovery timeRecovery = otherAssetAward.getTimeRecovery();
-    otherAssetAward.setRecoveryOfAwardTimeRelated(String.valueOf(timeRecovery != null));
+    otherAssetAward.setRecoveryOfAwardTimeRelated(timeRecovery != null);
     if (timeRecovery != null) {
       timeRecovery.setAwardType(AWARD_TYPE_OTHER_ASSET);
     }

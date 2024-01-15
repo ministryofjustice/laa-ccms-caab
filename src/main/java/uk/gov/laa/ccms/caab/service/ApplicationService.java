@@ -10,9 +10,11 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTH
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -34,14 +36,16 @@ import reactor.util.function.Tuple4;
 import reactor.util.function.Tuple6;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
-import uk.gov.laa.ccms.caab.bean.CopyCaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.builders.ApplicationBuilder;
 import uk.gov.laa.ccms.caab.builders.ApplicationSummaryBuilder;
 import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
@@ -55,6 +59,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.model.BaseApplication;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -119,27 +124,101 @@ public class ApplicationService {
 
   private final LookupService lookupService;
 
+  private final SearchConstants searchConstants;
+
   private static final String UPDATE_APPLICATION_APPLICATION_TYPE = "application-type";
   private static final String UPDATE_APPLICATION_CORRESPONDENCE_ADDRESS = "correspondence-address";
   private static final String UPDATE_APPLICATION_PROVIDER_DETAILS = "provider-details";
 
+
+
   /**
-   * Searches and retrieves case details based on provided search criteria.
+   * Performs a combined search of SOA cases and TDS applications based on provided search criteria.
+   * Each result is mapped to a BaseApplication to summarise the details.
    *
-   * @param copyCaseSearchCriteria The search criteria to use when fetching cases.
+   * @param caseSearchCriteria The search criteria to use when fetching cases.
    * @param loginId                The login identifier for the user.
    * @param userType               Type of the user (e.g., admin, user).
-   * @param page                   The page number for pagination.
-   * @param size                   The size or number of records per page.
-   * @return A Mono wrapping the CaseDetails.
+   * @return A List of BaseApplication.
    */
-  public Mono<CaseDetails> getCases(
-      final CopyCaseSearchCriteria copyCaseSearchCriteria,
+  public List<BaseApplication> getCases(
+      final CaseSearchCriteria caseSearchCriteria,
       final String loginId,
-      final String userType,
+      final String userType) throws TooManyResultsException {
+
+    List<BaseApplication> searchResults = new ArrayList<>();
+
+    // Only search for SOA Cases if the user hasn't selected status 'UNSUBMITTED'.
+    if (!STATUS_UNSUBMITTED_ACTUAL_VALUE.equals(caseSearchCriteria.getStatus())) {
+      // Set page and size to min and max respectively. Because we are combining 2 searches
+      // we will have to return all records for pagination by the caller.
+      CaseDetails caseDetails = Optional.ofNullable(
+              soaApiClient.getCases(
+                  caseSearchCriteria,
+                  loginId,
+                  userType,
+                  0,
+                  searchConstants.getMaxSearchResultsCases()).block())
+          .orElseThrow(() -> new CaabApplicationException("Failed to retrieve SOA Cases"));
+
+      if (caseDetails.getTotalElements() > searchConstants.getMaxSearchResultsCases()) {
+        throw new TooManyResultsException(
+            String.format("Case Search returned %s results", caseDetails.getTotalElements()));
+      }
+
+      searchResults.addAll(caseDetails.getContent().stream()
+          .map(applicationMapper::toBaseApplication)
+          .toList());
+    }
+
+    // Now retrieve applications from the Transient Data Store
+    List<BaseApplication> tdsApplications = this.getTdsApplications(
+        caseSearchCriteria,
+        0,
+        searchConstants.getMaxSearchResultsCases()).getContent();
+
+    /*
+     * TODO: Exclude (and remove) any Pending Applications where the SOA
+     *  transaction has now completed.
+     */
+    // tdsApplications = pollPendingApplications(tdsApplications, data, ccmsUser);
+
+    // Remove any duplicates (remove the TDS applications as they are amendments, keep the cases)
+    tdsApplications.removeIf(
+        app -> searchResults.stream().anyMatch(
+                soaCase -> soaCase.getCaseReferenceNumber().equals(app.getCaseReferenceNumber())));
+
+    // Now add the remaining TDS applications into the list
+    searchResults.addAll(tdsApplications);
+
+    // Final check of the number of results now that the two searches have been combined.
+    if (searchResults.size() > searchConstants.getMaxSearchResultsCases()) {
+      throw new TooManyResultsException(
+          String.format("Case Search returned %s results", searchResults.size()));
+    }
+
+    // Sort the combined list by Case Reference
+    searchResults.sort(Comparator.comparing(BaseApplication::getCaseReferenceNumber));
+
+    return searchResults;
+  }
+
+  /**
+   * Query for Applications in the TDS based on the supplied search criteria.
+   *
+   * @param caseSearchCriteria - the search criteria
+   * @param page - the page number
+   * @param size - the page size
+   * @return ApplicationDetails containing a List of BaseApplication.
+   */
+  public uk.gov.laa.ccms.caab.model.ApplicationDetails getTdsApplications(
+      final CaseSearchCriteria caseSearchCriteria,
       final Integer page,
       final Integer size) {
-    return soaApiClient.getCases(copyCaseSearchCriteria, loginId, userType, page, size);
+
+    return Optional.ofNullable(
+        caabApiClient.getApplications(caseSearchCriteria, page, size).block())
+        .orElseThrow(() -> new CaabApplicationException("Failed to query for applications"));
   }
 
   /**
@@ -331,22 +410,13 @@ public class ApplicationService {
   }
 
   /**
-   * Retrieves the case status lookup details based on the provided copyAllowed flag.
-   *
-   * @param copyAllowed A boolean flag indicating whether copying is allowed.
-   * @return A Mono containing the CaseStatusLookupDetail or an error handler if an error occurs.
-   */
-  public Mono<CaseStatusLookupDetail> getCaseStatusValues(final Boolean copyAllowed) {
-    return ebsApiClient.getCaseStatusValues(copyAllowed);
-  }
-
-  /**
    * Retrieves the case status lookup value that is eligible for copying.
    *
    * @return The CaseStatusLookupValueDetail representing the eligible case status for copying.
    */
   public CaseStatusLookupValueDetail getCopyCaseStatus() {
-    CaseStatusLookupDetail caseStatusLookupDetail = this.getCaseStatusValues(Boolean.TRUE).block();
+    CaseStatusLookupDetail caseStatusLookupDetail =
+        lookupService.getCaseStatusValues(Boolean.TRUE).block();
 
     return Optional.ofNullable(caseStatusLookupDetail)
         .map(CaseStatusLookupDetail::getContent)
@@ -391,11 +461,11 @@ public class ApplicationService {
               .caseReferenceNumber(
                   application.getCaseReferenceNumber())
               .providerCaseReferenceNumber(
-                  application.getProviderCaseReference())
+                  application.getProviderDetails().getProviderCaseReference())
               .applicationType(
                   application.getApplicationType())
               .providerDetails(
-                  application.getProviderContact())
+                  application.getProviderDetails().getProviderContact())
               .generalDetails(
                   application.getCorrespondenceAddress())
               .proceedingsAndCosts(

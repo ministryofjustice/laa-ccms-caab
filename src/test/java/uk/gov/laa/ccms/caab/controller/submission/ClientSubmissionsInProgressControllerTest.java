@@ -23,7 +23,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
+import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class ClientSubmissionsInProgressControllerTest {
@@ -53,8 +53,8 @@ public class ClientSubmissionsInProgressControllerTest {
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
 
-    ClientStatus clientStatus = new ClientStatus();
-    clientStatus.setClientReferenceNumber("123456");
+    TransactionStatus clientStatus = new TransactionStatus();
+    clientStatus.setReferenceNumber("123456");
 
     when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
 
@@ -72,7 +72,7 @@ public class ClientSubmissionsInProgressControllerTest {
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
 
-    ClientStatus clientStatus = new ClientStatus();
+    TransactionStatus clientStatus = new TransactionStatus();
 
     when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
 
@@ -90,7 +90,7 @@ public class ClientSubmissionsInProgressControllerTest {
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
 
-    final ClientStatus clientStatus = new ClientStatus();
+    final TransactionStatus clientStatus = new TransactionStatus();
 
     when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
 
@@ -113,7 +113,7 @@ public class ClientSubmissionsInProgressControllerTest {
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
 
-    ClientStatus clientStatus = new ClientStatus();
+    TransactionStatus clientStatus = new TransactionStatus();
 
     when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
 

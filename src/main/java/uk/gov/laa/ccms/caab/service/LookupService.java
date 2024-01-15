@@ -30,6 +30,7 @@ import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -454,6 +455,25 @@ public class LookupService {
    */
   public Mono<RelationshipToCaseLookupDetail> getPersonToCaseRelationships() {
     return ebsApiClient.getPersonToCaseRelationships(null, null);
+  }
+
+  /**
+   * Retrieves all case status values.
+   *
+   * @return A Mono containing the CaseStatusLookupDetail or an error handler if an error occurs.
+   */
+  public Mono<CaseStatusLookupDetail> getCaseStatusValues() {
+    return this.getCaseStatusValues(null);
+  }
+
+  /**
+   * Retrieves the case status lookup details based on the provided copyAllowed flag.
+   *
+   * @param copyAllowed A boolean flag indicating whether copying is allowed.
+   * @return A Mono containing the CaseStatusLookupDetail or an error handler if an error occurs.
+   */
+  public Mono<CaseStatusLookupDetail> getCaseStatusValues(final Boolean copyAllowed) {
+    return ebsApiClient.getCaseStatusValues(copyAllowed);
   }
 
   /**

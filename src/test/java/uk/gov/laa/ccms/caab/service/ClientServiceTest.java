@@ -23,7 +23,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientStatus;
+import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 @ExtendWith(MockitoExtension.class)
@@ -89,12 +89,12 @@ public class ClientServiceTest {
     String loginId = "user1";
     String userType = "userType";
 
-    ClientStatus mockClientStatus = new ClientStatus();
+    TransactionStatus mockClientStatus = new TransactionStatus();
 
     when(soaApiClient.getClientStatus(transactionId, loginId, userType))
         .thenReturn(Mono.just(mockClientStatus));
 
-    Mono<ClientStatus> clientStatusMono =
+    Mono<TransactionStatus> clientStatusMono =
         clientService.getClientStatus(transactionId, loginId, userType);
 
     StepVerifier.create(clientStatusMono)
