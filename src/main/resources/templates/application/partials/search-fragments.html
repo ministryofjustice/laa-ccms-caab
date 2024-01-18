@@ -25,3 +25,32 @@
     </div>
   </form>
 </th:block>
+
+<th:block th:fragment="noResultsFragment">
+  <span class="govuk-caption-l" th:text="${caption}">Application search</span>
+  <h1 class="govuk-heading-l">
+    Application search - no results
+  </h1>
+  <p class="govuk-body-l">
+    Your search has returned 0 results.
+  </p>
+  <p class="govuk-body-l">
+    Please return to amend your search criteria and try again or start a new application by clicking the <span class="govuk-!-font-weight-bold">'New application'</span> button.
+  </p>
+  <a class="govuk-button" data-module="govuk-button" href="/application/office">
+    New application
+  </a>
+</th:block>
+
+<th:block th:fragment="tooManyResultsFragment">
+  <span class="govuk-caption-l" th:text="${caption}">Application search</span>
+  <h1 class="govuk-heading-l">
+    Application search - too many results
+  </h1>
+  <p class="govuk-body-l">
+    Your search has returned too many results.
+  </p>
+  <p class="govuk-body-l">
+    Please return to refine your search criteria and try again.
+  </p>
+</th:block>
