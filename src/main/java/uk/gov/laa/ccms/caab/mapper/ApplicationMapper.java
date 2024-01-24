@@ -174,6 +174,7 @@ public interface ApplicationMapper {
   @Mapping(target = "orderTypeDisplayFlag", ignore = true)
   @Mapping(target = "deleteScopeLimitationFlag", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
+  @Mapping(target = "id", ignore = true)
   Proceeding toProceeding(ProceedingMappingContext proceedingContext);
 
   @Mapping(target = "grantedCostLimitation",
@@ -205,6 +206,7 @@ public interface ApplicationMapper {
   @Mapping(target = "nonDefaultWordingReqd", ignore = true)
   @Mapping(target = "stage", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
+  @Mapping(target = "id", ignore = true)
   uk.gov.laa.ccms.caab.model.ScopeLimitation toScopeLimitation(
       Pair<ScopeLimitation, CommonLookupValueDetail> scopeLimitation);
 
@@ -330,6 +332,7 @@ public interface ApplicationMapper {
   @Mapping(target = "valueRequired", source = "priorAuthorityTypeLookup.valueRequired")
   @Mapping(target = "ebsId", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
+  @Mapping(target = "id", ignore = true)
   PriorAuthority toPriorAuthority(PriorAuthorityMappingContext priorAuthorityMappingContext);
 
   @Mapping(target = "code.id", source = "key.code")

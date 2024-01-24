@@ -16,7 +16,11 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.model.BaseClient;
+import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
+import uk.gov.laa.ccms.caab.model.PriorAuthority;
+import uk.gov.laa.ccms.caab.model.Proceeding;
 
 /**
  * Client responsible for interactions with the CAAB API.
@@ -178,6 +182,81 @@ public class CaabApiClient {
   }
 
   /**
+   * Fetches the proceedings associated with a specific application id.
+   * This method communicates with the CAAB API client to fetch the proceedings.
+   *
+   * @param id The id of the application for which proceedings should be retrieved.
+   * @return A {@code Mono<List<Proceeding>>} containing the proceedings.
+   */
+  public Mono<List<Proceeding>> getProceedings(
+      final String id) {
+    return caabApiWebClient
+        .get()
+        .uri("/applications/{id}/proceedings", id)
+        .retrieve()
+        .bodyToMono(new ParameterizedTypeReference<List<Proceeding>>() {})
+        .onErrorResume(caabApiClientErrorHandler::handleGetProceedingError);
+  }
+
+  /**
+   * Fetches the cost structure associated with a specific application id.
+   * This method communicates with the CAAB API client to fetch the cost structure.
+   *
+   * @param id The id of the application for which the cost structure should be retrieved.
+   * @return A {@code Mono<CostStructure>} containing the cost structure.
+   */
+  public Mono<CostStructure> getCosts(
+      final String id) {
+    return caabApiWebClient
+        .get()
+        .uri("/applications/{id}/cost-structure", id)
+        .retrieve()
+        .bodyToMono(new ParameterizedTypeReference<CostStructure>() {})
+        .onErrorResume(caabApiClientErrorHandler::handleGetCostsError);
+  }
+
+  /**
+   * Fetches the prior authorities associated with a specific application id.
+   * This method communicates with the CAAB API client to fetch the prior authorities.
+   *
+   * @param id The id of the application for which prior authorities should be retrieved.
+   * @return A {@code Mono<List<PriorAuthority>>} containing the prior authorities.
+   */
+  public Mono<List<PriorAuthority>> getPriorAuthorities(
+      final String id) {
+    return caabApiWebClient
+        .get()
+        .uri("/applications/{id}/prior-authorities", id)
+        .retrieve()
+        .bodyToMono(new ParameterizedTypeReference<List<PriorAuthority>>() {})
+        .onErrorResume(caabApiClientErrorHandler::handleGetPriorAuthorityError);
+  }
+
+  /**
+   * Updates a proceeding in the CAAB API for a given application.
+   *
+   * @param proceedingId the ID of the proceeding to be updated
+   * @param data the new data for the proceeding
+   * @param loginId the login ID of the user performing the update
+   * @return a Mono indicating completion of the update operation
+   */
+  public Mono<Void> updateProceeding(
+      final Integer proceedingId,
+      final Proceeding data,
+      final String loginId) {
+    return caabApiWebClient
+        .patch()
+        .uri("/proceedings/{proceeding-id}",
+            proceedingId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(data)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleUpdateProceedingError(e, proceedingId));
+  }
+
+  /**
    * Removes a linked case from the CAAB API for a given application.
    *
    * @param applicationId the ID of the application to remove the linked case from
@@ -191,8 +270,8 @@ public class CaabApiClient {
       final String loginId) {
     return caabApiWebClient
         .delete()
-        .uri("/applications/{applicationId}/linked-cases/{linkedCaseId}",
-            applicationId, linkedCaseId)
+        .uri("/linked-cases/{linkedCaseId}",
+            linkedCaseId)
         .header("Caab-User-Login-Id", loginId)
         .retrieve()
         .bodyToMono(Void.class)
@@ -215,8 +294,8 @@ public class CaabApiClient {
       final String loginId) {
     return caabApiWebClient
         .patch()
-        .uri("/applications/{applicationId}/linked-cases/{linkedCaseId}",
-            applicationId, linkedCaseId)
+        .uri("/linked-cases/{linkedCaseId}",
+            linkedCaseId)
         .header("Caab-User-Login-Id", loginId)
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(data)
@@ -250,5 +329,30 @@ public class CaabApiClient {
         .retrieve()
         .bodyToMono(Void.class)
         .onErrorResume(e -> caabApiClientErrorHandler.handleUpdateApplicationError(e, type));
+  }
+
+  /**
+   * Patches all application clients with the same reference id using the CAAB API.
+   *
+   * @param clientReferenceId the ID associated with the client
+   * @param loginId the ID associated with the user login
+   * @param data the client data to amend to the application
+   * @return a Mono void
+   */
+  public Mono<Void> updateClient(
+      final String clientReferenceId,
+      final String loginId,
+      final BaseClient data) {
+
+    return caabApiWebClient
+        .patch()
+        .uri("/applications/clients/{clientReferenceId}", clientReferenceId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(data)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleUpdateClientError(e,
+            clientReferenceId));
   }
 }

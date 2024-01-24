@@ -2,12 +2,15 @@ package uk.gov.laa.ccms.caab.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.opensaml.xmlsec.encryption.Public;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
+import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
+import uk.gov.laa.ccms.caab.model.BaseClient;
 import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -23,6 +26,8 @@ import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 @Slf4j
 public class ClientService {
   private final SoaApiClient soaApiClient;
+
+  private final CaabApiClient caabApiClient;
 
   private final ClientDetailMapper clientDetailsMapper;
 
@@ -125,4 +130,25 @@ public class ClientService {
         user.getLoginId(),
         user.getUserType());
   }
+
+  /**
+   * Updates the client details stored against all applications with the client ref in the TDS.
+   *
+   * @param clientReferenceNumber The client's reference id
+   * @param user                  The user.
+   * @param baseClient            The client details to update.
+   * @return A Mono wrapping the ClientCreated transaction id.
+   */
+  public Mono<Void> updateClientNames(
+      final String clientReferenceNumber,
+      final UserDetail user,
+      final BaseClient baseClient) {
+
+    return caabApiClient.updateClient(
+        clientReferenceNumber,
+        user.getLoginId(),
+        baseClient);
+  }
+
+
 }

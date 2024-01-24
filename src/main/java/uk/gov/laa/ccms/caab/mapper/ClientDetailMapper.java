@@ -17,6 +17,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
+import uk.gov.laa.ccms.caab.model.BaseClient;
 import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
@@ -30,6 +31,10 @@ import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
  */
 @Mapper(componentModel = "spring", config = IgnoreUnmappedMapperConfig.class)
 public interface ClientDetailMapper {
+
+  @Mapping(target = "firstName", source = "basicDetails.firstName")
+  @Mapping(target = "surname", source = "basicDetails.surname")
+  BaseClient toBaseClient(ClientFlowFormData clientFlowFormData);
 
   @Mapping(target = "details", source = ".")
   ClientDetail toClientDetail(ClientFlowFormData clientFlowFormData);

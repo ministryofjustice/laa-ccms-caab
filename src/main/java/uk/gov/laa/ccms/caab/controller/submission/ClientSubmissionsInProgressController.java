@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_CLIENT_NAMES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_REFERENCE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
@@ -18,6 +19,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
+import uk.gov.laa.ccms.caab.model.BaseClient;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
@@ -76,6 +78,7 @@ public class ClientSubmissionsInProgressController {
   public String clientUpdateSubmission(
       @SessionAttribute(SUBMISSION_TRANSACTION_ID) final String transactionId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(APPLICATION_CLIENT_NAMES) final BaseClient baseClient,
       final HttpSession session, final Model model) {
 
     model.addAttribute("submissionType", SUBMISSION_UPDATE_CLIENT);
@@ -86,9 +89,15 @@ public class ClientSubmissionsInProgressController {
         user.getUserType()).block();
 
     if (clientStatus != null && StringUtils.hasText(clientStatus.getReferenceNumber())) {
+      clientService.updateClientNames(
+          clientStatus.getReferenceNumber(),
+          user,
+          baseClient).block();
+
       //Do some session tidy up
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
       session.removeAttribute(CLIENT_FLOW_FORM_DATA);
+      session.removeAttribute(APPLICATION_CLIENT_NAMES);
 
       return "redirect:/submissions/client-update/confirmed";
     }

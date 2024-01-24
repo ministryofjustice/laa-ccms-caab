@@ -101,4 +101,6 @@ public class SessionConstants {
    */
   public static final String SUBMISSION_POLL_COUNT = "submissionPollCount";
 
+  public static final String APPLICATION_CLIENT_NAMES = "applicationClientNames";
+
 }

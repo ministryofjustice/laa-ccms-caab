@@ -1,11 +1,13 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_CLIENT_NAMES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -21,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
+import uk.gov.laa.ccms.caab.model.BaseClient;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
@@ -135,15 +138,19 @@ public class ClientSubmissionsInProgressControllerTest {
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
 
+    final BaseClient baseClient = new BaseClient().firstName("testFirstName").surname("testSurname");
+
     final TransactionStatus clientStatus = new TransactionStatus();
     clientStatus.setReferenceNumber("123456");
 
     when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
+    when(clientService.updateClientNames(anyString(), any(), any())).thenReturn(Mono.empty());
 
     mockMvc.perform(
             get("/submissions/client-update")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
-                .sessionAttr(USER_DETAILS, user))
+                .sessionAttr(USER_DETAILS, user)
+                .sessionAttr(APPLICATION_CLIENT_NAMES, baseClient))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/submissions/client-update/confirmed"));
   }
@@ -154,6 +161,8 @@ public class ClientSubmissionsInProgressControllerTest {
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
 
+    final BaseClient baseClient = new BaseClient().firstName("testFirstName").surname("testSurname");
+
     final TransactionStatus clientStatus = new TransactionStatus();
 
     when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
@@ -161,7 +170,8 @@ public class ClientSubmissionsInProgressControllerTest {
     mockMvc.perform(
             get("/submissions/client-update")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
-                .sessionAttr(USER_DETAILS, user))
+                .sessionAttr(USER_DETAILS, user)
+                .sessionAttr(APPLICATION_CLIENT_NAMES, baseClient))
         .andExpect(status().isOk())
         .andExpect(view().name("submissions/submissionInProgress"));
   }

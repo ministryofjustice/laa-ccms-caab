@@ -4,7 +4,7 @@ search:
 #    notification-count: 500
 #    notifications: 500
     clients: 200
-    cases: 300
+    cases: 100
 #    statement-of-accounts: 400
 #    organisations: 500
 

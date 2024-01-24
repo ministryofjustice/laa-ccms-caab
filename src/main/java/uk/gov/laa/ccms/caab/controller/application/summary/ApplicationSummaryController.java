@@ -37,15 +37,15 @@ public class ApplicationSummaryController {
   @GetMapping("/application/summary")
   public String applicationSummary(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
-      HttpSession session,
-      Model model) {
+      final HttpSession session,
+      final Model model) {
 
-    ApplicationSummaryDisplay summary =
+    final ApplicationSummaryDisplay summary =
         applicationService.getApplicationSummary(applicationId).block();
 
     model.addAttribute("summary", summary);
 
-    ActiveCase activeCase = ActiveCase.builder()
+    final ActiveCase activeCase = ActiveCase.builder()
         .caseReferenceNumber(summary.getCaseReferenceNumber())
         .client(summary.getClientFullName())
         .clientReferenceNumber(summary.getClientReferenceNumber())

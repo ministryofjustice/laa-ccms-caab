@@ -63,12 +63,15 @@ import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplication;
+import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.PriorAuthority;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
+import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
@@ -155,13 +158,15 @@ public class ApplicationService {
       final String loginId,
       final String userType) throws TooManyResultsException {
 
-    List<BaseApplication> searchResults = new ArrayList<>();
+    ReflectionUtils.nullifyStrings(caseSearchCriteria);
+
+    final List<BaseApplication> searchResults = new ArrayList<>();
 
     // Only search for SOA Cases if the user hasn't selected status 'UNSUBMITTED'.
     if (!STATUS_UNSUBMITTED_ACTUAL_VALUE.equals(caseSearchCriteria.getStatus())) {
       // Set page and size to min and max respectively. Because we are combining 2 searches
       // we will have to return all records for pagination by the caller.
-      CaseDetails caseDetails = Optional.ofNullable(
+      final CaseDetails caseDetails = Optional.ofNullable(
               soaApiClient.getCases(
                   caseSearchCriteria,
                   loginId,
@@ -181,7 +186,7 @@ public class ApplicationService {
     }
 
     // Now retrieve applications from the Transient Data Store
-    List<BaseApplication> tdsApplications = this.getTdsApplications(
+    final List<BaseApplication> tdsApplications = this.getTdsApplications(
         caseSearchCriteria,
         0,
         searchConstants.getMaxSearchResultsCases()).getContent();
@@ -523,6 +528,110 @@ public class ApplicationService {
           results.setContent(list); // Set the content of ResultsDisplay
           return results; // Return the populated ResultsDisplay
         }).block();
+  }
+
+  /**
+   * Fetches the proceedings associated with a specific application id.
+   * This method communicates with the CAAB API client to fetch the proceedings and
+   * transforms them into a {@code ResultsDisplay<Proceeding>} format.
+   *
+   * @param applicationId The id of the application for which proceedings should be retrieved.
+   * @return A {@code Mono<ResultsDisplay<Proceeding>>} containing the proceedings.
+   */
+  public Mono<ResultsDisplay<Proceeding>> getProceedings(final String applicationId) {
+    final ResultsDisplay<Proceeding> results = new ResultsDisplay<>();
+
+    return caabApiClient.getProceedings(applicationId)
+        .flatMapMany(Flux::fromIterable) // Convert to Flux<LinkedCase>
+        .collectList() // Collect into a List
+        .map(list -> {
+          results.setContent(list); // Set the content of ResultsDisplay
+          return results; // Return the populated ResultsDisplay
+        });
+  }
+
+  /**
+   * Fetches the cost structure associated with a specific application id.
+   * This method communicates with the CAAB API client to fetch the cost structure.
+   *
+   * @param applicationId The id of the application for which the cost structure should be
+   *                      retrieved.
+   * @return A {@code Mono<CostStructure>} containing the cost structure.
+   */
+  public Mono<CostStructure> getCosts(final String applicationId) {
+    return caabApiClient.getCosts(applicationId);
+  }
+
+  /**
+   * Fetches the prior authorities associated with a specific application id.
+   * This method communicates with the CAAB API client to fetch the prior authorities and
+   * transforms them into a {@code ResultsDisplay<PriorAuthority>} format.
+   *
+   * @param applicationId The id of the application for which prior authorities should be retrieved.
+   * @return A {@code Mono<ResultsDisplay<PriorAuthority>>} containing the prior authorities.
+   */
+  public Mono<ResultsDisplay<PriorAuthority>> getPriorAuthorities(final String applicationId) {
+    final ResultsDisplay<PriorAuthority> results = new ResultsDisplay<>();
+
+    return caabApiClient.getPriorAuthorities(applicationId)
+        .flatMapMany(Flux::fromIterable) // Convert to Flux<LinkedCase>
+        .collectList() // Collect into a List
+        .map(list -> {
+          results.setContent(list); // Set the content of ResultsDisplay
+          return results; // Return the populated ResultsDisplay
+        });
+  }
+
+  /**
+   * Updates the lead proceeding for a specific application.
+   * This method communicates with the CAAB API client to update the lead proceeding.
+   *
+   * @param applicationId The id of the application for which the lead proceeding should be updated.
+   * @param newLeadProceedingId The id of the new lead proceeding.
+   * @param user The user performing the operation, identified by {@code UserDetail}.
+   */
+  public void makeLeadProceeding(
+      final String applicationId,
+      final Integer newLeadProceedingId,
+      final UserDetail user) {
+
+    final List<Proceeding> proceedings = caabApiClient.getProceedings(applicationId).block();
+
+    if (proceedings == null) {
+      throw new CaabApplicationException(
+          "No proceedings found for applicationId: " + applicationId);
+    }
+
+    // Find and update the current lead proceeding if it exists
+    proceedings.stream()
+        .filter(Proceeding::getLeadProceedingInd)
+        .findFirst()
+        .ifPresent(proceeding -> {
+          proceeding.setLeadProceedingInd(false);
+          caabApiClient.updateProceeding(
+              proceeding.getId(),
+              proceeding,
+              user.getLoginId()).block();
+        });
+
+    // Set the new lead proceeding
+    final Proceeding newLeadProceeding = proceedings.stream()
+        .filter(proceeding -> proceeding.getId().equals(newLeadProceedingId))
+        .findFirst()
+        .orElseThrow(() ->
+            new CaabApplicationException("Error: New lead proceeding not found with id: "
+                + newLeadProceedingId));
+
+    newLeadProceeding.setLeadProceedingInd(true);
+    caabApiClient.updateProceeding(
+        newLeadProceedingId,
+        newLeadProceeding,
+        user.getLoginId()).block();
+
+    //TODO application opa means and merits reset
+    //Requires a new endpoint to be added to the CAAB API
+    //caabApiClient.updateApplication();
+    //see application.setMeritsReassessmentReqdInd(true); in pui
   }
 
   /**

@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application.summary;
 
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_EDIT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_CLIENT_NAMES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -26,6 +27,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
 import uk.gov.laa.ccms.caab.controller.application.client.AbstractClientSummaryController;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
+import uk.gov.laa.ccms.caab.model.BaseClient;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -110,13 +112,17 @@ public class EditClientSummaryController extends AbstractClientSummaryController
 
     validateClientFlowFormData(clientFlowFormData, bindingResult);
 
-    ClientTransactionResponse response =
+    final ClientTransactionResponse response =
         clientService.updateClient(
             activeCase.getClientReferenceNumber(),
             clientFlowFormData,
             user).block();
 
+
+    final BaseClient applicationClientNames = clientDetailsMapper.toBaseClient(clientFlowFormData);
+
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
+    session.setAttribute(APPLICATION_CLIENT_NAMES, applicationClientNames);
 
     return String.format("redirect:/submissions/%s", SUBMISSION_UPDATE_CLIENT);
   }
