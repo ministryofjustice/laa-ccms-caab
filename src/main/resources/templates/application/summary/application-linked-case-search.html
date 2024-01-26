@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>LAA CCMS - Search for an application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a href="/application/summary/linked-cases" class="govuk-back-link">Cancel and return to Linked case summary</a>
+  </div>
+  <div id="main-content">
+    <th:block th:replace="~{application/partials/search-fragments :: searchCaseFormFragment(
+      caption=${'Search for a case or application'},
+      heading=${'Linked cases'},
+      action=${'/application/summary/linked-cases/search'},
+      copyCase=${false})}">
+    </th:block>
+  </div>
+</div>
+</body>
+</html>

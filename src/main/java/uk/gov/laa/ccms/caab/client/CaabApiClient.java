@@ -279,6 +279,30 @@ public class CaabApiClient {
   }
 
   /**
+   * Asynchronously adds a linked case to an application.
+   *
+   * @param applicationId The ID of the application to which the case is linked.
+   * @param data          The linked case information.
+   * @param loginId       The login ID of the user performing the operation.
+   * @return A Mono that completes when the operation is done.
+   */
+  public Mono<Void> addLinkedCase(
+      final String applicationId,
+      final LinkedCase data,
+      final String loginId) {
+    return caabApiWebClient
+        .post()
+        .uri("applications/{applicationId}/linked-cases",
+            applicationId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(data)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleAddLinkedCaseError(e, applicationId));
+  }
+
+  /**
    * Updates a linked case in the CAAB API for a given application.
    *
    * @param applicationId the ID of the application to update the linked case for

@@ -1,12 +1,19 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -16,21 +23,35 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.bean.validators.application.LinkedCaseValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.CorrespondenceAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
+import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.ApplicationDetails;
+import uk.gov.laa.ccms.caab.model.BaseApplication;
+import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
+import uk.gov.laa.ccms.caab.util.PaginationUtil;
+import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -42,17 +63,26 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @Slf4j
 public class EditGeneralDetailsSectionController {
 
+  //services
   private final ApplicationService applicationService;
   private final AddressService addressService;
   private final LookupService lookupService;
   private final ProviderService providerService;
 
+  //validators
   private final FindAddressValidator findAddressValidator;
   private final AddressSearchValidator addressSearchValidator;
   private final CorrespondenceAddressValidator correspondenceAddressValidator;
   private final LinkedCaseValidator linkedCaseValidator;
+  private final CaseSearchCriteriaValidator searchCriteriaValidator;
+
+  //Mappers
+  private final ApplicationMapper applicationMapper;
+  private final ResultDisplayMapper resultDisplayMapper;
 
   private static final String ACTION_FIND_ADDRESS = "find_address";
+  protected static final String CURRENT_URL = "currentUrl";
+  protected static final String CASE_RESULTS_PAGE = "caseResultsPage";
 
   /**
    * Handles the GET request for editing an application's correspondence address.
@@ -365,25 +395,208 @@ public class EditGeneralDetailsSectionController {
   }
 
   /**
+   * Handles the GET request for searching linked cases.
+   *
+   * @param userDetails The details of the logged-in user.
+   * @param model       The UI model to add attributes to.
+   * @param session     The HTTP session object.
+   * @return String     The view name for linked cases search.
+   */
+  @GetMapping("/application/summary/linked-cases/search")
+  public String linkedCasesSearchGet(
+      @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
+      final Model model,
+      final HttpSession session) {
+
+    populateLinkedCasesSearchDropdowns(userDetails, model);
+
+    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    model.addAttribute(CASE_SEARCH_CRITERIA, caseSearchCriteria);
+    session.setAttribute(CASE_SEARCH_CRITERIA, caseSearchCriteria);
+
+    return "application/summary/application-linked-case-search";
+  }
+
+  /**
+   * Handles the POST request for searching linked cases, validates the search criteria,
+   * and processes search results.
+   *
+   * @param activeCase           Active case details from session attribute.
+   * @param caseSearchCriteria   Search criteria model attribute.
+   * @param user                 User details from session attribute.
+   * @param linkedCases          Linked cases from session attribute.
+   * @param redirectAttributes   Redirect attributes.
+   * @param bindingResult        Binding result for validation.
+   * @param model                Spring MVC model.
+   * @return The view name for redirection or linked case search view.
+   */
+  @PostMapping("/application/summary/linked-cases/search")
+  public String linkedCasesSearchPost(
+      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
+      @ModelAttribute(CASE_SEARCH_CRITERIA) final CaseSearchCriteria caseSearchCriteria,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute("linkedCases") final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases,
+      final RedirectAttributes redirectAttributes,
+      final BindingResult bindingResult,
+      final Model model) {
+
+    searchCriteriaValidator.validate(caseSearchCriteria, bindingResult);
+    if (bindingResult.hasErrors()) {
+      populateLinkedCasesSearchDropdowns(user, model);
+      return "application/summary/application-linked-case-search";
+    }
+
+    final List<BaseApplication> searchResults;
+
+    try {
+      searchResults = applicationService.getCases(caseSearchCriteria,
+          user.getLoginId(),
+          user.getUserType());
+
+      //filter out current linked cases and where application id is the same as the current
+      //application
+      searchResults.removeIf(
+          result -> linkedCases.getContent().stream()
+              .anyMatch(lc -> lc.getLscCaseReference().equals(result.getCaseReferenceNumber()))
+              || result.getCaseReferenceNumber().equals(activeCase.getCaseReferenceNumber()));
+
+      if (searchResults.isEmpty()) {
+        return "application/summary/application-linked-case-search-no-results";
+      }
+    } catch (TooManyResultsException e) {
+      return "application/summary/application-linked-case-search-too-many-results";
+    }
+
+    redirectAttributes.addFlashAttribute(CASE_SEARCH_RESULTS, searchResults);
+
+    return "redirect:/application/summary/linked-cases/search/results";
+  }
+
+  /**
+   * Displays the search results for linked cases with pagination.
+   *
+   * @param page              Requested page number.
+   * @param size              Size of the page.
+   * @param caseSearchResults List of search results.
+   * @param request           HTTP servlet request.
+   * @param model             Spring MVC model.
+   * @param session           HTTP session.
+   * @return The view name for search results.
+   */
+  @GetMapping("/application/summary/linked-cases/search/results")
+  public String linkedCasesSearchResults(
+      @RequestParam(value = "page", defaultValue = "0") final int page,
+      @RequestParam(value = "size", defaultValue = "10") final int size,
+      @ModelAttribute(CASE_SEARCH_RESULTS) final List<BaseApplication> caseSearchResults,
+      final HttpServletRequest request,
+      final Model model,
+      final HttpSession session) {
+
+    // Paginate the results list, and convert to the Page wrapper object for display
+    final ApplicationDetails applicationDetails = applicationMapper.toApplicationDetails(
+        PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), caseSearchResults));
+
+    model.addAttribute(CURRENT_URL,  request.getRequestURL().toString());
+
+    model.addAttribute(CASE_RESULTS_PAGE, applicationDetails);
+    session.setAttribute(CASE_RESULTS_PAGE, applicationDetails);
+    return "application/summary/application-linked-case-search-results";
+  }
+
+  /**
+   * Handles the GET request to initiate the addition of a linked case based on
+   * selected case reference ID.
+   *
+   * @param caseReferenceId    The case reference ID path variable.
+   * @param applicationDetails Application details from session attribute.
+   * @param model              Spring MVC model.
+   * @return The view name for adding a linked case.
+   */
+  @GetMapping("/application/summary/linked-cases/{case-reference-id}/add")
+  public String addLinkedCaseGet(
+      @PathVariable("case-reference-id") final String caseReferenceId,
+      @SessionAttribute(CASE_RESULTS_PAGE) final ApplicationDetails applicationDetails,
+      final Model model
+  ) {
+
+    final BaseApplication baseApplication = applicationDetails.getContent() == null ? null :
+        applicationDetails.getContent().stream()
+            .filter(lc -> caseReferenceId.equals(lc.getCaseReferenceNumber()))
+            .findFirst()
+            .orElse(null);
+
+    //map base application to linked case
+    final LinkedCaseResultRowDisplay linkedCase =
+        resultDisplayMapper.toLinkedCaseResultRowDisplay(baseApplication);
+
+    model.addAttribute("linkedCase", linkedCase);
+    populateLinkedCasesConfirmDropdowns(model);
+
+    return "application/summary/application-linked-case-add";
+  }
+
+  /**
+   * Processes the POST request for adding a linked case, validating the provided
+   * linked case details.
+   *
+   * @param applicationId Application ID from session attribute.
+   * @param user          User details from session attribute.
+   * @param linkedCase    Linked case model attribute.
+   * @param bindingResult Binding result for validation.
+   * @param model         Spring MVC model.
+   * @return The redirection view name upon successful addition, or the view name
+   *         to re-add upon validation errors.
+   */
+  @PostMapping("/application/summary/linked-cases/add")
+  public String addLinkedCasePost(
+      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @ModelAttribute("linkedCase") final LinkedCaseResultRowDisplay linkedCase,
+      final BindingResult bindingResult,
+      final Model model) {
+
+    linkedCaseValidator.validate(linkedCase, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      model.addAttribute("linkedCase", linkedCase);
+      populateLinkedCasesConfirmDropdowns(model);
+      return "application/summary/application-linked-case-add";
+    }
+
+    applicationService.addLinkedCase(applicationId, linkedCase, user);
+
+    return "redirect:/application/summary/linked-cases";
+  }
+
+  /**
    * Populates the model with dropdown options and additional attributes for linked case search.
    *
    * @param user the user details containing provider information
    * @param model the Spring Model to pass attributes for dropdowns and additional data
    */
   private void populateLinkedCasesSearchDropdowns(final UserDetail user, final Model model) {
-    final ProviderDetail provider = providerService.getProvider(user.getProvider().getId()).block();
-    if (provider == null) {
-      throw new CaabApplicationException(
-          String.format("Failed to retrieve Provider with id: %s",
-              user.getProvider().getId()));
-    }
+    Tuple2<ProviderDetail, CaseStatusLookupDetail> combinedResults =
+        Optional.ofNullable(Mono.zip(
+            providerService.getProvider(user.getProvider().getId()),
+            lookupService.getCaseStatusValues()).block()).orElseThrow(
+              () -> new CaabApplicationException("Failed to retrieve lookup data"));
+
+    final ProviderDetail providerDetail = combinedResults.getT1();
+    final CaseStatusLookupDetail caseStatusLookupDetail = combinedResults.getT2();
+
+    model.addAttribute("feeEarners",
+        providerService.getAllFeeEarners(providerDetail));
+    model.addAttribute("offices",
+        user.getProvider().getOffices());
+    model.addAttribute("statuses",
+        caseStatusLookupDetail.getContent());
 
     new DropdownBuilder(model)
         .addDropdown("Status",
             lookupService.getApplicationStatuses())
         .build();
 
-    model.addAttribute("feeEarners", providerService.getAllFeeEarners(provider));
+    model.addAttribute("feeEarners", providerService.getAllFeeEarners(providerDetail));
     model.addAttribute("offices", user.getProvider().getOffices());
   }
 
