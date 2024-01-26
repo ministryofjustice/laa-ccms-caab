@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.mapper;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import uk.gov.laa.ccms.caab.model.BaseApplication;
 import uk.gov.laa.ccms.caab.model.ClientResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ClientResultsDisplay;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
@@ -32,6 +33,18 @@ public interface ResultDisplayMapper {
   @Mapping(target = "clientSurname", source = "client.surname")
   @Mapping(target = "clientReferenceNumber", source = "client.reference")
   LinkedCaseResultRowDisplay toLinkedCaseResultRowDisplay(LinkedCase linkedCase);
+
+  @Mapping(target = "clientFirstName", source = "client.firstName")
+  @Mapping(target = "clientSurname", source = "client.surname")
+  @Mapping(target = "clientReferenceNumber", source = "client.reference")
+  @Mapping(target = "lscCaseReference", source = "caseReferenceNumber")
+  @Mapping(target = "providerCaseReference", source = "providerDetails.providerCaseReference")
+  @Mapping(target = "categoryOfLaw", source = "categoryOfLaw.displayValue")
+  @Mapping(target = "feeEarner", source = "providerDetails.feeEarner.displayValue")
+  @Mapping(target = "status", source = "status.displayValue")
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "relationToCase", ignore = true)
+  LinkedCaseResultRowDisplay toLinkedCaseResultRowDisplay(BaseApplication baseApplication);
 
   @Mapping(target = "auditTrail", ignore = true)
   @InheritInverseConfiguration(name = "toLinkedCaseResultRowDisplay")

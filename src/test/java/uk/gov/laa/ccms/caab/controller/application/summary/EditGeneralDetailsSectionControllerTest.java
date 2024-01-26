@@ -1,7 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -14,11 +16,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.controller.application.summary.EditGeneralDetailsSectionController.CASE_RESULTS_PAGE;
+import static uk.gov.laa.ccms.caab.controller.application.summary.EditGeneralDetailsSectionController.CURRENT_URL;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,18 +42,36 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
+import uk.gov.laa.ccms.caab.bean.validators.application.LinkedCaseValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.CorrespondenceAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
+import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
+import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
+import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.ApplicationDetails;
+import uk.gov.laa.ccms.caab.model.BaseApplication;
+import uk.gov.laa.ccms.caab.model.LinkedCase;
+import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.service.ProviderService;
+import uk.gov.laa.ccms.data.model.BaseOffice;
+import uk.gov.laa.ccms.data.model.BaseProvider;
+import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
+import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -57,7 +85,12 @@ class EditGeneralDetailsSectionControllerTest {
   private AddressService addressService;
 
   @Mock
+  private ProviderService providerService;
+  @Mock
   private LookupService lookupService;
+
+  @Mock
+  private CaseSearchCriteriaValidator searchCriteriaValidator;
 
   @Mock
   private  FindAddressValidator findAddressValidator;
@@ -66,7 +99,13 @@ class EditGeneralDetailsSectionControllerTest {
   private AddressSearchValidator addressSearchValidator;
 
   @Mock
+  private LinkedCaseValidator linkedCaseValidator;
+
+  @Mock
   private CorrespondenceAddressValidator correspondenceAddressValidator;
+
+  @Mock
+  private ApplicationMapper applicationMapper;
 
   @InjectMocks
   private EditGeneralDetailsSectionController editGeneralDetailsSectionController;
@@ -281,6 +320,196 @@ class EditGeneralDetailsSectionControllerTest {
 
   }
 
+  @Test
+  public void testLinkedCasesGet() throws Exception {
+    final String applicationId = "123";
+    final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases = new ResultsDisplay<>();
 
+    when(applicationService.getLinkedCases(applicationId)).thenReturn(linkedCases);
+
+    this.mockMvc.perform(get("/application/summary/linked-cases")
+            .sessionAttr(APPLICATION_ID, applicationId))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/summary/application-linked-case-summary"))
+        .andExpect(model().attribute("linkedCases", linkedCases));
+
+    verify(applicationService, times(1)).getLinkedCases(applicationId);
+  }
+
+  @Test
+  public void testRemoveLinkedCaseGet() throws Exception {
+    final Integer linkedCaseId = 1;
+    final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
+    linkedCase.setId(linkedCaseId);
+
+    final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases = new ResultsDisplay<>();
+    linkedCases.setContent(Collections.singletonList(linkedCase));
+
+    this.mockMvc.perform(get("/application/summary/linked-cases/{linked-case-id}/remove", linkedCaseId)
+            .sessionAttr("linkedCases", linkedCases))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/summary/application-linked-case-remove"))
+        .andExpect(model().attribute("linkedCase", linkedCase));
+  }
+
+  @Test
+  public void testRemoveLinkedCasePost() throws Exception {
+    final String applicationId = "123";
+    final String linkedCaseId = "1";
+    final UserDetail user = new UserDetail();
+
+    this.mockMvc.perform(post("/application/summary/linked-cases/{linked-case-id}/remove", linkedCaseId)
+            .sessionAttr(APPLICATION_ID, applicationId)
+            .sessionAttr(USER_DETAILS, user))
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/summary/linked-cases"));
+
+    verify(applicationService, times(1)).removeLinkedCase(applicationId, linkedCaseId, user);
+  }
+
+  @Test
+  public void testConfirmLinkedCaseGet() throws Exception {
+    final Integer linkedCaseId = 1;
+    final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
+    linkedCase.setId(linkedCaseId);
+
+    final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases = new ResultsDisplay<>();
+    linkedCases.setContent(Collections.singletonList(linkedCase));
+
+    when(lookupService.getCaseLinkTypes()).thenReturn(Mono.just(mockCommonLookupDetail));
+
+    this.mockMvc.perform(get("/application/summary/linked-cases/{linked-case-id}/confirm", linkedCaseId)
+            .sessionAttr("linkedCases", linkedCases))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/summary/application-linked-case-confirm"))
+        .andExpect(model().attribute("linkedCase", linkedCase));
+  }
+
+  @Test
+  public void testConfirmLinkedCasePost() throws Exception {
+    final String applicationId = "123";
+    final String linkedCaseId = "1";
+    final UserDetail user = new UserDetail();
+    final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
+
+    this.mockMvc.perform(post("/application/summary/linked-cases/{linked-case-id}/confirm", linkedCaseId)
+            .sessionAttr(APPLICATION_ID, applicationId)
+            .sessionAttr(USER_DETAILS, user)
+            .flashAttr("linkedCase", linkedCase))
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/summary/linked-cases"));
+
+    verify(applicationService, times(1)).updateLinkedCase(applicationId, linkedCaseId, linkedCase, user);
+  }
+
+  @Test
+  public void testConfirmLinkedCasePost_validationError() throws Exception {
+    final String applicationId = "123";
+    final String linkedCaseId = "1";
+    final UserDetail user = new UserDetail();
+    final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
+
+    when(lookupService.getCaseLinkTypes()).thenReturn(Mono.just(mockCommonLookupDetail));
+
+    doAnswer(invocation -> {
+      final Errors errors = (Errors) invocation.getArguments()[1];
+      errors.reject("error.code", "Error message");
+      return null;
+    }).when(linkedCaseValidator).validate(any(), any());
+
+    this.mockMvc.perform(post("/application/summary/linked-cases/{linked-case-id}/confirm", linkedCaseId)
+            .sessionAttr(APPLICATION_ID, applicationId)
+            .sessionAttr(USER_DETAILS, user)
+            .flashAttr("linkedCase", linkedCase))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/summary/application-linked-case-confirm"));
+
+    verify(applicationService, never()).updateLinkedCase(applicationId, linkedCaseId, linkedCase, user);
+  }
+
+  @Test
+  public void testLinkedCasesSearchGet() throws Exception {
+    final ProviderDetail mockProviderDetail = new ProviderDetail();
+    final CaseStatusLookupDetail mockCaseStatusValues = new CaseStatusLookupDetail();
+
+    when(lookupService.getApplicationStatuses()).thenReturn(Mono.just(mockCommonLookupDetail));
+    when(providerService.getProvider(any())).thenReturn(Mono.just(mockProviderDetail));
+    when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(mockCaseStatusValues));
+
+    this.mockMvc.perform(get("/application/summary/linked-cases/search")
+            .sessionAttr(USER_DETAILS, buildUserDetail()))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/summary/application-linked-case-search"))
+        .andExpect(model().attributeExists(CASE_SEARCH_CRITERIA));
+  }
+
+  @Test
+  public void testLinkedCasesSearchPost_validationError() throws Exception {
+
+    final ProviderDetail mockProviderDetail = new ProviderDetail();
+    final CaseStatusLookupDetail mockCaseStatusValues = new CaseStatusLookupDetail();
+
+    when(lookupService.getApplicationStatuses()).thenReturn(Mono.just(mockCommonLookupDetail));
+    when(providerService.getProvider(any())).thenReturn(Mono.just(mockProviderDetail));
+    when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(mockCaseStatusValues));
+
+    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    doAnswer(invocation -> {
+      final Errors errors = (Errors) invocation.getArguments()[1];
+      errors.reject("error.code", "Error message");
+      return null;
+    }).when(searchCriteriaValidator).validate(any(), any());
+
+    this.mockMvc.perform(post("/application/summary/linked-cases/search")
+            .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
+            .sessionAttr(USER_DETAILS, buildUserDetail())
+            .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
+            .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/summary/application-linked-case-search"));
+  }
+
+  @Test
+  public void testLinkedCasesSearchPost_emptySearchResults() throws Exception {
+    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    when(applicationService.getCases(any(), anyString(), anyString())).thenReturn(Collections.emptyList());
+
+    this.mockMvc.perform(post("/application/summary/linked-cases/search")
+            .sessionAttr(ACTIVE_CASE,  ActiveCase.builder().build())
+            .sessionAttr(USER_DETAILS, buildUserDetail())
+            .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
+            .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/summary/application-linked-case-search-no-results"));
+  }
+
+  @Test
+  public void testLinkedCasesSearchPost_tooManyResults() throws Exception {
+    // Arrange
+    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+
+    // Mock the applicationService to throw TooManyResultsException
+    when(applicationService.getCases(any(), anyString(), anyString()))
+        .thenThrow(new TooManyResultsException("test"));
+
+    // Act & Assert
+    this.mockMvc.perform(post("/application/summary/linked-cases/search")
+            .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
+            .sessionAttr(USER_DETAILS, buildUserDetail())
+            .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
+            .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/summary/application-linked-case-search-too-many-results"));
+  }
 
 }

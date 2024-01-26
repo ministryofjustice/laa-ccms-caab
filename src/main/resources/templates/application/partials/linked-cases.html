@@ -1,0 +1,56 @@
+<th:block th:fragment="confirmLinkedCase">
+  <form action="#" th:action="@{${action}}" th:object="${linkedCase}" method="post">
+    <div th:replace="~{partials/error-summary :: error-summary}"></div>
+    <input type="hidden" id="providerCaseReference" name="providerCaseReference" th:value="*{providerCaseReference}">
+    <input type="hidden" id="categoryOfLaw" name="categoryOfLaw" th:value="*{categoryOfLaw}">
+    <input type="hidden" id="feeEarner" name="feeEarner" th:value="*{feeEarner}">
+    <input type="hidden" id="status" name="status" th:value="*{status}">
+    <span class="govuk-caption-l">Create application</span>
+    <h1 class="govuk-heading-l">
+      Linked cases
+    </h1>
+    <p class="govuk-body-l">
+      Please answer the following questions concerning the application / case you are linking
+      to your application.
+    </p>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-two-thirds">
+        <p class="govuk-body">
+                <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
+                    Client name
+                </span>
+          <span th:text="${linkedCase.clientFirstName + ' ' + linkedCase.clientSurname}"></span>
+          <input type="hidden" id="clientFirstName" name="clientFirstName" th:value="*{clientFirstName}">
+          <input type="hidden" id="clientSurname" name="clientSurname" th:value="*{clientSurname}">
+          <input type="hidden" id="clientReferenceNumber" name="clientReferenceNumber" th:value="*{clientReferenceNumber}">
+        </p>
+        <p class="govuk-body">
+                <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
+                    LAA application / case reference
+                </span>
+          <span th:text="*{lscCaseReference}"></span>
+          <input type="hidden" id="lscCaseReference" name="lscCaseReference" th:value="*{lscCaseReference}">
+        </p>
+        <div th:replace="~{partials/forms :: dropdown('relationToCase', 'How is this application / case related to your application?', ${caseLinkOptions}, 'code', 'description', false)}"></div>
+        <div class="govuk-button-group">
+          <button type="submit" class="govuk-button" data-module="govuk-button">
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
+</th:block>
+
+<th:block th:fragment="noResultsFragment">
+  <span class="govuk-caption-l">Search for a case or application to link to your application</span>
+  <h1 class="govuk-heading-l">
+    Application search - no results
+  </h1>
+  <p class="govuk-body-l">
+    Your search has returned 0 results.
+  </p>
+  <p class="govuk-body-l">
+    Please return to amend your search criteria and try again.
+  </p>
+</th:block>

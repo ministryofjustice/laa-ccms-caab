@@ -677,6 +677,25 @@ public class ApplicationService {
   }
 
   /**
+   * Adds a linked case to an application.
+   *
+   * @param applicationId The ID of the application to link the case to.
+   * @param data          The display data of the linked case.
+   * @param user          The user performing the operation.
+   */
+  public void addLinkedCase(
+      final String applicationId,
+      final LinkedCaseResultRowDisplay data,
+      final UserDetail user) {
+
+    final LinkedCase linkedCase = resultDisplayMapper.toLinkedCase(data);
+    caabApiClient.addLinkedCase(
+        applicationId,
+        linkedCase,
+        user.getLoginId()).block();
+  }
+
+  /**
    * Patches an application's correspondence address in the CAAB's Transient Data Store.
    *
    * @param id the ID associated with the application
