@@ -10,7 +10,10 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
+import uk.gov.laa.ccms.caab.model.PriorAuthority;
+import uk.gov.laa.ccms.caab.model.Proceeding;
 
 /**
  * Provides error-handling capabilities for the CAAB API client interactions.
@@ -104,6 +107,42 @@ public class CaabApiClientErrorHandler {
   }
 
   /**
+   * Handles errors during retrieval of proceedings.
+   *
+   * @param e the Throwable associated with the error
+   * @return a Mono error encapsulating the issue encountered
+   */
+  public Mono<List<Proceeding>> handleGetProceedingError(Throwable e) {
+    final String msg = "Failed to retrieve proceedings";
+    log.error(msg, e);
+    return Mono.error(new CaabApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors during retrieval of costs.
+   *
+   * @param e the Throwable associated with the error
+   * @return a Mono error encapsulating the issue encountered
+   */
+  public Mono<CostStructure> handleGetCostsError(Throwable e) {
+    final String msg = "Failed to retrieve costs";
+    log.error(msg, e);
+    return Mono.error(new CaabApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors during retrieval of prior authorities.
+   *
+   * @param e the Throwable associated with the error
+   * @return a Mono error encapsulating the issue encountered
+   */
+  public Mono<List<PriorAuthority>> handleGetPriorAuthorityError(Throwable e) {
+    final String msg = "Failed to retrieve prior authorities";
+    log.error(msg, e);
+    return Mono.error(new CaabApiClientException(msg, e));
+  }
+
+  /**
    * Handles errors during the deletion of a linked case.
    *
    * @param e the Throwable associated with the error
@@ -130,13 +169,39 @@ public class CaabApiClientErrorHandler {
   }
 
   /**
+   * Handles errors during the update of a proceeding.
+   *
+   * @param e the Throwable associated with the error
+   * @param proceedingId the ID of the linked case attempted to be updated
+   * @return a Mono error encapsulating the issue encountered
+   */
+  public Mono<Void> handleUpdateProceedingError(final Throwable e, final Integer proceedingId) {
+    final String msg = String.format("Failed to update linked case - %s", proceedingId);
+    log.error(msg, e);
+    return Mono.error(new CaabApiClientException(msg, e));
+  }
+
+  /**
    * Handles errors encountered during updating an application.
    *
    * @param e the encountered error
    * @return a Mono signaling the error wrapped in a {@code CaabApiServiceException}
    */
-  public Mono<Void> handleUpdateApplicationError(Throwable e, String type) {
+  public Mono<Void> handleUpdateApplicationError(final Throwable e, final String type) {
     final String msg = String.format("Failed to update application - %s", type);
+    log.error(msg, e);
+    return Mono.error(new CaabApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors encountered during updating clients for an application by their reference.
+   *
+   * @param e the encountered error
+   * @return a Mono signaling the error wrapped in a {@code CaabApiServiceException}
+   */
+  public Mono<Void> handleUpdateClientError(final Throwable e, final String clientReference) {
+    final String msg = String.format("Failed to update client with reference - %s",
+        clientReference);
     log.error(msg, e);
     return Mono.error(new CaabApiClientException(msg, e));
   }

@@ -98,7 +98,7 @@ class NotificationsSearchResultsControllerTest {
     flashMap.put("user", userDetails);
     flashMap.put(NOTIFICATION_SEARCH_CRITERIA, criteria);
     when(notificationService.getNotifications(any(), any(), any()))
-        .thenReturn(Mono.just(notificationsMock));
+        .thenReturn(Mono.empty());
 
     Exception exception = assertThrows(Exception.class, () ->
         this.mockMvc.perform(get("/notifications/search-results")

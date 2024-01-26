@@ -290,10 +290,10 @@ public class CaabApiClientTest {
     final String applicationId = "app123";
     final String linkedCaseId = "case456";
     final String loginId = "user789";
-    final String expectedUri = "/applications/{applicationId}/linked-cases/{linkedCaseId}";
+    final String expectedUri = "/linked-cases/{linkedCaseId}";
 
     when(caabApiWebClient.delete()).thenReturn(requestHeadersUriMock);
-    when(requestHeadersUriMock.uri(expectedUri, applicationId, linkedCaseId)).thenReturn(requestBodyMock);
+    when(requestHeadersUriMock.uri(expectedUri, linkedCaseId)).thenReturn(requestBodyMock);
     when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
     when(requestBodyMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
@@ -313,10 +313,10 @@ public class CaabApiClientTest {
     final String linkedCaseId = "case456";
     final LinkedCase linkedCaseData = new LinkedCase(); // Populate this with test data as needed
     final String loginId = "user789";
-    final String expectedUri = "/applications/{applicationId}/linked-cases/{linkedCaseId}";
+    final String expectedUri = "/linked-cases/{linkedCaseId}";
 
     when(caabApiWebClient.patch()).thenReturn(requestBodyUriMock);
-    when(requestBodyUriMock.uri(expectedUri, applicationId, linkedCaseId)).thenReturn(requestBodyMock);
+    when(requestBodyUriMock.uri(expectedUri, linkedCaseId)).thenReturn(requestBodyMock);
     when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
     when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
     when(requestBodyMock.bodyValue(linkedCaseData)).thenReturn(requestHeadersMock);

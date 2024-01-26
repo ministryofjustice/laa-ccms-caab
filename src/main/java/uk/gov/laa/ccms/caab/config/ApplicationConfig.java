@@ -1,11 +1,14 @@
 package uk.gov.laa.ccms.caab.config;
 
+import java.util.Locale;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.i18n.FixedLocaleResolver;
 
 /**
  * Configuration class for creating WebClient instances used for making HTTP requests.
@@ -88,5 +91,18 @@ public class ApplicationConfig implements WebMvcConfigurer {
   @Bean("osApiWebClient")
   WebClient osApiWebClient() {
     return WebClient.create(osApiUrl);
+  }
+
+
+  /**
+   * Creates a LocaleResolver bean for setting the default locale to UK.
+   *
+   * @return A LocaleResolver instance configured for the UK locale.
+   */
+  @Bean
+  public LocaleResolver localeResolver() {
+    final FixedLocaleResolver localeResolver = new FixedLocaleResolver();
+    localeResolver.setDefaultLocale(Locale.UK);
+    return localeResolver;
   }
 }

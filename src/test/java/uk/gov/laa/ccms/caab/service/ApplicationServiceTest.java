@@ -55,6 +55,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
@@ -87,6 +88,7 @@ import uk.gov.laa.ccms.caab.model.Client;
 import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
@@ -1542,6 +1544,80 @@ class ApplicationServiceTest {
     assertEquals(1, result.getProceedings().size());
 
   }
+
+  @Test
+  void getProceedings_ReturnsListOfProceedings_Successful() {
+    final String applicationId = "app123";
+    final List<Proceeding> mockProceedings = Arrays.asList(new Proceeding(), new Proceeding());
+
+    when(caabApiClient.getProceedings(applicationId)).thenReturn(Mono.just(mockProceedings));
+
+    final Mono<ResultsDisplay<Proceeding>> resultMono = applicationService.getProceedings(applicationId);
+
+    StepVerifier.create(resultMono)
+        .assertNext(resultsDisplay -> {
+          assertNotNull(resultsDisplay.getContent());
+          assertEquals(mockProceedings.size(), resultsDisplay.getContent().size());
+          assertEquals(mockProceedings, resultsDisplay.getContent());
+        })
+        .verifyComplete();
+  }
+
+  @Test
+  void getCosts_ReturnsCostStructure_Successful() {
+    final String applicationId = "app123";
+    final CostStructure mockCostStructure = new CostStructure();
+
+    when(caabApiClient.getCosts(applicationId)).thenReturn(Mono.just(mockCostStructure));
+
+    final Mono<CostStructure> resultMono = applicationService.getCosts(applicationId);
+
+    StepVerifier.create(resultMono)
+        .assertNext(costStructure -> assertEquals(mockCostStructure, costStructure))
+        .verifyComplete();
+  }
+
+  @Test
+  void getPriorAuthorities_ReturnsListOfPriorAuthorities_Successful() {
+    final String applicationId = "app123";
+    final List<uk.gov.laa.ccms.caab.model.PriorAuthority> mockPriorAuthorities =
+        Arrays.asList(new uk.gov.laa.ccms.caab.model.PriorAuthority(), new uk.gov.laa.ccms.caab.model.PriorAuthority());
+
+    when(caabApiClient.getPriorAuthorities(applicationId)).thenReturn(Mono.just(mockPriorAuthorities));
+
+    final Mono<ResultsDisplay<uk.gov.laa.ccms.caab.model.PriorAuthority>> resultMono =
+        applicationService.getPriorAuthorities(applicationId);
+
+    StepVerifier.create(resultMono)
+        .assertNext(resultsDisplay -> {
+          assertNotNull(resultsDisplay.getContent());
+          assertEquals(mockPriorAuthorities.size(), resultsDisplay.getContent().size());
+          assertEquals(mockPriorAuthorities, resultsDisplay.getContent());
+        })
+        .verifyComplete();
+  }
+
+  @Test
+  void makeLeadProceeding_UpdatesLeadProceeding_Successful() {
+    final String applicationId = "app123";
+    final Integer newLeadProceedingId = 2;
+    final UserDetail user = new UserDetail().loginId("user1");
+
+    final List<Proceeding> mockProceedings = Arrays.asList(
+        new Proceeding().id(1).leadProceedingInd(true),
+        new Proceeding().id(2).leadProceedingInd(false)
+    );
+
+    when(caabApiClient.getProceedings(applicationId)).thenReturn(Mono.just(mockProceedings));
+    when(caabApiClient.updateProceeding(anyInt(), any(Proceeding.class), anyString()))
+        .thenReturn(Mono.empty());
+
+    applicationService.makeLeadProceeding(applicationId, newLeadProceedingId, user);
+
+    verify(caabApiClient).updateProceeding(eq(1), any(Proceeding.class), eq(user.getLoginId()));
+    verify(caabApiClient).updateProceeding(eq(2), any(Proceeding.class), eq(user.getLoginId()));
+  }
+
 
   private ApplicationFormData buildApplicationFormData() {
     final ApplicationFormData applicationFormData = new ApplicationFormData();
