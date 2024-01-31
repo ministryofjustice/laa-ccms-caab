@@ -17,6 +17,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_M
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MATTER_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_NOTIFICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_STATUS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
 
@@ -476,6 +477,24 @@ public class LookupService {
    */
   public Mono<RelationshipToCaseLookupDetail> getPersonToCaseRelationships() {
     return ebsApiClient.getPersonToCaseRelationships(null, null);
+  }
+
+  /**
+   * Get a list of all Organisation Relationship To Case Lookup Values.
+   *
+   * @return Mono containing all relationship lookup values or null if an error occurs.
+   */
+  public Mono<RelationshipToCaseLookupDetail> getOrganisationToCaseRelationships() {
+    return ebsApiClient.getOrganisationToCaseRelationships(null, null);
+  }
+
+  /**
+   * Get a list of all Relationships To Client Lookup Values.
+   *
+   * @return Mono containing all relationship lookup values or null if an error occurs.
+   */
+  public Mono<CommonLookupDetail> getRelationshipsToClient() {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT);
   }
 
   /**

@@ -450,5 +450,30 @@ public class EbsApiClient {
         .onErrorResume(e -> ebsApiClientErrorHandler.handlePersonToCaseRelationshipError(code,
             description, e));
   }
+
+  /**
+   * Retrieves organisation to case relationship lookup detail based on the provided code
+   * and description values.
+   *
+   * @param code - the relationship code.
+   * @param description - the relationship description value.
+   * @return A Mono containing RelationshipToCaseLookupDetail or error handler if an error occurs.
+   */
+  public Mono<RelationshipToCaseLookupDetail> getOrganisationToCaseRelationships(
+      final String code,
+      final String description) {
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/lookup/organisation-to-case-relationships")
+            .queryParamIfPresent("code",
+                Optional.ofNullable(code))
+            .queryParamIfPresent("description",
+                Optional.ofNullable(description))
+            .build())
+        .retrieve()
+        .bodyToMono(RelationshipToCaseLookupDetail.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleOrganisationToCaseRelationshipError(code,
+            description, e));
+  }
 }
 
