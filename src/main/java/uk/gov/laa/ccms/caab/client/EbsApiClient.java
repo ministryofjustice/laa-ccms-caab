@@ -145,16 +145,25 @@ public class EbsApiClient {
   }
 
   /**
-   * Retrieves the organisation to case relationships lookup values.
+   * Retrieves the organisation to case relationships lookup values, optionally
+   * filtered on code and description value.
    *
+   * @param code - the relationship code.
+   * @param description - the relationship description value.
    * @return A Mono containing the RelationshipToCaseLookupDetail or an error handler if an error
    *         occurs.
    */
-  public Mono<RelationshipToCaseLookupDetail> getOrganisationRelationshipsToCaseValues() {
+  public Mono<RelationshipToCaseLookupDetail> getOrganisationRelationshipsToCaseValues(
+      final String code,
+      final String description) {
 
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/lookup/organisation-to-case-relationships")
+            .queryParamIfPresent("code",
+                Optional.ofNullable(code))
+            .queryParamIfPresent("description",
+                Optional.ofNullable(description))
             .build())
         .retrieve()
         .bodyToMono(RelationshipToCaseLookupDetail.class)
@@ -448,31 +457,6 @@ public class EbsApiClient {
         .retrieve()
         .bodyToMono(RelationshipToCaseLookupDetail.class)
         .onErrorResume(e -> ebsApiClientErrorHandler.handlePersonToCaseRelationshipError(code,
-            description, e));
-  }
-
-  /**
-   * Retrieves organisation to case relationship lookup detail based on the provided code
-   * and description values.
-   *
-   * @param code - the relationship code.
-   * @param description - the relationship description value.
-   * @return A Mono containing RelationshipToCaseLookupDetail or error handler if an error occurs.
-   */
-  public Mono<RelationshipToCaseLookupDetail> getOrganisationToCaseRelationships(
-      final String code,
-      final String description) {
-    return ebsApiWebClient
-        .get()
-        .uri(builder -> builder.path("/lookup/organisation-to-case-relationships")
-            .queryParamIfPresent("code",
-                Optional.ofNullable(code))
-            .queryParamIfPresent("description",
-                Optional.ofNullable(description))
-            .build())
-        .retrieve()
-        .bodyToMono(RelationshipToCaseLookupDetail.class)
-        .onErrorResume(e -> ebsApiClientErrorHandler.handleOrganisationToCaseRelationshipError(code,
             description, e));
   }
 }

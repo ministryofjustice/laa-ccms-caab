@@ -450,10 +450,10 @@ public class ApplicationService {
   public Mono<ApplicationSummaryDisplay> getApplicationSummary(final String id) {
 
     Mono<RelationshipToCaseLookupDetail> organisationRelationshipsMono =
-        ebsApiClient.getOrganisationRelationshipsToCaseValues();
+        lookupService.getOrganisationToCaseRelationships();
 
     Mono<RelationshipToCaseLookupDetail> personRelationshipsMono =
-        ebsApiClient.getPersonRelationshipsToCaseValues();
+        lookupService.getPersonToCaseRelationships();
 
     Mono<ApplicationDetail> applicationMono
         = caabApiClient.getApplication(id);
