@@ -424,7 +424,7 @@ public class EditGeneralDetailsSectionController {
    * @param activeCase           Active case details from session attribute.
    * @param caseSearchCriteria   Search criteria model attribute.
    * @param user                 User details from session attribute.
-   * @param linkedCases          Linked cases from session attribute.
+   * @param currentlinkedCases   The current Linked cases for the application.
    * @param redirectAttributes   Redirect attributes.
    * @param bindingResult        Binding result for validation.
    * @param model                Spring MVC model.
@@ -435,7 +435,8 @@ public class EditGeneralDetailsSectionController {
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @ModelAttribute(CASE_SEARCH_CRITERIA) final CaseSearchCriteria caseSearchCriteria,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @SessionAttribute(LINKED_CASES) final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases,
+      @SessionAttribute(LINKED_CASES)
+      final ResultsDisplay<LinkedCaseResultRowDisplay> currentlinkedCases,
       final RedirectAttributes redirectAttributes,
       final BindingResult bindingResult,
       final Model model) {
@@ -456,7 +457,7 @@ public class EditGeneralDetailsSectionController {
       //filter out current linked cases and where application id is the same as the current
       //application
       searchResults.removeIf(
-          result -> linkedCases.getContent().stream()
+          result -> currentlinkedCases.getContent().stream()
               .anyMatch(lc -> lc.getLscCaseReference().equals(result.getCaseReferenceNumber()))
               || result.getCaseReferenceNumber().equals(activeCase.getCaseReferenceNumber()));
 
