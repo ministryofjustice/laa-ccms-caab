@@ -107,5 +107,10 @@ public class CommonValueConstants {
    */
   public static final String COMMON_VALUE_APPLICATION_STATUS = "XXCCMS_APP_CASE_STATUS";
 
+  /**
+   * Type used to retrieve the Relationship to Client values.
+   */
+  public static final String COMMON_VALUE_RELATIONSHIP_TO_CLIENT = "XXCCMS_REL_TO_CLIENT";
+
 
 }

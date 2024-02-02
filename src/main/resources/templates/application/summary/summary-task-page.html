@@ -77,7 +77,7 @@
             <td class="govuk-table__cell"></td>
           </tr>
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell"><a href="#" class="govuk-link">Opponents and other parties</a></td>
+            <td class="govuk-table__cell"><a href="/application/summary/opponents" class="govuk-link">Opponents and other parties</a></td>
             <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.opponentsAndOtherParties.status})}"></td>
             <td class="govuk-table__cell" th:text="${#dates.format(summary.opponentsAndOtherParties.lastSaved, 'dd/MM/yyyy')}"></td>
             <td class="govuk-table__cell" th:text="${summary.opponentsAndOtherParties.lastSavedBy}"></td>

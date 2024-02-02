@@ -8,6 +8,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FIN
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_LAND;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTHER_ASSET;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_ORGANISATION;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
@@ -67,6 +68,8 @@ import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.Opponent;
+import uk.gov.laa.ccms.caab.model.OpponentRowDisplay;
 import uk.gov.laa.ccms.caab.model.PriorAuthority;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
@@ -447,10 +450,10 @@ public class ApplicationService {
   public Mono<ApplicationSummaryDisplay> getApplicationSummary(final String id) {
 
     Mono<RelationshipToCaseLookupDetail> organisationRelationshipsMono =
-        ebsApiClient.getOrganisationRelationshipsToCaseValues();
+        lookupService.getOrganisationToCaseRelationships();
 
     Mono<RelationshipToCaseLookupDetail> personRelationshipsMono =
-        ebsApiClient.getPersonRelationshipsToCaseValues();
+        lookupService.getPersonToCaseRelationships();
 
     Mono<ApplicationDetail> applicationMono
         = caabApiClient.getApplication(id);
@@ -795,6 +798,137 @@ public class ApplicationService {
         id, user.getLoginId(), providerDetails, UPDATE_APPLICATION_PROVIDER_DETAILS).block();
 
   }
+
+  /**
+   * Fetches the opponents associated with a specific application id.
+   * This method communicates with the CAAB API client to fetch the proceedings and
+   * transforms them into a {@code ResultsDisplay<Opponent>} format.
+   *
+   * @param applicationId The id of the application for which proceedings should be retrieved.
+   * @return A {@code Mono<ResultsDisplay<OpponentRowDisplay>>} containing the opponents.
+   */
+  public ResultsDisplay<OpponentRowDisplay> getOpponents(final String applicationId) {
+    final ResultsDisplay<OpponentRowDisplay> results = new ResultsDisplay<>();
+
+    // Retrieve the lookup data required to translate the opponent attributes to display data.
+    Tuple4<CommonLookupDetail,
+        RelationshipToCaseLookupDetail,
+        RelationshipToCaseLookupDetail,
+        CommonLookupDetail> combinedResponse = Optional.ofNullable(Mono.zip(
+            lookupService.getContactTitles(),
+            lookupService.getPersonToCaseRelationships(),
+            lookupService.getOrganisationToCaseRelationships(),
+            lookupService.getRelationshipsToClient()).block())
+        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
+
+    // Get the list of opponents for the application, and transform to display model.
+    return caabApiClient.getOpponents(applicationId)
+        .flatMapMany(Flux::fromIterable) // Convert to Flux<LinkedCase>
+        .map(opponent ->
+          buildOpponentRowDisplay(
+              opponent,
+              combinedResponse.getT1(),
+              combinedResponse.getT2(),
+              combinedResponse.getT3(),
+              combinedResponse.getT4())
+        )
+        .collectList() // Collect into a List
+        .map(list -> {
+          results.setContent(list); // Set the content of ResultsDisplay
+          return results; // Return the populated ResultsDisplay
+        }).block();
+  }
+
+  /**
+   * Build an OpponentRowDisplay for the provided Opponent.
+   * Codes will be translated to their display value depending on the type of opponent.
+   *
+   * @param opponent - the opponent
+   * @param contactTitles - a lookup of all contact titles
+   * @param personRelationshipsToCase - a lookup of all person relationships to case
+   * @param orgRelationshipsToCase - a lookup of all organisation relationships to case
+   * @param relationshipsToClient - a lookup of all relationships to client
+   * @return OpponentRowDisplay for the Opponent
+   */
+  protected OpponentRowDisplay buildOpponentRowDisplay(
+      final Opponent opponent,
+      final CommonLookupDetail contactTitles,
+      final RelationshipToCaseLookupDetail personRelationshipsToCase,
+      final RelationshipToCaseLookupDetail orgRelationshipsToCase,
+      final CommonLookupDetail relationshipsToClient) {
+
+    boolean isOrganisation = OPPONENT_TYPE_ORGANISATION.equals(opponent.getType());
+
+    // Build a name for the opponent depending on the opponent type.
+    String partyName = isOrganisation ? opponent.getOrganisationName()
+        : toIndividualOpponentPartyName(opponent, contactTitles);
+
+    // Look up the relationship to case display value depending on opponent type.
+    List<RelationshipToCaseLookupValueDetail> relationships = isOrganisation
+        ? orgRelationshipsToCase.getContent() : personRelationshipsToCase.getContent();
+
+    String relationshipToCase = relationships.stream()
+        .filter(relationship -> relationship.getCode().equals(opponent.getRelationshipToCase()))
+        .findFirst()
+        .map(RelationshipToCaseLookupValueDetail::getDescription)
+        .orElse(opponent.getRelationshipToCase());
+
+    // Look up the relationship to client display value.
+    String relationshipToClient = relationshipsToClient.getContent().stream()
+        .filter(relationship -> relationship.getCode().equals(opponent.getRelationshipToClient()))
+        .findFirst()
+        .map(CommonLookupValueDetail::getDescription)
+        .orElse(opponent.getRelationshipToClient());
+
+    return OpponentRowDisplay.builder()
+        .id(opponent.getId())
+        .partyName(partyName)
+        .partyType(opponent.getType())
+        .relationshipToCase(relationshipToCase)
+        .relationshipToClient(relationshipToClient)
+        .editable(isOrganisation || OPPONENT_TYPE_INDIVIDUAL.equals(opponent.getType()))
+        .deletable(opponent.getDeleteInd())
+        .build();
+  }
+
+  /**
+   * Build the full name for an Individual Opponent.
+   *
+   * @param opponent - the opponent
+   * @param contactTitles - a lookup of all contact titles
+   * @return The opponent's full name
+   */
+  protected String toIndividualOpponentPartyName(final Opponent opponent,
+      final CommonLookupDetail contactTitles) {
+    StringBuilder builder = new StringBuilder();
+
+    if (StringUtils.hasText(opponent.getTitle())) {
+      // Lookup the display value for the contact title
+      final String titleDisplayValue = contactTitles.getContent().stream()
+          .filter(title -> title.getCode().equals(opponent.getTitle()))
+          .findFirst()
+          .map(CommonLookupValueDetail::getDescription)
+          .orElse(opponent.getTitle());
+      builder.append(titleDisplayValue);
+    }
+
+    if (StringUtils.hasText(opponent.getFirstName())) {
+      if (!builder.isEmpty()) {
+        builder.append(" ");
+      }
+      builder.append(opponent.getFirstName());
+    }
+
+    if (StringUtils.hasText(opponent.getSurname())) {
+      if (!builder.isEmpty()) {
+        builder.append(" ");
+      }
+      builder.append(opponent.getSurname());
+    }
+
+    return builder.isEmpty() ? "undefined" : builder.toString();
+  }
+
 
   /**
    * Before a CaseDetail can be mapped to a CAAB ApplicationDetail further lookup

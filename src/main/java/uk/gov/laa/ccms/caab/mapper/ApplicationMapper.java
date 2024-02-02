@@ -242,6 +242,7 @@ public interface ApplicationMapper {
   Client toClient(BaseClient soaClient);
 
   @Mapping(target = "type", constant = OPPONENT_TYPE_INDIVIDUAL)
+  @Mapping(target = "id", ignore = true)
   @Mapping(target = "ebsId", source = "otherPartyId")
   @Mapping(target = ".", source = "person")
   @Mapping(target = "courtOrderedMeansAssessment", source = "person.courtOrderedMeansAssesment")
@@ -274,6 +275,7 @@ public interface ApplicationMapper {
 
 
   @Mapping(target = "type", constant = OPPONENT_TYPE_ORGANISATION)
+  @Mapping(target = "id", ignore = true)
   @Mapping(target = "ebsId", source = "otherPartyId")
   @Mapping(target = ".", source = "organisation")
   @Mapping(target = "address", source = "organisation.address")
