@@ -386,7 +386,7 @@ class EditGeneralDetailsSectionControllerTest {
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/summary/application-linked-case-confirm"))
-        .andExpect(model().attribute("linkedCase", linkedCase));
+        .andExpect(model().attribute("currentLinkedCase", linkedCase));
   }
 
   @Test
@@ -446,8 +446,7 @@ class EditGeneralDetailsSectionControllerTest {
             .sessionAttr(USER_DETAILS, buildUserDetail()))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/application-linked-case-search"))
-        .andExpect(model().attributeExists(CASE_SEARCH_CRITERIA));
+        .andExpect(view().name("application/summary/application-linked-case-search"));
   }
 
   @Test

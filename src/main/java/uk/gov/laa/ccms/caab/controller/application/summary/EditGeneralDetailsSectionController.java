@@ -1,7 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.LINKED_CASES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
@@ -23,12 +25,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.bean.validators.application.LinkedCaseValidator;
@@ -43,7 +47,6 @@ import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplication;
-import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
@@ -61,6 +64,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
+@SessionAttributes({CASE_SEARCH_CRITERIA})
 public class EditGeneralDetailsSectionController {
 
   //services
@@ -268,12 +272,12 @@ public class EditGeneralDetailsSectionController {
       final Model model,
       final HttpSession session) {
 
-
     final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases =
         applicationService.getLinkedCases(applicationId);
 
-    model.addAttribute("linkedCases", linkedCases);
-    session.setAttribute("linkedCases", linkedCases);
+    model.addAttribute(LINKED_CASES, linkedCases);
+    session.setAttribute(LINKED_CASES, linkedCases);
+    model.addAttribute(CASE_SEARCH_CRITERIA, new CaseSearchCriteria());
 
     return "application/summary/application-linked-case-summary";
   }
@@ -289,7 +293,7 @@ public class EditGeneralDetailsSectionController {
   @GetMapping("/application/summary/linked-cases/{linked-case-id}/remove")
   public String removeLinkedCaseGet(
       @PathVariable("linked-case-id") final Integer linkedCaseId,
-      @SessionAttribute("linkedCases") final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases,
+      @SessionAttribute(LINKED_CASES) final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases,
       final Model model) {
 
     final LinkedCaseResultRowDisplay linkedCase = linkedCases.getContent() == null ? null :
@@ -333,7 +337,7 @@ public class EditGeneralDetailsSectionController {
   @GetMapping("/application/summary/linked-cases/{linked-case-id}/confirm")
   public String confirmLinkedCaseGet(
       @PathVariable("linked-case-id") final Integer linkedCaseId,
-      @SessionAttribute("linkedCases") final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases,
+      @SessionAttribute(LINKED_CASES) final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases,
       final Model model) {
 
     final LinkedCaseResultRowDisplay linkedCase = linkedCases.getContent() == null ? null :
@@ -342,7 +346,7 @@ public class EditGeneralDetailsSectionController {
             .findFirst()
             .orElse(null);
 
-    model.addAttribute("linkedCase", linkedCase);
+    model.addAttribute("currentLinkedCase", linkedCase);
 
     populateLinkedCasesConfirmDropdowns(model);
 
@@ -365,14 +369,14 @@ public class EditGeneralDetailsSectionController {
       @PathVariable("linked-case-id") final String linkedCaseId,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @ModelAttribute("linkedCase") final LinkedCaseResultRowDisplay linkedCase,
+      @ModelAttribute("currentLinkedCase") final LinkedCaseResultRowDisplay linkedCase,
       final BindingResult bindingResult,
       final Model model) {
 
     linkedCaseValidator.validate(linkedCase, bindingResult);
 
     if (bindingResult.hasErrors()) {
-      model.addAttribute("linkedCase", linkedCase);
+      model.addAttribute("currentLinkedCase", linkedCase);
       populateLinkedCasesConfirmDropdowns(model);
       return "application/summary/application-linked-case-confirm";
     }
@@ -410,10 +414,6 @@ public class EditGeneralDetailsSectionController {
 
     populateLinkedCasesSearchDropdowns(userDetails, model);
 
-    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
-    model.addAttribute(CASE_SEARCH_CRITERIA, caseSearchCriteria);
-    session.setAttribute(CASE_SEARCH_CRITERIA, caseSearchCriteria);
-
     return "application/summary/application-linked-case-search";
   }
 
@@ -435,7 +435,7 @@ public class EditGeneralDetailsSectionController {
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @ModelAttribute(CASE_SEARCH_CRITERIA) final CaseSearchCriteria caseSearchCriteria,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @SessionAttribute("linkedCases") final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases,
+      @SessionAttribute(LINKED_CASES) final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases,
       final RedirectAttributes redirectAttributes,
       final BindingResult bindingResult,
       final Model model) {
@@ -493,13 +493,13 @@ public class EditGeneralDetailsSectionController {
       final HttpSession session) {
 
     // Paginate the results list, and convert to the Page wrapper object for display
-    final ApplicationDetails applicationDetails = applicationMapper.toApplicationDetails(
+    final ApplicationDetails linkedCaseSearchResults = applicationMapper.toApplicationDetails(
         PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), caseSearchResults));
 
     model.addAttribute(CURRENT_URL,  request.getRequestURL().toString());
 
-    model.addAttribute(CASE_RESULTS_PAGE, applicationDetails);
-    session.setAttribute(CASE_RESULTS_PAGE, applicationDetails);
+    model.addAttribute(CASE_RESULTS_PAGE, linkedCaseSearchResults);
+    session.setAttribute(CASE_RESULTS_PAGE, linkedCaseSearchResults);
     return "application/summary/application-linked-case-search-results";
   }
 
@@ -508,28 +508,30 @@ public class EditGeneralDetailsSectionController {
    * selected case reference ID.
    *
    * @param caseReferenceId    The case reference ID path variable.
-   * @param applicationDetails Application details from session attribute.
+   * @param linkedCaseSearchResults the results from the linked case search.=.
    * @param model              Spring MVC model.
    * @return The view name for adding a linked case.
    */
   @GetMapping("/application/summary/linked-cases/{case-reference-id}/add")
   public String addLinkedCaseGet(
       @PathVariable("case-reference-id") final String caseReferenceId,
-      @SessionAttribute(CASE_RESULTS_PAGE) final ApplicationDetails applicationDetails,
+      @SessionAttribute(CASE_RESULTS_PAGE) final ApplicationDetails linkedCaseSearchResults,
       final Model model
   ) {
 
-    final BaseApplication baseApplication = applicationDetails.getContent() == null ? null :
-        applicationDetails.getContent().stream()
+    final BaseApplication baseApplication = linkedCaseSearchResults.getContent() == null ? null :
+        linkedCaseSearchResults.getContent().stream()
             .filter(lc -> caseReferenceId.equals(lc.getCaseReferenceNumber()))
             .findFirst()
-            .orElse(null);
+            .orElseThrow(() -> new CaabApplicationException(
+                String.format("Unable to add linked case with case reference: %s",
+                    caseReferenceId)));
 
     //map base application to linked case
     final LinkedCaseResultRowDisplay linkedCase =
         resultDisplayMapper.toLinkedCaseResultRowDisplay(baseApplication);
 
-    model.addAttribute("linkedCase", linkedCase);
+    model.addAttribute("currentLinkedCase", linkedCase);
     populateLinkedCasesConfirmDropdowns(model);
 
     return "application/summary/application-linked-case-add";
@@ -551,14 +553,14 @@ public class EditGeneralDetailsSectionController {
   public String addLinkedCasePost(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @ModelAttribute("linkedCase") final LinkedCaseResultRowDisplay linkedCase,
+      @ModelAttribute("currentLinkedCase") final LinkedCaseResultRowDisplay linkedCase,
       final BindingResult bindingResult,
       final Model model) {
 
     linkedCaseValidator.validate(linkedCase, bindingResult);
 
     if (bindingResult.hasErrors()) {
-      model.addAttribute("linkedCase", linkedCase);
+      model.addAttribute("currentLinkedCase", linkedCase);
       populateLinkedCasesConfirmDropdowns(model);
       return "application/summary/application-linked-case-add";
     }
