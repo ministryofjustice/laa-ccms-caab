@@ -123,6 +123,12 @@ public class EbsApiClientErrorHandler {
       "Failed to retrieve person relationship to case with code: %s, description: %s";
 
   /**
+   * The error message for organisation relationship to case.
+   */
+  public static String ORGANISATION_RELATIONSHIP_TO_CASE_ERROR_MESSAGE =
+      "Failed to retrieve organisation relationship to case with code: %s, description: %s";
+
+  /**
    * Handles errors related to user data retrieval.
    *
    * @param loginId the ID used during login
@@ -356,6 +362,24 @@ public class EbsApiClientErrorHandler {
       String description,
       Throwable e) {
     final String msg = String.format(PERSON_RELATIONSHIP_TO_CASE_ERROR_MESSAGE,
+        code, description);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to organisation to case relationship retrieval.
+   *
+   * @param code the relationship code.
+   * @param description the description.
+   * @param e the exception encountered
+   * @return a Mono error containing the specific error message and exception
+   */
+  public Mono<RelationshipToCaseLookupDetail> handleOrganisationToCaseRelationshipError(
+      String code,
+      String description,
+      Throwable e) {
+    final String msg = String.format(ORGANISATION_RELATIONSHIP_TO_CASE_ERROR_MESSAGE,
         code, description);
     log.error(msg, e);
     return Mono.error(new EbsApiClientException(msg, e));

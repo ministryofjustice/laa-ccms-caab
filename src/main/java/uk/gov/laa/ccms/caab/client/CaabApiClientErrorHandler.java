@@ -12,6 +12,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
+import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.PriorAuthority;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 
@@ -156,6 +157,20 @@ public class CaabApiClientErrorHandler {
   }
 
   /**
+   * Handles errors encountered when adding a linked case to an application.
+   *
+   * @param e the Throwable associated with the error
+   * @param applicationId the ID of the application the linked case is associated with
+   * @return a Mono error encapsulating the issue encountered
+   */
+  public Mono<Void> handleAddLinkedCaseError(final Throwable e, final String applicationId) {
+    final String msg = String.format("Failed to add linked case to application: - %s",
+        applicationId);
+    log.error(msg, e);
+    return Mono.error(new CaabApiClientException(msg, e));
+  }
+
+  /**
    * Handles errors during the update of a linked case.
    *
    * @param e the Throwable associated with the error
@@ -202,6 +217,18 @@ public class CaabApiClientErrorHandler {
   public Mono<Void> handleUpdateClientError(final Throwable e, final String clientReference) {
     final String msg = String.format("Failed to update client with reference - %s",
         clientReference);
+    log.error(msg, e);
+    return Mono.error(new CaabApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors during retrieval of opponents.
+   *
+   * @param e the Throwable associated with the error
+   * @return a Mono error encapsulating the issue encountered
+   */
+  public Mono<List<Opponent>> handleGetOpponentsError(Throwable e) {
+    final String msg = "Failed to retrieve opponents";
     log.error(msg, e);
     return Mono.error(new CaabApiClientException(msg, e));
   }

@@ -19,6 +19,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseClient;
 import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
+import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.PriorAuthority;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 
@@ -279,6 +280,30 @@ public class CaabApiClient {
   }
 
   /**
+   * Asynchronously adds a linked case to an application.
+   *
+   * @param applicationId The ID of the application to which the case is linked.
+   * @param data          The linked case information.
+   * @param loginId       The login ID of the user performing the operation.
+   * @return A Mono that completes when the operation is done.
+   */
+  public Mono<Void> addLinkedCase(
+      final String applicationId,
+      final LinkedCase data,
+      final String loginId) {
+    return caabApiWebClient
+        .post()
+        .uri("applications/{applicationId}/linked-cases",
+            applicationId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(data)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleAddLinkedCaseError(e, applicationId));
+  }
+
+  /**
    * Updates a linked case in the CAAB API for a given application.
    *
    * @param applicationId the ID of the application to update the linked case for
@@ -354,5 +379,22 @@ public class CaabApiClient {
         .bodyToMono(Void.class)
         .onErrorResume(e -> caabApiClientErrorHandler.handleUpdateClientError(e,
             clientReferenceId));
+  }
+
+  /**
+   * Fetches the opponents associated with a specific application id.
+   * This method communicates with the CAAB API client to fetch the opponents.
+   *
+   * @param id The id of the application for which opponents should be retrieved.
+   * @return A {@code Mono<List<Opponent>>} containing the opponents.
+   */
+  public Mono<List<Opponent>> getOpponents(
+      final String id) {
+    return caabApiWebClient
+        .get()
+        .uri("/applications/{id}/opponents", id)
+        .retrieve()
+        .bodyToMono(new ParameterizedTypeReference<List<Opponent>>() {})
+        .onErrorResume(caabApiClientErrorHandler::handleGetOpponentsError);
   }
 }

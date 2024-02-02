@@ -31,6 +31,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
+import uk.gov.laa.ccms.caab.model.Opponent;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -266,6 +267,27 @@ public class CaabApiClientTest {
   }
 
   @Test
+  void getOpponents_success() {
+    final String id = "123";
+    final String expectedUri = "/applications/{id}/opponents";
+
+    final List<Opponent> mockOpponents = new ArrayList<>();
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, id)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(new ParameterizedTypeReference<List<Opponent>>() {})).thenReturn(
+        Mono.just(mockOpponents));
+
+    final Mono<List<Opponent>> listMono
+        = caabApiClient.getOpponents(id);
+
+    StepVerifier.create(listMono)
+        .expectNext(mockOpponents)
+        .verifyComplete();
+  }
+
+  @Test
   void getLinkedCases_success() {
     final String id = "123";
     final String expectedUri = "/applications/{id}/linked-cases";
@@ -324,6 +346,32 @@ public class CaabApiClientTest {
     when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
 
     final Mono<Void> result = caabApiClient.updateLinkedCase(applicationId, linkedCaseId, linkedCaseData, loginId);
+
+    StepVerifier.create(result)
+        .verifyComplete();
+
+    verify(requestBodyMock, times(1)).header("Caab-User-Login-Id", loginId);
+    verify(requestBodyMock, times(1)).contentType(MediaType.APPLICATION_JSON);
+    verify(requestBodyMock, times(1)).bodyValue(linkedCaseData);
+    verify(responseMock, times(1)).bodyToMono(Void.class);
+  }
+
+  @Test
+  void addLinkedCase_success() {
+    final String applicationId = "app123";
+    final LinkedCase linkedCaseData = new LinkedCase(); // Populate this with test data as needed
+    final String loginId = "user789";
+    final String expectedUri = "applications/{applicationId}/linked-cases";
+
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri, applicationId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(linkedCaseData)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.addLinkedCase(applicationId, linkedCaseData, loginId);
 
     StepVerifier.create(result)
         .verifyComplete();
