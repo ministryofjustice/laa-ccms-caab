@@ -157,6 +157,20 @@ public class CaabApiClientErrorHandler {
   }
 
   /**
+   * Handles errors encountered when adding a linked case to an application.
+   *
+   * @param e the Throwable associated with the error
+   * @param applicationId the ID of the application the linked case is associated with
+   * @return a Mono error encapsulating the issue encountered
+   */
+  public Mono<Void> handleAddLinkedCaseError(final Throwable e, final String applicationId) {
+    final String msg = String.format("Failed to add linked case to application: - %s",
+        applicationId);
+    log.error(msg, e);
+    return Mono.error(new CaabApiClientException(msg, e));
+  }
+
+  /**
    * Handles errors during the update of a linked case.
    *
    * @param e the Throwable associated with the error

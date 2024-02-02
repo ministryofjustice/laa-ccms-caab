@@ -164,4 +164,9 @@ public class ApplicationConstants {
    */
   public static final String OPPONENT_TYPE_ORGANISATION = "Organisation";
 
+  /**
+   * The organisation opponent type.
+   */
+  public static final String LINKED_CASES = "linkedCases";
+
 }
