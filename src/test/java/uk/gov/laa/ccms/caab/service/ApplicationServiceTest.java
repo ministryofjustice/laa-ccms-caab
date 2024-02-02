@@ -19,10 +19,12 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERG
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_ORGANISATION;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
+import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCategoryOfLawLookupValueDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildPriorAuthorityTypeDetails;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildProviderDetail;
@@ -55,7 +57,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
@@ -88,6 +89,8 @@ import uk.gov.laa.ccms.caab.model.Client;
 import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.Opponent;
+import uk.gov.laa.ccms.caab.model.OpponentRowDisplay;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -117,12 +120,9 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
-import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.PriorAuthority;
 import uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail;
-import uk.gov.laa.ccms.soa.gateway.model.RecordHistory;
 
 @ExtendWith(MockitoExtension.class)
 class ApplicationServiceTest {
@@ -742,10 +742,10 @@ class ApplicationServiceTest {
     mockApplicationDetail.setCosts(costStructure);
 
     // Mock the behavior of your dependencies
-    when(ebsApiClient.getOrganisationRelationshipsToCaseValues()).thenReturn(
+    when(lookupService.getOrganisationToCaseRelationships()).thenReturn(
         Mono.just(orgRelationshipsDetail));
 
-    when(ebsApiClient.getPersonRelationshipsToCaseValues()).thenReturn(
+    when(lookupService.getPersonToCaseRelationships()).thenReturn(
         Mono.just(personRelationshipsDetail));
 
     when(caabApiClient.getApplication(applicationId)).thenReturn(
@@ -809,10 +809,10 @@ class ApplicationServiceTest {
     mockApplicationDetail.setCosts(costStructure);
 
     // Mock the behavior of your dependencies
-    when(ebsApiClient.getOrganisationRelationshipsToCaseValues()).thenReturn(
+    when(lookupService.getOrganisationToCaseRelationships()).thenReturn(
         Mono.just(orgRelationshipsDetail));
 
-    when(ebsApiClient.getPersonRelationshipsToCaseValues()).thenReturn(
+    when(lookupService.getPersonToCaseRelationships()).thenReturn(
         Mono.just(personRelationshipsDetail));
 
     when(caabApiClient.getApplication(applicationId)).thenReturn(
@@ -1618,6 +1618,240 @@ class ApplicationServiceTest {
     verify(caabApiClient).updateProceeding(eq(2), any(Proceeding.class), eq(user.getLoginId()));
   }
 
+  @Test
+  void testToIndividualOpponentPartyName_buildsFullName() {
+    Opponent opponent = buildOpponent(new Date());
+
+    CommonLookupDetail contactTitles = new CommonLookupDetail();
+    CommonLookupValueDetail title = new CommonLookupValueDetail()
+        .code(opponent.getTitle())
+        .description("test");
+    contactTitles.addContentItem(title);
+
+    String fullName =
+        applicationService.toIndividualOpponentPartyName(opponent, contactTitles);
+
+    assertNotNull(fullName);
+    String expectedResult = title.getDescription() + " " + opponent.getFirstName() + " " + opponent.getSurname();
+    assertEquals(expectedResult, fullName);
+  }
+
+  @Test
+  void testToIndividualOpponentPartyName_noTitleMatchReturnsCode() {
+    Opponent opponent = buildOpponent(new Date());
+
+    CommonLookupDetail contactTitles = new CommonLookupDetail();
+
+    String fullName =
+        applicationService.toIndividualOpponentPartyName(opponent, contactTitles);
+
+    assertNotNull(fullName);
+    String expectedResult = opponent.getTitle() + " " + opponent.getFirstName() + " " + opponent.getSurname();
+    assertEquals(expectedResult, fullName);
+  }
+
+  @Test
+  void testToIndividualOpponentPartyName_noNameElementsReturnsUndefined() {
+    Opponent opponent = new Opponent();
+
+    CommonLookupDetail contactTitles = new CommonLookupDetail();
+    CommonLookupValueDetail title = new CommonLookupValueDetail()
+        .code(opponent.getTitle())
+        .description("test");
+    contactTitles.addContentItem(title);
+
+    String fullName =
+        applicationService.toIndividualOpponentPartyName(opponent, contactTitles);
+
+    assertNotNull(fullName);
+    String expectedResult = "undefined";
+    assertEquals(expectedResult, fullName);
+  }
+
+  @Test
+  void testToIndividualOpponentPartyName_noFirstnameReturnsCorrectly() {
+    Opponent opponent = buildOpponent(new Date());
+    opponent.setFirstName(null);
+
+    CommonLookupDetail contactTitles = new CommonLookupDetail();
+
+    String fullName =
+        applicationService.toIndividualOpponentPartyName(opponent, contactTitles);
+
+    assertNotNull(fullName);
+    String expectedResult = opponent.getTitle() + " " + opponent.getSurname();
+    assertEquals(expectedResult, fullName);
+  }
+
+  @Test
+  void testToIndividualOpponentPartyName_noSurnameReturnsCorrectly() {
+    Opponent opponent = buildOpponent(new Date());
+    opponent.setSurname(null);
+
+    CommonLookupDetail contactTitles = new CommonLookupDetail();
+
+    String fullName =
+        applicationService.toIndividualOpponentPartyName(opponent, contactTitles);
+
+    assertNotNull(fullName);
+    String expectedResult = opponent.getTitle() + " " + opponent.getFirstName();
+    assertEquals(expectedResult, fullName);
+  }
+
+  @Test
+  void testToIndividualOpponentPartyName_noFirstnameSurnameReturnsTitleonly() {
+    Opponent opponent = buildOpponent(new Date());
+    opponent.setFirstName(null);
+    opponent.setSurname(null);
+
+    CommonLookupDetail contactTitles = new CommonLookupDetail();
+
+    String fullName =
+        applicationService.toIndividualOpponentPartyName(opponent, contactTitles);
+
+    assertNotNull(fullName);
+    String expectedResult = opponent.getTitle();
+    assertEquals(expectedResult, fullName);
+  }
+
+  @Test
+  void testBuildIndividualOpponentRowDisplay_noLookupMatchReturnsCodes() {
+    Opponent opponent = buildOpponent(new Date());
+    opponent.setType(OPPONENT_TYPE_INDIVIDUAL);
+
+    OpponentRowDisplay result = applicationService.buildOpponentRowDisplay(
+        opponent,
+        new CommonLookupDetail(),
+        new RelationshipToCaseLookupDetail(),
+        new RelationshipToCaseLookupDetail(),
+        new CommonLookupDetail());
+
+    String expectedPartyName =
+        opponent.getTitle() + " " + opponent.getFirstName() + " " + opponent.getSurname();
+
+    assertNotNull(result);
+    assertEquals(opponent.getId(), result.getId());
+    assertEquals(expectedPartyName, result.getPartyName());
+    assertEquals(opponent.getType(), result.getPartyType());
+    assertEquals(opponent.getRelationshipToCase(), result.getRelationshipToCase());
+    assertEquals(opponent.getRelationshipToClient(), result.getRelationshipToClient());
+  }
+
+  @Test
+  void testBuildOrgOpponentRowDisplay_ReturnsOrganisationName() {
+    Opponent opponent = buildOpponent(new Date());
+    opponent.setType(OPPONENT_TYPE_ORGANISATION);
+
+    OpponentRowDisplay result = applicationService.buildOpponentRowDisplay(
+        opponent,
+        new CommonLookupDetail(),
+        new RelationshipToCaseLookupDetail(),
+        new RelationshipToCaseLookupDetail(),
+        new CommonLookupDetail());
+
+    String expectedPartyName =
+        opponent.getOrganisationName();
+
+    assertNotNull(result);
+    assertEquals(opponent.getId(), result.getId());
+    assertEquals(expectedPartyName, result.getPartyName());
+    assertEquals(opponent.getType(), result.getPartyType());
+    assertEquals(opponent.getRelationshipToCase(), result.getRelationshipToCase());
+    assertEquals(opponent.getRelationshipToClient(), result.getRelationshipToClient());
+  }
+
+  @Test
+  void testBuildOrgOpponentRowDisplay_lookupMatchesReturnDisplayValues() {
+    Opponent opponent = buildOpponent(new Date());
+    opponent.setType(OPPONENT_TYPE_ORGANISATION);
+
+    RelationshipToCaseLookupValueDetail orgRelationshipToCase =
+        new RelationshipToCaseLookupValueDetail()
+            .code(opponent.getRelationshipToCase())
+            .description("org rel");
+    RelationshipToCaseLookupDetail orgRelationshipsToCase =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(orgRelationshipToCase);
+
+    CommonLookupValueDetail relationshipToClient = new CommonLookupValueDetail()
+        .code(opponent.getRelationshipToClient())
+        .description("rel 2 client");
+    CommonLookupDetail relationshipsToClient = new CommonLookupDetail()
+        .addContentItem(relationshipToClient);
+
+    OpponentRowDisplay result = applicationService.buildOpponentRowDisplay(
+        opponent,
+        new CommonLookupDetail(),
+        new RelationshipToCaseLookupDetail(),
+        orgRelationshipsToCase,
+        relationshipsToClient);
+
+    String expectedPartyName =
+        opponent.getOrganisationName();
+
+    assertNotNull(result);
+    assertEquals(opponent.getId(), result.getId());
+    assertEquals(expectedPartyName, result.getPartyName());
+    assertEquals(opponent.getType(), result.getPartyType());
+    assertEquals(orgRelationshipToCase.getDescription(), result.getRelationshipToCase());
+    assertEquals(relationshipToClient.getDescription(), result.getRelationshipToClient());
+  }
+
+  @Test
+  void testBuildIndividualOpponentRowDisplay_lookupMatchesReturnDisplayValues() {
+    Opponent opponent = buildOpponent(new Date());
+    opponent.setType(OPPONENT_TYPE_INDIVIDUAL);
+
+    RelationshipToCaseLookupValueDetail personRelationshipToCase =
+        new RelationshipToCaseLookupValueDetail()
+            .code(opponent.getRelationshipToCase())
+            .description("ind rel");
+    RelationshipToCaseLookupDetail personRelationshipsToCase =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(personRelationshipToCase);
+
+    CommonLookupValueDetail relationshipToClient = new CommonLookupValueDetail()
+        .code(opponent.getRelationshipToClient())
+        .description("rel 2 client");
+    CommonLookupDetail relationshipsToClient = new CommonLookupDetail()
+        .addContentItem(relationshipToClient);
+
+    OpponentRowDisplay result = applicationService.buildOpponentRowDisplay(
+        opponent,
+        new CommonLookupDetail(),
+        personRelationshipsToCase,
+        new RelationshipToCaseLookupDetail(),
+        relationshipsToClient);
+
+    String expectedPartyName =
+        opponent.getTitle() + " " + opponent.getFirstName() + " " + opponent.getSurname();
+
+    assertNotNull(result);
+    assertEquals(opponent.getId(), result.getId());
+    assertEquals(expectedPartyName, result.getPartyName());
+    assertEquals(opponent.getType(), result.getPartyType());
+    assertEquals(personRelationshipToCase.getDescription(), result.getRelationshipToCase());
+    assertEquals(relationshipToClient.getDescription(), result.getRelationshipToClient());
+  }
+
+  @Test
+  void testGetOpponents_queriesLookupData() {
+    final String applicationId = "123";
+    Opponent opponent = buildOpponent(new Date());
+
+    when(lookupService.getContactTitles()).thenReturn(Mono.just(new CommonLookupDetail()));
+    when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.just(new RelationshipToCaseLookupDetail()));
+    when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.just(new RelationshipToCaseLookupDetail()));
+    when(lookupService.getRelationshipsToClient()).thenReturn(Mono.just(new CommonLookupDetail()));
+
+    when(caabApiClient.getOpponents(applicationId)).thenReturn(Mono.just(List.of(opponent)));
+    ResultsDisplay<OpponentRowDisplay> result =
+        applicationService.getOpponents(applicationId);
+
+    assertNotNull(result);
+    assertEquals(1, result.getContent().size());
+
+  }
 
   private ApplicationFormData buildApplicationFormData() {
     final ApplicationFormData applicationFormData = new ApplicationFormData();
@@ -1630,15 +1864,6 @@ class ApplicationServiceTest {
     applicationFormData.setDelegatedFunctionUsedMonth("01");
     applicationFormData.setDelegatedFunctionUsedYear("2022");
     return applicationFormData;
-  }
-
-  public ClientDetail buildClientInformation() {
-    final String clientReferenceNumber = "12345";
-    return new ClientDetail()
-        .clientReferenceNumber(clientReferenceNumber)
-        .details(new ClientDetailDetails()
-            .name(new NameDetail()))
-        .recordHistory(new RecordHistory());
   }
 
 }

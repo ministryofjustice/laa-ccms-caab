@@ -31,6 +31,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
+import uk.gov.laa.ccms.caab.model.Opponent;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -262,6 +263,27 @@ public class CaabApiClientTest {
 
     StepVerifier.create(applicationProviderDetailsMono)
         .expectNext(mockProvider)
+        .verifyComplete();
+  }
+
+  @Test
+  void getOpponents_success() {
+    final String id = "123";
+    final String expectedUri = "/applications/{id}/opponents";
+
+    final List<Opponent> mockOpponents = new ArrayList<>();
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, id)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(new ParameterizedTypeReference<List<Opponent>>() {})).thenReturn(
+        Mono.just(mockOpponents));
+
+    final Mono<List<Opponent>> listMono
+        = caabApiClient.getOpponents(id);
+
+    StepVerifier.create(listMono)
+        .expectNext(mockOpponents)
         .verifyComplete();
   }
 
