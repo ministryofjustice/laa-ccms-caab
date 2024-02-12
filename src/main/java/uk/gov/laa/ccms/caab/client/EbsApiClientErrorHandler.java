@@ -7,10 +7,14 @@ import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
+import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
+import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
+import uk.gov.laa.ccms.data.model.ProceedingDetails;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
@@ -72,10 +76,34 @@ public class EbsApiClientErrorHandler {
       "Failed to retrieve relationship to case";
 
   /**
+   * The error message for relationships to case.
+   */
+  public static String MATTER_TYPE_ERROR_MESSAGE =
+      "Failed to retrieve matter types";
+
+  /**
    * The error message for Proceeding-related errors.
    */
   public static String PROCEEDING_ERROR_MESSAGE =
       "Failed to retrieve Proceeding: (code: %s)";
+
+  /**
+   * The error message for Proceedings-related errors.
+   */
+  public static String PROCEEDINGS_ERROR_MESSAGE =
+      "Failed to retrieve Proceedings";
+
+  /**
+   * The error message for client involvement-related errors.
+   */
+  public static String CLIENT_INVOLVEMENT_ERROR_MESSAGE =
+      "Failed to retrieve client involvement types";
+
+  /**
+   * The error message for level of service errors.
+   */
+  public static String LEVEL_OF_SERVICE_ERROR_MESSAGE =
+      "Failed to retrieve level of service types";
 
   /**
    * The error message for Scope Limitations-related errors.
@@ -216,6 +244,18 @@ public class EbsApiClientErrorHandler {
   }
 
   /**
+   * Handles errors related to matter type values data retrieval.
+   *
+   * @param e The exception encountered during the matter type values data retrieval.
+   * @return A Mono error containing the specific error message and exception.
+   */
+  public Mono<MatterTypeLookupDetail> handleToMatterTypeValuesError(Throwable e) {
+    final String msg = String.format(MATTER_TYPE_ERROR_MESSAGE);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
    * Handles errors related to provider data retrieval.
    *
    * @param providerId the ID of the provider
@@ -244,6 +284,43 @@ public class EbsApiClientErrorHandler {
     log.error(msg, e);
     return Mono.error(new EbsApiClientException(msg, e));
   }
+
+  /**
+   * Handles errors related to proceedings data retrieval.
+   *
+   * @param e The exception encountered during the proceedings data retrieval.
+   * @return A Mono error containing the specific error message and exception.
+   */
+  public Mono<ProceedingDetails> handleProceedingsError(Throwable e) {
+    final String msg = String.format(PROCEEDINGS_ERROR_MESSAGE);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to client involvement data retrieval.
+   *
+   * @param e The exception encountered during the client involvement data retrieval.
+   * @return A Mono error containing the specific error message and exception.
+   */
+  public Mono<ClientInvolvementTypeLookupDetail> handleClientInvolvementError(Throwable e) {
+    final String msg = String.format(CLIENT_INVOLVEMENT_ERROR_MESSAGE);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors related to level of service data retrieval.
+   *
+   * @param e The exception encountered during the level of service data retrieval.
+   * @return A Mono error containing the specific error message and exception.
+   */
+  public Mono<LevelOfServiceLookupDetail> handleLevelOfServiceError(Throwable e) {
+    final String msg = String.format(LEVEL_OF_SERVICE_ERROR_MESSAGE);
+    log.error(msg, e);
+    return Mono.error(new EbsApiClientException(msg, e));
+  }
+
 
   /**
    * Handles errors related to scope limitations data retrieval.

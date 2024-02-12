@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>LAA CCMS - Create application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a href="/application/summary/proceedings-and-costs" class="govuk-back-link">Return to proceedings and costs</a>
+  </div>
+  <div id="main-content">
+    <span class="govuk-caption-l">Create application</span>
+    <h1 class="govuk-heading-l">
+      Proceeding detail overview
+    </h1>
+    <p class="govuk-body-l">
+      Please view below the information that you have entered for this proceeding. If you wish to
+      change any of these details please click on one of the edit links below. Please note that
+      these details may not be changed once the certificate is revoked or discharged, when the
+      office no longer schedule authorisation to carry out work in the category of law of the case
+      or when an outcome for the proceeding has been specified.
+    </p>
+    <div class="govuk-summary-card">
+      <div class="govuk-summary-card__title-wrapper">
+        <h2 class="govuk-summary-card__title">Proceeding details</h2>
+        <ul class="govuk-summary-card__actions">
+          <li class="govuk-summary-card__action">
+            <a class="govuk-link" href="/application/summary/proceedings/edit/matter-type">
+              Edit Proceeding details
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div class="govuk-summary-card__content">
+        <dl class="govuk-summary-list">
+          <div th:replace="~{this :: summaryListDisplay('Matter type', ${proceeding.matterType.displayValue})}"></div>
+          <div th:replace="~{this :: summaryListDisplay('Proceeding', ${proceeding.proceedingType.displayValue})}"></div>
+          <div th:replace="~{this :: summaryListDisplay('Client involvement type', ${proceeding.clientInvolvement.displayValue})}"></div>
+          <div th:replace="~{this :: summaryListDisplay('Form of civil legal service', ${proceeding.levelOfService.displayValue})}"></div>
+          <th:block th:if="${proceeding.typeOfOrder.id}">
+            <div th:replace="~{this :: summaryListDisplay('Type of order', ${orderTypeDisplayValue})}"></div>
+          </th:block>
+        </dl>
+      </div>
+    </div>
+    <div class="govuk-summary-card">
+      <div class="govuk-summary-card__title-wrapper">
+        <h2 class="govuk-summary-card__title">Scope limitations</h2>
+        <ul class="govuk-summary-card__actions">
+          <li class="govuk-summary-card__action">
+            <a class="govuk-link" href="/application/summary/proceedings/edit/confirm">
+              Edit Scope Limitations
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div class="govuk-summary-card__content">
+        <dl class="govuk-summary-list" th:each="scopeLimitation : ${proceeding.scopeLimitations}" th:unless="${proceeding.scopeLimitations.isEmpty()}">
+          <div th:replace="~{this :: summaryListDisplay(${scopeLimitation.scopeLimitation.displayValue}, ${scopeLimitation.scopeLimitationWording})}"></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
+
+<!--Simple fragment for repeated summary list rows -->
+<div class="govuk-summary-list__row" th:fragment="summaryListDisplay(label, value)">
+  <dt class="govuk-summary-list__key"
+      th:text="${label}">
+  </dt>
+  <dd class="govuk-summary-list__value"
+      th:text="${value}">
+  </dd>
+</div>

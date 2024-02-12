@@ -54,9 +54,9 @@
           </tr>
           </thead>
           <tbody class="govuk-table__body">
-          <tr class="govuk-table__row" th:each="proceeding : ${proceedings.content}" th:unless="${proceedings.content.isEmpty()}">
+          <tr class="govuk-table__row" th:each="proceeding : ${proceedings}" th:unless="${proceedings.isEmpty()}">
             <td class="govuk-table__cell">
-              <a th:href="@{/application/summary/proceedings/{id}/confirm(id=${proceeding.id})}"
+              <a th:href="@{/application/summary/proceedings/{id}/summary(id=${proceeding.id})}"
                  class="govuk-link" th:text="${proceeding.matterType.displayValue}"></a>
             </td>
             <td class="govuk-table__cell" th:text="${proceeding.proceedingType.displayValue}"></td>
@@ -83,14 +83,14 @@
               </td>
             </th:block>
           </tr>
-          <tr class="govuk-table__row" th:if="${proceedings.content.isEmpty()}">
+          <tr class="govuk-table__row" th:if="${proceedings.isEmpty()}">
             <td class="govuk-table__cell" colspan="6">None</td>
           </tr>
           </tbody>
         </table>
         <a class="govuk-button govuk-button--secondary"
            data-module="govuk-button"
-           href="/todo">
+           href="/application/summary/proceedings/add/matter-type">
           Add proceeding
         </a>
       </div>
@@ -130,7 +130,7 @@
           </tr>
           </thead>
           <tbody class="govuk-table__body">
-          <tr class="govuk-table__row" th:each="priorAuthority : ${priorAuthorities.content}" th:unless="${priorAuthorities.content.isEmpty()}">
+          <tr class="govuk-table__row" th:each="priorAuthority : ${priorAuthorities}" th:unless="${priorAuthorities.isEmpty()}">
             <td class="govuk-table__cell">
               <a th:href="@{/application/summary/prior-authorities/{id}/confirm(id=${priorAuthority.id})}"
                  class="govuk-link" th:text="${priorAuthority.summary}">
@@ -145,7 +145,7 @@
               </a>
             </td>
           </tr>
-          <tr class="govuk-table__row" th:if="${priorAuthorities.content.isEmpty()}">
+          <tr class="govuk-table__row" th:if="${priorAuthorities.isEmpty()}">
             <td class="govuk-table__cell" colspan="5">None</td>
           </tr>
           </tbody>

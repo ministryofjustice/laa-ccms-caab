@@ -7,6 +7,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_COS
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FINANCIAL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_LAND;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTHER_ASSET;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EMERGENCY_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_ORGANISATION;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
@@ -16,6 +17,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMI
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -94,6 +96,7 @@ import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
+import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -394,6 +397,8 @@ public class ApplicationService {
                   RelationshipToCaseLookupValueDetail::getCode, Function.identity()))
               : Collections.emptyMap();
 
+
+
       // Find the max cost limitation across the Proceedings, and set this as the
       // default cost limitation for the application.
       BigDecimal defaultCostLimitation = BigDecimal.ZERO;
@@ -441,21 +446,26 @@ public class ApplicationService {
         .stream().findFirst().orElse(null);
   }
 
+  public Mono<ApplicationDetail> getApplication(final String id) {
+    return caabApiClient.getApplication(id);
+  }
+
   /**
    * Retrieves the application Summary display values.
    *
    * @param id the identifier of the application to retrieve a summary for.
    * @return A Mono of ApplicationSummaryDisplay representing the case summary display values.
    */
-  public Mono<ApplicationSummaryDisplay> getApplicationSummary(final String id) {
+  public Mono<ApplicationSummaryDisplay> getApplicationSummary(
+      final String id) {
 
-    Mono<RelationshipToCaseLookupDetail> organisationRelationshipsMono =
+    final Mono<RelationshipToCaseLookupDetail> organisationRelationshipsMono =
         lookupService.getOrganisationToCaseRelationships();
 
-    Mono<RelationshipToCaseLookupDetail> personRelationshipsMono =
+    final Mono<RelationshipToCaseLookupDetail> personRelationshipsMono =
         lookupService.getPersonToCaseRelationships();
 
-    Mono<ApplicationDetail> applicationMono
+    final Mono<ApplicationDetail> applicationMono
         = caabApiClient.getApplication(id);
 
     return Mono.zip(organisationRelationshipsMono,
@@ -463,11 +473,11 @@ public class ApplicationService {
             applicationMono)
         .map(tuple -> {
 
-          List<RelationshipToCaseLookupValueDetail> organisationRelationships
+          final List<RelationshipToCaseLookupValueDetail> organisationRelationships
               = tuple.getT1().getContent();
-          List<RelationshipToCaseLookupValueDetail> personsRelationships
+          final List<RelationshipToCaseLookupValueDetail> personsRelationships
               = tuple.getT2().getContent();
-          ApplicationDetail application = tuple.getT3();
+          final ApplicationDetail application = tuple.getT3();
 
           return new ApplicationSummaryBuilder(application.getAuditTrail())
               .clientFullName(
@@ -534,55 +544,204 @@ public class ApplicationService {
   }
 
   /**
-   * Fetches the proceedings associated with a specific application id.
-   * This method communicates with the CAAB API client to fetch the proceedings and
-   * transforms them into a {@code ResultsDisplay<Proceeding>} format.
+   * Retrieves the default scope limitation details for a given proceeding.
+   * The scope limitation details are fetched based on the category of law, matter type, proceeding
+   * code, level of service, and application type. If the application type is emergency or
+   * substantive devolved powers, the method sets the emergency and emergency scope default flags
+   * to true. Otherwise, it sets the scope default flag to true.
    *
-   * @param applicationId The id of the application for which proceedings should be retrieved.
-   * @return A {@code Mono<ResultsDisplay<Proceeding>>} containing the proceedings.
+   * @param categoryOfLaw The category of law.
+   * @param matterType The type of the matter.
+   * @param proceedingCode The code of the proceeding.
+   * @param levelOfService The level of service.
+   * @param applicationType The type of the application.
+   * @return A Mono of ScopeLimitationDetails containing the default scope limitation details.
    */
-  public Mono<ResultsDisplay<Proceeding>> getProceedings(final String applicationId) {
-    final ResultsDisplay<Proceeding> results = new ResultsDisplay<>();
+  public Mono<ScopeLimitationDetails> getDefaultScopeLimitation(
+      final String categoryOfLaw,
+      final String matterType,
+      final String proceedingCode,
+      final String levelOfService,
+      final String applicationType) {
 
-    return caabApiClient.getProceedings(applicationId)
-        .flatMapMany(Flux::fromIterable) // Convert to Flux<LinkedCase>
-        .collectList() // Collect into a List
-        .map(list -> {
-          results.setContent(list); // Set the content of ResultsDisplay
-          return results; // Return the populated ResultsDisplay
-        });
+    final ScopeLimitationDetail criteria = new ScopeLimitationDetail()
+        .categoryOfLaw(categoryOfLaw)
+        .matterType(matterType)
+        .proceedingCode(proceedingCode)
+        .levelOfService(levelOfService);
+
+    // Could be possible to amend this if app type is SUBDP,
+    // it could include both the emergency and non-emergency scope limitations by default
+    // left as is per PUI code.
+    if (EMERGENCY_APPLICATION_TYPE_CODES.contains(applicationType)
+        || APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS.equals(applicationType)) {
+      criteria.emergency(true);
+      criteria.emergencyScopeDefault(true);
+    } else {
+      criteria.scopeDefault(true);
+    }
+
+    return lookupService.getScopeLimitationDetails(criteria);
   }
 
   /**
-   * Fetches the cost structure associated with a specific application id.
-   * This method communicates with the CAAB API client to fetch the cost structure.
+   * Calculates the maximum cost limitation for a proceeding.
    *
-   * @param applicationId The id of the application for which the cost structure should be
-   *                      retrieved.
-   * @return A {@code Mono<CostStructure>} containing the cost structure.
+   * @param categoryOfLaw The category of law.
+   * @param matterType The type of the matter.
+   * @param proceedingCode The code of the proceeding.
+   * @param levelOfService The level of service.
+   * @param applicationType The type of the application.
+   * @param scopeLimitations The list of scope limitations.
+   * @return The maximum cost limitation for the proceeding.
    */
-  public Mono<CostStructure> getCosts(final String applicationId) {
-    return caabApiClient.getCosts(applicationId);
+  public BigDecimal getProceedingCostLimitation(
+      final String categoryOfLaw,
+      final String matterType,
+      final String proceedingCode,
+      final String levelOfService,
+      final String applicationType,
+      final List<uk.gov.laa.ccms.caab.model.ScopeLimitation> scopeLimitations) {
+
+    BigDecimal maxValue = new BigDecimal(0);
+    final List<Float> costLimitations = new ArrayList<Float>();
+
+    for (final uk.gov.laa.ccms.caab.model.ScopeLimitation scopeLimitation : scopeLimitations) {
+      final ScopeLimitationDetail criteria = new ScopeLimitationDetail()
+          .categoryOfLaw(categoryOfLaw)
+          .matterType(matterType)
+          .proceedingCode(proceedingCode)
+          .levelOfService(levelOfService)
+          .scopeLimitations(scopeLimitation.getScopeLimitation().getId());
+
+      if (EMERGENCY_APPLICATION_TYPE_CODES.contains(applicationType)) {
+        criteria.emergency(true);
+      }
+
+      lookupService.getScopeLimitationDetails(criteria)
+          .block()
+          .getContent()
+          .stream()
+          .findFirst()
+          .map(ScopeLimitationDetail::getCostLimitation)
+          .ifPresent(costLimitation -> costLimitations.add(costLimitation.floatValue()));
+
+    }
+
+    if (!costLimitations.isEmpty()) {
+      maxValue = BigDecimal.valueOf(
+          costLimitations
+              .stream()
+              .max(Float::compareTo)
+              .orElse(null));
+    }
+
+    return maxValue;
   }
 
   /**
-   * Fetches the prior authorities associated with a specific application id.
-   * This method communicates with the CAAB API client to fetch the prior authorities and
-   * transforms them into a {@code ResultsDisplay<PriorAuthority>} format.
+   * Determines the proceeding stage based on various parameters.
    *
-   * @param applicationId The id of the application for which prior authorities should be retrieved.
-   * @return A {@code Mono<ResultsDisplay<PriorAuthority>>} containing the prior authorities.
+   * @param categoryOfLaw The category of law.
+   * @param matterType The type of the matter.
+   * @param proceedingCode The code of the proceeding.
+   * @param levelOfService The level of service.
+   * @param scopeLimitations The list of scope limitations.
+   * @param isAmendment Flag indicating if it's an amendment.
+   * @return The proceeding stage as an Integer.
    */
-  public Mono<ResultsDisplay<PriorAuthority>> getPriorAuthorities(final String applicationId) {
-    final ResultsDisplay<PriorAuthority> results = new ResultsDisplay<>();
+  public Integer getProceedingStage(
+      final String categoryOfLaw,
+      final String matterType,
+      final String proceedingCode,
+      final String levelOfService,
+      final List<uk.gov.laa.ccms.caab.model.ScopeLimitation> scopeLimitations,
+      final boolean isAmendment) {
 
-    return caabApiClient.getPriorAuthorities(applicationId)
-        .flatMapMany(Flux::fromIterable) // Convert to Flux<LinkedCase>
-        .collectList() // Collect into a List
-        .map(list -> {
-          results.setContent(list); // Set the content of ResultsDisplay
-          return results; // Return the populated ResultsDisplay
-        });
+    // String existingStage = null;
+    //todo - see GetDefaultScopeLimitation in pui
+    //    if (isAmendment) {
+    //
+    //      // for (Proceeding caseProceeding : myCase.getProceedings()) {
+    //      //   if (caseProceeding.getEbsId().equalsIgnoreCase(proceeding.getEbsId())) {
+    //      //     existingStage = caseProceeding.getStage();
+    //      //   }
+    //      // }
+    //      // see - getAmendmentProceedingStage
+    //    }
+
+    if (scopeLimitations.size() == 1) {
+      final ScopeLimitationDetail criteria = new ScopeLimitationDetail()
+          .categoryOfLaw(categoryOfLaw)
+          .matterType(matterType)
+          .proceedingCode(proceedingCode)
+          .levelOfService(levelOfService)
+          .scopeLimitations(scopeLimitations.get(0).getScopeLimitation().getId());
+
+      final List<Integer> stageList = lookupService.getScopeLimitationDetails(criteria)
+          .block()
+          .getContent()
+          .stream()
+          .map(ScopeLimitationDetail::getStage)
+          .toList();
+
+      return getMinValue(stageList);
+    }
+
+    final List<List<Integer>> allStages = new ArrayList<>();
+    final List<Integer> minStageList = new ArrayList<>();
+    for (final uk.gov.laa.ccms.caab.model.ScopeLimitation scopeLimitation : scopeLimitations) {
+      final ScopeLimitationDetail criteria = new ScopeLimitationDetail()
+          .categoryOfLaw(categoryOfLaw)
+          .matterType(matterType)
+          .proceedingCode(proceedingCode)
+          .levelOfService(levelOfService)
+          .scopeLimitations(scopeLimitation.getScopeLimitation().getId());
+
+      final List<Integer> stageList = lookupService.getScopeLimitationDetails(criteria)
+          .block()
+          .getContent()
+          .stream()
+          .map(ScopeLimitationDetail::getStage)
+          .toList();
+
+      allStages.add(stageList);
+      minStageList.add(getMinValue(stageList));
+
+      //common Stages stuff
+      final List<Integer> commonStages = getCommonStages(allStages);
+      if (!commonStages.isEmpty()) {
+        return getMinValue(commonStages);
+      }
+    }
+
+    return getMinValue(minStageList);
+  }
+
+  /**
+   * Finds the common stages across all scope limitations.
+   *
+   * @param allStages A list of lists, where each inner list represents the stages of a scope
+   *                  limitation.
+   * @return A list of common stages across all scope limitations.
+   */
+  private List<Integer> getCommonStages(final List<List<Integer>> allStages) {
+    return allStages.get(0).stream()
+        .filter(stage -> allStages.stream().allMatch(scopeLimStages ->
+            scopeLimStages.contains(stage)))
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Finds the minimum value in a collection of integers.
+   *
+   * @param values A collection of integer values.
+   * @return The minimum integer value in the collection. Returns null if the collection is empty.
+   */
+  private Integer getMinValue(final Collection<Integer> values) {
+    return values.stream()
+        .min(Integer::compareTo)
+        .orElse(null);
   }
 
   /**
@@ -1344,7 +1503,6 @@ public class ApplicationService {
           proceeding.getScopeLimitations()) {
         searchCriteria.setScopeLimitations(limitation.getScopeLimitation());
         BigDecimal costLimitation = lookupService.getScopeLimitationDetails(searchCriteria)
-            // TODO: Remove once ebs-api fixed
             .map(scopeLimitationDetails -> scopeLimitationDetails.getContent() != null
                 ? scopeLimitationDetails.getContent().stream()
                 .findFirst()
@@ -1384,5 +1542,70 @@ public class ApplicationService {
         .map(AwardTypeLookupValueDetail::getAwardType)
         .orElseThrow(() -> new CaabApplicationException(
             String.format("Failed to find AwardType with code: %s", award.getAwardType())));
+  }
+
+  /**
+   * Prepares the proceeding summary for a specific application.
+   *
+   * @param id The ID of the application.
+   * @param application The application details.
+   * @param user The user performing the operation.
+   */
+  public void prepareProceedingSummary(
+      final String id,
+      final ApplicationDetail application,
+      final UserDetail user) {
+
+    getDefaultCostLimitation(application);
+
+    if (!application.getAmendment()
+        && application.getCosts().getRequestedCostLimitation() == null) {
+      application.getCosts()
+          .setRequestedCostLimitation(application.getCosts().getDefaultCostLimitation());
+    }
+
+    caabApiClient.updateCosts(id, application.getCosts(), user.getLoginId()).block();
+  }
+
+  private BigDecimal getDefaultCostLimitation(final ApplicationDetail application) {
+    BigDecimal defaultCostLimitation = new BigDecimal("0.00");
+
+    final BigDecimal currentDefault = application.getCosts().getDefaultCostLimitation();
+    final BigDecimal currentRequested = application.getCosts().getRequestedCostLimitation();
+
+    final boolean costManuallyChanged = currentDefault != null && currentRequested != null
+        && currentDefault.compareTo(currentRequested) != 0;
+    for (final Proceeding proceeding : application.getProceedings()) {
+      if (proceeding.getCostLimitation() != null
+          && defaultCostLimitation.compareTo(proceeding.getCostLimitation()) < 0) {
+        defaultCostLimitation = proceeding.getCostLimitation();
+      }
+    }
+
+    application.getCosts().setDefaultCostLimitation(defaultCostLimitation);
+
+    if (application.getCosts().getRequestedCostLimitation() != null && !application.getAmendment()
+        && !costManuallyChanged) {
+      application.getCosts().setRequestedCostLimitation(defaultCostLimitation);
+    } else if (application.getCosts().getRequestedCostLimitation() == null) {
+      application.getCosts().setRequestedCostLimitation(defaultCostLimitation);
+    }
+    if (defaultCostLimitation.scale() < 2) {
+      defaultCostLimitation = defaultCostLimitation.setScale(2);
+    }
+    return defaultCostLimitation;
+  }
+
+  public void addProceeding(
+      final String applicationId,
+      final Proceeding proceeding,
+      final UserDetail user) {
+    caabApiClient.addProceeding(applicationId, proceeding, user.getLoginId()).block();
+  }
+
+  public void updateProceeding(
+      final Proceeding proceeding,
+      final UserDetail user) {
+    caabApiClient.updateProceeding(proceeding.getId(), proceeding, user.getLoginId()).block();
   }
 }

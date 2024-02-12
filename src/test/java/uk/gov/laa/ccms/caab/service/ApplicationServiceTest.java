@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -18,6 +19,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERG
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_ORGANISATION;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
@@ -54,8 +56,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -103,11 +107,13 @@ import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
@@ -1546,58 +1552,6 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void getProceedings_ReturnsListOfProceedings_Successful() {
-    final String applicationId = "app123";
-    final List<Proceeding> mockProceedings = Arrays.asList(new Proceeding(), new Proceeding());
-
-    when(caabApiClient.getProceedings(applicationId)).thenReturn(Mono.just(mockProceedings));
-
-    final Mono<ResultsDisplay<Proceeding>> resultMono = applicationService.getProceedings(applicationId);
-
-    StepVerifier.create(resultMono)
-        .assertNext(resultsDisplay -> {
-          assertNotNull(resultsDisplay.getContent());
-          assertEquals(mockProceedings.size(), resultsDisplay.getContent().size());
-          assertEquals(mockProceedings, resultsDisplay.getContent());
-        })
-        .verifyComplete();
-  }
-
-  @Test
-  void getCosts_ReturnsCostStructure_Successful() {
-    final String applicationId = "app123";
-    final CostStructure mockCostStructure = new CostStructure();
-
-    when(caabApiClient.getCosts(applicationId)).thenReturn(Mono.just(mockCostStructure));
-
-    final Mono<CostStructure> resultMono = applicationService.getCosts(applicationId);
-
-    StepVerifier.create(resultMono)
-        .assertNext(costStructure -> assertEquals(mockCostStructure, costStructure))
-        .verifyComplete();
-  }
-
-  @Test
-  void getPriorAuthorities_ReturnsListOfPriorAuthorities_Successful() {
-    final String applicationId = "app123";
-    final List<uk.gov.laa.ccms.caab.model.PriorAuthority> mockPriorAuthorities =
-        Arrays.asList(new uk.gov.laa.ccms.caab.model.PriorAuthority(), new uk.gov.laa.ccms.caab.model.PriorAuthority());
-
-    when(caabApiClient.getPriorAuthorities(applicationId)).thenReturn(Mono.just(mockPriorAuthorities));
-
-    final Mono<ResultsDisplay<uk.gov.laa.ccms.caab.model.PriorAuthority>> resultMono =
-        applicationService.getPriorAuthorities(applicationId);
-
-    StepVerifier.create(resultMono)
-        .assertNext(resultsDisplay -> {
-          assertNotNull(resultsDisplay.getContent());
-          assertEquals(mockPriorAuthorities.size(), resultsDisplay.getContent().size());
-          assertEquals(mockPriorAuthorities, resultsDisplay.getContent());
-        })
-        .verifyComplete();
-  }
-
-  @Test
   void makeLeadProceeding_UpdatesLeadProceeding_Successful() {
     final String applicationId = "app123";
     final Integer newLeadProceedingId = 2;
@@ -1865,5 +1819,350 @@ class ApplicationServiceTest {
     applicationFormData.setDelegatedFunctionUsedYear("2022");
     return applicationFormData;
   }
+  @Test
+  void getApplication_returnsApplicationDetail_Successful() {
+    final String applicationId = "12345";
+    final ApplicationDetail mockApplicationDetail = new ApplicationDetail();
+
+    when(caabApiClient.getApplication(applicationId)).thenReturn(Mono.just(mockApplicationDetail));
+
+    final Mono<ApplicationDetail> applicationDetailMono = applicationService.getApplication(applicationId);
+
+    StepVerifier.create(applicationDetailMono)
+        .expectNextMatches(applicationDetail -> applicationDetail == mockApplicationDetail)
+        .verifyComplete();
+  }
+
+  @Test
+  void getDefaultScopeLimitation_withEmergencyApplicationType_returnsEmergencyScopeLimitations() {
+    String categoryOfLaw = "Family";
+    String matterType = "FAM";
+    String proceedingCode = "PC001";
+    String levelOfService = "3";
+    String applicationType = APP_TYPE_EMERGENCY; // Assume this is one of the emergency application type codes
+
+    ScopeLimitationDetail criteria = new ScopeLimitationDetail()
+        .categoryOfLaw(categoryOfLaw)
+        .matterType(matterType)
+        .proceedingCode(proceedingCode)
+        .levelOfService(levelOfService)
+        .emergency(true)
+        .emergencyScopeDefault(true);
+
+    ScopeLimitationDetails mockScopeLimitationDetails = new ScopeLimitationDetails();
+
+    when(lookupService.getScopeLimitationDetails(criteria)).thenReturn(Mono.just(mockScopeLimitationDetails));
+
+    Mono<ScopeLimitationDetails> result = applicationService.getDefaultScopeLimitation(
+        categoryOfLaw, matterType, proceedingCode, levelOfService, applicationType);
+
+    StepVerifier.create(result)
+        .expectNextMatches(scopeLimitationDetails -> scopeLimitationDetails == mockScopeLimitationDetails)
+        .verifyComplete();
+  }
+
+  @Test
+  void getDefaultScopeLimitation_withSubstantiveDevolvedPowersApplicationType_returnsEmergencyScopeLimitations() {
+    String categoryOfLaw = "Criminal";
+    String matterType = "CRM";
+    String proceedingCode = "PC002";
+    String levelOfService = "2";
+    String applicationType = APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
+
+    ScopeLimitationDetail criteria = new ScopeLimitationDetail()
+        .categoryOfLaw(categoryOfLaw)
+        .matterType(matterType)
+        .proceedingCode(proceedingCode)
+        .levelOfService(levelOfService)
+        .emergency(true)
+        .emergencyScopeDefault(true);
+
+    ScopeLimitationDetails mockScopeLimitationDetails = new ScopeLimitationDetails();
+
+    when(lookupService.getScopeLimitationDetails(criteria)).thenReturn(Mono.just(mockScopeLimitationDetails));
+
+    Mono<ScopeLimitationDetails> result = applicationService.getDefaultScopeLimitation(
+        categoryOfLaw, matterType, proceedingCode, levelOfService, applicationType);
+
+    StepVerifier.create(result)
+        .expectNextMatches(scopeLimitationDetails -> scopeLimitationDetails == mockScopeLimitationDetails)
+        .verifyComplete();
+  }
+
+  @Test
+  void getDefaultScopeLimitation_withNonEmergencyApplicationType_returnsDefaultScopeLimitations() {
+    String categoryOfLaw = "Housing";
+    String matterType = "HOU";
+    String proceedingCode = "PC003";
+    String levelOfService = "1";
+    String applicationType = APP_TYPE_SUBSTANTIVE; // Assume this is a non-emergency application type
+
+    ScopeLimitationDetail criteria = new ScopeLimitationDetail()
+        .categoryOfLaw(categoryOfLaw)
+        .matterType(matterType)
+        .proceedingCode(proceedingCode)
+        .levelOfService(levelOfService)
+        .scopeDefault(true);
+
+    ScopeLimitationDetails mockScopeLimitationDetails = new ScopeLimitationDetails();
+
+    when(lookupService.getScopeLimitationDetails(criteria)).thenReturn(Mono.just(mockScopeLimitationDetails));
+
+    Mono<ScopeLimitationDetails> result = applicationService.getDefaultScopeLimitation(
+        categoryOfLaw, matterType, proceedingCode, levelOfService, applicationType);
+
+    StepVerifier.create(result)
+        .expectNextMatches(scopeLimitationDetails -> scopeLimitationDetails == mockScopeLimitationDetails)
+        .verifyComplete();
+  }
+
+  @Test
+  void getProceedingCostLimitation_withEmergencyApplicationType_returnsMaxCostLimitation() {
+    String categoryOfLaw = "Family";
+    String matterType = "FAM";
+    String proceedingCode = "PC001";
+    String levelOfService = "3";
+    String applicationType = APP_TYPE_EMERGENCY; // Assume this is one of the emergency application type codes
+    List<uk.gov.laa.ccms.caab.model.ScopeLimitation> scopeLimitations = List.of(
+        new uk.gov.laa.ccms.caab.model.ScopeLimitation().scopeLimitation(new StringDisplayValue().id("SL1")),
+        new uk.gov.laa.ccms.caab.model.ScopeLimitation().scopeLimitation(new StringDisplayValue().id("SL2"))
+    );
+
+    ScopeLimitationDetails mockScopeLimitationDetails1 = new ScopeLimitationDetails()
+        .addContentItem(new ScopeLimitationDetail().costLimitation(new BigDecimal(500)));
+    ScopeLimitationDetails mockScopeLimitationDetails2 = new ScopeLimitationDetails()
+        .addContentItem(new ScopeLimitationDetail().costLimitation(new BigDecimal(1000)));
+
+    when(lookupService.getScopeLimitationDetails(any(ScopeLimitationDetail.class)))
+        .thenReturn(Mono.just(mockScopeLimitationDetails1), Mono.just(mockScopeLimitationDetails2));
+
+    BigDecimal result = applicationService.getProceedingCostLimitation(
+        categoryOfLaw, matterType, proceedingCode, levelOfService, applicationType, scopeLimitations);
+
+    assertEquals(new BigDecimal(1000).setScale(2), result.setScale(2));
+  }
+
+  @Test
+  void getProceedingCostLimitation_withNonEmergencyApplicationType_returnsMaxCostLimitation() {
+    String categoryOfLaw = "Housing";
+    String matterType = "HOU";
+    String proceedingCode = "PC003";
+    String levelOfService = "1";
+    String applicationType = APP_TYPE_SUBSTANTIVE;
+    List<uk.gov.laa.ccms.caab.model.ScopeLimitation> scopeLimitations = List.of(
+        new uk.gov.laa.ccms.caab.model.ScopeLimitation().scopeLimitation(new StringDisplayValue().id("SL1")),
+        new uk.gov.laa.ccms.caab.model.ScopeLimitation().scopeLimitation(new StringDisplayValue().id("SL2"))
+    );
+
+    ScopeLimitationDetails mockScopeLimitationDetails1 = new ScopeLimitationDetails()
+        .addContentItem(new ScopeLimitationDetail().costLimitation(new BigDecimal(300)));
+    ScopeLimitationDetails mockScopeLimitationDetails2 = new ScopeLimitationDetails()
+        .addContentItem(new ScopeLimitationDetail().costLimitation(new BigDecimal(800)));
+
+    when(lookupService.getScopeLimitationDetails(any(ScopeLimitationDetail.class)))
+        .thenReturn(Mono.just(mockScopeLimitationDetails1), Mono.just(mockScopeLimitationDetails2));
+
+    BigDecimal result = applicationService.getProceedingCostLimitation(
+        categoryOfLaw, matterType, proceedingCode, levelOfService, applicationType, scopeLimitations);
+
+    assertEquals(new BigDecimal(800).setScale(2), result.setScale(2));
+  }
+
+  @Test
+  void getProceedingCostLimitation_withEmptyScopeLimitations_returnsZero() {
+    String categoryOfLaw = "Immigration";
+    String matterType = "IMG";
+    String proceedingCode = "PC004";
+    String levelOfService = "2";
+    String applicationType = APP_TYPE_SUBSTANTIVE; // Any non-emergency application type
+    List<uk.gov.laa.ccms.caab.model.ScopeLimitation> scopeLimitations = Collections.emptyList();
+
+    BigDecimal result = applicationService.getProceedingCostLimitation(
+        categoryOfLaw, matterType, proceedingCode, levelOfService, applicationType, scopeLimitations);
+
+    assertEquals(BigDecimal.ZERO.setScale(2), result.setScale(2));
+  }
+
+  @Test
+  void getProceedingStage_singleScopeLimitation_returnsMinStage() {
+    String categoryOfLaw = "Family";
+    String matterType = "FAM";
+    String proceedingCode = "PC001";
+    String levelOfService = "3";
+    boolean isAmendment = false;
+    List<uk.gov.laa.ccms.caab.model.ScopeLimitation> scopeLimitations = List.of(
+        new uk.gov.laa.ccms.caab.model.ScopeLimitation().scopeLimitation(
+            new StringDisplayValue().id("SL1"))
+    );
+
+    ScopeLimitationDetails mockScopeLimitationDetails = new ScopeLimitationDetails()
+        .addContentItem(new ScopeLimitationDetail().stage(1))
+        .addContentItem(new ScopeLimitationDetail().stage(2));
+
+    when(lookupService.getScopeLimitationDetails(any(ScopeLimitationDetail.class)))
+        .thenReturn(Mono.just(mockScopeLimitationDetails));
+
+    Integer result = applicationService.getProceedingStage(
+        categoryOfLaw, matterType, proceedingCode, levelOfService, scopeLimitations, isAmendment);
+
+    assertEquals(1, result);
+  }
+
+  @Test
+  void getProceedingStage_multipleScopeLimitationsWithCommonStages_returnsMinCommonStage() {
+    String categoryOfLaw = "Criminal";
+    String matterType = "CRM";
+    String proceedingCode = "PC002";
+    String levelOfService = "2";
+    boolean isAmendment = false;
+    List<uk.gov.laa.ccms.caab.model.ScopeLimitation> scopeLimitations = List.of(
+        new uk.gov.laa.ccms.caab.model.ScopeLimitation().scopeLimitation(new StringDisplayValue().id("SL1")),
+        new uk.gov.laa.ccms.caab.model.ScopeLimitation().scopeLimitation(new StringDisplayValue().id("SL2"))
+    );
+
+    ScopeLimitationDetails mockScopeLimitationDetails1 = new ScopeLimitationDetails()
+        .addContentItem(new ScopeLimitationDetail().stage(1))
+        .addContentItem(new ScopeLimitationDetail().stage(2));
+    ScopeLimitationDetails mockScopeLimitationDetails2 = new ScopeLimitationDetails()
+        .addContentItem(new ScopeLimitationDetail().stage(2))
+        .addContentItem(new ScopeLimitationDetail().stage(3));
+
+    when(lookupService.getScopeLimitationDetails(any(ScopeLimitationDetail.class)))
+        .thenReturn(Mono.just(mockScopeLimitationDetails1), Mono.just(mockScopeLimitationDetails2));
+
+    Integer result = applicationService.getProceedingStage(
+        categoryOfLaw, matterType, proceedingCode, levelOfService, scopeLimitations, isAmendment);
+
+    assertEquals(1, result);
+  }
+
+
+  @Test
+  void getProceedingStage_multipleScopeLimitationsWithoutCommonStages_returnsMinOfMinStages() {
+    String categoryOfLaw = "Housing";
+    String matterType = "HOU";
+    String proceedingCode = "PC003";
+    String levelOfService = "1";
+    boolean isAmendment = false;
+    List<uk.gov.laa.ccms.caab.model.ScopeLimitation> scopeLimitations = List.of(
+        new uk.gov.laa.ccms.caab.model.ScopeLimitation().scopeLimitation(new StringDisplayValue().id("SL1")),
+        new uk.gov.laa.ccms.caab.model.ScopeLimitation().scopeLimitation(new StringDisplayValue().id("SL2"))
+    );
+
+    ScopeLimitationDetails mockScopeLimitationDetails1 = new ScopeLimitationDetails()
+        .addContentItem(new ScopeLimitationDetail().stage(1))
+        .addContentItem(new ScopeLimitationDetail().stage(3));
+    ScopeLimitationDetails mockScopeLimitationDetails2 = new ScopeLimitationDetails()
+        .addContentItem(new ScopeLimitationDetail().stage(4))
+        .addContentItem(new ScopeLimitationDetail().stage(5));
+
+    when(lookupService.getScopeLimitationDetails(any(ScopeLimitationDetail.class)))
+        .thenReturn(Mono.just(mockScopeLimitationDetails1), Mono.just(mockScopeLimitationDetails2));
+
+    Integer result = applicationService.getProceedingStage(
+        categoryOfLaw, matterType, proceedingCode, levelOfService, scopeLimitations, isAmendment);
+
+    assertEquals(1, result);
+  }
+
+  @Test
+  void getProceedingStage_isAmendmentIgnored_returnsStageBasedOnScopeLimitations() {
+    String categoryOfLaw = "Immigration";
+    String matterType = "IMG";
+    String proceedingCode = "PC004";
+    String levelOfService = "4";
+    boolean isAmendment = true;
+    List<uk.gov.laa.ccms.caab.model.ScopeLimitation> scopeLimitations = List.of(
+        new uk.gov.laa.ccms.caab.model.ScopeLimitation().scopeLimitation(new StringDisplayValue().id("SL1"))
+    );
+
+    ScopeLimitationDetails mockScopeLimitationDetails = new ScopeLimitationDetails()
+        .addContentItem(new ScopeLimitationDetail().stage(2));
+
+    when(lookupService.getScopeLimitationDetails(any(ScopeLimitationDetail.class)))
+        .thenReturn(Mono.just(mockScopeLimitationDetails));
+
+    Integer result = applicationService.getProceedingStage(
+        categoryOfLaw, matterType, proceedingCode, levelOfService, scopeLimitations, isAmendment);
+
+    assertEquals(2, result);
+  }
+
+  @Test
+  void updateProviderDetails_updatesProviderDetailsSuccessfully() {
+    String id = "12345";
+    UserDetail user = buildUserDetail();
+    ApplicationFormData applicationFormData = new ApplicationFormData();
+    applicationFormData.setOfficeId(2);
+    applicationFormData.setOfficeName("Office Name");
+    applicationFormData.setFeeEarnerId(201);
+    applicationFormData.setSupervisorId(301);
+    applicationFormData.setContactNameId("401");
+    applicationFormData.setProviderCaseReference("CaseRef123");
+
+    ProviderDetail providerDetail = new ProviderDetail()
+        .id(1)
+        .name("Provider Name")
+        .contactNames(List.of(new ContactDetail().id(401).name("Contact Name")));
+    ContactDetail feeEarner = new ContactDetail().id(201).name("Fee Earner Name");
+    ContactDetail supervisor = new ContactDetail().id(301).name("Supervisor Name");
+
+    when(providerService.getProvider(user.getProvider().getId())).thenReturn(Mono.just(providerDetail));
+    when(providerService.getFeeEarnerByOfficeAndId(providerDetail, applicationFormData.getOfficeId(), applicationFormData.getFeeEarnerId()))
+        .thenReturn(feeEarner);
+    when(providerService.getFeeEarnerByOfficeAndId(providerDetail, applicationFormData.getOfficeId(), applicationFormData.getSupervisorId()))
+        .thenReturn(supervisor);
+
+    when(caabApiClient.putApplication(eq(id), eq(user.getLoginId()), any(), eq("provider-details")))
+        .thenReturn(Mono.empty());
+
+    applicationService.updateProviderDetails(id, applicationFormData, user);
+
+    ArgumentCaptor<ApplicationProviderDetails> providerDetailsCaptor = ArgumentCaptor.forClass(ApplicationProviderDetails.class);
+
+    verify(caabApiClient).putApplication(eq(id), eq(user.getLoginId()), providerDetailsCaptor.capture(), eq("provider-details"));
+
+    ApplicationProviderDetails capturedProviderDetails = providerDetailsCaptor.getValue();
+
+    assertNotNull(capturedProviderDetails);
+    assertEquals(providerDetail.getId(), capturedProviderDetails.getProvider().getId());
+    assertEquals(applicationFormData.getOfficeId(), capturedProviderDetails.getOffice().getId());
+    assertEquals(feeEarner.getId().toString(), capturedProviderDetails.getFeeEarner().getId());
+    assertEquals(supervisor.getId().toString(), capturedProviderDetails.getSupervisor().getId());
+    assertEquals(applicationFormData.getProviderCaseReference(), capturedProviderDetails.getProviderCaseReference());
+  }
+
+  @Test
+  void prepareProceedingSummary_updatesCostsCorrectly() {
+    String id = "12345";
+    UserDetail user = new UserDetail().loginId("userLoginId");
+
+    ApplicationDetail application = getApplicationDetail();
+
+    when(caabApiClient.updateCosts(eq(id), any(CostStructure.class), eq(user.getLoginId()))).thenReturn(Mono.empty());
+
+    applicationService.prepareProceedingSummary(id, application, user);
+    
+    ArgumentCaptor<CostStructure> costsCaptor = ArgumentCaptor.forClass(CostStructure.class);
+    verify(caabApiClient).updateCosts(eq(id), costsCaptor.capture(), eq(user.getLoginId()));
+
+    CostStructure capturedCosts = costsCaptor.getValue();
+    assertNotNull(capturedCosts.getRequestedCostLimitation());
+    assertEquals(0, capturedCosts.getRequestedCostLimitation().compareTo(new BigDecimal("1500.00")));
+  }
+
+  private static ApplicationDetail getApplicationDetail() {
+    ApplicationDetail application = new ApplicationDetail();
+    application.setAmendment(false);
+    CostStructure costs = new CostStructure();
+    costs.setDefaultCostLimitation(new BigDecimal("1000.00")); // Assume this gets set within getDefaultCostLimitation
+    application.setCosts(costs);
+
+    Proceeding proceeding = new Proceeding();
+    proceeding.setCostLimitation(new BigDecimal("1500.00")); // This should trigger an update to default cost limitation
+    application.setProceedings(List.of(proceeding));
+    return application;
+  }
+
 
 }

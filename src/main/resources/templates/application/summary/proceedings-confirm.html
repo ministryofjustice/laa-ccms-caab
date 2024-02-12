@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+  <title>LAA CCMS - Create application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a href="/application/summary/proceedings-and-costs" class="govuk-back-link">Cancel and return to Proceedings and costs</a>
+  </div>
+  <div id="main-content">
+    <form action="#" th:action="@{/application/summary/proceedings/{action}/confirm(action=${proceedingFlow.action})}" method="post">
+      <span class="govuk-caption-l">Add/edit proceeding</span>
+      <h1 class="govuk-heading-l">
+        Proceeding details - Step 4 of 4
+      </h1>
+      <p class="govuk-body-l">
+        Please review the information below and, if required, update the scope limitations for this
+        Proceeding. You can add, edit or remove existing scope limitations, but at least one scope
+        limitation must exist to complete this Proceeding.
+      </p>
+      <p class="govuk-body">
+        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
+            Matter type
+        </span>
+        <span th:text="${proceedingFlow.matterTypeDetails.matterTypeDisplayValue}"></span>
+      </p>
+      <p class="govuk-body">
+        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
+            Proceeding
+        </span>
+        <span th:text="${proceedingFlow.proceedingDetails.proceedingTypeDisplayValue}"></span>
+      </p>
+      <p class="govuk-body">
+        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
+            Proceeding description
+        </span>
+        <span th:text="${proceedingFlow.proceedingDetails.proceedingTypeDisplayValue}"></span>
+      </p>
+      <p class="govuk-body">
+        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
+            Client involvement type
+        </span>
+        <span th:text="${proceedingFlow.furtherDetails.clientInvolvementTypeDisplayValue}"></span>
+      </p>
+      <p class="govuk-body">
+        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
+            Form of civil legal service
+        </span>
+        <span th:text="${proceedingFlow.furtherDetails.levelOfServiceDisplayValue}"></span>
+      </p>
+      <th:block th:if="${proceedingFlow.furtherDetails.typeOfOrder}">
+        <p class="govuk-body">
+        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
+            Type of order
+        </span>
+          <span th:text="${proceedingFlow.furtherDetails.typeOfOrderDisplayValue}"></span>
+        </p>
+      </th:block>
+      <h2 class="govuk-heading-m">Scope limitations</h2>
+      <table class="govuk-table">
+        <thead class="govuk-table__head">
+        <tr class="govuk-table__row">
+          <th scope="col" class="govuk-table__header">Scope limitation</th>
+          <th scope="col" class="govuk-table__header">Scope limitation wording</th>
+          <th scope="col" class="govuk-table__header">Action</th>
+        </tr>
+        </thead>
+        <tbody class="govuk-table__body">
+        <tr class="govuk-table__row" th:each="scopeLimitation : ${scopeLimitations}">
+          <td class="govuk-table__cell">
+            <a href="/todo"
+               class="govuk-link" th:text="${scopeLimitation.scopeLimitation.displayValue}"></a>
+          </td>
+          <td class="govuk-table__cell" th:text="${scopeLimitation.scopeLimitationWording}"></td>
+          <td class="govuk-table__cell"></td>
+        </tr>
+        </tbody>
+      </table>
+      <a class="govuk-button govuk-button--secondary"
+         data-module="govuk-button"
+         href="/application/summary/proceedings/add/matter-type">
+        Add scope limitation
+      </a>
+      <div class="govuk-button-group">
+        <button type="submit" class="govuk-button" data-module="govuk-button">
+          Confirm
+        </button>
+        <th:block th:if="${proceedingFlow.editingScopeLimitations}">
+          <a class="govuk-button govuk-button--secondary"
+             data-module="govuk-button"
+             th:href="@{/application/summary/proceedings/{proceeding-id}/summary(proceeding-id=${proceeding.id})}">
+            Cancel
+          </a>
+        </th:block>
+        <th:block th:unless="${proceedingFlow.editingScopeLimitations}">
+          <a class="govuk-button govuk-button--secondary"
+             data-module="govuk-button"
+             th:href="@{/application/summary/proceedings/{action}/further-details(action=${proceedingFlow.action})}">
+            Back
+          </a>
+        </th:block>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

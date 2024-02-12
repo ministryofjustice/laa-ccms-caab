@@ -10,10 +10,14 @@ import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
+import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
+import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
+import uk.gov.laa.ccms.data.model.ProceedingDetails;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
@@ -123,6 +127,23 @@ public class EbsApiClient {
    */
   public Mono<CommonLookupDetail> getCommonValues(final String type) {
     return this.getCommonValues(type, null);
+  }
+
+  /**
+   * Retrieves the matter type lookup values.
+   *
+   * @return A Mono containing the Matter types or an error handler if an error occurs.
+   */
+  public Mono<MatterTypeLookupDetail> getMatterTypes(final String categoryOfLaw) {
+
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/lookup/matter-types")
+            .queryParamIfPresent("category-of-law", Optional.ofNullable(categoryOfLaw))
+            .build())
+        .retrieve()
+        .bodyToMono(MatterTypeLookupDetail.class)
+        .onErrorResume(ebsApiClientErrorHandler::handleToMatterTypeValuesError);
   }
 
 
@@ -283,6 +304,76 @@ public class EbsApiClient {
         .retrieve()
         .bodyToMono(ProceedingDetail.class)
         .onErrorResume(e -> ebsApiClientErrorHandler.handleProceedingError(proceedingCode, e));
+  }
+
+  /**
+   * Retrieves proceeding details.
+   *
+   * @return A Mono containing the ProceedingDetails or an error handler if an error occurs.
+   */
+  public Mono<ProceedingDetails> getProceedings(
+      final String categoryOfLaw,
+      final String matterType,
+      final Boolean isAmendment,
+      final Boolean larScopeFlag,
+      final String applicationType,
+      final boolean isLead) {
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/proceedings")
+            .queryParamIfPresent("category-of-law", Optional.ofNullable(categoryOfLaw))
+            .queryParamIfPresent("matter-type", Optional.ofNullable(matterType))
+            .queryParamIfPresent("amendment-only", Optional.ofNullable(isAmendment))
+            .queryParamIfPresent("lar-scope-flag", Optional.ofNullable(larScopeFlag))
+            .queryParamIfPresent("application-type", Optional.ofNullable(applicationType))
+            .queryParamIfPresent("lead", Optional.of(isLead))
+            .queryParam("size", 1000)
+            .build())
+        .retrieve()
+        .bodyToMono(ProceedingDetails.class)
+        .onErrorResume(ebsApiClientErrorHandler::handleProceedingsError);
+  }
+
+  /**
+   * Retrieves Client involvement types.
+   *
+   * @return A Mono containing the ClientInvolvementTypeLookupDetail or an error handler if an error
+   *         occurs.
+   */
+  public Mono<ClientInvolvementTypeLookupDetail> getClientInvolvementTypes(
+      final String proceedingCode) {
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/lookup/proceeding-client-involvement-types")
+            .queryParamIfPresent("proceeding-code", Optional.ofNullable(proceedingCode))
+            .queryParam("size", 1000)
+            .build())
+        .retrieve()
+        .bodyToMono(ClientInvolvementTypeLookupDetail.class)
+        .onErrorResume(ebsApiClientErrorHandler::handleClientInvolvementError);
+  }
+
+  /**
+   * Retrieves Proceeding level of service types.
+   *
+   * @return A Mono containing the LevelOfServiceLookupDetail or an error handler if an error
+   *         occurs.
+   */
+  public Mono<LevelOfServiceLookupDetail> getLevelOfServiceTypes(
+      final String proceedingCode,
+      final String categoryOfLaw,
+      final String matterType) {
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/lookup/level-of-service")
+            .queryParamIfPresent("proceeding-code", Optional.ofNullable(proceedingCode))
+            .queryParamIfPresent("category-of-law", Optional.ofNullable(categoryOfLaw))
+            .queryParamIfPresent("matter-type", Optional.ofNullable(matterType))
+            .queryParam("size", 1000)
+            .build())
+        .retrieve()
+        .bodyToMono(LevelOfServiceLookupDetail.class)
+        .onErrorResume(ebsApiClientErrorHandler::handleLevelOfServiceError);
   }
 
   /**

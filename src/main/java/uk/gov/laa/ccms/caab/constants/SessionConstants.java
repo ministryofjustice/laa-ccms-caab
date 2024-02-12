@@ -91,6 +91,11 @@ public class SessionConstants {
   public static final String APPLICATION_ID = "applicationId";
 
   /**
+   * Session attribute used to keep track of the application.
+   */
+  public static final String APPLICATION = "application";
+
+  /**
    * Session attribute used to keep track of the active case details, used for application summary
    * page and its sections to render the case details within the header.
    */
@@ -102,5 +107,21 @@ public class SessionConstants {
   public static final String SUBMISSION_POLL_COUNT = "submissionPollCount";
 
   public static final String APPLICATION_CLIENT_NAMES = "applicationClientNames";
+
+
+  public static final String APPLICATION_COSTS = "costs";
+
+  public static final String APPLICATION_PROCEEDINGS = "proceedings";
+  public static final String CURRENT_PROCEEDING = "proceeding";
+  public static final String PROCEEDING_FLOW_FORM_DATA = "proceedingFlow";
+  public static final String PROCEEDING_FLOW_FORM_DATA_OLD = "oldProceedingFlow";
+
+  public static final String PROCEEDING_SCOPE_LIMITATIONS = "scopeLimitations";
+
+  public static final String APPLICATION_PRIOR_AUTHORITIES = "priorAuthorities";
+
+
+
+
 
 }

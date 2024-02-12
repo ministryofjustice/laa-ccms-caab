@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+  <title>LAA CCMS - Create application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a href="/application/summary/proceedings-and-costs" class="govuk-back-link">Cancel and return to Proceedings and costs</a>
+  </div>
+  <div id="main-content">
+    <form action="#" th:action="@{/application/summary/proceedings/{action}/proceeding-type(action=${proceedingFlow.action})}" th:object="${proceedingTypeDetails}" method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <span class="govuk-caption-l">Add/edit proceeding</span>
+      <h1 class="govuk-heading-l">
+        Proceeding details - Step 2 of 4
+      </h1>
+      <p class="govuk-body-l">
+        Please enter the proceeding details for your application.
+      </p>
+      <p class="govuk-body">
+        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
+            Matter type
+        </span>
+        <span th:text="${proceedingFlow.matterTypeDetails.matterTypeDisplayValue}"></span>
+      </p>
+      <div class="govuk-form-group"
+           th:classappend="${#fields.hasErrors('proceedingType')} ? 'govuk-form-group--error' : ''">
+        <label class="govuk-label" th:for="'proceedingType'" th:text="'Proceeding'">
+        </label>
+        <span th:if="${#fields.hasErrors('proceedingType')}" th:errors="*{'proceedingType'}" class="govuk-error-message"></span>
+        <input type="hidden" th:id="proceedingTypeDisplayValue" th:name="proceedingTypeDisplayValue" th:value="*{proceedingTypeDisplayValue}">
+        <input type="hidden" th:id="orderTypeRequired" th:name="orderTypeRequired" th:value="*{orderTypeRequired}">
+        <input type="hidden" th:id="larScope" th:name="larScope" th:value="*{larScope}">
+        <select class="govuk-select"
+                data-module="govuk-select"
+                th:field="*{__${'proceedingType'}__}"
+                th:errorclass="govuk-select--error"
+                th:id="proceedingType"
+                th:name="proceedingType"
+                th:attr="onchange=|document.getElementById('proceedingTypeDisplayValue').value =
+                            this.options[this.selectedIndex].text;
+                         document.getElementById('orderTypeRequired').value =
+                            this.options[this.selectedIndex].getAttribute('order-type-required');
+                         document.getElementById('larScope').value =
+                            this.options[this.selectedIndex].getAttribute('lar-scope');|">
+          <option value="">Please Select</option>
+          <option th:each="item : ${proceedingTypes}"
+                  th:value="${item['code']}"
+                  th:text="${item['description']}"
+                  th:order-type-required="${item['orderTypeRequired']}"
+                  th:lar-scope="${item['larScope']}">>
+          </option>
+        </select>
+      </div>
+      <div class="govuk-button-group">
+        <button type="submit" class="govuk-button" data-module="govuk-button">
+          Next
+        </button>
+        <a class="govuk-button govuk-button--secondary"
+           data-module="govuk-button"
+           th:href="@{/application/summary/proceedings/{action}/matter-type(action=${proceedingFlow.action})}">
+          Back
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>
