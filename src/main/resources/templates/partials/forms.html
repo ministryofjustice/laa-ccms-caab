@@ -29,6 +29,32 @@
   </select>
 </div>
 
+<div th:fragment="dropdownWithDisplayValue(fieldId, formLabel, list, itemValue, itemLabel)"
+           class="govuk-form-group"
+           th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
+
+  <label class="govuk-label" th:for="${fieldId}" th:text="${formLabel}">
+  </label>
+
+  <span th:if="${#fields.hasErrors(fieldId)}" th:errors="*{__${fieldId}__}" class="govuk-error-message"></span>
+
+  <input type="hidden" th:id="${fieldId + 'DisplayValue'}" th:name="${fieldId + 'DisplayValue'}" th:value="*{__${fieldId + 'DisplayValue'}__}">
+
+  <select class="govuk-select"
+          data-module="govuk-select"
+          th:field="*{__${fieldId}__}"
+          th:errorclass="govuk-select--error"
+          th:id="${fieldId}"
+          th:name="${fieldId}"
+          th:attr="onchange=|document.getElementById('${fieldId}DisplayValue').value = this.options[this.selectedIndex].text;|">
+    <option value="">Please Select</option>
+    <option th:each="item : ${list}"
+            th:value="${item[itemValue]}"
+            th:text="${item[itemLabel]}">
+    </option>
+  </select>
+</div>
+
 <div th:fragment="textInput(fieldId, label, inputClass)"
      class="govuk-form-group"
      th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
