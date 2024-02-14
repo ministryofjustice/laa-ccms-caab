@@ -312,21 +312,25 @@ public class EbsApiClient {
    * @return A Mono containing the ProceedingDetails or an error handler if an error occurs.
    */
   public Mono<ProceedingDetails> getProceedings(
-      final String categoryOfLaw,
-      final String matterType,
-      final Boolean isAmendment,
+      final ProceedingDetail searchCriteria,
       final Boolean larScopeFlag,
       final String applicationType,
-      final boolean isLead) {
+      final Boolean isLead) {
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/proceedings")
-            .queryParamIfPresent("category-of-law", Optional.ofNullable(categoryOfLaw))
-            .queryParamIfPresent("matter-type", Optional.ofNullable(matterType))
-            .queryParamIfPresent("amendment-only", Optional.ofNullable(isAmendment))
-            .queryParamIfPresent("lar-scope-flag", Optional.ofNullable(larScopeFlag))
-            .queryParamIfPresent("application-type", Optional.ofNullable(applicationType))
-            .queryParamIfPresent("lead", Optional.of(isLead))
+            .queryParamIfPresent("category-of-law",
+                Optional.ofNullable(searchCriteria.getCategoryOfLawCode()))
+            .queryParamIfPresent("matter-type",
+                Optional.ofNullable(searchCriteria.getMatterType()))
+            .queryParamIfPresent("amendment-only",
+                Optional.ofNullable(searchCriteria.getAmendmentOnly()))
+            .queryParamIfPresent("lar-scope-flag",
+                Optional.ofNullable(larScopeFlag))
+            .queryParamIfPresent("application-type",
+                Optional.ofNullable(applicationType))
+            .queryParamIfPresent("lead",
+                Optional.ofNullable(isLead))
             .queryParam("size", 1000)
             .build())
         .retrieve()

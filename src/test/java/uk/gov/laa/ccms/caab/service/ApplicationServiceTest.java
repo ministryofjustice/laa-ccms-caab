@@ -10,7 +10,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -59,7 +58,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -2139,12 +2137,12 @@ class ApplicationServiceTest {
 
     ApplicationDetail application = getApplicationDetail();
 
-    when(caabApiClient.updateCosts(eq(id), any(CostStructure.class), eq(user.getLoginId()))).thenReturn(Mono.empty());
+    when(caabApiClient.updateCostStructure(eq(id), any(CostStructure.class), eq(user.getLoginId()))).thenReturn(Mono.empty());
 
     applicationService.prepareProceedingSummary(id, application, user);
     
     ArgumentCaptor<CostStructure> costsCaptor = ArgumentCaptor.forClass(CostStructure.class);
-    verify(caabApiClient).updateCosts(eq(id), costsCaptor.capture(), eq(user.getLoginId()));
+    verify(caabApiClient).updateCostStructure(eq(id), costsCaptor.capture(), eq(user.getLoginId()));
 
     CostStructure capturedCosts = costsCaptor.getValue();
     assertNotNull(capturedCosts.getRequestedCostLimitation());

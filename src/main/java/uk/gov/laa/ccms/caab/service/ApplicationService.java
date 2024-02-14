@@ -66,13 +66,11 @@ import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplication;
-import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.OpponentRowDisplay;
-import uk.gov.laa.ccms.caab.model.PriorAuthority;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -669,24 +667,6 @@ public class ApplicationService {
     //      // }
     //      // see - getAmendmentProceedingStage
     //    }
-
-    if (scopeLimitations.size() == 1) {
-      final ScopeLimitationDetail criteria = new ScopeLimitationDetail()
-          .categoryOfLaw(categoryOfLaw)
-          .matterType(matterType)
-          .proceedingCode(proceedingCode)
-          .levelOfService(levelOfService)
-          .scopeLimitations(scopeLimitations.get(0).getScopeLimitation().getId());
-
-      final List<Integer> stageList = lookupService.getScopeLimitationDetails(criteria)
-          .block()
-          .getContent()
-          .stream()
-          .map(ScopeLimitationDetail::getStage)
-          .toList();
-
-      return getMinValue(stageList);
-    }
 
     final List<List<Integer>> allStages = new ArrayList<>();
     final List<Integer> minStageList = new ArrayList<>();
@@ -1558,13 +1538,13 @@ public class ApplicationService {
 
     getDefaultCostLimitation(application);
 
-    if (!application.getAmendment()
+    if (Boolean.FALSE.equals(application.getAmendment())
         && application.getCosts().getRequestedCostLimitation() == null) {
       application.getCosts()
           .setRequestedCostLimitation(application.getCosts().getDefaultCostLimitation());
     }
 
-    caabApiClient.updateCosts(id, application.getCosts(), user.getLoginId()).block();
+    caabApiClient.updateCostStructure(id, application.getCosts(), user.getLoginId()).block();
   }
 
   private BigDecimal getDefaultCostLimitation(final ApplicationDetail application) {

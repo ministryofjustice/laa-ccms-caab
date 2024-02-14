@@ -32,10 +32,11 @@ import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataFurtherDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
+import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
-import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingTypeDetailsValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthority;
@@ -77,7 +78,7 @@ public class EditProceedingsAndCostsSectionController {
   private final LookupService lookupService;
 
   private final ProceedingMatterTypeDetailsValidator matterTypeValidator;
-  private final ProceedingTypeDetailsValidator proceedingTypeValidator;
+  private final ProceedingDetailsValidator proceedingTypeValidator;
   private final ProceedingFurtherDetailsValidator furtherDetailsValidator;
 
   private final ProceedingAndCostsMapper proceedingAndCostsMapper;
@@ -96,35 +97,35 @@ public class EditProceedingsAndCostsSectionController {
    * @param model The Model object to add attributes to for the view.
    * @return The name of the view to be rendered.
    */
-  @GetMapping("/application/summary/proceedings-and-costs")
+  @GetMapping("/application/proceedings-and-costs")
   public String proceedingsAndCosts(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final Model model) {
 
     final ApplicationDetail application =
-        applicationService.getApplication(applicationId).block();
+        Optional.ofNullable(applicationService.getApplication(applicationId).block())
+            .orElseThrow(() -> new CaabApplicationException(
+                "No application found with id: " + applicationId));
 
     applicationService.prepareProceedingSummary(applicationId, application, user);
     model.addAttribute(APPLICATION, application);
 
-    if (application != null) {
-      model.addAttribute(APPLICATION_COSTS, application.getCosts());
+    model.addAttribute(APPLICATION_COSTS, application.getCosts());
 
-      final List<Proceeding> proceedings =
-          Optional.ofNullable(application.getProceedings())
-              .orElse(Collections.emptyList());
+    final List<Proceeding> proceedings =
+        Optional.ofNullable(application.getProceedings())
+            .orElse(Collections.emptyList());
 
-      model.addAttribute(APPLICATION_PROCEEDINGS, proceedings);
+    model.addAttribute(APPLICATION_PROCEEDINGS, proceedings);
 
-      final List<PriorAuthority> priorAuthorities =
-          Optional.ofNullable(application.getPriorAuthorities())
-              .orElse(Collections.emptyList());
+    final List<PriorAuthority> priorAuthorities =
+        Optional.ofNullable(application.getPriorAuthorities())
+            .orElse(Collections.emptyList());
 
-      model.addAttribute(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities);
-    }
+    model.addAttribute(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities);
 
-    return "application/summary/proceedings-and-costs-section";
+    return "application/proceedings-and-costs-section";
   }
 
   /**
@@ -138,7 +139,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param user The UserDetail object representing the current user, obtained from the session.
    * @return A redirect instruction to the proceedings and costs view.
    */
-  @GetMapping("/application/summary/proceedings/{proceeding-id}/make-lead")
+  @GetMapping("/application/proceedings/{proceeding-id}/make-lead")
   public String proceedingsMakeLead(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(APPLICATION_PROCEEDINGS) final List<Proceeding> proceedings,
@@ -153,7 +154,7 @@ public class EditProceedingsAndCostsSectionController {
       applicationService.makeLeadProceeding(applicationId, proceedingId, user);
     }
 
-    return "redirect:/application/summary/proceedings-and-costs";
+    return "redirect:/application/proceedings-and-costs";
   }
 
   /**
@@ -167,7 +168,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param model The Model object to add attributes to for the view.
    * @return The name of the view to be rendered.
    */
-  @GetMapping("/application/summary/proceedings/{proceeding-id}/summary")
+  @GetMapping("/application/proceedings/{proceeding-id}/summary")
   public String proceedingsSummary(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
@@ -201,7 +202,7 @@ public class EditProceedingsAndCostsSectionController {
     // see PrepareProceedingSummary in PUI
     // loadProceedingOutcomesFromTds
 
-    return "application/summary/proceedings-summary";
+    return "application/proceedings-summary";
   }
 
   /**
@@ -213,7 +214,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return The name of the view to be rendered.
    */
-  @GetMapping("/application/summary/proceedings/{action}/matter-type")
+  @GetMapping("/application/proceedings/{action}/matter-type")
   public String proceedingsActionMatterType(
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
       @PathVariable("action") final String action,
@@ -247,7 +248,7 @@ public class EditProceedingsAndCostsSectionController {
           proceedingFlow.getMatterTypeDetails());
     }
 
-    return "application/summary/proceedings-matter-type";
+    return "application/proceedings-matter-type";
   }
 
   /**
@@ -262,7 +263,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return A redirect instruction to the proceeding type view.
    */
-  @PostMapping("/application/summary/proceedings/{action}/matter-type")
+  @PostMapping("/application/proceedings/{action}/matter-type")
   public String proceedingsActionMatterTypePost(
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
       @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
@@ -278,7 +279,7 @@ public class EditProceedingsAndCostsSectionController {
     if (bindingResult.hasErrors()) {
       model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
       populateMatterTypeDropdown(model, application.getCategoryOfLaw().getId());
-      return "application/summary/proceedings-matter-type";
+      return "application/proceedings-matter-type";
     }
 
     //check if the data has been amended
@@ -296,7 +297,7 @@ public class EditProceedingsAndCostsSectionController {
     proceedingFlow.setMatterTypeDetails(matterTypeDetails);
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
-    return String.format("redirect:/application/summary/proceedings/%s/proceeding-type", action);
+    return String.format("redirect:/application/proceedings/%s/proceeding-type", action);
 
   }
 
@@ -326,7 +327,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param model The Model object to add attributes to for the view.
    * @return The name of the view to be rendered.
    */
-  @GetMapping("/application/summary/proceedings/{action}/proceeding-type")
+  @GetMapping("/application/proceedings/{action}/proceeding-type")
   public String proceedingsActionProceedingType(
       @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
@@ -342,7 +343,7 @@ public class EditProceedingsAndCostsSectionController {
     model.addAttribute("proceedingTypeDetails",
         proceedingFlow.getProceedingDetails());
 
-    return "application/summary/proceedings-proceeding-type";
+    return "application/proceedings-proceeding-type";
   }
 
   /**
@@ -357,7 +358,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return A redirect instruction to the proceedings further details view.
    */
-  @PostMapping("/application/summary/proceedings/{action}/proceeding-type")
+  @PostMapping("/application/proceedings/{action}/proceeding-type")
   public String proceedingsActionProceedingTypePost(
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
       @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
@@ -379,7 +380,7 @@ public class EditProceedingsAndCostsSectionController {
 
       model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
-      return "application/summary/proceedings-proceeding-type";
+      return "application/proceedings-proceeding-type";
     }
 
     if (action.equals(ACTION_ADD)) {
@@ -396,7 +397,7 @@ public class EditProceedingsAndCostsSectionController {
     proceedingFlow.setProceedingDetails(proceedingTypeDetails);
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
-    return String.format("redirect:/application/summary/proceedings/%s/further-details", action);
+    return String.format("redirect:/application/proceedings/%s/further-details", action);
 
   }
 
@@ -414,8 +415,16 @@ public class EditProceedingsAndCostsSectionController {
       final String matterType,
       final boolean isLead) {
 
+    final ProceedingDetail searchCriteria = new ProceedingDetail()
+        .amendmentOnly(application.getAmendment())
+        .matterType(matterType)
+        .categoryOfLawCode(application.getCategoryOfLaw().getId());
+
+    final Boolean larScopeFlag = application.getLarScopeFlag();
+    final String applicationType = application.getApplicationType().getId();
+
     final List<ProceedingDetail> proceedingDetails = Optional.ofNullable(
-        lookupService.getProceedings(application, matterType, isLead).block())
+        lookupService.getProceedings(searchCriteria, larScopeFlag, applicationType, isLead).block())
         .map(ProceedingDetails::getContent)
         .orElse(Collections.emptyList());
 
@@ -430,7 +439,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param model The Model object to add attributes to for the view.
    * @return The name of the view to be rendered.
    */
-  @GetMapping("/application/summary/proceedings/{action}/further-details")
+  @GetMapping("/application/proceedings/{action}/further-details")
   public String proceedingsActionFurtherDetails(
       @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
@@ -445,7 +454,7 @@ public class EditProceedingsAndCostsSectionController {
     model.addAttribute("furtherDetails",
         proceedingFlow.getFurtherDetails());
 
-    return "application/summary/proceedings-further-details";
+    return "application/proceedings-further-details";
   }
 
   /**
@@ -460,7 +469,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return A redirect instruction to the proceedings confirm view.
    */
-  @PostMapping("/application/summary/proceedings/{action}/further-details")
+  @PostMapping("/application/proceedings/{action}/further-details")
   public String proceedingsActionFurtherDetailsPost(
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
       @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
@@ -470,21 +479,19 @@ public class EditProceedingsAndCostsSectionController {
       final Model model,
       final HttpSession session) {
 
+    proceedingFlow.setFurtherDetails(furtherDetails);
+    furtherDetailsValidator.validate(proceedingFlow, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      populateFurtherDetailsDropdowns(model,
+          application,
+          proceedingFlow.getProceedingDetails(),
+          proceedingFlow.getMatterTypeDetails().getMatterType());
+      model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+      return "application/proceedings-further-details";
+    }
 
     if (action.equals(ACTION_ADD)) {
-
-      proceedingFlow.setFurtherDetails(furtherDetails);
-      furtherDetailsValidator.validate(proceedingFlow, bindingResult);
-
-      if (bindingResult.hasErrors()) {
-        populateFurtherDetailsDropdowns(model,
-            application,
-            proceedingFlow.getProceedingDetails(),
-            proceedingFlow.getMatterTypeDetails().getMatterType());
-        model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
-        return "application/summary/proceedings-further-details";
-      }
-
       proceedingFlow.setAmended(Boolean.TRUE);
     } else {
 
@@ -511,7 +518,7 @@ public class EditProceedingsAndCostsSectionController {
     proceedingFlow.setFurtherDetails(furtherDetails);
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
-    return String.format("redirect:/application/summary/proceedings/%s/confirm", action);
+    return String.format("redirect:/application/proceedings/%s/confirm", action);
   }
 
   /**
@@ -535,7 +542,8 @@ public class EditProceedingsAndCostsSectionController {
             .map(ClientInvolvementTypeLookupDetail::getContent);
 
     final Mono<List<LevelOfServiceLookupValueDetail>> levelOfServiceTypesMono =
-        lookupService.getProceedingLevelOfServiceTypes(application, proceedingCode, matterType)
+        lookupService.getProceedingLevelOfServiceTypes(
+            application.getCategoryOfLaw().getId(), proceedingCode, matterType)
             .map(LevelOfServiceLookupDetail::getContent);
 
     Mono.zip(clientInvolvementTypesMono, levelOfServiceTypesMono)
@@ -563,7 +571,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return The name of the view to be rendered.
    */
-  @GetMapping("/application/summary/proceedings/{action}/confirm")
+  @GetMapping("/application/proceedings/{action}/confirm")
   public String proceedingsActionConfirm(
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
       @PathVariable("action") final String action,
@@ -576,6 +584,8 @@ public class EditProceedingsAndCostsSectionController {
     if (isRoutedFromSummaryPage(action, session)) {
       final Proceeding proceeding = (Proceeding) session.getAttribute(CURRENT_PROCEEDING);
 
+      //get order type display value to be visible for the page
+      //this is not stored in the proceeding db object so we have to look it up
       final String orderTypeDisplayValue = Optional.ofNullable(proceeding.getTypeOfOrder())
           .map(StringDisplayValue::getId)
           .map(id -> lookupService.getOrderTypeDescription(id).block())
@@ -583,16 +593,21 @@ public class EditProceedingsAndCostsSectionController {
 
       proceedingFlow = proceedingAndCostsMapper.toProceedingFlow(proceeding, orderTypeDisplayValue);
 
+      //we set this true so when editing scope limitation we won't route back to editing the
+      // proceedings screens
       proceedingFlow.setEditingScopeLimitations(true);
 
       model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
       model.addAttribute(CURRENT_PROCEEDING, proceeding);
 
     } else {
-      //Came from previous step in the flow
+      // Came from previous step in the flow - editing further details, proceeding type and
+      // matter type
       proceedingFlow = (ProceedingFlowFormData) session.getAttribute(PROCEEDING_FLOW_FORM_DATA);
     }
 
+    // We want to retrieve the default scope limitations if the proceeding has been amended.
+    // Otherwise, we just retrieve the ones already stored in the session.
     if (proceedingFlow.isAmended()) {
       final ScopeLimitationDetails scopeLimitationDetails =
           applicationService.getDefaultScopeLimitation(
@@ -611,7 +626,8 @@ public class EditProceedingsAndCostsSectionController {
         model.addAttribute(PROCEEDING_SCOPE_LIMITATIONS, scopeLimitations);
       }
 
-      //do this last in case of errors
+      // Now we have retrieved the default scope limitations no need to do it again,
+      // we do this last in case of errors
       proceedingFlow.setAmended(Boolean.FALSE);
     } else {
       final Proceeding proceeding = (Proceeding) session.getAttribute(CURRENT_PROCEEDING);
@@ -627,7 +643,7 @@ public class EditProceedingsAndCostsSectionController {
 
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
-    return "application/summary/proceedings-confirm";
+    return "application/proceedings-confirm";
   }
 
   /**
@@ -662,7 +678,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return A redirect instruction to the proceedings and costs view.
    */
-  @PostMapping("/application/summary/proceedings/{action}/confirm")
+  @PostMapping("/application/proceedings/{action}/confirm")
   public String proceedingsActionConfirmPost(
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
@@ -735,7 +751,7 @@ public class EditProceedingsAndCostsSectionController {
     //todo - need to save the application updates
     // requires CCLS-2055
 
-    return "redirect:/application/summary/proceedings-and-costs";
+    return "redirect:/application/proceedings-and-costs";
   }
 
 

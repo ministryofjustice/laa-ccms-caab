@@ -265,23 +265,20 @@ public class LookupService {
   /**
    * Get a list of proceeding types for proceedings.
    *
+   * @param searchCriteria The criteria to search for proceedings.
+   * @param larScopeFlag The flag to indicate if the scope is for Legal Aid Representation.
+   * @param applicationType The type of the application.
+   * @param isLead A flag to indicate if the proceeding is lead.
    * @return CommonLookupDetail containing the common lookup values.
    */
   public Mono<ProceedingDetails> getProceedings(
-      final ApplicationDetail application,
-      final String matterType,
+      final ProceedingDetail searchCriteria,
+      final Boolean larScopeFlag,
+      final String applicationType,
       final Boolean isLead) {
 
-    final String categoryOfLaw = application.getCategoryOfLaw().getId();
-    final Boolean isAmendment = application.getAmendment();
-    final Boolean larScopeFlag = application.getLarScopeFlag();
-    final String applicationType = application.getApplicationType().getId();
-
-
     return ebsApiClient.getProceedings(
-        categoryOfLaw,
-        matterType,
-        isAmendment,
+        searchCriteria,
         larScopeFlag,
         applicationType,
         isLead);
@@ -313,17 +310,15 @@ public class LookupService {
    * The level of service types are fetched based on the proceeding code, category of law, and
    * matter type.
    *
-   * @param application The application detail object which contains the category of law.
+   * @param categoryOfLaw The category of law.
    * @param proceedingCode The code of the proceeding.
    * @param matterType The type of the matter.
    * @return A Mono of LevelOfServiceLookupDetail containing the level of service types.
    */
   public Mono<LevelOfServiceLookupDetail> getProceedingLevelOfServiceTypes(
-      final ApplicationDetail application,
+      final String categoryOfLaw,
       final String proceedingCode,
       final String matterType) {
-
-    final String categoryOfLaw = application.getCategoryOfLaw().getId();
 
     return ebsApiClient.getLevelOfServiceTypes(proceedingCode, categoryOfLaw, matterType);
   }
@@ -348,7 +343,7 @@ public class LookupService {
             .filter(commonLookupValueDetail -> commonLookupValueDetail.getCode().equals(code))
             .findFirst()
             .map(CommonLookupValueDetail::getDescription)
-            .orElse(null));
+            .orElse(code));
   }
 
   /**

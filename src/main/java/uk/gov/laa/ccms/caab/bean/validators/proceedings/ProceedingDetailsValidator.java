@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.bean.validators.proceedings;
 
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
@@ -10,7 +9,7 @@ import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
  * Validator the proceeding details provided by proceeding flow forms.
  */
 @Component
-public class ProceedingTypeDetailsValidator extends AbstractValidator {
+public class ProceedingDetailsValidator extends AbstractValidator {
 
   /**
    * Determines if the Validator supports the provided class.

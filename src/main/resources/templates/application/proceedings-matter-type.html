@@ -8,10 +8,10 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a href="/application/summary/proceedings-and-costs" class="govuk-back-link">Cancel and return to Proceedings and costs</a>
+    <a href="/application/proceedings-and-costs" class="govuk-back-link">Cancel and return to Proceedings and costs</a>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/summary/proceedings/{action}/matter-type(action=${proceedingFlow.action})}" th:object="${matterTypeDetails}" method="post">
+    <form action="#" th:action="@{/application/proceedings/{action}/matter-type(action=${proceedingFlow.action})}" th:object="${matterTypeDetails}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <span class="govuk-caption-l">Add/edit proceeding</span>
       <h1 class="govuk-heading-l">
@@ -28,7 +28,7 @@
         <th:block th:if="${proceedingFlow.action == 'edit'}">
           <a class="govuk-button govuk-button--secondary"
              data-module="govuk-button"
-             th:href="@{/application/summary/proceedings/{proceeding-id}/summary(proceeding-id=${proceeding.id})}">
+             th:href="@{/application/proceedings/{proceeding-id}/summary(proceeding-id=${proceeding.id})}">
             Back
           </a>
         </th:block>

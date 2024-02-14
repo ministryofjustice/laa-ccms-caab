@@ -8,10 +8,10 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a href="/application/summary/proceedings-and-costs" class="govuk-back-link">Cancel and return to Proceedings and costs</a>
+    <a href="/application/proceedings-and-costs" class="govuk-back-link">Cancel and return to Proceedings and costs</a>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/summary/proceedings/{action}/confirm(action=${proceedingFlow.action})}" method="post">
+    <form action="#" th:action="@{/application/proceedings/{action}/confirm(action=${proceedingFlow.action})}" method="post">
       <span class="govuk-caption-l">Add/edit proceeding</span>
       <h1 class="govuk-heading-l">
         Proceeding details - Step 4 of 4
@@ -81,7 +81,7 @@
       </table>
       <a class="govuk-button govuk-button--secondary"
          data-module="govuk-button"
-         href="/application/summary/proceedings/add/matter-type">
+         href="/application/proceedings/add/matter-type">
         Add scope limitation
       </a>
       <div class="govuk-button-group">
@@ -91,14 +91,14 @@
         <th:block th:if="${proceedingFlow.editingScopeLimitations}">
           <a class="govuk-button govuk-button--secondary"
              data-module="govuk-button"
-             th:href="@{/application/summary/proceedings/{proceeding-id}/summary(proceeding-id=${proceeding.id})}">
+             th:href="@{/application/proceedings/{proceeding-id}/summary(proceeding-id=${proceeding.id})}">
             Cancel
           </a>
         </th:block>
         <th:block th:unless="${proceedingFlow.editingScopeLimitations}">
           <a class="govuk-button govuk-button--secondary"
              data-module="govuk-button"
-             th:href="@{/application/summary/proceedings/{action}/further-details(action=${proceedingFlow.action})}">
+             th:href="@{/application/proceedings/{action}/further-details(action=${proceedingFlow.action})}">
             Back
           </a>
         </th:block>
