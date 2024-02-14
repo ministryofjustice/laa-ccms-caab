@@ -56,7 +56,7 @@
           <tbody class="govuk-table__body">
           <tr class="govuk-table__row" th:each="proceeding : ${proceedings}" th:unless="${proceedings.isEmpty()}">
             <td class="govuk-table__cell">
-              <a th:href="@{/application/summary/proceedings/{id}/summary(id=${proceeding.id})}"
+              <a th:href="@{/application/proceedings/{id}/summary(id=${proceeding.id})}"
                  class="govuk-link" th:text="${proceeding.matterType.displayValue}"></a>
             </td>
             <td class="govuk-table__cell" th:text="${proceeding.proceedingType.displayValue}"></td>
@@ -73,11 +73,11 @@
             <th:block th:unless="${proceeding.leadProceedingInd}">
               <td class="govuk-table__cell"></td>
               <td class="govuk-table__cell">
-                <a th:href="@{/application/summary/proceedings/{id}/remove(id=${proceeding.id})}" class="govuk-link">
+                <a th:href="@{/application/proceedings/{id}/remove(id=${proceeding.id})}" class="govuk-link">
                   Delete
                 </a>
                 |
-                <a th:href="@{/application/summary/proceedings/{id}/make-lead(id=${proceeding.id})}" class="govuk-link">
+                <a th:href="@{/application/proceedings/{id}/make-lead(id=${proceeding.id})}" class="govuk-link">
                   Make lead
                 </a>
               </td>
@@ -90,8 +90,7 @@
         </table>
         <a class="govuk-button govuk-button--secondary"
            data-module="govuk-button"
-           href="/application/summary/proceedings/add/matter-type">
-          Add proceeding
+           href="/application/proceedings/add/matter-type">
         </a>
       </div>
       <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="case-costs" aria-labelledby="tab_case-costs">
@@ -107,7 +106,7 @@
           <tbody class="govuk-table__body">
           <tr class="govuk-table__row">
             <td class="govuk-table__cell">
-              <a th:href="@{/application/summary/costs/confirm}" class="govuk-link">
+              <a th:href="@{/application/costs/confirm}" class="govuk-link">
                 Case cost limitation
               </a>
             </td>
@@ -132,7 +131,7 @@
           <tbody class="govuk-table__body">
           <tr class="govuk-table__row" th:each="priorAuthority : ${priorAuthorities}" th:unless="${priorAuthorities.isEmpty()}">
             <td class="govuk-table__cell">
-              <a th:href="@{/application/summary/prior-authorities/{id}/confirm(id=${priorAuthority.id})}"
+              <a th:href="@{/application/prior-authorities/{id}/confirm(id=${priorAuthority.id})}"
                  class="govuk-link" th:text="${priorAuthority.summary}">
               </a>
             </td>
@@ -140,7 +139,7 @@
             <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(priorAuthority.amountRequested)}"></td>
             <td class="govuk-table__cell" th:text="${priorAuthority.status}"></td>
             <td class="govuk-table__cell">
-              <a th:href="@{/application/summary/prior-authorities/{id}/remove(id=${priorAuthority.id})}"
+              <a th:href="@{/application/prior-authorities/{id}/remove(id=${priorAuthority.id})}"
                  class="govuk-link" th:text="${'Delete'}">
               </a>
             </td>

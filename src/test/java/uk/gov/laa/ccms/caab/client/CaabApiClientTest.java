@@ -439,7 +439,7 @@ public class CaabApiClientTest {
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
 
-    final Mono<Void> result = caabApiClient.updateCosts(id, costs, loginId);
+    final Mono<Void> result = caabApiClient.updateCostStructure(id, costs, loginId);
 
     StepVerifier.create(result).verifyComplete();
   }
