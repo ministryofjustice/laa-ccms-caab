@@ -21,6 +21,11 @@ public class ProceedingFormDataProceedingDetails {
   private String proceedingTypeDisplayValue;
 
   /**
+   * The description of the original proceeding type.
+   */
+  private String proceedingDescription;
+
+  /**
    * The LAR scope of the proceeding.
    */
   private String larScope;

@@ -6,6 +6,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
+import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ScopeLimitation;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
@@ -125,6 +126,8 @@ public interface ProceedingAndCostsMapper {
       source = "proceeding.proceedingType.id")
   @Mapping(target = "proceedingDetails.proceedingTypeDisplayValue",
       source = "proceeding.proceedingType.displayValue")
+  @Mapping(target = "proceedingDetails.proceedingDescription",
+      source = "proceeding.description")
   @Mapping(target = "proceedingDetails.larScope",
       source = "proceeding.larScope")
   @Mapping(target = "furtherDetails.clientInvolvementType",
@@ -160,5 +163,11 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "auditTrail", ignore = true)
   @Mapping(target = "ebsId", ignore = true)
   ScopeLimitation toScopeLimitation(ScopeLimitationDetail scopeLimitationDetail);
+
+  @Mapping(target = "action", constant = "edit")
+  @Mapping(target = "scopeLimitationId", source = "id")
+  @Mapping(target = "scopeLimitationDetails.scopeLimitation", source = "scopeLimitation.id")
+  @Mapping(target = "scopeLimitationIndex", ignore = true)
+  ScopeLimitationFlowFormData toScopeLimitationFlow(ScopeLimitation scopeLimitation);
 
 }

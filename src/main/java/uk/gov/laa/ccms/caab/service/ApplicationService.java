@@ -448,6 +448,8 @@ public class ApplicationService {
     return caabApiClient.getApplication(id);
   }
 
+
+
   /**
    * Retrieves the application Summary display values.
    *
@@ -1588,4 +1590,16 @@ public class ApplicationService {
       final UserDetail user) {
     caabApiClient.updateProceeding(proceeding.getId(), proceeding, user.getLoginId()).block();
   }
+
+  public void deleteProceeding(
+      final Integer proceedingId,
+      final UserDetail user) {
+    caabApiClient.deleteProceeding(proceedingId, user.getLoginId()).block();
+  }
+
+  public List<uk.gov.laa.ccms.caab.model.ScopeLimitation> getScopeLimitations(
+      final Integer proceedingId) {
+    return caabApiClient.getScopeLimitations(proceedingId).block();
+  }
+
 }

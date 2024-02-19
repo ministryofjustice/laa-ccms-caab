@@ -73,13 +73,9 @@
             <th:block th:unless="${proceeding.leadProceedingInd}">
               <td class="govuk-table__cell"></td>
               <td class="govuk-table__cell">
-                <a th:href="@{/application/proceedings/{id}/remove(id=${proceeding.id})}" class="govuk-link">
-                  Delete
-                </a>
-                |
-                <a th:href="@{/application/proceedings/{id}/make-lead(id=${proceeding.id})}" class="govuk-link">
-                  Make lead
-                </a>
+                <a th:href="@{/application/proceedings/{id}/remove(id=${proceeding.id})}" class="govuk-link">Delete</a>
+                 |
+                <a th:href="@{/application/proceedings/{id}/make-lead(id=${proceeding.id})}" class="govuk-link">Make lead</a>
               </td>
             </th:block>
           </tr>
@@ -91,6 +87,7 @@
         <a class="govuk-button govuk-button--secondary"
            data-module="govuk-button"
            href="/application/proceedings/add/matter-type">
+          Add proceeding
         </a>
       </div>
       <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="case-costs" aria-labelledby="tab_case-costs">

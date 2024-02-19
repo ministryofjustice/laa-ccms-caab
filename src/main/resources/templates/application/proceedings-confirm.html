@@ -37,7 +37,7 @@
         <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
             Proceeding description
         </span>
-        <span th:text="${proceedingFlow.proceedingDetails.proceedingTypeDisplayValue}"></span>
+        <span th:text="${proceedingFlow.proceedingDetails.proceedingDescription}"></span>
       </p>
       <p class="govuk-body">
         <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
@@ -69,33 +69,46 @@
         </tr>
         </thead>
         <tbody class="govuk-table__body">
-        <tr class="govuk-table__row" th:each="scopeLimitation : ${scopeLimitations}">
+        <tr class="govuk-table__row" th:each="scopeLimitation, rowStat : ${scopeLimitations}">
           <td class="govuk-table__cell">
-            <a href="/todo"
+            <a th:if="${proceedingFlow.action} == 'add'" th:href="@{/application/proceedings/scope-limitations/{scopeLimitationId}/edit(scopeLimitationId=${rowStat.index})}"
+               class="govuk-link" th:text="${scopeLimitation.scopeLimitation.displayValue}"></a>
+            <a th:if="${proceedingFlow.action} == 'edit'" th:href="@{/application/proceedings/scope-limitations/{scopeLimitationId}/edit(scopeLimitationId=${scopeLimitation.id})}"
                class="govuk-link" th:text="${scopeLimitation.scopeLimitation.displayValue}"></a>
           </td>
           <td class="govuk-table__cell" th:text="${scopeLimitation.scopeLimitationWording}"></td>
-          <td class="govuk-table__cell"></td>
+          <td class="govuk-table__cell">
+            <a th:if="${scopeLimitations.size()} == 1 "></a>
+            <th:block th:unless="${scopeLimitations.size()} == 1 ">
+              <a th:if="${proceedingFlow.action} == 'add'" th:href="@{/application/proceedings/scope-limitations/{scopeLimitationId}/remove(scopeLimitationId=${rowStat.index})}"
+                 class="govuk-link">Remove</a>
+              <a th:if="${proceedingFlow.action} == 'edit'" th:href="@{/application/proceedings/scope-limitations/{scopeLimitationId}/remove(scopeLimitationId=${scopeLimitation.id})}"
+                 class="govuk-link">Remove</a>
+            </th:block>
+          </td>
         </tr>
         </tbody>
       </table>
       <a class="govuk-button govuk-button--secondary"
          data-module="govuk-button"
-         href="/application/proceedings/add/matter-type">
+         href="/application/proceedings/scope-limitations/add/details">
         Add scope limitation
       </a>
       <div class="govuk-button-group">
-        <button type="submit" class="govuk-button" data-module="govuk-button">
-          Confirm
-        </button>
         <th:block th:if="${proceedingFlow.editingScopeLimitations}">
+          <button type="submit" class="govuk-button" data-module="govuk-button">
+            Next
+          </button>
           <a class="govuk-button govuk-button--secondary"
              data-module="govuk-button"
              th:href="@{/application/proceedings/{proceeding-id}/summary(proceeding-id=${proceeding.id})}">
-            Cancel
+            Back
           </a>
         </th:block>
         <th:block th:unless="${proceedingFlow.editingScopeLimitations}">
+          <button type="submit" class="govuk-button" data-module="govuk-button">
+            Confirm
+          </button>
           <a class="govuk-button govuk-button--secondary"
              data-module="govuk-button"
              th:href="@{/application/proceedings/{action}/further-details(action=${proceedingFlow.action})}">

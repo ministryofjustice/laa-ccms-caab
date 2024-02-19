@@ -1,21 +1,27 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EMERGENCY_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PRIOR_AUTHORITIES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PROCEEDINGS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_SCOPE_LIMITATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA_OLD;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_SCOPE_LIMITATIONS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SCOPE_LIMITATION_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -32,9 +38,12 @@ import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataFurtherDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
+import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
+import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.scopelimitation.ScopeLimitationDetailsValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
@@ -53,6 +62,7 @@ import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProceedingDetails;
+import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -70,7 +80,10 @@ import uk.gov.laa.ccms.data.model.UserDetail;
     CURRENT_PROCEEDING,
     PROCEEDING_FLOW_FORM_DATA,
     PROCEEDING_FLOW_FORM_DATA_OLD,
-    PROCEEDING_SCOPE_LIMITATIONS})
+    PROCEEDING_SCOPE_LIMITATIONS,
+    SCOPE_LIMITATION_FLOW_FORM_DATA,
+    CURRENT_SCOPE_LIMITATION})
+@SuppressWarnings("unchecked")
 public class EditProceedingsAndCostsSectionController {
 
   private final ApplicationService applicationService;
@@ -82,6 +95,8 @@ public class EditProceedingsAndCostsSectionController {
   private final ProceedingDetailsValidator proceedingTypeValidator;
 
   private final ProceedingFurtherDetailsValidator furtherDetailsValidator;
+
+  private final ScopeLimitationDetailsValidator scopeLimitationDetailsValidator;
 
   private final ProceedingAndCostsMapper proceedingAndCostsMapper;
 
@@ -154,6 +169,51 @@ public class EditProceedingsAndCostsSectionController {
 
     if (proceedingExists) {
       applicationService.makeLeadProceeding(applicationId, proceedingId, user);
+    }
+
+    return "redirect:/application/proceedings-and-costs";
+  }
+
+  /**
+   * Handles the GET request to display the confirmation page for removing a proceeding.
+   *
+   * @param proceedingId The ID of the proceeding to be removed, obtained from the path variable.
+   * @param model The Model object to add attributes to for the view.
+   * @return The name of the view to be rendered.
+   */
+  @GetMapping("/application/proceedings/{proceeding-id}/remove")
+  public String proceedingsRemove(
+      @PathVariable("proceeding-id") final Integer proceedingId,
+      final Model model) {
+
+    model.addAttribute("proceedingId", proceedingId);
+
+    return "/application/proceedings-remove";
+  }
+
+  /**
+   * Handles the POST request to remove a specific proceeding from an application.
+   *
+   * @param proceedingId The ID of the proceeding to be removed, obtained from the path variable.
+   * @param proceedings The list of proceedings associated with the application, obtained from the
+   *                    session.
+   * @param user The UserDetail object representing the current user, obtained from the session.
+   * @return A redirect instruction to the proceedings and costs view.
+   */
+  @PostMapping("/application/proceedings/{proceeding-id}/remove")
+  public String proceedingsRemovePost(
+      @PathVariable("proceeding-id") final Integer proceedingId,
+      @SessionAttribute(APPLICATION_PROCEEDINGS) final List<Proceeding> proceedings,
+      @SessionAttribute(USER_DETAILS) final UserDetail user) {
+
+    final boolean proceedingExists = proceedings.stream()
+        .anyMatch(proceeding -> proceeding.getId().equals(proceedingId));
+
+    if (proceedingExists) {
+      applicationService.deleteProceeding(proceedingId, user);
+    } else {
+      throw new CaabApplicationException(
+          "No proceeding found in current application with id: " + proceedingId);
     }
 
     return "redirect:/application/proceedings-and-costs";
@@ -387,6 +447,9 @@ public class EditProceedingsAndCostsSectionController {
 
     if (action.equals(ACTION_ADD)) {
       proceedingFlow.setAmended(Boolean.TRUE);
+      //set the proceeding description to the proceeding type display value
+      proceedingTypeDetails.setProceedingDescription(
+          proceedingTypeDetails.getProceedingTypeDisplayValue());
     } else {
       final ProceedingFlowFormData oldProceedingFlow =
           (ProceedingFlowFormData) session.getAttribute(PROCEEDING_FLOW_FORM_DATA_OLD);
@@ -579,7 +642,6 @@ public class EditProceedingsAndCostsSectionController {
       @PathVariable("action") final String action,
       final Model model,
       final HttpSession session) {
-
     ProceedingFlowFormData proceedingFlow = null;
 
     //coming directly from proceeding summary - editing scope limitations
@@ -600,6 +662,11 @@ public class EditProceedingsAndCostsSectionController {
       proceedingFlow.setEditingScopeLimitations(true);
 
       model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+
+      //refresh the scope limitations
+      final List<ScopeLimitation> scopeLimitations =
+          applicationService.getScopeLimitations(proceeding.getId());
+      proceeding.setScopeLimitations(scopeLimitations);
       model.addAttribute(CURRENT_PROCEEDING, proceeding);
 
     } else {
@@ -632,16 +699,14 @@ public class EditProceedingsAndCostsSectionController {
       // we do this last in case of errors
       proceedingFlow.setAmended(Boolean.FALSE);
     } else {
-      final Proceeding proceeding = (Proceeding) session.getAttribute(CURRENT_PROCEEDING);
-      model.addAttribute(PROCEEDING_SCOPE_LIMITATIONS, proceeding.getScopeLimitations());
+      if (action.equals(ACTION_EDIT)) {
+        final Proceeding proceeding = (Proceeding) session.getAttribute(CURRENT_PROCEEDING);
+        model.addAttribute(PROCEEDING_SCOPE_LIMITATIONS, proceeding.getScopeLimitations());
+      } else {
+        model.addAttribute(PROCEEDING_SCOPE_LIMITATIONS,
+            session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS));
+      }
     }
-
-    //Add scope limitations to model, use from session if already set
-    Optional.ofNullable(session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS))
-        .filter(List.class::isInstance)
-        .map(List.class::cast)
-        .filter(list -> !list.isEmpty() && list.get(0) instanceof ScopeLimitation)
-        .ifPresent(list -> model.addAttribute(PROCEEDING_SCOPE_LIMITATIONS, list));
 
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
@@ -756,5 +821,380 @@ public class EditProceedingsAndCostsSectionController {
     return "redirect:/application/proceedings-and-costs";
   }
 
+
+  /**
+   * Handles the GET request to edit a specific scope limitation of a proceeding.
+   *
+   * @param scopeLimitationId The ID of the scope limitation to be edited, obtained from the path
+   *                          variable.
+   * @param proceedingFlow The ProceedingFlowFormData object, obtained from the session.
+   * @param model The Model object to add attributes to for the view.
+   * @param session The HttpSession object representing the current session.
+   * @return A redirect instruction to the scope limitation details view.
+   */
+  @GetMapping("/application/proceedings/scope-limitations/{scope-limitation-id}/edit")
+  public String scopeLimitationEdit(
+      @PathVariable("scope-limitation-id") final Integer scopeLimitationId,
+      @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
+      final Model model,
+      final HttpSession session) {
+
+
+    // we need to different logic based off if the proceeding has just been created in memory or is
+    // being edited
+    if (proceedingFlow.getAction().equals(ACTION_ADD)) {
+      // we need to get the scope limitations from the session
+      final List<ScopeLimitation> scopeLimitations =
+          (List<ScopeLimitation>) session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS);
+
+      final ScopeLimitation scopeLimitation = scopeLimitations.get(scopeLimitationId);
+      model.addAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
+
+      final ScopeLimitationFlowFormData scopeLimitationFlow =
+          proceedingAndCostsMapper.toScopeLimitationFlow(scopeLimitation);
+      scopeLimitationFlow.setScopeLimitationIndex(scopeLimitationId);
+
+      model.addAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
+
+    } else {
+      // we need to get the scope limitations from the stored proceeding
+      final Proceeding proceeding = (Proceeding) session.getAttribute(CURRENT_PROCEEDING);
+      final ScopeLimitation scopeLimitation = proceeding.getScopeLimitations().stream()
+          .filter(sl -> sl.getId().equals(scopeLimitationId))
+          .findFirst()
+          .orElseThrow();
+
+      model.addAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
+
+      final ScopeLimitationFlowFormData scopeLimitationFlow =
+          proceedingAndCostsMapper.toScopeLimitationFlow(scopeLimitation);
+
+      model.addAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
+    }
+
+    return "redirect:/application/proceedings/scope-limitations/edit/details";
+  }
+
+  /**
+   * Handles the request for viewing the details of scope limitations
+   * based on a specific action.
+   *
+   * @param scopeLimitationAction the action related to scope limitations,
+   *                              extracted from the URL path.
+   * @param application the application details, retrieved from the session.
+   * @param proceedingFlow the proceeding flow data, retrieved from the session.
+   * @param model the {@link Model} object for passing attributes to the view.
+   * @param session the {@link HttpSession} object for accessing session attributes.
+   * @return the name of the view to render.
+   */
+  @GetMapping("/application/proceedings/scope-limitations/{action}/details")
+  public String scopeLimitationDetails(
+      @PathVariable("action") final String scopeLimitationAction,
+      @SessionAttribute(APPLICATION) final ApplicationDetail application,
+      @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
+      final Model model,
+      final HttpSession session) {
+
+    ScopeLimitationFlowFormData scopeLimitationFlow =
+        new ScopeLimitationFlowFormData(scopeLimitationAction);
+
+    if (scopeLimitationAction.equals(ACTION_EDIT)) {
+      scopeLimitationFlow = (ScopeLimitationFlowFormData)
+          session.getAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA);
+    }
+
+    model.addAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
+    model.addAttribute("scopeLimitationDetails",
+        scopeLimitationFlow.getScopeLimitationDetails());
+
+    populateScopeLimitationDropdown(model, application, proceedingFlow);
+
+    //used for determining the action
+    model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+
+    return "application/proceedings-scope-limitations-details";
+  }
+
+  /**
+   * Processes the submission of scope limitation details.
+   *
+   * @param application the application details, retrieved from the session.
+   * @param proceedingFlow the proceeding flow data, retrieved from the session.
+   * @param scopeLimitationFlow the scope limitation flow data, retrieved from
+   *                            the session.
+   * @param scopeLimitationDetails the submitted details of the scope limitation.
+   * @param model the {@link Model} object for passing attributes to the view.
+   * @param bindingResult the result of the validation process.
+   * @return the name of the view to render or a redirect path.
+   */
+  @PostMapping("/application/proceedings/scope-limitations/{action}/details")
+  public String scopeLimitationDetailsPost(
+      @SessionAttribute(APPLICATION) final ApplicationDetail application,
+      @SessionAttribute(PROCEEDING_FLOW_FORM_DATA)
+      final ProceedingFlowFormData proceedingFlow,
+      @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA)
+      final ScopeLimitationFlowFormData scopeLimitationFlow,
+      @ModelAttribute("scopeLimitationDetails")
+      final ScopeLimitationFormDataDetails scopeLimitationDetails,
+      final Model model,
+      final BindingResult bindingResult) {
+
+    scopeLimitationDetailsValidator.validate(scopeLimitationDetails, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      populateScopeLimitationDropdown(model, application, proceedingFlow);
+      model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+      model.addAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
+      return "application/proceedings-scope-limitations-details";
+    }
+
+    scopeLimitationFlow.setScopeLimitationDetails(scopeLimitationDetails);
+    populateScopeLimitationDetails(model, application, proceedingFlow, scopeLimitationFlow);
+
+    return "redirect:/application/proceedings/scope-limitations/confirm";
+  }
+
+  /**
+   * Populates the dropdown for scope limitations in the model.
+   *
+   * <p>Utilizes application and proceeding flow data to determine the criteria
+   * for filtering scope limitations. Adjusts criteria for emergency applications
+   * and retrieves a sorted list of scope limitation details for dropdown
+   * population.</p>
+   *
+   * @param model the {@link Model} object for passing attributes to the view.
+   * @param application the application details, used to set criteria.
+   * @param proceedingFlow the proceeding flow data, used to set criteria.
+   */
+  private void populateScopeLimitationDropdown(
+      final Model model,
+      final ApplicationDetail application,
+      final ProceedingFlowFormData proceedingFlow) {
+
+    final ScopeLimitationDetail criteria = new ScopeLimitationDetail()
+        .categoryOfLaw(application.getCategoryOfLaw().getId())
+        .matterType(proceedingFlow.getMatterTypeDetails().getMatterType())
+        .proceedingCode(proceedingFlow.getProceedingDetails().getProceedingType())
+        .levelOfService(proceedingFlow.getFurtherDetails().getLevelOfService());
+
+    if (EMERGENCY_APPLICATION_TYPE_CODES.contains(application.getApplicationType().getId())) {
+      criteria.emergency(true);
+    }
+
+    final List<ScopeLimitationDetail> scopeLimitationTypes = Optional.ofNullable(
+            lookupService.getScopeLimitationDetails(criteria).block())
+        .map(result ->
+            result.getContent() != null
+                ? result.getContent().stream()
+                .sorted(Comparator.comparing(ScopeLimitationDetail::getDescription))
+                .collect(Collectors.toList())
+                : null)
+        .orElse(Collections.emptyList());
+
+    model.addAttribute("scopeLimitationTypes", scopeLimitationTypes);
+
+  }
+
+  /**
+   * Populates the model with detailed scope limitation information for the current
+   * application and proceeding flow.
+   *
+   * <p>Builds criteria based on application details, proceeding flow, and selected scope
+   * limitations to retrieve a specific scope limitation detail. Handles emergency
+   * application criteria separately. Maps the retrieved detail to a scope limitation
+   * object and updates the model for view rendering.</p>
+   *
+   * @param model the {@link Model} object for passing attributes to the view.
+   * @param application the application details, used to set criteria.
+   * @param proceedingFlow the proceeding flow data, used to set criteria.
+   * @param scopeLimitationFlow the selected scope limitation data.
+   */
+  private void populateScopeLimitationDetails(
+      final Model model,
+      final ApplicationDetail application,
+      final ProceedingFlowFormData proceedingFlow,
+      final ScopeLimitationFlowFormData scopeLimitationFlow) {
+
+    final ScopeLimitationDetail criteria = new ScopeLimitationDetail()
+        .categoryOfLaw(application.getCategoryOfLaw().getId())
+        .matterType(proceedingFlow.getMatterTypeDetails().getMatterType())
+        .proceedingCode(proceedingFlow.getProceedingDetails().getProceedingType())
+        .levelOfService(proceedingFlow.getFurtherDetails().getLevelOfService())
+        .scopeLimitations(scopeLimitationFlow.getScopeLimitationDetails().getScopeLimitation());
+
+    if (EMERGENCY_APPLICATION_TYPE_CODES.contains(application.getApplicationType().getId())) {
+      criteria.emergency(true);
+    }
+
+    final ScopeLimitationDetail scopeLimitationDetail = Optional.ofNullable(
+        lookupService.getScopeLimitationDetails(criteria))
+        .map(Mono::block)
+        .map(result -> result.getContent() != null
+            ? result.getContent().stream().findFirst().orElse(null)
+            : null)
+        .orElseThrow(() -> new CaabApplicationException("No ScopeLimitationDetail found"));
+
+    final ScopeLimitation scopeLimitation =
+        proceedingAndCostsMapper.toScopeLimitation(scopeLimitationDetail);
+    scopeLimitation.setId(scopeLimitationFlow.getScopeLimitationId());
+
+    model.addAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
+  }
+
+  /**
+   * Displays the confirmation page for scope limitations with the currently
+   * selected scope limitation and its details.
+   *
+   * @param scopeLimitation the current scope limitation, retrieved from the session.
+   * @param scopeLimitationFlow the scope limitation flow data, retrieved from the session.
+   * @param model the {@link Model} object for passing attributes to the view.
+   * @return the name of the view to render.
+   */
+
+  @GetMapping("/application/proceedings/scope-limitations/confirm")
+  public String scopeLimitationConfirm(
+      @SessionAttribute(CURRENT_SCOPE_LIMITATION) final ScopeLimitation scopeLimitation,
+      @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA)
+      final ScopeLimitationFlowFormData scopeLimitationFlow,
+      final Model model) {
+
+    model.addAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
+    model.addAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
+
+    return "application/proceedings-scope-limitations-confirm";
+  }
+
+  /**
+   * Processes the confirmation of scope limitations, adding or updating them
+   * based on the action specified in the proceeding flow. Handles both new additions
+   * and updates to existing scope limitations within a session or proceeding.
+   *
+   * @param scopeLimitation the scope limitation to be confirmed, retrieved from the session.
+   * @param proceedingFlow the proceeding flow data, indicating the current action.
+   * @param scopeLimitationFlow the scope limitation flow data, containing index information
+   *                            for updates.
+   * @param user the current user's details, for updating proceedings.
+   * @param model the {@link Model} object for passing attributes to the view.
+   * @param session the {@link HttpSession} object for accessing session attributes.
+   * @return the redirect URL for the proceeding confirmation page.
+   */
+  @PostMapping("/application/proceedings/scope-limitations/confirm")
+  public String scopeLimitationConfirmPost(
+      @SessionAttribute(CURRENT_SCOPE_LIMITATION) final ScopeLimitation scopeLimitation,
+      @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
+      @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA)
+      final ScopeLimitationFlowFormData scopeLimitationFlow,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final Model model,
+      final HttpSession session) {
+
+
+    if (proceedingFlow.getAction().equals(ACTION_ADD)) {
+      final List<ScopeLimitation> scopeLimitations =
+          (List<ScopeLimitation>) session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS);
+
+      model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+
+      if (scopeLimitationFlow.getScopeLimitationIndex() == null) {
+        scopeLimitations.add(scopeLimitation);
+      } else {
+        scopeLimitations.set(scopeLimitationFlow.getScopeLimitationIndex(), scopeLimitation);
+      }
+
+    } else {
+      //when we are adding a scope limitation to an existing proceeding
+      final Proceeding proceeding = (Proceeding) session.getAttribute(CURRENT_PROCEEDING);
+
+      if (scopeLimitation.getId() == null) {
+        proceeding.getScopeLimitations().add(scopeLimitation);
+      } else {
+        //replace the scope limitation in the list with the one that matched the id
+        final List<ScopeLimitation> scopeLimitations = proceeding.getScopeLimitations();
+        IntStream.range(0, scopeLimitations.size())
+            .filter(i -> scopeLimitations.get(i).getId().equals(scopeLimitation.getId()))
+            .findFirst()
+            .ifPresent(i -> scopeLimitations.set(i, scopeLimitation));
+      }
+
+      applicationService.updateProceeding(proceeding, user);
+
+      //need to refresh current proceeding for new scope limitation id
+      final List<ScopeLimitation> scopeLimitations =
+          applicationService.getScopeLimitations(proceeding.getId());
+      proceeding.setScopeLimitations(scopeLimitations);
+
+      model.addAttribute(CURRENT_PROCEEDING, proceeding);
+    }
+
+    return String.format("redirect:/application/proceedings/%s/confirm",
+        proceedingFlow.getAction());
+  }
+
+  /**
+   * Displays the page for removing a scope limitation with an option to confirm or cancel.
+   *
+   * @param scopeLimitationId the ID of the scope limitation to be removed.
+   * @param proceedingFlow the proceeding flow data, retrieved from the session.
+   * @param model the {@link Model} object for passing attributes to the view.
+   * @return the name of the view to render.
+   */
+  @GetMapping("/application/proceedings/scope-limitations/{scope-limitation-id}/remove")
+  public String scopeLimitationRemove(
+      @PathVariable("scope-limitation-id") final int scopeLimitationId,
+      @SessionAttribute(PROCEEDING_FLOW_FORM_DATA)
+      final ProceedingFlowFormData proceedingFlow,
+      final Model model) {
+
+    model.addAttribute("scopeLimitationId", scopeLimitationId);
+    model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+
+    return "application/proceedings-scope-limitations-remove";
+  }
+
+  /**
+   * Processes the removal of a scope limitation, either from the session or
+   * by updating the database, based on the proceeding action.
+   *
+   * @param scopeLimitationId the ID of the scope limitation to remove.
+   * @param proceedingFlow the proceeding flow data, indicating the current action.
+   * @param user the current user's details, for updating proceedings.
+   * @param model the {@link Model} object for passing attributes to the view.
+   * @param session the {@link HttpSession} object for accessing session attributes.
+   * @return the redirect URL for the proceeding confirmation page.
+   */
+  @PostMapping("/application/proceedings/scope-limitations/{scope-limitation-id}/remove")
+  public String scopeLimitationRemovePost(
+      @PathVariable("scope-limitation-id") final int scopeLimitationId,
+      @SessionAttribute(PROCEEDING_FLOW_FORM_DATA)
+      final ProceedingFlowFormData proceedingFlow,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final Model model,
+      final HttpSession session) {
+
+    //remove the scope limitation from the session list
+    if (proceedingFlow.getAction().equals(ACTION_ADD)) {
+      final List<ScopeLimitation> scopeLimitations =
+          (List<ScopeLimitation>) session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS);
+
+      scopeLimitations.remove(scopeLimitationId);
+
+      model.addAttribute(PROCEEDING_SCOPE_LIMITATIONS, scopeLimitations);
+
+    } else {
+      //remove the scope limitation from the proceeding and update the db
+      final Proceeding proceeding = (Proceeding) session.getAttribute(CURRENT_PROCEEDING);
+      final List<ScopeLimitation> scopeLimitations = proceeding.getScopeLimitations();
+
+      scopeLimitations.removeIf(scopeLimitation ->
+          scopeLimitation.getId().equals(scopeLimitationId));
+
+      applicationService.updateProceeding(proceeding, user);
+
+      model.addAttribute(CURRENT_PROCEEDING, proceeding);
+    }
+
+    return String.format("redirect:/application/proceedings/%s/confirm",
+        proceedingFlow.getAction());
+  }
 
 }
