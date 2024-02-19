@@ -75,6 +75,15 @@ public class ApplicationConstants {
                   APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS);
 
   /**
+   * The Application Type Code list for codes to be excluded from application type screen's
+   * dropdown.
+   */
+  public static final List<String> EMERGENCY_APPLICATION_TYPE_CODES =
+      Arrays.asList(
+          APP_TYPE_EMERGENCY_DEVOLVED_POWERS,
+          APP_TYPE_EMERGENCY);
+
+  /**
    * The actual value for the status of an unsubmitted application.
    */
   public static final String STATUS_UNSUBMITTED_ACTUAL_VALUE = "UNSUBMITTED";

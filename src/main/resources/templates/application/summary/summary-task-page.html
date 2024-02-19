@@ -70,7 +70,7 @@
             <td class="govuk-table__cell"></td>
           </tr>
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell"><a href="/application/summary/proceedings-and-costs" class="govuk-link">Proceedings and costs</a></td>
+            <td class="govuk-table__cell"><a href="/application/proceedings-and-costs" class="govuk-link">Proceedings and costs</a></td>
             <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.proceedingsAndCosts.status})}"></td>
             <td class="govuk-table__cell" th:text="${#dates.format(summary.proceedingsAndCosts.lastSaved, 'dd/MM/yyyy')}"></td>
             <td class="govuk-table__cell" th:text="${summary.proceedingsAndCosts.lastSavedBy}"></td>

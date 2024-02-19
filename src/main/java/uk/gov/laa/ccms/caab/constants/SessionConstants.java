@@ -91,6 +91,11 @@ public class SessionConstants {
   public static final String APPLICATION_ID = "applicationId";
 
   /**
+   * Session attribute used to keep track of the application.
+   */
+  public static final String APPLICATION = "application";
+
+  /**
    * Session attribute used to keep track of the active case details, used for application summary
    * page and its sections to render the case details within the header.
    */
@@ -101,6 +106,50 @@ public class SessionConstants {
    */
   public static final String SUBMISSION_POLL_COUNT = "submissionPollCount";
 
+  /**
+   * Session attribute used to keep track of the client names associated with the application.
+   */
   public static final String APPLICATION_CLIENT_NAMES = "applicationClientNames";
+
+  /**
+   * Session attribute used to keep track of the costs associated with the application.
+   */
+  public static final String APPLICATION_COSTS = "costs";
+
+  /**
+   * Session attribute used to keep track of the proceedings associated with the application.
+   */
+  public static final String APPLICATION_PROCEEDINGS = "proceedings";
+
+  /**
+   * Session attribute used to keep track of the current proceeding being processed or viewed.
+   */
+  public static final String CURRENT_PROCEEDING = "proceeding";
+
+  /**
+   * Session attribute used to keep track of the proceeding flow data during the creation or
+   * modification of a proceeding.
+   */
+  public static final String PROCEEDING_FLOW_FORM_DATA = "proceedingFlow";
+
+  /**
+   * Session attribute used to keep track of the old proceeding flow data before
+   * modifications were made.
+   */
+  public static final String PROCEEDING_FLOW_FORM_DATA_OLD = "oldProceedingFlow";
+
+  /**
+   * Session attribute used to keep track of the scope limitations associated with the proceeding.
+   */
+  public static final String PROCEEDING_SCOPE_LIMITATIONS = "scopeLimitations";
+
+  /**
+   * Session attribute used to keep track of the prior authorities associated with the application.
+   */
+  public static final String APPLICATION_PRIOR_AUTHORITIES = "priorAuthorities";
+
+
+
+
 
 }
