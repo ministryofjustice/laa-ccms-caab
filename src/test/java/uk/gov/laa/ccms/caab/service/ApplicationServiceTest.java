@@ -23,6 +23,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCategoryOfLawLookupValueDetail;
@@ -605,8 +606,12 @@ class ApplicationServiceTest {
     when(lookupService.getPersonToCaseRelationships()).thenReturn(
         Mono.just(new RelationshipToCaseLookupDetail()));
     when(copyApplicationMapper.copyApplication(
-        eq(applicationToCopy), eq(caseReferenceSummary),
-        eq(clientDetail), any(BigDecimal.class), any(BigDecimal.class)))
+        eq(applicationToCopy),
+        eq(caseReferenceSummary.getCaseReferenceNumber()),
+        any(StringDisplayValue.class),
+        eq(clientDetail),
+        any(BigDecimal.class),
+        any(BigDecimal.class)))
         .thenReturn(applicationToCopy);
 
     when(caabApiClient.createApplication(anyString(), any())).thenReturn(Mono.empty());
@@ -619,8 +624,12 @@ class ApplicationServiceTest {
         .verifyComplete();
 
     verify(copyApplicationMapper).copyApplication(
-        eq(applicationToCopy), eq(caseReferenceSummary),
-        eq(clientDetail), any(BigDecimal.class), any(BigDecimal.class));
+        eq(applicationToCopy),
+        eq(caseReferenceSummary.getCaseReferenceNumber()),
+        any(StringDisplayValue.class),
+        eq(clientDetail),
+        any(BigDecimal.class),
+        any(BigDecimal.class));
   }
 
 
@@ -683,9 +692,17 @@ class ApplicationServiceTest {
     // Get the max cost limitation
     BigDecimal expectedDefaultCostLimit = costLimit1.max(costLimit2);
 
+    StringDisplayValue initialStatus = new StringDisplayValue()
+        .id(STATUS_UNSUBMITTED_ACTUAL_VALUE)
+        .displayValue(STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY);
+
     when(copyApplicationMapper.copyApplication(
-        applicationToCopy, caseReferenceSummary, clientDetail,
-        expectedRequestedCostLimit, expectedDefaultCostLimit))
+        applicationToCopy,
+        caseReferenceSummary.getCaseReferenceNumber(),
+        initialStatus,
+        clientDetail,
+        expectedRequestedCostLimit,
+        expectedDefaultCostLimit))
         .thenReturn(applicationToCopy);
 
 
@@ -701,8 +718,12 @@ class ApplicationServiceTest {
         .verifyComplete();
 
     verify(copyApplicationMapper).copyApplication(
-        applicationToCopy, caseReferenceSummary, clientDetail,
-        expectedRequestedCostLimit, expectedDefaultCostLimit);
+        applicationToCopy,
+        caseReferenceSummary.getCaseReferenceNumber(),
+        initialStatus,
+        clientDetail,
+        expectedRequestedCostLimit,
+        expectedDefaultCostLimit);
   }
 
   @Test

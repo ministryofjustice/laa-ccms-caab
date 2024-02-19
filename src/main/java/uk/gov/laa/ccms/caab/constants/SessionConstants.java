@@ -103,4 +103,17 @@ public class SessionConstants {
 
   public static final String APPLICATION_CLIENT_NAMES = "applicationClientNames";
 
+  /**
+   * Session attribute used to keep track of criteria when searching for an organisation.
+   */
+  public static final String ORGANISATION_SEARCH_CRITERIA = "orgSearchCriteria";
+
+  /**
+   * Session attribute used to keep track of organisation search results during the creation
+   * of a new application opponent.
+   * Used when returning to organisation search results screen to prepopulate table of results
+   */
+  public static final String ORGANISATION_SEARCH_RESULTS = "orgResultsPage";
+
+
 }

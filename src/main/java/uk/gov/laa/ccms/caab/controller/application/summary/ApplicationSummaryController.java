@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import jakarta.servlet.http.HttpSession;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -13,6 +14,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 
@@ -41,7 +43,9 @@ public class ApplicationSummaryController {
       final Model model) {
 
     final ApplicationSummaryDisplay summary =
-        applicationService.getApplicationSummary(applicationId).block();
+        Optional.ofNullable(applicationService.getApplicationSummary(applicationId).block())
+            .orElseThrow(() -> new CaabApplicationException(
+                "Failed to retrieve application summary"));
 
     model.addAttribute("summary", summary);
 

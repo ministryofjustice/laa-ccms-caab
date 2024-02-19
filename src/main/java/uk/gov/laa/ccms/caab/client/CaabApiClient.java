@@ -397,4 +397,28 @@ public class CaabApiClient {
         .bodyToMono(new ParameterizedTypeReference<List<Opponent>>() {})
         .onErrorResume(caabApiClientErrorHandler::handleGetOpponentsError);
   }
+
+  /**
+   * Asynchronously adds an opponent to an application.
+   *
+   * @param applicationId The ID of the related application.
+   * @param data          The opponent information.
+   * @param loginId       The login ID of the user performing the operation.
+   * @return A Mono that completes when the operation is done.
+   */
+  public Mono<Void> addOpponent(
+      final String applicationId,
+      final Opponent data,
+      final String loginId) {
+    return caabApiWebClient
+        .post()
+        .uri("applications/{applicationId}/opponents",
+            applicationId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(data)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleAddOpponentError(e, applicationId));
+  }
 }

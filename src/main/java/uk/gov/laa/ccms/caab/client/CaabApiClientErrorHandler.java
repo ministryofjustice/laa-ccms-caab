@@ -232,4 +232,18 @@ public class CaabApiClientErrorHandler {
     log.error(msg, e);
     return Mono.error(new CaabApiClientException(msg, e));
   }
+
+  /**
+   * Handles errors encountered when adding an opponent to an application.
+   *
+   * @param e the Throwable associated with the error.
+   * @param applicationId the ID of the related application.
+   * @return a Mono error encapsulating the issue encountered
+   */
+  public Mono<Void> handleAddOpponentError(final Throwable e, final String applicationId) {
+    final String msg = String.format("Failed to add opponent to application: - %s",
+        applicationId);
+    log.error(msg, e);
+    return Mono.error(new CaabApiClientException(msg, e));
+  }
 }

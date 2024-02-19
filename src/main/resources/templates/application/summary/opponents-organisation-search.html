@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>LAA CCMS - Start new application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a href="/application/summary/opponents" class="govuk-back-link">Cancel and return to opponents and other parties</a>
+    </div>
+    <div id="main-content">
+        <form action="#" th:action="@{/application/summary/opponents/organisation/search}" th:object="${orgSearchCriteria}" method="post">
+            <div th:replace="~{partials/error-summary :: error-summary}"></div>
+            <span class="govuk-caption-l">Create application</span>
+            <h1 class="govuk-heading-l">
+                Opponents and other parties
+            </h1>
+            <p class="govuk-body-l">
+                Please enter the organisation details in the fields provided to perform your search.
+            </p>
+            <h1 class="govuk-heading-m">
+                Organisation search
+            </h1>
+            <div class="govuk-grid-row">
+                <div class="govuk-grid-column-two-thirds">
+                    <div th:replace="~{partials/forms :: textInput('name', 'Organisation name', 'govuk-input--width-20')}"></div>
+                    <div th:replace="~{partials/forms :: dropdown('type', 'Organisation type (optional)', ${organisationTypes}, 'code', 'description', false)}"></div>
+                    <div th:replace="~{partials/forms :: textInput('city', 'City (optional)', 'govuk-input--width-20')}"></div>
+                    <div th:replace="~{partials/forms :: textInput('postcode', 'Postcode (optional)', 'govuk-input--width-20')}"></div>
+
+                    <button class="govuk-button" data-module="govuk-button">
+                        Search
+                    </button>
+                    <a class="govuk-button govuk-button--secondary"
+                       data-module="govuk-button"
+                       href="/application/summary/opponents/organisation/create">
+                        Create new organisation
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>
