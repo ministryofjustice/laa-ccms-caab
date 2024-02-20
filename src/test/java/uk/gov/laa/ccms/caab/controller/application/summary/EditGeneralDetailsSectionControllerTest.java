@@ -2,8 +2,8 @@ package uk.gov.laa.ccms.caab.controller.application.summary;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -23,10 +23,10 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITER
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.application.summary.EditGeneralDetailsSectionController.CASE_RESULTS_PAGE;
-import static uk.gov.laa.ccms.caab.controller.application.summary.EditGeneralDetailsSectionController.CURRENT_URL;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +39,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
@@ -50,28 +51,23 @@ import uk.gov.laa.ccms.caab.bean.validators.application.LinkedCaseValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.CorrespondenceAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
-import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplication;
-import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
-import uk.gov.laa.ccms.data.model.BaseOffice;
-import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
-import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -106,6 +102,9 @@ class EditGeneralDetailsSectionControllerTest {
 
   @Mock
   private ApplicationMapper applicationMapper;
+
+  @Mock
+  private ResultDisplayMapper resultDisplayMapper;
 
   @InjectMocks
   private EditGeneralDetailsSectionController editGeneralDetailsSectionController;
@@ -510,5 +509,97 @@ class EditGeneralDetailsSectionControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/summary/application-linked-case-search-too-many-results"));
   }
+
+  @Test
+  public void testLinkedCasesSearchResults() throws Exception {
+    final int page = 0;
+    final int size = 10;
+    final List<BaseApplication> caseSearchResults = Arrays.asList(new BaseApplication(), new BaseApplication());
+    final ApplicationDetails linkedCaseSearchResults = new ApplicationDetails();
+
+    when(applicationMapper.toApplicationDetails(any())).thenReturn(linkedCaseSearchResults);
+
+    this.mockMvc.perform(get("/application/summary/linked-cases/search/results")
+            .param("page", String.valueOf(page))
+            .param("size", String.valueOf(size))
+            .flashAttr(CASE_SEARCH_RESULTS, caseSearchResults))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/summary/application-linked-case-search-results"))
+        .andExpect(model().attribute(CASE_RESULTS_PAGE, linkedCaseSearchResults));
+
+    verify(applicationMapper, times(1)).toApplicationDetails(any());
+  }
+
+  @Test
+  public void testAddLinkedCaseGet_Success() throws Exception {
+    final String caseReferenceId = "123456789";
+    final ApplicationDetails linkedCaseSearchResults = new ApplicationDetails();
+    final List<BaseApplication> applications = new ArrayList<>();
+    final BaseApplication baseApplication = new BaseApplication();
+    baseApplication.setCaseReferenceNumber(caseReferenceId);
+    applications.add(baseApplication);
+    linkedCaseSearchResults.setContent(applications);
+    final LinkedCaseResultRowDisplay linkedCaseResultRowDisplay = new LinkedCaseResultRowDisplay();
+
+    when(resultDisplayMapper.toLinkedCaseResultRowDisplay(baseApplication)).thenReturn(linkedCaseResultRowDisplay);
+    when(lookupService.getCaseLinkTypes()).thenReturn(Mono.just(mockCommonLookupDetail));
+
+    this.mockMvc.perform(get("/application/summary/linked-cases/{case-reference-id}/add", caseReferenceId)
+            .sessionAttr(CASE_RESULTS_PAGE, linkedCaseSearchResults))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/summary/application-linked-case-add"))
+        .andExpect(model().attribute("currentLinkedCase", linkedCaseResultRowDisplay));
+
+    verify(resultDisplayMapper, times(1)).toLinkedCaseResultRowDisplay(baseApplication);
+  }
+
+  @Test
+  public void testAddLinkedCasePost_Success() throws Exception {
+    final String applicationId = "app123";
+    final UserDetail user = new UserDetail();
+    final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
+
+    this.mockMvc.perform(post("/application/summary/linked-cases/add")
+            .sessionAttr(APPLICATION_ID, applicationId)
+            .sessionAttr(USER_DETAILS, user)
+            .flashAttr("currentLinkedCase", linkedCase))
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/summary/linked-cases"));
+
+    verify(linkedCaseValidator, times(1)).validate(eq(linkedCase), any(BindingResult.class));
+    verify(applicationService, times(1)).addLinkedCase(eq(applicationId), eq(linkedCase), eq(user));
+  }
+
+  @Test
+  public void testAddLinkedCasePost_ValidationError() throws Exception {
+    final String applicationId = "app123";
+    final UserDetail user = new UserDetail();
+    final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
+
+    doAnswer(invocation -> {
+      final BindingResult bindingResult = invocation.getArgument(1);
+      bindingResult.rejectValue("relationToCase", "required.relationToCase",
+          "Please complete 'How is this application / case related to your application?'.");
+      return null;
+    }).when(linkedCaseValidator).validate(eq(linkedCase), any(BindingResult.class));
+
+    when(lookupService.getCaseLinkTypes()).thenReturn(Mono.just(mockCommonLookupDetail));
+
+    // When & Then
+    this.mockMvc.perform(post("/application/summary/linked-cases/add")
+            .sessionAttr(APPLICATION_ID, applicationId)
+            .sessionAttr(USER_DETAILS, user)
+            .flashAttr("currentLinkedCase", linkedCase))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/summary/application-linked-case-add"))
+        .andExpect(model().attributeHasFieldErrors("currentLinkedCase", "relationToCase"));
+
+    verify(applicationService, never()).addLinkedCase(anyString(), any(LinkedCaseResultRowDisplay.class), any(UserDetail.class));
+  }
+
 
 }

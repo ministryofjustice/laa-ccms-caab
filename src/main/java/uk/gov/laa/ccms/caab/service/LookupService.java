@@ -17,6 +17,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_M
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MATTER_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_NOTIFICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_ORDER_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
@@ -37,10 +38,15 @@ import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
+import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
+import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
+import uk.gov.laa.ccms.data.model.ProceedingDetail;
+import uk.gov.laa.ccms.data.model.ProceedingDetails;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
@@ -237,6 +243,107 @@ public class LookupService {
     return ebsApiClient.getCommonValues(COMMON_VALUE_APPLICATION_STATUS);
   }
 
+  /**
+   * Get a list of matter types for proceedings.
+   *
+   * @return MatterTypeLookupDetail containing the matterType values.
+   */
+  public Mono<MatterTypeLookupDetail> getMatterTypes(final String categoryOfLaw) {
+    return ebsApiClient.getMatterTypes(categoryOfLaw);
+  }
+
+  /**
+   * Get a list of Matter Type Common Values.
+   *
+   * @return CommonLookupDetail containing the common lookup values.
+   */
+  public Mono<CommonLookupDetail> getMatterTypes() {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_MATTER_TYPES);
+  }
+
+  /**
+   * Get a list of proceeding types for proceedings.
+   *
+   * @param searchCriteria The criteria to search for proceedings.
+   * @param larScopeFlag The flag to indicate if the scope is for Legal Aid Representation.
+   * @param applicationType The type of the application.
+   * @param isLead A flag to indicate if the proceeding is lead.
+   * @return CommonLookupDetail containing the common lookup values.
+   */
+  public Mono<ProceedingDetails> getProceedings(
+      final ProceedingDetail searchCriteria,
+      final Boolean larScopeFlag,
+      final String applicationType,
+      final Boolean isLead) {
+
+    return ebsApiClient.getProceedings(
+        searchCriteria,
+        larScopeFlag,
+        applicationType,
+        isLead);
+  }
+
+  /**
+   * Retrieves Client involvement types with detailed parameters.
+   *
+   * @param proceedingCode The proceeding code.
+   * @return A Mono containing the ClientInvolvementTypeLookupDetail or an error handler if an
+   *         error occurs.
+   */
+  public Mono<ClientInvolvementTypeLookupDetail> getClientInvolvementTypes(
+      final String proceedingCode) {
+    return ebsApiClient.getClientInvolvementTypes(proceedingCode);
+  }
+
+  /**
+   * Get a list of Client Involvement Types Common Values.
+   *
+   * @return CommonLookupDetail containing the common lookup values.
+   */
+  public Mono<CommonLookupDetail> getClientInvolvementTypes() {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES);
+  }
+
+  /**
+   * Retrieves the level of service types for a given proceeding.
+   * The level of service types are fetched based on the proceeding code, category of law, and
+   * matter type.
+   *
+   * @param categoryOfLaw The category of law.
+   * @param proceedingCode The code of the proceeding.
+   * @param matterType The type of the matter.
+   * @return A Mono of LevelOfServiceLookupDetail containing the level of service types.
+   */
+  public Mono<LevelOfServiceLookupDetail> getProceedingLevelOfServiceTypes(
+      final String categoryOfLaw,
+      final String proceedingCode,
+      final String matterType) {
+
+    return ebsApiClient.getLevelOfServiceTypes(proceedingCode, categoryOfLaw, matterType);
+  }
+
+  /**
+   * Get a list of Order Type Common Values.
+   *
+   * @return CommonLookupDetail containing the common lookup values.
+   */
+  public Mono<CommonLookupDetail> getOrderTypes() {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_PROCEEDING_ORDER_TYPE);
+  }
+
+  /**
+   * Get the order type description, filtered by code.
+   *
+   * @return String containing the description of an order type.
+   */
+  public Mono<String> getOrderTypeDescription(final String code) {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_PROCEEDING_ORDER_TYPE)
+        .map(commonLookupDetail -> commonLookupDetail.getContent().stream()
+            .filter(commonLookupValueDetail -> commonLookupValueDetail.getCode().equals(code))
+            .findFirst()
+            .map(CommonLookupValueDetail::getDescription)
+            .orElse(code));
+  }
 
   /**
    * Get a Correspondence Language Common Values.
@@ -287,8 +394,6 @@ public class LookupService {
     return getCommonValue(COMMON_VALUE_DISABILITY, code);
   }
 
-
-
   /**
    * Get a list of Levels Of Service Common Values.
    *
@@ -296,24 +401,6 @@ public class LookupService {
    */
   public Mono<CommonLookupDetail> getLevelsOfService() {
     return ebsApiClient.getCommonValues(COMMON_VALUE_LEVEL_OF_SERVICE);
-  }
-
-  /**
-   * Get a list of Matter Type Common Values.
-   *
-   * @return CommonLookupDetail containing the common lookup values.
-   */
-  public Mono<CommonLookupDetail> getMatterTypes() {
-    return ebsApiClient.getCommonValues(COMMON_VALUE_MATTER_TYPES);
-  }
-
-  /**
-   * Get a list of Client Involvement Types Common Values.
-   *
-   * @return CommonLookupDetail containing the common lookup values.
-   */
-  public Mono<CommonLookupDetail> getClientInvolvementTypes() {
-    return ebsApiClient.getCommonValues(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES);
   }
 
   /**

@@ -116,5 +116,9 @@ public class CommonValueConstants {
    * Type used to retrieve the Organisation Type values.
    */
   public static final String COMMON_VALUE_ORGANISATION_TYPES = "XXCCMS_ORGANISATION_TYPE";
+  /**
+   * Type used to retrieve the Proceeding order type.
+   */
+  public static final String COMMON_VALUE_PROCEEDING_ORDER_TYPE = "XXCCMS_PROCEEDING_ORDER_TYPE";
 
 }

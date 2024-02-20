@@ -132,6 +132,18 @@ public class CaabApiClientErrorHandler {
   }
 
   /**
+   * Handles errors encountered during the update of costs.
+   *
+   * @param e The exception thrown during the update operation.
+   * @return A Mono error encapsulating the issue encountered.
+   */
+  public Mono<Void> handleUpdateCostsError(Throwable e) {
+    final String msg = "Failed to update costs";
+    log.error(msg, e);
+    return Mono.error(new CaabApiClientException(msg, e));
+  }
+
+  /**
    * Handles errors during retrieval of prior authorities.
    *
    * @param e the Throwable associated with the error
@@ -243,6 +255,20 @@ public class CaabApiClientErrorHandler {
   public Mono<Void> handleAddOpponentError(final Throwable e, final String applicationId) {
     final String msg = String.format("Failed to add opponent to application: - %s",
         applicationId);
+    log.error(msg, e);
+    return Mono.error(new CaabApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors during saving of a proceeding.
+   *
+   * @param e the Throwable associated with the error
+   * @return a Mono error encapsulating the issue encountered
+   */
+  public Mono<Void> handleSaveProceedingError(
+      final Throwable e,
+      final String id) {
+    final String msg = String.format("Failed to save proceeding to application: %s", id);
     log.error(msg, e);
     return Mono.error(new CaabApiClientException(msg, e));
   }

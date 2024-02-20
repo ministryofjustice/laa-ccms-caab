@@ -217,6 +217,29 @@ public class CaabApiClient {
   }
 
   /**
+   * Updates the cost structure of an application using the CAAB API.
+   *
+   * @param id The ID of the application.
+   * @param costs The new cost structure for the application.
+   * @param loginId The ID associated with the user login.
+   * @return A Mono Void indicating the completion of the update operation.
+   */
+  public Mono<Void> updateCostStructure(
+      final String id,
+      final CostStructure costs,
+      final String loginId) {
+    return caabApiWebClient
+        .put()
+        .uri("/applications/{id}/cost-structure", id)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
+        .bodyValue(costs)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(caabApiClientErrorHandler::handleUpdateCostsError);
+  }
+
+  /**
    * Fetches the prior authorities associated with a specific application id.
    * This method communicates with the CAAB API client to fetch the prior authorities.
    *
@@ -255,6 +278,29 @@ public class CaabApiClient {
         .retrieve()
         .bodyToMono(Void.class)
         .onErrorResume(e -> caabApiClientErrorHandler.handleUpdateProceedingError(e, proceedingId));
+  }
+
+  /**
+   * Adds a proceeding to an application using the CAAB API.
+   *
+   * @param applicationId The ID of the application.
+   * @param proceeding The proceeding to be added.
+   * @param loginId The ID associated with the user login.
+   * @return A Mono Void indicating the completion of the add operation.
+   */
+  public Mono<Void> addProceeding(
+      final String applicationId,
+      final Proceeding proceeding,
+      final String loginId) {
+    return caabApiWebClient
+        .post()
+        .uri("/applications/{applicationId}/proceedings", applicationId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(proceeding)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleSaveProceedingError(e, applicationId));
   }
 
   /**
@@ -421,4 +467,6 @@ public class CaabApiClient {
         .bodyToMono(Void.class)
         .onErrorResume(e -> caabApiClientErrorHandler.handleAddOpponentError(e, applicationId));
   }
+
+
 }
