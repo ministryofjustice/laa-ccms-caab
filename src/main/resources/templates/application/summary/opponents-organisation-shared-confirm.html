@@ -10,9 +10,11 @@
     </div>
     <div id="main-content">
         <form action="#" th:action="@{/application/summary/opponents/organisation/confirm}" th:object="${opponent}" method="post">
+            <input type="hidden" th:name="type" th:value="*{type}"/>
             <input type="hidden" th:name="partyId" th:value="*{partyId}"/>
             <input type="hidden" th:name="organisationName" th:value="*{organisationName}"/>
             <input type="hidden" th:name="organisationType" th:value="*{organisationType}"/>
+            <input type="hidden" th:name="organisationTypeDisplayValue" th:value="*{organisationTypeDisplayValue}"/>
             <input type="hidden" th:name="currentlyTrading" th:value="*{currentlyTrading}"/>
             <input type="hidden" th:name="contactName" th:value="*{contactName}"/>
             <input type="hidden" th:name="houseNameOrNumber" th:value="*{houseNameOrNumber}"/>

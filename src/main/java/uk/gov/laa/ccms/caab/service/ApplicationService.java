@@ -626,8 +626,9 @@ public class ApplicationService {
         criteria.emergency(true);
       }
 
-      lookupService.getScopeLimitationDetails(criteria)
-          .block()
+      Optional.ofNullable(lookupService.getScopeLimitationDetails(criteria).block())
+          .orElseThrow(() -> new CaabApplicationException(
+              "Failed to retrieve scope limitiation details"))
           .getContent()
           .stream()
           .findFirst()
@@ -688,12 +689,14 @@ public class ApplicationService {
           .levelOfService(levelOfService)
           .scopeLimitations(scopeLimitation.getScopeLimitation().getId());
 
-      final List<Integer> stageList = lookupService.getScopeLimitationDetails(criteria)
-          .block()
-          .getContent()
-          .stream()
-          .map(ScopeLimitationDetail::getStage)
-          .toList();
+      final List<Integer> stageList =
+          Optional.ofNullable(lookupService.getScopeLimitationDetails(criteria).block())
+              .orElseThrow(() -> new CaabApplicationException(
+                  "Failed to retrieve scope limitation details"))
+              .getContent()
+              .stream()
+              .map(ScopeLimitationDetail::getStage)
+              .toList();
 
       allStages.add(stageList);
       minStageList.add(getMinValue(stageList));
@@ -1003,9 +1006,9 @@ public class ApplicationService {
     Opponent opponent = opponentMapper.toOpponent(opponentFormData);
 
     // Set the remaining flags on the opponent based on the application state.
-    // TODO: Change this to .getApplication once rebased.
     ApplicationDetail application =
-        this.getCase(applicationId, userDetail.getLoginId(), userDetail.getUserType());
+        Optional.ofNullable(this.getApplication(applicationId).block())
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve application"));
 
     opponent.setAppMode(application.getAppMode());
     opponent.setAmendment(application.getAmendment());

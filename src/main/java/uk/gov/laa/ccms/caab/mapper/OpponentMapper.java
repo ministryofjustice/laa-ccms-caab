@@ -33,6 +33,7 @@ public interface OpponentMapper {
   OpponentFormData toOpponentFormData(OrganisationDetail organisation,
       CommonLookupValueDetail orgTypeLookup);
 
+  @Mapping(target = "ebsId", source = "partyId")
   @Mapping(target = "organisationType.id", source = "organisationType")
   @Mapping(target = "organisationType.displayValue", source = "organisationTypeDisplayValue")
   @Mapping(target = "address", source = ".")
