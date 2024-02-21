@@ -14,6 +14,11 @@ public class ValidationPatternConstants {
   public static final String NUMERIC_PATTERN = "[0-9]+";
 
   /**
+   * Validation pattern to check for numerical values.
+   */
+  public static final String CURRENCY_PATTERN = "[0-9]+(.[0-9]{1,2})?";
+
+  /**
    * Validation pattern for national insurance numbers.
    */
   public static final String NATIONAL_INSURANCE_NUMBER_PATTERN = "^[A-Za-z]{2}[0-9]{6}[A-Za-z]{1}$";

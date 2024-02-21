@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.bean.validators;
 
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CURRENCY_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.INTERNATIONAL_POSTCODE;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NUMERIC_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.UK_POSTCODE;
@@ -26,6 +27,7 @@ public abstract class AbstractValidator implements Validator {
    */
   private static final String GENERIC_REQUIRED_ERROR = "Please complete '%s'.";
   private static final String GENERIC_NUMERIC_REQUIRED = "Please enter a numeric value for %s.";
+  private static final String GENERIC_CURRENCY_REQUIRED = "Please enter a currency value for %s.";
   private static final String GENERIC_DATEFIELD_ENTRY = "Your date range is invalid."
       + " Please amend your entry for the %s field.";
   protected static String GENERIC_INCORRECT_FORMAT = "Your input for '%s' is in an incorrect "
@@ -56,6 +58,15 @@ public abstract class AbstractValidator implements Validator {
     if (fieldValue == null || !fieldValue.matches(NUMERIC_PATTERN)) {
       errors.rejectValue(field, "invalid.numeric",
           String.format(GENERIC_NUMERIC_REQUIRED, displayValue));
+    }
+  }
+
+  protected void validateCurrencyField(
+      final String field, final String fieldValue, final String displayValue, Errors errors) {
+
+    if (fieldValue == null || !fieldValue.matches(CURRENCY_PATTERN)) {
+      errors.rejectValue(field, "invalid.currency",
+          String.format(GENERIC_CURRENCY_REQUIRED, displayValue));
     }
   }
 

@@ -225,7 +225,6 @@ public class CaabApiClient {
    * @param loginId The ID associated with the user login.
    * @return A Mono Void indicating the completion of the update operation.
    */
-
   public Mono<Void> updateCostStructure(
       final String id,
       final CostStructure costs,

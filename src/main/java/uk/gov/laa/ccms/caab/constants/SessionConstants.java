@@ -31,6 +31,7 @@ public class SessionConstants {
    */
   public static final String CASE_SEARCH_RESULTS = "caseSearchResults";
 
+
   /**
    * Session attribute used to keep track of client search criteria during the creation of a new
    * application.

@@ -22,6 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PROCEEDINGS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
@@ -60,12 +61,14 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataFurtherDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails;
+import uk.gov.laa.ccms.caab.bean.validators.costs.CostDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
@@ -74,6 +77,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ScopeLimitation;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -108,9 +112,11 @@ class EditProceedingsAndCostsSectionControllerTest {
     private ProceedingDetailsValidator proceedingTypeValidator;
     @Mock
     private ProceedingFurtherDetailsValidator furtherDetailsValidator;
-
     @Mock
     private ScopeLimitationDetailsValidator scopeLimitationDetailsValidator;
+    @Mock
+    private CostDetailsValidator costDetailsValidator;
+
     @Mock
     private ProceedingAndCostsMapper proceedingAndCostsMapper;
 
@@ -1078,13 +1084,92 @@ class EditProceedingsAndCostsSectionControllerTest {
         assertTrue(proceeding.getScopeLimitations().isEmpty(), "Proceeding's scope limitations should be empty after removal");
     }
 
+    @Test
+    void testCaseCosts() throws Exception {
+        final ApplicationDetail application = new ApplicationDetail();
+        final CostStructure costs = new CostStructure();
+        costs.setRequestedCostLimitation(new BigDecimal("1000"));
 
 
+        final CostsFormData costsFormData = new CostsFormData();
+        costsFormData.setRequestedCostLimitation(costs.getRequestedCostLimitation());
+
+        when(proceedingAndCostsMapper.toCostsFormData(any(BigDecimal.class)))
+            .thenReturn(costsFormData);
+
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(APPLICATION, application);
+        session.setAttribute(APPLICATION_COSTS, costs);
+
+        mockMvc.perform(get("/application/case-costs")
+                .session(session))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/case-costs"))
+            .andExpect(model().attributeExists("costDetails"))
+            .andExpect(model().attribute("costDetails", costsFormData))
+            .andExpect(model().attributeExists(APPLICATION_COSTS))
+            .andExpect(model().attribute(APPLICATION_COSTS, costs))
+            .andExpect(model().attributeExists(APPLICATION))
+            .andExpect(model().attribute(APPLICATION, application));
 
 
+        verify(proceedingAndCostsMapper, times(1))
+            .toCostsFormData(costs.getRequestedCostLimitation());
+    }
 
 
+    @Test
+    void testCaseCostsPost_ValidationPasses() throws Exception {
+        final String applicationId = "123";
+        final ApplicationDetail application = new ApplicationDetail();
+        final CostStructure costs = new CostStructure();
+        final UserDetail user = new UserDetail();
+        final CostsFormData costsFormData = new CostsFormData();
 
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(APPLICATION_ID, applicationId);
+        session.setAttribute(APPLICATION, application);
+        session.setAttribute(APPLICATION_COSTS, costs);
+        session.setAttribute(USER_DETAILS, user);
 
+        mockMvc.perform(post("/application/case-costs")
+                .session(session)
+                .flashAttr("costDetails", costsFormData))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/proceedings-and-costs#costs"));
+    }
+
+    @Test
+    void testCaseCostsPost_WithValidationErrors() throws Exception {
+        final String applicationId = "123";
+        final ApplicationDetail application = new ApplicationDetail();
+        final CostStructure costs = new CostStructure();
+        final UserDetail user = new UserDetail();
+        final CostsFormData costsFormData = new CostsFormData();
+
+        doAnswer(invocation -> {
+            final BindingResult errors = invocation.getArgument(1);
+            errors.reject("errorKey", "Default message");
+            return null;
+        }).when(costDetailsValidator).validate(eq(costsFormData), any(BindingResult.class));
+
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(APPLICATION_ID, applicationId);
+        session.setAttribute(APPLICATION, application);
+        session.setAttribute(APPLICATION_COSTS, costs);
+        session.setAttribute(USER_DETAILS, user);
+
+        mockMvc.perform(post("/application/case-costs")
+                .session(session)
+                .flashAttr("costDetails", costsFormData))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/case-costs"))
+            .andExpect(model().attributeHasErrors("costDetails"))
+            .andExpect(model().attribute("costDetails", costsFormData))
+            .andExpect(model().attribute(APPLICATION_COSTS, costs))
+            .andExpect(model().attribute(APPLICATION, application));
+
+        verify(costDetailsValidator, times(1)).validate(eq(costsFormData), any(BindingResult.class));
+    }
 
 }

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+  <title>LAA CCMS - Create application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a href="/application/proceedings-and-costs#case-costs" class="govuk-back-link">Cancel and return to Proceedings and costs</a>
+  </div>
+  <div id="main-content">
+    <form action="#" th:action="@{/application/case-costs}" th:object="${costDetails}" method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <span class="govuk-caption-l">Amend case costs</span>
+      <h1 class="govuk-heading-l">
+        Case costs
+      </h1>
+      <p class="govuk-body-l">
+        Please view the associated costs below. If you estimate that you will need a cost limitation
+        that is different to the default cost limitation figure, please enter the new figure and
+        click 'confirm'.
+      </p>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+          <h2 class="govuk-heading-m">Case cost limitations</h2>
+          <table class="govuk-table">
+            <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+              <th scope="col" class="govuk-table__header">Cost limitation</th>
+              <th scope="col" class="govuk-table__header">Amount</th>
+            </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+            <tr class="govuk-table__row">
+              <td class="govuk-table__cell">
+                Default cost limitation
+              </td>
+              <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(costs.defaultCostLimitation)}"></td>
+            </tr>
+            <tr th:if="${application.amendment}" class="govuk-table__row">
+              <td class="govuk-table__cell">
+                Granted cost limitation
+              </td>
+              <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(costs.grantedCostLimitation)}"></td>
+            </tr>
+            </tbody>
+          </table>
+          <div class="govuk-form-group" th:classappend="${#fields.hasErrors('requestedCostLimitation')} ? 'govuk-form-group--error' : ''">
+            <h2 class="govuk-label-wrapper">
+              <label class="govuk-label" for="requestedCostLimitation">
+                Requested cost limitation
+              </label>
+              <span th:if="${#fields.hasErrors('requestedCostLimitation')}"
+                    th:errors="*{requestedCostLimitation}"
+                    class="govuk-error-message">
+              </span>
+            </h2>
+            <div class="govuk-input__wrapper">
+              <div class="govuk-input__prefix" aria-hidden="true">£</div>
+              <input th:errorclass="govuk-input--error"
+                     class="govuk-input govuk-input--width-5"
+                     id="requestedCostLimitation"
+                     name="requestedCostLimitation"
+                     type="text" spellcheck="false"
+                     th:value="*{requestedCostLimitation}">
+            </div>
+          </div>
+          <div class="govuk-button-group">
+            <button type="submit" class="govuk-button" data-module="govuk-button">
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>
