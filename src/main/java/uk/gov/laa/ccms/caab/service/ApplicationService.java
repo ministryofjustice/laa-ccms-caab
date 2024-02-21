@@ -355,6 +355,8 @@ public class ApplicationService {
               applicationFormData.getCategoryOfLawId())
           .larScopeFlag(amendmentTypes)
           .status()
+          .costStructure()
+          .correspondenceAddress()
           .build();
     });
   }
