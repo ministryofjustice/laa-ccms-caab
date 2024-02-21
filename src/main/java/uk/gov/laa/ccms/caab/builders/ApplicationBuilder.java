@@ -3,12 +3,15 @@ package uk.gov.laa.ccms.caab.builders;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import uk.gov.laa.ccms.caab.model.Address;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.Client;
+import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.DevolvedPowers;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -195,6 +198,33 @@ public class ApplicationBuilder {
             .id(STATUS_UNSUBMITTED_ACTUAL_VALUE)
             .displayValue(STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY);
     application.setStatus(status);
+    return this;
+  }
+
+  /**
+   * Sets the cost structure details.
+   *
+   * @return The builder instance.
+   */
+  public ApplicationBuilder costStructure() {
+    application.costs(
+        new CostStructure()
+            .grantedCostLimitation(BigDecimal.valueOf(0))
+            .defaultCostLimitation(BigDecimal.valueOf(0))
+            .requestedCostLimitation(BigDecimal.valueOf(0))
+    );
+    return this;
+  }
+
+  /**
+   * Sets the correspondence address details.
+   *
+   * @return The builder instance.
+   */
+  public ApplicationBuilder correspondenceAddress() {
+    application.correspondenceAddress(
+        new Address()
+            .noFixedAbode(false));
     return this;
   }
 
