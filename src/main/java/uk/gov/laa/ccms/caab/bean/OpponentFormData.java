@@ -52,7 +52,7 @@ public class OpponentFormData {
   /**
    * The contact name and role.
    */
-  private String contactName;
+  private String contactNameRole;
 
   /**
    * The opponent house name/number.
@@ -118,5 +118,11 @@ public class OpponentFormData {
    * Any other information regarding the opponent.
    */
   private String otherInformation;
+
+  /**
+   * Flag to indicate this is a shared opponent.
+   */
+  private boolean shared;
+
 
 }

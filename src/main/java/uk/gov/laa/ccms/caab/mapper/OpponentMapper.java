@@ -25,11 +25,13 @@ public interface OpponentMapper {
   @Mapping(target = "organisationName", source = "organisation.name")
   @Mapping(target = "organisationType", source = "orgTypeLookup.code")
   @Mapping(target = "organisationTypeDisplayValue", source = "orgTypeLookup.description")
+  @Mapping(target = "contactNameRole", source = "organisation.contactName")
   @Mapping(target = "telephoneHome", source = "organisation.contactDetails.telephoneHome")
   @Mapping(target = "telephoneWork", source = "organisation.contactDetails.telephoneWork")
   @Mapping(target = "telephoneMobile", source = "organisation.contactDetails.mobileNumber")
   @Mapping(target = "faxNumber", source = "organisation.contactDetails.fax")
   @Mapping(target = "emailAddress", source = "organisation.contactDetails.emailAddress")
+  @Mapping(target = "shared", constant = "true")
   OpponentFormData toOpponentFormData(OrganisationDetail organisation,
       CommonLookupValueDetail orgTypeLookup);
 
@@ -37,5 +39,7 @@ public interface OpponentMapper {
   @Mapping(target = "organisationType.id", source = "organisationType")
   @Mapping(target = "organisationType.displayValue", source = "organisationTypeDisplayValue")
   @Mapping(target = "address", source = ".")
+  @Mapping(target = "sharedInd", source = "shared")
+  @Mapping(target = "confirmed", constant = "true")
   Opponent toOpponent(OpponentFormData opponentFormData);
 }

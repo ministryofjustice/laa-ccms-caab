@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_OPPONENT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ORGANISATION_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ORGANISATION_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -47,7 +48,8 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @Slf4j
 @SessionAttributes(value = {
     ORGANISATION_SEARCH_CRITERIA,
-    ORGANISATION_SEARCH_RESULTS})
+    ORGANISATION_SEARCH_RESULTS,
+    CURRENT_OPPONENT})
 public class EditOpponentsSectionController {
 
   private final ApplicationService applicationService;
@@ -211,7 +213,7 @@ public class EditOpponentsSectionController {
         user.getLoginId(),
         user.getUserType());
 
-    model.addAttribute("opponent", opponentFormData);
+    model.addAttribute(CURRENT_OPPONENT, opponentFormData);
 
     populateConfirmSharedOrganisationDropdowns(model);
 
@@ -230,7 +232,7 @@ public class EditOpponentsSectionController {
    */
   @PostMapping("/application/summary/opponents/organisation/confirm")
   public String confirmSharedOrganisation(
-      @ModelAttribute("opponent") OpponentFormData opponentFormData,
+      @ModelAttribute(CURRENT_OPPONENT) OpponentFormData opponentFormData,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final BindingResult bindingResult,

@@ -10,23 +10,6 @@
     </div>
     <div id="main-content">
         <form action="#" th:action="@{/application/summary/opponents/organisation/confirm}" th:object="${opponent}" method="post">
-            <input type="hidden" th:name="type" th:value="*{type}"/>
-            <input type="hidden" th:name="partyId" th:value="*{partyId}"/>
-            <input type="hidden" th:name="organisationName" th:value="*{organisationName}"/>
-            <input type="hidden" th:name="organisationType" th:value="*{organisationType}"/>
-            <input type="hidden" th:name="organisationTypeDisplayValue" th:value="*{organisationTypeDisplayValue}"/>
-            <input type="hidden" th:name="currentlyTrading" th:value="*{currentlyTrading}"/>
-            <input type="hidden" th:name="contactName" th:value="*{contactName}"/>
-            <input type="hidden" th:name="houseNameOrNumber" th:value="*{houseNameOrNumber}"/>
-            <input type="hidden" th:name="addressLine1" th:value="*{addressLine1}"/>
-            <input type="hidden" th:name="addressLine2" th:value="*{addressLine2}"/>
-            <input type="hidden" th:name="city" th:value="*{city}"/>
-            <input type="hidden" th:name="county" th:value="*{county}"/>
-            <input type="hidden" th:name="country" th:value="*{country}"/>
-            <input type="hidden" th:name="postcode" th:value="*{postcode}"/>
-            <input type="hidden" th:name="telephoneWork" th:value="*{telephoneWork}"/>
-            <input type="hidden" th:name="faxNumber" th:value="*{faxNumber}"/>
-            <input type="hidden" th:name="emailAddress" th:value="*{emailAddress}"/>
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l">Search for an organisation</span>
             <h1 class="govuk-heading-l">
@@ -44,7 +27,7 @@
                         <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Organisation name', *{organisationName})}"></div>
                         <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Organisation type', *{organisationTypeDisplayValue})}"></div>
                         <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayYesNo('Currently trading', *{currentlyTrading})}"></div>
-                        <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Contact name and role', *{contactName})}"></div>
+                        <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Contact name and role', *{contactNameRole})}"></div>
                         <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Building name / number', *{houseNameOrNumber})}"></div>
                         <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Address line 1', *{addressLine1})}"></div>
                         <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Address line 2', *{addressLine2})}"></div>

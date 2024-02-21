@@ -123,6 +123,10 @@ public class SessionConstants {
    */
   public static final String ORGANISATION_SEARCH_RESULTS = "orgResultsPage";
 
+  /**
+   * Session attribute used to keep track of the current opponent being processed or viewed.
+   */
+  public static final String CURRENT_OPPONENT = "opponent";
 
   /**
    * Session attribute used to keep track of the costs associated with the application.
