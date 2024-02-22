@@ -112,5 +112,9 @@ public class CommonValueConstants {
    */
   public static final String COMMON_VALUE_RELATIONSHIP_TO_CLIENT = "XXCCMS_REL_TO_CLIENT";
 
+  /**
+   * Type used to retrieve the Proceeding order type.
+   */
+  public static final String COMMON_VALUE_PROCEEDING_ORDER_TYPE = "XXCCMS_PROCEEDING_ORDER_TYPE";
 
 }
