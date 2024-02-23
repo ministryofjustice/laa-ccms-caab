@@ -93,7 +93,6 @@ public class EditProceedingsAndCostsSectionController {
   private final ApplicationService applicationService;
   private final LookupService lookupService;
 
-
   //validators
   private final ProceedingMatterTypeDetailsValidator matterTypeValidator;
   private final ProceedingDetailsValidator proceedingTypeValidator;
@@ -975,15 +974,8 @@ public class EditProceedingsAndCostsSectionController {
       final ApplicationDetail application,
       final ProceedingFlowFormData proceedingFlow) {
 
-    final ScopeLimitationDetail criteria = new ScopeLimitationDetail()
-        .categoryOfLaw(application.getCategoryOfLaw().getId())
-        .matterType(proceedingFlow.getMatterTypeDetails().getMatterType())
-        .proceedingCode(proceedingFlow.getProceedingDetails().getProceedingType())
-        .levelOfService(proceedingFlow.getFurtherDetails().getLevelOfService());
-
-    if (EMERGENCY_APPLICATION_TYPE_CODES.contains(application.getApplicationType().getId())) {
-      criteria.emergency(true);
-    }
+    final ScopeLimitationDetail criteria = createScopeLimitationCriteria(
+        application, proceedingFlow);
 
     final List<ScopeLimitationDetail> scopeLimitationTypes = Optional.ofNullable(
             lookupService.getScopeLimitationDetails(criteria).block())
@@ -1019,20 +1011,13 @@ public class EditProceedingsAndCostsSectionController {
       final ProceedingFlowFormData proceedingFlow,
       final ScopeLimitationFlowFormData scopeLimitationFlow) {
 
-    final ScopeLimitationDetail criteria = new ScopeLimitationDetail()
-        .categoryOfLaw(application.getCategoryOfLaw().getId())
-        .matterType(proceedingFlow.getMatterTypeDetails().getMatterType())
-        .proceedingCode(proceedingFlow.getProceedingDetails().getProceedingType())
-        .levelOfService(proceedingFlow.getFurtherDetails().getLevelOfService())
-        .scopeLimitations(scopeLimitationFlow.getScopeLimitationDetails().getScopeLimitation());
-
-    if (EMERGENCY_APPLICATION_TYPE_CODES.contains(application.getApplicationType().getId())) {
-      criteria.emergency(true);
-    }
+    final ScopeLimitationDetail criteria = createScopeLimitationCriteria(
+        application, proceedingFlow);
+    criteria.scopeLimitations(scopeLimitationFlow.getScopeLimitationDetails()
+        .getScopeLimitation());
 
     final ScopeLimitationDetail scopeLimitationDetail = Optional.ofNullable(
-        lookupService.getScopeLimitationDetails(criteria))
-        .map(Mono::block)
+        lookupService.getScopeLimitationDetails(criteria).block())
         .map(result -> result.getContent() != null
             ? result.getContent().stream().findFirst().orElse(null)
             : null)
@@ -1043,6 +1028,23 @@ public class EditProceedingsAndCostsSectionController {
     scopeLimitation.setId(scopeLimitationFlow.getScopeLimitationId());
 
     model.addAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
+  }
+
+  private ScopeLimitationDetail createScopeLimitationCriteria(
+      final ApplicationDetail application,
+      final ProceedingFlowFormData proceedingFlow) {
+
+    final ScopeLimitationDetail criteria = new ScopeLimitationDetail()
+        .categoryOfLaw(application.getCategoryOfLaw().getId())
+        .matterType(proceedingFlow.getMatterTypeDetails().getMatterType())
+        .proceedingCode(proceedingFlow.getProceedingDetails().getProceedingType())
+        .levelOfService(proceedingFlow.getFurtherDetails().getLevelOfService());
+
+    if (EMERGENCY_APPLICATION_TYPE_CODES.contains(application.getApplicationType().getId())) {
+      criteria.emergency(true);
+    }
+
+    return criteria;
   }
 
   /**
@@ -1102,7 +1104,12 @@ public class EditProceedingsAndCostsSectionController {
       if (scopeLimitationFlow.getScopeLimitationIndex() == null) {
         scopeLimitations.add(scopeLimitation);
       } else {
-        scopeLimitations.set(scopeLimitationFlow.getScopeLimitationIndex(), scopeLimitation);
+        int index = scopeLimitationFlow.getScopeLimitationIndex();
+        if (index >= 0 && index < scopeLimitations.size()) {
+          scopeLimitations.set(index, scopeLimitation);
+        } else {
+          throw new CaabApplicationException("No scope limitation found at index: " + index);
+        }
       }
 
     } else {

@@ -5,6 +5,7 @@ import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.INTERNAT
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NUMERIC_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.UK_POSTCODE;
 
+import java.math.BigDecimal;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -32,6 +33,8 @@ public abstract class AbstractValidator implements Validator {
       + " Please amend your entry for the %s field.";
   protected static String GENERIC_INCORRECT_FORMAT = "Your input for '%s' is in an incorrect "
       + "format. Please amend your entry.";
+
+  protected static String GENERIC_NUMERIC_LIMIT_ERROR = "'%s' must be less than £%s";
 
 
   protected void validateRequiredField(
@@ -67,6 +70,21 @@ public abstract class AbstractValidator implements Validator {
     if (fieldValue == null || !fieldValue.matches(CURRENCY_PATTERN)) {
       errors.rejectValue(field, "invalid.currency",
           String.format(GENERIC_CURRENCY_REQUIRED, displayValue));
+    }
+  }
+
+  protected void validateNumericLimit(
+      final String field, final String fieldValue,
+      final String displayValue, final BigDecimal maxLimit, final Errors errors) {
+    try {
+      final BigDecimal value = new BigDecimal(fieldValue);
+      if (value.compareTo(maxLimit) >= 0) {
+        errors.rejectValue(field, "value.exceeds.max",
+            String.format(GENERIC_NUMERIC_LIMIT_ERROR, displayValue, maxLimit));
+      }
+    } catch (final NumberFormatException e) {
+      errors.rejectValue(field, "invalid.numeric",
+          String.format(GENERIC_NUMERIC_REQUIRED, displayValue));
     }
   }
 

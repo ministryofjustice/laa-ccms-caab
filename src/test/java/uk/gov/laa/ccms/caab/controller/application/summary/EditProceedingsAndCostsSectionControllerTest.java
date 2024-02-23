@@ -50,7 +50,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -73,7 +72,6 @@ import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidat
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.scopelimitation.ScopeLimitationDetailsValidator;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
@@ -112,6 +110,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     private ProceedingDetailsValidator proceedingTypeValidator;
     @Mock
     private ProceedingFurtherDetailsValidator furtherDetailsValidator;
+
     @Mock
     private ScopeLimitationDetailsValidator scopeLimitationDetailsValidator;
     @Mock
@@ -1092,7 +1091,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
 
         final CostsFormData costsFormData = new CostsFormData();
-        costsFormData.setRequestedCostLimitation(costs.getRequestedCostLimitation());
+        costsFormData.setRequestedCostLimitation(String.valueOf(costs.getRequestedCostLimitation()));
 
         when(proceedingAndCostsMapper.toCostsFormData(any(BigDecimal.class)))
             .thenReturn(costsFormData);

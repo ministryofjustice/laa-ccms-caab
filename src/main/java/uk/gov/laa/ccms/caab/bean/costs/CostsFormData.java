@@ -12,5 +12,5 @@ public class CostsFormData {
   /**
    * The requested cost limitation amount.
    */
-  private BigDecimal requestedCostLimitation;
+  private String requestedCostLimitation;
 }

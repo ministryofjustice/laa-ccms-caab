@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/application/proceedings-and-costs}" class="govuk-back-link">Cancel and return to proceeding and costs</a>
+    <a th:href="@{/application/proceedings-and-costs}" class="govuk-back-link">Cancel and return to proceedings and costs</a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/application/proceedings/{proceedingId}/remove(proceedingId=${proceedingId})}" method="post">
@@ -15,7 +15,7 @@
       </h1>
       <p class="govuk-body-l">
         Are you sure you want to delete this proceeding? Please click 'Confirm' to delete
-        this information otherwise click 'Cancel and return to proceeding and costs' to go back.
+        this information. Otherwise, click 'Cancel and return to proceeding and costs' to go back.
       </p>
       <div class="govuk-button-group">
         <button type="submit" class="govuk-button" data-module="govuk-button">
