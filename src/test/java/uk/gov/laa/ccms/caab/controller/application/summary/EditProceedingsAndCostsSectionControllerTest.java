@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -21,12 +22,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PROCEEDINGS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_SCOPE_LIMITATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA_OLD;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_SCOPE_LIMITATIONS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SCOPE_LIMITATION_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.math.BigDecimal;
@@ -55,21 +59,27 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.context.WebApplicationContext;
+import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataFurtherDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
+import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
+import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails;
+import uk.gov.laa.ccms.caab.bean.validators.costs.CostDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
-import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.scopelimitation.ScopeLimitationDetailsValidator;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ScopeLimitation;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
-import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupValueDetail;
@@ -81,6 +91,7 @@ import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProceedingDetails;
+import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -99,6 +110,12 @@ class EditProceedingsAndCostsSectionControllerTest {
     private ProceedingDetailsValidator proceedingTypeValidator;
     @Mock
     private ProceedingFurtherDetailsValidator furtherDetailsValidator;
+
+    @Mock
+    private ScopeLimitationDetailsValidator scopeLimitationDetailsValidator;
+    @Mock
+    private CostDetailsValidator costDetailsValidator;
+
     @Mock
     private ProceedingAndCostsMapper proceedingAndCostsMapper;
 
@@ -155,6 +172,33 @@ class EditProceedingsAndCostsSectionControllerTest {
             .andExpect(redirectedUrl("/application/proceedings-and-costs"));
 
         verify(applicationService, times(1)).makeLeadProceeding(applicationId, proceedingId, user);
+    }
+
+    @Test
+    void testProceedingsRemoveGet() throws Exception {
+        final Integer proceedingId = 1;
+
+        mockMvc.perform(get("/application/proceedings/{proceeding-id}/remove", proceedingId))
+            .andExpect(status().isOk())
+            .andExpect(view().name("/application/proceedings-remove"))
+            .andExpect(model().attribute("proceedingId", proceedingId));
+    }
+
+    @Test
+    void testProceedingsRemovePost() throws Exception {
+        final Integer proceedingId = 1;
+        final List<Proceeding> proceedings = Collections.singletonList(new Proceeding().id(proceedingId));
+        final UserDetail userDetail = new UserDetail().userId(1).userType("testUserType").loginId("testLoginId");
+
+        doNothing().when(applicationService).deleteProceeding(anyInt(), any(UserDetail.class));
+
+        mockMvc.perform(post("/application/proceedings/{proceeding-id}/remove", proceedingId)
+                .sessionAttr(APPLICATION_PROCEEDINGS, proceedings)
+                .sessionAttr(USER_DETAILS, userDetail))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/proceedings-and-costs"));
+
+        verify(applicationService, times(1)).deleteProceeding(eq(proceedingId), eq(userDetail));
     }
 
     @Test
@@ -702,4 +746,429 @@ class EditProceedingsAndCostsSectionControllerTest {
         verify(applicationService, times(1)).addProceeding(eq(applicationId), any(Proceeding.class), eq(user));
 
     }
+
+    @Test
+    void testScopeLimitationEditAddAction() throws Exception {
+        final Integer scopeLimitationId = 0;
+        final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData("add");
+        proceedingFlow.setAction("add");
+        final List<ScopeLimitation> scopeLimitations = Collections.singletonList(new ScopeLimitation().id(scopeLimitationId));
+        final ScopeLimitationFlowFormData scopeLimitationFlow = new ScopeLimitationFlowFormData("add");
+
+        when(proceedingAndCostsMapper.toScopeLimitationFlow(any(ScopeLimitation.class))).thenReturn(scopeLimitationFlow);
+
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+        session.setAttribute(PROCEEDING_SCOPE_LIMITATIONS, scopeLimitations);
+
+        mockMvc.perform(get("/application/proceedings/scope-limitations/{scope-limitation-id}/edit", scopeLimitationId)
+                .session(session))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/proceedings/scope-limitations/edit/details"));
+
+        verify(proceedingAndCostsMapper, times(1)).toScopeLimitationFlow(any(ScopeLimitation.class));
+    }
+
+    @Test
+    void testScopeLimitationEditEditAction() throws Exception {
+        final Integer scopeLimitationId = 1;
+        final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData("edit");
+        proceedingFlow.setAction("edit");
+        final ScopeLimitation scopeLimitation = new ScopeLimitation().id(scopeLimitationId);
+        final Proceeding proceeding = new Proceeding();
+        proceeding.setScopeLimitations(Collections.singletonList(scopeLimitation));
+        final ScopeLimitationFlowFormData scopeLimitationFlow = new ScopeLimitationFlowFormData("edit");
+
+        when(proceedingAndCostsMapper.toScopeLimitationFlow(any(ScopeLimitation.class))).thenReturn(scopeLimitationFlow);
+
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+        session.setAttribute(CURRENT_PROCEEDING, proceeding);
+
+        mockMvc.perform(get("/application/proceedings/scope-limitations/{scope-limitation-id}/edit", scopeLimitationId)
+                .session(session))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/proceedings/scope-limitations/edit/details"));
+
+        verify(proceedingAndCostsMapper, times(1)).toScopeLimitationFlow(any(ScopeLimitation.class));
+    }
+
+    @Test
+    void testScopeLimitationDetailsEditAction() throws Exception {
+        final String action = "edit";
+        final ApplicationDetail application = new ApplicationDetail()
+            .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+            .applicationType(new ApplicationType().id("applicationTypeId"));
+        final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
+        proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
+        proceedingFlow.getProceedingDetails().setProceedingType("proceedingType");
+        proceedingFlow.getFurtherDetails().setLevelOfService("levelOfService");
+
+        final ScopeLimitationFlowFormData scopeLimitationFlow = new ScopeLimitationFlowFormData(action);
+
+        final ScopeLimitationDetails mockedScopeLimitationDetails = new ScopeLimitationDetails()
+            .addContentItem(new ScopeLimitationDetail().description("Mock Detail 1"))
+            .addContentItem(new ScopeLimitationDetail().description("Mock Detail 2"));
+
+        when(lookupService.getScopeLimitationDetails(any(ScopeLimitationDetail.class)))
+            .thenReturn(Mono.just(mockedScopeLimitationDetails));
+
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(APPLICATION, application);
+        session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+        session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
+
+        mockMvc.perform(get("/application/proceedings/scope-limitations/{action}/details", action)
+                .session(session))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/proceedings-scope-limitations-details"))
+            .andExpect(model().attributeExists(SCOPE_LIMITATION_FLOW_FORM_DATA))
+            .andExpect(model().attribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow));
+    }
+
+    @Test
+    void testScopeLimitationDetailsAddAction() throws Exception {
+        final String action = "add";
+        final ApplicationDetail application = new ApplicationDetail()
+            .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+            .applicationType(new ApplicationType().id("applicationTypeId"));
+        final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
+        proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
+        proceedingFlow.getProceedingDetails().setProceedingType("proceedingType");
+        proceedingFlow.getFurtherDetails().setLevelOfService("levelOfService");
+
+        final ScopeLimitationDetails mockedScopeLimitationDetails = new ScopeLimitationDetails()
+            .addContentItem(new ScopeLimitationDetail().description("Mock Detail 1"))
+            .addContentItem(new ScopeLimitationDetail().description("Mock Detail 2"));
+
+        when(lookupService.getScopeLimitationDetails(any(ScopeLimitationDetail.class)))
+            .thenReturn(Mono.just(mockedScopeLimitationDetails));
+
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(APPLICATION, application);
+        session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+
+        mockMvc.perform(get("/application/proceedings/scope-limitations/{action}/details", action)
+                .session(session))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/proceedings-scope-limitations-details"))
+            .andExpect(model().attributeExists(SCOPE_LIMITATION_FLOW_FORM_DATA))
+            .andExpect(model().attribute(SCOPE_LIMITATION_FLOW_FORM_DATA, hasProperty("action", is(action))));
+    }
+
+    @Test
+    void testScopeLimitationDetailsPostWithValidationErrors() throws Exception {
+        final String action = "edit";
+        final ApplicationDetail application = new ApplicationDetail()
+          .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+          .applicationType(new ApplicationType().id("applicationTypeId"));
+        final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
+        proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
+        proceedingFlow.getProceedingDetails().setProceedingType("proceedingType");
+        proceedingFlow.getFurtherDetails().setLevelOfService("levelOfService");
+
+        final ScopeLimitationFlowFormData scopeLimitationFlow = new ScopeLimitationFlowFormData(action);
+        final ScopeLimitationFormDataDetails scopeLimitationDetails = new ScopeLimitationFormDataDetails();
+
+        final ScopeLimitationDetails mockedScopeLimitationDetails = new ScopeLimitationDetails()
+            .addContentItem(new ScopeLimitationDetail().description("Mock Detail 1"))
+            .addContentItem(new ScopeLimitationDetail().description("Mock Detail 2"));
+
+        when(lookupService.getScopeLimitationDetails(any(ScopeLimitationDetail.class)))
+            .thenReturn(Mono.just(mockedScopeLimitationDetails));
+
+        // Simulate validation error
+        doAnswer(invocation -> {
+            final BindingResult errors = invocation.getArgument(1);
+            errors.reject("errorKey", "Default message");
+            return null;
+        }).when(scopeLimitationDetailsValidator).validate(eq(scopeLimitationDetails), any(BindingResult.class));
+
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(APPLICATION, application);
+        session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+        session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
+
+        mockMvc.perform(post("/application/proceedings/scope-limitations/{action}/details", action)
+                .session(session)
+                .flashAttr("scopeLimitationDetails", scopeLimitationDetails))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/proceedings-scope-limitations-details"))
+            .andExpect(model().attributeHasErrors("scopeLimitationDetails"));
+    }
+
+    @Test
+    void testScopeLimitationDetailsPostValidationPasses() throws Exception {
+        final String action = "edit";
+        final ApplicationDetail application = new ApplicationDetail()
+            .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+            .applicationType(new ApplicationType().id("applicationTypeId"));
+        final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
+        proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
+        proceedingFlow.getProceedingDetails().setProceedingType("proceedingType");
+        proceedingFlow.getFurtherDetails().setLevelOfService("levelOfService");
+
+        final ScopeLimitationFlowFormData scopeLimitationFlow = new ScopeLimitationFlowFormData(action);
+        scopeLimitationFlow.setScopeLimitationId(1);
+        final ScopeLimitationFormDataDetails scopeLimitationDetails = new ScopeLimitationFormDataDetails();
+        scopeLimitationDetails.setScopeLimitation("newScopeLimitation");
+
+        final ScopeLimitationDetails mockedScopeLimitationDetails = new ScopeLimitationDetails()
+            .addContentItem(new ScopeLimitationDetail().description("Mock Detail 1"))
+            .addContentItem(new ScopeLimitationDetail().description("Mock Detail 2"));
+
+        when(lookupService.getScopeLimitationDetails(any(ScopeLimitationDetail.class)))
+            .thenReturn(Mono.just(mockedScopeLimitationDetails));
+
+        when(proceedingAndCostsMapper.toScopeLimitation(any(ScopeLimitationDetail.class)))
+            .thenReturn(new ScopeLimitation());
+
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(APPLICATION, application);
+        session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+        session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
+
+        mockMvc.perform(post("/application/proceedings/scope-limitations/{action}/details", action)
+                .session(session)
+                .flashAttr("scopeLimitationDetails", scopeLimitationDetails))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/proceedings/scope-limitations/confirm"));
+    }
+
+    @Test
+    void testScopeLimitationConfirm() throws Exception {
+        final String action = "edit";
+        final ScopeLimitation scopeLimitation = new ScopeLimitation();
+        final ScopeLimitationFlowFormData scopeLimitationFlow = new ScopeLimitationFlowFormData(action);
+
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
+        session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
+
+        mockMvc.perform(get("/application/proceedings/scope-limitations/confirm")
+                .session(session))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/proceedings-scope-limitations-confirm"))
+            .andExpect(model().attributeExists(CURRENT_SCOPE_LIMITATION))
+            .andExpect(model().attributeExists(SCOPE_LIMITATION_FLOW_FORM_DATA))
+            .andExpect(model().attribute(CURRENT_SCOPE_LIMITATION, scopeLimitation))
+            .andExpect(model().attribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow));
+    }
+
+    @Test
+    void testScopeLimitationConfirmPostActionAdd() throws Exception {
+        final String action = "add";
+        final ApplicationDetail application = new ApplicationDetail()
+            .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+            .applicationType(new ApplicationType().id("applicationTypeId"));
+        final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
+        proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
+        proceedingFlow.getProceedingDetails().setProceedingType("proceedingType");
+        proceedingFlow.getFurtherDetails().setLevelOfService("levelOfService");
+
+        final ScopeLimitation scopeLimitation = new ScopeLimitation();
+        final ScopeLimitationFlowFormData scopeLimitationFlow = new ScopeLimitationFlowFormData(action);
+        final List<ScopeLimitation> scopeLimitations = new ArrayList<>();
+
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
+        session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+        session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
+        session.setAttribute(PROCEEDING_SCOPE_LIMITATIONS, scopeLimitations);
+        session.setAttribute(USER_DETAILS, new UserDetail()); // Mocked user detail
+
+        mockMvc.perform(post("/application/proceedings/scope-limitations/confirm")
+                .session(session))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl(String.format("/application/proceedings/%s/confirm", action)));
+    }
+
+    @Test
+    void testScopeLimitationConfirmPostActionEdit() throws Exception {
+        final String action = "edit";
+        final ApplicationDetail application = new ApplicationDetail()
+            .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+            .applicationType(new ApplicationType().id("applicationTypeId"));
+        final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
+        proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
+        proceedingFlow.getProceedingDetails().setProceedingType("proceedingType");
+        proceedingFlow.getFurtherDetails().setLevelOfService("levelOfService");
+
+        final ScopeLimitation scopeLimitation = new ScopeLimitation();
+
+        final ScopeLimitationFlowFormData scopeLimitationFlow = new ScopeLimitationFlowFormData(action);
+        scopeLimitationFlow.setScopeLimitationIndex(0);
+
+        final Proceeding proceeding = new Proceeding();
+        proceeding.setId(123);
+        final List<ScopeLimitation> existingScopeLimitations = new ArrayList<>();
+        existingScopeLimitations.add(new ScopeLimitation().id(1));
+        proceeding.setScopeLimitations(existingScopeLimitations);
+
+        final UserDetail user = new UserDetail();
+
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
+        session.setAttribute(APPLICATION, application);
+        session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+        session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
+        session.setAttribute(CURRENT_PROCEEDING, proceeding);
+        session.setAttribute(USER_DETAILS, user);
+
+        mockMvc.perform(post("/application/proceedings/scope-limitations/confirm")
+                .session(session))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl(String.format("/application/proceedings/%s/confirm", action)));
+    }
+
+    @Test
+    void testScopeLimitationRemove() throws Exception {
+        final String action = "edit";
+        final int scopeLimitationId = 1;
+        final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
+
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+
+        mockMvc.perform(get("/application/proceedings/scope-limitations/{scope-limitation-id}/remove", scopeLimitationId)
+                .session(session))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/proceedings-scope-limitations-remove"))
+            .andExpect(model().attributeExists("scopeLimitationId"))
+            .andExpect(model().attribute("scopeLimitationId", scopeLimitationId))
+            .andExpect(model().attributeExists(PROCEEDING_FLOW_FORM_DATA))
+            .andExpect(model().attribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow));
+    }
+
+    @Test
+    void testScopeLimitationRemovePos_ActionAdd() throws Exception {
+        final String action = "add";
+        final int scopeLimitationIndex = 0;
+        final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
+        final List<ScopeLimitation> scopeLimitations = new ArrayList<>();
+        scopeLimitations.add(new ScopeLimitation());
+
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+        session.setAttribute(PROCEEDING_SCOPE_LIMITATIONS, scopeLimitations);
+        session.setAttribute(USER_DETAILS, user);
+
+        mockMvc.perform(post("/application/proceedings/scope-limitations/{scope-limitation-id}/remove", scopeLimitationIndex)
+                .session(session))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl(String.format("/application/proceedings/%s/confirm", action)));
+
+        assertTrue(scopeLimitations.isEmpty(), "Scope limitations list should be empty after removal");
+    }
+
+    @Test
+    void testScopeLimitationRemovePost_ActionEdit() throws Exception {
+        final int scopeLimitationId = 1;
+        final String action = "edit";
+        final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
+        final UserDetail user = new UserDetail();
+        final Proceeding proceeding = new Proceeding();
+        proceeding.setScopeLimitations(new ArrayList<>(List.of(new ScopeLimitation().id(scopeLimitationId))));
+
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+        session.setAttribute(USER_DETAILS, user);
+        session.setAttribute(CURRENT_PROCEEDING, proceeding);
+
+        mockMvc.perform(post("/application/proceedings/scope-limitations/{scope-limitation-id}/remove", scopeLimitationId)
+                .session(session))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl(String.format("/application/proceedings/%s/confirm", action)));
+
+        assertTrue(proceeding.getScopeLimitations().isEmpty(), "Proceeding's scope limitations should be empty after removal");
+    }
+
+    @Test
+    void testCaseCosts() throws Exception {
+        final ApplicationDetail application = new ApplicationDetail();
+        final CostStructure costs = new CostStructure();
+        costs.setRequestedCostLimitation(new BigDecimal("1000"));
+
+
+        final CostsFormData costsFormData = new CostsFormData();
+        costsFormData.setRequestedCostLimitation(String.valueOf(costs.getRequestedCostLimitation()));
+
+        when(proceedingAndCostsMapper.toCostsFormData(any(BigDecimal.class)))
+            .thenReturn(costsFormData);
+
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(APPLICATION, application);
+        session.setAttribute(APPLICATION_COSTS, costs);
+
+        mockMvc.perform(get("/application/case-costs")
+                .session(session))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/case-costs"))
+            .andExpect(model().attributeExists("costDetails"))
+            .andExpect(model().attribute("costDetails", costsFormData))
+            .andExpect(model().attributeExists(APPLICATION_COSTS))
+            .andExpect(model().attribute(APPLICATION_COSTS, costs))
+            .andExpect(model().attributeExists(APPLICATION))
+            .andExpect(model().attribute(APPLICATION, application));
+
+
+        verify(proceedingAndCostsMapper, times(1))
+            .toCostsFormData(costs.getRequestedCostLimitation());
+    }
+
+
+    @Test
+    void testCaseCostsPost_ValidationPasses() throws Exception {
+        final String applicationId = "123";
+        final ApplicationDetail application = new ApplicationDetail();
+        final CostStructure costs = new CostStructure();
+        final UserDetail user = new UserDetail();
+        final CostsFormData costsFormData = new CostsFormData();
+
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(APPLICATION_ID, applicationId);
+        session.setAttribute(APPLICATION, application);
+        session.setAttribute(APPLICATION_COSTS, costs);
+        session.setAttribute(USER_DETAILS, user);
+
+        mockMvc.perform(post("/application/case-costs")
+                .session(session)
+                .flashAttr("costDetails", costsFormData))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/proceedings-and-costs#costs"));
+    }
+
+    @Test
+    void testCaseCostsPost_WithValidationErrors() throws Exception {
+        final String applicationId = "123";
+        final ApplicationDetail application = new ApplicationDetail();
+        final CostStructure costs = new CostStructure();
+        final UserDetail user = new UserDetail();
+        final CostsFormData costsFormData = new CostsFormData();
+
+        doAnswer(invocation -> {
+            final BindingResult errors = invocation.getArgument(1);
+            errors.reject("errorKey", "Default message");
+            return null;
+        }).when(costDetailsValidator).validate(eq(costsFormData), any(BindingResult.class));
+
+        final MockHttpSession session = new MockHttpSession();
+        session.setAttribute(APPLICATION_ID, applicationId);
+        session.setAttribute(APPLICATION, application);
+        session.setAttribute(APPLICATION_COSTS, costs);
+        session.setAttribute(USER_DETAILS, user);
+
+        mockMvc.perform(post("/application/case-costs")
+                .session(session)
+                .flashAttr("costDetails", costsFormData))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/case-costs"))
+            .andExpect(model().attributeHasErrors("costDetails"))
+            .andExpect(model().attribute("costDetails", costsFormData))
+            .andExpect(model().attribute(APPLICATION_COSTS, costs))
+            .andExpect(model().attribute(APPLICATION, application));
+
+        verify(costDetailsValidator, times(1)).validate(eq(costsFormData), any(BindingResult.class));
+    }
+
 }

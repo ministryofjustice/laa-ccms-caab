@@ -2168,6 +2168,7 @@ class ApplicationServiceTest {
     applicationService.prepareProceedingSummary(id, application, user);
     
     ArgumentCaptor<CostStructure> costsCaptor = ArgumentCaptor.forClass(CostStructure.class);
+
     verify(caabApiClient).updateCostStructure(eq(id), costsCaptor.capture(), eq(user.getLoginId()));
 
     CostStructure capturedCosts = costsCaptor.getValue();

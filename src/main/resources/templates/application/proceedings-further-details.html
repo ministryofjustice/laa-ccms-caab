@@ -8,7 +8,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a href="/application/proceedings-and-costs" class="govuk-back-link">Cancel and return to Proceedings and costs</a>
+    <a href="/application/proceedings-and-costs" class="govuk-back-link">Cancel and return to proceedings and costs</a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/application/proceedings/{action}/further-details(action=${proceedingFlow.action})}" th:object="${furtherDetails}" method="post">
@@ -36,7 +36,8 @@
         <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
             Proceeding description
         </span>
-        <span th:text="${proceedingFlow.proceedingDetails.proceedingTypeDisplayValue}"></span>
+        <span th:if="${proceedingFlow.action == 'add'}" th:text="${proceedingFlow.proceedingDetails.proceedingTypeDisplayValue}"></span>
+        <span th:if="${proceedingFlow.action == 'edit'}" th:text="${proceedingFlow.proceedingDetails.proceedingDescription}"></span>
       </p>
       <div th:replace="~{partials/forms :: dropdownWithDisplayValue('clientInvolvementType', 'Client involvement type', ${clientInvolvementTypes}, 'clientInvolvementType', 'clientInvolvementTypeName')}"></div>
       <div th:replace="~{partials/forms :: dropdownWithDisplayValue('levelOfService', 'Form of Civil Legal Service', ${levelOfServiceTypes}, 'levelOfServiceCode', 'description')}"></div>

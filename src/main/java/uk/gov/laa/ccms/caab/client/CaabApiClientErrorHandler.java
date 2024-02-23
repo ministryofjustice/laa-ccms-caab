@@ -15,6 +15,7 @@ import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.PriorAuthority;
 import uk.gov.laa.ccms.caab.model.Proceeding;
+import uk.gov.laa.ccms.caab.model.ScopeLimitation;
 
 /**
  * Provides error-handling capabilities for the CAAB API client interactions.
@@ -149,8 +150,20 @@ public class CaabApiClientErrorHandler {
    * @param e the Throwable associated with the error
    * @return a Mono error encapsulating the issue encountered
    */
-  public Mono<List<PriorAuthority>> handleGetPriorAuthorityError(Throwable e) {
+  public Mono<List<PriorAuthority>> handleGetPriorAuthorityError(final Throwable e) {
     final String msg = "Failed to retrieve prior authorities";
+    log.error(msg, e);
+    return Mono.error(new CaabApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors during retrieval of scope limitations.
+   *
+   * @param e the Throwable associated with the error
+   * @return a Mono error encapsulating the issue encountered
+   */
+  public Mono<List<ScopeLimitation>> handleGetScopeLimitationError(final Throwable e) {
+    final String msg = "Failed to retrieve scope limitations";
     log.error(msg, e);
     return Mono.error(new CaabApiClientException(msg, e));
   }

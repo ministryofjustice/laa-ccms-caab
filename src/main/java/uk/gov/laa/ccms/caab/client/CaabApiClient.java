@@ -22,6 +22,7 @@ import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.PriorAuthority;
 import uk.gov.laa.ccms.caab.model.Proceeding;
+import uk.gov.laa.ccms.caab.model.ScopeLimitation;
 
 /**
  * Client responsible for interactions with the CAAB API.
@@ -224,6 +225,7 @@ public class CaabApiClient {
    * @param loginId The ID associated with the user login.
    * @return A Mono Void indicating the completion of the update operation.
    */
+
   public Mono<Void> updateCostStructure(
       final String id,
       final CostStructure costs,
@@ -301,6 +303,45 @@ public class CaabApiClient {
         .retrieve()
         .bodyToMono(Void.class)
         .onErrorResume(e -> caabApiClientErrorHandler.handleSaveProceedingError(e, applicationId));
+  }
+
+  /**
+   * Deletes a proceeding from the CAAB API.
+   *
+   * @param proceedingId the ID of the proceeding to be deleted
+   * @param loginId the ID associated with the user login
+   * @return a Mono Void indicating the completion of the delete operation
+   * @throws RuntimeException if an error occurs during the delete operation
+   */
+  public Mono<Void> deleteProceeding(
+      final Integer proceedingId,
+      final String loginId) {
+    return caabApiWebClient
+        .delete()
+        .uri("/proceedings/{proceeding-id}",
+            proceedingId)
+        .header("Caab-User-Login-Id", loginId)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleUpdateProceedingError(e, proceedingId));
+  }
+
+  /**
+   * Retrieves the scope limitations associated with a specific proceeding id.
+   * This method communicates with the CAAB API client to fetch the scope limitations.
+   *
+   * @param proceedingId The id of the proceeding for which scope limitations should be retrieved.
+   * @return A {@code Mono<List<ScopeLimitation>>} containing the scope limitations.
+   * @throws RuntimeException if an error occurs during the retrieval operation
+   */
+  public Mono<List<ScopeLimitation>> getScopeLimitations(
+      final Integer proceedingId) {
+    return caabApiWebClient
+        .get()
+        .uri("/proceedings/{id}/scope-limitations", proceedingId)
+        .retrieve()
+        .bodyToMono(new ParameterizedTypeReference<List<ScopeLimitation>>() {})
+        .onErrorResume(caabApiClientErrorHandler::handleGetScopeLimitationError);
   }
 
   /**

@@ -30,8 +30,8 @@ import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
-import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
+import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
@@ -466,7 +466,7 @@ public class EbsApiClientTest {
         "/scope-limitations?scope-limitations=%s&category-of-law=%s&matter-type=%s"
             + "&proceeding-code=%s&level-of-service=%s&default-wording=%s"
             + "&stage=%s&cost-limitation=%s&emergency-cost-limitation=%s&non-standard-wording=%s"
-            + "&emergency-scope-default=%s&emergency=%s&default-code=%s&scope-default=%s",
+            + "&emergency-scope-default=%s&emergency=%s&default-code=%s&scope-default=%s&size=1000",
         scopeLimitationDetail.getScopeLimitations(),
         scopeLimitationDetail.getCategoryOfLaw(),
         scopeLimitationDetail.getMatterType(),

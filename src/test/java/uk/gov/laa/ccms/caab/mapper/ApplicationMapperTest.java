@@ -249,7 +249,7 @@ public class ApplicationMapperTest {
     assertEquals(soaCostLimitation.getCostLimitId(), result.getEbsId());
     assertEquals(soaCostLimitation.getCostCategory(), result.getCostCategory());
     assertFalse(result.getNewEntry());
-    assertTrue(result.getSubmitted()); // defaulted by caab-api model.
+    assertTrue(result.getSubmitted()); // Defaults to true in caab-api model
   }
 
   @Test

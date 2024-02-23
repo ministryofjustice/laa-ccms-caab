@@ -69,6 +69,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplication;
+import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
@@ -360,6 +361,8 @@ public class ApplicationService {
               applicationFormData.getCategoryOfLawId())
           .larScopeFlag(amendmentTypes)
           .status()
+          .costStructure()
+          .correspondenceAddress()
           .build();
     });
   }
@@ -457,6 +460,7 @@ public class ApplicationService {
   public Mono<ApplicationDetail> getApplication(final String id) {
     return caabApiClient.getApplication(id);
   }
+
 
   /**
    * Retrieves the application Summary display values.
@@ -1616,6 +1620,13 @@ public class ApplicationService {
     }
   }
 
+  /**
+   * Adds a proceeding associated to a specific application.
+   *
+   * @param applicationId the ID of the application to which the proceeding is added
+   * @param proceeding the proceeding to add
+   * @param user the user details initiating the action
+   */
   public void addProceeding(
       final String applicationId,
       final Proceeding proceeding,
@@ -1623,9 +1634,55 @@ public class ApplicationService {
     caabApiClient.addProceeding(applicationId, proceeding, user.getLoginId()).block();
   }
 
+  /**
+   * Updates a specified proceeding.
+   *
+   * @param proceeding the proceeding to update
+   * @param user the user details initiating the update
+   */
   public void updateProceeding(
       final Proceeding proceeding,
       final UserDetail user) {
     caabApiClient.updateProceeding(proceeding.getId(), proceeding, user.getLoginId()).block();
+  }
+
+  /**
+   * Deletes a specified proceeding.
+   *
+   * @param proceedingId the ID of the proceeding to delete
+   * @param user the user details initiating the deletion
+   */
+  public void deleteProceeding(
+      final Integer proceedingId,
+      final UserDetail user) {
+    caabApiClient.deleteProceeding(proceedingId, user.getLoginId()).block();
+  }
+
+  /**
+   * Retrieves scope limitations for a specified proceeding.
+   *
+   * @param proceedingId the ID of the proceeding
+   * @return List of scope limitations associated with the proceeding
+   */
+  public List<uk.gov.laa.ccms.caab.model.ScopeLimitation> getScopeLimitations(
+      final Integer proceedingId) {
+    return caabApiClient.getScopeLimitations(proceedingId).block();
+  }
+
+  /**
+   * Updates the cost structure for a specified application.
+   *
+   * @param applicationId the ID of the application to update
+   * @param costStructure the new cost structure details
+   * @param user the user details initiating the update
+   */
+  public void updateCostStructure(
+      final String applicationId,
+      final CostStructure costStructure,
+      final UserDetail user) {
+    caabApiClient.updateCostStructure(
+        applicationId,
+        costStructure,
+        user.getLoginId()).block();
   }
 }
