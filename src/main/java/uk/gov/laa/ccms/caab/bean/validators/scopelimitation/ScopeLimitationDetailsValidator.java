@@ -7,7 +7,7 @@ import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**
- * Validator the scope limitation details provided by scope limitation flow forms.
+ * Validates the scope limitation details provided by scope limitation flow forms.
  */
 @Component
 public class ScopeLimitationDetailsValidator extends AbstractValidator {
