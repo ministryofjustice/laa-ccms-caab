@@ -7,7 +7,7 @@ import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**
- * Validator the proceeding details provided by proceeding flow forms.
+ * Validates the proceeding details provided by proceeding flow forms.
  */
 @Component
 public class ProceedingTypeDetailsValidator extends AbstractValidator {

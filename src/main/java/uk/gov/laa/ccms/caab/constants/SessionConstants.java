@@ -150,8 +150,9 @@ public class SessionConstants {
    */
   public static final String SCOPE_LIMITATION_FLOW_FORM_DATA = "scopeLimitationFlow";
 
-
-
+  /**
+   * Session attribute used to keep track of the current scope limitation and its modifications.
+   */
   public static final String CURRENT_SCOPE_LIMITATION = "scopeLimitation";
 
   /**

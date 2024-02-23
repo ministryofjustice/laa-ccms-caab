@@ -8,7 +8,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a href="/application/proceedings-and-costs" class="govuk-back-link">Cancel and return to Proceedings and costs</a>
+    <a href="/application/proceedings-and-costs" class="govuk-back-link">Cancel and return to proceedings and costs</a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/application/proceedings/{action}/confirm(action=${proceedingFlow.action})}" method="post">
@@ -78,8 +78,7 @@
           </td>
           <td class="govuk-table__cell" th:text="${scopeLimitation.scopeLimitationWording}"></td>
           <td class="govuk-table__cell">
-            <a th:if="${scopeLimitations.size()} == 1 "></a>
-            <th:block th:unless="${scopeLimitations.size()} == 1 ">
+            <th:block th:if="${scopeLimitations.size()} > 1 ">
               <a th:if="${proceedingFlow.action} == 'add'" th:href="@{/application/proceedings/scope-limitations/{scopeLimitationId}/remove(scopeLimitationId=${rowStat.index})}"
                  class="govuk-link">Remove</a>
               <a th:if="${proceedingFlow.action} == 'edit'" th:href="@{/application/proceedings/scope-limitations/{scopeLimitationId}/remove(scopeLimitationId=${scopeLimitation.id})}"
