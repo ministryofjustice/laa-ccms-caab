@@ -17,6 +17,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ApplicationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.AssessmentScreen;
 import uk.gov.laa.ccms.soa.gateway.model.Award;
 import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
+import uk.gov.laa.ccms.soa.gateway.model.BaseContact;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDoc;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
@@ -40,6 +41,7 @@ import uk.gov.laa.ccms.soa.gateway.model.OpaAttribute;
 import uk.gov.laa.ccms.soa.gateway.model.OpaEntity;
 import uk.gov.laa.ccms.soa.gateway.model.OpaGoal;
 import uk.gov.laa.ccms.soa.gateway.model.OpaInstance;
+import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OtherAsset;
 import uk.gov.laa.ccms.soa.gateway.model.OtherParty;
 import uk.gov.laa.ccms.soa.gateway.model.OtherPartyOrganisation;
@@ -59,6 +61,7 @@ import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.Valuation;
 
 public class SoaModelUtils {
+
   public static uk.gov.laa.ccms.soa.gateway.model.PriorAuthority buildPriorAuthority() {
     return new uk.gov.laa.ccms.soa.gateway.model.PriorAuthority()
         .assessedAmount(BigDecimal.TEN)
@@ -187,7 +190,7 @@ public class SoaModelUtils {
     return new ScopeLimitation()
         .delegatedFunctionsApply(Boolean.TRUE)
         .scopeLimitation(prefix + "scopelim")
-        .scopeLimitationId(prefix +"scopelimid")
+        .scopeLimitationId(prefix + "scopelimid")
         .scopeLimitationWording(prefix + "slwording");
   }
 
@@ -598,5 +601,26 @@ public class SoaModelUtils {
         .client(buildBaseClient())
         .feeEarnerName("feeearner")
         .providerCaseReferenceNumber("prov");
+  }
+
+  public static BaseContact buildBaseContact() {
+    return new BaseContact()
+        .emailAddress("emailaddr")
+        .fax("123")
+        .mobileNumber("456")
+        .telephoneHome("789")
+        .telephoneWork("012");
+  }
+
+  public static OrganisationDetail buildOrganisationDetail(String prefix) {
+    return new OrganisationDetail()
+        .address(buildAddressDetail(prefix))
+        .contactDetails(buildBaseContact())
+        .contactName("thecontactname")
+        .currentlyTrading(Boolean.TRUE)
+        .name("thename")
+        .otherInformation("otherinf")
+        .partyId("123")
+        .type("thetype");
   }
 }

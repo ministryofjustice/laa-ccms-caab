@@ -65,6 +65,7 @@ import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.OpponentFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
@@ -75,6 +76,7 @@ import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.OpponentMapper;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
@@ -160,6 +162,9 @@ class ApplicationServiceTest {
 
   @Mock
   private CopyApplicationMapper copyApplicationMapper;
+
+  @Mock
+  private OpponentMapper opponentMapper;
 
   @Mock
   private SearchConstants searchConstants;
@@ -2168,6 +2173,27 @@ class ApplicationServiceTest {
     CostStructure capturedCosts = costsCaptor.getValue();
     assertNotNull(capturedCosts.getRequestedCostLimitation());
     assertEquals(0, capturedCosts.getRequestedCostLimitation().compareTo(new BigDecimal("1500.00")));
+  }
+
+  @Test
+  void testAddOpponent() {
+    String appplicationId = "12345";
+    UserDetail user = new UserDetail().loginId("userLoginId");
+    ApplicationDetail application = getApplicationDetail();
+
+    OpponentFormData opponentFormData = new OpponentFormData();
+    Opponent opponent = new Opponent();
+
+    when(opponentMapper.toOpponent(opponentFormData)).thenReturn(opponent);
+    when(caabApiClient.getApplication(appplicationId)).thenReturn(Mono.just(application));
+    when(caabApiClient.addOpponent(appplicationId, opponent, user.getLoginId())).thenReturn(Mono.empty());
+
+    applicationService.addOpponent(appplicationId, opponentFormData, user);
+
+    verify(caabApiClient).addOpponent(appplicationId, opponent, user.getLoginId());
+
+    assertEquals(application.getAppMode(), opponent.getAppMode());
+    assertEquals(application.getAmendment(), opponent.getAmendment());
   }
 
   private static ApplicationDetail getApplicationDetail() {

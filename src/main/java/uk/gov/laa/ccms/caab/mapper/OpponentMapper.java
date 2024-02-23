@@ -23,7 +23,7 @@ public interface OpponentMapper {
   @Mapping(target = "country", source = "organisation.address.country")
   @Mapping(target = "postcode", source = "organisation.address.postalCode")
   @Mapping(target = "organisationName", source = "organisation.name")
-  @Mapping(target = "organisationType", source = "orgTypeLookup.code")
+  @Mapping(target = "organisationType", source = "organisation.type")
   @Mapping(target = "organisationTypeDisplayValue", source = "orgTypeLookup.description")
   @Mapping(target = "contactNameRole", source = "organisation.contactName")
   @Mapping(target = "telephoneHome", source = "organisation.contactDetails.telephoneHome")

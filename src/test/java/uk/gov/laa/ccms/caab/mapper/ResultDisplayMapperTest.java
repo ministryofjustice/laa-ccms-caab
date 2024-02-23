@@ -2,8 +2,8 @@ package uk.gov.laa.ccms.caab.mapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,12 +13,15 @@ import uk.gov.laa.ccms.caab.model.ClientResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ClientResultsDisplay;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.OrganisationResultRowDisplay;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
-import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientSummary;
+import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
+import uk.gov.laa.ccms.soa.gateway.model.OrganisationSummary;
 
 @ExtendWith(SpringExtension.class)
 class ResultDisplayMapperTest {
@@ -120,6 +123,56 @@ class ResultDisplayMapperTest {
     assertEquals("Family Law", result.getCategoryOfLaw());
     assertEquals("John Doe", result.getFeeEarner());
     assertEquals("Active", result.getStatus());
+  }
+
+  @Test
+  void testToOrganisationResultRowDisplay() {
+    OrganisationSummary organisationSummary = new OrganisationSummary()
+        .city("thecity")
+        .name("thename")
+        .partyId("123")
+        .postcode("postcode")
+        .type("thetype");
+
+    List<CommonLookupValueDetail> orgTypesLookup = List.of(
+        new CommonLookupValueDetail()
+            .code(organisationSummary.getType())
+            .description("the description"));
+
+    final OrganisationResultRowDisplay result = mapper.toOrganisationResultRowDisplay(
+        organisationSummary, orgTypesLookup);
+
+    assertEquals(organisationSummary.getName(), result.getName());
+    assertEquals(organisationSummary.getType(), result.getType());
+    assertEquals(orgTypesLookup.get(0).getDescription(), result.getTypeDisplayValue());
+    assertEquals(organisationSummary.getPartyId(), result.getPartyId());
+    assertEquals(organisationSummary.getPostcode(), result.getPostcode());
+    assertEquals(organisationSummary.getCity(), result.getCity());
+  }
+
+  @Test
+  void testToOrganisationResultRowDisplay_noTypeMatchReturnsCode() {
+    OrganisationSummary organisationSummary = new OrganisationSummary()
+        .city("thecity")
+        .name("thename")
+        .partyId("123")
+        .postcode("postcode")
+        .type("thetype");
+
+    List<CommonLookupValueDetail> orgTypesLookup = List.of(
+        new CommonLookupValueDetail()
+            .code("wrong type")
+            .description("the description"));
+
+    final OrganisationResultRowDisplay result = mapper.toOrganisationResultRowDisplay(
+        organisationSummary, orgTypesLookup);
+
+    assertEquals(organisationSummary.getName(), result.getName());
+    assertEquals(organisationSummary.getType(), result.getType());
+    assertEquals(organisationSummary.getType(), result.getTypeDisplayValue());
+    assertEquals(organisationSummary.getPartyId(), result.getPartyId());
+    assertEquals(organisationSummary.getPostcode(), result.getPostcode());
+    assertEquals(organisationSummary.getCity(), result.getCity());
   }
 
 }
