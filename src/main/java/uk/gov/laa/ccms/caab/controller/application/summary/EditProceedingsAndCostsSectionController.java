@@ -34,12 +34,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataFurtherDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails;
+import uk.gov.laa.ccms.caab.bean.validators.costs.CostDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
@@ -48,6 +50,7 @@ import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.PriorAuthority;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ScopeLimitation;
@@ -86,18 +89,18 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @SuppressWarnings("unchecked")
 public class EditProceedingsAndCostsSectionController {
 
+  //services
   private final ApplicationService applicationService;
-
   private final LookupService lookupService;
 
+  //validators
   private final ProceedingMatterTypeDetailsValidator matterTypeValidator;
-
   private final ProceedingDetailsValidator proceedingTypeValidator;
-
   private final ProceedingFurtherDetailsValidator furtherDetailsValidator;
-
   private final ScopeLimitationDetailsValidator scopeLimitationDetailsValidator;
+  private final CostDetailsValidator costDetailsValidator;
 
+  //mappers
   private final ProceedingAndCostsMapper proceedingAndCostsMapper;
 
   private static final String ACTION_EDIT = "edit";
@@ -1203,6 +1206,69 @@ public class EditProceedingsAndCostsSectionController {
 
     return String.format("redirect:/application/proceedings/%s/confirm",
         proceedingFlow.getAction());
+  }
+
+  /**
+   * Displays the case costs page with cost details for the specified application.
+   *
+   * @param application the application details from the session
+   * @param costs the cost structure details from the session
+   * @param model the model for adding attributes to the view
+   * @return the view name to render
+   */
+  @GetMapping("/application/case-costs")
+  public String caseCosts(
+      @SessionAttribute(APPLICATION) final ApplicationDetail application,
+      @SessionAttribute(APPLICATION_COSTS) final CostStructure costs,
+      final Model model) {
+
+    final CostsFormData costsFormData =
+        proceedingAndCostsMapper.toCostsFormData(costs.getRequestedCostLimitation());
+
+    model.addAttribute("costDetails", costsFormData);
+    model.addAttribute(APPLICATION_COSTS, costs);
+    model.addAttribute(APPLICATION, application);
+
+    return "application/case-costs";
+  }
+
+  /**
+   * Handles the submission of case costs form, updating costs for the specified application.
+   *
+   * @param applicationId the application ID from the session
+   * @param application the application details from the session
+   * @param costs the cost structure details from the session
+   * @param user the user details from the session
+   * @param costsFormData the submitted form data for costs
+   * @param model the model for adding attributes to the view
+   * @param bindingResult the result of form validation
+   * @return the view name to redirect to after processing
+   */
+  @PostMapping("/application/case-costs")
+  public String caseCostsPost(
+      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @SessionAttribute(APPLICATION) final ApplicationDetail application,
+      @SessionAttribute(APPLICATION_COSTS) final CostStructure costs,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @ModelAttribute("costDetails") final CostsFormData costsFormData,
+      final Model model,
+      final BindingResult bindingResult) {
+
+    //validate amounts
+    costDetailsValidator.validate(costsFormData, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      model.addAttribute("costDetails", costsFormData);
+      model.addAttribute(APPLICATION_COSTS, costs);
+      model.addAttribute(APPLICATION, application);
+      return "application/case-costs";
+    }
+
+    proceedingAndCostsMapper.toCostStructure(costs, costsFormData);
+
+    applicationService.updateCostStructure(applicationId, costs, user);
+
+    return "redirect:/application/proceedings-and-costs#costs";
   }
 
 }

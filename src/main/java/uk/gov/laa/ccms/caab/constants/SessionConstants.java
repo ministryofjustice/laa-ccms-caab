@@ -31,6 +31,7 @@ public class SessionConstants {
    */
   public static final String CASE_SEARCH_RESULTS = "caseSearchResults";
 
+
   /**
    * Session attribute used to keep track of client search criteria during the creation of a new
    * application.
@@ -148,7 +149,6 @@ public class SessionConstants {
    * modification of a scope limitation.
    */
   public static final String SCOPE_LIMITATION_FLOW_FORM_DATA = "scopeLimitationFlow";
-
 
   /**
    * Session attribute used to keep track of the current scope limitation and its modifications.

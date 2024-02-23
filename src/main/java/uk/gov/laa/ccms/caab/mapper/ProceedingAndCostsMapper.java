@@ -5,8 +5,10 @@ import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
+import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ScopeLimitation;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
@@ -169,5 +171,17 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "scopeLimitationDetails.scopeLimitation", source = "scopeLimitation.id")
   @Mapping(target = "scopeLimitationIndex", ignore = true)
   ScopeLimitationFlowFormData toScopeLimitationFlow(ScopeLimitation scopeLimitation);
+
+  @Mapping(target = "requestedCostLimitation", source = "costLimitation")
+  CostsFormData toCostsFormData(BigDecimal costLimitation);
+
+  @Mapping(target = "defaultCostLimitation", ignore = true)
+  @Mapping(target = "grantedCostLimitation", ignore = true)
+  @Mapping(target = "costEntries", ignore = true)
+  @Mapping(target = "currentProviderBilledAmount", ignore = true)
+  @Mapping(target = "auditTrail", ignore = true)
+  void toCostStructure(
+      @MappingTarget CostStructure costStructure,
+      CostsFormData costsFormData);
 
 }
