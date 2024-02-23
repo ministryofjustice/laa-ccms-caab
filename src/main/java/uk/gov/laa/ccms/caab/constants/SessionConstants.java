@@ -144,6 +144,18 @@ public class SessionConstants {
   public static final String PROCEEDING_SCOPE_LIMITATIONS = "scopeLimitations";
 
   /**
+   * Session attribute used to keep track of the scope limitation flow data during the creation or
+   * modification of a scope limitation.
+   */
+  public static final String SCOPE_LIMITATION_FLOW_FORM_DATA = "scopeLimitationFlow";
+
+
+  /**
+   * Session attribute used to keep track of the current scope limitation and its modifications.
+   */
+  public static final String CURRENT_SCOPE_LIMITATION = "scopeLimitation";
+
+  /**
    * Session attribute used to keep track of the prior authorities associated with the application.
    */
   public static final String APPLICATION_PRIOR_AUTHORITIES = "priorAuthorities";

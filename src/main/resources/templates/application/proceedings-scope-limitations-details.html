@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+  <title>LAA CCMS - Create application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/application/proceedings/{action}/confirm(action=${proceedingFlow.action})}" class="govuk-back-link">Cancel and return to proceeding details</a>
+  </div>
+  <div id="main-content">
+    <form action="#" th:action="@{/application/proceedings/scope-limitations/{action}/details(action=${scopeLimitationFlow.action})}" th:object="${scopeLimitationDetails}" method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <span class="govuk-caption-l">Add scope limitation</span>
+      <h1 class="govuk-heading-l">
+        Scope limitation details
+      </h1>
+      <p class="govuk-body-l">
+        Please select the scope limitation.
+      </p>
+      <div th:replace="~{partials/forms :: dropdown('scopeLimitation', 'Scope Limitation', ${scopeLimitationTypes}, 'scopeLimitations', 'description', false)}"></div>
+      <div class="govuk-button-group">
+        <button type="submit" class="govuk-button" data-module="govuk-button">
+          Next
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

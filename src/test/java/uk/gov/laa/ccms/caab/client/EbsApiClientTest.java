@@ -466,7 +466,7 @@ public class EbsApiClientTest {
         "/scope-limitations?scope-limitations=%s&category-of-law=%s&matter-type=%s"
             + "&proceeding-code=%s&level-of-service=%s&default-wording=%s"
             + "&stage=%s&cost-limitation=%s&emergency-cost-limitation=%s&non-standard-wording=%s"
-            + "&emergency-scope-default=%s&emergency=%s&default-code=%s&scope-default=%s",
+            + "&emergency-scope-default=%s&emergency=%s&default-code=%s&scope-default=%s&size=1000",
         scopeLimitationDetail.getScopeLimitations(),
         scopeLimitationDetail.getCategoryOfLaw(),
         scopeLimitationDetail.getMatterType(),

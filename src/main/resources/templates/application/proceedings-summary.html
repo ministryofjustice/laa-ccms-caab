@@ -35,6 +35,7 @@
         <dl class="govuk-summary-list">
           <div th:replace="~{this :: summaryListDisplay('Matter type', ${proceeding.matterType.displayValue})}"></div>
           <div th:replace="~{this :: summaryListDisplay('Proceeding', ${proceeding.proceedingType.displayValue})}"></div>
+          <div th:replace="~{this :: summaryListDisplay('Proceeding description', ${proceeding.description})}"></div>
           <div th:replace="~{this :: summaryListDisplay('Client involvement type', ${proceeding.clientInvolvement.displayValue})}"></div>
           <div th:replace="~{this :: summaryListDisplay('Form of civil legal service', ${proceeding.levelOfService.displayValue})}"></div>
           <th:block th:if="${proceeding.typeOfOrder.id}">
@@ -55,8 +56,10 @@
         </ul>
       </div>
       <div class="govuk-summary-card__content">
-        <dl class="govuk-summary-list" th:each="scopeLimitation : ${proceeding.scopeLimitations}" th:unless="${proceeding.scopeLimitations.isEmpty()}">
-          <div th:replace="~{this :: summaryListDisplay(${scopeLimitation.scopeLimitation.displayValue}, ${scopeLimitation.scopeLimitationWording})}"></div>
+        <dl class="govuk-summary-list">
+          <th:block th:each="scopeLimitation : ${proceeding.scopeLimitations}" th:unless="${proceeding.scopeLimitations.isEmpty()}">
+            <div th:replace="~{this :: summaryListDisplay(${scopeLimitation.scopeLimitation.displayValue}, ${scopeLimitation.scopeLimitationWording})}"></div>
+          </th:block>
         </dl>
       </div>
     </div>
