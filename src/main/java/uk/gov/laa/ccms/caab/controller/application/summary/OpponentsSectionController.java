@@ -50,7 +50,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
     ORGANISATION_SEARCH_CRITERIA,
     ORGANISATION_SEARCH_RESULTS,
     CURRENT_OPPONENT})
-public class EditOpponentsSectionController {
+public class OpponentsSectionController {
 
   private final ApplicationService applicationService;
 
@@ -104,14 +104,14 @@ public class EditOpponentsSectionController {
    * @param model The Model object to add attributes to for the view.
    * @return The name of the view to be rendered.
    */
-  @GetMapping("/application/summary/opponents/organisation/search")
+  @GetMapping("/application/opponents/organisation/search")
   public String organisationSearch(
       @ModelAttribute(ORGANISATION_SEARCH_CRITERIA) final OrganisationSearchCriteria searchCriteria,
       final Model model) {
 
     populateOrganisationSearchDropdowns(model);
 
-    return "application/summary/opponents-organisation-search";
+    return "application/opponents/opponents-organisation-search";
   }
 
   /**
@@ -122,7 +122,7 @@ public class EditOpponentsSectionController {
    * @param model          The model used to pass data to the view.
    * @return Either redirects to the search results or reloads the form with validation errors.
    */
-  @PostMapping("/application/summary/opponents/organisation/search")
+  @PostMapping("/application/opponents/organisation/search")
   public String organisationSearch(
       @ModelAttribute(ORGANISATION_SEARCH_CRITERIA) OrganisationSearchCriteria searchCriteria,
       BindingResult bindingResult,
@@ -132,10 +132,10 @@ public class EditOpponentsSectionController {
 
     if (bindingResult.hasErrors()) {
       populateOrganisationSearchDropdowns(model);
-      return "application/summary/opponents-organisation-search";
+      return "application/opponents/opponents-organisation-search";
     }
 
-    return "redirect:/application/summary/opponents/organisation/search/results";
+    return "redirect:/application/opponents/organisation/search/results";
   }
 
   /**
@@ -149,7 +149,7 @@ public class EditOpponentsSectionController {
    * @param model               Model to pass data to the view.
    * @return The view name for organisation search results or the appropriate error view.
    */
-  @GetMapping("/application/summary/opponents/organisation/search/results")
+  @GetMapping("/application/opponents/organisation/search/results")
   public String organisationSearchResults(
       @ModelAttribute(ORGANISATION_SEARCH_CRITERIA) OrganisationSearchCriteria searchCriteria,
       @SessionAttribute(USER_DETAILS) UserDetail user,
@@ -167,10 +167,10 @@ public class EditOpponentsSectionController {
           size);
 
       if (organisationResults.getContent().isEmpty()) {
-        return "application/summary/opponents-organisation-search-no-results";
+        return "application/opponents/opponents-organisation-search-no-results";
       }
     } catch (TooManyResultsException e) {
-      return "application/summary/opponents-organisation-search-too-many-results";
+      return "application/opponents/opponents-organisation-search-too-many-results";
     }
 
     String currentUrl = request.getRequestURL().toString();
@@ -178,7 +178,7 @@ public class EditOpponentsSectionController {
 
     model.addAttribute(ORGANISATION_SEARCH_RESULTS, organisationResults);
 
-    return "application/summary/opponents-organisation-search-results";
+    return "application/opponents/opponents-organisation-search-results";
   }
 
   /**
@@ -189,7 +189,7 @@ public class EditOpponentsSectionController {
    * @param orgSearchResults Search results containing copy cases.
    * @return The view name for shared organisation confirmation screen.
    */
-  @GetMapping("/application/summary/opponents/organisation/{id}/select")
+  @GetMapping("/application/opponents/organisation/{id}/select")
   public String selectSharedOrganisation(
       @PathVariable("id") String organisationId,
       @SessionAttribute(ORGANISATION_SEARCH_RESULTS)
@@ -217,7 +217,7 @@ public class EditOpponentsSectionController {
 
     populateConfirmSharedOrganisationDropdowns(model);
 
-    return "application/summary/opponents-organisation-shared-confirm";
+    return "application/opponents/opponents-organisation-shared-confirm";
   }
 
   /**
@@ -230,7 +230,7 @@ public class EditOpponentsSectionController {
    * @param model - the model.
    * @return The view name for shared organisation confirmation screen.
    */
-  @PostMapping("/application/summary/opponents/organisation/confirm")
+  @PostMapping("/application/opponents/organisation/confirm")
   public String confirmSharedOrganisation(
       @ModelAttribute(CURRENT_OPPONENT) OpponentFormData opponentFormData,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
@@ -243,7 +243,7 @@ public class EditOpponentsSectionController {
 
     if (bindingResult.hasErrors()) {
       populateConfirmSharedOrganisationDropdowns(model);
-      return "application/summary/opponents-organisation-shared-confirm";
+      return "application/opponents/opponents-organisation-shared-confirm";
     }
 
     // Call the service to add the opponent to the application.
@@ -265,7 +265,7 @@ public class EditOpponentsSectionController {
   private void populateConfirmSharedOrganisationDropdowns(final Model model) {
     Tuple2<RelationshipToCaseLookupDetail, CommonLookupDetail> combinedLookup =
         Optional.ofNullable(Mono.zip(
-            lookupService.getPersonToCaseRelationships(),
+            lookupService.getOrganisationToCaseRelationships(),
             lookupService.getRelationshipsToClient()).block())
             .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
 

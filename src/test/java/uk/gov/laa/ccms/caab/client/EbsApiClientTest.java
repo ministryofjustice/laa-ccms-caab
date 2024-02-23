@@ -243,7 +243,7 @@ public class EbsApiClientTest {
         .thenReturn(Mono.just(relationshipToCaseLookupDetail));
 
     Mono<RelationshipToCaseLookupDetail> relationshipToCaseLookupDetailMono =
-        ebsApiClient.getOrganisationRelationshipsToCaseValues(null, null);
+        ebsApiClient.getOrganisationToCaseRelationshipValues(null, null);
 
     StepVerifier.create(relationshipToCaseLookupDetailMono)
         .expectNext(relationshipToCaseLookupDetail)

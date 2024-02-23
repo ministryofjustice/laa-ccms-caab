@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a href="/application/summary/opponents/organisation/search" class="govuk-back-link">Return to organisation search</a>
+        <a href="/application/opponents/organisation/search" class="govuk-back-link">Return to organisation search</a>
     </div>
     <div id="main-content">
         <span class="govuk-caption-l">Search for an organisation</span>
@@ -37,7 +37,7 @@
                     <td class="govuk-table__cell" th:text="${org.city}"></td>
                     <td class="govuk-table__cell" th:text="${org.postcode}"></td>
                     <td class="govuk-table__cell">
-                        <a th:href="@{/application/summary/opponents/organisation/{id}/select(id=${org.partyId})}" class="govuk-link">Use this record</a>
+                        <a th:href="@{/application/opponents/organisation/{id}/select(id=${org.partyId})}" class="govuk-link">Use this record</a>
                     </td>
                 </tr>
             </tbody>

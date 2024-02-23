@@ -34,7 +34,7 @@
       <tbody class="govuk-table__body">
         <tr class="govuk-table__row" th:each="opponent : ${opponents.content}" th:unless="${opponents.content.isEmpty()}">
           <td class="govuk-table__cell" th:if="${opponent.editable}">
-            <a th:href="@{/application/summary/opponents/{id}/edit(id=${opponent.id})}"
+            <a th:href="@{/application/opponents/{id}/edit(id=${opponent.id})}"
                class="govuk-link"
                th:text="${opponent.partyName}"></a>
           </td>
@@ -43,7 +43,7 @@
           <td class="govuk-table__cell" th:text="${opponent.relationshipToCase}"></td>
           <td class="govuk-table__cell" th:text="${opponent.relationshipToClient}"></td>
           <td class="govuk-table__cell" th:if="${opponent.deletable}">
-            <a th:href="@{/application/summary/opponents/{id}/remove(id=${opponent.id})}"
+            <a th:href="@{/application/opponents/{id}/remove(id=${opponent.id})}"
                class="govuk-link"
                th:text="Remove"></a>
           </td>
@@ -55,7 +55,7 @@
     </table>
     <a class="govuk-button govuk-button--secondary"
        data-module="govuk-button"
-       href="/application/summary/opponents/organisation/search">
+       href="/application/opponents/organisation/search">
       Add organisation
     </a>
     <a class="govuk-button govuk-button--secondary"

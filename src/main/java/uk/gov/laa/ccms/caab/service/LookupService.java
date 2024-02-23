@@ -573,7 +573,7 @@ public class LookupService {
    * @return Mono containing all relationship lookup values or null if an error occurs.
    */
   public Mono<RelationshipToCaseLookupDetail> getOrganisationToCaseRelationships() {
-    return ebsApiClient.getOrganisationRelationshipsToCaseValues(null, null);
+    return ebsApiClient.getOrganisationToCaseRelationshipValues(null, null);
   }
 
   /**
