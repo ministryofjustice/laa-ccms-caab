@@ -14,7 +14,7 @@ public class ValidationPatternConstants {
   public static final String NUMERIC_PATTERN = "[0-9]+";
 
   /**
-   * Validation pattern to check for numerical values.
+   * Validation pattern to check for currency values.
    */
   public static final String CURRENCY_PATTERN = "[0-9]+(.[0-9]{1,2})?";
 

@@ -1,16 +1,13 @@
 package uk.gov.laa.ccms.caab.bean.validators.costs;
 
-import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NUMERIC_PATTERN;
-
 import java.math.BigDecimal;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
-import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**
- * Validator the cost details form.
+ * Validates the cost details form.
  */
 @Component
 public class CostDetailsValidator extends AbstractValidator {
@@ -45,14 +42,15 @@ public class CostDetailsValidator extends AbstractValidator {
         String.valueOf(costDetails.getRequestedCostLimitation()),
         "Requested cost limitation", errors);
 
-    validateCurrencyField("requestedCostLimitation",
-        String.valueOf(costDetails.getRequestedCostLimitation()),
-        "Requested cost limitation", errors);
+    if (costDetails.getRequestedCostLimitation() != null) {
+      validateCurrencyField("requestedCostLimitation",
+          costDetails.getRequestedCostLimitation(),
+          "Requested cost limitation", errors);
 
-    if (costDetails.getRequestedCostLimitation() != null
-        && costDetails.getRequestedCostLimitation().compareTo(MAX_COST_LIMIT) >= 0) {
-      errors.rejectValue("requestedCostLimitation", "invalid.numeric",
-          "Requested cost limitation must be less than 100,000,000.00");
+
+
+      validateNumericLimit("requestedCostLimitation", costDetails.getRequestedCostLimitation(),
+          "Requested cost limitation", MAX_COST_LIMIT, errors);
     }
 
   }

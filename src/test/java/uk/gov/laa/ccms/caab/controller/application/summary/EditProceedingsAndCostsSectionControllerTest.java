@@ -1091,7 +1091,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
 
         final CostsFormData costsFormData = new CostsFormData();
-        costsFormData.setRequestedCostLimitation(costs.getRequestedCostLimitation());
+        costsFormData.setRequestedCostLimitation(String.valueOf(costs.getRequestedCostLimitation()));
 
         when(proceedingAndCostsMapper.toCostsFormData(any(BigDecimal.class)))
             .thenReturn(costsFormData);
