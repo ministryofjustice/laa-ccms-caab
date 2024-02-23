@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+  <title>LAA CCMS - Create application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/application/proceedings/{action}/confirm(action=${proceedingFlow.action})}" class="govuk-back-link">Cancel and return to proceeding details</a>
+  </div>
+  <div id="main-content">
+    <form th:action="@{/application/proceedings/scope-limitations/confirm}" method="post">
+      <span class="govuk-caption-l">Add scope limitation</span>
+      <h1 class="govuk-heading-l">
+        Scope limitation details
+      </h1>
+      <p class="govuk-body-l">
+        Please review the scope limitation wording and click 'Confirm' to continue.
+      </p>
+<!--      TODO replace with summary list fragment once Pozza has implemented it-->
+      <dl class="govuk-body">
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">
+            Scope limitation
+          </dt>
+          <dd class="govuk-summary-list__value"  th:text="${scopeLimitation.scopeLimitation.displayValue}">
+          </dd>
+        </div>
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">
+            Scope limitation wording
+          </dt>
+          <dd class="govuk-summary-list__value" th:text="${scopeLimitation.scopeLimitationWording}">
+          </dd>
+        </div>
+      </dl>
+      <div class="govuk-button-group">
+        <button type="submit" class="govuk-button" data-module="govuk-button">
+          Confirm
+        </button>
+        <a class="govuk-button govuk-button--secondary"
+           data-module="govuk-button"
+           th:href="@{/application/proceedings/scope-limitations/{action}/details(action=${scopeLimitationFlow.action})}">
+          Back
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

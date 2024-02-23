@@ -64,7 +64,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes({CASE_SEARCH_CRITERIA})
+@SessionAttributes({CASE_SEARCH_CRITERIA, CASE_SEARCH_RESULTS})
 public class EditGeneralDetailsSectionController {
 
   //services

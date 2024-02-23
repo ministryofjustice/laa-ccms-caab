@@ -199,7 +199,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
         .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(criteria.getUserType()))
         .willReturn(okJson(notificationsJson)));
     Mono<Notifications> notificationsMono =
-        soaApiClient.getNotifications(criteria,page, size);
+        soaApiClient.getNotifications(criteria, page, size);
     Notifications response = notificationsMono.block();
     assertEquals(notifications, response);
   }

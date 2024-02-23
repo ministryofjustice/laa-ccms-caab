@@ -419,6 +419,7 @@ public class EbsApiClient {
                 Optional.ofNullable(scopeLimitationDetail.getDefaultCode()))
             .queryParamIfPresent("scope-default",
                 Optional.ofNullable(scopeLimitationDetail.getScopeDefault()))
+            .queryParam("size", 1000)
             .build())
         .retrieve()
         .bodyToMono(ScopeLimitationDetails.class)

@@ -73,13 +73,9 @@
             <th:block th:unless="${proceeding.leadProceedingInd}">
               <td class="govuk-table__cell"></td>
               <td class="govuk-table__cell">
-                <a th:href="@{/application/proceedings/{id}/remove(id=${proceeding.id})}" class="govuk-link">
-                  Delete
-                </a>
-                |
-                <a th:href="@{/application/proceedings/{id}/make-lead(id=${proceeding.id})}" class="govuk-link">
-                  Make lead
-                </a>
+                <a th:href="@{/application/proceedings/{id}/remove(id=${proceeding.id})}" class="govuk-link">Delete</a>
+                 |
+                <a th:href="@{/application/proceedings/{id}/make-lead(id=${proceeding.id})}" class="govuk-link">Make lead</a>
               </td>
             </th:block>
           </tr>
@@ -107,7 +103,7 @@
           <tbody class="govuk-table__body">
           <tr class="govuk-table__row">
             <td class="govuk-table__cell">
-              <a th:href="@{/application/costs/confirm}" class="govuk-link">
+              <a th:href="@{/application/case-costs}" class="govuk-link">
                 Case cost limitation
               </a>
             </td>
