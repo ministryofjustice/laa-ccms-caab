@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>LAA CCMS - Search for an organisation</title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a href="/application/opponents/organisation/search" class="govuk-back-link">Return to organisation search</a>
+    </div>
+    <div id="main-content">
+        <span class="govuk-caption-l">Search for an organisation</span>
+        <h1 class="govuk-heading-l">
+            Organisation search - no results
+        </h1>
+        <p class="govuk-body-l">
+            Please return to amend your search criteria and try again or create a new organisation by clicking the 'Create
+            new organisation' button.
+        </p>
+        <a class="govuk-button govuk-button--secondary"
+           data-module="govuk-button"
+           href="/application/opponents/organisation/create">
+            Create new organisation
+        </a>
+    </div>
+</div>
+</body>
+</html>
