@@ -14,7 +14,7 @@
             Opponents and other parties - search results
         </h1>
         <p class="govuk-body-l">
-            Your search has returned <span th:text="${orgResultsPage.totalElements}"></span> results.
+            Your search has returned <span th:text="${organisationSearchResults.totalElements}"></span> results.
         </p>
         <p class="govuk-body-l">
             To use an Organisation displayed in the results table, click "Use this Record" for the relevant Organisation.
@@ -31,7 +31,7 @@
                 </tr>
             </thead>
             <tbody class="govuk-table__body">
-                <tr class="govuk-table__row" th:each="org , rowStat : ${orgResultsPage.content}">
+                <tr class="govuk-table__row" th:each="org , rowStat : ${organisationSearchResults.content}">
                     <td class="govuk-table__cell" th:text="${org.name}"></td>
                     <td class="govuk-table__cell" th:text="${org.typeDisplayValue}"></td>
                     <td class="govuk-table__cell" th:text="${org.city}"></td>
@@ -42,7 +42,7 @@
                 </tr>
             </tbody>
         </table>
-        <nav th:replace="~{partials/pagination :: pagination(page=${orgResultsPage})}"></nav>
+        <nav th:replace="~{partials/pagination :: pagination(page=${organisationSearchResults})}"></nav>
         <a class="govuk-button govuk-button--secondary"
            data-module="govuk-button"
            href="/application/opponents/organisation/create">

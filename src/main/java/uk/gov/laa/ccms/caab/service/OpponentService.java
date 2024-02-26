@@ -40,7 +40,7 @@ public class OpponentService {
   /**
    * Searches and retrieves organisation details based on provided search criteria.
    *
-   * @param orgSearchCriteria     The search criteria to use when fetching organisations.
+   * @param searchCriteria        The search criteria to use when fetching organisations.
    * @param loginId               The login identifier for the user.
    * @param userType              Type of the user (e.g., admin, user).
    * @param page                  The page number for pagination.
@@ -48,16 +48,16 @@ public class OpponentService {
    * @return A Mono wrapping the OrganisationDetails.
    */
   public ResultsDisplay<OrganisationResultRowDisplay> getOrganisations(
-      final OrganisationSearchCriteria orgSearchCriteria,
+      final OrganisationSearchCriteria searchCriteria,
       final String loginId,
       final String userType,
       final Integer page,
       final Integer size) {
-    log.debug("SOA Organisations to get using criteria: {}", orgSearchCriteria);
+    log.debug("SOA Organisations to get using criteria: {}", searchCriteria);
 
     OrganisationDetails organisationDetails =
         Optional.ofNullable(soaApiClient.getOrganisations(
-                orgSearchCriteria,
+                searchCriteria,
                 loginId,
                 userType,
                 page,

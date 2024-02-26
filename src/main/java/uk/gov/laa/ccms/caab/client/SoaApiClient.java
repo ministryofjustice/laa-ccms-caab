@@ -385,7 +385,7 @@ public class SoaApiClient {
   /**
    * Searches and retrieves organisation details based on provided search criteria.
    *
-   * @param orgSearchCriteria      The search criteria to use when fetching organisations.
+   * @param searchCriteria         The search criteria to use when fetching organisations.
    * @param loginId                The login identifier for the user.
    * @param userType               Type of the user (e.g., admin, user).
    * @param page                   The page number for pagination.
@@ -393,7 +393,7 @@ public class SoaApiClient {
    * @return A Mono wrapping the CaseDetails.
    */
   public Mono<OrganisationDetails> getOrganisations(
-      final OrganisationSearchCriteria orgSearchCriteria,
+      final OrganisationSearchCriteria searchCriteria,
       final String loginId,
       final String userType,
       final Integer page,
@@ -401,11 +401,11 @@ public class SoaApiClient {
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/organisations")
-            .queryParamIfPresent("name", Optional.ofNullable(orgSearchCriteria.getName()))
-            .queryParamIfPresent("type", Optional.ofNullable(orgSearchCriteria.getType()))
-            .queryParamIfPresent("city", Optional.ofNullable(orgSearchCriteria.getCity()))
+            .queryParamIfPresent("name", Optional.ofNullable(searchCriteria.getName()))
+            .queryParamIfPresent("type", Optional.ofNullable(searchCriteria.getType()))
+            .queryParamIfPresent("city", Optional.ofNullable(searchCriteria.getCity()))
             .queryParamIfPresent("postcode",
-                Optional.ofNullable(orgSearchCriteria.getPostcode()))
+                Optional.ofNullable(searchCriteria.getPostcode()))
             .queryParamIfPresent("page", Optional.ofNullable(page))
             .queryParamIfPresent("size", Optional.ofNullable(size))
             .build())
@@ -414,7 +414,7 @@ public class SoaApiClient {
         .retrieve()
         .bodyToMono(OrganisationDetails.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleOrganisationsError(
-            orgSearchCriteria, e));
+            searchCriteria, e));
 
   }
 

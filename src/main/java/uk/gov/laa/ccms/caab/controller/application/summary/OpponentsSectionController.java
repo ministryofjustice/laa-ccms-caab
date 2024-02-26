@@ -186,20 +186,20 @@ public class OpponentsSectionController {
    * to gather final details for the opponent.
    *
    * @param organisationId The id of the selected organisation.
-   * @param orgSearchResults Search results containing copy cases.
+   * @param searchResults Search results containing organisations.
    * @return The view name for shared organisation confirmation screen.
    */
   @GetMapping("/application/opponents/organisation/{id}/select")
   public String selectSharedOrganisation(
       @PathVariable("id") String organisationId,
       @SessionAttribute(ORGANISATION_SEARCH_RESULTS)
-      ResultsDisplay<OrganisationResultRowDisplay> orgSearchResults,
+      ResultsDisplay<OrganisationResultRowDisplay> searchResults,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       Model model) {
 
     // Validate that the supplied organisation id is one from the search results in the session
     boolean validOrgId =
-        orgSearchResults.getContent().stream().anyMatch(
+        searchResults.getContent().stream().anyMatch(
             org -> org.getPartyId().equals(organisationId));
 
     if (!validOrgId) {

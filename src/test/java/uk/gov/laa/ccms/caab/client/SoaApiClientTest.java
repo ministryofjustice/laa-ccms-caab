@@ -730,18 +730,18 @@ class SoaApiClientTest {
     int page = 0;
     int size = 10;
 
-    OrganisationSearchCriteria orgSearchCriteria = new OrganisationSearchCriteria();
-    orgSearchCriteria.setName("thename");
-    orgSearchCriteria.setType("thetype");
-    orgSearchCriteria.setCity("thecity");
-    orgSearchCriteria.setPostcode("thepostcode");
+    OrganisationSearchCriteria searchCriteria = new OrganisationSearchCriteria();
+    searchCriteria.setName("thename");
+    searchCriteria.setType("thetype");
+    searchCriteria.setCity("thecity");
+    searchCriteria.setPostcode("thepostcode");
 
     String expectedUri = String.format(
         "/organisations?name=%s&type=%s&city=%s&postcode=%s&page=%s&size=%s",
-        orgSearchCriteria.getName(),
-        orgSearchCriteria.getType(),
-        orgSearchCriteria.getCity(),
-        orgSearchCriteria.getPostcode(),
+        searchCriteria.getName(),
+        searchCriteria.getType(),
+        searchCriteria.getCity(),
+        searchCriteria.getPostcode(),
         page,
         size);
 
@@ -760,7 +760,7 @@ class SoaApiClientTest {
         Mono.just(mockOrganisationDetails));
 
     Mono<OrganisationDetails> organisationDetailsMono =
-        soaApiClient.getOrganisations(orgSearchCriteria, loginId, userType, page, size);
+        soaApiClient.getOrganisations(searchCriteria, loginId, userType, page, size);
 
     StepVerifier.create(organisationDetailsMono)
         .expectNextMatches(orgDetails -> orgDetails == mockOrganisationDetails)
@@ -786,7 +786,7 @@ class SoaApiClientTest {
     int page = 0;
     int size = 10;
 
-    OrganisationSearchCriteria orgSearchCriteria = new OrganisationSearchCriteria();
+    OrganisationSearchCriteria searchCriteria = new OrganisationSearchCriteria();
 
     ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
@@ -801,11 +801,11 @@ class SoaApiClientTest {
         new WebClientResponseException(
             HttpStatus.INTERNAL_SERVER_ERROR.value(), "", null, null, null)));
 
-    when(soaApiClientErrorHandler.handleOrganisationsError(eq(orgSearchCriteria),
+    when(soaApiClientErrorHandler.handleOrganisationsError(eq(searchCriteria),
         any(WebClientResponseException.class))).thenReturn(Mono.empty());
 
     Mono<OrganisationDetails> organisationDetailsMono =
-        soaApiClient.getOrganisations(orgSearchCriteria, loginId, userType, page, size);
+        soaApiClient.getOrganisations(searchCriteria, loginId, userType, page, size);
 
     StepVerifier.create(organisationDetailsMono)
         .verifyComplete();
