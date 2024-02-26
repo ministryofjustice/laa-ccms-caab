@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.mapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -14,6 +15,7 @@ import uk.gov.laa.ccms.caab.model.ClientResultsDisplay;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.OrganisationResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -21,6 +23,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientSummary;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
+import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationSummary;
 
 @ExtendWith(SpringExtension.class)
@@ -175,4 +178,28 @@ class ResultDisplayMapperTest {
     assertEquals(organisationSummary.getCity(), result.getCity());
   }
 
+  @Test
+  void testToOrganisationResultDisplay() {
+    OrganisationDetails organisationDetails = new OrganisationDetails()
+        .addContentItem(new OrganisationSummary())
+        .totalElements(1)
+        .size(1)
+        .totalPages(1)
+        .number(1);
+
+    List<CommonLookupValueDetail> orgTypesLookup = List.of(
+        new CommonLookupValueDetail()
+            .code("thecode")
+            .description("thedescr"));
+
+    final ResultsDisplay<OrganisationResultRowDisplay> result = mapper.toOrganisationResultsDisplay(
+        organisationDetails, orgTypesLookup);
+
+    assertNotNull(result);
+    assertEquals(1, result.getContent().size());
+    assertEquals(organisationDetails.getNumber(), result.getNumber());
+    assertEquals(organisationDetails.getSize(), result.getSize());
+    assertEquals(organisationDetails.getTotalElements(), result.getTotalElements());
+    assertEquals(organisationDetails.getTotalPages(), result.getTotalPages());
+  }
 }
