@@ -14,6 +14,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_L
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MATTER_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_NOTIFICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
 
@@ -62,7 +63,8 @@ public class LookupServiceTest {
         Arguments.of("getLevelsOfService", COMMON_VALUE_LEVEL_OF_SERVICE),
         Arguments.of("getMatterTypes", COMMON_VALUE_MATTER_TYPES),
         Arguments.of("getClientInvolvementTypes", COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES),
-        Arguments.of("getScopeLimitations", COMMON_VALUE_SCOPE_LIMITATIONS)
+        Arguments.of("getScopeLimitations", COMMON_VALUE_SCOPE_LIMITATIONS),
+        Arguments.of("getOrganisationTypes", COMMON_VALUE_ORGANISATION_TYPES)
     );
   }
 
@@ -96,7 +98,8 @@ public class LookupServiceTest {
         Arguments.of("getCorrespondenceMethod", COMMON_VALUE_CORRESPONDENCE_METHOD),
         Arguments.of("getCorrespondenceLanguage", COMMON_VALUE_CORRESPONDENCE_LANGUAGE),
         Arguments.of("getEthnicOrigin", COMMON_VALUE_ETHNIC_ORIGIN),
-        Arguments.of("getDisability", COMMON_VALUE_DISABILITY)
+        Arguments.of("getDisability", COMMON_VALUE_DISABILITY),
+        Arguments.of("getOrganisationType", COMMON_VALUE_ORGANISATION_TYPES)
     );
   }
 

@@ -1,16 +1,24 @@
 package uk.gov.laa.ccms.caab.mapper;
 
+import java.util.List;
+import org.mapstruct.Context;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import uk.gov.laa.ccms.caab.model.BaseApplication;
 import uk.gov.laa.ccms.caab.model.ClientResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ClientResultsDisplay;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.OrganisationResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.ResultsDisplay;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientSummary;
+import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
+import uk.gov.laa.ccms.soa.gateway.model.OrganisationSummary;
 
 /**
  * Maps between multiple objects into results display objects.
@@ -50,6 +58,29 @@ public interface ResultDisplayMapper {
   @InheritInverseConfiguration(name = "toLinkedCaseResultRowDisplay")
   LinkedCase toLinkedCase(LinkedCaseResultRowDisplay linkedCaseResultRowDisplay);
 
+  @Mapping(target = "typeDisplayValue", source = "type", qualifiedByName = "toDisplayValue")
+  OrganisationResultRowDisplay toOrganisationResultRowDisplay(
+      OrganisationSummary organisationSummary,
+      @Context List<CommonLookupValueDetail> organisationTypes);
 
+  ResultsDisplay<OrganisationResultRowDisplay> toOrganisationResultsDisplay(
+      OrganisationDetails organisationDetails,
+      @Context List<CommonLookupValueDetail> organisationTypes);
+
+  /**
+   * Convert a code to its display value.
+   *
+   * @param code - the code
+   * @param lookups - the lookups containing the display values
+   * @return display value for code, or the original code if no match found.
+   */
+  @Named("toDisplayValue")
+  default String toDisplayValue(String code, @Context List<CommonLookupValueDetail> lookups) {
+    return lookups.stream()
+        .filter(lookup -> lookup.getCode().equals(code))
+        .findFirst()
+        .map(CommonLookupValueDetail::getDescription)
+        .orElse(code);
+  }
 
 }

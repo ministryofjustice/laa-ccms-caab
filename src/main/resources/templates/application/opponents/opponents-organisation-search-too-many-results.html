@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>LAA CCMS - Search for an organisation</title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a href="/application/opponents/organisation/search" class="govuk-back-link">Return to organisation search</a>
+    </div>
+    <div id="main-content">
+        <span class="govuk-caption-l">Search for an organisation</span>
+        <h1 class="govuk-heading-l">
+            Organisation search - too many results
+        </h1>
+        <p class="govuk-body-l">
+            Please return to refine your search criteria and try again.
+        </p>
+    </div>
+</div>
+</body>
+</html>

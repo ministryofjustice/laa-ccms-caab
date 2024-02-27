@@ -174,7 +174,7 @@ public class EbsApiClient {
    * @return A Mono containing the RelationshipToCaseLookupDetail or an error handler if an error
    *         occurs.
    */
-  public Mono<RelationshipToCaseLookupDetail> getOrganisationRelationshipsToCaseValues(
+  public Mono<RelationshipToCaseLookupDetail> getOrganisationToCaseRelationshipValues(
       final String code,
       final String description) {
 

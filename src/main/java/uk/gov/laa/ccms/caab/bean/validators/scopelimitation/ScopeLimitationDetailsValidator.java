@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.bean.validators.scopelimitation;
 
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 

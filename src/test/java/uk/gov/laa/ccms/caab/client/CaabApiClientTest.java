@@ -523,4 +523,24 @@ public class CaabApiClientTest {
     StepVerifier.create(result).verifyComplete();
   }
 
+  @Test
+  void addOpponent_success() {
+    final String applicationId = "app123";
+    final Opponent opponent = new Opponent(); // Populate this as needed
+    final String loginId = "user789";
+    final String expectedUri = "/applications/{applicationId}/opponents";
+
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri, applicationId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(opponent)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.addOpponent(applicationId, opponent, loginId);
+
+    StepVerifier.create(result).verifyComplete();
+  }
+
 }

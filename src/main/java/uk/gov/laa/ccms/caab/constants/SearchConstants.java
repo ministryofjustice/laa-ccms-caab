@@ -22,5 +22,11 @@ public class SearchConstants {
    */
   @Value("${search.max-results.cases:100}")
   private Integer maxSearchResultsCases;
+
+  /**
+   * the maximum amount of results to return for an EBS organisation search.
+   */
+  @Value("${search.max-results.organisations:100}")
+  private Integer maxSearchResultsOrganisations;
 }
 
