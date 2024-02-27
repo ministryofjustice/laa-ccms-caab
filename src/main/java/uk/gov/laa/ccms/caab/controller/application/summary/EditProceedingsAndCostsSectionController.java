@@ -606,7 +606,7 @@ public class EditProceedingsAndCostsSectionController {
     final String proceedingCode = proceedingDetails.getProceedingType();
 
     final Mono<List<ClientInvolvementTypeLookupValueDetail>> clientInvolvementTypesMono =
-        lookupService.getClientInvolvementTypes(proceedingCode)
+        lookupService.getProceedingClientInvolvementTypes(proceedingCode)
             .map(ClientInvolvementTypeLookupDetail::getContent);
 
     final Mono<List<LevelOfServiceLookupValueDetail>> levelOfServiceTypesMono =
