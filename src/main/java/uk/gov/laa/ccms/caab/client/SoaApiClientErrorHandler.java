@@ -10,6 +10,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
@@ -19,6 +20,8 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
+import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
+import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 
 /**
@@ -228,6 +231,44 @@ public class SoaApiClientErrorHandler {
         criteria.getNotificationType(),
         criteria.getDateFrom(),
         criteria.getDateTo(), e);
+    return Mono.empty();
+  }
+
+  /**
+   * Handles errors that occur while fetching Organisations.
+   *
+   * @param criteria the search criteria.
+   * @param e Exception thrown during operation.
+   * @return and empty Mono.
+   */
+  public Mono<OrganisationDetails> handleOrganisationsError(
+      final OrganisationSearchCriteria criteria,
+      Throwable e) {
+    log.error("Failed to retrieve Organisations for "
+            + "name: {}, "
+            + "type: {}, "
+            + "city: {}, "
+            + "postcode: {}",
+        criteria.getName(),
+        criteria.getType(),
+        criteria.getCity(),
+        criteria.getPostcode(), e);
+    return Mono.empty();
+  }
+
+
+  /**
+   * Handles errors that occur while fetching an Organisation.
+   *
+   * @param organisationId the organisation id.
+   * @param e Exception thrown during operation.
+   * @return and empty Mono.
+   */
+  public Mono<OrganisationDetail> handleOrganisationError(
+      final String organisationId,
+      Throwable e) {
+    log.error("Failed to retrieve Organisation with : {}",
+        organisationId, e);
     return Mono.empty();
   }
 

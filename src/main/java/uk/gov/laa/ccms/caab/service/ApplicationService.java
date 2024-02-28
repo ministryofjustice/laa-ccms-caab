@@ -13,6 +13,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -40,6 +41,7 @@ import reactor.util.function.Tuple5;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.OpponentFormData;
 import uk.gov.laa.ccms.caab.builders.ApplicationBuilder;
 import uk.gov.laa.ccms.caab.builders.ApplicationSummaryBuilder;
 import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
@@ -53,6 +55,7 @@ import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.OpponentMapper;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
@@ -137,6 +140,8 @@ public class ApplicationService {
   private final LookupService lookupService;
 
   private final ResultDisplayMapper resultDisplayMapper;
+
+  private final OpponentMapper opponentMapper;
 
   private final SearchConstants searchConstants;
 
@@ -376,7 +381,7 @@ public class ApplicationService {
             lookupService.getPersonToCaseRelationships());
 
     return combinedResult.map(tuple -> {
-      CaseReferenceSummary caseReferenceSummary = tuple.getT1();
+      String caseReferenceNumber = tuple.getT1().getCaseReferenceNumber();
 
       // Check whether the cost limit should be copied for the case's category of law
       Boolean copyCostLimit = tuple.getT2().getCopyCostLimit();
@@ -408,10 +413,15 @@ public class ApplicationService {
             .orElse(BigDecimal.ZERO);
       }
 
+      StringDisplayValue initialStatus = new StringDisplayValue()
+          .id(STATUS_UNSUBMITTED_ACTUAL_VALUE)
+          .displayValue(STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY);
+
       // Use a mapper to copy the relevant attributes
       ApplicationDetail application = copyApplicationMapper.copyApplication(
           applicationToCopy,
-          caseReferenceSummary,
+          caseReferenceNumber,
+          initialStatus,
           clientDetail,
           requestedCostLimitation,
           defaultCostLimitation);
@@ -604,7 +614,7 @@ public class ApplicationService {
       final List<uk.gov.laa.ccms.caab.model.ScopeLimitation> scopeLimitations) {
 
     BigDecimal maxValue = new BigDecimal(0);
-    final List<Float> costLimitations = new ArrayList<Float>();
+    final List<Float> costLimitations = new ArrayList<>();
 
     for (final uk.gov.laa.ccms.caab.model.ScopeLimitation scopeLimitation : scopeLimitations) {
       final ScopeLimitationDetail criteria = new ScopeLimitationDetail()
@@ -618,8 +628,9 @@ public class ApplicationService {
         criteria.emergency(true);
       }
 
-      lookupService.getScopeLimitationDetails(criteria)
-          .block()
+      Optional.ofNullable(lookupService.getScopeLimitationDetails(criteria).block())
+          .orElseThrow(() -> new CaabApplicationException(
+              "Failed to retrieve scope limitiation details"))
           .getContent()
           .stream()
           .findFirst()
@@ -680,12 +691,14 @@ public class ApplicationService {
           .levelOfService(levelOfService)
           .scopeLimitations(scopeLimitation.getScopeLimitation().getId());
 
-      final List<Integer> stageList = lookupService.getScopeLimitationDetails(criteria)
-          .block()
-          .getContent()
-          .stream()
-          .map(ScopeLimitationDetail::getStage)
-          .toList();
+      final List<Integer> stageList =
+          Optional.ofNullable(lookupService.getScopeLimitationDetails(criteria).block())
+              .orElseThrow(() -> new CaabApplicationException(
+                  "Failed to retrieve scope limitation details"))
+              .getContent()
+              .stream()
+              .map(ScopeLimitationDetail::getStage)
+              .toList();
 
       allStages.add(stageList);
       minStageList.add(getMinValue(stageList));
@@ -981,6 +994,34 @@ public class ApplicationService {
   }
 
   /**
+   * Add a new Opponent to an application based on the supplied form data.
+   *
+   * @param applicationId - the id of the application.
+   * @param opponentFormData - the opponent form data.
+   * @param userDetail - the user related user.
+   */
+  public void addOpponent(
+      final String applicationId,
+      final OpponentFormData opponentFormData,
+      final UserDetail userDetail) {
+
+    Opponent opponent = opponentMapper.toOpponent(opponentFormData);
+
+    // Set the remaining flags on the opponent based on the application state.
+    ApplicationDetail application =
+        Optional.ofNullable(this.getApplication(applicationId).block())
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve application"));
+
+    opponent.setAppMode(application.getAppMode());
+    opponent.setAmendment(application.getAmendment());
+
+    caabApiClient.addOpponent(
+        applicationId,
+        opponent,
+        userDetail.getLoginId()).block();
+  }
+
+  /**
    * Build an OpponentRowDisplay for the provided Opponent.
    * Codes will be translated to their display value depending on the type of opponent.
    *
@@ -1069,7 +1110,6 @@ public class ApplicationService {
 
     return builder.isEmpty() ? "undefined" : builder.toString();
   }
-
 
   /**
    * Before a CaseDetail can be mapped to a CAAB ApplicationDetail further lookup
@@ -1497,7 +1537,7 @@ public class ApplicationService {
       final ApplicationDetail application,
       final UserDetail user) {
 
-    getDefaultCostLimitation(application);
+    setCostLimitations(application);
 
     if (Boolean.FALSE.equals(application.getAmendment())
         && application.getCosts().getRequestedCostLimitation() == null) {
@@ -1508,7 +1548,7 @@ public class ApplicationService {
     caabApiClient.updateCostStructure(id, application.getCosts(), user.getLoginId()).block();
   }
 
-  private BigDecimal getDefaultCostLimitation(final ApplicationDetail application) {
+  private void setCostLimitations(final ApplicationDetail application) {
     BigDecimal defaultCostLimitation = new BigDecimal("0.00");
 
     final BigDecimal currentDefault = application.getCosts().getDefaultCostLimitation();
@@ -1523,6 +1563,10 @@ public class ApplicationService {
       }
     }
 
+    if (defaultCostLimitation.scale() < 2) {
+      defaultCostLimitation = defaultCostLimitation.setScale(2);
+    }
+
     application.getCosts().setDefaultCostLimitation(defaultCostLimitation);
 
     if (application.getCosts().getRequestedCostLimitation() != null && !application.getAmendment()
@@ -1531,10 +1575,6 @@ public class ApplicationService {
     } else if (application.getCosts().getRequestedCostLimitation() == null) {
       application.getCosts().setRequestedCostLimitation(defaultCostLimitation);
     }
-    if (defaultCostLimitation.scale() < 2) {
-      defaultCostLimitation = defaultCostLimitation.setScale(2);
-    }
-    return defaultCostLimitation;
   }
 
   /**

@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.bean.costs;
 
-import java.math.BigDecimal;
 import lombok.Data;
 
 /**

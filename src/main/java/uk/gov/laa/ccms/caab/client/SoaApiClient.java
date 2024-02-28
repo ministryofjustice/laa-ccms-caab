@@ -14,6 +14,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
@@ -24,6 +25,8 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
+import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
+import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 
 /**
@@ -377,6 +380,64 @@ public class SoaApiClient {
         .bodyToMono(Notifications.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleNotificationsError(criteria, e));
 
+  }
+
+  /**
+   * Searches and retrieves organisation details based on provided search criteria.
+   *
+   * @param searchCriteria         The search criteria to use when fetching organisations.
+   * @param loginId                The login identifier for the user.
+   * @param userType               Type of the user (e.g., admin, user).
+   * @param page                   The page number for pagination.
+   * @param size                   The size or number of records per page.
+   * @return A Mono wrapping the CaseDetails.
+   */
+  public Mono<OrganisationDetails> getOrganisations(
+      final OrganisationSearchCriteria searchCriteria,
+      final String loginId,
+      final String userType,
+      final Integer page,
+      final Integer size) {
+    return soaApiWebClient
+        .get()
+        .uri(builder -> builder.path("/organisations")
+            .queryParamIfPresent("name", Optional.ofNullable(searchCriteria.getName()))
+            .queryParamIfPresent("type", Optional.ofNullable(searchCriteria.getType()))
+            .queryParamIfPresent("city", Optional.ofNullable(searchCriteria.getCity()))
+            .queryParamIfPresent("postcode",
+                Optional.ofNullable(searchCriteria.getPostcode()))
+            .queryParamIfPresent("page", Optional.ofNullable(page))
+            .queryParamIfPresent("size", Optional.ofNullable(size))
+            .build())
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .retrieve()
+        .bodyToMono(OrganisationDetails.class)
+        .onErrorResume(e -> soaApiClientErrorHandler.handleOrganisationsError(
+            searchCriteria, e));
+
+  }
+
+  /**
+   * Retrieves an organisation based on provided organisation id.
+   *
+   * @param organisationId         The organisation id.
+   * @param loginId                The login identifier for the user.
+   * @param userType               Type of the user (e.g., admin, user).
+   * @return A Mono wrapping the CaseDetails.
+   */
+  public Mono<OrganisationDetail> getOrganisation(
+      final String organisationId,
+      final String loginId,
+      final String userType) {
+    return soaApiWebClient
+        .get()
+        .uri(builder -> builder.path("/organisation/{organisation-id}").build(organisationId))
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .retrieve()
+        .bodyToMono(OrganisationDetail.class)
+        .onErrorResume(e -> soaApiClientErrorHandler.handleOrganisationError(organisationId, e));
   }
 
 }

@@ -34,6 +34,9 @@ public abstract class AbstractValidator implements Validator {
   protected static String GENERIC_INCORRECT_FORMAT = "Your input for '%s' is in an incorrect "
       + "format. Please amend your entry.";
 
+  private static final String GENERIC_MAX_LENGTH =
+      "Please enter a maximum of %s characters for %s.";
+
   protected static String GENERIC_NUMERIC_LIMIT_ERROR = "'%s' must be less than £%s";
 
 
@@ -95,6 +98,16 @@ public abstract class AbstractValidator implements Validator {
     if (fieldValue == null || (!fieldValue.matches(format) && !fieldValue.isEmpty())) {
       errors.rejectValue(field, "invalid.format",
           String.format(GENERIC_INCORRECT_FORMAT, displayValue));
+    }
+  }
+
+  protected void validateFieldMaxLength(
+      final String field, final String fieldValue, final int maxLength,
+      String displayValue, Errors errors) {
+
+    if (fieldValue == null || fieldValue.length() > maxLength) {
+      errors.rejectValue(field, "invalid.format",
+          String.format(GENERIC_MAX_LENGTH, maxLength, displayValue));
     }
   }
 

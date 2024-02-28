@@ -1,0 +1,47 @@
+<!--Simple fragment for repeated summary list rows -->
+<div class="govuk-summary-list__row" th:fragment="summaryListDisplay(label, value)">
+  <dt class="govuk-summary-list__key"
+      th:text="${label}">
+  </dt>
+  <dd class="govuk-summary-list__value"
+      th:text="${value}">
+  </dd>
+</div>
+
+<!--Simple fragment for repeated summary list rows with yes/no values -->
+<div class="govuk-summary-list__row" th:fragment="summaryListDisplayYesNo(label, checked)">
+  <dt class="govuk-summary-list__key" th:text="${label}">
+  </dt>
+  <dd class="govuk-summary-list__value" th:if="${checked}">
+    Yes
+  </dd>
+  <dd class="govuk-summary-list__value" th:unless="${checked}">
+    No
+  </dd>
+</div>
+
+<!--Simple fragment for repeated summary list rows with an isVulnerable? check -->
+<div class="govuk-summary-list__row" th:fragment="summaryListDisplayWithVulnerability(label, value, isVulnerable)">
+  <dt class="govuk-summary-list__key" th:text="${label}">
+  </dt>
+  <dd class="govuk-summary-list__value"
+      th:if="${isVulnerable}">
+    Not applicable
+  </dd>
+  <dd class="govuk-summary-list__value"
+      th:unless="${isVulnerable}"
+      th:text="${value}">
+  </dd>
+</div>
+
+<!--Simple fragment for repeated checkbox items -->
+<div th:fragment="checkbox(id, label)" class="govuk-checkboxes__item">
+  <input class="govuk-checkboxes__input"
+         th:id="${id}"
+         th:name="${id}"
+         type="checkbox"
+         th:checked="*{__${id}__}"/>
+  <label class="govuk-label govuk-checkboxes__label" th:for="${id}" th:text="${label}">
+  </label>
+  <input type="hidden" th:name="${'_' + id}" value="on">
+</div>
