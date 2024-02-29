@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.bean.validators.proceedings;
 
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.ClientFormDataMonitoringDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 

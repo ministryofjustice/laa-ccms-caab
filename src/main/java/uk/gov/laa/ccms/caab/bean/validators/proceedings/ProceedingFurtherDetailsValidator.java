@@ -4,7 +4,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataFurtherDetails;
-import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**

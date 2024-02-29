@@ -35,8 +35,8 @@ import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProceedingDetails;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
-import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
+import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
@@ -248,7 +248,7 @@ public class EbsApiClientTest {
         .thenReturn(Mono.just(relationshipToCaseLookupDetail));
 
     Mono<RelationshipToCaseLookupDetail> relationshipToCaseLookupDetailMono =
-        ebsApiClient.getOrganisationRelationshipsToCaseValues(null, null);
+        ebsApiClient.getOrganisationToCaseRelationshipValues(null, null);
 
     StepVerifier.create(relationshipToCaseLookupDetailMono)
         .expectNext(relationshipToCaseLookupDetail)

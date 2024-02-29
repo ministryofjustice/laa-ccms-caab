@@ -16,6 +16,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_L
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MATTER_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_NOTIFICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_ORDER_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
@@ -24,7 +25,6 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_U
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -34,7 +34,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
-import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
@@ -574,7 +573,7 @@ public class LookupService {
    * @return Mono containing all relationship lookup values or null if an error occurs.
    */
   public Mono<RelationshipToCaseLookupDetail> getOrganisationToCaseRelationships() {
-    return ebsApiClient.getOrganisationRelationshipsToCaseValues(null, null);
+    return ebsApiClient.getOrganisationToCaseRelationshipValues(null, null);
   }
 
   /**
@@ -640,7 +639,22 @@ public class LookupService {
     return ebsApiClient.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE);
   }
 
+  /**
+   * Get a list of Organisation Type Common Values.
+   *
+   * @return CommonLookupDetail containing the common lookup values.
+   */
+  public Mono<CommonLookupDetail> getOrganisationTypes() {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES);
+  }
 
-
+  /**
+   * Get a single Organisation Type Common Value by its code.
+   *
+   * @return CommonLookupValueDetail containing the common lookup values.
+   */
+  public Mono<CommonLookupValueDetail> getOrganisationType(final String code) {
+    return this.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES, code);
+  }
 
 }

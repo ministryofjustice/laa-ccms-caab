@@ -283,6 +283,29 @@ public class CaabApiClient {
   }
 
   /**
+   * Adds a proceeding to an application using the CAAB API.
+   *
+   * @param applicationId The ID of the application.
+   * @param proceeding The proceeding to be added.
+   * @param loginId The ID associated with the user login.
+   * @return A Mono Void indicating the completion of the add operation.
+   */
+  public Mono<Void> addProceeding(
+      final String applicationId,
+      final Proceeding proceeding,
+      final String loginId) {
+    return caabApiWebClient
+        .post()
+        .uri("/applications/{applicationId}/proceedings", applicationId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(proceeding)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleSaveProceedingError(e, applicationId));
+  }
+
+  /**
    * Deletes a proceeding from the CAAB API.
    *
    * @param proceedingId the ID of the proceeding to be deleted
@@ -463,26 +486,27 @@ public class CaabApiClient {
   }
 
   /**
-   * Adds a proceeding to an application using the CAAB API.
+   * Asynchronously adds an opponent to an application.
    *
-   * @param applicationId The ID of the application.
-   * @param proceeding The proceeding to be added.
-   * @param loginId The ID associated with the user login.
-   * @return A Mono Void indicating the completion of the add operation.
+   * @param applicationId The ID of the related application.
+   * @param data          The opponent information.
+   * @param loginId       The login ID of the user performing the operation.
+   * @return A Mono that completes when the operation is done.
    */
-  public Mono<Void> addProceeding(
+  public Mono<Void> addOpponent(
       final String applicationId,
-      final Proceeding proceeding,
+      final Opponent data,
       final String loginId) {
     return caabApiWebClient
         .post()
-        .uri("/applications/{applicationId}/proceedings", applicationId)
+        .uri("/applications/{applicationId}/opponents",
+            applicationId)
         .header("Caab-User-Login-Id", loginId)
         .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(proceeding)
+        .bodyValue(data)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> caabApiClientErrorHandler.handleSaveProceedingError(e, applicationId));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleAddOpponentError(e, applicationId));
   }
 
 
@@ -555,4 +579,6 @@ public class CaabApiClient {
         .onErrorResume(e -> caabApiClientErrorHandler
             .handleUpdatePriorAuthorityError(e, priorAuthorityId));
   }
+
+
 }

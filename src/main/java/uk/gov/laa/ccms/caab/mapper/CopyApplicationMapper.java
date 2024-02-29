@@ -14,7 +14,7 @@ import uk.gov.laa.ccms.caab.model.Client;
 import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ScopeLimitation;
-import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
+import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 /**
@@ -24,7 +24,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 public interface CopyApplicationMapper {
 
   @BeanMapping(ignoreByDefault = true)
-  @Mapping(target = "caseReferenceNumber", source = "caseReferenceSummary.caseReferenceNumber")
+  @Mapping(target = "caseReferenceNumber", source = "caseReferenceNumber")
   @Mapping(target = "applicationType", source = "applicationToCopy.applicationType")
   @Mapping(target = "providerDetails", source = "applicationToCopy.providerDetails")
   @Mapping(target = "categoryOfLaw", source = "applicationToCopy.categoryOfLaw")
@@ -35,9 +35,11 @@ public interface CopyApplicationMapper {
   @Mapping(target = "client", source = "clientDetail")
   @Mapping(target = "costs.requestedCostLimitation", source = "requestedCostLimitation")
   @Mapping(target = "costs.defaultCostLimitation", source = "defaultCostLimitation")
+  @Mapping(target = "status", source = "status")
   ApplicationDetail copyApplication(
       ApplicationDetail applicationToCopy,
-      CaseReferenceSummary caseReferenceSummary,
+      String caseReferenceNumber,
+      StringDisplayValue status,
       ClientDetail clientDetail,
       BigDecimal requestedCostLimitation,
       BigDecimal defaultCostLimitation);

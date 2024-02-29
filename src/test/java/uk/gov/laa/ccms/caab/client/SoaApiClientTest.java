@@ -25,12 +25,15 @@ import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
+import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
+import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
@@ -717,6 +720,165 @@ class SoaApiClientTest {
         clientReferenceNumber, clientDetails, loginId, userType);
 
     StepVerifier.create(clientUpdatedMono)
+        .verifyComplete();
+  }
+
+  @Test
+  void getOrganisations_Successful() {
+    String loginId = "user1";
+    String userType = "userType";
+    int page = 0;
+    int size = 10;
+
+    OrganisationSearchCriteria searchCriteria = new OrganisationSearchCriteria();
+    searchCriteria.setName("thename");
+    searchCriteria.setType("thetype");
+    searchCriteria.setCity("thecity");
+    searchCriteria.setPostcode("thepostcode");
+
+    String expectedUri = String.format(
+        "/organisations?name=%s&type=%s&city=%s&postcode=%s&page=%s&size=%s",
+        searchCriteria.getName(),
+        searchCriteria.getType(),
+        searchCriteria.getCity(),
+        searchCriteria.getPostcode(),
+        page,
+        size);
+
+    OrganisationDetails mockOrganisationDetails = new OrganisationDetails();
+
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(soaApiWebClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
+        requestHeadersMock);
+    when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(
+        requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(OrganisationDetails.class)).thenReturn(
+        Mono.just(mockOrganisationDetails));
+
+    Mono<OrganisationDetails> organisationDetailsMono =
+        soaApiClient.getOrganisations(searchCriteria, loginId, userType, page, size);
+
+    StepVerifier.create(organisationDetailsMono)
+        .expectNextMatches(orgDetails -> orgDetails == mockOrganisationDetails)
+        .verifyComplete();
+
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    verify(soaApiWebClientMock).get();
+    verify(requestHeadersUriMock).uri(uriCaptor.capture());
+    verify(requestHeadersMock).header("SoaGateway-User-Login-Id", loginId);
+    verify(requestHeadersMock).header("SoaGateway-User-Role", userType);
+    verify(requestHeadersMock).retrieve();
+    verify(responseMock).bodyToMono(OrganisationDetails.class);
+
+    assertEquals(expectedUri, actualUri.toString());
+  }
+
+  @Test
+  void getOrganisations_handlesError() {
+    String loginId = "user1";
+    String userType = "userType";
+    int page = 0;
+    int size = 10;
+
+    OrganisationSearchCriteria searchCriteria = new OrganisationSearchCriteria();
+
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(soaApiWebClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
+        requestHeadersMock);
+    when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(
+        requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(OrganisationDetails.class)).thenReturn(Mono.error(
+        new WebClientResponseException(
+            HttpStatus.INTERNAL_SERVER_ERROR.value(), "", null, null, null)));
+
+    when(soaApiClientErrorHandler.handleOrganisationsError(eq(searchCriteria),
+        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+
+    Mono<OrganisationDetails> organisationDetailsMono =
+        soaApiClient.getOrganisations(searchCriteria, loginId, userType, page, size);
+
+    StepVerifier.create(organisationDetailsMono)
+        .verifyComplete();
+  }
+
+  @Test
+  void getOrganisation_Successful() {
+    String loginId = "user1";
+    String userType = "userType";
+    String orgId = "123";
+
+    String expectedUri = String.format("/organisation/%s", orgId);
+
+    OrganisationDetail mockOrganisationDetail = new OrganisationDetail();
+
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(soaApiWebClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
+        requestHeadersMock);
+    when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(
+        requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(OrganisationDetail.class)).thenReturn(
+        Mono.just(mockOrganisationDetail));
+
+    Mono<OrganisationDetail> organisationDetailMono =
+        soaApiClient.getOrganisation(orgId, loginId, userType);
+
+    StepVerifier.create(organisationDetailMono)
+        .expectNextMatches(orgDetail -> orgDetail == mockOrganisationDetail)
+        .verifyComplete();
+
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    verify(soaApiWebClientMock).get();
+    verify(requestHeadersUriMock).uri(uriCaptor.capture());
+    verify(requestHeadersMock).header("SoaGateway-User-Login-Id", loginId);
+    verify(requestHeadersMock).header("SoaGateway-User-Role", userType);
+    verify(requestHeadersMock).retrieve();
+    verify(responseMock).bodyToMono(OrganisationDetail.class);
+
+    assertEquals(expectedUri, actualUri.toString());
+  }
+
+  @Test
+  void getOrganisation_handlesError() {
+    String loginId = "user1";
+    String userType = "userType";
+    String orgId = "123";
+
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(soaApiWebClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
+        requestHeadersMock);
+    when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(
+        requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(OrganisationDetail.class)).thenReturn(Mono.error(
+        new WebClientResponseException(
+            HttpStatus.INTERNAL_SERVER_ERROR.value(), "", null, null, null)));
+
+    when(soaApiClientErrorHandler.handleOrganisationError(eq(orgId),
+        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+
+    Mono<OrganisationDetail> organisationDetailMono =
+        soaApiClient.getOrganisation(orgId, loginId, userType);
+
+    StepVerifier.create(organisationDetailMono)
         .verifyComplete();
   }
 }

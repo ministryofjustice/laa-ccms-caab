@@ -660,7 +660,7 @@ public class EditProceedingsAndCostsSectionController {
       @PathVariable("action") final String action,
       final Model model,
       final HttpSession session) {
-    ProceedingFlowFormData proceedingFlow = null;
+    ProceedingFlowFormData proceedingFlow;
 
     //coming directly from proceeding summary - editing scope limitations
     if (isRoutedFromSummaryPage(action, session)) {
