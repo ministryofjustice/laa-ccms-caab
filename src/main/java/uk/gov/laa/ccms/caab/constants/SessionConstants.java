@@ -160,6 +160,8 @@ public class SessionConstants {
    */
   public static final String APPLICATION_PRIOR_AUTHORITIES = "priorAuthorities";
 
+  public static final String PRIOR_AUTHORITY_FLOW_FORM_DATA = "priorAuthorityFlow";
+
 
 
 

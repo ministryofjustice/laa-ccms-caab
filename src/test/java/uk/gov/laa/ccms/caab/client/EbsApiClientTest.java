@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.client;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -25,10 +26,14 @@ import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.BaseUser;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
+import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
+import uk.gov.laa.ccms.data.model.ProceedingDetails;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
@@ -126,7 +131,7 @@ public class EbsApiClientTest {
     URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
     // Assert the URI
-    assertEquals(String.format("/lookup/common?type=%s&code=%s&description=%s&sort=%s",
+    assertEquals(String.format("/lookup/common?type=%s&code=%s&description=%s&sort=%s&size=1000",
             type, code, descr, sort), actualUri.toString());
   }
 
@@ -158,7 +163,7 @@ public class EbsApiClientTest {
     URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
     // Assert the URI
-    assertEquals(String.format("/lookup/common?type=%s&code=%s&description=%s&sort=%s",
+    assertEquals(String.format("/lookup/common?type=%s&code=%s&description=%s&sort=%s&size=1000",
         type, code, descr, sort), actualUri.toString());
   }
 
@@ -597,4 +602,202 @@ public class EbsApiClientTest {
     assertEquals(String.format("/lookup/award-types?code=%s&award-type=%s",
         code, awardType), actualUri.toString());
   }
+
+  @Test
+  void getCategoriesOfLaw_success() {
+    final String code = "code";
+    final String matterTypeDescription = "description";
+    final Boolean copyCostLimit = true;
+    final CategoryOfLawLookupDetail lookupDetail = new CategoryOfLawLookupDetail(); // Populate this as needed
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CategoryOfLawLookupDetail.class)).thenReturn(Mono.just(lookupDetail));
+
+    final Mono<CategoryOfLawLookupDetail> result = ebsApiClient.getCategoriesOfLaw(code, matterTypeDescription, copyCostLimit);
+
+    StepVerifier.create(result)
+        .expectNext(lookupDetail)
+        .verifyComplete();
+
+    verify(responseMock).bodyToMono(CategoryOfLawLookupDetail.class);
+  }
+
+  @Test
+  void getCategoriesOfLaw_errorHandling() {
+    final String code = "error_code";
+    final String matterTypeDescription = "error_description";
+    final Boolean copyCostLimit = false;
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CategoryOfLawLookupDetail.class)).thenReturn(Mono.error(new RuntimeException("Error")));
+
+    final Mono<CategoryOfLawLookupDetail> result = ebsApiClient.getCategoriesOfLaw(code, matterTypeDescription, copyCostLimit);
+
+    StepVerifier.create(result)
+        .expectError(RuntimeException.class)
+        .verify();
+
+    verify(responseMock).bodyToMono(CategoryOfLawLookupDetail.class);
+  }
+
+  @Test
+  void getPersonToCaseRelationships_success() {
+    final String code = "rel_code";
+    final String description = "rel_description";
+    final RelationshipToCaseLookupDetail lookupDetail = new RelationshipToCaseLookupDetail(); // Populate this as needed
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(RelationshipToCaseLookupDetail.class)).thenReturn(Mono.just(lookupDetail));
+
+    final Mono<RelationshipToCaseLookupDetail> result = ebsApiClient.getPersonToCaseRelationships(code, description);
+
+    StepVerifier.create(result)
+        .expectNext(lookupDetail)
+        .verifyComplete();
+
+    verify(responseMock).bodyToMono(RelationshipToCaseLookupDetail.class);
+  }
+
+  @Test
+  void getPersonToCaseRelationships_errorHandling() {
+    final String code = "error_rel_code";
+    final String description = "error_rel_description";
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(RelationshipToCaseLookupDetail.class)).thenReturn(Mono.error(new RuntimeException("Error")));
+
+    final Mono<RelationshipToCaseLookupDetail> result = ebsApiClient.getPersonToCaseRelationships(code, description);
+
+    StepVerifier.create(result)
+        .expectError(RuntimeException.class)
+        .verify();
+
+    verify(responseMock).bodyToMono(RelationshipToCaseLookupDetail.class);
+  }
+
+  @Test
+  void getProceedings_success() {
+    final ProceedingDetail searchCriteria = new ProceedingDetail();
+    searchCriteria.setCategoryOfLawCode("FAM");
+    searchCriteria.setMatterType("DOM");
+    searchCriteria.setAmendmentOnly(true);
+    final Boolean larScopeFlag = true;
+    final String applicationType = "NEW";
+    final Boolean isLead = true;
+
+    final ProceedingDetails mockDetails = new ProceedingDetails();
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(ProceedingDetails.class)).thenReturn(Mono.just(mockDetails));
+
+    final Mono<ProceedingDetails> result = ebsApiClient.getProceedings(searchCriteria, larScopeFlag, applicationType, isLead);
+
+    StepVerifier.create(result)
+        .expectNextMatches(details -> details.equals(mockDetails))
+        .verifyComplete();
+  }
+
+  @Test
+  void getProceedings_error() {
+    final ProceedingDetail searchCriteria = new ProceedingDetail();
+    final Boolean larScopeFlag = false;
+    final String applicationType = "MOD";
+    final Boolean isLead = false;
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(ProceedingDetails.class))
+        .thenReturn(Mono.error(new RuntimeException("Unexpected error")));
+
+    final Mono<ProceedingDetails> result = ebsApiClient.getProceedings(searchCriteria, larScopeFlag, applicationType, isLead);
+
+    StepVerifier.create(result)
+        .expectError(RuntimeException.class)
+        .verify();
+  }
+
+
+  @Test
+  void getClientInvolvementTypes_success() {
+    final String proceedingCode = "PROC123";
+    final ClientInvolvementTypeLookupDetail mockDetail = new ClientInvolvementTypeLookupDetail(); // Assume this is populated
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(ClientInvolvementTypeLookupDetail.class)).thenReturn(Mono.just(mockDetail));
+
+    final Mono<ClientInvolvementTypeLookupDetail> result = ebsApiClient.getClientInvolvementTypes(proceedingCode);
+
+    StepVerifier.create(result)
+        .expectNextMatches(detail -> detail.equals(mockDetail))
+        .verifyComplete();
+  }
+
+  @Test
+  void getClientInvolvementTypes_error() {
+    final String proceedingCode = "PROC123";
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(ClientInvolvementTypeLookupDetail.class))
+        .thenReturn(Mono.error(new RuntimeException("Unexpected error")));
+
+    final Mono<ClientInvolvementTypeLookupDetail> result = ebsApiClient.getClientInvolvementTypes(proceedingCode);
+
+    StepVerifier.create(result)
+        .expectError(RuntimeException.class)
+        .verify();
+  }
+
+  @Test
+  void getLevelOfServiceTypes_success() {
+    final String proceedingCode = "PROC123";
+    final String categoryOfLaw = "FAM";
+    final String matterType = "DOM";
+    LevelOfServiceLookupDetail mockDetail = new LevelOfServiceLookupDetail(); // Assume this is populated
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(LevelOfServiceLookupDetail.class)).thenReturn(Mono.just(mockDetail));
+
+    final Mono<LevelOfServiceLookupDetail> result = ebsApiClient.getLevelOfServiceTypes(proceedingCode, categoryOfLaw, matterType);
+
+    StepVerifier.create(result)
+        .expectNextMatches(detail -> detail.equals(mockDetail))
+        .verifyComplete();
+  }
+
+  @Test
+  void getLevelOfServiceTypes_error() {
+    final String proceedingCode = "PROC404";
+    final String categoryOfLaw = "UNK";
+    final String matterType = "UNKNOWN";
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(LevelOfServiceLookupDetail.class))
+        .thenReturn(Mono.error(new RuntimeException("Unexpected error")));
+
+    final Mono<LevelOfServiceLookupDetail> result = ebsApiClient.getLevelOfServiceTypes(proceedingCode, categoryOfLaw, matterType);
+
+    StepVerifier.create(result)
+        .expectError(RuntimeException.class)
+        .verify();
+  }
+
 }

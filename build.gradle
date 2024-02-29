@@ -74,7 +74,7 @@ repositories {
 dependencies {
 	implementation 'uk.gov.laa.ccms.data:data-api:0.0.5-ac50be4-SNAPSHOT'
 	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.13'
-	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.14'
+	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.16-e9a75d6-SNAPSHOT'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -143,7 +143,6 @@ jacocoTestCoverageVerification {
 			fileTree(dir: it, exclude: ['**/CaabApplication.class', '**/SecurityConfiguration.class'])
 		}))
 	}
-
 
 	violationRules {
 		rule {

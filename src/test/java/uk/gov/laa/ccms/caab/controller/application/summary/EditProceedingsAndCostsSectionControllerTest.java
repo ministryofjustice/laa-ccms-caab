@@ -4,6 +4,8 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -24,15 +26,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PRIOR_AUTHORITIES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PROCEEDINGS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_SCOPE_LIMITATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRIOR_AUTHORITY_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA_OLD;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_SCOPE_LIMITATIONS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SCOPE_LIMITATION_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import jakarta.servlet.ServletException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,6 +49,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
@@ -59,8 +65,12 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.util.NestedServletException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataDetails;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataTypeDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataFurtherDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
@@ -68,14 +78,18 @@ import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails;
 import uk.gov.laa.ccms.caab.bean.validators.costs.CostDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.priorauthority.PriorAuthorityDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.priorauthority.PriorAuthorityTypeDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.scopelimitation.ScopeLimitationDetailsValidator;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.CostStructure;
+import uk.gov.laa.ccms.caab.model.PriorAuthority;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ScopeLimitation;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -89,6 +103,9 @@ import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupValueDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProceedingDetails;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
@@ -115,6 +132,12 @@ class EditProceedingsAndCostsSectionControllerTest {
     private ScopeLimitationDetailsValidator scopeLimitationDetailsValidator;
     @Mock
     private CostDetailsValidator costDetailsValidator;
+
+    @Mock
+    private PriorAuthorityTypeDetailsValidator priorAuthorityTypeDetailsValidator;
+
+    @Mock
+    private PriorAuthorityDetailsValidator  priorAuthorityDetailsValidator;
 
     @Mock
     private ProceedingAndCostsMapper proceedingAndCostsMapper;
@@ -1170,5 +1193,323 @@ class EditProceedingsAndCostsSectionControllerTest {
 
         verify(costDetailsValidator, times(1)).validate(eq(costsFormData), any(BindingResult.class));
     }
+
+    @Test
+    void testPriorAuthorityType() throws Exception {
+        final List<PriorAuthorityTypeDetail> priorAuthorityTypes = List.of(
+            new PriorAuthorityTypeDetail().code("1").description("Type 1"),
+            new PriorAuthorityTypeDetail().code("2").description("Type 2")
+        );
+
+        final PriorAuthorityTypeDetails priorAuthorityTypeDetails = new PriorAuthorityTypeDetails().content(priorAuthorityTypes);
+        when(lookupService.getPriorAuthorityTypes()).thenReturn(Mono.just(priorAuthorityTypeDetails));
+
+        final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData("add");
+
+        mockMvc.perform(get("/application/prior-authorities/add/type"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/prior-authority-type"))
+            .andExpect(model().attribute("priorAuthorityTypes", priorAuthorityTypes))
+            .andExpect(model().attribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow))
+            .andExpect(model().attribute("priorAuthorityTypeDetails", priorAuthorityFlow.getPriorAuthorityTypeFormDataDetails()));
+
+        verify(lookupService, times(1)).getPriorAuthorityTypes();
+    }
+
+    @Test
+    void testPriorAuthorityTypePostWithValidationErrors() throws Exception {
+        final PriorAuthorityFormDataTypeDetails priorAuthorityFormDataTypeDetails = new PriorAuthorityFormDataTypeDetails();
+        priorAuthorityFormDataTypeDetails.setPriorAuthorityType("1");
+
+        final List<PriorAuthorityTypeDetail> priorAuthorityTypes = List.of(
+            new PriorAuthorityTypeDetail().code("1").description("Type 1"),
+            new PriorAuthorityTypeDetail().code("2").description("Type 2")
+        );
+
+        final PriorAuthorityTypeDetails priorAuthorityTypeDetails = new PriorAuthorityTypeDetails().content(priorAuthorityTypes);
+        when(lookupService.getPriorAuthorityTypes()).thenReturn(Mono.just(priorAuthorityTypeDetails));
+
+        final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData("add");
+
+        doAnswer(invocation -> {
+            BindingResult errors = invocation.getArgument(1);
+            errors.rejectValue("priorAuthorityType", "required.priorAuthorityType", "Please complete 'Prior authority type'.");
+            return null;
+        }).when(priorAuthorityTypeDetailsValidator).validate(any(PriorAuthorityFormDataTypeDetails.class), any(BindingResult.class));
+
+        mockMvc.perform(post("/application/prior-authorities/add/type")
+                .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
+                .flashAttr("priorAuthorityTypeDetails", priorAuthorityFormDataTypeDetails))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/prior-authority-type"))
+            .andExpect(model().attributeHasFieldErrors("priorAuthorityTypeDetails", "priorAuthorityType"))
+            .andExpect(model().attribute("priorAuthorityTypeDetails", priorAuthorityFormDataTypeDetails))
+            .andExpect(model().attribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow));
+
+        verify(priorAuthorityTypeDetailsValidator, times(1)).validate(any(PriorAuthorityFormDataTypeDetails.class), any(BindingResult.class));
+    }
+
+    @Test
+    void testPriorAuthorityTypePostValidationPasses() throws Exception {
+        final PriorAuthorityFormDataTypeDetails priorAuthorityTypeDetails = new PriorAuthorityFormDataTypeDetails();
+        priorAuthorityTypeDetails.setPriorAuthorityType("1");
+
+        final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData("add");
+
+        mockMvc.perform(post("/application/prior-authorities/add/type")
+                .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
+                .flashAttr("priorAuthorityTypeDetails", priorAuthorityTypeDetails))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/prior-authorities/add/details"));
+
+        verify(priorAuthorityTypeDetailsValidator, times(1)).validate(any(
+            PriorAuthorityFormDataTypeDetails.class), any(BindingResult.class));
+    }
+
+    @Test
+    void testPriorAuthorityDetailsForAddAction() throws Exception {
+        final String priorAuthorityAction = "add";
+        final PriorAuthorityFormDataTypeDetails typeDetails = new PriorAuthorityFormDataTypeDetails();
+        typeDetails.setPriorAuthorityType("1");
+
+        final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(priorAuthorityAction);
+        priorAuthorityFlow.setPriorAuthorityTypeFormDataDetails(typeDetails);
+
+        final PriorAuthorityTypeDetail priorAuthorityDynamicForm = createPriorAuthorityTypeDetail();
+
+        when(applicationService.getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType()))
+            .thenReturn(priorAuthorityDynamicForm);
+
+        final List<CommonLookupValueDetail> commonLookupValues = List.of(new CommonLookupValueDetail().code("1").description("Value 1"));
+        when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupValues));
+
+        mockMvc.perform(get("/application/prior-authorities/{action}/details", priorAuthorityAction)
+                .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/prior-authority-details"))
+            .andExpect(model().attributeExists("testCode"))
+            .andExpect(model().attribute("testCode", commonLookupValues))
+            .andExpect(model().attribute("priorAuthorityDynamicForm", priorAuthorityDynamicForm))
+            .andExpect(model().attributeExists("priorAuthorityDetails"))
+            .andExpect(model().attribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow));
+
+        verify(applicationService, times(1)).getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType());
+        verify(lookupService, times(1)).getCommonValues("testLovCode");
+    }
+
+    @Test
+    void testPriorAuthorityDetailsForEditAction() throws Exception {
+        final String priorAuthorityAction = "edit";
+        final PriorAuthorityFormDataTypeDetails typeDetails = new PriorAuthorityFormDataTypeDetails();
+        typeDetails.setPriorAuthorityType("1");
+
+        final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(priorAuthorityAction);
+        priorAuthorityFlow.setPriorAuthorityTypeFormDataDetails(typeDetails);
+
+        final PriorAuthorityTypeDetail priorAuthorityDynamicForm = createPriorAuthorityTypeDetail();
+
+        when(applicationService.getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType()))
+            .thenReturn(priorAuthorityDynamicForm);
+
+        final List<CommonLookupValueDetail> commonLookupValues = List.of(new CommonLookupValueDetail().code("1").description("Value 1"));
+        when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupValues));
+
+        mockMvc.perform(get("/application/prior-authorities/{action}/details", priorAuthorityAction)
+                .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/prior-authority-details"))
+            .andExpect(model().attributeExists("testCode"))
+            .andExpect(model().attribute("testCode", commonLookupValues))
+            .andExpect(model().attribute("priorAuthorityDynamicForm", priorAuthorityDynamicForm))
+            .andExpect(model().attributeExists("priorAuthorityDetails"))
+            .andExpect(model().attribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow));
+
+        verify(applicationService, times(1)).getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType());
+        verify(lookupService, times(1)).getCommonValues("testLovCode");
+    }
+
+    private PriorAuthorityTypeDetail createPriorAuthorityTypeDetail() {
+        return new PriorAuthorityTypeDetail()
+            .code("1")
+            .valueRequired(true)
+            .priorAuthorities(List.of(new PriorAuthorityDetail()
+                .code("testCode")
+                .dataType("LOV")
+                .lovCode("testLovCode")));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"add", "edit"})
+    void testPriorAuthorityDetailsPostWithValidationErrors(final String action) throws Exception {
+        final String applicationId = "app123";
+        final UserDetail user = new UserDetail();
+
+        final PriorAuthorityFormDataTypeDetails typeDetails = new PriorAuthorityFormDataTypeDetails();
+        typeDetails.setPriorAuthorityType("1");
+
+        final PriorAuthorityTypeDetail priorAuthorityDynamicForm = createPriorAuthorityTypeDetail();
+
+        when(applicationService.getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType()))
+            .thenReturn(priorAuthorityDynamicForm);
+
+        final List<CommonLookupValueDetail> commonLookupValues = List.of(new CommonLookupValueDetail().code("1").description("Value 1"));
+        when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupValues));
+
+        final PriorAuthorityFormDataDetails priorAuthorityDetails = new PriorAuthorityFormDataDetails();
+        final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(action);
+        priorAuthorityFlow.setPriorAuthorityTypeFormDataDetails(typeDetails);
+        priorAuthorityFlow.setPriorAuthorityFormDataDetails(priorAuthorityDetails);
+
+        doAnswer(invocation -> {
+            final BindingResult errors = invocation.getArgument(1);
+            errors.rejectValue("summary", "required.summary", "Error Message");
+            return null;
+        }).when(priorAuthorityDetailsValidator).validate(eq(priorAuthorityDetails), any(BindingResult.class));
+
+        mockMvc.perform(post("/application/prior-authorities/{action}/details", action)
+                .sessionAttr(APPLICATION_ID, applicationId)
+                .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
+                .sessionAttr(USER_DETAILS, user)
+                .flashAttr("priorAuthorityDetails", priorAuthorityDetails))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/prior-authority-details"))
+            .andExpect(model().attributeHasFieldErrors("priorAuthorityDetails", "summary"));
+
+        verify(priorAuthorityDetailsValidator, times(1)).validate(eq(priorAuthorityDetails), any(BindingResult.class));
+        verify(applicationService, times(1)).getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType());
+        verify(lookupService, times(1)).getCommonValues("testLovCode");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"add", "edit"})
+    void testPriorAuthorityDetailsPostValidationPasses(final String action) throws Exception {
+        final String applicationId = "app123";
+        final UserDetail user = new UserDetail();
+
+        final PriorAuthorityFormDataTypeDetails typeDetails = new PriorAuthorityFormDataTypeDetails();
+        typeDetails.setPriorAuthorityType("1");
+
+        final PriorAuthorityFormDataDetails priorAuthorityDetails = new PriorAuthorityFormDataDetails();
+        final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(action);
+        priorAuthorityFlow.setPriorAuthorityTypeFormDataDetails(typeDetails);
+        priorAuthorityFlow.setPriorAuthorityFormDataDetails(priorAuthorityDetails);
+
+        mockMvc.perform(post("/application/prior-authorities/{action}/details", action)
+                .sessionAttr(APPLICATION_ID, applicationId)
+                .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
+                .sessionAttr(USER_DETAILS, user)
+                .flashAttr("priorAuthorityDetails", priorAuthorityDetails))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/proceedings-and-costs#prior-authority"));
+
+        if ("add".equals(action)) {
+            verify(applicationService, times(1)).addPriorAuthority(eq(applicationId), any(), eq(user));
+        } else if ("edit".equals(action)) {
+            verify(applicationService, times(1)).updatePriorAuthority(any(), eq(user));
+        }
+    }
+
+    @Test
+    void testPriorAuthorityConfirmFound() throws Exception {
+        final int priorAuthorityId = 1;
+        final PriorAuthority priorAuthority = new PriorAuthority();
+        priorAuthority.setId(priorAuthorityId);
+
+        final List<PriorAuthority> priorAuthorities = Collections.singletonList(priorAuthority);
+
+        when(proceedingAndCostsMapper.toPriorAuthorityFlowFormData(any(PriorAuthority.class)))
+            .thenReturn(new PriorAuthorityFlowFormData("edit"));
+
+        mockMvc.perform(get("/application/prior-authorities/{prior-authority-id}/confirm", priorAuthorityId)
+                .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/prior-authorities/edit/details"));
+
+        verify(proceedingAndCostsMapper, times(1)).toPriorAuthorityFlowFormData(priorAuthority);
+    }
+
+    @Test
+    void testPriorAuthorityConfirmNotFound() {
+        final int priorAuthorityId = 1;
+        final List<PriorAuthority> priorAuthorities = Collections.emptyList();
+
+        final Exception exception = assertThrows(ServletException.class, () ->
+            mockMvc.perform(get("/application/prior-authorities/{prior-authority-id}/confirm", priorAuthorityId)
+                .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities))
+        );
+
+        assertInstanceOf(CaabApplicationException.class, exception.getCause());
+        assertEquals("No prior authority found with id: " + priorAuthorityId, exception.getCause().getMessage());
+    }
+
+    @Test
+    void testPriorAuthorityRemoveFound() throws Exception {
+        final int priorAuthorityId = 1;
+        final PriorAuthority priorAuthority = new PriorAuthority();
+        priorAuthority.setId(priorAuthorityId);
+
+        final List<PriorAuthority> priorAuthorities = Collections.singletonList(priorAuthority);
+
+        mockMvc.perform(get("/application/prior-authorities/{prior-authority-id}/remove", priorAuthorityId)
+                .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/prior-authority-remove"))
+            .andExpect(model().attribute("priorAuthority", priorAuthority));
+    }
+
+    @Test
+    void testPriorAuthorityRemoveNotFound() {
+        final int priorAuthorityId = 1;
+        final List<PriorAuthority> priorAuthorities = Collections.emptyList();
+
+        final Exception exception = assertThrows(ServletException.class, () ->
+            mockMvc.perform(get("/application/prior-authorities/{prior-authority-id}/remove", priorAuthorityId)
+                .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities))
+        );
+
+        assertInstanceOf(CaabApplicationException.class, exception.getCause());
+        assertEquals("No prior authority found with id: " + priorAuthorityId, exception.getCause().getMessage());
+    }
+
+    @Test
+    void testPriorAuthorityRemovePostSuccess() throws Exception {
+        final int priorAuthorityId = 1;
+        final UserDetail user = new UserDetail();
+        final PriorAuthority priorAuthority = new PriorAuthority();
+        priorAuthority.setId(priorAuthorityId);
+
+        final List<PriorAuthority> priorAuthorities = new ArrayList<>();
+        priorAuthorities.add(priorAuthority);
+
+        mockMvc.perform(post("/application/prior-authorities/{prior-authority-id}/remove", priorAuthorityId)
+                .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)
+                .sessionAttr(USER_DETAILS, user))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/proceedings-and-costs#prior-authority"));
+
+        verify(applicationService, times(1)).deletePriorAuthority(priorAuthorityId, user);
+    }
+
+    @Test
+    void testPriorAuthorityRemovePostNotFound() {
+        final int priorAuthorityId = 1;
+        final UserDetail user = new UserDetail();
+        final List<PriorAuthority> priorAuthorities = new ArrayList<>();
+
+        final Exception exception = assertThrows(ServletException.class, () ->
+            mockMvc.perform(post("/application/prior-authorities/{prior-authority-id}/remove", priorAuthorityId)
+                .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)
+                .sessionAttr(USER_DETAILS, user))
+        );
+
+        assertInstanceOf(CaabApplicationException.class, exception.getCause());
+        assertEquals("No prior authority found with id: " + priorAuthorityId, exception.getCause().getMessage());
+    }
+
+
+
+
+
+
 
 }

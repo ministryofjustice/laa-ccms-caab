@@ -88,6 +88,7 @@ public class EbsApiClient {
             .queryParamIfPresent("code", Optional.ofNullable(code))
             .queryParamIfPresent("description", Optional.ofNullable(description))
             .queryParamIfPresent("sort", Optional.ofNullable(sort))
+            .queryParam("size", 1000)
             .build())
         .retrieve()
         .bodyToMono(CommonLookupDetail.class)

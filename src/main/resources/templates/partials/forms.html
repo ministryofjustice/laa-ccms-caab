@@ -73,12 +73,38 @@
          th:field="*{__${fieldId}__}">
 </div>
 
+<div th:fragment="largeTextInput(fieldId, label)"
+     class="govuk-form-group"
+     th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
+  <fieldset class="govuk-fieldset">
+    <label class="govuk-label" th:for="${fieldId}" th:text="${label}"></label>
+    <span th:if="${#fields.hasErrors(fieldId)}"
+          th:errors="*{__${fieldId}__}"
+          class="govuk-error-message">
+    </span>
+    <textarea
+            class="govuk-textarea govuk-!-margin-bottom-2"
+            th:errorclass="govuk-input--error"
+            th:id="${fieldId}"
+            th:name="${fieldId}"
+            rows="5"
+            maxlength="2000"
+            th:field="*{__${fieldId}__}">
+    </textarea>
+  </fieldset>
+</div>
+
 <div th:fragment="numericInput(fieldId, label, maxLength)" class="govuk-date-input__item">
-  <div class="govuk-form-group">
+  <div class="govuk-form-group"
+       th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">>
     <label class="govuk-label govuk-date-input__label"
            th:for="${fieldId}"
            th:text="${label}">
     </label>
+    <span th:if="${#fields.hasErrors(fieldId)}"
+          th:errors="*{__${fieldId}__}"
+          class="govuk-error-message">
+    </span>
     <input th:errorclass="govuk-input--error"
            th:class="${'govuk-input govuk-date-input__input govuk-input--width-' + maxLength}"
            th:id="${fieldId}"
@@ -86,6 +112,28 @@
            type="text"
            inputmode="numeric"
            th:maxlength="${maxLength}"
+           th:field="*{__${fieldId}__}">
+  </div>
+</div>
+
+
+<div th:fragment="currencyInput(fieldId, label, maxLength)"
+     class="govuk-form-group"
+     th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
+  <h2 class="govuk-label-wrapper">
+    <label class="govuk-label" th:for="${fieldId}" th:text="${label}"></label>
+    <span th:if="${#fields.hasErrors(fieldId)}"
+          th:errors="*{__${fieldId}__}"
+          class="govuk-error-message">
+    </span>
+  </h2>
+  <div class="govuk-input__wrapper">
+    <div class="govuk-input__prefix" aria-hidden="true" >£</div>
+    <input th:errorclass="govuk-input--error"
+           th:class="${'govuk-input govuk-input--width-' + maxLength}"
+           th:id="${fieldId}"
+           th:name="${fieldId}"
+           type="text" spellcheck="false"
            th:field="*{__${fieldId}__}">
   </div>
 </div>

@@ -343,6 +343,7 @@ public interface ApplicationMapper {
   @Mapping(target = "lovLookUp", source = "key.lovCode")
   @Mapping(target = "mandatory", source = "key.mandatoryFlag")
   @Mapping(target = "value", source = "value")
+  @Mapping(target = "id", ignore = true)
   ReferenceDataItem toReferenceDataItem(
       Pair<PriorAuthorityDetail, CommonLookupValueDetail> priorAuthorityDetail);
 

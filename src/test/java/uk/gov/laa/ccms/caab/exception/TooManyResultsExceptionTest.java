@@ -8,12 +8,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class CaabApplicationExceptionTest {
+class TooManyResultsExceptionTest {
 
   @Test
   public void testConstructorWithMessage() {
-    final String expectedMessage = "Test Exception";
-    final CaabApplicationException exception = new CaabApplicationException(expectedMessage);
+    final String expectedMessage = "Too many results";
+    final TooManyResultsException exception = new TooManyResultsException(expectedMessage);
 
     assertEquals(expectedMessage, exception.getMessage());
     assertNull(exception.getCause());
@@ -21,12 +21,11 @@ class CaabApplicationExceptionTest {
 
   @Test
   public void testConstructorWithMessageAndCause() {
-    final String expectedMessage = "Test Exception";
-    final Exception cause = new Exception("Cause Exception");
-    final CaabApplicationException exception = new CaabApplicationException(expectedMessage, cause);
+    final String expectedMessage = "Too many results";
+    final Throwable cause = new Exception("Cause of too many results");
+    final TooManyResultsException exception = new TooManyResultsException(expectedMessage, cause);
 
     assertEquals(expectedMessage, exception.getMessage());
     assertEquals(cause, exception.getCause());
   }
-
 }
