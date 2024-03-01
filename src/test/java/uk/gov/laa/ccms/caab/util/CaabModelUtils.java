@@ -48,6 +48,7 @@ public class CaabModelUtils {
     return new ApplicationDetail()
         .caseReferenceNumber(id + "")
         .categoryOfLaw(new StringDisplayValue().id(id + "cat1").displayValue(id + "catoflaw1"))
+        .certificate(new StringDisplayValue().id(id + "cert").displayValue(id + " certificate"))
         .client(new Client().firstName(id + "firstname"))
         .providerDetails(new ApplicationProviderDetails()
             .provider(new IntDisplayValue().id(id).displayValue("Client " + id))

@@ -13,7 +13,6 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -372,27 +371,29 @@ public class ApplicationService {
 
     // get case reference Number, category of law value, contractual devolved powers,
     // amendment types
-    Mono<Tuple3<CaseReferenceSummary,
+    Mono<Tuple4<CaseReferenceSummary,
         CategoryOfLawLookupValueDetail,
+        ContractDetails,
         RelationshipToCaseLookupDetail>> combinedResult =
         Mono.zip(
             this.getCaseReference(user.getLoginId(), user.getUserType()),
             lookupService.getCategoryOfLaw(applicationToCopy.getCategoryOfLaw().getId()),
+            soaApiClient.getContractDetails(
+                user.getProvider().getId(),
+                applicationToCopy.getProviderDetails().getOffice().getId(),
+                user.getLoginId(),
+                user.getUserType()
+            ),
             lookupService.getPersonToCaseRelationships());
 
     return combinedResult.map(tuple -> {
-      String caseReferenceNumber = tuple.getT1().getCaseReferenceNumber();
-
-      // Check whether the cost limit should be copied for the case's category of law
-      Boolean copyCostLimit = tuple.getT2().getCopyCostLimit();
-      BigDecimal requestedCostLimitation =
-          Boolean.TRUE.equals(copyCostLimit)
-              ? applicationToCopy.getCosts().getRequestedCostLimitation() : BigDecimal.ZERO;
+      final CaseReferenceSummary caseReferenceSummary = tuple.getT1();
+      final CategoryOfLawLookupValueDetail categoryOfLawLookupValueDetail = tuple.getT2();
+      final ContractDetails contractDetails = tuple.getT3();
+      final RelationshipToCaseLookupDetail relationshipToCaseLookupDetail = tuple.getT4();
 
       // Get a Map of RelationshipToCase by code, filtered for those with the 'copyParty'
       // flag set.
-      RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-          tuple.getT3();
       Map<String, RelationshipToCaseLookupValueDetail> copyPartyRelationships =
           relationshipToCaseLookupDetail.getContent() != null
               ? relationshipToCaseLookupDetail.getContent().stream()
@@ -400,8 +401,6 @@ public class ApplicationService {
               .collect(Collectors.toMap(
                   RelationshipToCaseLookupValueDetail::getCode, Function.identity()))
               : Collections.emptyMap();
-
-
 
       // Find the max cost limitation across the Proceedings, and set this as the
       // default cost limitation for the application.
@@ -413,30 +412,40 @@ public class ApplicationService {
             .orElse(BigDecimal.ZERO);
       }
 
-      StringDisplayValue initialStatus = new StringDisplayValue()
-          .id(STATUS_UNSUBMITTED_ACTUAL_VALUE)
-          .displayValue(STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY);
+      // Check whether the cost limit should be copied for the case's category of law
+      BigDecimal requestedCostLimitation =
+          Boolean.TRUE.equals(categoryOfLawLookupValueDetail.getCopyCostLimit())
+              ? applicationToCopy.getCosts().getRequestedCostLimitation() : BigDecimal.ZERO;
 
-      // Use a mapper to copy the relevant attributes
-      ApplicationDetail application = copyApplicationMapper.copyApplication(
-          applicationToCopy,
-          caseReferenceNumber,
-          initialStatus,
-          clientDetail,
-          requestedCostLimitation,
-          defaultCostLimitation);
+      // Use the builder to intialise the application.
+      ApplicationDetail newApplication = new ApplicationBuilder()
+          .caseReference(caseReferenceSummary)
+          .provider(user)
+          .client(clientDetail)
+          .contractualDevolvedPower(
+              contractDetails.getContracts(),
+              applicationToCopy.getCategoryOfLaw().getId())
+          .costStructure(
+              new CostStructure()
+                  .requestedCostLimitation(requestedCostLimitation)
+                  .defaultCostLimitation(defaultCostLimitation))
+          .status()
+          .build();
+
+      // Use a mapper to copy the relevant attributes into the new application
+      newApplication = copyApplicationMapper.copyApplication(newApplication, applicationToCopy);
 
       // Clear the ebsId for an opponent if it is of type INDIVIDUAL AND it is NOT shared AND
       // the relationship to case for the opponent is of type Copy Party.
-      if (application.getOpponents() != null) {
-        application.getOpponents().stream()
+      if (newApplication.getOpponents() != null) {
+        newApplication.getOpponents().stream()
             .filter(opponent -> OPPONENT_TYPE_INDIVIDUAL.equalsIgnoreCase(opponent.getType())
                 && copyPartyRelationships.containsKey(opponent.getRelationshipToCase())
                 && !opponent.getSharedInd())
             .forEach(opponent -> opponent.setEbsId(null));
       }
 
-      return application;
+      return newApplication;
     });
   }
 
@@ -1139,13 +1148,22 @@ public class ApplicationService {
         .orElseThrow(() -> new CaabApplicationException(
             "Failed to query lookup data for Application mapping"));
 
-    // Lookup the application type if the SOA Case has a Certificate Type
-    CommonLookupValueDetail applicationType = soaCase.getCertificateType() != null
+    // Lookup the certificate display value
+    CommonLookupValueDetail certificateLookup = soaCase.getCertificateType() != null
         ? Optional.ofNullable(lookupService.getApplicationType(soaCase.getCertificateType())
-            .block()).orElseThrow(
-                () -> new CaabApplicationException(
-                  String.format("Failed to retrieve applicationtype with code: %s",
-                      soaCase.getCertificateType()))) : null;
+        .block()).orElseThrow(() -> new CaabApplicationException(
+            String.format("Failed to retrieve applicationtype with code: %s",
+                soaCase.getCertificateType()))) : null;
+
+    // Lookup the application type display value - this should be based on the
+    // application/amendment type (if it has one), or the certificate type.
+    CommonLookupValueDetail applicationTypeLookup =
+        soaApplicationDetails.getApplicationAmendmentType() != null
+        ? Optional.ofNullable(
+            lookupService.getApplicationType(soaApplicationDetails.getApplicationAmendmentType())
+        .block()).orElseThrow(() -> new CaabApplicationException(
+            String.format("Failed to retrieve applicationtype with code: %s",
+                soaCase.getCertificateType()))) : certificateLookup;
 
     // Find the correct provider office.
     OfficeDetail providerOffice = providerDetail.getOffices().stream()
@@ -1243,7 +1261,8 @@ public class ApplicationService {
 
     return ApplicationMappingContext.builder()
         .soaCaseDetail(soaCase)
-        .applicationType(applicationType)
+        .applicationType(applicationTypeLookup)
+        .certificate(certificateLookup)
         .providerDetail(providerDetail)
         .providerOffice(providerOffice)
         .supervisorContact(supervisorContact)

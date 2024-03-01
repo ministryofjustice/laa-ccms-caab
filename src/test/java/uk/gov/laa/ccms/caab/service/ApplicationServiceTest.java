@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.AdditionalAnswers.returnsSecondArg;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -24,7 +25,6 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCategoryOfLawLookupValueDetail;
@@ -71,7 +71,7 @@ import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
-import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapperImpl;
 import uk.gov.laa.ccms.caab.mapper.OpponentMapper;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
@@ -157,7 +157,7 @@ class ApplicationServiceTest {
   private ResultDisplayMapper resultDisplayMapper;
 
   @Mock
-  private CopyApplicationMapper copyApplicationMapper;
+  private CopyApplicationMapperImpl copyApplicationMapper;
 
   @Mock
   private OpponentMapper opponentMapper;
@@ -507,6 +507,10 @@ class ApplicationServiceTest {
     when(lookupService.getApplicationType(soaCase.getCertificateType()))
         .thenReturn(Mono.just(applicationTypeLookup));
 
+    when(lookupService.getApplicationType(
+        soaCase.getApplicationDetails().getApplicationAmendmentType()))
+        .thenReturn(Mono.just(applicationTypeLookup));
+
     when(providerService.getProvider(Integer.parseInt(
         soaCase.getApplicationDetails().getProviderDetails().getProviderFirmId())))
         .thenReturn(Mono.just(providerDetail));
@@ -609,13 +613,15 @@ class ApplicationServiceTest {
         .thenReturn(Mono.just(new CategoryOfLawLookupValueDetail()));
     when(lookupService.getPersonToCaseRelationships()).thenReturn(
         Mono.just(new RelationshipToCaseLookupDetail()));
+    when(soaApiClient.getContractDetails(
+        user.getProvider().getId(),
+        applicationToCopy.getProviderDetails().getOffice().getId(),
+        user.getLoginId(),
+        user.getUserType())).thenReturn(Mono.just(new ContractDetails()));
+
     when(copyApplicationMapper.copyApplication(
-        eq(applicationToCopy),
-        eq(caseReferenceSummary.getCaseReferenceNumber()),
-        any(StringDisplayValue.class),
-        eq(clientDetail),
-        any(BigDecimal.class),
-        any(BigDecimal.class)))
+        any(ApplicationDetail.class),
+        eq(applicationToCopy)))
         .thenReturn(applicationToCopy);
 
     when(caabApiClient.createApplication(anyString(), any())).thenReturn(Mono.empty());
@@ -628,12 +634,8 @@ class ApplicationServiceTest {
         .verifyComplete();
 
     verify(copyApplicationMapper).copyApplication(
-        eq(applicationToCopy),
-        eq(caseReferenceSummary.getCaseReferenceNumber()),
-        any(StringDisplayValue.class),
-        eq(clientDetail),
-        any(BigDecimal.class),
-        any(BigDecimal.class));
+        any(ApplicationDetail.class),
+        eq(applicationToCopy));
   }
 
 
@@ -688,6 +690,12 @@ class ApplicationServiceTest {
     when(lookupService.getPersonToCaseRelationships()).thenReturn(
         Mono.just(relationshipToCaseLookupDetail));
 
+    when(soaApiClient.getContractDetails(
+        userDetail.getProvider().getId(),
+        applicationToCopy.getProviderDetails().getOffice().getId(),
+        userDetail.getLoginId(),
+        userDetail.getUserType())).thenReturn(Mono.just(new ContractDetails()));
+
     // If the category of law has copyCostLimit set to TRUE the requested cost
     // limit from the applicationToCopy's costs should be used.
     BigDecimal expectedRequestedCostLimit =
@@ -696,38 +704,27 @@ class ApplicationServiceTest {
     // Get the max cost limitation
     BigDecimal expectedDefaultCostLimit = costLimit1.max(costLimit2);
 
-    StringDisplayValue initialStatus = new StringDisplayValue()
-        .id(STATUS_UNSUBMITTED_ACTUAL_VALUE)
-        .displayValue(STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY);
+    ArgumentCaptor<ApplicationDetail> newApplicationCaptor = ArgumentCaptor.forClass(ApplicationDetail.class);
 
     when(copyApplicationMapper.copyApplication(
-        applicationToCopy,
-        caseReferenceSummary.getCaseReferenceNumber(),
-        initialStatus,
-        clientDetail,
-        expectedRequestedCostLimit,
-        expectedDefaultCostLimit))
-        .thenReturn(applicationToCopy);
-
+        newApplicationCaptor.capture(),
+        eq(applicationToCopy)))
+        .then(returnsSecondArg());
 
     /* Call the method under test */
-    Mono<ApplicationDetail> result =
+    Mono<ApplicationDetail> resultMono =
         applicationService.copyApplication(applicationToCopy, clientDetail, userDetail);
 
     // If the opponent is an INDIVIDUAL, it is not shared, and the opponents relationship
     // to the case is set to 'Copy Party' then the ebsId should be null.
-    StepVerifier.create(result)
+    StepVerifier.create(resultMono)
         .expectNextMatches(applicationDetail ->
-            opponentEbsIdCleared == (applicationDetail.getOpponents().get(0).getEbsId() == null))
-        .verifyComplete();
-
-    verify(copyApplicationMapper).copyApplication(
-        applicationToCopy,
-        caseReferenceSummary.getCaseReferenceNumber(),
-        initialStatus,
-        clientDetail,
-        expectedRequestedCostLimit,
-        expectedDefaultCostLimit);
+            opponentEbsIdCleared == (applicationDetail.getOpponents().get(0).getEbsId() == null)
+                && expectedDefaultCostLimit.equals(
+                newApplicationCaptor.getValue().getCosts().getDefaultCostLimitation())
+                && expectedRequestedCostLimit.equals(
+                newApplicationCaptor.getValue().getCosts().getRequestedCostLimitation())
+        ).verifyComplete();
   }
 
   @Test
@@ -1407,6 +1404,10 @@ class ApplicationServiceTest {
     when(lookupService.getApplicationType(soaCase.getCertificateType()))
         .thenReturn(Mono.just(applicationTypeLookup));
 
+    when(lookupService.getApplicationType(
+        soaCase.getApplicationDetails().getApplicationAmendmentType()))
+        .thenReturn(Mono.just(applicationTypeLookup));
+
     when(providerService.getProvider(Integer.parseInt(
         soaCase.getApplicationDetails().getProviderDetails().getProviderFirmId())))
         .thenReturn(Mono.just(providerDetail));
@@ -1493,6 +1494,10 @@ class ApplicationServiceTest {
     when(lookupService.getApplicationType(soaCase.getCertificateType()))
         .thenReturn(Mono.just(applicationTypeLookup));
 
+    when(lookupService.getApplicationType(
+        soaCase.getApplicationDetails().getApplicationAmendmentType()))
+        .thenReturn(Mono.just(applicationTypeLookup));
+
     when(providerService.getProvider(Integer.parseInt(
         soaCase.getApplicationDetails().getProviderDetails().getProviderFirmId())))
         .thenReturn(Mono.just(providerDetail));
@@ -1533,6 +1538,65 @@ class ApplicationServiceTest {
     assertEquals(1, result.getAmendmentProceedingsInEbs().size());
     assertEquals(1, result.getProceedings().size());
 
+  }
+
+  @Test
+  void testBuildApplicationMappingContext_NoAppTypeDefaultsToCertificate() {
+    CaseDetail soaCase = buildCaseDetail(null);
+    soaCase.getApplicationDetails().getProceedings().forEach(
+        proceedingDetail -> {
+          // Clear the outcome and scopelimitations from all proceedings - this is tested elsewhere
+          proceedingDetail.setOutcome(null);
+          proceedingDetail.getScopeLimitations().clear();
+        });
+    soaCase.getPriorAuthorities().clear(); // PriorAuthority mapping context tested elsewhere.
+    soaCase.getAwards().clear(); // Awards tested separately.
+
+
+    uk.gov.laa.ccms.data.model.ProviderDetail providerDetail = buildProviderDetail(
+        soaCase.getApplicationDetails().getProviderDetails().getProviderOfficeId(),
+        soaCase.getApplicationDetails().getProviderDetails().getFeeEarnerContactId(),
+        soaCase.getApplicationDetails().getProviderDetails().getSupervisorContactId());
+
+    CommonLookupValueDetail certificateTypeLookup = new CommonLookupValueDetail();
+    when(lookupService.getApplicationType(soaCase.getCertificateType()))
+        .thenReturn(Mono.just(certificateTypeLookup));
+
+    when(providerService.getProvider(Integer.parseInt(
+        soaCase.getApplicationDetails().getProviderDetails().getProviderFirmId())))
+        .thenReturn(Mono.just(providerDetail));
+
+    CommonLookupValueDetail matterTypeLookup =
+        new CommonLookupValueDetail().code("mat1").description("mat 1");
+    when(lookupService.getMatterType(anyString())).thenReturn(Mono.just(matterTypeLookup));
+
+    CommonLookupValueDetail levelOfServiceLookup =
+        new CommonLookupValueDetail().code("los1").description("los 1");
+    when(lookupService.getLevelOfService(anyString())).thenReturn(Mono.just(levelOfServiceLookup));
+
+    CommonLookupValueDetail clientInvolvementLookup =
+        new CommonLookupValueDetail().code("ci1").description("ci 1");
+    when(lookupService.getClientInvolvementType(anyString())).thenReturn(Mono.just(clientInvolvementLookup));
+
+
+    // Also need to mock calls for the 'sub' mapping contexts, but we aren't testing their
+    // content here.
+    when(ebsApiClient.getProceeding(any(String.class)))
+        .thenReturn(Mono.just(new uk.gov.laa.ccms.data.model.ProceedingDetail()));
+    when(lookupService.getProceedingStatus(any(String.class)))
+        .thenReturn(Mono.just(new CommonLookupValueDetail()));
+    when(lookupService.getAwardTypes()).thenReturn(Mono.just(
+        new AwardTypeLookupDetail()
+            .addContentItem(new AwardTypeLookupValueDetail())));
+
+    final ApplicationMappingContext result =
+        applicationService.buildApplicationMappingContext(soaCase);
+
+    assertNotNull(result);
+
+    // The soa case has no applicationAmendmentType, so the lookup should default to the
+    // certificateType.
+    assertEquals(certificateTypeLookup, result.getApplicationType());
   }
 
   @Test

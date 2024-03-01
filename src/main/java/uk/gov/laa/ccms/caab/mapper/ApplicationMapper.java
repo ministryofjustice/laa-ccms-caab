@@ -92,7 +92,7 @@ public interface ApplicationMapper {
   ApplicationProviderDetails toApplicationProviderDetails(CaseSummary soaCaseSummary);
 
   @Mapping(target = ".", source = "soaCaseDetail")
-  @Mapping(target = "certificate", source = "soaCaseDetail.certificateType")
+  @Mapping(target = "certificate", source = "certificate")
   @Mapping(target = "applicationType", source = "applicationMappingContext")
   @Mapping(target = "dateCreated", source = "soaCaseDetail.recordHistory.dateCreated")
   @Mapping(target = "providerDetails.providerCaseReference",

@@ -3,30 +3,22 @@ package uk.gov.laa.ccms.caab.mapper;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.PROCEEDING_STATUS_UNCHANGED_DISPLAY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildProceeding;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildScopeLimitation;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCaseReferenceSummary;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildClientDetail;
 
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import uk.gov.laa.ccms.caab.builders.ApplicationBuilder;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
-import uk.gov.laa.ccms.caab.model.Client;
-import uk.gov.laa.ccms.caab.model.CostStructure;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.model.DevolvedPowers;
 import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ScopeLimitation;
-import uk.gov.laa.ccms.caab.model.StringDisplayValue;
-import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 public class CopyApplicationMapperTest {
 
@@ -35,36 +27,21 @@ public class CopyApplicationMapperTest {
   @Test
   void testCopyApplication() {
     Date sharedDate = new Date();
-    BigDecimal requestedCostLimitation = BigDecimal.TEN;
-    BigDecimal defaultCostLimitation = BigDecimal.ONE;
 
     ApplicationDetail copyApplication = buildApplicationDetail(2, true, sharedDate);
 
-    ClientDetail soaClient = buildClientDetail();
-
-    CaseReferenceSummary soaCaseReference = buildCaseReferenceSummary();
-
-    StringDisplayValue intialStatus = new StringDisplayValue()
-        .id(STATUS_UNSUBMITTED_ACTUAL_VALUE)
-        .displayValue(STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY);
-
     // Build and update the expected application in line with the expected mappings.
-    ApplicationDetail expectedApplication = new ApplicationBuilder().build();
-    applyApplicationMappingUpdates(expectedApplication,
-        copyApplication,
-        soaCaseReference,
-        intialStatus,
-        soaClient,
-        requestedCostLimitation,
-        defaultCostLimitation);
+    ApplicationDetail expectedApplication = buildExpectedApplication(copyApplication);
 
+    ApplicationDetail newApplication = new ApplicationDetail()
+        .applicationType(
+            new ApplicationType()
+                .devolvedPowers(
+                    new DevolvedPowers()
+                        .contractFlag("should remain unchanged")));
     ApplicationDetail result = copyApplicationMapper.copyApplication(
-        copyApplication,
-        soaCaseReference.getCaseReferenceNumber(),
-        intialStatus,
-        soaClient,
-        requestedCostLimitation,
-        defaultCostLimitation);
+        newApplication,
+        copyApplication);
 
     assertEquals(expectedApplication, result);
   }
@@ -108,50 +85,43 @@ public class CopyApplicationMapperTest {
     assertEquals(expectedOpponent, result);
   }
 
-  private void applyApplicationMappingUpdates(ApplicationDetail expectedApplication,
-      ApplicationDetail copyApplication,
-      CaseReferenceSummary caseReferenceSummary,
-      StringDisplayValue intialStatus,
-      ClientDetail clientDetail,
-      BigDecimal requestedCostLimitation,
-      BigDecimal defaultCostLimitation) {
-    expectedApplication.setCaseReferenceNumber(caseReferenceSummary.getCaseReferenceNumber());
-    expectedApplication.setApplicationType(copyApplication.getApplicationType());
-    if (expectedApplication.getProviderDetails() == null) {
-      expectedApplication.setProviderDetails(new ApplicationProviderDetails());
-    }
-    expectedApplication.getProviderDetails().setProvider(
-        copyApplication.getProviderDetails().getProvider());
-    expectedApplication.getProviderDetails().setOffice(
-        copyApplication.getProviderDetails().getOffice());
-    expectedApplication.getProviderDetails().setSupervisor(
-        copyApplication.getProviderDetails().getSupervisor());
-    expectedApplication.getProviderDetails().setFeeEarner(
-        copyApplication.getProviderDetails().getFeeEarner());
-    expectedApplication.getProviderDetails().setProviderContact(
-        copyApplication.getProviderDetails().getProviderContact());
-    expectedApplication.setCategoryOfLaw(copyApplication.getCategoryOfLaw());
-    expectedApplication.setCorrespondenceAddress(copyApplication.getCorrespondenceAddress());
-    expectedApplication.setLarScopeFlag(copyApplication.getLarScopeFlag());
-    expectedApplication.setCosts(new CostStructure());
-    expectedApplication.getCosts().setRequestedCostLimitation(requestedCostLimitation);
-    expectedApplication.getCosts().setDefaultCostLimitation(defaultCostLimitation);
-    expectedApplication.setProceedings(List.copyOf(copyApplication.getProceedings()));
-    expectedApplication.getProceedings().forEach(this::applyProceedingMappingUpdates);
-    expectedApplication.setOpponents(List.copyOf(copyApplication.getOpponents()));
-    expectedApplication.setClient(new Client()
-        .firstName(clientDetail.getDetails().getName().getFirstName())
-        .surname(clientDetail.getDetails().getName().getSurname())
-        .reference(clientDetail.getClientReferenceNumber()));
-    expectedApplication.setStatus(intialStatus);
-    applyOpponentMappingUpdates(expectedApplication.getOpponents().get(0));
+  private ApplicationDetail buildExpectedApplication(ApplicationDetail copyApplication) {
+    return new ApplicationDetail()
+        .applicationType(
+            new ApplicationType()
+                .id(copyApplication.getApplicationType().getId())
+                .displayValue(copyApplication.getApplicationType().getDisplayValue())
+                .devolvedPowers(
+                    new DevolvedPowers()
+                        .contractFlag("should remain unchanged")
+                        .dateUsed(copyApplication.getApplicationType().getDevolvedPowers().getDateUsed())
+                        .used(copyApplication.getApplicationType().getDevolvedPowers().getUsed())))
+        .providerDetails(new ApplicationProviderDetails()
+            .provider(copyApplication.getProviderDetails().getProvider())
+            .office(copyApplication.getProviderDetails().getOffice())
+            .supervisor(copyApplication.getProviderDetails().getSupervisor())
+            .feeEarner(copyApplication.getProviderDetails().getFeeEarner())
+            .providerContact(copyApplication.getProviderDetails().getProviderContact()))
+        .categoryOfLaw(copyApplication.getCategoryOfLaw())
+        .correspondenceAddress(copyApplication.getCorrespondenceAddress())
+        .larScopeFlag(copyApplication.getLarScopeFlag())
+        .proceedings(List.copyOf(copyApplication.getProceedings()))
+        .opponents(copyApplication.getOpponents().stream()
+            .map(this::applyOpponentMappingUpdates)
+            .toList())
+        .proceedings(
+            copyApplication.getProceedings().stream()
+                .map(this::applyProceedingMappingUpdates)
+                    .toList());
   }
 
-  private void applyProceedingMappingUpdates(Proceeding expectedProceeding) {
+  private Proceeding applyProceedingMappingUpdates(Proceeding expectedProceeding) {
     expectedProceeding.setEbsId(null);
     expectedProceeding.getStatus().setId(STATUS_DRAFT);
     expectedProceeding.getStatus().setDisplayValue(PROCEEDING_STATUS_UNCHANGED_DISPLAY);
     applyScopeLimitationMappingUpdates(expectedProceeding.getScopeLimitations().get(0));
+
+    return expectedProceeding;
   }
 
   private void applyScopeLimitationMappingUpdates(ScopeLimitation expectedScopeLimitation) {
@@ -161,11 +131,13 @@ public class CopyApplicationMapperTest {
     expectedScopeLimitation.setStage(null);
   }
 
-  private void applyOpponentMappingUpdates(Opponent expectedOpponent) {
+  private Opponent applyOpponentMappingUpdates(Opponent expectedOpponent) {
     expectedOpponent.setConfirmed(Boolean.TRUE);
     expectedOpponent.setDeleteInd(Boolean.TRUE);
     expectedOpponent.setAmendment(Boolean.FALSE);
     expectedOpponent.setAppMode(Boolean.TRUE);
     expectedOpponent.setAward(Boolean.FALSE);
+
+    return expectedOpponent;
   }
 }
