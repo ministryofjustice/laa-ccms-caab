@@ -366,7 +366,7 @@ class EditGeneralDetailsSectionControllerTest {
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/summary/linked-cases"));
 
-    verify(applicationService, times(1)).removeLinkedCase(applicationId, linkedCaseId, user);
+    verify(applicationService, times(1)).removeLinkedCase(linkedCaseId, user);
   }
 
   @Test
@@ -403,7 +403,7 @@ class EditGeneralDetailsSectionControllerTest {
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/summary/linked-cases"));
 
-    verify(applicationService, times(1)).updateLinkedCase(applicationId, linkedCaseId, linkedCase, user);
+    verify(applicationService, times(1)).updateLinkedCase(linkedCaseId, linkedCase, user);
   }
 
   @Test
@@ -429,7 +429,7 @@ class EditGeneralDetailsSectionControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/summary/application-linked-case-confirm"));
 
-    verify(applicationService, never()).updateLinkedCase(applicationId, linkedCaseId, linkedCase, user);
+    verify(applicationService, never()).updateLinkedCase(linkedCaseId, linkedCase, user);
   }
 
   @Test

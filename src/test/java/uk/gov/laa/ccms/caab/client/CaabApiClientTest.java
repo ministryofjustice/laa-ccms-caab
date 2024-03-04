@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +37,6 @@ import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.PriorAuthority;
-import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -61,18 +61,18 @@ public class CaabApiClientTest {
   private WebClient.ResponseSpec responseMock;
 
   @Mock
-  private CaabApiClientErrorHandler caabApiClientErrorHandler;
+  private ApiClientErrorHandler apiClientErrorHandler;
 
   @InjectMocks
   private CaabApiClient caabApiClient;
 
   @Test
   void createApplication_success() {
-    String loginId = "user1";
-    ApplicationDetail application =
+    final String loginId = "user1";
+    final ApplicationDetail application =
         new ApplicationDetail(); // Populate as needed
-    String expectedUri = "/applications";
-    String locationId = "123"; // Replace with your expected location header
+    final String expectedUri = "/applications";
+    final String locationId = "123"; // Replace with your expected location header
 
     when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
     when(requestBodyUriMock.uri(expectedUri)).thenReturn(requestBodyMock);
@@ -81,7 +81,7 @@ public class CaabApiClientTest {
     when(requestBodyMock.bodyValue(any(ApplicationDetail.class))).thenReturn(requestHeadersMock);
     when(requestHeadersMock.exchangeToMono(any(Function.class))).thenReturn(Mono.just(locationId));
 
-    Mono<String> result = caabApiClient.createApplication(loginId, application);
+    final Mono<String> result = caabApiClient.createApplication(loginId, application);
 
     StepVerifier.create(result)
         .expectNext(locationId) // Expect the location header value
@@ -94,17 +94,17 @@ public class CaabApiClientTest {
   @Test
   void getApplication_success() {
 
-    String id = "123";
-    String expectedUri = "/applications/{id}";
+    final String id = "123";
+    final String expectedUri = "/applications/{id}";
 
-    ApplicationDetail mockApplication = new ApplicationDetail();
+    final ApplicationDetail mockApplication = new ApplicationDetail();
 
     when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
     when(requestHeadersUriMock.uri(expectedUri, id)).thenReturn(requestHeadersMock);
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(ApplicationDetail.class)).thenReturn(Mono.just(mockApplication));
 
-    Mono<ApplicationDetail> applicationDetailMono
+    final Mono<ApplicationDetail> applicationDetailMono
         = caabApiClient.getApplication(id);
 
     StepVerifier.create(applicationDetailMono)
@@ -115,7 +115,7 @@ public class CaabApiClientTest {
   @Test
   void getApplications_success() {
 
-    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     caseSearchCriteria.setCaseReference("123");
     caseSearchCriteria.setClientReference("cliref");
     caseSearchCriteria.setProviderCaseReference("456");
@@ -124,10 +124,10 @@ public class CaabApiClientTest {
     caseSearchCriteria.setClientSurname("asurname");
     caseSearchCriteria.setStatus("thestatus");
 
-    int page = 0;
-    int size = 2;
+    final int page = 0;
+    final int size = 2;
 
-    String expectedUri = String.format(
+    final String expectedUri = String.format(
         "/applications?case-reference-number=%s&provider-case-ref=%s&client-surname=%s&client-reference=%s&fee-earner=%s&office-id=%s&status=%s&page=%s&size=%s",
         caseSearchCriteria.getCaseReference(),
         caseSearchCriteria.getProviderCaseReference(),
@@ -139,9 +139,9 @@ public class CaabApiClientTest {
         page,
         size);
 
-    ApplicationDetails mockApplicationDetails = new ApplicationDetails();
+    final ApplicationDetails mockApplicationDetails = new ApplicationDetails();
 
-    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+    final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
     when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
     when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
@@ -149,15 +149,15 @@ public class CaabApiClientTest {
     when(responseMock.bodyToMono(ApplicationDetails.class))
         .thenReturn(Mono.just(mockApplicationDetails));
 
-    Mono<ApplicationDetails> applicationDetailsMono
+    final Mono<ApplicationDetails> applicationDetailsMono
         = caabApiClient.getApplications(caseSearchCriteria, page, size);
 
     StepVerifier.create(applicationDetailsMono)
-        .expectNext(applicationDetailsMono.block())
+        .expectNext(Objects.requireNonNull(applicationDetailsMono.block()))
         .verifyComplete();
 
-    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+    final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
     // Assert the URI
     assertEquals(expectedUri, actualUri.toString());
@@ -166,17 +166,17 @@ public class CaabApiClientTest {
   @Test
   void getApplicationType_success() {
 
-    String id = "123";
-    String expectedUri = "/applications/{id}/application-type";
+    final String id = "123";
+    final String expectedUri = "/applications/{id}/application-type";
 
-    ApplicationType mockApplication = new ApplicationType();
+    final ApplicationType mockApplication = new ApplicationType();
 
     when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
     when(requestHeadersUriMock.uri(expectedUri, id)).thenReturn(requestHeadersMock);
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(ApplicationType.class)).thenReturn(Mono.just(mockApplication));
 
-    Mono<ApplicationType> applicationTypeMono
+    final Mono<ApplicationType> applicationTypeMono
         = caabApiClient.getApplicationType(id);
 
     StepVerifier.create(applicationTypeMono)
@@ -187,10 +187,10 @@ public class CaabApiClientTest {
   @Test
   void getCorrespondenceAddress_success() {
 
-    String id = "123";
-    String expectedUri = "/applications/{id}/correspondence-address";
+    final String id = "123";
+    final String expectedUri = "/applications/{id}/correspondence-address";
 
-    Address mockApplication = new Address();
+    final Address mockApplication = new Address();
 
     when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
     when(requestHeadersUriMock.uri(expectedUri, id)).thenReturn(requestHeadersMock);
@@ -314,7 +314,6 @@ public class CaabApiClientTest {
 
   @Test
   void removeLinkedCase_success() {
-    final String applicationId = "app123";
     final String linkedCaseId = "case456";
     final String loginId = "user789";
     final String expectedUri = "/linked-cases/{linkedCaseId}";
@@ -325,7 +324,7 @@ public class CaabApiClientTest {
     when(requestBodyMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
 
-    final Mono<Void> result = caabApiClient.removeLinkedCase(applicationId, linkedCaseId, loginId);
+    final Mono<Void> result = caabApiClient.removeLinkedCase(linkedCaseId, loginId);
 
     StepVerifier.create(result)
         .verifyComplete();
@@ -336,7 +335,6 @@ public class CaabApiClientTest {
 
   @Test
   void updateLinkedCase_success() {
-    final String applicationId = "app123";
     final String linkedCaseId = "case456";
     final LinkedCase linkedCaseData = new LinkedCase(); // Populate this with test data as needed
     final String loginId = "user789";
@@ -350,7 +348,7 @@ public class CaabApiClientTest {
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
 
-    final Mono<Void> result = caabApiClient.updateLinkedCase(applicationId, linkedCaseId, linkedCaseData, loginId);
+    final Mono<Void> result = caabApiClient.updateLinkedCase(linkedCaseId, linkedCaseData, loginId);
 
     StepVerifier.create(result)
         .verifyComplete();
@@ -418,7 +416,7 @@ public class CaabApiClientTest {
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(new ParameterizedTypeReference<CostStructure>() {})).thenReturn(Mono.just(mockCostStructure));
 
-    final Mono<CostStructure> result = caabApiClient.getCosts(id);
+    final Mono<CostStructure> result = caabApiClient.getCostStructure(id);
 
     StepVerifier.create(result)
         .expectNext(mockCostStructure)

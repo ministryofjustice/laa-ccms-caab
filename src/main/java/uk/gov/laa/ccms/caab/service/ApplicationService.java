@@ -799,15 +799,13 @@ public class ApplicationService {
    * This method communicates with the CAAB API client to un-link a case identified by
    * {@code linkedCaseId} from a primary case identified by {@code id}.
    *
-   * @param applicationId The id of the application for which linked cases should be retrieved
    * @param linkedCaseId The ID of the linked case to be removed.
    * @param user         The user performing the operation, identified by {@code UserDetail}.
    */
   public void removeLinkedCase(
-      final String applicationId,
       final String linkedCaseId,
       final UserDetail user) {
-    caabApiClient.removeLinkedCase(applicationId, linkedCaseId, user.getLoginId()).block();
+    caabApiClient.removeLinkedCase(linkedCaseId, user.getLoginId()).block();
   }
 
   /**
@@ -816,21 +814,18 @@ public class ApplicationService {
    * the linked case identified by {@code linkedCaseId} in relation to the primary case
    * identified by {@code id}.
    *
-   * @param applicationId The ID of the case related to the linked case.
    * @param linkedCaseId The ID of the linked case to be updated.
    * @param data         The new data for the linked case, encapsulated in
    *                     {@code LinkedCaseResultRowDisplay}.
    * @param user         The user performing the update, identified by {@code UserDetail}.
    */
   public void updateLinkedCase(
-      final String applicationId,
       final String linkedCaseId,
       final LinkedCaseResultRowDisplay data,
       final UserDetail user) {
 
     final LinkedCase linkedCase = resultDisplayMapper.toLinkedCase(data);
     caabApiClient.updateLinkedCase(
-        applicationId,
         linkedCaseId,
         linkedCase, 
         user.getLoginId()).block();

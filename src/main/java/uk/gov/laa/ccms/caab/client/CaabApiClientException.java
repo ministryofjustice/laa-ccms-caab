@@ -11,7 +11,7 @@ public class CaabApiClientException extends RuntimeException {
    * @param message the detail message. The detail message is saved for later retrieval by the
    *        {@link #getMessage()} method.
    */
-  public CaabApiClientException(String message) {
+  public CaabApiClientException(final String message) {
     super(message);
   }
 
@@ -21,7 +21,7 @@ public class CaabApiClientException extends RuntimeException {
    * @param message the detail message
    * @param cause the cause of the exception
    */
-  public CaabApiClientException(String message, Throwable cause) {
+  public CaabApiClientException(final String message, final Throwable cause) {
     super(message, cause);
   }
 }

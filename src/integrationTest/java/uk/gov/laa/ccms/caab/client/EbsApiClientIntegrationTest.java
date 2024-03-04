@@ -9,8 +9,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static uk.gov.laa.ccms.caab.client.EbsApiClientErrorHandler.USER_ERROR_MESSAGE;
-import static uk.gov.laa.ccms.caab.client.EbsApiClientErrorHandler.USERS_ERROR_MESSAGE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,6 +53,9 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   private EbsApiClient ebsApiClient;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
+
+  private static final String USER_ERROR_MESSAGE = "Failed to retrieve User with loginId: %s";
+  private static final String USERS_ERROR_MESSAGE = "Failed to retrieve Users for provider: (id: %s)";
 
   @Test
   public void testGetUser_returnData() throws Exception {

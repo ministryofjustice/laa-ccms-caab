@@ -32,14 +32,14 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
-import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
-import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
-import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
+import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
+import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
+import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -59,7 +59,7 @@ class SoaApiClientTest {
   private WebClient.RequestBodyUriSpec requestBodyUriMock;
 
   @Mock
-  private SoaApiClientErrorHandler soaApiClientErrorHandler;
+  private ApiClientErrorHandler apiClientErrorHandler;
 
   @InjectMocks
   private SoaApiClient soaApiClient;
@@ -112,8 +112,7 @@ class SoaApiClientTest {
     when(responseMock.bodyToMono(NotificationSummary.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-    when(soaApiClientErrorHandler.handleNotificationSummaryError(eq(loginId),
-        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+    when(apiClientErrorHandler.handleSoaApiError(any(), any())).thenReturn(Mono.empty());
 
     Mono<NotificationSummary> summaryMono =
         soaApiClient.getNotificationsSummary(loginId, userType);
@@ -175,17 +174,13 @@ class SoaApiClientTest {
     when(responseMock.bodyToMono(ContractDetails.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-    when(soaApiClientErrorHandler.handleContractDetailsError(eq(providerFirmId), eq(officeId),
-        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+    when(apiClientErrorHandler.handleSoaApiError(any(), any())).thenReturn(Mono.empty());
 
     Mono<ContractDetails> contractDetailsMono =
         soaApiClient.getContractDetails(providerFirmId, officeId, loginId, userType);
 
     StepVerifier.create(contractDetailsMono)
         .verifyComplete();
-
-    verify(soaApiClientErrorHandler).handleContractDetailsError(eq(providerFirmId),
-        eq(officeId), any(WebClientResponseException.class));
 
     Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
     URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
@@ -396,8 +391,7 @@ class SoaApiClientTest {
     when(responseMock.bodyToMono(ClientDetail.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-    when(soaApiClientErrorHandler.handleClientDetailError(eq(clientReferenceNumber),
-        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+    when(apiClientErrorHandler.handleSoaApiError(any(), any())).thenReturn(Mono.empty());
 
     Mono<ClientDetail> clientDetailMono =
         soaApiClient.getClient(clientReferenceNumber, loginId, userType);
@@ -448,8 +442,7 @@ class SoaApiClientTest {
     when(responseMock.bodyToMono(CaseReferenceSummary.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-    when(soaApiClientErrorHandler.handleCaseReferenceError(
-        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+    when(apiClientErrorHandler.handleSoaApiError(any(), any())).thenReturn(Mono.empty());
 
     Mono<CaseReferenceSummary> caseReferenceSummaryMono =
         soaApiClient.getCaseReference(loginId, userType);
@@ -527,8 +520,7 @@ class SoaApiClientTest {
     when(responseMock.bodyToMono(Notifications.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-    when(soaApiClientErrorHandler.handleNotificationsError(eq(criteria),
-        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+    when(apiClientErrorHandler.handleSoaApiError(any(), any())).thenReturn(Mono.empty());
 
     Mono<Notifications> notificationsMono =
         soaApiClient.getNotifications(criteria, page, size );
@@ -585,8 +577,7 @@ class SoaApiClientTest {
     when(responseMock.bodyToMono(TransactionStatus.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-    when(soaApiClientErrorHandler.handleClientStatusError(eq(transactionId),
-        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+    when(apiClientErrorHandler.handleSoaApiError(any(), any())).thenReturn(Mono.empty());
 
     Mono<TransactionStatus> transactionStatusMono = soaApiClient.getClientStatus(transactionId, loginId, userType);
 
@@ -644,8 +635,7 @@ class SoaApiClientTest {
     when(responseMock.bodyToMono(ClientTransactionResponse.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.INTERNAL_SERVER_ERROR.value(), "", null, null, null)));
 
-    when(soaApiClientErrorHandler.handleClientCreatedError(eq(clientDetails.getName().getFullName()),
-        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+    when(apiClientErrorHandler.handleSoaApiError(any(), any())).thenReturn(Mono.empty());
 
     Mono<ClientTransactionResponse> clientCreatedMono = soaApiClient.postClient(clientDetails, loginId, userType);
 
@@ -713,8 +703,7 @@ class SoaApiClientTest {
     when(responseMock.bodyToMono(ClientTransactionResponse.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.INTERNAL_SERVER_ERROR.value(), "", null, null, null)));
 
-    when(soaApiClientErrorHandler.handleClientUpdatedError(eq(clientDetails.getName().getFullName()),
-        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+    when(apiClientErrorHandler.handleSoaApiError(any(), any())).thenReturn(Mono.empty());
 
     Mono<ClientTransactionResponse> clientUpdatedMono = soaApiClient.putClient(
         clientReferenceNumber, clientDetails, loginId, userType);
@@ -801,8 +790,7 @@ class SoaApiClientTest {
         new WebClientResponseException(
             HttpStatus.INTERNAL_SERVER_ERROR.value(), "", null, null, null)));
 
-    when(soaApiClientErrorHandler.handleOrganisationsError(eq(searchCriteria),
-        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+    when(apiClientErrorHandler.handleSoaApiError(any(), any())).thenReturn(Mono.empty());
 
     Mono<OrganisationDetails> organisationDetailsMono =
         soaApiClient.getOrganisations(searchCriteria, loginId, userType, page, size);
@@ -872,8 +860,7 @@ class SoaApiClientTest {
         new WebClientResponseException(
             HttpStatus.INTERNAL_SERVER_ERROR.value(), "", null, null, null)));
 
-    when(soaApiClientErrorHandler.handleOrganisationError(eq(orgId),
-        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+    when(apiClientErrorHandler.handleSoaApiError(any(), any())).thenReturn(Mono.empty());
 
     Mono<OrganisationDetail> organisationDetailMono =
         soaApiClient.getOrganisation(orgId, loginId, userType);

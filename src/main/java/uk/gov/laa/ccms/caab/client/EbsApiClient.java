@@ -34,9 +34,60 @@ import uk.gov.laa.ccms.data.model.UserDetails;
 @Slf4j
 @RequiredArgsConstructor
 public class EbsApiClient {
+
+  private static final String USER_ERROR_MESSAGE = "Failed to retrieve User with loginId: %s";
+  private static final String COMMON_VALUES_ERROR_MESSAGE =
+      "Failed to retrieve Common Values: (type: %s, code: %s, sort: %s)";
+  private static final String CASE_STATUS_VALUES_ERROR_MESSAGE =
+      "Failed to retrieve Case Status Values: (copyAllowed: %s)";
+  private static final String PROVIDER_ERROR_MESSAGE =
+      "Failed to retrieve Provider: (id: %s)";
+  private static final String AMENDMENT_TYPE_ERROR_MESSAGE =
+      "Failed to retrieve Amendment Types: (applicationType: %s)";
+  private static final String COUNTRY_ERROR_MESSAGE =
+      "Failed to retrieve Countries";
+  private static final String USERS_ERROR_MESSAGE =
+      "Failed to retrieve Users for provider: (id: %s)";
+  private static final String RELATIONSHIP_TO_CASE_ERROR_MESSAGE =
+      "Failed to retrieve relationship to case";
+  private static final String MATTER_TYPE_ERROR_MESSAGE =
+      "Failed to retrieve matter types: (categoryOfLaw: %s)";
+  private static final String PROCEEDING_ERROR_MESSAGE =
+      "Failed to retrieve Proceeding: (code: %s)";
+  private static final String PROCEEDINGS_ERROR_MESSAGE =
+      "Failed to retrieve Proceedings: (categoryOfLaw: %s, matterType: %s, amendmentOnly: %s, "
+          + "larScopeFlag: %s, applicationType: %s, isLead: %s)";
+  private static final String CLIENT_INVOLVEMENT_ERROR_MESSAGE =
+      "Failed to retrieve client involvement types: (proceedingCode: %s)";
+  private static final String LEVEL_OF_SERVICE_ERROR_MESSAGE =
+      "Failed to retrieve level of service types: (proceedingCode: %s, categoryOfLaw: %s, "
+          + "matterType: %s)";
+  private static final String SCOPE_LIMITATIONS_ERROR_MESSAGE =
+      "Failed to retrieve ScopeLimitationsDetails: (scopeLimitations: %s, categoryOfLaw: %s, "
+          + "matterType: %s, proceedingCode: %s, levelOfService: %s, defaultWording: %s, "
+          + "stage: %s, costLimitation: %s, emergencyCostLimitation: %s, "
+          + "nonStandardWordingRequired: %s, emergencyScopeDefault: %s, emergency: %s, "
+          + "defaultCode: %s, scopeDefault: %s)";
+  private static final String OUTCOME_RESULTS_ERROR_MESSAGE =
+      "Failed to retrieve OutcomeResultDetails with search criteria: (proceedingCode: %s, "
+          + "outcomeResult: %s)";
+  private static final String STAGE_END_ERROR_MESSAGE =
+      "Failed to retrieve StageEndLookupDetails with search criteria: (proceedingCode: %s, "
+          + "stageEnd: %s)";
+  private static final String PRIOR_AUTHORITY_TYPE_ERROR_MESSAGE =
+      "Failed to retrieve prior authority types: (code: %s, valueRequired: %s)";
+  private static final String AWARD_TYPE_ERROR_MESSAGE =
+      "Failed to retrieve award types: (code: %s, awardType: %s)";
+  private static final String CATEGORIES_OF_LAW_ERROR_MESSAGE =
+      "Failed to retrieve categories of law: (code: %s, matterType: %s, copyCostLimit: %s)";
+  private static final String PERSON_RELATIONSHIP_TO_CASE_ERROR_MESSAGE =
+      "Failed to retrieve person relationship to case: (code: %s, description: %s)";
+  private static final String ORGANISATION_RELATIONSHIP_TO_CASE_ERROR_MESSAGE =
+      "Failed to retrieve organisation relationship to case: (code: %s, description: %s)";
+
   private final WebClient ebsApiWebClient;
 
-  private final EbsApiClientErrorHandler ebsApiClientErrorHandler;
+  private final ApiClientErrorHandler apiClientErrorHandler;
 
   /**
    * Retrieves user details based on the login ID.
@@ -45,13 +96,13 @@ public class EbsApiClient {
    * @return A Mono containing the UserDetail or an error handler if an error occurs.
    */
   public Mono<UserDetail> getUser(final String loginId) {
-
+    final String errorMessage = String.format(USER_ERROR_MESSAGE, loginId);
     return ebsApiWebClient
             .get()
             .uri("/users/{loginId}", loginId)
             .retrieve()
             .bodyToMono(UserDetail.class)
-            .onErrorResume(e -> ebsApiClientErrorHandler.handleUserError(loginId, e));
+            .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 
   /**
@@ -61,12 +112,13 @@ public class EbsApiClient {
    * @return A Mono containing the ProviderDetail or an error handler if an error occurs.
    */
   public Mono<ProviderDetail> getProvider(final Integer providerId) {
+    final String errorMessage = String.format(PROVIDER_ERROR_MESSAGE, providerId);
     return ebsApiWebClient
         .get()
         .uri("/providers/{providerId}", String.valueOf(providerId))
         .retrieve()
         .bodyToMono(ProviderDetail.class)
-        .onErrorResume(e -> ebsApiClientErrorHandler.handleProviderError(providerId, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 
   /**
@@ -80,7 +132,7 @@ public class EbsApiClient {
    */
   public Mono<CommonLookupDetail> getCommonValues(final String type, final String code,
       final String description, final String sort) {
-
+    final String errorMessage = String.format(COMMON_VALUES_ERROR_MESSAGE, type, code, sort);
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/lookup/common")
@@ -92,8 +144,7 @@ public class EbsApiClient {
             .build())
         .retrieve()
         .bodyToMono(CommonLookupDetail.class)
-        .onErrorResume(e -> ebsApiClientErrorHandler.handleCommonValuesError(
-            type, code, sort, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 
   /**
@@ -136,7 +187,7 @@ public class EbsApiClient {
    * @return A Mono containing the Matter types or an error handler if an error occurs.
    */
   public Mono<MatterTypeLookupDetail> getMatterTypes(final String categoryOfLaw) {
-
+    final String errorMessage = String.format(MATTER_TYPE_ERROR_MESSAGE, categoryOfLaw);
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/lookup/matter-types")
@@ -144,7 +195,7 @@ public class EbsApiClient {
             .build())
         .retrieve()
         .bodyToMono(MatterTypeLookupDetail.class)
-        .onErrorResume(ebsApiClientErrorHandler::handleToMatterTypeValuesError);
+        .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 
 
@@ -156,14 +207,14 @@ public class EbsApiClient {
    *         occurs.
    */
   public Mono<RelationshipToCaseLookupDetail> getPersonRelationshipsToCaseValues() {
-
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/lookup/person-to-case-relationships")
             .build())
         .retrieve()
         .bodyToMono(RelationshipToCaseLookupDetail.class)
-       .onErrorResume(ebsApiClientErrorHandler::handleToCaseRelationshipValuesError);
+        .onErrorResume(e -> apiClientErrorHandler
+            .handleEbsApiError(e, RELATIONSHIP_TO_CASE_ERROR_MESSAGE));
   }
 
   /**
@@ -178,7 +229,8 @@ public class EbsApiClient {
   public Mono<RelationshipToCaseLookupDetail> getOrganisationToCaseRelationshipValues(
       final String code,
       final String description) {
-
+    final String errorMessage = String.format(
+        ORGANISATION_RELATIONSHIP_TO_CASE_ERROR_MESSAGE, code, description);
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/lookup/organisation-to-case-relationships")
@@ -189,7 +241,7 @@ public class EbsApiClient {
             .build())
         .retrieve()
         .bodyToMono(RelationshipToCaseLookupDetail.class)
-        .onErrorResume(ebsApiClientErrorHandler::handleToCaseRelationshipValuesError);
+        .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 
   /**
@@ -200,7 +252,7 @@ public class EbsApiClient {
    */
   public Mono<CaseStatusLookupDetail> getCaseStatusValues(
       final Boolean copyAllowed) {
-
+    final String errorMessage = String.format(CASE_STATUS_VALUES_ERROR_MESSAGE, copyAllowed);
     return ebsApiWebClient
             .get()
             .uri(builder -> builder.path("/lookup/case-status")
@@ -208,8 +260,7 @@ public class EbsApiClient {
                     .build())
             .retrieve()
             .bodyToMono(CaseStatusLookupDetail.class)
-            .onErrorResume(e -> ebsApiClientErrorHandler
-                    .handleCaseStatusValuesError(copyAllowed, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 
   /**
@@ -220,6 +271,7 @@ public class EbsApiClient {
    */
   public Mono<AmendmentTypeLookupDetail> getAmendmentTypes(
       final String applicationType) {
+    final String errorMessage = String.format(AMENDMENT_TYPE_ERROR_MESSAGE, applicationType);
     return ebsApiWebClient
             .get()
             .uri(builder -> builder.path("/lookup/amendment-types")
@@ -228,8 +280,7 @@ public class EbsApiClient {
                     .build())
             .retrieve()
             .bodyToMono(AmendmentTypeLookupDetail.class)
-            .onErrorResume(e -> ebsApiClientErrorHandler
-                    .handleAmendmentTypeLookupError(applicationType, e));
+            .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 
   /**
@@ -245,7 +296,7 @@ public class EbsApiClient {
                     .build())
             .retrieve()
             .bodyToMono(CommonLookupDetail.class)
-            .onErrorResume(ebsApiClientErrorHandler::handleCountryLookupError);
+            .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, COUNTRY_ERROR_MESSAGE));
   }
 
   /**
@@ -258,6 +309,8 @@ public class EbsApiClient {
   public Mono<PriorAuthorityTypeDetails> getPriorAuthorityTypes(
       final String code,
       final Boolean valueRequired) {
+    final String errorMessage =
+        String.format(PRIOR_AUTHORITY_TYPE_ERROR_MESSAGE, code, valueRequired);
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/prior-authority-types")
@@ -268,8 +321,7 @@ public class EbsApiClient {
             .build())
         .retrieve()
         .bodyToMono(PriorAuthorityTypeDetails.class)
-        .onErrorResume(e -> ebsApiClientErrorHandler
-            .handlePriorAuthorityTypeError(code, valueRequired, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 
   /**
@@ -279,6 +331,7 @@ public class EbsApiClient {
    * @return A Mono containing the UserDetail or an error handler if an error occurs.
    */
   public Mono<UserDetails> getUsers(final Integer providerId) {
+    final String errorMessage = String.format(USERS_ERROR_MESSAGE, providerId);
     return  ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/users")
@@ -287,8 +340,7 @@ public class EbsApiClient {
             .build())
         .retrieve()
         .bodyToMono(UserDetails.class)
-        .onErrorResume(e -> ebsApiClientErrorHandler
-            .handleUsersError(Integer.toString(providerId), e));
+        .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
 
   }
 
@@ -299,12 +351,13 @@ public class EbsApiClient {
    * @return A Mono containing the ProceedingDetail or an error handler if an error occurs.
    */
   public Mono<ProceedingDetail> getProceeding(final String proceedingCode) {
+    final String errorMessage = String.format(PROCEEDING_ERROR_MESSAGE, proceedingCode);
     return ebsApiWebClient
         .get()
         .uri("/proceedings/{proceeding-code}", proceedingCode)
         .retrieve()
         .bodyToMono(ProceedingDetail.class)
-        .onErrorResume(e -> ebsApiClientErrorHandler.handleProceedingError(proceedingCode, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 
   /**
@@ -317,6 +370,14 @@ public class EbsApiClient {
       final Boolean larScopeFlag,
       final String applicationType,
       final Boolean isLead) {
+    final String errorMessage =
+        String.format(PROCEEDINGS_ERROR_MESSAGE,
+            searchCriteria.getCategoryOfLawCode(),
+            searchCriteria.getMatterType(),
+            searchCriteria.getAmendmentOnly(),
+            larScopeFlag,
+            applicationType,
+            isLead);
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/proceedings")
@@ -336,7 +397,7 @@ public class EbsApiClient {
             .build())
         .retrieve()
         .bodyToMono(ProceedingDetails.class)
-        .onErrorResume(ebsApiClientErrorHandler::handleProceedingsError);
+        .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 
   /**
@@ -347,6 +408,7 @@ public class EbsApiClient {
    */
   public Mono<ClientInvolvementTypeLookupDetail> getClientInvolvementTypes(
       final String proceedingCode) {
+    final String errorMessage = String.format(CLIENT_INVOLVEMENT_ERROR_MESSAGE, proceedingCode);
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/lookup/proceeding-client-involvement-types")
@@ -355,7 +417,7 @@ public class EbsApiClient {
             .build())
         .retrieve()
         .bodyToMono(ClientInvolvementTypeLookupDetail.class)
-        .onErrorResume(ebsApiClientErrorHandler::handleClientInvolvementError);
+        .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 
   /**
@@ -368,6 +430,8 @@ public class EbsApiClient {
       final String proceedingCode,
       final String categoryOfLaw,
       final String matterType) {
+    final String errorMessage = String.format(LEVEL_OF_SERVICE_ERROR_MESSAGE,
+        proceedingCode, categoryOfLaw, matterType);
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/lookup/level-of-service")
@@ -378,7 +442,7 @@ public class EbsApiClient {
             .build())
         .retrieve()
         .bodyToMono(LevelOfServiceLookupDetail.class)
-        .onErrorResume(ebsApiClientErrorHandler::handleLevelOfServiceError);
+        .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 
   /**
@@ -389,6 +453,21 @@ public class EbsApiClient {
    */
   public Mono<ScopeLimitationDetails> getScopeLimitations(
       final ScopeLimitationDetail scopeLimitationDetail) {
+    final String errorMessage = String.format(SCOPE_LIMITATIONS_ERROR_MESSAGE,
+        scopeLimitationDetail.getScopeLimitations(),
+        scopeLimitationDetail.getCategoryOfLaw(),
+        scopeLimitationDetail.getMatterType(),
+        scopeLimitationDetail.getProceedingCode(),
+        scopeLimitationDetail.getLevelOfService(),
+        scopeLimitationDetail.getDefaultWording(),
+        scopeLimitationDetail.getStage(),
+        scopeLimitationDetail.getCostLimitation(),
+        scopeLimitationDetail.getEmergencyCostLimitation(),
+        scopeLimitationDetail.getNonStandardWordingRequired(),
+        scopeLimitationDetail.getEmergencyScopeDefault(),
+        scopeLimitationDetail.getEmergency(),
+        scopeLimitationDetail.getDefaultCode(),
+        scopeLimitationDetail.getScopeDefault());
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/scope-limitations")
@@ -424,8 +503,7 @@ public class EbsApiClient {
             .build())
         .retrieve()
         .bodyToMono(ScopeLimitationDetails.class)
-        .onErrorResume(e -> ebsApiClientErrorHandler.handleScopeLimitationsError(
-            scopeLimitationDetail, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 
   /**
@@ -439,6 +517,8 @@ public class EbsApiClient {
   public Mono<OutcomeResultLookupDetail> getOutcomeResults(
       final String proceedingCode,
       final String outcomeResult) {
+    final String errorMessage =
+        String.format(OUTCOME_RESULTS_ERROR_MESSAGE, proceedingCode, outcomeResult);
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/lookup/outcome-results")
@@ -449,8 +529,7 @@ public class EbsApiClient {
             .build())
         .retrieve()
         .bodyToMono(OutcomeResultLookupDetail.class)
-        .onErrorResume(e -> ebsApiClientErrorHandler.handleOutcomeResultsError(proceedingCode,
-            outcomeResult, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 
   /**
@@ -464,6 +543,7 @@ public class EbsApiClient {
   public Mono<StageEndLookupDetail> getStageEnds(
       final String proceedingCode,
       final String stageEnd) {
+    final String errorMessage = String.format(STAGE_END_ERROR_MESSAGE, proceedingCode, stageEnd);
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/lookup/stage-ends")
@@ -474,8 +554,7 @@ public class EbsApiClient {
             .build())
         .retrieve()
         .bodyToMono(StageEndLookupDetail.class)
-        .onErrorResume(e -> ebsApiClientErrorHandler.handleStageEndError(proceedingCode,
-            stageEnd, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 
   /**
@@ -489,6 +568,7 @@ public class EbsApiClient {
   public Mono<AwardTypeLookupDetail> getAwardTypes(
       final String code,
       final String awardType) {
+    final String errorMessage = String.format(AWARD_TYPE_ERROR_MESSAGE, code, awardType);
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/lookup/award-types")
@@ -499,8 +579,7 @@ public class EbsApiClient {
             .build())
         .retrieve()
         .bodyToMono(AwardTypeLookupDetail.class)
-        .onErrorResume(e -> ebsApiClientErrorHandler.handleAwardTypeError(code,
-            awardType, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 
   /**
@@ -516,6 +595,8 @@ public class EbsApiClient {
       final String code,
       final String matterTypeDescription,
       final Boolean copyCostLimit) {
+    final String errorMessage = String.format(CATEGORIES_OF_LAW_ERROR_MESSAGE,
+        code, matterTypeDescription, copyCostLimit);
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/lookup/categories-of-law")
@@ -528,8 +609,7 @@ public class EbsApiClient {
             .build())
         .retrieve()
         .bodyToMono(CategoryOfLawLookupDetail.class)
-        .onErrorResume(e -> ebsApiClientErrorHandler.handleCategoriesOfLawError(code,
-            matterTypeDescription, copyCostLimit, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 
   /**
@@ -543,6 +623,8 @@ public class EbsApiClient {
   public Mono<RelationshipToCaseLookupDetail> getPersonToCaseRelationships(
       final String code,
       final String description) {
+    final String errorMessage = String.format(PERSON_RELATIONSHIP_TO_CASE_ERROR_MESSAGE,
+        code, description);
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/lookup/person-to-case-relationships")
@@ -553,8 +635,7 @@ public class EbsApiClient {
             .build())
         .retrieve()
         .bodyToMono(RelationshipToCaseLookupDetail.class)
-        .onErrorResume(e -> ebsApiClientErrorHandler.handlePersonToCaseRelationshipError(code,
-            description, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleEbsApiError(e, errorMessage));
   }
 }
 

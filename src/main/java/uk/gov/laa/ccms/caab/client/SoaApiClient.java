@@ -39,12 +39,49 @@ import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 @RequiredArgsConstructor
 public class SoaApiClient {
 
-  public static final String SOA_GATEWAY_USER_LOGIN_ID = "SoaGateway-User-Login-Id";
-  public static final String SOA_GATEWAY_USER_ROLE = "SoaGateway-User-Role";
-  public static final String CASE_REFERENCE_NUMBER = "case-reference-number";
+  //notification error messages
+  private static final String FAILED_NOTIFICATION_SUMMARY =
+      "Failed to retrieve Notification count for loginId: %s";
+  private static final String FAILED_NOTIFICATIONS =
+      "Failed to retrieve Notifications";
+
+  //contract error messages
+  private static final String FAILED_CONTRACT_DETAILS =
+      "Failed to retrieve ContractDetails for providerFirmId: %s, officeId: %s";
+
+  //client error messages
+  private static final String FAILED_CLIENT_DETAILS =
+      "Failed to retrieve ClientDetails";
+  private static final String FAILED_CLIENT_DETAIL =
+      "Failed to retrieve ClientDetail for clientReferenceNumber: %s";
+  private static final String FAILED_CLIENT_STATUS =
+      "Failed to retrieve Client Status for transactionId: %s";
+  private static final String FAILED_CLIENT_CREATED =
+      "Failed to create Client";
+  private static final String FAILED_CLIENT_UPDATED =
+      "Failed to update Client for reference number: %s";
+
+  //case error messages
+  private static final String FAILED_CASE_DETAILS =
+      "Failed to retrieve CaseDetails";
+  private static final String FAILED_CASE_DETAIL =
+      "Failed to retrieve CaseDetail for caseReferenceNumber: %s";
+  private static final String FAILED_CASE_REFERENCE =
+      "Failed to retrieve CaseReferenceSummary";
+
+  //organisation error messages
+  private static final String FAILED_ORGANISATIONS =
+      "Failed to retrieve Organisations";
+  private static final String FAILED_ORGANISATION =
+      "Failed to retrieve Organisation with id: %s";
+
+  private static final String SOA_GATEWAY_USER_LOGIN_ID = "SoaGateway-User-Login-Id";
+  private static final String SOA_GATEWAY_USER_ROLE = "SoaGateway-User-Role";
+  private static final String CASE_REFERENCE_NUMBER = "case-reference-number";
+
   private final WebClient soaApiWebClient;
 
-  private final SoaApiClientErrorHandler soaApiClientErrorHandler;
+  private final ApiClientErrorHandler apiClientErrorHandler;
 
   /**
    * Retrieve the summary of notifications for a given user.
@@ -56,6 +93,7 @@ public class SoaApiClient {
   public Mono<NotificationSummary> getNotificationsSummary(
       final String loginId,
       final String userType) {
+    final String errorMessage = String.format(FAILED_NOTIFICATION_SUMMARY, loginId);
     return soaApiWebClient
         .get()
         .uri("/users/{loginId}/notifications/summary", loginId)
@@ -63,8 +101,7 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(NotificationSummary.class)
-        .onErrorResume(e -> soaApiClientErrorHandler
-            .handleNotificationSummaryError(loginId, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, errorMessage));
   }
 
   /**
@@ -81,6 +118,7 @@ public class SoaApiClient {
       final Integer officeId,
       final String loginId,
       final String userType) {
+    final String errorMessage = String.format(FAILED_CONTRACT_DETAILS, providerFirmId, officeId);
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/contract-details")
@@ -91,8 +129,7 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(ContractDetails.class)
-        .onErrorResume(e -> soaApiClientErrorHandler
-            .handleContractDetailsError(providerFirmId, officeId, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, errorMessage));
   }
 
   /**
@@ -139,8 +176,7 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(ClientDetails.class)
-        .onErrorResume(e -> soaApiClientErrorHandler
-            .handleClientDetailsError(clientSearchCriteria, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, FAILED_CLIENT_DETAILS));
 
   }
 
@@ -156,6 +192,7 @@ public class SoaApiClient {
       final String clientReferenceNumber,
       final  String loginId,
       final String userType) {
+    final String errorMessage = String.format(FAILED_CLIENT_DETAIL, clientReferenceNumber);
     return soaApiWebClient
         .get()
         .uri("/clients/{clientReferenceNumber}", clientReferenceNumber)
@@ -163,8 +200,7 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(ClientDetail.class)
-        .onErrorResume(e -> soaApiClientErrorHandler
-            .handleClientDetailError(clientReferenceNumber, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, errorMessage));
 
   }
 
@@ -180,6 +216,7 @@ public class SoaApiClient {
       final String transactionId,
       final String loginId,
       final String userType) {
+    final String errorMessage = String.format(FAILED_CLIENT_STATUS, transactionId);
     return soaApiWebClient
         .get()
         .uri("/clients/status/{transactionId}", transactionId)
@@ -187,8 +224,7 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(TransactionStatus.class)
-        .onErrorResume(e -> soaApiClientErrorHandler
-            .handleClientStatusError(transactionId, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, errorMessage));
 
   }
 
@@ -207,14 +243,13 @@ public class SoaApiClient {
     return soaApiWebClient
         .post()
         .uri("/clients")
-        .header("SoaGateway-User-Login-Id", loginId)
-        .header("SoaGateway-User-Role", userType)
-        .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(clientDetails)
         .retrieve()
         .bodyToMono(ClientTransactionResponse.class)
-        .onErrorResume(e -> soaApiClientErrorHandler
-            .handleClientCreatedError(clientDetails.getName().getFullName(), e));
+        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, FAILED_CLIENT_CREATED));
   }
 
   /**
@@ -231,17 +266,17 @@ public class SoaApiClient {
       final ClientDetailDetails clientDetails,
       final String loginId,
       final String userType) {
+    final String errorMessage = String.format(FAILED_CLIENT_UPDATED, clientReferenceNumber);
     return soaApiWebClient
         .put()
         .uri("/clients/{clientReferenceNumber}", clientReferenceNumber)
-        .header("SoaGateway-User-Login-Id", loginId)
-        .header("SoaGateway-User-Role", userType)
-        .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(clientDetails)
         .retrieve()
         .bodyToMono(ClientTransactionResponse.class)
-        .onErrorResume(e -> soaApiClientErrorHandler
-            .handleClientUpdatedError(clientDetails.getName().getFullName(), e));
+        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, errorMessage));
   }
 
   /**
@@ -284,8 +319,7 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(CaseDetails.class)
-        .onErrorResume(e -> soaApiClientErrorHandler.handleCaseDetailsError(
-            caseSearchCriteria, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, FAILED_CASE_DETAILS));
 
   }
 
@@ -301,15 +335,15 @@ public class SoaApiClient {
       final String caseReferenceNumber,
       final String loginId,
       final String userType) {
+    final String errorMessage = String.format(FAILED_CASE_DETAIL, caseReferenceNumber);
     return soaApiWebClient
         .get()
-        .uri(builder -> builder.path("/cases/{case-ref}").build(caseReferenceNumber))
-        .header("SoaGateway-User-Login-Id", loginId)
-        .header("SoaGateway-User-Role", userType)
+        .uri(builder -> builder.path("/cases/{case-reference}").build(caseReferenceNumber))
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(CaseDetail.class)
-        .onErrorResume(e -> soaApiClientErrorHandler.handleCaseDetailError(
-            caseReferenceNumber, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, errorMessage));
 
   }
 
@@ -330,7 +364,7 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(CaseReferenceSummary.class)
-        .onErrorResume(soaApiClientErrorHandler::handleCaseReferenceError);
+        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, FAILED_CASE_REFERENCE));
 
   }
 
@@ -378,7 +412,7 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_ROLE, criteria.getUserType())
         .retrieve()
         .bodyToMono(Notifications.class)
-        .onErrorResume(e -> soaApiClientErrorHandler.handleNotificationsError(criteria, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, FAILED_NOTIFICATIONS));
 
   }
 
@@ -413,8 +447,7 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(OrganisationDetails.class)
-        .onErrorResume(e -> soaApiClientErrorHandler.handleOrganisationsError(
-            searchCriteria, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, FAILED_ORGANISATIONS));
 
   }
 
@@ -430,6 +463,7 @@ public class SoaApiClient {
       final String organisationId,
       final String loginId,
       final String userType) {
+    final String errorMessage = String.format(FAILED_ORGANISATION, organisationId);
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/organisation/{organisation-id}").build(organisationId))
@@ -437,7 +471,7 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(OrganisationDetail.class)
-        .onErrorResume(e -> soaApiClientErrorHandler.handleOrganisationError(organisationId, e));
+        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, errorMessage));
   }
 
 }

@@ -944,33 +944,31 @@ class ApplicationServiceTest {
 
   @Test
   void removeLinkedCase_success() {
-    final String primaryCaseId = "12345";
     final String linkedCaseId = "67890";
     final UserDetail user = new UserDetail().loginId("userLoginId");
 
-    when(caabApiClient.removeLinkedCase(primaryCaseId, linkedCaseId, user.getLoginId()))
+    when(caabApiClient.removeLinkedCase(linkedCaseId, user.getLoginId()))
         .thenReturn(Mono.empty());
 
-    applicationService.removeLinkedCase(primaryCaseId, linkedCaseId, user);
+    applicationService.removeLinkedCase(linkedCaseId, user);
 
-    verify(caabApiClient).removeLinkedCase(primaryCaseId, linkedCaseId, user.getLoginId());
+    verify(caabApiClient).removeLinkedCase(linkedCaseId, user.getLoginId());
   }
 
   @Test
   void updateLinkedCase_success() {
-    final String id = "primaryCaseId";
     final String linkedCaseId = "linkedCaseId";
     final LinkedCaseResultRowDisplay data = new LinkedCaseResultRowDisplay();
     final UserDetail user = new UserDetail().loginId("userLoginId");
     final LinkedCase linkedCase = new LinkedCase();
 
     when(resultDisplayMapper.toLinkedCase(data)).thenReturn(linkedCase);
-    when(caabApiClient.updateLinkedCase(id, linkedCaseId, linkedCase, user.getLoginId())).thenReturn(Mono.empty());
+    when(caabApiClient.updateLinkedCase(linkedCaseId, linkedCase, user.getLoginId())).thenReturn(Mono.empty());
 
-    applicationService.updateLinkedCase(id, linkedCaseId, data, user);
+    applicationService.updateLinkedCase(linkedCaseId, data, user);
 
     verify(resultDisplayMapper).toLinkedCase(data);
-    verify(caabApiClient).updateLinkedCase(id, linkedCaseId, linkedCase, user.getLoginId());
+    verify(caabApiClient).updateLinkedCase(linkedCaseId, linkedCase, user.getLoginId());
   }
 
   @Test

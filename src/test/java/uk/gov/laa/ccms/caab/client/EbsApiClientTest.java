@@ -56,7 +56,7 @@ public class EbsApiClientTest {
   private WebClient.ResponseSpec responseMock;
 
   @Mock
-  private EbsApiClientErrorHandler ebsApiClientErrorHandler;
+  private ApiClientErrorHandler apiClientErrorHandler;
 
   @InjectMocks
   private EbsApiClient ebsApiClient;
@@ -97,8 +97,7 @@ public class EbsApiClientTest {
     when(responseMock.bodyToMono(UserDetail.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-    when(ebsApiClientErrorHandler.handleUserError(eq(loginId),
-        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+    when(apiClientErrorHandler.handleEbsApiError(any(),any())).thenReturn(Mono.empty());
 
     Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(loginId);
 
@@ -150,8 +149,7 @@ public class EbsApiClientTest {
     when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-    when(ebsApiClientErrorHandler.handleCommonValuesError(eq(type), eq(code), eq(sort),
-        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+    when(apiClientErrorHandler.handleEbsApiError(any(),any())).thenReturn(Mono.empty());
 
     Mono<CommonLookupDetail> commonValuesMono = ebsApiClient.getCommonValues(
         type, code, descr, sort);
@@ -296,8 +294,7 @@ public class EbsApiClientTest {
     when(responseMock.bodyToMono(AmendmentTypeLookupDetail.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-    when(ebsApiClientErrorHandler.handleAmendmentTypeLookupError(eq(applicationType),
-        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+    when(apiClientErrorHandler.handleEbsApiError(any(),any())).thenReturn(Mono.empty());
 
     Mono<AmendmentTypeLookupDetail> amendmentTypesMono =
         ebsApiClient.getAmendmentTypes(applicationType);
@@ -343,8 +340,7 @@ public class EbsApiClientTest {
     when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-    when(ebsApiClientErrorHandler.handleCountryLookupError(any(WebClientResponseException.class)))
-        .thenReturn(Mono.empty());
+    when(apiClientErrorHandler.handleEbsApiError(any(),any())).thenReturn(Mono.empty());
 
     Mono<CommonLookupDetail> countriesMono = ebsApiClient.getCountries();
 
@@ -419,8 +415,7 @@ public class EbsApiClientTest {
     when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(UserDetails.class)).thenReturn(Mono.error(
         new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
-    when(ebsApiClientErrorHandler.handleUsersError(eq(providerId.toString()),
-        any(WebClientResponseException.class))).thenReturn(Mono.empty());
+    when(apiClientErrorHandler.handleEbsApiError(any(),any())).thenReturn(Mono.empty());
 
     Mono<UserDetails> userDetailsMono = ebsApiClient.getUsers(providerId);
     StepVerifier.create(userDetailsMono)
