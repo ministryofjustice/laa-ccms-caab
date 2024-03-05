@@ -47,32 +47,32 @@ public class PriorAuthorityDetailsValidator extends AbstractValidator {
    */
   @Override
   public void validate(final Object target, final Errors errors) {
-    final PriorAuthorityFormDataDetails priorAuthorityTypeDetails =
+    final PriorAuthorityFormDataDetails priorAuthorityDetails =
         (PriorAuthorityFormDataDetails) target;
 
-    validateRequiredField("summary", priorAuthorityTypeDetails.getSummary(),
+    validateRequiredField("summary", priorAuthorityDetails.getSummary(),
         "Summary", errors);
 
-    validateRequiredField("justification", priorAuthorityTypeDetails.getSummary(),
+    validateRequiredField("justification", priorAuthorityDetails.getSummary(),
         "Justification", errors);
 
-    if (priorAuthorityTypeDetails.isValueRequired()) {
+    if (priorAuthorityDetails.isValueRequired()) {
       validateRequiredField("amountRequested",
-          priorAuthorityTypeDetails.getAmountRequested(),
+          priorAuthorityDetails.getAmountRequested(),
           "Amount requested", errors);
 
-      if (StringUtils.hasText(priorAuthorityTypeDetails.getAmountRequested())) {
+      if (StringUtils.hasText(priorAuthorityDetails.getAmountRequested())) {
         validateCurrencyField("amountRequested",
-            priorAuthorityTypeDetails.getAmountRequested(),
+            priorAuthorityDetails.getAmountRequested(),
             "Amount requested", errors);
       }
 
     }
 
-    if (priorAuthorityTypeDetails.getDynamicOptions() != null) {
+    if (priorAuthorityDetails.getDynamicOptions() != null) {
 
       final List<String> keys = new ArrayList<>(
-          priorAuthorityTypeDetails
+          priorAuthorityDetails
               .getDynamicOptions()
               .keySet());
 
@@ -80,7 +80,7 @@ public class PriorAuthorityDetailsValidator extends AbstractValidator {
 
       for (final String key : keys) {
         final PriorAuthorityFormDataDynamicOption value =
-            priorAuthorityTypeDetails.getDynamicOptions().get(key);
+            priorAuthorityDetails.getDynamicOptions().get(key);
 
         if (value.isMandatory()) {
           validateRequiredField(String.format("dynamicOptions[%s].fieldValue", key),

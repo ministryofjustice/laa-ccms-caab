@@ -14,6 +14,9 @@ public class PriorAuthorityFlowFormData {
    */
   private PriorAuthorityFormDataTypeDetails priorAuthorityTypeFormDataDetails;
 
+  /**
+   * The details of the prior authority form data, including the dynamic form information.
+   */
   private PriorAuthorityFormDataDetails priorAuthorityFormDataDetails;
 
   /**

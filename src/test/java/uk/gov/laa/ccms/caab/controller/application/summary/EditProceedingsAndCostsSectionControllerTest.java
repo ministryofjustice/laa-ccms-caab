@@ -1158,7 +1158,7 @@ class EditProceedingsAndCostsSectionControllerTest {
                 .session(session)
                 .flashAttr("costDetails", costsFormData))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/proceedings-and-costs#costs"));
+            .andExpect(redirectedUrl("/application/proceedings-and-costs#case-costs"));
     }
 
     @Test

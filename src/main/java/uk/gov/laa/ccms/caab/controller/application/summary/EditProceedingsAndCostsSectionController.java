@@ -1283,7 +1283,7 @@ public class EditProceedingsAndCostsSectionController {
 
     applicationService.updateCostStructure(applicationId, costs, user);
 
-    return "redirect:/application/proceedings-and-costs#costs";
+    return "redirect:/application/proceedings-and-costs#case-costs";
   }
 
   /**
