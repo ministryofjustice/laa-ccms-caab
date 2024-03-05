@@ -510,4 +510,75 @@ public class CaabApiClient {
   }
 
 
+  /**
+   * Adds a priorAuthority to an application using the CAAB API.
+   *
+   * @param applicationId The ID of the application.
+   * @param priorAuthority The priorAuthority to be added.
+   * @param loginId The ID associated with the user login.
+   * @return A Mono Void indicating the completion of the add operation.
+   */
+  public Mono<Void> addPriorAuthority(
+      final String applicationId,
+      final PriorAuthority priorAuthority,
+      final String loginId) {
+    return caabApiWebClient
+        .post()
+        .uri("/applications/{applicationId}/prior-authorities", applicationId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(priorAuthority)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleSavePriorAuthorityError(
+            e, applicationId));
+  }
+
+  /**
+   * Updates a prior authority with new data.
+   *
+   * @param priorAuthorityId the ID of the prior authority to update.
+   * @param data the new data for the prior authority.
+   * @param loginId the login ID of the user performing the update.
+   * @return a Mono signaling completion or error handling.
+   */
+  public Mono<Void> updatePriorAuthority(
+      final Integer priorAuthorityId,
+      final PriorAuthority data,
+      final String loginId) {
+    return caabApiWebClient
+        .patch()
+        .uri("/prior-authorities/{prior-authority-id}",
+            priorAuthorityId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(data)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler
+            .handleUpdateProceedingError(e, priorAuthorityId));
+  }
+
+  /**
+   * Deletes a specific prior authority.
+   *
+   * @param priorAuthorityId the ID of the prior authority to delete.
+   * @param loginId the login ID of the user performing the deletion.
+   * @return a Mono signaling completion or error handling.
+   */
+  public Mono<Void> deletePriorAuthority(
+      final Integer priorAuthorityId,
+      final String loginId) {
+    return caabApiWebClient
+        .delete()
+        .uri("/prior-authorities/{prior-authority-id}",
+            priorAuthorityId)
+        .header("Caab-User-Login-Id", loginId)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler
+            .handleUpdatePriorAuthorityError(e, priorAuthorityId));
+  }
+
+
 }

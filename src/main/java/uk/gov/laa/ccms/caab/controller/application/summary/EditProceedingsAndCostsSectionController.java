@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EMERGENCY_APPLICATION_TYPE_CODES;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
@@ -8,6 +9,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PRIOR_
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PROCEEDINGS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_SCOPE_LIMITATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRIOR_AUTHORITY_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA_OLD;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_SCOPE_LIMITATIONS;
@@ -16,6 +18,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -35,6 +38,9 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataDetails;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataTypeDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataFurtherDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
@@ -42,6 +48,8 @@ import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails;
 import uk.gov.laa.ccms.caab.bean.validators.costs.CostDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.priorauthority.PriorAuthorityDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.priorauthority.PriorAuthorityTypeDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
@@ -59,10 +67,14 @@ import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupValueDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProceedingDetails;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
@@ -85,7 +97,8 @@ import uk.gov.laa.ccms.data.model.UserDetail;
     PROCEEDING_FLOW_FORM_DATA_OLD,
     PROCEEDING_SCOPE_LIMITATIONS,
     SCOPE_LIMITATION_FLOW_FORM_DATA,
-    CURRENT_SCOPE_LIMITATION})
+    CURRENT_SCOPE_LIMITATION,
+    PRIOR_AUTHORITY_FLOW_FORM_DATA})
 @SuppressWarnings("unchecked")
 public class EditProceedingsAndCostsSectionController {
 
@@ -99,6 +112,8 @@ public class EditProceedingsAndCostsSectionController {
   private final ProceedingFurtherDetailsValidator furtherDetailsValidator;
   private final ScopeLimitationDetailsValidator scopeLimitationDetailsValidator;
   private final CostDetailsValidator costDetailsValidator;
+  private final PriorAuthorityTypeDetailsValidator priorAuthorityTypeValidator;
+  private final PriorAuthorityDetailsValidator priorAuthorityDetailsValidator;
 
   //mappers
   private final ProceedingAndCostsMapper proceedingAndCostsMapper;
@@ -1104,7 +1119,7 @@ public class EditProceedingsAndCostsSectionController {
       if (scopeLimitationFlow.getScopeLimitationIndex() == null) {
         scopeLimitations.add(scopeLimitation);
       } else {
-        int index = scopeLimitationFlow.getScopeLimitationIndex();
+        final int index = scopeLimitationFlow.getScopeLimitationIndex();
         if (index >= 0 && index < scopeLimitations.size()) {
           scopeLimitations.set(index, scopeLimitation);
         } else {
@@ -1268,7 +1283,295 @@ public class EditProceedingsAndCostsSectionController {
 
     applicationService.updateCostStructure(applicationId, costs, user);
 
-    return "redirect:/application/proceedings-and-costs#costs";
+    return "redirect:/application/proceedings-and-costs#case-costs";
   }
+
+  /**
+   * Displays the prior authority type selection page.
+   *
+   * @param model the model to add attributes to for the view.
+   * @return the view name for prior authority type selection.
+   */
+  @GetMapping("/application/prior-authorities/add/type")
+  public String priorAuthorityType(
+      final Model model) {
+
+    final PriorAuthorityFlowFormData priorAuthorityFlow
+        = new PriorAuthorityFlowFormData(ACTION_ADD);
+
+    model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
+    model.addAttribute("priorAuthorityTypeDetails",
+        priorAuthorityFlow.getPriorAuthorityTypeFormDataDetails());
+
+    populatePriorAuthorityTypeDropdown(model);
+
+    return "application/prior-authority-type";
+  }
+
+  private void populatePriorAuthorityTypeDropdown(final Model model) {
+    final List<PriorAuthorityTypeDetail> priorAuthorityTypes = Optional.ofNullable(
+        lookupService.getPriorAuthorityTypes().block())
+        .map(PriorAuthorityTypeDetails::getContent)
+        .orElse(Collections.emptyList());
+
+    model.addAttribute("priorAuthorityTypes", priorAuthorityTypes);
+  }
+
+  /**
+   * Handles submission of the prior authority type form, updating the session and redirecting
+   * to details.
+   *
+   * @param priorAuthorityFlow the prior authority flow data.
+   * @param priorAuthorityTypeDetails the selected prior authority type details.
+   * @param model the model to add attributes to for the view.
+   * @param bindingResult the result of form validation.
+   * @return the redirect URL for the prior authority details page.
+   */
+  @PostMapping("/application/prior-authorities/add/type")
+  public String priorAuthorityTypePost(
+      @SessionAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA)
+      final PriorAuthorityFlowFormData priorAuthorityFlow,
+      @ModelAttribute("priorAuthorityTypeDetails")
+      final PriorAuthorityFormDataTypeDetails priorAuthorityTypeDetails,
+      final Model model,
+      final BindingResult bindingResult) {
+
+    priorAuthorityTypeValidator.validate(priorAuthorityTypeDetails, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      populatePriorAuthorityTypeDropdown(model);
+      model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
+      model.addAttribute("priorAuthorityTypeDetails", priorAuthorityTypeDetails);
+      return "application/prior-authority-type";
+    }
+
+    priorAuthorityFlow.setPriorAuthorityTypeFormDataDetails(priorAuthorityTypeDetails);
+    model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
+
+    return "redirect:/application/prior-authorities/add/details";
+  }
+
+  /**
+   * Displays the prior authority details page for adding or editing.
+   *
+   * @param priorAuthorityAction the action (add or edit) being performed.
+   * @param priorAuthorityFlow the flow data for prior authority actions.
+   * @param model the model for adding attributes to the view.
+   * @return the view name for prior authority details.
+   */
+  @GetMapping("/application/prior-authorities/{action}/details")
+  public String priorAuthorityDetails(
+      @PathVariable("action") final String priorAuthorityAction,
+      @SessionAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA)
+      final PriorAuthorityFlowFormData priorAuthorityFlow,
+      final Model model) {
+
+    final PriorAuthorityFormDataDetails priorAuthorityDetails =
+        priorAuthorityFlow.getPriorAuthorityFormDataDetails();
+
+    final PriorAuthorityTypeDetail priorAuthorityDynamicForm =
+        applicationService.getPriorAuthorityTypeDetail(
+            priorAuthorityFlow.getPriorAuthorityTypeFormDataDetails().getPriorAuthorityType());
+
+    populatePriorAuthorityDetailsLookupDropdowns(model, priorAuthorityDynamicForm);
+
+    if (ACTION_ADD.equals(priorAuthorityAction)) {
+      priorAuthorityDetails.setValueRequired(priorAuthorityDynamicForm.getValueRequired());
+
+      proceedingAndCostsMapper.populatePriorAuthorityDetailsForm(
+          priorAuthorityDetails,
+          priorAuthorityDynamicForm);
+
+      priorAuthorityFlow.setPriorAuthorityFormDataDetails(priorAuthorityDetails);
+    }
+
+    model.addAttribute("priorAuthorityDynamicForm", priorAuthorityDynamicForm);
+    model.addAttribute("priorAuthorityDetails", priorAuthorityDetails);
+
+    model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
+
+    return "application/prior-authority-details";
+  }
+
+  /**
+   * Processes the prior authority details form submission for adding or editing.
+   *
+   * @param priorAuthorityAction the action (add or edit) being performed.
+   * @param applicationId the ID of the application.
+   * @param priorAuthorityFlow the prior authority flow data.
+   * @param user the user details.
+   * @param priorAuthorityDetails the prior authority details submitted.
+   * @param model the model for adding attributes.
+   * @param bindingResult the result of form validation.
+   * @return the redirect URL for the next step or back to details on error.
+   */
+  @PostMapping("/application/prior-authorities/{action}/details")
+  public String priorAuthorityDetailsPost(
+      @PathVariable("action") final String priorAuthorityAction,
+      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @SessionAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA)
+      final PriorAuthorityFlowFormData priorAuthorityFlow,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @ModelAttribute("priorAuthorityDetails")
+      final PriorAuthorityFormDataDetails priorAuthorityDetails,
+      final Model model,
+      final BindingResult bindingResult) {
+
+
+    proceedingAndCostsMapper.toPriorAuthorityFormDataDetails(
+        priorAuthorityDetails,
+        priorAuthorityFlow);
+
+    priorAuthorityDetailsValidator.validate(priorAuthorityDetails, bindingResult);
+    priorAuthorityFlow.setPriorAuthorityFormDataDetails(priorAuthorityDetails);
+
+    final PriorAuthorityTypeDetail priorAuthorityDynamicForm =
+        applicationService.getPriorAuthorityTypeDetail(
+        priorAuthorityFlow.getPriorAuthorityTypeFormDataDetails().getPriorAuthorityType());
+
+    if (bindingResult.hasErrors()) {
+      populatePriorAuthorityDetailsLookupDropdowns(model, priorAuthorityDynamicForm);
+
+      model.addAttribute("priorAuthorityDynamicForm", priorAuthorityDynamicForm);
+      model.addAttribute("priorAuthorityDetails", priorAuthorityDetails);
+
+      model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
+      return "application/prior-authority-details";
+    }
+
+    //convert all this to mapper
+    final PriorAuthority priorAuthority =
+        proceedingAndCostsMapper.toPriorAuthority(priorAuthorityFlow, priorAuthorityDynamicForm);
+
+    if (ACTION_ADD.equals(priorAuthorityAction)) {
+      applicationService.addPriorAuthority(applicationId, priorAuthority, user);
+    } else {
+      applicationService.updatePriorAuthority(priorAuthority, user);
+    }
+
+    return "redirect:/application/proceedings-and-costs#prior-authority";
+  }
+
+  /**
+   * Fills model with dropdown data for prior authority details.
+   *
+   * <p>Iterates over PriorAuthorityDetails with 'LOV' type, fetching and adding their
+   * corresponding values to the model for dropdowns.</p>
+   *
+   * @param model the model to populate.
+   * @param priorAuthorityTypeDetail the detail containing data for dropdowns.
+   */
+  private void populatePriorAuthorityDetailsLookupDropdowns(
+      final Model model,
+      final PriorAuthorityTypeDetail priorAuthorityTypeDetail) {
+
+    //collect list of Prior authority detail where dataType is LOV
+    final List<PriorAuthorityDetail> lookups =
+        priorAuthorityTypeDetail.getPriorAuthorities().stream()
+        .filter(priorAuthorityDetail ->
+            REFERENCE_DATA_ITEM_TYPE_LOV.equals(priorAuthorityDetail.getDataType()))
+        .toList();
+
+    // Create a list to hold all the Mono<Void> objects
+    final List<Mono<Void>> listOfMonos = new ArrayList<>();
+
+    for (final PriorAuthorityDetail lookup : lookups) {
+      final Mono<List<CommonLookupValueDetail>> commonValuesMono =
+          lookupService.getCommonValues(lookup.getLovCode());
+
+      // Subscribe to the Mono and add the attribute in the subscription
+      final Mono<Void> mono = commonValuesMono.doOnNext(commonValues ->
+          model.addAttribute(lookup.getCode(), commonValues)).then();
+      listOfMonos.add(mono);
+    }
+
+    Mono.when(listOfMonos).block();
+  }
+
+  /**
+   * Displays the confirmation page for editing prior authority details.
+   *
+   * @param priorAuthorityId the ID of the prior authority to confirm.
+   * @param priorAuthorities the list of prior authorities for reference.
+   * @param model the model to add attributes for the view.
+   * @return the redirect URL to the details editing page.
+   */
+  @GetMapping("/application/prior-authorities/{prior-authority-id}/confirm")
+  public String priorAuthorityConfirm(
+      @PathVariable("prior-authority-id") final int priorAuthorityId,
+      @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES) final List<PriorAuthority> priorAuthorities,
+      final Model model) {
+
+    final PriorAuthority priorAuthority = priorAuthorities.stream()
+        .filter(pa -> pa.getId().equals(priorAuthorityId))
+        .findFirst()
+        .orElseThrow(() ->
+            new CaabApplicationException("No prior authority found with id: " + priorAuthorityId)
+        );
+
+    final PriorAuthorityFlowFormData priorAuthorityFlow =
+        proceedingAndCostsMapper.toPriorAuthorityFlowFormData(
+            priorAuthority);
+
+    model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
+
+    return "redirect:/application/prior-authorities/edit/details";
+  }
+
+
+  /**
+   * Displays the page to confirm the removal of a prior authority.
+   *
+   * @param priorAuthorityId the ID of the prior authority to be removed.
+   * @param priorAuthorities the list of current prior authorities.
+   * @param model the model to add attributes for the view.
+   * @return the name of the view to render for removing a prior authority.
+   */
+  @GetMapping("/application/prior-authorities/{prior-authority-id}/remove")
+  public String priorAuthorityRemove(
+      @PathVariable("prior-authority-id") final int priorAuthorityId,
+      @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES) final List<PriorAuthority> priorAuthorities,
+      final Model model) {
+
+    final PriorAuthority priorAuthority = priorAuthorities.stream()
+        .filter(pa -> pa.getId().equals(priorAuthorityId))
+        .findFirst()
+        .orElseThrow(() ->
+            new CaabApplicationException("No prior authority found with id: " + priorAuthorityId)
+    );
+
+    model.addAttribute("priorAuthority", priorAuthority);
+
+    return "application/prior-authority-remove";
+  }
+
+  /**
+   * Processes the request to remove a prior authority from an application.
+   *
+   * @param priorAuthorityId the ID of the prior authority to remove.
+   * @param priorAuthorities the list of current prior authorities.
+   * @param user the current user's details.
+   * @return the redirect URL after the prior authority is removed.
+   */
+  @PostMapping("/application/prior-authorities/{prior-authority-id}/remove")
+  public String priorAuthorityRemovePost(
+      @PathVariable("prior-authority-id") final int priorAuthorityId,
+      @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES) final List<PriorAuthority> priorAuthorities,
+      @SessionAttribute(USER_DETAILS) final UserDetail user) {
+
+    //existence check
+    final boolean exists = priorAuthorities.stream()
+        .anyMatch(pa -> pa.getId().equals(priorAuthorityId));
+
+    if (!exists) {
+      throw new CaabApplicationException("No prior authority found with id: " + priorAuthorityId);
+    }
+
+    applicationService.deletePriorAuthority(priorAuthorityId, user);
+
+    return "redirect:/application/proceedings-and-costs#prior-authority";
+  }
+
+
 
 }

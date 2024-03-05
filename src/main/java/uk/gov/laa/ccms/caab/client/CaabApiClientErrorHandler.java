@@ -285,4 +285,32 @@ public class CaabApiClientErrorHandler {
     log.error(msg, e);
     return Mono.error(new CaabApiClientException(msg, e));
   }
+
+  /**
+   * Handles errors during saving of a prior authority.
+   *
+   * @param e the Throwable associated with the error
+   * @return a Mono error encapsulating the issue encountered
+   */
+  public Mono<Void> handleSavePriorAuthorityError(
+      final Throwable e,
+      final String id) {
+    final String msg = String.format("Failed to save prior authority to application: %s", id);
+    log.error(msg, e);
+    return Mono.error(new CaabApiClientException(msg, e));
+  }
+
+  /**
+   * Handles errors during updating of a prior authority.
+   *
+   * @param e the Throwable associated with the error
+   * @return a Mono error encapsulating the issue encountered
+   */
+  public Mono<Void> handleUpdatePriorAuthorityError(
+      final Throwable e,
+      final Integer priorAuthorityId) {
+    final String msg = String.format("Failed to update prior authority - %s", priorAuthorityId);
+    log.error(msg, e);
+    return Mono.error(new CaabApiClientException(msg, e));
+  }
 }

@@ -36,6 +36,7 @@ import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.PriorAuthority;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -519,6 +520,63 @@ public class CaabApiClientTest {
     when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
 
     final Mono<Void> result = caabApiClient.updateClient(clientReferenceId, loginId, data);
+
+    StepVerifier.create(result).verifyComplete();
+  }
+
+  @Test
+  void addPriorAuthority_success() {
+    final String applicationId = "app123";
+    final PriorAuthority priorAuthority = new PriorAuthority(); // Populate this as needed
+    final String loginId = "user789";
+    final String expectedUri = "/applications/{applicationId}/prior-authorities";
+
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri, applicationId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(priorAuthority)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.addPriorAuthority(applicationId, priorAuthority, loginId);
+
+    StepVerifier.create(result).verifyComplete();
+  }
+
+  @Test
+  void updatePriorAuthority_success() {
+    final Integer priorAuthorityId = 123;
+    final PriorAuthority data = new PriorAuthority(); // Populate this as needed
+    final String loginId = "user456";
+    final String expectedUri = "/prior-authorities/{prior-authority-id}";
+
+    when(caabApiWebClient.patch()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri, priorAuthorityId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(data)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.updatePriorAuthority(priorAuthorityId, data, loginId);
+
+    StepVerifier.create(result).verifyComplete();
+  }
+
+  @Test
+  void deletePriorAuthority_success() {
+    final Integer priorAuthorityId = 456;
+    final String loginId = "user123";
+    final String expectedUri = "/prior-authorities/{prior-authority-id}";
+
+    when(caabApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, priorAuthorityId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.deletePriorAuthority(priorAuthorityId, loginId);
 
     StepVerifier.create(result).verifyComplete();
   }

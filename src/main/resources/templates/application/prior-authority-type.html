@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+  <title>LAA CCMS - Create application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a href="/application/proceedings-and-costs#prior-authority" class="govuk-back-link">Cancel and return to proceedings and costs</a>
+  </div>
+  <div id="main-content">
+    <form action="#" th:action="@{/application/prior-authorities/{action}/type(action=${priorAuthorityFlow.action})}" th:object="${priorAuthorityTypeDetails}" method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <span class="govuk-caption-l">Add/edit prior authority</span>
+      <h1 class="govuk-heading-l">
+        Prior authority - Step 1 of 2
+      </h1>
+      <p class="govuk-body-l">
+        Please select the prior authority type.
+      </p>
+      <div th:replace="~{partials/forms :: dropdownWithDisplayValue('priorAuthorityType', 'Prior authority type', ${priorAuthorityTypes}, 'code', 'description')}"></div>
+      <div class="govuk-button-group">
+        <button type="submit" class="govuk-button" data-module="govuk-button">
+          Next
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

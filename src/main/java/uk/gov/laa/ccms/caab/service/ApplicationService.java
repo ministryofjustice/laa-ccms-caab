@@ -73,6 +73,7 @@ import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.OpponentRowDisplay;
+import uk.gov.laa.ccms.caab.model.PriorAuthority;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -1597,6 +1598,21 @@ public class ApplicationService {
   }
 
   /**
+   * Retrieves details for a given prior authority type.
+   *
+   * @param priorAuthorityType the type of the prior authority to retrieve details for.
+   * @return the detail of the specified prior authority type or null if not found.
+   */
+  public PriorAuthorityTypeDetail getPriorAuthorityTypeDetail(final String priorAuthorityType) {
+    return lookupService.getPriorAuthorityTypes(priorAuthorityType, null)
+        .block()
+        .getContent()
+        .stream()
+        .findFirst()
+        .orElse(null);
+  }
+
+  /**
    * Adds a proceeding associated to a specific application.
    *
    * @param applicationId the ID of the application to which the proceeding is added
@@ -1660,5 +1676,44 @@ public class ApplicationService {
         applicationId,
         costStructure,
         user.getLoginId()).block();
+  }
+
+  /**
+   * Adds a priorAuthority associated to a specific application.
+   *
+   * @param applicationId the ID of the application to which the priorAuthority is added
+   * @param priorAuthority the priorAuthority to add
+   * @param user the user details initiating the action
+   */
+  public void addPriorAuthority(
+      final String applicationId,
+      final PriorAuthority priorAuthority,
+      final UserDetail user) {
+    caabApiClient.addPriorAuthority(applicationId, priorAuthority, user.getLoginId()).block();
+  }
+
+  /**
+   * Updates a specified priorAuthority.
+   *
+   * @param priorAuthority the priorAuthority to update
+   * @param user the user details initiating the update
+   */
+  public void updatePriorAuthority(
+      final PriorAuthority priorAuthority,
+      final UserDetail user) {
+    caabApiClient.updatePriorAuthority(priorAuthority.getId(), priorAuthority,
+        user.getLoginId()).block();
+  }
+
+  /**
+   * Deletes a specified priorAuthority.
+   *
+   * @param priorAuthorityId the ID of the priorAuthority to delete
+   * @param user the user details initiating the deletion
+   */
+  public void deletePriorAuthority(
+      final Integer priorAuthorityId,
+      final UserDetail user) {
+    caabApiClient.deletePriorAuthority(priorAuthorityId, user.getLoginId()).block();
   }
 }

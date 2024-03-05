@@ -144,7 +144,6 @@ jacocoTestCoverageVerification {
 		}))
 	}
 
-
 	violationRules {
 		rule {
 			limit {

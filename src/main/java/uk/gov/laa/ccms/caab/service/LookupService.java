@@ -674,6 +674,15 @@ public class LookupService {
             .orElse(null));
   }
 
+
+
+  public Mono<List<CommonLookupValueDetail>> getCommonValues(
+      final String type) {
+    return ebsApiClient.getCommonValues(type)
+        .mapNotNull(CommonLookupDetail::getContent);
+  }
+
+
   /**
    * Get a list of Notification Type Common Values.
    *
