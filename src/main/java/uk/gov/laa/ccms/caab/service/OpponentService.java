@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
+
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -72,7 +74,7 @@ public class OpponentService {
     }
 
     CommonLookupDetail organisationTypes = Optional.ofNullable(
-            lookupService.getOrganisationTypes().block())
+            lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES).block())
         .orElse(new CommonLookupDetail());
 
     return resultDisplayMapper.toOrganisationResultsDisplay(
@@ -102,7 +104,8 @@ public class OpponentService {
 
     // Lookup the display value for the organisation type.
     CommonLookupValueDetail orgType =
-        Optional.ofNullable(lookupService.getOrganisationType(organisation.getType()).block())
+        Optional.ofNullable(lookupService.getCommonValue(
+            COMMON_VALUE_ORGANISATION_TYPES, organisation.getType()).block())
             .orElseThrow(
                 () -> new CaabApplicationException("Failed to retrieve organisation type lookup"));
 

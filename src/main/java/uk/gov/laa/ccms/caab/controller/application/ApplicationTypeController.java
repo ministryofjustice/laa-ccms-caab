@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLICATION_TYPE_CODES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
 import java.util.List;
@@ -82,7 +83,8 @@ public class ApplicationTypeController {
   }
 
   private List<CommonLookupValueDetail> getFilteredApplicationTypes() {
-    return Optional.ofNullable(lookupService.getApplicationTypes().block())
+    return Optional.ofNullable(lookupService.getCommonValues(
+        COMMON_VALUE_APPLICATION_TYPE).block())
         .orElse(new CommonLookupDetail())
         .getContent()
         .stream()

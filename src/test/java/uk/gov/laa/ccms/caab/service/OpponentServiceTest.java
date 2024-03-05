@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,7 +64,7 @@ public class OpponentServiceTest {
         .thenReturn(Mono.just(organisationDetails));
     CommonLookupDetail commonLookupDetail = new CommonLookupDetail()
         .addContentItem(new CommonLookupValueDetail());
-    when(lookupService.getOrganisationTypes()).thenReturn(Mono.just(commonLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.just(commonLookupDetail));
     when(resultDisplayMapper.toOrganisationResultsDisplay(
         organisationDetails, commonLookupDetail.getContent()))
         .thenReturn(expectedResults);
@@ -110,7 +111,7 @@ public class OpponentServiceTest {
     when(soaApiClient.getOrganisation(orgId, loginId, userType))
         .thenReturn(Mono.just(organisationDetail));
     CommonLookupValueDetail orgLookup = new CommonLookupValueDetail();
-    when(lookupService.getOrganisationType(organisationDetail.getType()))
+    when(lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES, organisationDetail.getType()))
         .thenReturn(Mono.just(orgLookup));
     when(opponentMapper.toOpponentFormData(
         organisationDetail, orgLookup))

@@ -10,6 +10,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DISABILITY;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ETHNIC_ORIGIN;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -67,10 +69,10 @@ public class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
 
   @Test
   public void testClientEqualOpportunitiesMonitoringGet() throws Exception {
-    when(lookupService.getEthnicOrigins()).thenReturn(
+    when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN)).thenReturn(
         Mono.just(ethnicityLookupDetail));
 
-    when(lookupService.getDisabilities()).thenReturn(
+    when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY)).thenReturn(
         Mono.just(disabilityLookupDetail));
 
     mockMvc.perform(get("/application/client/details/equal-opportunities-monitoring")
@@ -90,10 +92,10 @@ public class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
       return null;
     }).when(validator).validate(any(), any());
 
-    when(lookupService.getEthnicOrigins()).thenReturn(
+    when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN)).thenReturn(
         Mono.just(ethnicityLookupDetail));
 
-    when(lookupService.getDisabilities()).thenReturn(
+    when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY)).thenReturn(
         Mono.just(disabilityLookupDetail));
 
     mockMvc.perform(post("/application/client/details/equal-opportunities-monitoring")

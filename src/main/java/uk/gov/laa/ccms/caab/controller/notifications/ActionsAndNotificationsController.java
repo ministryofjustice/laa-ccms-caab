@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.notifications;
 
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_NOTIFICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -172,7 +173,8 @@ public class ActionsAndNotificationsController {
     Mono<List<ContactDetail>> feeEarners = providerService.getProvider(user.getProvider().getId())
         .map(providerService::getAllFeeEarners);
     // get the notification types
-    Mono<CommonLookupDetail> notificationTypes = lookupService.getNotificationTypes();
+    Mono<CommonLookupDetail> notificationTypes =
+        lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE);
     // get the Users
     Mono<UserDetails> users = userService.getUsers(user.getProvider().getId());
 

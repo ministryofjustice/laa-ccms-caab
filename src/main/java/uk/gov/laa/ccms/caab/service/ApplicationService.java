@@ -14,6 +14,14 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_LEVEL_OF_SERVICE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MATTER_TYPES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_STATUS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -967,10 +975,10 @@ public class ApplicationService {
         RelationshipToCaseLookupDetail,
         RelationshipToCaseLookupDetail,
         CommonLookupDetail> combinedResponse = Optional.ofNullable(Mono.zip(
-            lookupService.getContactTitles(),
+            lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE),
             lookupService.getPersonToCaseRelationships(),
             lookupService.getOrganisationToCaseRelationships(),
-            lookupService.getRelationshipsToClient()).block())
+            lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).block())
         .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
 
     // Get the list of opponents for the application, and transform to display model.
@@ -1139,10 +1147,10 @@ public class ApplicationService {
         PriorAuthorityTypeDetails> lookupTuple = Optional.ofNullable(
         Mono.zip(
             providerService.getProvider(Integer.parseInt(soaProvider.getProviderFirmId())),
-            lookupService.getMatterTypes(),
-            lookupService.getLevelsOfService(),
-            lookupService.getClientInvolvementTypes(),
-            lookupService.getScopeLimitations(),
+            lookupService.getCommonValues(COMMON_VALUE_MATTER_TYPES),
+            lookupService.getCommonValues(COMMON_VALUE_LEVEL_OF_SERVICE),
+            lookupService.getCommonValues(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES),
+            lookupService.getCommonValues(COMMON_VALUE_SCOPE_LIMITATIONS),
             lookupService.getPriorAuthorityTypes()).block())
         .orElseThrow(() -> new CaabApplicationException(
             "Failed to query lookup data for Application mapping"));
@@ -1156,11 +1164,13 @@ public class ApplicationService {
 
     // Lookup the application type if the SOA Case has a Certificate Type
     CommonLookupValueDetail applicationType = soaCase.getCertificateType() != null
-        ? Optional.ofNullable(lookupService.getApplicationType(soaCase.getCertificateType())
-            .block()).orElseThrow(
-                () -> new CaabApplicationException(
-                  String.format("Failed to retrieve applicationtype with code: %s",
-                      soaCase.getCertificateType()))) : null;
+        ? Optional.ofNullable(
+            lookupService.getCommonValue(
+                COMMON_VALUE_APPLICATION_TYPE, soaCase.getCertificateType())
+                    .block()).orElseThrow(
+                        () -> new CaabApplicationException(
+                          String.format("Failed to retrieve applicationtype with code: %s",
+                              soaCase.getCertificateType()))) : null;
 
     // Find the correct provider office.
     OfficeDetail providerOffice = providerDetail.getOffices().stream()
@@ -1295,7 +1305,8 @@ public class ApplicationService {
     Tuple2<uk.gov.laa.ccms.data.model.ProceedingDetail,
                 CommonLookupValueDetail> lookupTuple = Optional.ofNullable(
         Mono.zip(ebsApiClient.getProceeding(soaProceeding.getProceedingType()),
-            lookupService.getProceedingStatus(soaProceeding.getStatus())).block())
+            lookupService.getCommonValue(COMMON_VALUE_PROCEEDING_STATUS,
+                soaProceeding.getStatus())).block())
         .orElseThrow(() -> new CaabApplicationException(
             "Failed to retrieve lookup data for Proceeding"));
 

@@ -25,6 +25,14 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_LEVEL_OF_SERVICE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MATTER_TYPES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_STATUS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCategoryOfLawLookupValueDetail;
@@ -520,20 +528,20 @@ class ApplicationServiceTest {
     PriorAuthorityTypeDetails priorAuthorityTypes =
         buildPriorAuthorityTypeDetails("dataType");
 
-    when(lookupService.getApplicationType(soaCase.getCertificateType()))
+    when(lookupService.getCommonValue(COMMON_VALUE_APPLICATION_TYPE, soaCase.getCertificateType()))
         .thenReturn(Mono.just(applicationTypeLookup));
 
     when(providerService.getProvider(Integer.parseInt(
         soaCase.getApplicationDetails().getProviderDetails().getProviderFirmId())))
         .thenReturn(Mono.just(providerDetail));
 
-    when(lookupService.getMatterTypes()).thenReturn(Mono.just(matterTypeLookups));
+    when(lookupService.getCommonValues(COMMON_VALUE_MATTER_TYPES)).thenReturn(Mono.just(matterTypeLookups));
 
-    when(lookupService.getLevelsOfService()).thenReturn(Mono.just(levelOfServiceLookups));
+    when(lookupService.getCommonValues(COMMON_VALUE_LEVEL_OF_SERVICE)).thenReturn(Mono.just(levelOfServiceLookups));
 
-    when(lookupService.getClientInvolvementTypes()).thenReturn(Mono.just(clientInvolvementLookups));
+    when(lookupService.getCommonValues(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES)).thenReturn(Mono.just(clientInvolvementLookups));
 
-    when(lookupService.getScopeLimitations()).thenReturn(Mono.just(scopeLimitations));
+    when(lookupService.getCommonValues(COMMON_VALUE_SCOPE_LIMITATIONS)).thenReturn(Mono.just(scopeLimitations));
 
     when(lookupService.getPriorAuthorityTypes()).thenReturn(Mono.just(priorAuthorityTypes));
 
@@ -547,7 +555,7 @@ class ApplicationServiceTest {
 
     CommonLookupValueDetail proceedingStatusLookup =
         new CommonLookupValueDetail();
-    when(lookupService.getProceedingStatus(soaProceeding.getStatus()))
+    when(lookupService.getCommonValue(COMMON_VALUE_PROCEEDING_STATUS,  soaProceeding.getStatus()))
         .thenReturn(Mono.just(proceedingStatusLookup));
 
     // Mock the call for scopeLimitationDetails, used to calculate the max cost limitation.
@@ -1207,7 +1215,7 @@ class ApplicationServiceTest {
 
     CommonLookupValueDetail proceedingStatusLookup =
         new CommonLookupValueDetail();
-    when(lookupService.getProceedingStatus(soaProceeding.getStatus()))
+    when(lookupService.getCommonValue(COMMON_VALUE_PROCEEDING_STATUS,  soaProceeding.getStatus()))
         .thenReturn(Mono.just(proceedingStatusLookup));
 
     CommonLookupValueDetail matterTypeLookup = new CommonLookupValueDetail()
@@ -1431,20 +1439,20 @@ class ApplicationServiceTest {
     PriorAuthorityTypeDetails priorAuthorityTypes =
         buildPriorAuthorityTypeDetails("dataType");
 
-    when(lookupService.getApplicationType(soaCase.getCertificateType()))
+    when(lookupService.getCommonValue(COMMON_VALUE_APPLICATION_TYPE, soaCase.getCertificateType()))
         .thenReturn(Mono.just(applicationTypeLookup));
 
     when(providerService.getProvider(Integer.parseInt(
         soaCase.getApplicationDetails().getProviderDetails().getProviderFirmId())))
         .thenReturn(Mono.just(providerDetail));
 
-    when(lookupService.getMatterTypes()).thenReturn(Mono.just(matterTypeLookups));
+    when(lookupService.getCommonValues(COMMON_VALUE_MATTER_TYPES)).thenReturn(Mono.just(matterTypeLookups));
 
-    when(lookupService.getLevelsOfService()).thenReturn(Mono.just(levelOfServiceLookups));
+    when(lookupService.getCommonValues(COMMON_VALUE_LEVEL_OF_SERVICE)).thenReturn(Mono.just(levelOfServiceLookups));
 
-    when(lookupService.getClientInvolvementTypes()).thenReturn(Mono.just(clientInvolvementLookups));
+    when(lookupService.getCommonValues(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES)).thenReturn(Mono.just(clientInvolvementLookups));
 
-    when(lookupService.getScopeLimitations()).thenReturn(Mono.just(scopeLimitations));
+    when(lookupService.getCommonValues(COMMON_VALUE_SCOPE_LIMITATIONS)).thenReturn(Mono.just(scopeLimitations));
 
     when(lookupService.getPriorAuthorityTypes()).thenReturn(Mono.just(priorAuthorityTypes));
 
@@ -1452,7 +1460,7 @@ class ApplicationServiceTest {
     // content here.
     when(ebsApiClient.getProceeding(any(String.class)))
         .thenReturn(Mono.just(new uk.gov.laa.ccms.data.model.ProceedingDetail()));
-    when(lookupService.getProceedingStatus(any(String.class)))
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROCEEDING_STATUS),  any(String.class)))
         .thenReturn(Mono.just(new CommonLookupValueDetail()));
     when(lookupService.getAwardTypes()).thenReturn(Mono.just(
         new AwardTypeLookupDetail()
@@ -1531,20 +1539,20 @@ class ApplicationServiceTest {
             .description("pi desc")
             .addPriorAuthoritiesItem(new PriorAuthorityDetail()));
 
-    when(lookupService.getApplicationType(soaCase.getCertificateType()))
+    when(lookupService.getCommonValue(COMMON_VALUE_APPLICATION_TYPE, soaCase.getCertificateType()))
         .thenReturn(Mono.just(applicationTypeLookup));
 
     when(providerService.getProvider(Integer.parseInt(
         soaCase.getApplicationDetails().getProviderDetails().getProviderFirmId())))
         .thenReturn(Mono.just(providerDetail));
 
-    when(lookupService.getMatterTypes()).thenReturn(Mono.just(matterTypeLookups));
+    when(lookupService.getCommonValues(COMMON_VALUE_MATTER_TYPES)).thenReturn(Mono.just(matterTypeLookups));
 
-    when(lookupService.getLevelsOfService()).thenReturn(Mono.just(levelOfServiceLookups));
+    when(lookupService.getCommonValues(COMMON_VALUE_LEVEL_OF_SERVICE)).thenReturn(Mono.just(levelOfServiceLookups));
 
-    when(lookupService.getClientInvolvementTypes()).thenReturn(Mono.just(clientInvolvementLookups));
+    when(lookupService.getCommonValues(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES)).thenReturn(Mono.just(clientInvolvementLookups));
 
-    when(lookupService.getScopeLimitations()).thenReturn(Mono.just(scopeLimitations));
+    when(lookupService.getCommonValues(COMMON_VALUE_SCOPE_LIMITATIONS)).thenReturn(Mono.just(scopeLimitations));
 
     when(lookupService.getPriorAuthorityTypes()).thenReturn(Mono.just(priorAuthorityTypes));
 
@@ -1552,7 +1560,7 @@ class ApplicationServiceTest {
     // content here.
     when(ebsApiClient.getProceeding(any(String.class)))
         .thenReturn(Mono.just(new uk.gov.laa.ccms.data.model.ProceedingDetail()));
-    when(lookupService.getProceedingStatus(any(String.class)))
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROCEEDING_STATUS),  any(String.class)))
         .thenReturn(Mono.just(new CommonLookupValueDetail()));
     when(lookupService.getAwardTypes()).thenReturn(Mono.just(
         new AwardTypeLookupDetail()
@@ -1815,10 +1823,10 @@ class ApplicationServiceTest {
     final String applicationId = "123";
     Opponent opponent = buildOpponent(new Date());
 
-    when(lookupService.getContactTitles()).thenReturn(Mono.just(new CommonLookupDetail()));
+    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(Mono.just(new CommonLookupDetail()));
     when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.just(new RelationshipToCaseLookupDetail()));
     when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.just(new RelationshipToCaseLookupDetail()));
-    when(lookupService.getRelationshipsToClient()).thenReturn(Mono.just(new CommonLookupDetail()));
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(new CommonLookupDetail()));
 
     when(caabApiClient.getOpponents(applicationId)).thenReturn(Mono.just(List.of(opponent)));
     ResultsDisplay<OpponentRowDisplay> result =

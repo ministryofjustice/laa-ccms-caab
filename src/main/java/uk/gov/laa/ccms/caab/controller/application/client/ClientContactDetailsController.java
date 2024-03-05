@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import lombok.RequiredArgsConstructor;
@@ -94,9 +96,9 @@ public class ClientContactDetailsController {
   private void populateDropdowns(Model model) {
     new DropdownBuilder(model)
         .addDropdown("correspondenceMethods",
-            lookupService.getCorrespondenceMethods())
+            lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD))
         .addDropdown("correspondenceLanguages",
-            lookupService.getCorrespondenceLanguages())
+            lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE))
         .build();
   }
 }

@@ -1,5 +1,13 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DISABILITY;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ETHNIC_ORIGIN;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
+
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -60,25 +68,27 @@ public abstract class AbstractClientSummaryController {
     // Create a list of Mono calls and their respective attribute keys
     List<Pair<String, Mono<CommonLookupValueDetail>>> lookups = List.of(
         Pair.of("contactTitle",
-            lookupService.getContactTitle(
+            lookupService.getCommonValue(
+                COMMON_VALUE_CONTACT_TITLE,
                 clientFlowFormData.getBasicDetails().getTitle())),
         Pair.of("countryOfOrigin",
             lookupService.getCountry(
                 clientFlowFormData.getBasicDetails().getCountryOfOrigin())),
         Pair.of("maritalStatus",
-            lookupService.getMaritalStatus(
+            lookupService.getCommonValue(COMMON_VALUE_MARITAL_STATUS,
                 clientFlowFormData.getBasicDetails().getMaritalStatus())),
         Pair.of("gender",
-            lookupService.getGender(
+            lookupService.getCommonValue(
+                COMMON_VALUE_GENDER,
                 clientFlowFormData.getBasicDetails().getGender())),
         Pair.of("correspondenceMethod",
-            lookupService.getCorrespondenceMethod(
+            lookupService.getCommonValue(COMMON_VALUE_CORRESPONDENCE_METHOD,
                 clientFlowFormData.getContactDetails().getCorrespondenceMethod())),
         Pair.of("ethnicity",
-            lookupService.getEthnicOrigin(
+            lookupService.getCommonValue(COMMON_VALUE_ETHNIC_ORIGIN,
                 clientFlowFormData.getMonitoringDetails().getEthnicOrigin())),
         Pair.of("disability",
-            lookupService.getDisability(
+            lookupService.getCommonValue(COMMON_VALUE_DISABILITY,
                 clientFlowFormData.getMonitoringDetails().getDisability())),
 
         //Processed differently due to optionality
@@ -89,7 +99,7 @@ public abstract class AbstractClientSummaryController {
                 : Mono.just(new CommonLookupValueDetail())),
         Pair.of("correspondenceLanguage",
             StringUtils.hasText(clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
-                ? lookupService.getCorrespondenceLanguage(
+                ? lookupService.getCommonValue(COMMON_VALUE_CORRESPONDENCE_LANGUAGE,
                 clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
                 : Mono.just(new CommonLookupValueDetail()))
     );

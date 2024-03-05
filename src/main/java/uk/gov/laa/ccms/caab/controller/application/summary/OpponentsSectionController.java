@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_OPPONENT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ORGANISATION_SEARCH_CRITERIA;
@@ -258,7 +260,7 @@ public class OpponentsSectionController {
   private void populateOrganisationSearchDropdowns(final Model model) {
     new DropdownBuilder(model)
         .addDropdown("organisationTypes",
-            lookupService.getOrganisationTypes())
+            lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
         .build();
   }
 
@@ -266,7 +268,7 @@ public class OpponentsSectionController {
     Tuple2<RelationshipToCaseLookupDetail, CommonLookupDetail> combinedLookup =
         Optional.ofNullable(Mono.zip(
             lookupService.getOrganisationToCaseRelationships(),
-            lookupService.getRelationshipsToClient()).block())
+            lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).block())
             .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
 
     model.addAttribute("relationshipsToCase", combinedLookup.getT1().getContent());

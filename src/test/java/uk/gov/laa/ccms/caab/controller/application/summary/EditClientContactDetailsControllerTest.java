@@ -12,6 +12,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_EDIT;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -76,9 +78,9 @@ public class EditClientContactDetailsControllerTest {
   @Test
   void testClientDetailsContact() throws Exception {
 
-    when(lookupService.getCorrespondenceMethods()).thenReturn(
+    when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD)).thenReturn(
         Mono.just(correspondenceMethodLookupDetail));
-    when(lookupService.getCorrespondenceLanguages()).thenReturn(
+    when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE)).thenReturn(
         Mono.just(correspondenceLanguageLookupDetail));
 
     this.mockMvc.perform(get("/application/summary/client/details/contact")
@@ -113,9 +115,9 @@ public class EditClientContactDetailsControllerTest {
       return null;
     }).when(clientContactDetailsValidator).validate(any(), any());
 
-    when(lookupService.getCorrespondenceMethods()).thenReturn(
+    when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD)).thenReturn(
         Mono.just(correspondenceMethodLookupDetail));
-    when(lookupService.getCorrespondenceLanguages()).thenReturn(
+    when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE)).thenReturn(
         Mono.just(correspondenceLanguageLookupDetail));
 
     this.mockMvc.perform(post("/application/summary/client/details/contact")

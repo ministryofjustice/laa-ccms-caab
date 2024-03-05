@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +65,7 @@ public class ApplicationTypeControllerTest {
     applicationTypes.addContentItem(
         new CommonLookupValueDetail().type("Type 1").code("Code 1"));
 
-    when(lookupService.getApplicationTypes()).thenReturn(
+    when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_TYPE)).thenReturn(
         Mono.just(applicationTypes));
 
     this.mockMvc.perform(get("/application/application-type")
@@ -75,7 +76,8 @@ public class ApplicationTypeControllerTest {
         .andExpect(model().attribute(APPLICATION_FORM_DATA, new ApplicationFormData()))
         .andExpect(model().attribute("applicationTypes", applicationTypes.getContent()));
 
-    verify(lookupService, times(1)).getApplicationTypes();
+    verify(lookupService, times(1))
+        .getCommonValues(COMMON_VALUE_APPLICATION_TYPE);
   }
 
   @Test
@@ -100,7 +102,7 @@ public class ApplicationTypeControllerTest {
     applicationTypes.addContentItem(
         new CommonLookupValueDetail().type("Type 1").code("Code 1"));
 
-    when(lookupService.getApplicationTypes()).thenReturn(
+    when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_TYPE)).thenReturn(
         Mono.just(applicationTypes));
 
     doAnswer(invocation -> {

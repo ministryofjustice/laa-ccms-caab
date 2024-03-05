@@ -1,6 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.LINKED_CASES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_STATUS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_LINK_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
@@ -187,7 +190,7 @@ public class EditGeneralDetailsSectionController {
         .addDropdown("countries",
             lookupService.getCountries())
         .addDropdown("caseAddressOptions",
-            lookupService.getCaseAddressOptions())
+            lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
         .build();
   }
 
@@ -388,7 +391,7 @@ public class EditGeneralDetailsSectionController {
   private void populateLinkedCasesConfirmDropdowns(final Model model) {
     new DropdownBuilder(model)
         .addDropdown("caseLinkOptions",
-            lookupService.getCaseLinkTypes())
+            lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE))
         .build();
   }
 
@@ -588,7 +591,7 @@ public class EditGeneralDetailsSectionController {
 
     new DropdownBuilder(model)
         .addDropdown("Status",
-            lookupService.getApplicationStatuses())
+            lookupService.getCommonValues(COMMON_VALUE_APPLICATION_STATUS))
         .build();
 
     model.addAttribute("feeEarners", providerService.getAllFeeEarners(providerDetail));

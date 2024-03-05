@@ -23,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_ORDER_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
@@ -504,7 +505,7 @@ class EditProceedingsAndCostsSectionControllerTest {
             .thenReturn(Mono.just(new LevelOfServiceLookupDetail().content(levelOfServiceTypes)));
 
         if (orderTypeRequired) {
-            when(lookupService.getOrderTypes())
+            when(lookupService.getCommonValues(COMMON_VALUE_PROCEEDING_ORDER_TYPE))
                 .thenReturn(Mono.just(new CommonLookupDetail().content(orderTypes)));
         }
 
@@ -522,7 +523,7 @@ class EditProceedingsAndCostsSectionControllerTest {
         if (orderTypeRequired) {
             resultActions.andExpect(model().attributeExists("orderTypes"))
                 .andExpect(model().attribute("orderTypes", orderTypes));
-            verify(lookupService, times(1)).getOrderTypes();
+            verify(lookupService, times(1)).getCommonValues(COMMON_VALUE_PROCEEDING_ORDER_TYPE);
         } else {
             resultActions.andExpect(model().attributeDoesNotExist("orderTypes"));
         }
@@ -1280,8 +1281,11 @@ class EditProceedingsAndCostsSectionControllerTest {
         when(applicationService.getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType()))
             .thenReturn(priorAuthorityDynamicForm);
 
+
+        final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
         final List<CommonLookupValueDetail> commonLookupValues = List.of(new CommonLookupValueDetail().code("1").description("Value 1"));
-        when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupValues));
+        commonLookupDetail.setContent(commonLookupValues);
+        when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupDetail));
 
         mockMvc.perform(get("/application/prior-authorities/{action}/details", priorAuthorityAction)
                 .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow))
@@ -1311,8 +1315,10 @@ class EditProceedingsAndCostsSectionControllerTest {
         when(applicationService.getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType()))
             .thenReturn(priorAuthorityDynamicForm);
 
+        final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
         final List<CommonLookupValueDetail> commonLookupValues = List.of(new CommonLookupValueDetail().code("1").description("Value 1"));
-        when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupValues));
+        commonLookupDetail.setContent(commonLookupValues);
+        when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupDetail));
 
         mockMvc.perform(get("/application/prior-authorities/{action}/details", priorAuthorityAction)
                 .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow))
@@ -1352,8 +1358,10 @@ class EditProceedingsAndCostsSectionControllerTest {
         when(applicationService.getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType()))
             .thenReturn(priorAuthorityDynamicForm);
 
+        final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
         final List<CommonLookupValueDetail> commonLookupValues = List.of(new CommonLookupValueDetail().code("1").description("Value 1"));
-        when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupValues));
+        commonLookupDetail.setContent(commonLookupValues);
+        when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupDetail));
 
         final PriorAuthorityFormDataDetails priorAuthorityDetails = new PriorAuthorityFormDataDetails();
         final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(action);
