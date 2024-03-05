@@ -104,7 +104,10 @@ public class ApplicationMapperTest {
 
     assertNotNull(result);
     assertEquals(soaCaseDetail.getCaseReferenceNumber(), result.getCaseReferenceNumber());
-    assertEquals(soaCaseDetail.getCertificateType(), result.getCertificate().getId());
+    assertEquals(applicationMappingContext.getCertificate().getCode(),
+        result.getCertificate().getId());
+    assertEquals(applicationMappingContext.getCertificate().getDescription(),
+        result.getCertificate().getDisplayValue());
     assertEquals(soaCaseDetail.getApplicationDetails().getApplicationAmendmentType(),
         result.getApplicationType().getId());
     assertEquals(applicationMappingContext.getApplicationType().getDescription(),
@@ -997,6 +1000,9 @@ public class ApplicationMapperTest {
             buildProceedingMappingContext(soaCase.getApplicationDetails().getProceedings().get(0))))
         .caseOutcome(buildCaseOutcomeMappingContext(soaCase))
         .caseWithOnlyDraftProceedings(Boolean.TRUE)
+        .certificate(new CommonLookupValueDetail()
+            .code("certcode")
+            .description("certificate descr"))
         .currentProviderBilledAmount(BigDecimal.ONE)
         .devolvedPowers(Pair.of(devolvedPowers, devolvedPowersDate))
         .feeEarnerContact(new uk.gov.laa.ccms.data.model.ContactDetail()

@@ -44,6 +44,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProceedingDetails;
@@ -262,6 +263,15 @@ public class LookupService {
   }
 
   /**
+   * Get a single Matter Type Common Value with the supplied code.
+   *
+   * @return CommonLookupValueDetail with the supplied code.
+   */
+  public Mono<CommonLookupValueDetail> getMatterType(final String code) {
+    return this.getCommonValue(COMMON_VALUE_MATTER_TYPES, code);
+  }
+
+  /**
    * Get a list of proceeding types for proceedings.
    *
    * @param searchCriteria The criteria to search for proceedings.
@@ -290,7 +300,7 @@ public class LookupService {
    * @return A Mono containing the ClientInvolvementTypeLookupDetail or an error handler if an
    *         error occurs.
    */
-  public Mono<ClientInvolvementTypeLookupDetail> getClientInvolvementTypes(
+  public Mono<ClientInvolvementTypeLookupDetail> getProceedingClientInvolvementTypes(
       final String proceedingCode) {
     return ebsApiClient.getClientInvolvementTypes(proceedingCode);
   }
@@ -302,6 +312,15 @@ public class LookupService {
    */
   public Mono<CommonLookupDetail> getClientInvolvementTypes() {
     return ebsApiClient.getCommonValues(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES);
+  }
+
+  /**
+   * Get a single Client Involvement Type Common Value for the specified code.
+   *
+   * @return CommonLookupValueDetail with the specified code.
+   */
+  public Mono<CommonLookupValueDetail> getClientInvolvementType(final String code) {
+    return this.getCommonValue(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES, code);
   }
 
   /**
@@ -404,12 +423,30 @@ public class LookupService {
   }
 
   /**
+   * Get a single Level Of Service Common Value by code.
+   *
+   * @return CommonLookupValueDetail for the specified code.
+   */
+  public Mono<CommonLookupValueDetail> getLevelOfService(final String code) {
+    return this.getCommonValue(COMMON_VALUE_LEVEL_OF_SERVICE, code);
+  }
+
+  /**
    * Get a list of Scope Limitation Common Values.
    *
    * @return CommonLookupDetail containing the common lookup values.
    */
   public Mono<CommonLookupDetail> getScopeLimitations() {
     return ebsApiClient.getCommonValues(COMMON_VALUE_SCOPE_LIMITATIONS);
+  }
+
+  /**
+   * Get a single Scope Limitation Common Value for the specified code.
+   *
+   * @return CommonLookupValueDetail with the specified code.
+   */
+  public Mono<CommonLookupValueDetail> getScopeLimitation(final String code) {
+    return this.getCommonValue(COMMON_VALUE_SCOPE_LIMITATIONS, code);
   }
 
   /**
@@ -511,6 +548,22 @@ public class LookupService {
   public Mono<PriorAuthorityTypeDetails> getPriorAuthorityTypes(
       final String code, final Boolean valueRequired) {
     return ebsApiClient.getPriorAuthorityTypes(code, valueRequired);
+  }
+
+  /**
+   * Retrieve a single prior authority type matching the specified code.
+   *
+   * @param code - the prior authority code.
+   * @return A Mono containing the PriorAuthorityTypeDetail
+   *     or an error handler if an error occurs.
+   */
+  public Mono<PriorAuthorityTypeDetail> getPriorAuthorityType(
+      final String code) {
+    return this.getPriorAuthorityTypes(code, null)
+        .mapNotNull(priorAuthorityTypeDetails -> priorAuthorityTypeDetails.getContent()
+            .stream()
+            .findFirst()
+            .orElse(null));
   }
 
   /**

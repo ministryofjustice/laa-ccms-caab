@@ -217,6 +217,17 @@ public class ApplicationBuilder {
   }
 
   /**
+   * Sets the cost structure details based on the provided value.
+   *
+   * @param costStructure - the cost structure.
+   * @return The builder instance.
+   */
+  public ApplicationBuilder costStructure(final CostStructure costStructure) {
+    application.costs(costStructure);
+    return this;
+  }
+
+  /**
    * Sets the correspondence address details.
    *
    * @return The builder instance.

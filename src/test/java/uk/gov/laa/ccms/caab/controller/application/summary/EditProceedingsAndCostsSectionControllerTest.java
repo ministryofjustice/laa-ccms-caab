@@ -475,7 +475,7 @@ class EditProceedingsAndCostsSectionControllerTest {
             new CommonLookupValueDetail().code("OT1").description("Order Type 1"),
             new CommonLookupValueDetail().code("OT2").description("Order Type 2"));
 
-        when(lookupService.getClientInvolvementTypes(anyString()))
+        when(lookupService.getProceedingClientInvolvementTypes(anyString()))
             .thenReturn(Mono.just(new ClientInvolvementTypeLookupDetail().content(clientInvolvementTypes)));
         when(lookupService.getProceedingLevelOfServiceTypes(anyString(), anyString(), anyString()))
             .thenReturn(Mono.just(new LevelOfServiceLookupDetail().content(levelOfServiceTypes)));
@@ -504,7 +504,7 @@ class EditProceedingsAndCostsSectionControllerTest {
             resultActions.andExpect(model().attributeDoesNotExist("orderTypes"));
         }
 
-        verify(lookupService, times(1)).getClientInvolvementTypes("proceedingType");
+        verify(lookupService, times(1)).getProceedingClientInvolvementTypes("proceedingType");
         verify(lookupService, times(1)).getProceedingLevelOfServiceTypes("categoryOfLawId", "proceedingType", "matterType");
 
     }
@@ -553,7 +553,7 @@ class EditProceedingsAndCostsSectionControllerTest {
             new LevelOfServiceLookupValueDetail().levelOfServiceCode("A").description("Level A"),
             new LevelOfServiceLookupValueDetail().levelOfServiceCode("B").description("Level B"));
 
-        when(lookupService.getClientInvolvementTypes(anyString()))
+        when(lookupService.getProceedingClientInvolvementTypes(anyString()))
             .thenReturn(Mono.just(new ClientInvolvementTypeLookupDetail().content(clientInvolvementTypes)));
         when(lookupService.getProceedingLevelOfServiceTypes(anyString(), anyString(), anyString()))
             .thenReturn(Mono.just(new LevelOfServiceLookupDetail().content(levelOfServiceTypes)));

@@ -32,6 +32,11 @@ public class ApplicationMappingContext {
   CommonLookupValueDetail applicationType;
 
   /**
+   * Lookup of certificate display value.
+   */
+  CommonLookupValueDetail certificate;
+
+  /**
    * Lookup of additional provider data for this Case.
    */
   ProviderDetail providerDetail;
