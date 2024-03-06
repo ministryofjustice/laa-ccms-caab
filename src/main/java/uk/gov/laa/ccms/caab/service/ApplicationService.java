@@ -13,11 +13,14 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_LEVEL_OF_SERVICE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MATTER_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -97,7 +100,6 @@ import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
-import reactor.util.function.Tuple5;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
@@ -1164,7 +1166,7 @@ public class ApplicationService {
         soaApplicationDetails.getApplicationAmendmentType() != null
         ? Optional.ofNullable(
             lookupService.getCommonValue(
-                COMMON_VALUE_APPLICATION_TYPE,soaApplicationDetails.getApplicationAmendmentType())
+                COMMON_VALUE_APPLICATION_TYPE, soaApplicationDetails.getApplicationAmendmentType())
         .block()).orElseThrow(() -> new CaabApplicationException(
             String.format("Failed to retrieve applicationtype with code: %s",
                 soaCase.getCertificateType()))) : certificateLookup;
@@ -1295,9 +1297,12 @@ public class ApplicationService {
         Mono.zip(ebsApiClient.getProceeding(soaProceeding.getProceedingType()),
             lookupService.getCommonValue(
                 COMMON_VALUE_PROCEEDING_STATUS, soaProceeding.getStatus()),
-            lookupService.getMatterType(soaProceeding.getMatterType()),
-            lookupService.getLevelOfService(soaProceeding.getLevelOfService()),
-            lookupService.getClientInvolvementType(soaProceeding.getClientInvolvementType()))
+            lookupService.getCommonValue(
+                COMMON_VALUE_MATTER_TYPES, soaProceeding.getMatterType()),
+            lookupService.getCommonValue(
+                COMMON_VALUE_LEVEL_OF_SERVICE, soaProceeding.getLevelOfService()),
+            lookupService.getCommonValue(
+                COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES, soaProceeding.getClientInvolvementType()))
             .block())
         .orElseThrow(() -> new CaabApplicationException(
             "Failed to retrieve lookup data for Proceeding"));
@@ -1311,7 +1316,8 @@ public class ApplicationService {
         soaProceeding.getScopeLimitations().stream()
             .map(scopeLimitation -> Pair.of(
                 scopeLimitation,
-                lookupService.getScopeLimitation(
+                lookupService.getCommonValue(
+                    COMMON_VALUE_SCOPE_LIMITATIONS,
                     scopeLimitation.getScopeLimitation()).block()))
             .toList();
 

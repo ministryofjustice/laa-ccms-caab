@@ -23,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_ORDER_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
@@ -65,7 +66,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.util.NestedServletException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
@@ -185,7 +185,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     public void testProceedingsMakeLead() throws Exception {
         final String applicationId = "testApplicationId";
         final Integer proceedingId = 1;
-        List<Proceeding> proceedings = Collections.singletonList(new Proceeding().id(proceedingId));
+        final List<Proceeding> proceedings = Collections.singletonList(new Proceeding().id(proceedingId));
 
         mockMvc.perform(get("/application/proceedings/{proceeding-id}/make-lead", proceedingId)
                 .sessionAttr(APPLICATION_ID, applicationId)
@@ -411,7 +411,7 @@ class EditProceedingsAndCostsSectionControllerTest {
             .thenReturn(Mono.just(new ProceedingDetails().content(proceedingDetails)));
 
         doAnswer(invocation -> {
-            BindingResult errors = invocation.getArgument(1);
+            final BindingResult errors = invocation.getArgument(1);
             errors.rejectValue("proceedingType", "error.proceedingType", "Proceeding Type is required");
             return null;
         }).when(proceedingTypeValidator).validate(any(), any(BindingResult.class));
@@ -504,7 +504,7 @@ class EditProceedingsAndCostsSectionControllerTest {
             .thenReturn(Mono.just(new LevelOfServiceLookupDetail().content(levelOfServiceTypes)));
 
         if (orderTypeRequired) {
-            when(lookupService.getOrderTypes())
+            when(lookupService.getCommonValues(COMMON_VALUE_PROCEEDING_ORDER_TYPE))
                 .thenReturn(Mono.just(new CommonLookupDetail().content(orderTypes)));
         }
 
@@ -522,7 +522,7 @@ class EditProceedingsAndCostsSectionControllerTest {
         if (orderTypeRequired) {
             resultActions.andExpect(model().attributeExists("orderTypes"))
                 .andExpect(model().attribute("orderTypes", orderTypes));
-            verify(lookupService, times(1)).getOrderTypes();
+            verify(lookupService, times(1)).getCommonValues(COMMON_VALUE_PROCEEDING_ORDER_TYPE);
         } else {
             resultActions.andExpect(model().attributeDoesNotExist("orderTypes"));
         }
@@ -981,9 +981,6 @@ class EditProceedingsAndCostsSectionControllerTest {
     @Test
     void testScopeLimitationConfirmPostActionAdd() throws Exception {
         final String action = "add";
-        final ApplicationDetail application = new ApplicationDetail()
-            .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
-            .applicationType(new ApplicationType().id("applicationTypeId"));
         final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
         proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
         proceedingFlow.getProceedingDetails().setProceedingType("proceedingType");
@@ -1232,7 +1229,7 @@ class EditProceedingsAndCostsSectionControllerTest {
         final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData("add");
 
         doAnswer(invocation -> {
-            BindingResult errors = invocation.getArgument(1);
+            final BindingResult errors = invocation.getArgument(1);
             errors.rejectValue("priorAuthorityType", "required.priorAuthorityType", "Please complete 'Prior authority type'.");
             return null;
         }).when(priorAuthorityTypeDetailsValidator).validate(any(PriorAuthorityFormDataTypeDetails.class), any(BindingResult.class));
@@ -1280,8 +1277,10 @@ class EditProceedingsAndCostsSectionControllerTest {
         when(applicationService.getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType()))
             .thenReturn(priorAuthorityDynamicForm);
 
+        final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
         final List<CommonLookupValueDetail> commonLookupValues = List.of(new CommonLookupValueDetail().code("1").description("Value 1"));
-        when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupValues));
+        commonLookupDetail.setContent(commonLookupValues);
+        when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupDetail));
 
         mockMvc.perform(get("/application/prior-authorities/{action}/details", priorAuthorityAction)
                 .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow))
@@ -1311,8 +1310,10 @@ class EditProceedingsAndCostsSectionControllerTest {
         when(applicationService.getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType()))
             .thenReturn(priorAuthorityDynamicForm);
 
+        final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
         final List<CommonLookupValueDetail> commonLookupValues = List.of(new CommonLookupValueDetail().code("1").description("Value 1"));
-        when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupValues));
+        commonLookupDetail.setContent(commonLookupValues);
+        when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupDetail));
 
         mockMvc.perform(get("/application/prior-authorities/{action}/details", priorAuthorityAction)
                 .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow))
@@ -1352,8 +1353,10 @@ class EditProceedingsAndCostsSectionControllerTest {
         when(applicationService.getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType()))
             .thenReturn(priorAuthorityDynamicForm);
 
+        final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
         final List<CommonLookupValueDetail> commonLookupValues = List.of(new CommonLookupValueDetail().code("1").description("Value 1"));
-        when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupValues));
+        commonLookupDetail.setContent(commonLookupValues);
+        when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupDetail));
 
         final PriorAuthorityFormDataDetails priorAuthorityDetails = new PriorAuthorityFormDataDetails();
         final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(action);
