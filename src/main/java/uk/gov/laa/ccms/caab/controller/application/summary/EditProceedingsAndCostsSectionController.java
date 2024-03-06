@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.controller.application.summary;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EMERGENCY_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_ORDER_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
@@ -68,7 +67,6 @@ import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupValueDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupValueDetail;
@@ -623,7 +621,7 @@ public class EditProceedingsAndCostsSectionController {
     final String proceedingCode = proceedingDetails.getProceedingType();
 
     final Mono<List<ClientInvolvementTypeLookupValueDetail>> clientInvolvementTypesMono =
-        lookupService.getClientInvolvementTypes(proceedingCode)
+        lookupService.getProceedingClientInvolvementTypes(proceedingCode)
             .map(ClientInvolvementTypeLookupDetail::getContent);
 
     final Mono<List<LevelOfServiceLookupValueDetail>> levelOfServiceTypesMono =
@@ -641,7 +639,7 @@ public class EditProceedingsAndCostsSectionController {
         && proceedingDetails.getOrderTypeRequired()) {
       new DropdownBuilder(model)
           .addDropdown("orderTypes",
-              lookupService.getCommonValues(COMMON_VALUE_PROCEEDING_ORDER_TYPE))
+              lookupService.getOrderTypes())
           .build();
     }
 
@@ -1285,7 +1283,7 @@ public class EditProceedingsAndCostsSectionController {
 
     applicationService.updateCostStructure(applicationId, costs, user);
 
-    return "redirect:/application/proceedings-and-costs#costs";
+    return "redirect:/application/proceedings-and-costs#case-costs";
   }
 
   /**
@@ -1479,8 +1477,7 @@ public class EditProceedingsAndCostsSectionController {
 
     for (final PriorAuthorityDetail lookup : lookups) {
       final Mono<List<CommonLookupValueDetail>> commonValuesMono =
-          lookupService.getCommonValues(lookup.getLovCode())
-           .mapNotNull(CommonLookupDetail::getContent);
+          lookupService.getCommonValues(lookup.getLovCode());
 
       // Subscribe to the Mono and add the attribute in the subscription
       final Mono<Void> mono = commonValuesMono.doOnNext(commonValues ->

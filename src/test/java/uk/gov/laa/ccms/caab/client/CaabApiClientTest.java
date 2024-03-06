@@ -37,6 +37,7 @@ import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.PriorAuthority;
+import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})

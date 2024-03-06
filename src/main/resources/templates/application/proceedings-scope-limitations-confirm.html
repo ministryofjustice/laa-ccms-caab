@@ -19,22 +19,9 @@
       <p class="govuk-body-l">
         Please review the scope limitation wording and click 'Confirm' to continue.
       </p>
-<!--      TODO replace with summary list fragment once Pozza has implemented it-->
       <dl class="govuk-body">
-        <div class="govuk-summary-list__row">
-          <dt class="govuk-summary-list__key">
-            Scope limitation
-          </dt>
-          <dd class="govuk-summary-list__value"  th:text="${scopeLimitation.scopeLimitation.displayValue}">
-          </dd>
-        </div>
-        <div class="govuk-summary-list__row">
-          <dt class="govuk-summary-list__key">
-            Scope limitation wording
-          </dt>
-          <dd class="govuk-summary-list__value" th:text="${scopeLimitation.scopeLimitationWording}">
-          </dd>
-        </div>
+        <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Scope limitation', ${scopeLimitation.scopeLimitation.displayValue})}"></div>
+        <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Scope limitation wording', ${scopeLimitation.scopeLimitationWording})}"></div>
       </dl>
       <div class="govuk-button-group">
         <button type="submit" class="govuk-button" data-module="govuk-button">

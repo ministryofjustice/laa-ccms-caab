@@ -1,25 +1,8 @@
 package uk.gov.laa.ccms.caab.service;
 
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_STATUS;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_LINK_TYPE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_COURTS;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DISABILITY;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ETHNIC_ORIGIN;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_LEVEL_OF_SERVICE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MATTER_TYPES;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_NOTIFICATION_TYPE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_ORDER_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
 
 import java.util.Collections;
 import java.util.List;
@@ -42,6 +25,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProceedingDetails;
@@ -139,7 +123,7 @@ public class LookupService {
    * @return A Mono containing the ClientInvolvementTypeLookupDetail or an error handler if an
    *         error occurs.
    */
-  public Mono<ClientInvolvementTypeLookupDetail> getClientInvolvementTypes(
+  public Mono<ClientInvolvementTypeLookupDetail> getProceedingClientInvolvementTypes(
       final String proceedingCode) {
     return ebsApiClient.getClientInvolvementTypes(proceedingCode);
   }
@@ -264,6 +248,22 @@ public class LookupService {
   public Mono<PriorAuthorityTypeDetails> getPriorAuthorityTypes(
       final String code, final Boolean valueRequired) {
     return ebsApiClient.getPriorAuthorityTypes(code, valueRequired);
+  }
+
+  /**
+   * Retrieve a single prior authority type matching the specified code.
+   *
+   * @param code - the prior authority code.
+   * @return A Mono containing the PriorAuthorityTypeDetail
+   *     or an error handler if an error occurs.
+   */
+  public Mono<PriorAuthorityTypeDetail> getPriorAuthorityType(
+      final String code) {
+    return this.getPriorAuthorityTypes(code, null)
+        .mapNotNull(priorAuthorityTypeDetails -> priorAuthorityTypeDetails.getContent()
+            .stream()
+            .findFirst()
+            .orElse(null));
   }
 
   /**

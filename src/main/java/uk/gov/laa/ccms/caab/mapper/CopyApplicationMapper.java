@@ -3,19 +3,16 @@ package uk.gov.laa.ccms.caab.mapper;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.PROCEEDING_STATUS_UNCHANGED_DISPLAY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 
-import java.math.BigDecimal;
 import java.util.List;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
-import uk.gov.laa.ccms.caab.model.Client;
 import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ScopeLimitation;
-import uk.gov.laa.ccms.caab.model.StringDisplayValue;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 /**
  * Mapper class to copy a subset of attributes from one CAAB ApplicationDetail to another.
@@ -24,25 +21,17 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 public interface CopyApplicationMapper {
 
   @BeanMapping(ignoreByDefault = true)
-  @Mapping(target = "caseReferenceNumber", source = "caseReferenceNumber")
-  @Mapping(target = "applicationType", source = "applicationToCopy.applicationType")
-  @Mapping(target = "providerDetails", source = "applicationToCopy.providerDetails")
-  @Mapping(target = "categoryOfLaw", source = "applicationToCopy.categoryOfLaw")
-  @Mapping(target = "correspondenceAddress", source = "applicationToCopy.correspondenceAddress")
-  @Mapping(target = "larScopeFlag", source = "applicationToCopy.larScopeFlag")
-  @Mapping(target = "proceedings", source = "applicationToCopy.proceedings")
-  @Mapping(target = "opponents", source = "applicationToCopy.opponents")
-  @Mapping(target = "client", source = "clientDetail")
-  @Mapping(target = "costs.requestedCostLimitation", source = "requestedCostLimitation")
-  @Mapping(target = "costs.defaultCostLimitation", source = "defaultCostLimitation")
-  @Mapping(target = "status", source = "status")
+  @Mapping(target = "applicationType", source = "applicationType")
+  @Mapping(target = "applicationType.devolvedPowers.contractFlag", ignore = true)
+  @Mapping(target = "providerDetails", source = "providerDetails")
+  @Mapping(target = "categoryOfLaw", source = "categoryOfLaw")
+  @Mapping(target = "correspondenceAddress", source = "correspondenceAddress")
+  @Mapping(target = "larScopeFlag", source = "larScopeFlag")
+  @Mapping(target = "proceedings", source = "proceedings")
+  @Mapping(target = "opponents", source = "opponents")
   ApplicationDetail copyApplication(
-      ApplicationDetail applicationToCopy,
-      String caseReferenceNumber,
-      StringDisplayValue status,
-      ClientDetail clientDetail,
-      BigDecimal requestedCostLimitation,
-      BigDecimal defaultCostLimitation);
+      @MappingTarget ApplicationDetail newApplication,
+      ApplicationDetail applicationToCopy);
 
   @Mapping(target = "providerCaseReference", ignore = true)
   ApplicationProviderDetails copyApplicationProviderDetails(
@@ -72,9 +61,4 @@ public interface CopyApplicationMapper {
   @Mapping(target = "appMode", constant = "true")
   @Mapping(target = "award", constant = "false")
   Opponent copyOpponent(Opponent opponentToCopy);
-
-  @Mapping(target = "firstName", source = "details.name.firstName")
-  @Mapping(target = "surname", source = "details.name.surname")
-  @Mapping(target = "reference", source = "clientReferenceNumber")
-  Client copyClient(ClientDetail soaClient);
 }
