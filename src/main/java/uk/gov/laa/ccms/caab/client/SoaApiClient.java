@@ -88,9 +88,9 @@ public class SoaApiClient {
 
     final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
     Optional.ofNullable(providerFirmId)
-        .ifPresent(param -> queryParams.add("providerFirmId", param.toString()));
+        .ifPresent(param -> queryParams.add("providerFirmId", String.valueOf(param)));
     Optional.ofNullable(officeId)
-        .ifPresent(param -> queryParams.add("officeId", param.toString()));
+        .ifPresent(param -> queryParams.add("officeId", String.valueOf(param)));
 
     return soaApiWebClient
         .get()
@@ -142,9 +142,9 @@ public class SoaApiClient {
         .ifPresent(caseReferenceNumber -> queryParams.add(
             CASE_REFERENCE_NUMBER, caseReferenceNumber));
     Optional.ofNullable(page)
-        .ifPresent(p -> queryParams.add("page", p.toString()));
+        .ifPresent(param -> queryParams.add("page", String.valueOf(param)));
     Optional.ofNullable(size)
-        .ifPresent(s -> queryParams.add("size", s.toString()));
+        .ifPresent(param -> queryParams.add("size", String.valueOf(param)));
 
     return soaApiWebClient
         .get()
@@ -297,9 +297,9 @@ public class SoaApiClient {
         .ifPresent(clientSurname -> queryParams.add(
             "client-surname", clientSurname));
     Optional.ofNullable(page)
-        .ifPresent(p -> queryParams.add("page", p.toString()));
+        .ifPresent(param -> queryParams.add("page", String.valueOf(param)));
     Optional.ofNullable(size)
-        .ifPresent(s -> queryParams.add("size", s.toString()));
+        .ifPresent(param -> queryParams.add("size", String.valueOf(param)));
 
     return soaApiWebClient
         .get()
@@ -387,7 +387,7 @@ public class SoaApiClient {
     Optional.ofNullable(criteria.getFeeEarnerId())
         .ifPresent(feeEarnerId -> queryParams.add("fee-earner-id", String.valueOf(feeEarnerId)));
     Optional.of(criteria.isIncludeClosed())
-        .ifPresent(includeClosed -> queryParams.add("include-closed", includeClosed.toString()));
+        .ifPresent(param -> queryParams.add("include-closed", String.valueOf(param)));
     Optional.ofNullable(criteria.getNotificationType())
         .ifPresent(notificationType -> queryParams.add("notification-type", notificationType));
     Optional.ofNullable(criteria.getDateFrom())
@@ -395,9 +395,9 @@ public class SoaApiClient {
     Optional.ofNullable(criteria.getDateTo())
         .ifPresent(dateTo -> queryParams.add("date-to", dateTo));
     Optional.ofNullable(page)
-        .ifPresent(p -> queryParams.add("page", p.toString()));
+        .ifPresent(param -> queryParams.add("page", String.valueOf(param)));
     Optional.ofNullable(size)
-        .ifPresent(s -> queryParams.add("size", s.toString()));
+        .ifPresent(param -> queryParams.add("size", String.valueOf(param)));
     Optional.ofNullable(criteria.getSort())
         .ifPresent(sort -> queryParams.add("sort", sort));
 
@@ -442,9 +442,9 @@ public class SoaApiClient {
     Optional.ofNullable(searchCriteria.getPostcode())
         .ifPresent(postcode -> queryParams.add("postcode", postcode));
     Optional.ofNullable(page)
-        .ifPresent(p -> queryParams.add("page", p.toString()));
+        .ifPresent(param -> queryParams.add("page", String.valueOf(param)));
     Optional.ofNullable(size)
-        .ifPresent(s -> queryParams.add("size", s.toString()));
+        .ifPresent(param -> queryParams.add("size", String.valueOf(param)));
 
 
     return soaApiWebClient

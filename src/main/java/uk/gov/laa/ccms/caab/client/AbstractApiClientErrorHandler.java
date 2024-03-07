@@ -13,15 +13,13 @@ import reactor.core.publisher.Mono;
 public abstract class AbstractApiClientErrorHandler {
 
   /**
-   * Creates an exception with a specified message and cause.
+   * Abstract method used to create an exception with a specified message and cause.
    *
    * @param message the detail message for the exception.
    * @param cause the cause of the exception.
    * @return a new instance of RuntimeException.
    */
-  protected RuntimeException createException(final String message, final Throwable cause) {
-    return new RuntimeException(message, cause);
-  }
+  protected abstract RuntimeException createException(final String message, final Throwable cause);
 
   /**
    * Handles errors occurring during API create operations.

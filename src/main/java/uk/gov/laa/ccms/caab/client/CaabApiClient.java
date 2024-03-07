@@ -394,7 +394,7 @@ public class CaabApiClient {
         .retrieve()
         .bodyToMono(Void.class)
         .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(e,
-            RESOURCE_TYPE_PROCEEDINGS, "id", proceedingId.toString()));
+            RESOURCE_TYPE_PROCEEDINGS, "id", String.valueOf(proceedingId)));
   }
 
   /**
@@ -439,7 +439,7 @@ public class CaabApiClient {
         .retrieve()
         .bodyToMono(Void.class)
         .onErrorResume(e -> caabApiClientErrorHandler.handleApiDeleteError(e,
-            RESOURCE_TYPE_PROCEEDINGS, "id", proceedingId.toString()));
+            RESOURCE_TYPE_PROCEEDINGS, "id", String.valueOf(proceedingId)));
   }
 
   /**
@@ -458,7 +458,7 @@ public class CaabApiClient {
         .retrieve()
         .bodyToMono(new ParameterizedTypeReference<List<ScopeLimitation>>() {})
         .onErrorResume(e -> caabApiClientErrorHandler.handleApiRetrieveError(e,
-            RESOURCE_TYPE_SCOPE_LIMITATIONS, "proceeding id", proceedingId.toString()));
+            RESOURCE_TYPE_SCOPE_LIMITATIONS, "proceeding id", String.valueOf(proceedingId)));
   }
 
   /**
@@ -592,7 +592,7 @@ public class CaabApiClient {
         .retrieve()
         .bodyToMono(Void.class)
         .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(e,
-            RESOURCE_TYPE_PRIOR_AUTHORITIES, "id", priorAuthorityId.toString()));
+            RESOURCE_TYPE_PRIOR_AUTHORITIES, "id", String.valueOf(priorAuthorityId)));
   }
 
   /**
@@ -613,7 +613,7 @@ public class CaabApiClient {
         .retrieve()
         .bodyToMono(Void.class)
         .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(e,
-            RESOURCE_TYPE_PRIOR_AUTHORITIES, "id", priorAuthorityId.toString()));
+            RESOURCE_TYPE_PRIOR_AUTHORITIES, "id", String.valueOf(priorAuthorityId)));
   }
 
 

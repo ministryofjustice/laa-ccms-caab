@@ -77,7 +77,7 @@ public class EbsApiClient {
         .retrieve()
         .bodyToMono(ProviderDetail.class)
         .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
-            e, "Provider", "id", providerId.toString()));
+            e, "Provider", "id", String.valueOf(providerId)));
   }
 
   /**
@@ -315,7 +315,7 @@ public class EbsApiClient {
   public Mono<UserDetails> getUsers(final Integer providerId) {
     final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
     Optional.ofNullable(providerId)
-        .ifPresent(param -> queryParams.add("provider-id", param.toString()));
+        .ifPresent(param -> queryParams.add("provider-id", String.valueOf(param)));
     return  ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/users")
@@ -361,13 +361,13 @@ public class EbsApiClient {
     Optional.ofNullable(searchCriteria.getMatterType())
         .ifPresent(type -> queryParams.add("matter-type", type));
     Optional.ofNullable(searchCriteria.getAmendmentOnly())
-        .ifPresent(amendment -> queryParams.add("amendment-only", amendment.toString()));
+        .ifPresent(param -> queryParams.add("amendment-only", String.valueOf(param)));
     Optional.ofNullable(larScopeFlag)
-        .ifPresent(flag -> queryParams.add("lar-scope-flag", flag.toString()));
+        .ifPresent(param -> queryParams.add("lar-scope-flag", String.valueOf(param)));
     Optional.ofNullable(applicationType)
         .ifPresent(type -> queryParams.add("application-type", type));
     Optional.ofNullable(isLead)
-        .ifPresent(lead -> queryParams.add("lead", lead.toString()));
+        .ifPresent(param -> queryParams.add("lead", String.valueOf(param)));
 
     return ebsApiWebClient
         .get()
@@ -457,18 +457,18 @@ public class EbsApiClient {
     Optional.ofNullable(scopeLimitationDetail.getStage())
         .ifPresent(stage -> queryParams.add("stage", String.valueOf(stage)));
     Optional.ofNullable(scopeLimitationDetail.getCostLimitation())
-        .ifPresent(costLimitation -> queryParams.add("cost-limitation", costLimitation.toString()));
+        .ifPresent(param -> queryParams.add("cost-limitation", String.valueOf(param)));
     Optional.ofNullable(scopeLimitationDetail.getEmergencyCostLimitation())
-        .ifPresent(emergencyCostLimitation -> queryParams.add(
-            "emergency-cost-limitation", emergencyCostLimitation.toString()));
+        .ifPresent(param -> queryParams.add(
+            "emergency-cost-limitation", String.valueOf(param)));
     Optional.ofNullable(scopeLimitationDetail.getNonStandardWordingRequired())
-        .ifPresent(nonStandardWording -> queryParams.add(
-            "non-standard-wording", nonStandardWording.toString()));
+        .ifPresent(param -> queryParams.add(
+            "non-standard-wording", String.valueOf(param)));
     Optional.ofNullable(scopeLimitationDetail.getEmergencyScopeDefault())
-        .ifPresent(emergencyScopeDefault -> queryParams.add(
-            "emergency-scope-default", emergencyScopeDefault.toString()));
+        .ifPresent(param -> queryParams.add(
+            "emergency-scope-default", String.valueOf(param)));
     Optional.ofNullable(scopeLimitationDetail.getEmergency())
-        .ifPresent(emergency -> queryParams.add("emergency", emergency.toString()));
+        .ifPresent(param -> queryParams.add("emergency", String.valueOf(param)));
     Optional.ofNullable(scopeLimitationDetail.getDefaultCode())
         .ifPresent(defaultCode -> queryParams.add("default-code", String.valueOf(defaultCode)));
     Optional.ofNullable(scopeLimitationDetail.getScopeDefault())
@@ -586,11 +586,11 @@ public class EbsApiClient {
 
     final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
     Optional.ofNullable(code)
-        .ifPresent(id -> queryParams.add("code", id));
+        .ifPresent(param -> queryParams.add("code", param));
     Optional.ofNullable(matterTypeDescription)
-        .ifPresent(description -> queryParams.add("matter-type-description", description));
+        .ifPresent(param -> queryParams.add("matter-type-description", param));
     Optional.ofNullable(copyCostLimit)
-        .ifPresent(limit -> queryParams.add("copy-cost-limit", limit.toString()));
+        .ifPresent(param -> queryParams.add("copy-cost-limit", String.valueOf(param)));
 
     return ebsApiWebClient
         .get()
