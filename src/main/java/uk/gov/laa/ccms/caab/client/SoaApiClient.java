@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
@@ -39,49 +41,13 @@ import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 @RequiredArgsConstructor
 public class SoaApiClient {
 
-  //notification error messages
-  private static final String FAILED_NOTIFICATION_SUMMARY =
-      "Failed to retrieve Notification count for loginId: %s";
-  private static final String FAILED_NOTIFICATIONS =
-      "Failed to retrieve Notifications";
-
-  //contract error messages
-  private static final String FAILED_CONTRACT_DETAILS =
-      "Failed to retrieve ContractDetails for providerFirmId: %s, officeId: %s";
-
-  //client error messages
-  private static final String FAILED_CLIENT_DETAILS =
-      "Failed to retrieve ClientDetails";
-  private static final String FAILED_CLIENT_DETAIL =
-      "Failed to retrieve ClientDetail for clientReferenceNumber: %s";
-  private static final String FAILED_CLIENT_STATUS =
-      "Failed to retrieve Client Status for transactionId: %s";
-  private static final String FAILED_CLIENT_CREATED =
-      "Failed to create Client";
-  private static final String FAILED_CLIENT_UPDATED =
-      "Failed to update Client for reference number: %s";
-
-  //case error messages
-  private static final String FAILED_CASE_DETAILS =
-      "Failed to retrieve CaseDetails";
-  private static final String FAILED_CASE_DETAIL =
-      "Failed to retrieve CaseDetail for caseReferenceNumber: %s";
-  private static final String FAILED_CASE_REFERENCE =
-      "Failed to retrieve CaseReferenceSummary";
-
-  //organisation error messages
-  private static final String FAILED_ORGANISATIONS =
-      "Failed to retrieve Organisations";
-  private static final String FAILED_ORGANISATION =
-      "Failed to retrieve Organisation with id: %s";
-
   private static final String SOA_GATEWAY_USER_LOGIN_ID = "SoaGateway-User-Login-Id";
   private static final String SOA_GATEWAY_USER_ROLE = "SoaGateway-User-Role";
   private static final String CASE_REFERENCE_NUMBER = "case-reference-number";
 
   private final WebClient soaApiWebClient;
 
-  private final ApiClientErrorHandler apiClientErrorHandler;
+  private final SoaApiClientErrorHandler soaApiClientErrorHandler;
 
   /**
    * Retrieve the summary of notifications for a given user.
@@ -93,7 +59,7 @@ public class SoaApiClient {
   public Mono<NotificationSummary> getNotificationsSummary(
       final String loginId,
       final String userType) {
-    final String errorMessage = String.format(FAILED_NOTIFICATION_SUMMARY, loginId);
+
     return soaApiWebClient
         .get()
         .uri("/users/{loginId}/notifications/summary", loginId)
@@ -101,7 +67,8 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(NotificationSummary.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, errorMessage));
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
+            e, "Notification summary", "user login id", loginId));
   }
 
   /**
@@ -118,18 +85,24 @@ public class SoaApiClient {
       final Integer officeId,
       final String loginId,
       final String userType) {
-    final String errorMessage = String.format(FAILED_CONTRACT_DETAILS, providerFirmId, officeId);
+
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    Optional.ofNullable(providerFirmId)
+        .ifPresent(param -> queryParams.add("providerFirmId", param.toString()));
+    Optional.ofNullable(officeId)
+        .ifPresent(param -> queryParams.add("officeId", param.toString()));
+
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/contract-details")
-            .queryParam("providerFirmId", providerFirmId)
-            .queryParam("officeId", officeId)
+            .queryParams(queryParams)
             .build())
         .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(ContractDetails.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, errorMessage));
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
+            e, "Contract details", queryParams));
   }
 
   /**
@@ -148,35 +121,42 @@ public class SoaApiClient {
       final String userType,
       final Integer page,
       final Integer size) {
+
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    Optional.ofNullable(clientSearchCriteria.getForename())
+        .ifPresent(forename -> queryParams.add("first-name", forename));
+    Optional.ofNullable(clientSearchCriteria.getSurname())
+        .ifPresent(surname -> queryParams.add("surname", surname));
+    Optional.ofNullable(clientSearchCriteria.getDateOfBirth())
+        .ifPresent(dateOfBirth -> queryParams.add("date-of-birth", dateOfBirth));
+    Optional.ofNullable(clientSearchCriteria.getUniqueIdentifier(
+        UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE))
+        .ifPresent(homeOfficeReference -> queryParams.add(
+            "home-office-reference", homeOfficeReference));
+    Optional.ofNullable(clientSearchCriteria.getUniqueIdentifier(
+        UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER))
+        .ifPresent(nationalInsuranceNumber -> queryParams.add(
+            "national-insurance_number", nationalInsuranceNumber));
+    Optional.ofNullable(clientSearchCriteria.getUniqueIdentifier(
+        UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER))
+        .ifPresent(caseReferenceNumber -> queryParams.add(
+            CASE_REFERENCE_NUMBER, caseReferenceNumber));
+    Optional.ofNullable(page)
+        .ifPresent(p -> queryParams.add("page", p.toString()));
+    Optional.ofNullable(size)
+        .ifPresent(s -> queryParams.add("size", s.toString()));
+
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/clients")
-            .queryParamIfPresent("first-name",
-                Optional.ofNullable(clientSearchCriteria.getForename()))
-            .queryParamIfPresent("surname",
-                Optional.ofNullable(clientSearchCriteria.getSurname()))
-            .queryParamIfPresent("date-of-birth",
-                Optional.ofNullable(clientSearchCriteria.getDateOfBirth()))
-            .queryParamIfPresent("home-office-reference",
-                Optional.ofNullable(clientSearchCriteria
-                    .getUniqueIdentifier(UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE)))
-            .queryParamIfPresent("national-insurance_number",
-                Optional.ofNullable(clientSearchCriteria
-                    .getUniqueIdentifier(
-                        UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER)))
-            .queryParamIfPresent(CASE_REFERENCE_NUMBER,
-                Optional.ofNullable(clientSearchCriteria
-                    .getUniqueIdentifier(UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER)))
-            .queryParamIfPresent("page",
-                Optional.ofNullable(page))
-            .queryParamIfPresent("size",
-                Optional.ofNullable(size))
+            .queryParams(queryParams)
             .build())
         .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(ClientDetails.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, FAILED_CLIENT_DETAILS));
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
+            e, "Clients", queryParams));
 
   }
 
@@ -192,7 +172,6 @@ public class SoaApiClient {
       final String clientReferenceNumber,
       final  String loginId,
       final String userType) {
-    final String errorMessage = String.format(FAILED_CLIENT_DETAIL, clientReferenceNumber);
     return soaApiWebClient
         .get()
         .uri("/clients/{clientReferenceNumber}", clientReferenceNumber)
@@ -200,7 +179,8 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(ClientDetail.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, errorMessage));
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
+            e, "client", "reference number", clientReferenceNumber));
 
   }
 
@@ -216,7 +196,6 @@ public class SoaApiClient {
       final String transactionId,
       final String loginId,
       final String userType) {
-    final String errorMessage = String.format(FAILED_CLIENT_STATUS, transactionId);
     return soaApiWebClient
         .get()
         .uri("/clients/status/{transactionId}", transactionId)
@@ -224,7 +203,8 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(TransactionStatus.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, errorMessage));
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
+            e, "client transaction status", "transaction id", transactionId));
 
   }
 
@@ -249,7 +229,8 @@ public class SoaApiClient {
         .bodyValue(clientDetails)
         .retrieve()
         .bodyToMono(ClientTransactionResponse.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, FAILED_CLIENT_CREATED));
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiCreateError(
+            e, "Client"));
   }
 
   /**
@@ -266,7 +247,6 @@ public class SoaApiClient {
       final ClientDetailDetails clientDetails,
       final String loginId,
       final String userType) {
-    final String errorMessage = String.format(FAILED_CLIENT_UPDATED, clientReferenceNumber);
     return soaApiWebClient
         .put()
         .uri("/clients/{clientReferenceNumber}", clientReferenceNumber)
@@ -276,7 +256,8 @@ public class SoaApiClient {
         .bodyValue(clientDetails)
         .retrieve()
         .bodyToMono(ClientTransactionResponse.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, errorMessage));
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiUpdateError(
+            e, "Client", "reference number", clientReferenceNumber));
   }
 
   /**
@@ -295,31 +276,42 @@ public class SoaApiClient {
       final String userType,
       final Integer page,
       final Integer size) {
+
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    Optional.ofNullable(caseSearchCriteria.getCaseReference())
+        .ifPresent(caseReference -> queryParams.add(
+            CASE_REFERENCE_NUMBER, caseReference));
+    Optional.ofNullable(caseSearchCriteria.getProviderCaseReference())
+        .ifPresent(providerCaseReference -> queryParams.add(
+            "provider-case-reference", providerCaseReference));
+    Optional.ofNullable(caseSearchCriteria.getStatus())
+        .ifPresent(status -> queryParams.add(
+            "case-status", status));
+    Optional.ofNullable(caseSearchCriteria.getFeeEarnerId())
+        .ifPresent(feeEarnerId -> queryParams.add(
+            "fee-earner-id", String.valueOf(feeEarnerId)));
+    Optional.ofNullable(caseSearchCriteria.getOfficeId())
+        .ifPresent(officeId -> queryParams.add(
+            "office-id", String.valueOf(officeId)));
+    Optional.ofNullable(caseSearchCriteria.getClientSurname())
+        .ifPresent(clientSurname -> queryParams.add(
+            "client-surname", clientSurname));
+    Optional.ofNullable(page)
+        .ifPresent(p -> queryParams.add("page", p.toString()));
+    Optional.ofNullable(size)
+        .ifPresent(s -> queryParams.add("size", s.toString()));
+
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/cases")
-            .queryParamIfPresent(CASE_REFERENCE_NUMBER, Optional.ofNullable(
-                caseSearchCriteria.getCaseReference()))
-            .queryParamIfPresent("provider-case-reference", Optional.ofNullable(
-                caseSearchCriteria.getProviderCaseReference()))
-            .queryParamIfPresent("case-status",
-                Optional.ofNullable(caseSearchCriteria.getStatus()))
-            .queryParamIfPresent("fee-earner-id",
-                Optional.ofNullable(caseSearchCriteria.getFeeEarnerId()))
-            .queryParamIfPresent("office-id",
-                Optional.ofNullable(caseSearchCriteria.getOfficeId()))
-            .queryParamIfPresent("client-surname",
-                Optional.ofNullable(caseSearchCriteria.getClientSurname()))
-            .queryParamIfPresent("page",
-                Optional.ofNullable(page))
-            .queryParamIfPresent("size",
-                Optional.ofNullable(size))
+            .queryParams(queryParams)
             .build())
         .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(CaseDetails.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, FAILED_CASE_DETAILS));
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
+            e, "Cases", queryParams));
 
   }
 
@@ -335,7 +327,6 @@ public class SoaApiClient {
       final String caseReferenceNumber,
       final String loginId,
       final String userType) {
-    final String errorMessage = String.format(FAILED_CASE_DETAIL, caseReferenceNumber);
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/cases/{case-reference}").build(caseReferenceNumber))
@@ -343,7 +334,8 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(CaseDetail.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, errorMessage));
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
+            e, "Cases", "case reference", caseReferenceNumber));
 
   }
 
@@ -364,7 +356,8 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(CaseReferenceSummary.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, FAILED_CASE_REFERENCE));
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
+            e, "case reference", null));
 
   }
 
@@ -380,39 +373,45 @@ public class SoaApiClient {
       final NotificationSearchCriteria criteria,
       final Integer page,
       final Integer size) {
+
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    Optional.ofNullable(criteria.getCaseReference())
+        .ifPresent(caseReference -> queryParams.add(CASE_REFERENCE_NUMBER, caseReference));
+    Optional.ofNullable(criteria.getProviderCaseReference())
+        .ifPresent(providerCaseReference -> queryParams.add(
+            "provider-case-reference", providerCaseReference));
+    Optional.ofNullable(criteria.getAssignedToUserId())
+        .ifPresent(assignedToUserId -> queryParams.add("assigned-to-user-id", assignedToUserId));
+    Optional.ofNullable(criteria.getClientSurname())
+        .ifPresent(clientSurname -> queryParams.add("client-surname", clientSurname));
+    Optional.ofNullable(criteria.getFeeEarnerId())
+        .ifPresent(feeEarnerId -> queryParams.add("fee-earner-id", String.valueOf(feeEarnerId)));
+    Optional.of(criteria.isIncludeClosed())
+        .ifPresent(includeClosed -> queryParams.add("include-closed", includeClosed.toString()));
+    Optional.ofNullable(criteria.getNotificationType())
+        .ifPresent(notificationType -> queryParams.add("notification-type", notificationType));
+    Optional.ofNullable(criteria.getDateFrom())
+        .ifPresent(dateFrom -> queryParams.add("date-from", dateFrom));
+    Optional.ofNullable(criteria.getDateTo())
+        .ifPresent(dateTo -> queryParams.add("date-to", dateTo));
+    Optional.ofNullable(page)
+        .ifPresent(p -> queryParams.add("page", p.toString()));
+    Optional.ofNullable(size)
+        .ifPresent(s -> queryParams.add("size", s.toString()));
+    Optional.ofNullable(criteria.getSort())
+        .ifPresent(sort -> queryParams.add("sort", sort));
+
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/notifications")
-            .queryParamIfPresent(CASE_REFERENCE_NUMBER,
-                Optional.ofNullable(criteria.getCaseReference()))
-            .queryParamIfPresent("provider-case-reference",
-                Optional.ofNullable(criteria.getProviderCaseReference()))
-            .queryParamIfPresent("assigned-to-user-id",
-                Optional.ofNullable(criteria.getAssignedToUserId()))
-            .queryParamIfPresent("client-surname",
-                Optional.ofNullable(criteria.getClientSurname()))
-            .queryParamIfPresent("fee-earner-id",
-                Optional.ofNullable(criteria.getFeeEarnerId()))
-            .queryParamIfPresent("include-closed",
-                Optional.of(criteria.isIncludeClosed()))
-            .queryParamIfPresent("notification-type",
-                Optional.ofNullable(criteria.getNotificationType()))
-            .queryParamIfPresent("date-from",
-                Optional.ofNullable(criteria.getDateFrom()))
-            .queryParamIfPresent("date-to",
-                Optional.ofNullable(criteria.getDateTo()))
-            .queryParamIfPresent("page",
-                Optional.ofNullable(page))
-            .queryParamIfPresent("size",
-                Optional.ofNullable(size))
-            .queryParamIfPresent("sort",
-                Optional.ofNullable(criteria.getSort()))
+            .queryParams(queryParams)
             .build())
         .header(SOA_GATEWAY_USER_LOGIN_ID, criteria.getLoginId())
         .header(SOA_GATEWAY_USER_ROLE, criteria.getUserType())
         .retrieve()
         .bodyToMono(Notifications.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, FAILED_NOTIFICATIONS));
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
+            e, "Notifications", queryParams));
 
   }
 
@@ -432,22 +431,33 @@ public class SoaApiClient {
       final String userType,
       final Integer page,
       final Integer size) {
+
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    Optional.ofNullable(searchCriteria.getName())
+        .ifPresent(name -> queryParams.add("name", name));
+    Optional.ofNullable(searchCriteria.getType())
+        .ifPresent(type -> queryParams.add("type", type));
+    Optional.ofNullable(searchCriteria.getCity())
+        .ifPresent(city -> queryParams.add("city", city));
+    Optional.ofNullable(searchCriteria.getPostcode())
+        .ifPresent(postcode -> queryParams.add("postcode", postcode));
+    Optional.ofNullable(page)
+        .ifPresent(p -> queryParams.add("page", p.toString()));
+    Optional.ofNullable(size)
+        .ifPresent(s -> queryParams.add("size", s.toString()));
+
+
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/organisations")
-            .queryParamIfPresent("name", Optional.ofNullable(searchCriteria.getName()))
-            .queryParamIfPresent("type", Optional.ofNullable(searchCriteria.getType()))
-            .queryParamIfPresent("city", Optional.ofNullable(searchCriteria.getCity()))
-            .queryParamIfPresent("postcode",
-                Optional.ofNullable(searchCriteria.getPostcode()))
-            .queryParamIfPresent("page", Optional.ofNullable(page))
-            .queryParamIfPresent("size", Optional.ofNullable(size))
+            .queryParams(queryParams)
             .build())
         .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(OrganisationDetails.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, FAILED_ORGANISATIONS));
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
+            e, "Organisations", queryParams));
 
   }
 
@@ -463,7 +473,6 @@ public class SoaApiClient {
       final String organisationId,
       final String loginId,
       final String userType) {
-    final String errorMessage = String.format(FAILED_ORGANISATION, organisationId);
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/organisation/{organisation-id}").build(organisationId))
@@ -471,7 +480,8 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(OrganisationDetail.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleSoaApiError(e, errorMessage));
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
+            e, "Organisation", "id", organisationId));
   }
 
 }

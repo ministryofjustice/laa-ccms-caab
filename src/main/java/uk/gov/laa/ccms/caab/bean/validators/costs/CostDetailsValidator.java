@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**
@@ -47,8 +46,6 @@ public class CostDetailsValidator extends AbstractValidator {
       validateCurrencyField("requestedCostLimitation",
           costDetails.getRequestedCostLimitation(),
           "Requested cost limitation", errors);
-
-
 
       validateNumericLimit("requestedCostLimitation", costDetails.getRequestedCostLimitation(),
           "Requested cost limitation", MAX_COST_LIMIT, errors);

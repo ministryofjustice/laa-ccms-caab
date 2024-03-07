@@ -8,6 +8,8 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
@@ -32,59 +34,19 @@ import uk.gov.laa.ccms.caab.model.ScopeLimitation;
 public class CaabApiClient {
 
   private final WebClient caabApiWebClient;
+  private final CaabApiClientErrorHandler caabApiClientErrorHandler;
 
-  private final ApiClientErrorHandler apiClientErrorHandler;
-
-  public static final String FAILED_CREATE_APPLICATION =
-      "Failed to create application";
-  private static final String FAILED_RETRIEVE_APPLICATION =
-      "Failed to retrieve application with id: %s";
-  private static final String FAILED_UPDATE_APPLICATION =
-      "Failed to update application with id: %s";
-  private static final String FAILED_RETRIEVE_APPLICATIONS =
-      "Failed to retrieve applications";
-  private static final String FAILED_RETRIEVE_APPLICATION_TYPE =
-      "Failed to retrieve application type for application id: %s";
-  private static final String FAILED_RETRIEVE_PROVIDER_DETAILS =
-      "Failed to retrieve provider details for application id: %s";
-  private static final String FAILED_RETRIEVE_CORRESPONDENCE_ADDRESS =
-      "Failed to retrieve correspondence address for application id: %s";
-  private static final String FAILED_RETRIEVE_LINKED_CASES =
-      "Failed to retrieve linked cases for application id: %s";
-  private static final String FAILED_UPDATE_LINKED_CASE =
-      "Failed to update linked case with id: %s";
-  private static final String FAILED_ADD_LINKED_CASE =
-      "Failed to update linked case for application id: %s";
-  private static final String FAILED_DELETE_LINKED_CASE =
-      "Failed to delete linked case with id: %s";
-  private static final String FAILED_RETRIEVE_COSTS =
-      "Failed to retrieve cost structure for application id: %s";
-  private static final String FAILED_UPDATE_COSTS =
-      "Failed to update cost structure for application id: %s";
-  private static final String FAILED_RETRIEVE_PRIOR_AUTHORITIES =
-      "Failed to retrieve prior authorities for application id: %s";
-  private static final String FAILED_RETRIEVE_PROCEEDINGS =
-      "Failed to retrieve proceedings for application id: %s";
-  private static final String FAILED_ADD_PROCEEDINGS =
-      "Failed to add proceedings to application id: %s";
-  private static final String FAILED_UPDATE_PROCEEDINGS =
-      "Failed to update proceeding with id: %s";
-  private static final String FAILED_DELETE_PROCEEDINGS =
-      "Failed to delete proceeding with id: %s";
-  private static final String FAILED_RETRIEVE_SCOPE_LIMITATIONS =
-      "Failed to retrieve scope limitations for proceeding id: %s";
-  private static final String FAILED_UPDATE_CLIENT =
-      "Failed to update client with reference - %s";
-  private static final String FAILED_RETRIEVE_OPPONENTS =
-      "Failed to retrieve opponents for application id: %s";
-  private static final String FAILED_ADD_OPPONENTS =
-      "Failed to add opponents to application id: %s";
-  private static final String FAILED_ADD_PRIOR_AUTHORITY =
-      "Failed to add prior authority to application: %s";
-  private static final String FAILED_UPDATE_PRIOR_AUTHORITY =
-      "Failed to update prior authority with id: %s";
-  private static final String FAILED_DELETE_PRIOR_AUTHORITY =
-      "Failed to delete prior authority with id: %s";
+  public static final String RESOURCE_TYPE_APPLICATION = "applications";
+  public static final String RESOURCE_TYPE_APPLICATION_TYPE = "application type";
+  public static final String RESOURCE_TYPE_PROVIDER_DETAIL = "provider detail";
+  public static final String RESOURCE_TYPE_CORRESPONDENCE_ADDRESS = "correspondence address";
+  public static final String RESOURCE_TYPE_LINKED_CASES = "linked cases";
+  public static final String RESOURCE_TYPE_COSTS = "cost structure";
+  public static final String RESOURCE_TYPE_PRIOR_AUTHORITIES = "prior authorities";
+  public static final String RESOURCE_TYPE_PROCEEDINGS = "proceedings";
+  public static final String RESOURCE_TYPE_SCOPE_LIMITATIONS = "scope limitations";
+  public static final String RESOURCE_TYPE_CLIENT = "client";
+  public static final String RESOURCE_TYPE_OPPONENTS = "opponents";
 
   /**
    * Creates an application using the CAAB API.
@@ -115,8 +77,8 @@ public class CaabApiClient {
                 return Mono.error(new RuntimeException("Location header missing or URI invalid"));
               }
             })
-        .onErrorResume(e -> apiClientErrorHandler
-            .handleCaabApiError(e, FAILED_CREATE_APPLICATION));
+        .onErrorResume(e -> caabApiClientErrorHandler
+            .handleApiCreateError(e, RESOURCE_TYPE_APPLICATION));
   }
 
   /**
@@ -128,15 +90,13 @@ public class CaabApiClient {
   public Mono<ApplicationDetail> getApplication(
       final String id) {
 
-    final String errorMessage = String.format(FAILED_RETRIEVE_APPLICATION, id);
-
     return caabApiWebClient
         .get()
         .uri("/applications/{id}", id)
         .retrieve()
         .bodyToMono(ApplicationDetail.class)
-        .onErrorResume(e -> apiClientErrorHandler
-            .handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler
+            .handleApiRetrieveError(e, RESOURCE_TYPE_APPLICATION, "id", id));
   }
 
   /**
@@ -149,32 +109,35 @@ public class CaabApiClient {
       final Integer page,
       final Integer size) {
 
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    Optional.ofNullable(caseSearchCriteria.getCaseReference())
+        .ifPresent(ref -> queryParams.add("case-reference-number", ref));
+    Optional.ofNullable(caseSearchCriteria.getProviderCaseReference())
+        .ifPresent(ref -> queryParams.add("provider-case-ref", ref));
+    Optional.ofNullable(caseSearchCriteria.getClientSurname())
+        .ifPresent(surname -> queryParams.add("client-surname", surname));
+    Optional.ofNullable(caseSearchCriteria.getClientReference())
+        .ifPresent(ref -> queryParams.add("client-reference", ref));
+    Optional.ofNullable(caseSearchCriteria.getFeeEarnerId())
+        .ifPresent(id -> queryParams.add("fee-earner", String.valueOf(id)));
+    Optional.ofNullable(caseSearchCriteria.getOfficeId())
+        .ifPresent(id -> queryParams.add("office-id", String.valueOf(id)));
+    Optional.ofNullable(caseSearchCriteria.getStatus())
+        .ifPresent(status -> queryParams.add("status", status));
+    Optional.ofNullable(page)
+        .ifPresent(p -> queryParams.add("page", String.valueOf(p)));
+    Optional.ofNullable(size)
+        .ifPresent(s -> queryParams.add("size", String.valueOf(s)));
+
     return caabApiWebClient
         .get()
         .uri(builder -> builder.path("/applications")
-            .queryParamIfPresent("case-reference-number",
-                Optional.ofNullable(caseSearchCriteria.getCaseReference()))
-            .queryParamIfPresent("provider-case-ref",
-                Optional.ofNullable(caseSearchCriteria.getProviderCaseReference()))
-            .queryParamIfPresent("client-surname",
-                Optional.ofNullable(caseSearchCriteria.getClientSurname()))
-            .queryParamIfPresent("client-reference",
-                Optional.ofNullable(caseSearchCriteria.getClientReference()))
-            .queryParamIfPresent("fee-earner",
-                Optional.ofNullable(caseSearchCriteria.getFeeEarnerId()))
-            .queryParamIfPresent("office-id",
-                Optional.ofNullable(caseSearchCriteria.getOfficeId()))
-            .queryParamIfPresent("status",
-                Optional.ofNullable(caseSearchCriteria.getStatus()))
-            .queryParamIfPresent("page",
-                Optional.ofNullable(page))
-            .queryParamIfPresent("size",
-                Optional.ofNullable(size))
+            .queryParams(queryParams)
             .build())
         .retrieve()
         .bodyToMono(ApplicationDetails.class)
-        .onErrorResume(e -> apiClientErrorHandler
-            .handleCaabApiError(e, FAILED_RETRIEVE_APPLICATIONS));
+        .onErrorResume(e -> caabApiClientErrorHandler
+            .handleApiRetrieveError(e, RESOURCE_TYPE_APPLICATION, queryParams));
   }
 
   /**
@@ -192,7 +155,6 @@ public class CaabApiClient {
       final String loginId,
       final Object data,
       final String type) {
-    final String errorMessage = String.format(FAILED_UPDATE_APPLICATION, id);
     return caabApiWebClient
         .put()
         .uri("/applications/{id}/" + type, id)
@@ -201,7 +163,8 @@ public class CaabApiClient {
         .bodyValue(data)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler
+            .handleApiUpdateError(e, RESOURCE_TYPE_APPLICATION, "id", id));
   }
 
   /**
@@ -213,14 +176,14 @@ public class CaabApiClient {
   public Mono<ApplicationType> getApplicationType(
       final String id) {
 
-    final String errorMessage = String.format(FAILED_RETRIEVE_APPLICATION_TYPE, id);
-
     return caabApiWebClient
         .get()
         .uri("/applications/{id}/application-type", id)
         .retrieve()
         .bodyToMono(ApplicationType.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler
+            .handleApiRetrieveError(e,
+                RESOURCE_TYPE_APPLICATION_TYPE, "application id", id));
   }
 
   /**
@@ -231,13 +194,14 @@ public class CaabApiClient {
    */
   public Mono<ApplicationProviderDetails> getProviderDetails(
       final String id) {
-    final String errorMessage = String.format(FAILED_RETRIEVE_PROVIDER_DETAILS, id);
     return caabApiWebClient
         .get()
         .uri("/applications/{id}/provider-details", id)
         .retrieve()
         .bodyToMono(ApplicationProviderDetails.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler
+            .handleApiRetrieveError(e,
+                RESOURCE_TYPE_PROVIDER_DETAIL, "application id", id));
   }
 
   /**
@@ -248,13 +212,14 @@ public class CaabApiClient {
    */
   public Mono<Address> getCorrespondenceAddress(
       final String id) {
-    final String errorMessage = String.format(FAILED_RETRIEVE_CORRESPONDENCE_ADDRESS, id);
     return caabApiWebClient
         .get()
         .uri("/applications/{id}/correspondence-address", id)
         .retrieve()
         .bodyToMono(Address.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler
+            .handleApiRetrieveError(e,
+                RESOURCE_TYPE_CORRESPONDENCE_ADDRESS, "application id", id));
   }
 
   /**
@@ -265,13 +230,14 @@ public class CaabApiClient {
    */
   public Mono<List<LinkedCase>> getLinkedCases(
       final String id) {
-    final String errorMessage = String.format(FAILED_RETRIEVE_LINKED_CASES, id);
     return caabApiWebClient
         .get()
         .uri("/applications/{id}/linked-cases", id)
         .retrieve()
         .bodyToMono(new ParameterizedTypeReference<List<LinkedCase>>() {})
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler
+            .handleApiRetrieveError(e,
+                RESOURCE_TYPE_LINKED_CASES, "application id", id));
   }
 
   /**
@@ -284,7 +250,6 @@ public class CaabApiClient {
   public Mono<Void> removeLinkedCase(
       final String linkedCaseId,
       final String loginId) {
-    final String errorMessage = String.format(FAILED_DELETE_LINKED_CASE, linkedCaseId);
     return caabApiWebClient
         .delete()
         .uri("/linked-cases/{linkedCaseId}",
@@ -292,7 +257,9 @@ public class CaabApiClient {
         .header("Caab-User-Login-Id", loginId)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler
+            .handleApiDeleteError(e,
+                RESOURCE_TYPE_LINKED_CASES, "linked case id", linkedCaseId));
   }
 
   /**
@@ -307,7 +274,6 @@ public class CaabApiClient {
       final String applicationId,
       final LinkedCase data,
       final String loginId) {
-    final String errorMessage = String.format(FAILED_ADD_LINKED_CASE, applicationId);
     return caabApiWebClient
         .post()
         .uri("applications/{applicationId}/linked-cases",
@@ -317,7 +283,8 @@ public class CaabApiClient {
         .bodyValue(data)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiCreateError(e,
+            RESOURCE_TYPE_LINKED_CASES));
   }
 
   /**
@@ -332,7 +299,6 @@ public class CaabApiClient {
       final String linkedCaseId,
       final LinkedCase data,
       final String loginId) {
-    final String errorMessage = String.format(FAILED_UPDATE_LINKED_CASE, linkedCaseId);
     return caabApiWebClient
         .patch()
         .uri("/linked-cases/{linkedCaseId}",
@@ -342,7 +308,8 @@ public class CaabApiClient {
         .bodyValue(data)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(e,
+            RESOURCE_TYPE_LINKED_CASES, "linked case id", linkedCaseId));
   }
 
   /**
@@ -354,13 +321,13 @@ public class CaabApiClient {
    */
   public Mono<CostStructure> getCostStructure(
       final String id) {
-    final String errorMessage = String.format(FAILED_RETRIEVE_COSTS, id);
     return caabApiWebClient
         .get()
         .uri("/applications/{id}/cost-structure", id)
         .retrieve()
         .bodyToMono(new ParameterizedTypeReference<CostStructure>() {})
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiRetrieveError(e,
+            RESOURCE_TYPE_COSTS, "application id", id));
   }
 
   /**
@@ -375,7 +342,6 @@ public class CaabApiClient {
       final String id,
       final CostStructure costs,
       final String loginId) {
-    final String errorMessage = String.format(FAILED_UPDATE_COSTS, id);
     return caabApiWebClient
         .put()
         .uri("/applications/{id}/cost-structure", id)
@@ -384,7 +350,8 @@ public class CaabApiClient {
         .bodyValue(costs)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(e,
+            RESOURCE_TYPE_COSTS, "application id", id));
   }
 
   /**
@@ -396,13 +363,13 @@ public class CaabApiClient {
    */
   public Mono<List<Proceeding>> getProceedings(
       final String id) {
-    final String errorMessage = String.format(FAILED_RETRIEVE_PROCEEDINGS, id);
     return caabApiWebClient
         .get()
         .uri("/applications/{id}/proceedings", id)
         .retrieve()
         .bodyToMono(new ParameterizedTypeReference<List<Proceeding>>() {})
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiRetrieveError(e,
+            RESOURCE_TYPE_PROCEEDINGS, "application id", id));
   }
 
   /**
@@ -417,7 +384,6 @@ public class CaabApiClient {
       final Integer proceedingId,
       final Proceeding data,
       final String loginId) {
-    final String errorMessage = String.format(FAILED_UPDATE_PROCEEDINGS, proceedingId);
     return caabApiWebClient
         .patch()
         .uri("/proceedings/{proceeding-id}",
@@ -427,7 +393,8 @@ public class CaabApiClient {
         .bodyValue(data)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(e,
+            RESOURCE_TYPE_PROCEEDINGS, "id", proceedingId.toString()));
   }
 
   /**
@@ -442,7 +409,6 @@ public class CaabApiClient {
       final String applicationId,
       final Proceeding proceeding,
       final String loginId) {
-    final String errorMessage = String.format(FAILED_ADD_PROCEEDINGS, applicationId);
     return caabApiWebClient
         .post()
         .uri("/applications/{applicationId}/proceedings", applicationId)
@@ -451,7 +417,8 @@ public class CaabApiClient {
         .bodyValue(proceeding)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiCreateError(e,
+            RESOURCE_TYPE_PROCEEDINGS));
   }
 
   /**
@@ -464,7 +431,6 @@ public class CaabApiClient {
   public Mono<Void> deleteProceeding(
       final Integer proceedingId,
       final String loginId) {
-    final String errorMessage = String.format(FAILED_DELETE_PROCEEDINGS, proceedingId);
     return caabApiWebClient
         .delete()
         .uri("/proceedings/{proceeding-id}",
@@ -472,7 +438,8 @@ public class CaabApiClient {
         .header("Caab-User-Login-Id", loginId)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiDeleteError(e,
+            RESOURCE_TYPE_PROCEEDINGS, "id", proceedingId.toString()));
   }
 
   /**
@@ -485,13 +452,13 @@ public class CaabApiClient {
    */
   public Mono<List<ScopeLimitation>> getScopeLimitations(
       final Integer proceedingId) {
-    final String errorMessage = String.format(FAILED_RETRIEVE_SCOPE_LIMITATIONS, proceedingId);
     return caabApiWebClient
         .get()
         .uri("/proceedings/{id}/scope-limitations", proceedingId)
         .retrieve()
         .bodyToMono(new ParameterizedTypeReference<List<ScopeLimitation>>() {})
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiRetrieveError(e,
+            RESOURCE_TYPE_SCOPE_LIMITATIONS, "proceeding id", proceedingId.toString()));
   }
 
   /**
@@ -506,7 +473,6 @@ public class CaabApiClient {
       final String clientReferenceId,
       final String loginId,
       final BaseClient data) {
-    final String errorMessage = String.format(FAILED_UPDATE_CLIENT, clientReferenceId);
     return caabApiWebClient
         .patch()
         .uri("/applications/clients/{clientReferenceId}", clientReferenceId)
@@ -515,7 +481,8 @@ public class CaabApiClient {
         .bodyValue(data)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(e,
+            RESOURCE_TYPE_CLIENT, "client reference", clientReferenceId));
   }
 
   /**
@@ -527,13 +494,13 @@ public class CaabApiClient {
    */
   public Mono<List<Opponent>> getOpponents(
       final String id) {
-    final String errorMessage = String.format(FAILED_RETRIEVE_OPPONENTS, id);
     return caabApiWebClient
         .get()
         .uri("/applications/{id}/opponents", id)
         .retrieve()
         .bodyToMono(new ParameterizedTypeReference<List<Opponent>>() {})
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(e,
+            RESOURCE_TYPE_OPPONENTS, "application id", id));
   }
 
   /**
@@ -548,7 +515,6 @@ public class CaabApiClient {
       final String applicationId,
       final Opponent data,
       final String loginId) {
-    final String errorMessage = String.format(FAILED_ADD_OPPONENTS, applicationId);
     return caabApiWebClient
         .post()
         .uri("/applications/{applicationId}/opponents",
@@ -558,7 +524,8 @@ public class CaabApiClient {
         .bodyValue(data)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiCreateError(e,
+            RESOURCE_TYPE_OPPONENTS));
   }
 
   /**
@@ -570,13 +537,13 @@ public class CaabApiClient {
    */
   public Mono<List<PriorAuthority>> getPriorAuthorities(
       final String id) {
-    final String errorMessage = String.format(FAILED_RETRIEVE_PRIOR_AUTHORITIES, id);
     return caabApiWebClient
         .get()
         .uri("/applications/{id}/prior-authorities", id)
         .retrieve()
         .bodyToMono(new ParameterizedTypeReference<List<PriorAuthority>>() {})
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(e,
+            RESOURCE_TYPE_PRIOR_AUTHORITIES, "application id", id));
   }
 
   /**
@@ -591,7 +558,6 @@ public class CaabApiClient {
       final String applicationId,
       final PriorAuthority priorAuthority,
       final String loginId) {
-    final String errorMessage = String.format(FAILED_ADD_PRIOR_AUTHORITY, applicationId);
     return caabApiWebClient
         .post()
         .uri("/applications/{applicationId}/prior-authorities", applicationId)
@@ -600,7 +566,8 @@ public class CaabApiClient {
         .bodyValue(priorAuthority)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiCreateError(e,
+            RESOURCE_TYPE_PRIOR_AUTHORITIES));
   }
 
   /**
@@ -615,7 +582,6 @@ public class CaabApiClient {
       final Integer priorAuthorityId,
       final PriorAuthority data,
       final String loginId) {
-    final String errorMessage = String.format(FAILED_UPDATE_PRIOR_AUTHORITY, priorAuthorityId);
     return caabApiWebClient
         .patch()
         .uri("/prior-authorities/{prior-authority-id}",
@@ -625,7 +591,8 @@ public class CaabApiClient {
         .bodyValue(data)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(e,
+            RESOURCE_TYPE_PRIOR_AUTHORITIES, "id", priorAuthorityId.toString()));
   }
 
   /**
@@ -638,7 +605,6 @@ public class CaabApiClient {
   public Mono<Void> deletePriorAuthority(
       final Integer priorAuthorityId,
       final String loginId) {
-    final String errorMessage = String.format(FAILED_DELETE_PRIOR_AUTHORITY, priorAuthorityId);
     return caabApiWebClient
         .delete()
         .uri("/prior-authorities/{prior-authority-id}",
@@ -646,7 +612,8 @@ public class CaabApiClient {
         .header("Caab-User-Login-Id", loginId)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> apiClientErrorHandler.handleCaabApiError(e, errorMessage));
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(e,
+            RESOURCE_TYPE_PRIOR_AUTHORITIES, "id", priorAuthorityId.toString()));
   }
 
 

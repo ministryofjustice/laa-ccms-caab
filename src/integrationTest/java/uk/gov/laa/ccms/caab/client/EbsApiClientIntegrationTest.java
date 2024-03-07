@@ -54,7 +54,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
   private final ObjectMapper objectMapper = new ObjectMapper();
 
-  private static final String USER_ERROR_MESSAGE = "Failed to retrieve User with loginId: %s";
+  private static final String USER_ERROR_MESSAGE = "Failed to retrieve User with login id: %s";
   private static final String USERS_ERROR_MESSAGE = "Failed to retrieve Users for provider: (id: %s)";
 
   @Test
@@ -172,7 +172,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
         .addContentItem(user);
 
     String userDetailsJson = objectMapper.writeValueAsString(userDetails);
-    wiremock.stubFor(get(String.format("/users?provider-id=%s", providerId))
+    wiremock.stubFor(get(String.format("/users?size=1000&provider-id=%s", providerId))
         .willReturn(okJson(userDetailsJson)));
     UserDetails result = ebsApiClient.getUsers(providerId).block();
 
@@ -183,8 +183,8 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   @Test
   public void testGetUsers_notFound() {
     Integer providerId = 123;
-    String expectedMessage = String.format(USERS_ERROR_MESSAGE, providerId);
-    wiremock.stubFor(get(String.format("/users?provider-id=%s", providerId))
+    String expectedMessage = "Failed to retrieve Users with parameters: size=1000, provider-id=123";
+    wiremock.stubFor(get(String.format("/users?size=1000&provider-id=%s", providerId))
         .willReturn(notFound()));
     Mono<UserDetails> userDetailsMono = ebsApiClient.getUsers(providerId);
 

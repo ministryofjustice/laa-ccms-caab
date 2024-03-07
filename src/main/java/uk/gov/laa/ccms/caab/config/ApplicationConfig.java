@@ -93,7 +93,6 @@ public class ApplicationConfig implements WebMvcConfigurer {
     return WebClient.create(osApiUrl);
   }
 
-
   /**
    * Creates a LocaleResolver bean for setting the default locale to UK.
    *
