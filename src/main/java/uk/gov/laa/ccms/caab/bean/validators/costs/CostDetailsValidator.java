@@ -47,8 +47,6 @@ public class CostDetailsValidator extends AbstractValidator {
           costDetails.getRequestedCostLimitation(),
           "Requested cost limitation", errors);
 
-
-
       validateNumericLimit("requestedCostLimitation", costDetails.getRequestedCostLimitation(),
           "Requested cost limitation", MAX_COST_LIMIT, errors);
     }

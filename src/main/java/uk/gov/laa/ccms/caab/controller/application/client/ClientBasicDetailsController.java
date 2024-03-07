@@ -1,5 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE;
@@ -150,13 +153,13 @@ public class ClientBasicDetailsController {
   private void populateDropdowns(Model model) {
     new DropdownBuilder(model)
         .addDropdown("titles",
-            lookupService.getContactTitles())
+            lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
         .addDropdown("countries",
             lookupService.getCountries())
         .addDropdown("genders",
-            lookupService.getGenders())
+            lookupService.getCommonValues(COMMON_VALUE_GENDER))
         .addDropdown("maritalStatusList",
-            lookupService.getMaritalStatuses())
+            lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS))
         .build();
   }
 }

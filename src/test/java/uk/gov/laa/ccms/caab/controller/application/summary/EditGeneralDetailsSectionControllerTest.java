@@ -16,6 +16,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_STATUS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_LINK_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
@@ -130,7 +133,7 @@ class EditGeneralDetailsSectionControllerTest {
 
     when(lookupService.getCountries())
         .thenReturn(Mono.just(mockCommonLookupDetail));
-    when(lookupService.getCaseAddressOptions())
+    when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
         .thenReturn(Mono.just(mockCommonLookupDetail));
 
     when(applicationService.getCorrespondenceAddressFormData(applicationId)).thenReturn(addressFormData);
@@ -154,7 +157,7 @@ class EditGeneralDetailsSectionControllerTest {
 
     when(lookupService.getCountries())
         .thenReturn(Mono.just(mockCommonLookupDetail));
-    when(lookupService.getCaseAddressOptions())
+    when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
         .thenReturn(Mono.just(mockCommonLookupDetail));
 
     this.mockMvc.perform(get("/application/summary/correspondence-address")
@@ -194,7 +197,7 @@ class EditGeneralDetailsSectionControllerTest {
 
     when(lookupService.getCountries())
         .thenReturn(Mono.just(mockCommonLookupDetail));
-    when(lookupService.getCaseAddressOptions())
+    when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
         .thenReturn(Mono.just(mockCommonLookupDetail));
 
     doAnswer(invocation -> {
@@ -250,7 +253,7 @@ class EditGeneralDetailsSectionControllerTest {
 
     when(lookupService.getCountries())
         .thenReturn(Mono.just(mockCommonLookupDetail));
-    when(lookupService.getCaseAddressOptions())
+    when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
         .thenReturn(Mono.just(mockCommonLookupDetail));
 
     this.mockMvc.perform(post("/application/summary/correspondence-address")
@@ -366,7 +369,7 @@ class EditGeneralDetailsSectionControllerTest {
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/summary/linked-cases"));
 
-    verify(applicationService, times(1)).removeLinkedCase(applicationId, linkedCaseId, user);
+    verify(applicationService, times(1)).removeLinkedCase(linkedCaseId, user);
   }
 
   @Test
@@ -378,7 +381,7 @@ class EditGeneralDetailsSectionControllerTest {
     final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases = new ResultsDisplay<>();
     linkedCases.setContent(Collections.singletonList(linkedCase));
 
-    when(lookupService.getCaseLinkTypes()).thenReturn(Mono.just(mockCommonLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(Mono.just(mockCommonLookupDetail));
 
     this.mockMvc.perform(get("/application/summary/linked-cases/{linked-case-id}/confirm", linkedCaseId)
             .sessionAttr("linkedCases", linkedCases))
@@ -403,7 +406,7 @@ class EditGeneralDetailsSectionControllerTest {
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/summary/linked-cases"));
 
-    verify(applicationService, times(1)).updateLinkedCase(applicationId, linkedCaseId, linkedCase, user);
+    verify(applicationService, times(1)).updateLinkedCase(linkedCaseId, linkedCase, user);
   }
 
   @Test
@@ -413,7 +416,7 @@ class EditGeneralDetailsSectionControllerTest {
     final UserDetail user = new UserDetail();
     final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
 
-    when(lookupService.getCaseLinkTypes()).thenReturn(Mono.just(mockCommonLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(Mono.just(mockCommonLookupDetail));
 
     doAnswer(invocation -> {
       final Errors errors = (Errors) invocation.getArguments()[1];
@@ -429,7 +432,7 @@ class EditGeneralDetailsSectionControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/summary/application-linked-case-confirm"));
 
-    verify(applicationService, never()).updateLinkedCase(applicationId, linkedCaseId, linkedCase, user);
+    verify(applicationService, never()).updateLinkedCase(linkedCaseId, linkedCase, user);
   }
 
   @Test
@@ -437,7 +440,7 @@ class EditGeneralDetailsSectionControllerTest {
     final ProviderDetail mockProviderDetail = new ProviderDetail();
     final CaseStatusLookupDetail mockCaseStatusValues = new CaseStatusLookupDetail();
 
-    when(lookupService.getApplicationStatuses()).thenReturn(Mono.just(mockCommonLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_STATUS)).thenReturn(Mono.just(mockCommonLookupDetail));
     when(providerService.getProvider(any())).thenReturn(Mono.just(mockProviderDetail));
     when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(mockCaseStatusValues));
 
@@ -454,7 +457,7 @@ class EditGeneralDetailsSectionControllerTest {
     final ProviderDetail mockProviderDetail = new ProviderDetail();
     final CaseStatusLookupDetail mockCaseStatusValues = new CaseStatusLookupDetail();
 
-    when(lookupService.getApplicationStatuses()).thenReturn(Mono.just(mockCommonLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_STATUS)).thenReturn(Mono.just(mockCommonLookupDetail));
     when(providerService.getProvider(any())).thenReturn(Mono.just(mockProviderDetail));
     when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(mockCaseStatusValues));
 
@@ -543,7 +546,7 @@ class EditGeneralDetailsSectionControllerTest {
     final LinkedCaseResultRowDisplay linkedCaseResultRowDisplay = new LinkedCaseResultRowDisplay();
 
     when(resultDisplayMapper.toLinkedCaseResultRowDisplay(baseApplication)).thenReturn(linkedCaseResultRowDisplay);
-    when(lookupService.getCaseLinkTypes()).thenReturn(Mono.just(mockCommonLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(Mono.just(mockCommonLookupDetail));
 
     this.mockMvc.perform(get("/application/summary/linked-cases/{case-reference-id}/add", caseReferenceId)
             .sessionAttr(CASE_RESULTS_PAGE, linkedCaseSearchResults))
@@ -586,7 +589,7 @@ class EditGeneralDetailsSectionControllerTest {
       return null;
     }).when(linkedCaseValidator).validate(eq(linkedCase), any(BindingResult.class));
 
-    when(lookupService.getCaseLinkTypes()).thenReturn(Mono.just(mockCommonLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(Mono.just(mockCommonLookupDetail));
 
     // When & Then
     this.mockMvc.perform(post("/application/summary/linked-cases/add")

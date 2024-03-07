@@ -13,6 +13,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_OPPONENT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ORGANISATION_SEARCH_CRITERIA;
@@ -108,7 +110,7 @@ class OpponentsSectionControllerTest {
     void organisationSearch() throws Exception {
         CommonLookupDetail orgTypes = new CommonLookupDetail()
             .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getOrganisationTypes()).thenReturn(Mono.just(orgTypes));
+        when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.just(orgTypes));
 
         mockMvc.perform(get("/application/opponents/organisation/search"))
             .andDo(print())
@@ -138,7 +140,7 @@ class OpponentsSectionControllerTest {
 
         CommonLookupDetail orgTypes = new CommonLookupDetail()
             .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getOrganisationTypes()).thenReturn(Mono.just(orgTypes));
+        when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.just(orgTypes));
 
         mockMvc.perform(post("/application/opponents/organisation/search")
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, new OrganisationSearchCriteria()))
@@ -247,7 +249,7 @@ class OpponentsSectionControllerTest {
 
         CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
             .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getRelationshipsToClient()).thenReturn(Mono.just(relationshipToClientLookupDetail));
+        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
 
         mockMvc.perform(get("/application/opponents/organisation/{id}/select", selectedOrgId)
                 .sessionAttr(ORGANISATION_SEARCH_RESULTS, resultsDisplay)
@@ -303,7 +305,7 @@ class OpponentsSectionControllerTest {
 
         CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
             .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getRelationshipsToClient()).thenReturn(Mono.just(relationshipToClientLookupDetail));
+        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
 
         doAnswer(invocation -> {
             Errors errors = (Errors) invocation.getArguments()[1];

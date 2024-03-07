@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_NOTIFICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
 
 import java.util.ArrayList;
@@ -169,7 +170,7 @@ class ActionsAndNotificationsControllerTest {
             .userType("type1")
             .loginId("login1"));
 
-    when(lookupService.getNotificationTypes()).thenReturn(Mono.just(notificationTypes));
+    when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE)).thenReturn(Mono.just(notificationTypes));
     when(providerService.getProvider(userDetails.getProvider().getId()))
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
@@ -213,7 +214,7 @@ class ActionsAndNotificationsControllerTest {
             .userType("type1")
             .loginId("login1"));
 
-    when(lookupService.getNotificationTypes()).thenReturn(Mono.just(notificationTypes));
+    when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE)).thenReturn(Mono.just(notificationTypes));
     when(providerService.getProvider(userDetails.getProvider().getId()))
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
@@ -260,7 +261,7 @@ class ActionsAndNotificationsControllerTest {
             .loginId("login1")
             .username("login1"));
 
-    when(lookupService.getNotificationTypes()).thenReturn(Mono.just(notificationTypes));
+    when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE)).thenReturn(Mono.just(notificationTypes));
     when(providerService.getProvider(userDetails.getProvider().getId()))
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
