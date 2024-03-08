@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>LAA CCMS - Search for an organisation</title>
+    <title>LAA CCMS - Start new application</title>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -9,17 +9,19 @@
         <a href="/application/summary/opponents" class="govuk-back-link">Cancel and return to opponents and other parties</a>
     </div>
     <div id="main-content">
-        <form action="#" th:action="@{/application/opponents/organisation/confirm}" th:object="${opponent}" method="post">
+        <form action="#" th:action="@{/application/opponents/organisation/create}" th:object="${opponent}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <span class="govuk-caption-l">Search for an organisation</span>
+            <span class="govuk-caption-l">Create application</span>
             <h1 class="govuk-heading-l">
                 Opponents and other parties
             </h1>
             <p class="govuk-body-l">
                 Please enter the details for any opponents and other parties involved in this application/amendment.
             </p>
-            <div th:replace="~{application/partials/opponent-fragments :: sharedOrganisationSummary}"></div>
-            <div th:replace="~{application/partials/opponent-fragments :: sharedOrganisationConfirmation}"></div>
+            <h1 class="govuk-heading-m">
+                Create new organisation
+            </h1>
+            <div th:replace="~{application/partials/opponent-fragments :: createOrganisation}"></div>
             <div class="govuk-button-group">
                 <button type="submit" class="govuk-button" data-module="govuk-button">
                     Confirm

@@ -10,9 +10,11 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
+import reactor.util.function.Tuple4;
 import uk.gov.laa.ccms.caab.bean.OpponentFormData;
 import uk.gov.laa.ccms.caab.bean.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.OpponentOrganisationValidator;
@@ -234,7 +237,7 @@ public class OpponentsSectionController {
    */
   @PostMapping("/application/opponents/organisation/confirm")
   public String confirmSharedOrganisation(
-      @ModelAttribute(CURRENT_OPPONENT) OpponentFormData opponentFormData,
+      @ModelAttribute(CURRENT_OPPONENT) final OpponentFormData opponentFormData,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final BindingResult bindingResult,
@@ -257,6 +260,53 @@ public class OpponentsSectionController {
     return "redirect:/application/summary/opponents";
   }
 
+  /**
+   * Displays the view to gather the form data for a new organisation opponent.
+   *
+   * @param model - the model
+   * @return The view name for the organisation creation screen.
+   */
+  @GetMapping("/application/opponents/organisation/create")
+  public String createNewOrganisation(
+      final Model model) {
+
+    populateOrganisationCreateDropdowns(model);
+
+    model.addAttribute(CURRENT_OPPONENT, new OpponentFormData());
+
+    return "application/opponents/opponents-organisation-create";
+  }
+
+  /**
+   * Processes the form submission for creating a new organisation opponent.
+   *
+   * @param opponentFormData The form data to create the organisation.
+   * @param bindingResult  Validation result of the form.
+   * @param model          The model used to pass data to the view.
+   * @return Either redirects to the opponent list or reloads the form with validation errors.
+   */
+  @PostMapping("/application/opponents/organisation/create")
+  public String createNewOrganisation(
+      @ModelAttribute(CURRENT_OPPONENT) final OpponentFormData opponentFormData,
+      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final BindingResult bindingResult,
+      final Model model) {
+
+    opponentOrganisationValidator.validate(opponentFormData, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      populateOrganisationCreateDropdowns(model);
+      return "application/opponents/opponents-organisation-create";
+    }
+
+    applicationService.addOpponent(applicationId, opponentFormData, user);
+
+    return "redirect:/application/summary/opponents";
+  }
+
+
+
   private void populateOrganisationSearchDropdowns(final Model model) {
     new DropdownBuilder(model)
         .addDropdown("organisationTypes",
@@ -275,4 +325,26 @@ public class OpponentsSectionController {
     model.addAttribute("relationshipsToClient", combinedLookup.getT2().getContent());
   }
 
+  private void populateOrganisationCreateDropdowns(final Model model) {
+    Tuple4<CommonLookupDetail,
+            RelationshipToCaseLookupDetail,
+            CommonLookupDetail,
+        CommonLookupDetail> combinedLookup =
+          Optional.ofNullable(Mono.zip(
+                  lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES),
+                  lookupService.getOrganisationToCaseRelationships(),
+                  lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT),
+                  lookupService.getCountries()).block())
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
+
+    model.addAttribute("organisationTypes", combinedLookup.getT1().getContent());
+    model.addAttribute("relationshipsToCase", combinedLookup.getT2().getContent());
+    model.addAttribute("relationshipsToClient", combinedLookup.getT3().getContent());
+    model.addAttribute("countries", combinedLookup.getT4().getContent());
+
+    List<Pair<Boolean, String>> currentlyTradingOptions = List.of(
+        Pair.of(Boolean.FALSE, "No"),
+        Pair.of(Boolean.TRUE, "Yes"));
+    model.addAttribute("currentlyTradingOptions", currentlyTradingOptions);
+  }
 }

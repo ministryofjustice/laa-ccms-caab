@@ -1,0 +1,56 @@
+<!-- Opponent fragments -->
+<div th:fragment="sharedOrganisationSummary"
+    class="govuk-summary-card">
+  <div class="govuk-summary-card__title-wrapper">
+    <h2 class="govuk-summary-card__title">Selected organisation</h2>
+  </div>
+  <div class="govuk-summary-card__content">
+    <dl class="govuk-summary-list">
+      <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Organisation name', *{organisationName})}"></div>
+      <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Organisation type', *{organisationTypeDisplayValue})}"></div>
+      <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayYesNo('Currently trading', *{currentlyTrading})}"></div>
+      <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Contact name and role', *{contactNameRole})}"></div>
+      <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Building name / number', *{houseNameOrNumber})}"></div>
+      <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Address line 1', *{addressLine1})}"></div>
+      <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Address line 2', *{addressLine2})}"></div>
+      <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('City / town', *{city})}"></div>
+      <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('County', *{county})}"></div>
+      <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Country', *{country})}"></div>
+      <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Post code', *{postcode})}"></div>
+      <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Telephone', *{telephoneWork})}"></div>
+      <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Fax', *{faxNumber})}"></div>
+      <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Email address', *{emailAddress})}"></div>
+    </dl>
+  </div>
+</div>
+
+<th:block th:fragment="sharedOrganisationConfirmation">
+  <div th:replace="~{partials/forms :: dropdown('relationshipToCase', 'Relationship to case', ${relationshipsToCase}, 'code', 'description', false)}"></div>
+  <div th:replace="~{partials/forms :: dropdown('relationshipToClient', 'Relationship to client', ${relationshipsToClient}, 'code', 'description', false)}"></div>
+  <div th:replace="~{partials/forms :: largeTextInput('otherInformation', 'Any other information about the liable organisation  (Maximum 2000 characters allowed)')}"></div>
+</th:block>
+
+<div th:fragment="createOrganisation"
+     class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+    <input type="hidden" id="type" name="type" th:value="Organisation"/>
+    <div th:replace="~{partials/forms :: textInput('organisationName', 'Organisation name', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: dropdownWithDisplayValue('organisationType', 'Organisation type', ${organisationTypes}, 'code', 'description')}"></div>
+    <div th:replace="~{partials/forms :: radios('currentlyTrading', 'Currently trading (optional)', ${currentlyTradingOptions}, 'key', 'value', false)}"></div>
+    <div th:replace="~{partials/forms :: dropdown('relationshipToCase', 'Relationship to case', ${relationshipsToCase}, 'code', 'description', false)}"></div>
+    <div th:replace="~{partials/forms :: dropdown('relationshipToClient', 'Relationship to client', ${relationshipsToClient}, 'code', 'description', false)}"></div>
+    <div th:replace="~{partials/forms :: textInput('contactNameRole', 'Contact name and role (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('houseNameOrNumber', 'Building name / number (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('addressLine1', 'Address line 1 (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('addressLine2', 'Address line 2 (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('city', 'City / town (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('county', 'County (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: dropdown('country', 'Country (optional)', ${countries}, 'code', 'description', false)}"></div>
+    <div th:replace="~{partials/forms :: textInput('postcode', 'Post code (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('telephoneWork', 'Telephone (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('faxNumber', 'Fax (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('emailAddress', 'Email address (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: largeTextInput('otherInformation', 'Any other information about the liable organisation  (Maximum 2000 characters allowed)')}"></div>
+  </div>
+</div>
+

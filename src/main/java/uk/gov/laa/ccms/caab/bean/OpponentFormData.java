@@ -37,7 +37,7 @@ public class OpponentFormData {
   /**
    * Flag to indicate that an organisation is currently trading.
    */
-  private boolean currentlyTrading;
+  private Boolean currentlyTrading;
 
   /**
    * The opponent's relationship to the case.

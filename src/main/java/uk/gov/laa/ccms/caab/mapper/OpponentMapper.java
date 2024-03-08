@@ -21,6 +21,7 @@ public interface OpponentMapper {
   @Mapping(target = "city", source = "organisation.address.city")
   @Mapping(target = "county", source = "organisation.address.county")
   @Mapping(target = "country", source = "organisation.address.country")
+  @Mapping(target = "currentlyTrading", source = "organisation.currentlyTrading")
   @Mapping(target = "postcode", source = "organisation.address.postalCode")
   @Mapping(target = "organisationName", source = "organisation.name")
   @Mapping(target = "organisationType", source = "organisation.type")
