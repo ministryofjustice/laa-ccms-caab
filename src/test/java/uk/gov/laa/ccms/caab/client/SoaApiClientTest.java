@@ -815,7 +815,7 @@ class SoaApiClientTest {
     String userType = "userType";
     String orgId = "123";
 
-    String expectedUri = String.format("/organisation/%s", orgId);
+    String expectedUri = String.format("/organisations/%s", orgId);
 
     OrganisationDetail mockOrganisationDetail = new OrganisationDetail();
 
