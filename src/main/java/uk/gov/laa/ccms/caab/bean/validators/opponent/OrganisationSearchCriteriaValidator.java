@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.bean.validators.application;
+package uk.gov.laa.ccms.caab.bean.validators.opponent;
 
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;

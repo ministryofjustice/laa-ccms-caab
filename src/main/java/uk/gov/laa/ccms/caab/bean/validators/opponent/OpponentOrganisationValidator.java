@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.bean.validators.application;
+package uk.gov.laa.ccms.caab.bean.validators.opponent;
 
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CHARACTER_SET_A;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.EMAIL_ADDRESS;
@@ -41,12 +41,7 @@ public class OpponentOrganisationValidator extends AbstractValidator {
         "Relationship to case", errors);
     validateRequiredField("relationshipToClient", opponentFormData.getRelationshipToClient(),
         "Relationship to client", errors);
-    if (StringUtils.hasText(opponentFormData.getOtherInformation())) {
-      validateFieldFormat("otherInformation", opponentFormData.getOtherInformation(),
-          STANDARD_CHARACTER_SET, "Other information", errors);
-      validateFieldMaxLength("otherInformation", opponentFormData.getOtherInformation(),
-          2000, "Other information", errors);
-    }
+    validateOtherInformation(opponentFormData, errors);
 
     // Perform validation on other fields if this is not a shared organisation (ie - a new
     // organisation is being created)
@@ -62,6 +57,15 @@ public class OpponentOrganisationValidator extends AbstractValidator {
           false, "Telephone", errors);
       validateTelephoneNumber("faxNumber", opponentFormData.getFaxNumber(),
           false, "Fax", errors);
+    }
+  }
+
+  private void validateOtherInformation(OpponentFormData opponentFormData, Errors errors) {
+    if (StringUtils.hasText(opponentFormData.getOtherInformation())) {
+      validateFieldFormat("otherInformation", opponentFormData.getOtherInformation(),
+          STANDARD_CHARACTER_SET, "Other information", errors);
+      validateFieldMaxLength("otherInformation", opponentFormData.getOtherInformation(),
+          2000, "Other information", errors);
     }
   }
 

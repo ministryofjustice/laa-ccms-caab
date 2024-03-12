@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.bean.validators.application;
+package uk.gov.laa.ccms.caab.bean.validators.opponent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -28,7 +28,7 @@ class OrganisationSearchCriteriaValidatorTest {
   @BeforeEach
   public void setUp() {
     searchCriteria =
-        new OrganisationSearchCriteria(); // Assuming that the default constructor sets all fields to null.
+        new OrganisationSearchCriteria();
     errors = new BeanPropertyBindingResult(searchCriteria, ORGANISATION_SEARCH_CRITERIA);
   }
 
@@ -43,7 +43,15 @@ class OrganisationSearchCriteriaValidatorTest {
   }
 
   @Test
-  public void validate() {
+  public void validate_noErrors() {
+    searchCriteria.setName("aname");
+
+    organisationSearchCriteriaValidator.validate(searchCriteria, errors);
+    assertFalse(errors.hasErrors());
+  }
+
+  @Test
+  public void validate_generatesErrors() {
     organisationSearchCriteriaValidator.validate(searchCriteria, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("name"));

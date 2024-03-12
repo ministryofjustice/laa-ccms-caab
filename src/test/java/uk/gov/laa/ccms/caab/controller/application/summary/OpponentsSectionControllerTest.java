@@ -1,7 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -40,8 +42,8 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.OpponentFormData;
 import uk.gov.laa.ccms.caab.bean.OrganisationSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.validators.application.OpponentOrganisationValidator;
-import uk.gov.laa.ccms.caab.bean.validators.application.OrganisationSearchCriteriaValidator;
+import uk.gov.laa.ccms.caab.bean.validators.opponent.OpponentOrganisationValidator;
+import uk.gov.laa.ccms.caab.bean.validators.opponent.OrganisationSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.model.OrganisationResultRowDisplay;
@@ -275,7 +277,8 @@ class OpponentsSectionControllerTest {
                 .sessionAttr(ORGANISATION_SEARCH_RESULTS, resultsDisplay)
                 .sessionAttr(USER_DETAILS, user))
             .andDo(print())
-            .andExpect(result -> assertTrue(result.getResolvedException() instanceof CaabApplicationException));
+            .andExpect(result -> assertInstanceOf(CaabApplicationException.class,
+                result.getResolvedException()));
     }
 
     @Test
@@ -321,6 +324,89 @@ class OpponentsSectionControllerTest {
             .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
             .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
             .andExpect(view().name("application/opponents/opponents-organisation-shared-confirm"));
+
+        verifyNoInteractions(applicationService);
+    }
+
+    @Test
+    void organisationCreate() throws Exception {
+        CommonLookupDetail orgTypes = new CommonLookupDetail()
+            .addContentItem(new CommonLookupValueDetail());
+        when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.just(orgTypes));
+
+        RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+            new RelationshipToCaseLookupDetail().addContentItem(new RelationshipToCaseLookupValueDetail());
+        when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.just(relationshipToCaseLookupDetail));
+
+        CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
+            .addContentItem(new CommonLookupValueDetail());
+        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
+
+        CommonLookupDetail countriesLookupDetail = new CommonLookupDetail();
+        when(lookupService.getCountries()).thenReturn(Mono.just(countriesLookupDetail));
+
+        mockMvc.perform(get("/application/opponents/organisation/create"))
+            .andDo(print())
+            .andExpect(status().isOk())
+            .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
+            .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+            .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+            .andExpect(model().attribute("countries", countriesLookupDetail.getContent()))
+            .andExpect(view().name("application/opponents/opponents-organisation-create"));
+
+    }
+
+    @Test
+    void organisationCreatePost_noValidationErrors_CreatesOpponent() throws Exception {
+        final String applicationId = "123";
+        final OpponentFormData opponentFormData = new OpponentFormData();
+
+        mockMvc.perform(post("/application/opponents/organisation/create")
+                .sessionAttr(CURRENT_OPPONENT, opponentFormData)
+                .sessionAttr(APPLICATION_ID, applicationId)
+                .sessionAttr(USER_DETAILS, user))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/summary/opponents"));
+
+        verify(applicationService).addOpponent(applicationId, opponentFormData, user);
+    }
+
+    @Test
+    void organisationCreatePost_validationErrors_returnsToCreateScreen() throws Exception {
+        final String applicationId = "123";
+        final OpponentFormData opponentFormData = new OpponentFormData();
+
+        doAnswer(invocation -> {
+            Errors errors = (Errors) invocation.getArguments()[1];
+            errors.rejectValue("relationshipToCase", "required.relationshipToCase", "Please complete 'Relationship to case'.");
+            return null;
+        }).when(opponentOrganisationValidator).validate(eq(opponentFormData), any());
+
+        CommonLookupDetail orgTypes = new CommonLookupDetail()
+            .addContentItem(new CommonLookupValueDetail());
+        when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.just(orgTypes));
+
+        RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+            new RelationshipToCaseLookupDetail().addContentItem(new RelationshipToCaseLookupValueDetail());
+        when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.just(relationshipToCaseLookupDetail));
+
+        CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
+            .addContentItem(new CommonLookupValueDetail());
+        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
+
+        CommonLookupDetail countriesLookupDetail = new CommonLookupDetail();
+        when(lookupService.getCountries()).thenReturn(Mono.just(countriesLookupDetail));
+
+        mockMvc.perform(post("/application/opponents/organisation/create")
+                .sessionAttr(CURRENT_OPPONENT, opponentFormData)
+                .sessionAttr(APPLICATION_ID, applicationId)
+                .sessionAttr(USER_DETAILS, user))
+            .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
+            .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+            .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+            .andExpect(model().attribute("countries", countriesLookupDetail.getContent()))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/opponents/opponents-organisation-create"));
 
         verifyNoInteractions(applicationService);
     }

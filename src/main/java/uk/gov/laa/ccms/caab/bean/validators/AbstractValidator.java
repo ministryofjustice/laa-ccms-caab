@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.bean.validators;
 
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CURRENCY_PATTERN;
-import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.DOUBLE_SPACE;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.INTERNATIONAL_POSTCODE;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NUMERIC_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.TELEPHONE_PATTERN;
@@ -111,7 +110,7 @@ public abstract class AbstractValidator implements Validator {
   protected void validateDoubleSpaces(
       final String field, final String fieldValue, String displayValue, Errors errors) {
 
-    if (fieldValue != null && fieldValue.matches(DOUBLE_SPACE)) {
+    if (fieldValue != null && fieldValue.contains("\s\s")) {
       errors.rejectValue(field, "double.spaces",
           String.format(GENERIC_DOUBLE_SPACES, displayValue));
     }
