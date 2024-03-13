@@ -1,6 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.LINKED_CASES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_STATUS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_LINK_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
@@ -187,7 +190,7 @@ public class EditGeneralDetailsSectionController {
         .addDropdown("countries",
             lookupService.getCountries())
         .addDropdown("caseAddressOptions",
-            lookupService.getCaseAddressOptions())
+            lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
         .build();
   }
 
@@ -309,17 +312,15 @@ public class EditGeneralDetailsSectionController {
    * Handles the POST request for removing a linked case.
    *
    * @param linkedCaseId the ID of the linked case to remove
-   * @param applicationId the application ID from the session attribute
    * @param user the user details from the session attribute
    * @return a redirect path to the linked cases summary
    */
   @PostMapping("/application/summary/linked-cases/{linked-case-id}/remove")
   public String removeLinkedCasePost(
       @PathVariable("linked-case-id") final String linkedCaseId,
-      @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user) {
 
-    applicationService.removeLinkedCase(applicationId, linkedCaseId, user);
+    applicationService.removeLinkedCase(linkedCaseId, user);
 
     return "redirect:/application/summary/linked-cases";
   }
@@ -355,7 +356,6 @@ public class EditGeneralDetailsSectionController {
    * Handles the POST request for confirming details of a linked case.
    *
    * @param linkedCaseId the ID of the linked case to confirm
-   * @param applicationId the application ID from the session attribute
    * @param user the user details from the session attribute
    * @param linkedCase the LinkedCaseResultRowDisplay object containing linked case details
    * @param bindingResult the BindingResult to capture validation errors
@@ -365,7 +365,6 @@ public class EditGeneralDetailsSectionController {
   @PostMapping("/application/summary/linked-cases/{linked-case-id}/confirm")
   public String confirmLinkedCasePost(
       @PathVariable("linked-case-id") final String linkedCaseId,
-      @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @ModelAttribute("currentLinkedCase") final LinkedCaseResultRowDisplay linkedCase,
       final BindingResult bindingResult,
@@ -379,7 +378,7 @@ public class EditGeneralDetailsSectionController {
       return "application/summary/application-linked-case-confirm";
     }
 
-    applicationService.updateLinkedCase(applicationId, linkedCaseId, linkedCase, user);
+    applicationService.updateLinkedCase(linkedCaseId, linkedCase, user);
 
     return "redirect:/application/summary/linked-cases";
   }
@@ -392,7 +391,7 @@ public class EditGeneralDetailsSectionController {
   private void populateLinkedCasesConfirmDropdowns(final Model model) {
     new DropdownBuilder(model)
         .addDropdown("caseLinkOptions",
-            lookupService.getCaseLinkTypes())
+            lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE))
         .build();
   }
 
@@ -401,14 +400,12 @@ public class EditGeneralDetailsSectionController {
    *
    * @param userDetails The details of the logged-in user.
    * @param model       The UI model to add attributes to.
-   * @param session     The HTTP session object.
    * @return String     The view name for linked cases search.
    */
   @GetMapping("/application/summary/linked-cases/search")
   public String linkedCasesSearchGet(
       @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
-      final Model model,
-      final HttpSession session) {
+      final Model model) {
 
     populateLinkedCasesSearchDropdowns(userDetails, model);
 
@@ -462,7 +459,7 @@ public class EditGeneralDetailsSectionController {
       if (searchResults.isEmpty()) {
         return "application/summary/application-linked-case-search-no-results";
       }
-    } catch (TooManyResultsException e) {
+    } catch (final TooManyResultsException e) {
       return "application/summary/application-linked-case-search-too-many-results";
     }
 
@@ -576,7 +573,7 @@ public class EditGeneralDetailsSectionController {
    * @param model the Spring Model to pass attributes for dropdowns and additional data
    */
   private void populateLinkedCasesSearchDropdowns(final UserDetail user, final Model model) {
-    Tuple2<ProviderDetail, CaseStatusLookupDetail> combinedResults =
+    final Tuple2<ProviderDetail, CaseStatusLookupDetail> combinedResults =
         Optional.ofNullable(Mono.zip(
             providerService.getProvider(user.getProvider().getId()),
             lookupService.getCaseStatusValues()).block()).orElseThrow(
@@ -594,7 +591,7 @@ public class EditGeneralDetailsSectionController {
 
     new DropdownBuilder(model)
         .addDropdown("Status",
-            lookupService.getApplicationStatuses())
+            lookupService.getCommonValues(COMMON_VALUE_APPLICATION_STATUS))
         .build();
 
     model.addAttribute("feeEarners", providerService.getAllFeeEarners(providerDetail));

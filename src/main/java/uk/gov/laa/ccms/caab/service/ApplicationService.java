@@ -13,6 +13,14 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_LEVEL_OF_SERVICE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MATTER_TYPES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_STATUS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -73,6 +81,7 @@ import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.Opponent;
 import uk.gov.laa.ccms.caab.model.OpponentRowDisplay;
+import uk.gov.laa.ccms.caab.model.PriorAuthority;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -805,15 +814,13 @@ public class ApplicationService {
    * This method communicates with the CAAB API client to un-link a case identified by
    * {@code linkedCaseId} from a primary case identified by {@code id}.
    *
-   * @param applicationId The id of the application for which linked cases should be retrieved
    * @param linkedCaseId The ID of the linked case to be removed.
    * @param user         The user performing the operation, identified by {@code UserDetail}.
    */
   public void removeLinkedCase(
-      final String applicationId,
       final String linkedCaseId,
       final UserDetail user) {
-    caabApiClient.removeLinkedCase(applicationId, linkedCaseId, user.getLoginId()).block();
+    caabApiClient.removeLinkedCase(linkedCaseId, user.getLoginId()).block();
   }
 
   /**
@@ -822,21 +829,18 @@ public class ApplicationService {
    * the linked case identified by {@code linkedCaseId} in relation to the primary case
    * identified by {@code id}.
    *
-   * @param applicationId The ID of the case related to the linked case.
    * @param linkedCaseId The ID of the linked case to be updated.
    * @param data         The new data for the linked case, encapsulated in
    *                     {@code LinkedCaseResultRowDisplay}.
    * @param user         The user performing the update, identified by {@code UserDetail}.
    */
   public void updateLinkedCase(
-      final String applicationId,
       final String linkedCaseId,
       final LinkedCaseResultRowDisplay data,
       final UserDetail user) {
 
     final LinkedCase linkedCase = resultDisplayMapper.toLinkedCase(data);
     caabApiClient.updateLinkedCase(
-        applicationId,
         linkedCaseId,
         linkedCase, 
         user.getLoginId()).block();
@@ -978,10 +982,10 @@ public class ApplicationService {
         RelationshipToCaseLookupDetail,
         RelationshipToCaseLookupDetail,
         CommonLookupDetail> combinedResponse = Optional.ofNullable(Mono.zip(
-            lookupService.getContactTitles(),
+            lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE),
             lookupService.getPersonToCaseRelationships(),
             lookupService.getOrganisationToCaseRelationships(),
-            lookupService.getRelationshipsToClient()).block())
+            lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).block())
         .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
 
     // Get the list of opponents for the application, and transform to display model.
@@ -1150,7 +1154,8 @@ public class ApplicationService {
 
     // Lookup the certificate display value
     CommonLookupValueDetail certificateLookup = soaCase.getCertificateType() != null
-        ? Optional.ofNullable(lookupService.getApplicationType(soaCase.getCertificateType())
+        ? Optional.ofNullable(lookupService.getCommonValue(
+            COMMON_VALUE_APPLICATION_TYPE, soaCase.getCertificateType())
         .block()).orElseThrow(() -> new CaabApplicationException(
             String.format("Failed to retrieve applicationtype with code: %s",
                 soaCase.getCertificateType()))) : null;
@@ -1160,7 +1165,8 @@ public class ApplicationService {
     CommonLookupValueDetail applicationTypeLookup =
         soaApplicationDetails.getApplicationAmendmentType() != null
         ? Optional.ofNullable(
-            lookupService.getApplicationType(soaApplicationDetails.getApplicationAmendmentType())
+            lookupService.getCommonValue(
+                COMMON_VALUE_APPLICATION_TYPE, soaApplicationDetails.getApplicationAmendmentType())
         .block()).orElseThrow(() -> new CaabApplicationException(
             String.format("Failed to retrieve applicationtype with code: %s",
                 soaCase.getCertificateType()))) : certificateLookup;
@@ -1202,7 +1208,7 @@ public class ApplicationService {
     if (categoryOfLaw.getCostLimitations() != null
         && categoryOfLaw.getTotalPaidToDate() != null) {
       // Add the total amount billed across all cost entries.
-      BigDecimal totalProviderAmount = categoryOfLaw.getCostLimitations().stream()
+      final BigDecimal totalProviderAmount = categoryOfLaw.getCostLimitations().stream()
           .map(CostLimitation::getPaidToDate)
           .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -1211,17 +1217,17 @@ public class ApplicationService {
     }
 
     // Find the most recent Assessments
-    AssessmentResult meansAssessment = getMostRecentAssessment(
+    final AssessmentResult meansAssessment = getMostRecentAssessment(
         soaApplicationDetails.getMeansAssesments());
 
-    AssessmentResult meritsAssessment = getMostRecentAssessment(
+    final AssessmentResult meritsAssessment = getMostRecentAssessment(
         soaApplicationDetails.getMeritsAssesments());
 
     /*
      * Split the proceeding list based on status, and build a ProceedingMappingContext
      * for each to hold the necessary lookup data.
      */
-    List<ProceedingMappingContext> amendmentProceedingsInEbs =
+    final List<ProceedingMappingContext> amendmentProceedingsInEbs =
         soaApplicationDetails.getProceedings() != null
             ? soaApplicationDetails.getProceedings().stream()
             .filter(proceedingDetail -> !caseWithOnlyDraftProceedings
@@ -1234,7 +1240,7 @@ public class ApplicationService {
                     "Failed to build mapping context")))
             .toList() : Collections.emptyList();
 
-    List<ProceedingMappingContext> proceedings =
+    final List<ProceedingMappingContext> proceedings =
         soaApplicationDetails.getProceedings() != null
             ? soaApplicationDetails.getProceedings().stream()
             .filter(proceedingDetail -> caseWithOnlyDraftProceedings
@@ -1284,15 +1290,19 @@ public class ApplicationService {
       final CaseDetail soaCase) {
 
     Tuple5<uk.gov.laa.ccms.data.model.ProceedingDetail,
-            CommonLookupValueDetail,
-            CommonLookupValueDetail,
-            CommonLookupValueDetail,
-            CommonLookupValueDetail> lookupTuple = Optional.ofNullable(
+                CommonLookupValueDetail,
+                CommonLookupValueDetail,
+                CommonLookupValueDetail,
+                CommonLookupValueDetail> lookupTuple = Optional.ofNullable(
         Mono.zip(ebsApiClient.getProceeding(soaProceeding.getProceedingType()),
-            lookupService.getProceedingStatus(soaProceeding.getStatus()),
-            lookupService.getMatterType(soaProceeding.getMatterType()),
-            lookupService.getLevelOfService(soaProceeding.getLevelOfService()),
-            lookupService.getClientInvolvementType(soaProceeding.getClientInvolvementType()))
+            lookupService.getCommonValue(
+                COMMON_VALUE_PROCEEDING_STATUS, soaProceeding.getStatus()),
+            lookupService.getCommonValue(
+                COMMON_VALUE_MATTER_TYPES, soaProceeding.getMatterType()),
+            lookupService.getCommonValue(
+                COMMON_VALUE_LEVEL_OF_SERVICE, soaProceeding.getLevelOfService()),
+            lookupService.getCommonValue(
+                COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES, soaProceeding.getClientInvolvementType()))
             .block())
         .orElseThrow(() -> new CaabApplicationException(
             "Failed to retrieve lookup data for Proceeding"));
@@ -1306,7 +1316,8 @@ public class ApplicationService {
         soaProceeding.getScopeLimitations().stream()
             .map(scopeLimitation -> Pair.of(
                 scopeLimitation,
-                lookupService.getScopeLimitation(
+                lookupService.getCommonValue(
+                    COMMON_VALUE_SCOPE_LIMITATIONS,
                     scopeLimitation.getScopeLimitation()).block()))
             .toList();
 
@@ -1335,7 +1346,7 @@ public class ApplicationService {
     }
 
     // Lookup extra data relating to the Proceeding Outcome
-    Tuple3<CommonLookupDetail,
+    final Tuple3<CommonLookupDetail,
         OutcomeResultLookupDetail,
         StageEndLookupDetail> combinedOutcomeResults = Optional.ofNullable(Mono.zip(
             lookupService.getCourts(
@@ -1350,7 +1361,7 @@ public class ApplicationService {
      * Only use the looked up Court data if we got a single match.
      * Otherwise, default to the court code for display.
      */
-    CommonLookupValueDetail courtLookup =
+    final CommonLookupValueDetail courtLookup =
         combinedOutcomeResults.getT1().getContent().size() == 1
         ? combinedOutcomeResults.getT1().getContent().get(0) :
         new CommonLookupValueDetail()
@@ -1358,12 +1369,12 @@ public class ApplicationService {
             .description(soaProceeding.getOutcome().getCourtCode());
 
     // Use the outcome result display data, if we have it.
-    OutcomeResultLookupValueDetail outcomeResultLookup =
+    final OutcomeResultLookupValueDetail outcomeResultLookup =
         !combinedOutcomeResults.getT2().getContent().isEmpty()
         ? combinedOutcomeResults.getT2().getContent().get(0) : null;
 
     // Lookup the stage end display value.
-    StageEndLookupValueDetail stageEndLookup =
+    final StageEndLookupValueDetail stageEndLookup =
         !combinedOutcomeResults.getT3().getContent().isEmpty()
         ? combinedOutcomeResults.getT3().getContent().get(0) : null;
 
@@ -1597,6 +1608,21 @@ public class ApplicationService {
   }
 
   /**
+   * Retrieves details for a given prior authority type.
+   *
+   * @param priorAuthorityType the type of the prior authority to retrieve details for.
+   * @return the detail of the specified prior authority type or null if not found.
+   */
+  public PriorAuthorityTypeDetail getPriorAuthorityTypeDetail(final String priorAuthorityType) {
+    return lookupService.getPriorAuthorityTypes(priorAuthorityType, null)
+        .block()
+        .getContent()
+        .stream()
+        .findFirst()
+        .orElse(null);
+  }
+
+  /**
    * Adds a proceeding associated to a specific application.
    *
    * @param applicationId the ID of the application to which the proceeding is added
@@ -1660,5 +1686,44 @@ public class ApplicationService {
         applicationId,
         costStructure,
         user.getLoginId()).block();
+  }
+
+  /**
+   * Adds a priorAuthority associated to a specific application.
+   *
+   * @param applicationId the ID of the application to which the priorAuthority is added
+   * @param priorAuthority the priorAuthority to add
+   * @param user the user details initiating the action
+   */
+  public void addPriorAuthority(
+      final String applicationId,
+      final PriorAuthority priorAuthority,
+      final UserDetail user) {
+    caabApiClient.addPriorAuthority(applicationId, priorAuthority, user.getLoginId()).block();
+  }
+
+  /**
+   * Updates a specified priorAuthority.
+   *
+   * @param priorAuthority the priorAuthority to update
+   * @param user the user details initiating the update
+   */
+  public void updatePriorAuthority(
+      final PriorAuthority priorAuthority,
+      final UserDetail user) {
+    caabApiClient.updatePriorAuthority(priorAuthority.getId(), priorAuthority,
+        user.getLoginId()).block();
+  }
+
+  /**
+   * Deletes a specified priorAuthority.
+   *
+   * @param priorAuthorityId the ID of the priorAuthority to delete
+   * @param user the user details initiating the deletion
+   */
+  public void deletePriorAuthority(
+      final Integer priorAuthorityId,
+      final UserDetail user) {
+    caabApiClient.deletePriorAuthority(priorAuthorityId, user.getLoginId()).block();
   }
 }

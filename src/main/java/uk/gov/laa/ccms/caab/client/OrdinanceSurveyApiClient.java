@@ -16,8 +16,9 @@ public class OrdinanceSurveyApiClient {
   private final WebClient osApiWebClient;
   private final String osApiKey;
 
-  public OrdinanceSurveyApiClient(WebClient osApiWebClient,
-                                  @Value("${os.api.key}") String osApiKey) {
+  public OrdinanceSurveyApiClient(
+      final WebClient osApiWebClient,
+      @Value("${os.api.key}") final String osApiKey) {
     this.osApiWebClient = osApiWebClient;
     this.osApiKey = osApiKey;
   }
@@ -28,7 +29,7 @@ public class OrdinanceSurveyApiClient {
    * @param postcode the ID associated with the user login
    * @return a Mono signaling the returned address payload
    */
-  public Mono<OrdinanceSurveyResponse> getAddresses(String postcode) {
+  public Mono<OrdinanceSurveyResponse> getAddresses(final String postcode) {
     return osApiWebClient
       .get()
           .uri(builder -> builder.path("/search/places/v1/postcode")

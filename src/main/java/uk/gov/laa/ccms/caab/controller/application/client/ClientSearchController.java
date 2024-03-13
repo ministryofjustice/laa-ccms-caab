@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 
@@ -93,12 +95,13 @@ public class ClientSearchController {
    */
   private void populateDropdowns(Model model) {
     CommonLookupDetail genders =
-        Optional.ofNullable(lookupService.getGenders().block())
+        Optional.ofNullable(lookupService.getCommonValues(COMMON_VALUE_GENDER).block())
             .orElse(new CommonLookupDetail());
     model.addAttribute("genders", genders.getContent());
 
     CommonLookupDetail uniqueIdentifierTypes =
-        Optional.ofNullable(lookupService.getUniqueIdentifierTypes().block())
+        Optional.ofNullable(lookupService.getCommonValues(
+            COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE).block())
             .orElse(new CommonLookupDetail());
     model.addAttribute("uniqueIdentifierTypes", uniqueIdentifierTypes.getContent());
   }

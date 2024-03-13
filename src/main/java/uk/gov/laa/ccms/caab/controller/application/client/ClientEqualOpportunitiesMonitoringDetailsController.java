@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DISABILITY;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ETHNIC_ORIGIN;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import lombok.RequiredArgsConstructor;
@@ -94,9 +96,9 @@ public class ClientEqualOpportunitiesMonitoringDetailsController {
   private void populateDropdowns(Model model) {
     new DropdownBuilder(model)
         .addDropdown("ethnicOrigins",
-            lookupService.getEthnicOrigins())
+            lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN))
         .addDropdown("disabilities",
-            lookupService.getDisabilities())
+            lookupService.getCommonValues(COMMON_VALUE_DISABILITY))
         .build();
   }
 }

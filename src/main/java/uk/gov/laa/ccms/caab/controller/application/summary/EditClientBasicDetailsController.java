@@ -1,5 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
@@ -97,13 +100,13 @@ public class EditClientBasicDetailsController {
 
     builder
         .addDropdown("titles",
-            lookupService.getContactTitles())
+            lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
         .addDropdown("countries",
             lookupService.getCountries())
         .addDropdown("genders",
-            lookupService.getGenders())
+            lookupService.getCommonValues(COMMON_VALUE_GENDER))
         .addDropdown("maritalStatusList",
-            lookupService.getMaritalStatuses())
+            lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS))
         .build();
   }
 }

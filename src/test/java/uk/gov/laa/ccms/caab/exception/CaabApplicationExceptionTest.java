@@ -12,8 +12,8 @@ class CaabApplicationExceptionTest {
 
   @Test
   public void testConstructorWithMessage() {
-    String expectedMessage = "Test Exception";
-    CaabApplicationException exception = new CaabApplicationException(expectedMessage);
+    final String expectedMessage = "Test Exception";
+    final CaabApplicationException exception = new CaabApplicationException(expectedMessage);
 
     assertEquals(expectedMessage, exception.getMessage());
     assertNull(exception.getCause());
@@ -21,9 +21,9 @@ class CaabApplicationExceptionTest {
 
   @Test
   public void testConstructorWithMessageAndCause() {
-    String expectedMessage = "Test Exception";
-    Exception cause = new Exception("Cause Exception");
-    CaabApplicationException exception = new CaabApplicationException(expectedMessage, cause);
+    final String expectedMessage = "Test Exception";
+    final Exception cause = new Exception("Cause Exception");
+    final CaabApplicationException exception = new CaabApplicationException(expectedMessage, cause);
 
     assertEquals(expectedMessage, exception.getMessage());
     assertEquals(cause, exception.getCause());
