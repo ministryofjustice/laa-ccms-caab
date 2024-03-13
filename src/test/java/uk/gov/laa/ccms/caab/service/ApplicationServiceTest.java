@@ -1616,13 +1616,25 @@ class ApplicationServiceTest {
     );
 
     when(caabApiClient.getProceedings(applicationId)).thenReturn(Mono.just(mockProceedings));
-    when(caabApiClient.updateProceeding(anyInt(), any(Proceeding.class), anyString()))
+    when(caabApiClient.updateProceeding(anyInt(), any(Proceeding.class), eq(user.getLoginId())))
+        .thenReturn(Mono.empty());
+    when(caabApiClient.patchApplication(
+        eq(applicationId),
+        any(ApplicationDetail.class),
+        eq(user.getLoginId())))
         .thenReturn(Mono.empty());
 
     applicationService.makeLeadProceeding(applicationId, newLeadProceedingId, user);
 
-    verify(caabApiClient).updateProceeding(eq(1), any(Proceeding.class), eq(user.getLoginId()));
-    verify(caabApiClient).updateProceeding(eq(2), any(Proceeding.class), eq(user.getLoginId()));
+    final ArgumentCaptor<Proceeding> proceedingArgumentCaptor = ArgumentCaptor.forClass(Proceeding.class);
+    verify(caabApiClient, times(2)).updateProceeding(anyInt(), proceedingArgumentCaptor.capture(), eq(user.getLoginId()));
+
+    final List<Proceeding> capturedProceedings = proceedingArgumentCaptor.getAllValues();
+
+    assertFalse(capturedProceedings.get(0).getLeadProceedingInd());
+    assertTrue(capturedProceedings.get(1).getLeadProceedingInd());
+
+    verify(caabApiClient).patchApplication(eq(applicationId), any(ApplicationDetail.class), eq(user.getLoginId()));
   }
 
   @Test

@@ -209,19 +209,21 @@ class EditProceedingsAndCostsSectionControllerTest {
 
     @Test
     void testProceedingsRemovePost() throws Exception {
+        final String applicationId = "testApplicationId";
         final Integer proceedingId = 1;
         final List<Proceeding> proceedings = Collections.singletonList(new Proceeding().id(proceedingId));
         final UserDetail userDetail = new UserDetail().userId(1).userType("testUserType").loginId("testLoginId");
 
-        doNothing().when(applicationService).deleteProceeding(anyInt(), any(UserDetail.class));
+        doNothing().when(applicationService).deleteProceeding(eq(applicationId), anyInt(), any(UserDetail.class));
 
         mockMvc.perform(post("/application/proceedings/{proceeding-id}/remove", proceedingId)
+                .sessionAttr(APPLICATION_ID, applicationId)
                 .sessionAttr(APPLICATION_PROCEEDINGS, proceedings)
                 .sessionAttr(USER_DETAILS, userDetail))
             .andExpect(status().is3xxRedirection())
             .andExpect(redirectedUrl("/application/proceedings-and-costs"));
 
-        verify(applicationService, times(1)).deleteProceeding(eq(proceedingId), eq(userDetail));
+        verify(applicationService, times(1)).deleteProceeding(eq(applicationId), eq(proceedingId), eq(userDetail));
     }
 
     @Test
