@@ -54,3 +54,43 @@
   </div>
 </div>
 
+<div th:fragment="createIndividual"
+     class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+    <input type="hidden" id="type" name="type" th:value="Individual"/>
+    <div th:replace="~{partials/forms :: dropdown('title', 'Title', ${contactTitles}, 'code', 'description', false)}"></div>
+    <div th:replace="~{partials/forms :: textInput('surname', 'Surname', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('firstName', 'First name', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('middleNames', 'Middle name(s) (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: dateOfBirth('dobDay', 'dobMonth', 'dobYear', 'Date of birth (optional)')}"></div>
+    <div th:replace="~{partials/forms :: dropdown('relationshipToCase', 'Relationship to case', ${relationshipsToCase}, 'code', 'description', false)}"></div>
+    <div th:replace="~{partials/forms :: dropdown('relationshipToClient', 'Relationship to client', ${relationshipsToClient}, 'code', 'description', false)}"></div>
+    <div th:replace="~{partials/forms :: textInput('nationalInsuranceNumber', 'National Insurance Number (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('houseNameOrNumber', 'Building name / number (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('addressLine1', 'Address line 1 (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('addressLine2', 'Address line 2 (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('city', 'City / town (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('county', 'County (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: dropdown('country', 'Country (optional)', ${countries}, 'code', 'description', false)}"></div>
+    <div th:replace="~{partials/forms :: textInput('postcode', 'Post code (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('telephoneHome', 'Telephone - home (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('telephoneWork', 'Telephone - work (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('telephoneMobile', 'Telephone - mobile (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('faxNumber', 'Fax (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: textInput('emailAddress', 'Email address (optional)', 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: radios('legalAided', 'Party is legal aided? (optional)', ${legalAidedOptions}, 'key', 'value', false)}"></div>
+    <div th:replace="~{partials/forms :: textInput('certificateNumber', 'Certificate number (optional)', 'govuk-input--width-20')}"></div>
+    <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
+      <summary class="govuk-details__summary">
+          <span class="govuk-details__summary-text">
+            Help with certificate number
+          </span>
+      </summary>
+      <div class="govuk-details__text">
+        If this individual party is in receipt of Legal Aid and you know their LAA Reference number, please enter it here.
+      </div>
+    </details>
+
+  </div>
+</div>
+

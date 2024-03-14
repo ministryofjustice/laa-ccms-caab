@@ -80,6 +80,9 @@ public class OpponentMapperTest {
     opponentFormData.setCountry("thecountry");
     opponentFormData.setCounty("thecounty");
     opponentFormData.setCurrentlyTrading(true);
+    opponentFormData.setDobDay("1");
+    opponentFormData.setDobMonth("10");
+    opponentFormData.setDobYear("2024");
     opponentFormData.setEmailAddress("email");
     opponentFormData.setFaxNumber("fax");
     opponentFormData.setHouseNameOrNumber("nameornum");

@@ -99,7 +99,6 @@ import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.Opponent;
-import uk.gov.laa.ccms.caab.model.OpponentRowDisplay;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -1726,7 +1725,7 @@ class ApplicationServiceTest {
     Opponent opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_INDIVIDUAL);
 
-    OpponentRowDisplay result = applicationService.buildOpponentRowDisplay(
+    OpponentFormData result = applicationService.buildOpponentFormData(
         opponent,
         new CommonLookupDetail(),
         new RelationshipToCaseLookupDetail(),
@@ -1739,7 +1738,7 @@ class ApplicationServiceTest {
     assertNotNull(result);
     assertEquals(opponent.getId(), result.getId());
     assertEquals(expectedPartyName, result.getPartyName());
-    assertEquals(opponent.getType(), result.getPartyType());
+    assertEquals(opponent.getType(), result.getType());
     assertEquals(opponent.getRelationshipToCase(), result.getRelationshipToCase());
     assertEquals(opponent.getRelationshipToClient(), result.getRelationshipToClient());
   }
@@ -1749,7 +1748,7 @@ class ApplicationServiceTest {
     Opponent opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_ORGANISATION);
 
-    OpponentRowDisplay result = applicationService.buildOpponentRowDisplay(
+    OpponentFormData result = applicationService.buildOpponentFormData(
         opponent,
         new CommonLookupDetail(),
         new RelationshipToCaseLookupDetail(),
@@ -1762,7 +1761,7 @@ class ApplicationServiceTest {
     assertNotNull(result);
     assertEquals(opponent.getId(), result.getId());
     assertEquals(expectedPartyName, result.getPartyName());
-    assertEquals(opponent.getType(), result.getPartyType());
+    assertEquals(opponent.getType(), result.getType());
     assertEquals(opponent.getRelationshipToCase(), result.getRelationshipToCase());
     assertEquals(opponent.getRelationshipToClient(), result.getRelationshipToClient());
   }
@@ -1786,7 +1785,7 @@ class ApplicationServiceTest {
     CommonLookupDetail relationshipsToClient = new CommonLookupDetail()
         .addContentItem(relationshipToClient);
 
-    OpponentRowDisplay result = applicationService.buildOpponentRowDisplay(
+    OpponentFormData result = applicationService.buildOpponentFormData(
         opponent,
         new CommonLookupDetail(),
         new RelationshipToCaseLookupDetail(),
@@ -1799,7 +1798,7 @@ class ApplicationServiceTest {
     assertNotNull(result);
     assertEquals(opponent.getId(), result.getId());
     assertEquals(expectedPartyName, result.getPartyName());
-    assertEquals(opponent.getType(), result.getPartyType());
+    assertEquals(opponent.getType(), result.getType());
     assertEquals(orgRelationshipToCase.getDescription(), result.getRelationshipToCase());
     assertEquals(relationshipToClient.getDescription(), result.getRelationshipToClient());
   }
@@ -1823,7 +1822,7 @@ class ApplicationServiceTest {
     CommonLookupDetail relationshipsToClient = new CommonLookupDetail()
         .addContentItem(relationshipToClient);
 
-    OpponentRowDisplay result = applicationService.buildOpponentRowDisplay(
+    OpponentFormData result = applicationService.buildOpponentFormData(
         opponent,
         new CommonLookupDetail(),
         personRelationshipsToCase,
@@ -1836,7 +1835,7 @@ class ApplicationServiceTest {
     assertNotNull(result);
     assertEquals(opponent.getId(), result.getId());
     assertEquals(expectedPartyName, result.getPartyName());
-    assertEquals(opponent.getType(), result.getPartyType());
+    assertEquals(opponent.getType(), result.getType());
     assertEquals(personRelationshipToCase.getDescription(), result.getRelationshipToCase());
     assertEquals(relationshipToClient.getDescription(), result.getRelationshipToClient());
   }
@@ -1852,11 +1851,11 @@ class ApplicationServiceTest {
     when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(new CommonLookupDetail()));
 
     when(caabApiClient.getOpponents(applicationId)).thenReturn(Mono.just(List.of(opponent)));
-    ResultsDisplay<OpponentRowDisplay> result =
+    List<OpponentFormData> result =
         applicationService.getOpponents(applicationId);
 
     assertNotNull(result);
-    assertEquals(1, result.getContent().size());
+    assertEquals(1, result.size());
 
   }
 

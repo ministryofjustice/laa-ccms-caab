@@ -113,6 +113,11 @@ public class SessionConstants {
   public static final String APPLICATION_CLIENT_NAMES = "applicationClientNames";
 
   /**
+   * Session attribute used to keep track of the opponents associated with the application.
+   */
+  public static final String APPLICATION_OPPONENTS = "opponents";
+
+  /**
    * Session attribute used to keep track of criteria when searching for an organisation.
    */
   public static final String ORGANISATION_SEARCH_CRITERIA = "organisationSearchCriteria";

@@ -135,6 +135,13 @@ public class ValidationPatternConstants {
   public static final String CHARACTER_SET_C = "^[A-Za-z\\'\\- ]*$";
 
   /**
+   * pattern to match what is known in provider-ui as 'characterSetE'.
+   * Valid characters are alphabetic, numeric, space, apostrophe and hyphen.
+   */
+  public static final String CHARACTER_SET_E = "^[A-Za-z0-9\\'\\- ]*$";
+
+
+  /**
    * pattern to match what is known in provider-ui as 'characterSetF.
    * Valid characters are A-Z a-z 0-9 & ' ( ) . * - / ! # $ % , ; ? @ [ \ ] _ ` | + = > £ :
    */

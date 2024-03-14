@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -42,7 +41,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.OpponentFormData;
 import uk.gov.laa.ccms.caab.bean.OrganisationSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.validators.opponent.OpponentOrganisationValidator;
+import uk.gov.laa.ccms.caab.bean.validators.opponent.OrganisationOpponentValidator;
 import uk.gov.laa.ccms.caab.bean.validators.opponent.OrganisationSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
@@ -75,7 +74,7 @@ class OpponentsSectionControllerTest {
     private OrganisationSearchCriteriaValidator organisationSearchCriteriaValidator;
 
     @Mock
-    private OpponentOrganisationValidator opponentOrganisationValidator;
+    private OrganisationOpponentValidator organisationOpponentValidator;
 
     @InjectMocks
     private OpponentsSectionController controller;
@@ -100,7 +99,7 @@ class OpponentsSectionControllerTest {
 
     @Test
     void opponents() throws Exception {
-        when(applicationService.getOpponents(any())).thenReturn(new ResultsDisplay<>());
+        when(applicationService.getOpponents(any())).thenReturn(new ArrayList<>());
 
         mockMvc.perform(get("/application/summary/opponents")
                 .sessionAttr("applicationId", "123"))
@@ -314,7 +313,7 @@ class OpponentsSectionControllerTest {
             Errors errors = (Errors) invocation.getArguments()[1];
             errors.rejectValue("relationshipToCase", "required.relationshipToCase", "Please complete 'Relationship to case'.");
             return null;
-        }).when(opponentOrganisationValidator).validate(any(), any());
+        }).when(organisationOpponentValidator).validate(any(), any());
 
         mockMvc.perform(post("/application/opponents/organisation/confirm")
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
@@ -380,7 +379,7 @@ class OpponentsSectionControllerTest {
             Errors errors = (Errors) invocation.getArguments()[1];
             errors.rejectValue("relationshipToCase", "required.relationshipToCase", "Please complete 'Relationship to case'.");
             return null;
-        }).when(opponentOrganisationValidator).validate(eq(opponentFormData), any());
+        }).when(organisationOpponentValidator).validate(eq(opponentFormData), any());
 
         CommonLookupDetail orgTypes = new CommonLookupDetail()
             .addContentItem(new CommonLookupValueDetail());

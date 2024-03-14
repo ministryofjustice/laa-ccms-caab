@@ -529,6 +529,52 @@ public class CaabApiClient {
   }
 
   /**
+   * Updates an opponent in the CAAB API for a given application.
+   *
+   * @param opponentId the ID of the opponent to be updated
+   * @param data the new data for the opponent
+   * @param loginId the login ID of the user performing the update
+   * @return a Mono indicating completion of the update operation
+   */
+  public Mono<Void> updateOpponent(
+      final Integer opponentId,
+      final Opponent data,
+      final String loginId) {
+    return caabApiWebClient
+        .patch()
+        .uri("/opponents/{opponent-id}",
+            opponentId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(data)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(e,
+            RESOURCE_TYPE_OPPONENTS, "id", String.valueOf(opponentId)));
+  }
+
+  /**
+   * Deletes an opponent from the CAAB API.
+   *
+   * @param opponentId the ID of the opponent to be deleted
+   * @param loginId the ID associated with the user login
+   * @return a Mono Void indicating the completion of the delete operation
+   */
+  public Mono<Void> deleteOpponent(
+      final Integer opponentId,
+      final String loginId) {
+    return caabApiWebClient
+        .delete()
+        .uri("/opponents/{opponent-id}",
+            opponentId)
+        .header("Caab-User-Login-Id", loginId)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiDeleteError(e,
+            RESOURCE_TYPE_OPPONENTS, "id", String.valueOf(opponentId)));
+  }
+
+  /**
    * Fetches the prior authorities associated with a specific application id.
    * This method communicates with the CAAB API client to fetch the prior authorities.
    *

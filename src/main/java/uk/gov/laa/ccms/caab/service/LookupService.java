@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.service;
 
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_COURTS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_ORDER_TYPE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +29,7 @@ import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProceedingDetails;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
@@ -318,6 +318,18 @@ public class LookupService {
    */
   public Mono<RelationshipToCaseLookupDetail> getPersonToCaseRelationships() {
     return ebsApiClient.getPersonToCaseRelationships(null, null);
+  }
+
+  /**
+   * Get a single Person Relationship To Case Lookup Value.
+   *
+   * @return Mono containing the relationship lookup value or null if an error occurs.
+   */
+  public Mono<RelationshipToCaseLookupValueDetail> getPersonToCaseRelationship(
+      final String code) {
+    return ebsApiClient.getPersonToCaseRelationships(code, null)
+        .mapNotNull(relationshipToCaseLookupDetail -> relationshipToCaseLookupDetail.getContent()
+            .stream().findFirst().orElse(null));
   }
 
   /**

@@ -1,15 +1,17 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_ORGANISATION;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_OPPONENTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_OPPONENT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ORGANISATION_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ORGANISATION_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -30,12 +33,12 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple4;
 import uk.gov.laa.ccms.caab.bean.OpponentFormData;
 import uk.gov.laa.ccms.caab.bean.OrganisationSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.validators.opponent.OpponentOrganisationValidator;
+import uk.gov.laa.ccms.caab.bean.validators.opponent.IndividualOpponentValidator;
+import uk.gov.laa.ccms.caab.bean.validators.opponent.OrganisationOpponentValidator;
 import uk.gov.laa.ccms.caab.bean.validators.opponent.OrganisationSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
-import uk.gov.laa.ccms.caab.model.OpponentRowDisplay;
 import uk.gov.laa.ccms.caab.model.OrganisationResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
@@ -43,6 +46,7 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.OpponentService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -52,6 +56,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @RequiredArgsConstructor
 @Slf4j
 @SessionAttributes(value = {
+    APPLICATION_OPPONENTS,
     ORGANISATION_SEARCH_CRITERIA,
     ORGANISATION_SEARCH_RESULTS,
     CURRENT_OPPONENT})
@@ -65,8 +70,9 @@ public class OpponentsSectionController {
 
   private final OrganisationSearchCriteriaValidator searchCriteriaValidator;
 
-  private final OpponentOrganisationValidator opponentOrganisationValidator;
+  private final OrganisationOpponentValidator organisationOpponentValidator;
 
+  private final IndividualOpponentValidator individualOpponentValidator;
 
   /**
    * Provides an instance of {@link OrganisationSearchCriteria} for use in the model.
@@ -84,20 +90,17 @@ public class OpponentsSectionController {
    *
    * @param applicationId The id of the application, retrieved from the session.
    * @param model The Model object to add attributes to for the view.
-   * @param session The HttpSession object to add attributes to for the session.
    * @return The name of the view to be rendered.
    */
   @GetMapping("/application/summary/opponents")
   public String opponents(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
-      final Model model,
-      final HttpSession session) {
+      final Model model) {
 
-    final ResultsDisplay<OpponentRowDisplay> opponents =
+    final List<OpponentFormData> opponents =
         applicationService.getOpponents(applicationId);
 
-    model.addAttribute("opponents", opponents);
-    session.setAttribute("opponents", opponents);
+    model.addAttribute(APPLICATION_OPPONENTS, opponents);
 
     return "application/summary/opponents-section";
   }
@@ -222,12 +225,12 @@ public class OpponentsSectionController {
 
     populateConfirmSharedOrganisationDropdowns(model);
 
-    return "application/opponents/opponents-organisation-shared-confirm";
+    return "application/opponents/opponents-organisation-shared-create";
   }
 
   /**
-   * Validates the selected opponent before displaying the 'shared organisation' screen
-   * to gather final details for the opponent.
+   * Validates the form data before adding a new shared organisation opponent to the
+   * application.
    *
    * @param opponentFormData the opponent form data.
    * @param applicationId The id of the opponents related application.
@@ -236,7 +239,7 @@ public class OpponentsSectionController {
    * @return The view name for shared organisation confirmation screen.
    */
   @PostMapping("/application/opponents/organisation/confirm")
-  public String confirmSharedOrganisation(
+  public String createSharedOrganisation(
       @ModelAttribute(CURRENT_OPPONENT) final OpponentFormData opponentFormData,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
@@ -244,11 +247,11 @@ public class OpponentsSectionController {
       Model model) {
 
     // Validate the complete opponent form data
-    opponentOrganisationValidator.validate(opponentFormData, bindingResult);
+    organisationOpponentValidator.validate(opponentFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {
       populateConfirmSharedOrganisationDropdowns(model);
-      return "application/opponents/opponents-organisation-shared-confirm";
+      return "application/opponents/opponents-organisation-shared-create";
     }
 
     // Call the service to add the opponent to the application.
@@ -293,7 +296,7 @@ public class OpponentsSectionController {
       final BindingResult bindingResult,
       final Model model) {
 
-    opponentOrganisationValidator.validate(opponentFormData, bindingResult);
+    organisationOpponentValidator.validate(opponentFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {
       populateOrganisationCreateDropdowns(model);
@@ -305,6 +308,205 @@ public class OpponentsSectionController {
     return "redirect:/application/summary/opponents";
   }
 
+  /**
+   * Displays the view to gather the form data for a new individual opponent.
+   *
+   * @param model - the model
+   * @return The view name for the individual opponent creation screen.
+   */
+  @GetMapping("/application/opponents/individual/create")
+  public String createNewIndividual(
+      final Model model) {
+
+    populateIndividualCreateDropdowns(model);
+
+    model.addAttribute(CURRENT_OPPONENT, new OpponentFormData());
+
+    return "application/opponents/opponents-individual-create";
+  }
+
+  /**
+   * Processes the form submission for creating a new organisation opponent.
+   *
+   * @param opponentFormData The form data to create the opponent.
+   * @param bindingResult  Validation result of the form.
+   * @param model          The model used to pass data to the view.
+   * @return Either redirects to the opponent list or reloads the form with validation errors.
+   */
+  @PostMapping("/application/opponents/individual/create")
+  public String createNewIndividual(
+      @ModelAttribute(CURRENT_OPPONENT) final OpponentFormData opponentFormData,
+      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final BindingResult bindingResult,
+      final Model model) {
+
+    // If the user has selected a relationship to case, we need to lookup this
+    // record again to determine if date of birth is mandatory.
+    if (StringUtils.hasText(opponentFormData.getRelationshipToCase())) {
+      RelationshipToCaseLookupValueDetail relationshipToCase =
+          Optional.ofNullable(lookupService.getPersonToCaseRelationship(
+              opponentFormData.getRelationshipToCase()).block())
+              .orElseThrow(() -> new CaabApplicationException(
+                  String.format("Failed to retrieve relationship to case with code: %s",
+                      opponentFormData.getRelationshipToCase())));
+
+      opponentFormData.setDateOfBirthMandatory(relationshipToCase.getDateOfBirthMandatory());
+    }
+
+    individualOpponentValidator.validate(opponentFormData, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      populateIndividualCreateDropdowns(model);
+      return "application/opponents/opponents-individual-create";
+    }
+
+    applicationService.addOpponent(applicationId, opponentFormData, user);
+
+    return "redirect:/application/summary/opponents";
+  }
+
+
+
+  /**
+   * Displays the view to edit the form data for an opponent.
+   *
+   * @param model - the model
+   * @return The view name for the appropriate opponent edit screen.
+   */
+  @GetMapping("/application/opponents/{opponent-id}/edit")
+  public String editOpponent(
+      @PathVariable("opponent-id") final Integer opponentId,
+      @SessionAttribute(APPLICATION_OPPONENTS) final List<OpponentFormData> applicationOpponents,
+      final Model model) {
+
+    // First check that the opponentId refers to an Opponent in the current application.
+    OpponentFormData currentOpponent =
+        applicationOpponents.stream()
+        .filter(opponentFormData -> opponentFormData.getId().equals(opponentId))
+        .findFirst()
+        .orElseThrow(() -> new CaabApplicationException(
+            String.format("Invalid Opponent Id: %s", opponentId)));
+
+    model.addAttribute(CURRENT_OPPONENT, currentOpponent);
+
+    if (OPPONENT_TYPE_ORGANISATION.equals(currentOpponent.getType())) {
+      if (Boolean.TRUE.equals(currentOpponent.getShared())) {
+        populateConfirmSharedOrganisationDropdowns(model);
+
+        return "application/opponents/opponents-organisation-shared-edit";
+      } else {
+        populateOrganisationCreateDropdowns(model);
+
+        return "application/opponents/opponents-organisation-edit";
+      }
+    } else {
+      populateIndividualCreateDropdowns(model);
+
+      return "application/opponents/opponents-individual-edit";
+    }
+  }
+
+  /**
+   * Processes the form submission for editing an opponent.
+   *
+   * @param currentOpponent The form data to edit the opponent.
+   * @param bindingResult  Validation result of the form.
+   * @param model          The model used to pass data to the view.
+   * @return Either redirects to the opponent list or reloads the form with validation errors.
+   */
+  @PostMapping("/application/opponents/{opponent-id}/edit")
+  public String editOpponent(
+      @PathVariable("opponent-id") final Integer opponentId,
+      @ModelAttribute(CURRENT_OPPONENT) final OpponentFormData currentOpponent,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final BindingResult bindingResult,
+      final Model model) {
+
+    if (OPPONENT_TYPE_ORGANISATION.equals(currentOpponent.getType())) {
+      // Validate organisation opponent
+      organisationOpponentValidator.validate(currentOpponent, bindingResult);
+
+      if (bindingResult.hasErrors()) {
+        if (Boolean.TRUE.equals(currentOpponent.getShared())) {
+          populateConfirmSharedOrganisationDropdowns(model);
+          return "application/opponents/opponents-organisation-shared-edit";
+        } else {
+          populateOrganisationCreateDropdowns(model);
+          return "application/opponents/opponents-organisation-edit";
+        }
+      }
+    } else {
+      // Validate individual opponent.
+      individualOpponentValidator.validate(currentOpponent, bindingResult);
+
+      if (bindingResult.hasErrors()) {
+        populateIndividualCreateDropdowns(model);
+        return "application/opponents/opponents-individual-edit";
+      }
+    }
+
+    applicationService.updateOpponent(opponentId, currentOpponent, user);
+
+    return "redirect:/application/summary/opponents";
+  }
+
+  /**
+   * Displays the confirmation view for removing an Opponent.
+   *
+   * @param model - the model
+   * @return The view name for the confirmation screen
+   */
+  @GetMapping("/application/opponents/{opponent-id}/remove")
+  public String removeOpponent(
+      @PathVariable("opponent-id") final Integer opponentId,
+      @SessionAttribute(APPLICATION_OPPONENTS) final List<OpponentFormData> applicationOpponents,
+      final Model model) {
+
+    // First check that the opponentId refers to an Opponent in the current application, and that
+    // it is deletable.
+    boolean validOpponent =
+        applicationOpponents.stream()
+            .anyMatch(opponentFormData ->
+                opponentFormData.getId().equals(opponentId)
+                && Boolean.TRUE.equals(opponentFormData.getDeletable()));
+
+    if (!validOpponent) {
+      throw new CaabApplicationException(String.format("Invalid Opponent Id: %s", opponentId));
+    }
+
+    model.addAttribute("opponentId", opponentId);
+
+    return "application/opponents/opponents-remove";
+  }
+
+  /**
+   * Removes an opponent from an application.
+   *
+   * @param model - the model
+   * @return The view name for the appropriate opponent edit screen.
+   */
+  @PostMapping("/application/opponents/{opponent-id}/remove")
+  public String removeOpponentPost(
+      @PathVariable("opponent-id") final Integer opponentId,
+      @SessionAttribute(APPLICATION_OPPONENTS) final List<OpponentFormData> applicationOpponents,
+      @SessionAttribute(USER_DETAILS) final UserDetail user) {
+
+    // First check that the opponentId refers to an Opponent in the current application, and that
+    // it is deletable.
+    boolean validOpponentId = applicationOpponents.stream()
+            .anyMatch(opponentFormData ->
+                opponentFormData.getId().equals(opponentId)
+                    && Boolean.TRUE.equals(opponentFormData.getDeletable()));
+
+    if (!validOpponentId) {
+      throw new CaabApplicationException(String.format("Invalid Opponent Id: %s", opponentId));
+    }
+
+    applicationService.deleteOpponent(opponentId, user);
+
+    return "redirect:/application/summary/opponents";
+  }
 
 
   private void populateOrganisationSearchDropdowns(final Model model) {
@@ -346,5 +548,28 @@ public class OpponentsSectionController {
         Pair.of(Boolean.FALSE, "No"),
         Pair.of(Boolean.TRUE, "Yes"));
     model.addAttribute("currentlyTradingOptions", currentlyTradingOptions);
+  }
+
+  private void populateIndividualCreateDropdowns(final Model model) {
+    Tuple4<CommonLookupDetail,
+        RelationshipToCaseLookupDetail,
+        CommonLookupDetail,
+        CommonLookupDetail> combinedLookup =
+        Optional.ofNullable(Mono.zip(
+                lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE),
+                lookupService.getPersonToCaseRelationships(),
+                lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT),
+                lookupService.getCountries()).block())
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
+
+    model.addAttribute("contactTitles", combinedLookup.getT1().getContent());
+    model.addAttribute("relationshipsToCase", combinedLookup.getT2().getContent());
+    model.addAttribute("relationshipsToClient", combinedLookup.getT3().getContent());
+    model.addAttribute("countries", combinedLookup.getT4().getContent());
+
+    List<Pair<Boolean, String>> legalAidedOptions = List.of(
+        Pair.of(Boolean.FALSE, "No"),
+        Pair.of(Boolean.TRUE, "Yes"));
+    model.addAttribute("legalAidedOptions", legalAidedOptions);
   }
 }

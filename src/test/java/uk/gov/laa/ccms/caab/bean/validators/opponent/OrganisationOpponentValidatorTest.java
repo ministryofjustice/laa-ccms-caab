@@ -19,10 +19,10 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.OpponentFormData;
 
 @ExtendWith(SpringExtension.class)
-class OpponentOrganisationValidatorTest {
+class OrganisationOpponentValidatorTest {
 
   @InjectMocks
-  private OpponentOrganisationValidator validator;
+  private OrganisationOpponentValidator validator;
 
   private OpponentFormData opponentFormData;
 

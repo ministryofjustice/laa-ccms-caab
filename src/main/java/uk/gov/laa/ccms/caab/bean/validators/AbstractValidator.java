@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.bean.validators;
 
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CURRENCY_PATTERN;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.FIRST_CHARACTER_MUST_BE_ALPHA;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.INTERNATIONAL_POSTCODE;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NUMERIC_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.TELEPHONE_PATTERN;
@@ -34,6 +35,9 @@ public abstract class AbstractValidator implements Validator {
       + " Please amend your entry for the %s field.";
   protected static String GENERIC_INCORRECT_FORMAT = "Your input for '%s' is in an incorrect "
       + "format. Please amend your entry.";
+
+  protected static String GENERIC_FIRST_CHAR_ALPHA = "Your input for %s is invalid. "
+      + "The first character must be a letter. Please amend your entry.";
 
   protected static String GENERIC_NUMERIC_LIMIT_ERROR = "'%s' must be less than %s";
 
@@ -104,6 +108,16 @@ public abstract class AbstractValidator implements Validator {
     if (fieldValue == null || (!fieldValue.matches(format) && !fieldValue.isEmpty())) {
       errors.rejectValue(field, "invalid.format",
           String.format(GENERIC_INCORRECT_FORMAT, displayValue));
+    }
+  }
+
+  protected void validateFirstCharAlpha(
+      final String field, final String fieldValue, String displayValue, Errors errors) {
+
+    if (fieldValue == null
+        || (!fieldValue.matches(FIRST_CHARACTER_MUST_BE_ALPHA) && !fieldValue.isEmpty())) {
+      errors.rejectValue(field, "first.char.alpha",
+          String.format(GENERIC_FIRST_CHAR_ALPHA, displayValue));
     }
   }
 

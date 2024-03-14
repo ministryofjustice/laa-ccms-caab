@@ -10,7 +10,7 @@ import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 /**
  * Mapper class to convert Opponents between various formats.
  */
-@Mapper(componentModel = "spring", config = IgnoreUnmappedMapperConfig.class)
+@Mapper(componentModel = "spring")
 public interface OpponentMapper {
 
   @Mapping(target = "type", constant = "Organisation")
@@ -36,11 +36,33 @@ public interface OpponentMapper {
   OpponentFormData toOpponentFormData(OrganisationDetail organisation,
       CommonLookupValueDetail orgTypeLookup);
 
+  @Mapping(target = ".", source = "opponent")
+  @Mapping(target = "partyName", source = "partyName")
+  @Mapping(target = "organisationType",
+      source = "opponent.organisationType.id")
+  @Mapping(target = "organisationTypeDisplayValue",
+      source = "opponent.organisationType.displayValue")
+  @Mapping(target = "relationshipToCaseDisplayValue",
+      source = "relationshipToCaseDisplayValue")
+  @Mapping(target = "relationshipToClientDisplayValue",
+      source = "relationshipToClientDisplayValue")
+  @Mapping(target = ".", source = "opponent.address")
+  @Mapping(target = "shared", source = "opponent.sharedInd")
+  @Mapping(target = "deletable", source = "opponent.deleteInd")
+  @Mapping(target = "editable", source = "editable")
+  OpponentFormData toOpponentFormData(
+      final Opponent opponent,
+      final String partyName,
+      final String relationshipToCaseDisplayValue,
+      final String relationshipToClientDisplayValue,
+      final boolean editable);
+
   @Mapping(target = "ebsId", source = "partyId")
   @Mapping(target = "organisationType.id", source = "organisationType")
   @Mapping(target = "organisationType.displayValue", source = "organisationTypeDisplayValue")
   @Mapping(target = "address", source = ".")
   @Mapping(target = "sharedInd", source = "shared")
+  @Mapping(target = "deleteInd", source = "deletable")
   @Mapping(target = "confirmed", constant = "true")
   Opponent toOpponent(OpponentFormData opponentFormData);
 }

@@ -174,3 +174,26 @@
     </div>
   </fieldset>
 </div>
+
+<div th:fragment="dateOfBirth(dobDayId, dobMonthId, dobYearId, formLabel)"
+     class="govuk-form-group" th:classappend="${#fields.hasErrors(dobDayId) || #fields.hasErrors(dobMonthId) || #fields.hasErrors(dobYearId)} ? 'govuk-form-group--error' : ''">
+  <fieldset class="govuk-fieldset" role="group" aria-describedby="dob-hint dob-error">
+    <legend class="govuk-fieldset__legend" th:text="${formLabel}">
+    </legend>
+    <div id="dob-hint" class="govuk-hint">
+      For example, 27 3 2007
+    </div>
+    <p id="dob-error" class="govuk-error-message">
+      <span th:each="error : ${#fields.detailedErrors()}">
+          <span th:inline="text" th:if="${error.fieldName == dobDayId || error.fieldName == dobMonthId || error.fieldName == dobYearId}">
+              <span th:utext="${error.message + '<br>'}"></span>
+          </span>
+      </span>
+    </p>
+    <div class="govuk-date-input" id="dob">
+      <div th:replace="partials/forms::numericInput(${dobDayId}, 'Day', '2')"></div>
+      <div th:replace="partials/forms::numericInput(${dobMonthId}, 'Month', '2')"></div>
+      <div th:replace="partials/forms::numericInput(${dobYearId}, 'Year', '4')"></div>
+    </div>
+  </fieldset>
+</div>

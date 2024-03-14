@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.bean;
 
+import java.time.LocalDate;
 import lombok.Data;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 /**
  * Represents the opponent details stored during opponent creation/edit flows.
@@ -8,6 +10,10 @@ import lombok.Data;
 @Data
 public class OpponentFormData {
 
+  /**
+   * The id of the opponent.
+   */
+  private Integer id;
 
   /**
    * The partyId of the opponent.
@@ -15,9 +21,55 @@ public class OpponentFormData {
   private String partyId;
 
   /**
-   * The type of Opponent.
+   * The party type of the Opponent.
    */
   private String type;
+
+  /**
+   * The party name, which depends on the type of Opponent (Organisation or Individual).
+   */
+  private String partyName;
+
+  /**
+   * The title of an individual opponent.
+   */
+  private String title;
+
+  /**
+   * The first name of an individual opponent.
+   */
+  private String firstName;
+
+  /**
+   * THe middle name(s) of an individual opponent.
+   */
+  private String middleNames;
+
+  /**
+   * The surname of an individual opponent.
+   */
+  private String surname;
+
+  /**
+   * The day of birth of an individual opponent.
+   */
+  private String dobDay;
+
+  /**
+   * The month of birth of an individual opponent.
+   */
+  private String dobMonth;
+
+  /**
+   * The year of birth of an individual opponent.
+   */
+  private String dobYear;
+
+
+  /**
+   * The national insurance number of an individual opponent.
+   */
+  private String nationalInsuranceNumber;
 
   /**
    * The name of the organisation Opponent (for opponents of type ORGANISATION only).
@@ -45,9 +97,19 @@ public class OpponentFormData {
   private String relationshipToCase;
 
   /**
+   * The display value for the opponent's relationship to the case.
+   */
+  private String relationshipToCaseDisplayValue;
+
+  /**
    * The opponent's relationship to the client.
    */
   private String relationshipToClient;
+
+  /**
+   * The display value for the opponent's relationship to the client.
+   */
+  private String relationshipToClientDisplayValue;
 
   /**
    * The contact name and role.
@@ -120,9 +182,62 @@ public class OpponentFormData {
   private String otherInformation;
 
   /**
+   * Flag to indicate that an individual is receiving legal aid.
+   */
+  private Boolean legalAided;
+
+  /**
+   * The opponent's legal aid certificate number.
+   */
+  private String certificateNumber;
+
+  /**
    * Flag to indicate this is a shared opponent.
    */
-  private boolean shared;
+  private Boolean shared;
 
+  /**
+   * Flag to indicate that this opponent can be modified.
+   */
+  private Boolean editable;
+
+  /**
+   * Flag to indicate that this opponent can be deleted.
+   */
+  private Boolean deletable;
+
+  /**
+   * The app mode flag.
+   */
+  private Boolean appMode;
+
+  /**
+   * The amendment flag.
+   */
+  private Boolean amendment;
+
+  /**
+   * Flag to indicate that date of birth is mandatory for this opponent.
+   */
+  private boolean dateOfBirthMandatory;
+
+  /**
+   * Retrieves the formatted date of birth based on the day, month, and year values.
+   *
+   * @return The formatted date of birth (yyyy-MM-dd), or null if the date components are not valid
+   *         integers.
+   */
+  public LocalDate getDateOfBirth() {
+    try {
+      int year = Integer.parseInt(dobYear);
+      int month = Integer.parseInt(dobMonth);
+      int day = Integer.parseInt(dobDay);
+
+      return LocalDate.of(year, month, day);
+    } catch (NumberFormatException e) {
+      // Handle the exception if any of the dobYear, dobMonth, or dobDay is not a valid integer
+      throw new CaabApplicationException("Unable to format date of birth", e);
+    }
+  }
 
 }
