@@ -223,6 +223,7 @@ public class EditProceedingsAndCostsSectionController {
   @PostMapping("/application/proceedings/{proceeding-id}/remove")
   public String proceedingsRemovePost(
       @PathVariable("proceeding-id") final Integer proceedingId,
+      @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(APPLICATION_PROCEEDINGS) final List<Proceeding> proceedings,
       @SessionAttribute(USER_DETAILS) final UserDetail user) {
 
@@ -230,7 +231,7 @@ public class EditProceedingsAndCostsSectionController {
         .anyMatch(proceeding -> proceeding.getId().equals(proceedingId));
 
     if (proceedingExists) {
-      applicationService.deleteProceeding(proceedingId, user);
+      applicationService.deleteProceeding(applicationId, proceedingId, user);
     } else {
       throw new CaabApplicationException(
           "No proceeding found in current application with id: " + proceedingId);
@@ -804,7 +805,6 @@ public class EditProceedingsAndCostsSectionController {
 
       if (proceedings == null || proceedings.isEmpty()) {
         proceeding.setLeadProceedingInd(true);
-        application.setLeadProceedingChanged(true);
       }
 
       proceeding.setEdited(Boolean.TRUE);
@@ -834,9 +834,6 @@ public class EditProceedingsAndCostsSectionController {
 
       applicationService.updateProceeding(proceeding, user);
     }
-
-    //todo - need to save the application updates
-    // requires CCLS-2055
 
     return "redirect:/application/proceedings-and-costs";
   }

@@ -140,6 +140,31 @@ public class CaabApiClient {
             .handleApiRetrieveError(e, RESOURCE_TYPE_APPLICATION, queryParams));
   }
 
+
+  /**
+   * Patches an application with the specified details.
+   *
+   * @param id The ID associated with the application to be patched.
+   * @param patch The application detail changes to be applied.
+   * @param loginId the ID associated with the user login
+   * @return A Mono indicating the completion of the patch operation.
+   */
+  public Mono<Void> patchApplication(
+      final String id,
+      final ApplicationDetail patch,
+      final String loginId) {
+    return caabApiWebClient
+        .patch()
+        .uri("/applications/{id}", id)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(patch)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler
+            .handleApiUpdateError(e, RESOURCE_TYPE_APPLICATION, "id", id));
+  }
+
   /**
    * Patches an application using the CAAB API.
    *

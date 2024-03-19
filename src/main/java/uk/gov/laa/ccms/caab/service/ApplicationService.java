@@ -42,6 +42,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
 import reactor.util.function.Tuple4;
 import reactor.util.function.Tuple5;
@@ -231,6 +232,22 @@ public class ApplicationService {
     searchResults.sort(Comparator.comparing(BaseApplication::getCaseReferenceNumber));
 
     return searchResults;
+  }
+
+
+  /**
+   * Applies a patch to an existing application.
+   *
+   * @param id The unique identifier of the application to be patched.
+   * @param patch The details of the application patch.
+   * @param user The user details, including the login ID.
+   * @return A Mono indicating the completion of the patch operation.
+   */
+  public Mono<Void> patchApplication(
+      final String id,
+      final ApplicationDetail patch,
+      final UserDetail user) {
+    return caabApiClient.patchApplication(id, patch, user.getLoginId());
   }
 
   /**
@@ -798,15 +815,18 @@ public class ApplicationService {
                 + newLeadProceedingId));
 
     newLeadProceeding.setLeadProceedingInd(true);
-    caabApiClient.updateProceeding(
+    final Mono<Void> updateProceedingMono = caabApiClient.updateProceeding(
         newLeadProceedingId,
         newLeadProceeding,
-        user.getLoginId()).block();
+        user.getLoginId());
 
-    //TODO application opa means and merits reset
-    //Requires a new endpoint to be added to the CAAB API
-    //caabApiClient.updateApplication();
-    //see application.setMeritsReassessmentReqdInd(true); in pui
+    //patch lead proceeding changed
+    final ApplicationDetail patch = new ApplicationDetail()
+        .leadProceedingChanged(true)
+        .meritsReassessmentRequired(true);
+
+    final Mono<Void> patchApplicationMono = patchApplication(applicationId, patch, user);
+    Mono.zip(updateProceedingMono, patchApplicationMono).block();
   }
 
   /**
@@ -1634,6 +1654,12 @@ public class ApplicationService {
       final Proceeding proceeding,
       final UserDetail user) {
     caabApiClient.addProceeding(applicationId, proceeding, user.getLoginId()).block();
+
+    //amend application if the proceeding is a lead proceeding
+    if (Boolean.TRUE.equals(proceeding.getLeadProceedingInd())) {
+      final ApplicationDetail patch = new ApplicationDetail().leadProceedingChanged(true);
+      patchApplication(applicationId, patch, user).block();
+    }
   }
 
   /**
@@ -1655,9 +1681,19 @@ public class ApplicationService {
    * @param user the user details initiating the deletion
    */
   public void deleteProceeding(
+      final String applicationId,
       final Integer proceedingId,
       final UserDetail user) {
-    caabApiClient.deleteProceeding(proceedingId, user.getLoginId()).block();
+
+    final Mono<Void> deleteProceedingMono = caabApiClient.deleteProceeding(
+        proceedingId, user.getLoginId());
+
+    //when a proceeding is deleted, merits reassessment required flag should be set to true
+    final ApplicationDetail patch = new ApplicationDetail()
+        .meritsReassessmentRequired(true);
+
+    final Mono<Void> patchApplicationMono = patchApplication(applicationId, patch, user);
+    Mono.zip(deleteProceedingMono, patchApplicationMono).block();
   }
 
   /**
