@@ -234,6 +234,15 @@ public class ApplicationService {
     return searchResults;
   }
 
+
+  /**
+   * Applies a patch to an existing application.
+   *
+   * @param id The unique identifier of the application to be patched.
+   * @param patch The details of the application patch.
+   * @param user The user details, including the login ID.
+   * @return A Mono indicating the completion of the patch operation.
+   */
   public Mono<Void> patchApplication(
       final String id,
       final ApplicationDetail patch,
