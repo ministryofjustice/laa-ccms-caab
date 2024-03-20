@@ -260,7 +260,7 @@ class OpponentsSectionControllerTest {
             .andExpect(model().attribute(CURRENT_OPPONENT, opponentFormData))
             .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
             .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
-            .andExpect(view().name("application/opponents/opponents-organisation-shared-confirm"));
+            .andExpect(view().name("application/opponents/opponents-organisation-shared-create"));
     }
 
     @Test
@@ -322,7 +322,7 @@ class OpponentsSectionControllerTest {
             .andDo(print())
             .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
             .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
-            .andExpect(view().name("application/opponents/opponents-organisation-shared-confirm"));
+            .andExpect(view().name("application/opponents/opponents-organisation-shared-create"));
 
         verifyNoInteractions(applicationService);
     }

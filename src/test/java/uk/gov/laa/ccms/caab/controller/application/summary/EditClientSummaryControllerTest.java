@@ -22,6 +22,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -122,20 +123,20 @@ class EditClientSummaryControllerTest {
   void testGetClientDetailsSummary_withFormDataInSession() throws Exception {
 
     when(lookupService.getCommonValue(eq(COMMON_VALUE_CONTACT_TITLE),  any())).thenReturn(
-        Mono.just(titleLookupValueDetail));
+        Mono.just(Optional.of(titleLookupValueDetail)));
     when(lookupService.getCountry(any())).thenReturn(
-        Mono.just(countryLookupValueDetail));
+        Mono.just(Optional.of(countryLookupValueDetail)));
     when(lookupService.getCommonValue(
         eq(COMMON_VALUE_GENDER), any())).thenReturn(
-        Mono.just(genderLookupValueDetail));
+        Mono.just(Optional.of(genderLookupValueDetail)));
     when(lookupService.getCommonValue(eq(COMMON_VALUE_MARITAL_STATUS), any())).thenReturn(
-        Mono.just(maritalStatusLookupValueDetail));
+        Mono.just(Optional.of(maritalStatusLookupValueDetail)));
     when(lookupService.getCommonValue(eq(COMMON_VALUE_ETHNIC_ORIGIN),any())).thenReturn(
-        Mono.just(ethnicityLookupValueDetail));
+        Mono.just(Optional.of(ethnicityLookupValueDetail)));
     when(lookupService.getCommonValue(eq(COMMON_VALUE_DISABILITY),any())).thenReturn(
-        Mono.just(disabilityLookupValueDetail));
+        Mono.just(Optional.of(disabilityLookupValueDetail)));
     when(lookupService.getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_METHOD), any())).thenReturn(
-        Mono.just(correspondenceMethodLookupValueDetail));
+        Mono.just(Optional.of(correspondenceMethodLookupValueDetail)));
 
 
     mockMvc.perform(get("/application/summary/client/details/summary")
@@ -163,20 +164,20 @@ class EditClientSummaryControllerTest {
   void testGetClientDetailsSummary_withoutFormDataInSession() throws Exception {
 
     when(lookupService.getCommonValue(eq(COMMON_VALUE_CONTACT_TITLE),  any())).thenReturn(
-        Mono.just(titleLookupValueDetail));
+        Mono.just(Optional.of(titleLookupValueDetail)));
     when(lookupService.getCountry(any())).thenReturn(
-        Mono.just(countryLookupValueDetail));
+        Mono.just(Optional.of(countryLookupValueDetail)));
     when(lookupService.getCommonValue(
         eq(COMMON_VALUE_GENDER), any())).thenReturn(
-        Mono.just(genderLookupValueDetail));
+        Mono.just(Optional.of(genderLookupValueDetail)));
     when(lookupService.getCommonValue(eq(COMMON_VALUE_MARITAL_STATUS), any())).thenReturn(
-        Mono.just(maritalStatusLookupValueDetail));
+        Mono.just(Optional.of(maritalStatusLookupValueDetail)));
     when(lookupService.getCommonValue(eq(COMMON_VALUE_ETHNIC_ORIGIN),any())).thenReturn(
-        Mono.just(ethnicityLookupValueDetail));
+        Mono.just(Optional.of(ethnicityLookupValueDetail)));
     when(lookupService.getCommonValue(eq(COMMON_VALUE_DISABILITY),any())).thenReturn(
-        Mono.just(disabilityLookupValueDetail));
+        Mono.just(Optional.of(disabilityLookupValueDetail)));
     when(lookupService.getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_METHOD), any())).thenReturn(
-        Mono.just(correspondenceMethodLookupValueDetail));
+        Mono.just(Optional.of(correspondenceMethodLookupValueDetail)));
 
     when(clientService.getClient(any(),any(),any())).thenReturn(
         Mono.just(new ClientDetail()));

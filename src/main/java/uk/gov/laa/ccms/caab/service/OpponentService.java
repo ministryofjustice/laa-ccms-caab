@@ -104,8 +104,12 @@ public class OpponentService {
 
     // Lookup the display value for the organisation type.
     CommonLookupValueDetail orgType =
-        Optional.ofNullable(lookupService.getCommonValue(
-            COMMON_VALUE_ORGANISATION_TYPES, organisation.getType()).block())
+        lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES, organisation.getType())
+            .map(commonLookupValueDetail -> commonLookupValueDetail
+                .orElse(new CommonLookupValueDetail()
+                    .code(organisation.getType())
+                    .description(organisation.getType())))
+            .blockOptional()
             .orElseThrow(
                 () -> new CaabApplicationException("Failed to retrieve organisation type lookup"));
 

@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.service;
 
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -43,9 +44,10 @@ public class LookupServiceTest {
 
     when(ebsApiClient.getCountries()).thenReturn(Mono.just(commonValues));
 
-    final Mono<CommonLookupValueDetail> commonLookupDetailMono = lookupService.getCountry("GBR");
+    final Mono<Optional<CommonLookupValueDetail>> commonLookupDetailMono =
+        lookupService.getCountry("GBR");
     StepVerifier.create(commonLookupDetailMono)
-        .expectNextMatches(result -> "GBR".equals(result.getCode()))
+        .expectNextMatches(result -> "GBR".equals(result.get().getCode()))
         .verifyComplete();
   }
 
@@ -78,10 +80,10 @@ public class LookupServiceTest {
         null))
         .thenReturn(Mono.just(commonValues));
 
-    final Mono<CategoryOfLawLookupValueDetail> commonLookupDetailMono =
+    final Mono<Optional<CategoryOfLawLookupValueDetail>> commonLookupDetailMono =
         lookupService.getCategoryOfLaw(commonValue.getCode());
     StepVerifier.create(commonLookupDetailMono)
-        .expectNextMatches(result -> result == commonValue)
+        .expectNextMatches(result -> result.get() == commonValue)
         .verifyComplete();
   }
 

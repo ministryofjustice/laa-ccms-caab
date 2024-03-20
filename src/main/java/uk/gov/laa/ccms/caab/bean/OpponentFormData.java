@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.bean;
 
 import java.time.LocalDate;
 import lombok.Data;
+import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 /**
@@ -228,16 +229,23 @@ public class OpponentFormData {
    *         integers.
    */
   public LocalDate getDateOfBirth() {
-    try {
-      int year = Integer.parseInt(dobYear);
-      int month = Integer.parseInt(dobMonth);
-      int day = Integer.parseInt(dobDay);
+    LocalDate dateOfBirth = null;
 
-      return LocalDate.of(year, month, day);
-    } catch (NumberFormatException e) {
-      // Handle the exception if any of the dobYear, dobMonth, or dobDay is not a valid integer
-      throw new CaabApplicationException("Unable to format date of birth", e);
+    if (StringUtils.hasText(dobYear)
+        && StringUtils.hasText(dobMonth)
+        && StringUtils.hasText(dobDay)) {
+      try {
+        int year = Integer.parseInt(dobYear);
+        int month = Integer.parseInt(dobMonth);
+        int day = Integer.parseInt(dobDay);
+
+        dateOfBirth = LocalDate.of(year, month, day);
+      } catch (NumberFormatException e) {
+        // Handle the exception if any of the dobYear, dobMonth, or dobDay is not a valid integer
+        throw new CaabApplicationException("Unable to format date of birth", e);
+      }
     }
-  }
 
+    return dateOfBirth;
+  }
 }

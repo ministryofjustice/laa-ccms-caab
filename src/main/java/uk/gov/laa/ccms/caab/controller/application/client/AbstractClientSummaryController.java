@@ -9,6 +9,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_G
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
@@ -66,7 +67,7 @@ public abstract class AbstractClientSummaryController {
   protected void populateSummaryListLookups(ClientFlowFormData clientFlowFormData, Model model) {
 
     // Create a list of Mono calls and their respective attribute keys
-    List<Pair<String, Mono<CommonLookupValueDetail>>> lookups = List.of(
+    List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups = List.of(
         Pair.of("contactTitle",
             lookupService.getCommonValue(
                 COMMON_VALUE_CONTACT_TITLE,
@@ -96,16 +97,16 @@ public abstract class AbstractClientSummaryController {
             StringUtils.hasText(clientFlowFormData.getAddressDetails().getCountry())
                 ? lookupService.getCountry(
                 clientFlowFormData.getAddressDetails().getCountry())
-                : Mono.just(new CommonLookupValueDetail())),
+                : Mono.just(Optional.of(new CommonLookupValueDetail()))),
         Pair.of("correspondenceLanguage",
             StringUtils.hasText(clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
                 ? lookupService.getCommonValue(COMMON_VALUE_CORRESPONDENCE_LANGUAGE,
                 clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
-                : Mono.just(new CommonLookupValueDetail()))
+                : Mono.just(Optional.of(new CommonLookupValueDetail())))
     );
 
     // Fetch all Monos asynchronously
-    Mono<List<CommonLookupValueDetail>> allMonos = Flux.fromIterable(lookups)
+    Mono<List<Optional<CommonLookupValueDetail>>> allMonos = Flux.fromIterable(lookups)
         .flatMap(pair -> pair.getRight().map(value -> Pair.of(pair.getLeft(), value)))
         .collectList()
         .doOnNext(list -> list.forEach(pair -> model.addAttribute(pair.getLeft(), pair.getRight())))

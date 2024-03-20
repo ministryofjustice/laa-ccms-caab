@@ -195,6 +195,8 @@ public class OpponentsSectionController {
    *
    * @param organisationId The id of the selected organisation.
    * @param searchResults Search results containing organisations.
+   * @param user The user details.
+   * @param model The model.
    * @return The view name for shared organisation confirmation screen.
    */
   @GetMapping("/application/opponents/organisation/{id}/select")
@@ -234,6 +236,7 @@ public class OpponentsSectionController {
    *
    * @param opponentFormData the opponent form data.
    * @param applicationId The id of the opponents related application.
+   * @param user The user details.
    * @param bindingResult - the binding result for validation.
    * @param model - the model.
    * @return The view name for shared organisation confirmation screen.
@@ -284,6 +287,8 @@ public class OpponentsSectionController {
    * Processes the form submission for creating a new organisation opponent.
    *
    * @param opponentFormData The form data to create the organisation.
+   * @param applicationId The application id.
+   * @param user The user details.
    * @param bindingResult  Validation result of the form.
    * @param model          The model used to pass data to the view.
    * @return Either redirects to the opponent list or reloads the form with validation errors.
@@ -329,6 +334,8 @@ public class OpponentsSectionController {
    * Processes the form submission for creating a new organisation opponent.
    *
    * @param opponentFormData The form data to create the opponent.
+   * @param applicationId The application id.
+   * @param user The user details.
    * @param bindingResult  Validation result of the form.
    * @param model          The model used to pass data to the view.
    * @return Either redirects to the opponent list or reloads the form with validation errors.
@@ -345,8 +352,13 @@ public class OpponentsSectionController {
     // record again to determine if date of birth is mandatory.
     if (StringUtils.hasText(opponentFormData.getRelationshipToCase())) {
       RelationshipToCaseLookupValueDetail relationshipToCase =
-          Optional.ofNullable(lookupService.getPersonToCaseRelationship(
-              opponentFormData.getRelationshipToCase()).block())
+          lookupService.getPersonToCaseRelationship(
+              opponentFormData.getRelationshipToCase())
+              .map(relationshipToCaseLookupValueDetail -> relationshipToCaseLookupValueDetail
+                  .orElse(new RelationshipToCaseLookupValueDetail()
+                      .code(opponentFormData.getRelationshipToCase())
+                      .description(opponentFormData.getRelationshipToCase())))
+              .blockOptional()
               .orElseThrow(() -> new CaabApplicationException(
                   String.format("Failed to retrieve relationship to case with code: %s",
                       opponentFormData.getRelationshipToCase())));
@@ -371,6 +383,8 @@ public class OpponentsSectionController {
   /**
    * Displays the view to edit the form data for an opponent.
    *
+   * @param opponentId - the opponent id.
+   * @param applicationOpponents - the list of opponents currently attached to the application.
    * @param model - the model
    * @return The view name for the appropriate opponent edit screen.
    */
@@ -410,7 +424,9 @@ public class OpponentsSectionController {
   /**
    * Processes the form submission for editing an opponent.
    *
+   * @param opponentId      The opponent id.
    * @param currentOpponent The form data to edit the opponent.
+   * @param user           The user details.
    * @param bindingResult  Validation result of the form.
    * @param model          The model used to pass data to the view.
    * @return Either redirects to the opponent list or reloads the form with validation errors.
@@ -454,8 +470,10 @@ public class OpponentsSectionController {
   /**
    * Displays the confirmation view for removing an Opponent.
    *
-   * @param model - the model
-   * @return The view name for the confirmation screen
+   * @param opponentId - the opponent id.
+   * @param applicationOpponents - the list of opponents currently attached to the application.
+   * @param model - the model.
+   * @return The view name for the remove confirmation screen
    */
   @GetMapping("/application/opponents/{opponent-id}/remove")
   public String removeOpponent(
@@ -483,8 +501,10 @@ public class OpponentsSectionController {
   /**
    * Removes an opponent from an application.
    *
-   * @param model - the model
-   * @return The view name for the appropriate opponent edit screen.
+   * @param opponentId - the opponent id.
+   * @param applicationOpponents - the list of opponents currently attached to the application.
+   * @param user - the user details.
+   * @return a redirect to the opponent summary view.
    */
   @PostMapping("/application/opponents/{opponent-id}/remove")
   public String removeOpponentPost(

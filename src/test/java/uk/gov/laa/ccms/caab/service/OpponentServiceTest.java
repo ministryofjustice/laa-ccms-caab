@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -112,7 +113,7 @@ public class OpponentServiceTest {
         .thenReturn(Mono.just(organisationDetail));
     CommonLookupValueDetail orgLookup = new CommonLookupValueDetail();
     when(lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES, organisationDetail.getType()))
-        .thenReturn(Mono.just(orgLookup));
+        .thenReturn(Mono.just(Optional.of(orgLookup)));
     when(opponentMapper.toOpponentFormData(
         organisationDetail, orgLookup))
         .thenReturn(expectedResults);
