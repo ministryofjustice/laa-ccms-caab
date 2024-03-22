@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.CsvFileSource;
 import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -75,33 +75,7 @@ class IndividualOpponentValidatorTest {
   }
 
   @ParameterizedTest
-  @CsvSource(value = {
-      "null,     rel2client, null,      null,     null, null, null,     null,     null,       null,             title,    firstname,  null,       surname,  null,       null, null,     null,     null,     null,     null, null, null, relationshipToCase, 1",
-      "rel2case, null,       null,      null,     null, null, null,     null,     null,       null,             title,    firstname,  null,       surname,  null,       null, null,     null,     null,     null,     null, null, null, relationshipToClient, 1",
-      "rel2case, rel2client, <,         addline1, null, null, null,     country,  null,       null,             title,    firstname,  null,       surname,  null,       null, null,     null,     null,     null,     null, null, null, houseNameOrNumber, 1",
-      "rel2case, rel2client, housenum,  null,     null, null, null,     country,  null,       null,             title,    firstname,  null,       surname,  null,       null, null,     null,     null,     null,     null, null, null, addressLine1, 1",
-      "rel2case, rel2client, null,      addline1, null, null, null,     null,     null,       null,             title,    firstname,  null,       surname,  null,       null, null,     null,     null,     null,     null, null, null, country, 1",
-      "rel2case, rel2client, null,      addline1, null, null, null,     country,  <postcode,  null,             title,    firstname,  null,       surname,  null,       null, null,     null,     null,     null,     null, null, null, postcode, 1",
-      "rel2case, rel2client, null,      addline1, null, null, null,     country,  null,       email,            title,    firstname,  null,       surname,  null,       null, null,     null,     null,     null,     null, null, null, emailAddress, 1",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       email@email.com,  null,     firstname,  null,       surname,  null,       null, null,     null,     null,     null,     null, null, null, title, 1",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       null,             title,    null,       null,       surname,  null,       null, null,     null,     null,     null,     null, null, null, firstName, 1",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       null,             title,    <  >,       null,       surname,  null,       null, null,     null,     null,     null,     null, null, null, firstName, 3",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       null,             title,    firstname,  <  >,       surname,  null,       null, null,     null,     null,     null,     null, null, null, middleNames, 3",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       null,             title,    firstname,  middleNames, null,    null,       null, null,     null,     null,     null,     null, null, null, surname, 1",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       null,             title,    firstname,  middleNames, <  >,    null,       null, null,     null,     null,     null,     null, null, null, surname, 3",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       null,             title,    firstname,  middleNames, surname, nino,       null, null,     null,     null,     null,     null, null, null, nationalInsuranceNumber, 1",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       null,             title,    firstname,  middleNames, surname, JP671245A,  <  >, null,     null,     null,     null,     null, null, null, certificateNumber, 1",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       null,             title,    firstname,  middleNames, surname, null,       1234, <  >,     null,     null,     null,     null, null, null, telephoneHome, 3",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       null,             title,    firstname,  middleNames, surname, null,       1234, 12345678, <  >,     null,     null,     null, null, null, telephoneWork, 3",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       null,             title,    firstname,  middleNames, surname, null,       1234, null,     12345678, <  >,     null,     null, null, null, telephoneMobile, 3",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       null,             title,    firstname,  middleNames, surname, null,       1234, null,     null,     12345678, <  >,     null, null, null, faxNumber, 3",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       null,             title,    firstname,  middleNames, surname, null,       1234, null,     null,     null,     12345678, null, 1,    2024, dobDay, 1",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       null,             title,    firstname,  middleNames, surname, null,       1234, null,     null,     null,     12345678, day,  1,    2024, dobDay, 1",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       null,             title,    firstname,  middleNames, surname, null,       1234, null,     null,     null,     12345678, 1,    null, 2024, dobMonth, 1",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       null,             title,    firstname,  middleNames, surname, null,       1234, null,     null,     null,     12345678, 1,    mth,  2024, dobMonth, 1",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       null,             title,    firstname,  middleNames, surname, null,       1234, null,     null,     null,     12345678, 1,    1,    null, dobYear, 1",
-      "rel2case, rel2client, null,      null    , null, null, null,     null,     null,       null,             title,    firstname,  middleNames, surname, null,       1234, null,     null,     null,     12345678, 1,    1,    year, dobYear, 1"
-  }, nullValues = "null")
+  @CsvFileSource(resources = "/csv/IndividualOpponentValidatorTest_values.csv", nullValues = "null")
   public void testIndividualOpponentValidation(
       final String relationshipToCase,
       final String relationshipToClient,
