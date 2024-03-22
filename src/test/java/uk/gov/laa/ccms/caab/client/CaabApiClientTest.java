@@ -599,4 +599,41 @@ public class CaabApiClientTest {
     StepVerifier.create(result).verifyComplete();
   }
 
+  @Test
+  void updateOpponent_success() {
+    final Integer opponentId = 123;
+    final Opponent opponent = new Opponent(); // Populate this as needed
+    final String loginId = "user789";
+    final String expectedUri = "/opponents/{opponent-id}";
+
+    when(caabApiWebClient.patch()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri, opponentId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(opponent)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.updateOpponent(opponentId, opponent, loginId);
+
+    StepVerifier.create(result).verifyComplete();
+  }
+
+  @Test
+  void deleteOpponent_success() {
+    final Integer opponentId = 123;
+    final String loginId = "user123";
+    final String expectedUri = "/opponents/{opponent-id}";
+
+    when(caabApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, opponentId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.deleteOpponent(opponentId, loginId);
+
+    StepVerifier.create(result).verifyComplete();
+  }
+
 }

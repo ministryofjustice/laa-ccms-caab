@@ -208,7 +208,7 @@ public class CaabModelUtils {
         .middleNames("midnames")
         .nationalInsuranceNumber("nino")
         .organisationName("orgName")
-        .organisationType(new StringDisplayValue().id("orgid").displayValue("org"))
+        .organisationType(new StringDisplayValue().id("orgid"))
         .otherInformation("otherInf")
         .partyId("party")
         .publicFundingApplied(Boolean.TRUE)

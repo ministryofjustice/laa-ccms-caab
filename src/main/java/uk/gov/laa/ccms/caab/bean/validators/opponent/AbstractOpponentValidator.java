@@ -5,7 +5,7 @@ import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.STANDARD
 
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.OpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 import uk.gov.laa.ccms.caab.constants.ValidationPatternConstants;
 
@@ -15,7 +15,7 @@ import uk.gov.laa.ccms.caab.constants.ValidationPatternConstants;
 public abstract class AbstractOpponentValidator extends AbstractValidator {
 
   protected void validateAddress(
-      final OpponentFormData opponentFormData,
+      final AbstractOpponentFormData opponentFormData,
       final Errors errors) {
     if (isAddressPopulated(opponentFormData)) {
       if (StringUtils.hasText(opponentFormData.getHouseNameOrNumber())) {
@@ -59,7 +59,7 @@ public abstract class AbstractOpponentValidator extends AbstractValidator {
     }
   }
 
-  boolean isAddressPopulated(final OpponentFormData opponentFormData) {
+  boolean isAddressPopulated(final AbstractOpponentFormData opponentFormData) {
     return StringUtils.hasText(opponentFormData.getHouseNameOrNumber())
         || StringUtils.hasText(opponentFormData.getAddressLine1())
         || StringUtils.hasText(opponentFormData.getAddressLine2())

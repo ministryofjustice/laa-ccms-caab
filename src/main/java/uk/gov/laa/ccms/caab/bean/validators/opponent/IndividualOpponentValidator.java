@@ -8,7 +8,7 @@ import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NATIONAL
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.OpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 
 /**
  * Validates the individual opponent details provided by the user.
@@ -24,7 +24,7 @@ public class IndividualOpponentValidator extends AbstractOpponentValidator {
    */
   @Override
   public boolean supports(Class<?> clazz) {
-    return OpponentFormData.class.isAssignableFrom(clazz);
+    return IndividualOpponentFormData.class.isAssignableFrom(clazz);
   }
 
   /**
@@ -35,7 +35,7 @@ public class IndividualOpponentValidator extends AbstractOpponentValidator {
    */
   @Override
   public void validate(final Object target, final Errors errors) {
-    final OpponentFormData opponentFormData = (OpponentFormData) target;
+    final IndividualOpponentFormData opponentFormData = (IndividualOpponentFormData) target;
 
     validateRequiredField("title", opponentFormData.getTitle(),
         "Title", errors);
@@ -46,12 +46,17 @@ public class IndividualOpponentValidator extends AbstractOpponentValidator {
     validateNameComponent("middleNames", opponentFormData.getMiddleNames(),
         "Middle name(s)", false, CHARACTER_SET_C, errors);
 
+    final boolean dateMandatory = opponentFormData.isDateOfBirthMandatory()
+        || StringUtils.hasText(opponentFormData.getDobDay())
+        || StringUtils.hasText(opponentFormData.getDobMonth())
+        || StringUtils.hasText(opponentFormData.getDobYear());
+
     validateDateComponent("dobDay", opponentFormData.getDobDay(),
-        "Date of birth (day)", opponentFormData.isDateOfBirthMandatory(), errors);
+        "Date of birth (day)", dateMandatory, errors);
     validateDateComponent("dobMonth", opponentFormData.getDobMonth(),
-        "Date of birth (month)", opponentFormData.isDateOfBirthMandatory(), errors);
+        "Date of birth (month)", dateMandatory, errors);
     validateDateComponent("dobYear", opponentFormData.getDobYear(),
-        "Date of birth (year)", opponentFormData.isDateOfBirthMandatory(), errors);
+        "Date of birth (year)", dateMandatory, errors);
 
     validateRequiredField("relationshipToCase", opponentFormData.getRelationshipToCase(),
         "Relationship to case", errors);
@@ -99,9 +104,11 @@ public class IndividualOpponentValidator extends AbstractOpponentValidator {
       validateRequiredField(fieldId, fieldValue, displayValue, errors);
     }
 
-    validateFieldFormat(fieldId, fieldValue, characterSetRestriction, displayValue, errors);
-    validateFirstCharAlpha(fieldId, fieldValue, displayValue, errors);
-    validateDoubleSpaces(fieldId, fieldValue, displayValue, errors);
+    if (StringUtils.hasText(fieldValue)) {
+      validateFieldFormat(fieldId, fieldValue, characterSetRestriction, displayValue, errors);
+      validateFirstCharAlpha(fieldId, fieldValue, displayValue, errors);
+      validateDoubleSpaces(fieldId, fieldValue, displayValue, errors);
+    }
   }
 
   private void validateDateComponent(final String fieldId, final String fieldValue,

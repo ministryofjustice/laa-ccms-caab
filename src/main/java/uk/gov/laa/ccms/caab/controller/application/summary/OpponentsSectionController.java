@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.application.summary;
 
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_ORGANISATION;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
@@ -31,8 +30,10 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple4;
-import uk.gov.laa.ccms.caab.bean.OpponentFormData;
-import uk.gov.laa.ccms.caab.bean.OrganisationSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.opponent.IndividualOpponentValidator;
 import uk.gov.laa.ccms.caab.bean.validators.opponent.OrganisationOpponentValidator;
 import uk.gov.laa.ccms.caab.bean.validators.opponent.OrganisationSearchCriteriaValidator;
@@ -97,7 +98,7 @@ public class OpponentsSectionController {
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       final Model model) {
 
-    final List<OpponentFormData> opponents =
+    final List<AbstractOpponentFormData> opponents =
         applicationService.getOpponents(applicationId);
 
     model.addAttribute(APPLICATION_OPPONENTS, opponents);
@@ -218,7 +219,7 @@ public class OpponentsSectionController {
     }
 
     // Retrieve the full Organisation details
-    OpponentFormData opponentFormData = opponentService.getOrganisationOpponent(
+    OrganisationOpponentFormData opponentFormData = opponentService.getOrganisationOpponent(
         organisationId,
         user.getLoginId(),
         user.getUserType());
@@ -241,9 +242,9 @@ public class OpponentsSectionController {
    * @param model - the model.
    * @return The view name for shared organisation confirmation screen.
    */
-  @PostMapping("/application/opponents/organisation/confirm")
+  @PostMapping("/application/opponents/organisation/shared/create")
   public String createSharedOrganisation(
-      @ModelAttribute(CURRENT_OPPONENT) final OpponentFormData opponentFormData,
+      @ModelAttribute(CURRENT_OPPONENT) final AbstractOpponentFormData opponentFormData,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final BindingResult bindingResult,
@@ -278,7 +279,7 @@ public class OpponentsSectionController {
 
     populateOrganisationCreateDropdowns(model);
 
-    model.addAttribute(CURRENT_OPPONENT, new OpponentFormData());
+    model.addAttribute(CURRENT_OPPONENT, new OrganisationOpponentFormData());
 
     return "application/opponents/opponents-organisation-create";
   }
@@ -295,7 +296,7 @@ public class OpponentsSectionController {
    */
   @PostMapping("/application/opponents/organisation/create")
   public String createNewOrganisation(
-      @ModelAttribute(CURRENT_OPPONENT) final OpponentFormData opponentFormData,
+      @ModelAttribute(CURRENT_OPPONENT) final AbstractOpponentFormData opponentFormData,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final BindingResult bindingResult,
@@ -325,7 +326,7 @@ public class OpponentsSectionController {
 
     populateIndividualCreateDropdowns(model);
 
-    model.addAttribute(CURRENT_OPPONENT, new OpponentFormData());
+    model.addAttribute(CURRENT_OPPONENT, new IndividualOpponentFormData());
 
     return "application/opponents/opponents-individual-create";
   }
@@ -342,7 +343,7 @@ public class OpponentsSectionController {
    */
   @PostMapping("/application/opponents/individual/create")
   public String createNewIndividual(
-      @ModelAttribute(CURRENT_OPPONENT) final OpponentFormData opponentFormData,
+      @ModelAttribute(CURRENT_OPPONENT) final IndividualOpponentFormData opponentFormData,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final BindingResult bindingResult,
@@ -390,12 +391,14 @@ public class OpponentsSectionController {
    */
   @GetMapping("/application/opponents/{opponent-id}/edit")
   public String editOpponent(
-      @PathVariable("opponent-id") final Integer opponentId,
-      @SessionAttribute(APPLICATION_OPPONENTS) final List<OpponentFormData> applicationOpponents,
+      @PathVariable("opponent-id")
+      final Integer opponentId,
+      @SessionAttribute(APPLICATION_OPPONENTS)
+      final List<AbstractOpponentFormData> applicationOpponents,
       final Model model) {
 
     // First check that the opponentId refers to an Opponent in the current application.
-    OpponentFormData currentOpponent =
+    AbstractOpponentFormData currentOpponent =
         applicationOpponents.stream()
         .filter(opponentFormData -> opponentFormData.getId().equals(opponentId))
         .findFirst()
@@ -404,8 +407,8 @@ public class OpponentsSectionController {
 
     model.addAttribute(CURRENT_OPPONENT, currentOpponent);
 
-    if (OPPONENT_TYPE_ORGANISATION.equals(currentOpponent.getType())) {
-      if (Boolean.TRUE.equals(currentOpponent.getShared())) {
+    if (currentOpponent instanceof OrganisationOpponentFormData) {
+      if (Boolean.TRUE.equals(((OrganisationOpponentFormData) currentOpponent).getShared())) {
         populateConfirmSharedOrganisationDropdowns(model);
 
         return "application/opponents/opponents-organisation-shared-edit";
@@ -434,17 +437,17 @@ public class OpponentsSectionController {
   @PostMapping("/application/opponents/{opponent-id}/edit")
   public String editOpponent(
       @PathVariable("opponent-id") final Integer opponentId,
-      @ModelAttribute(CURRENT_OPPONENT) final OpponentFormData currentOpponent,
+      @ModelAttribute(CURRENT_OPPONENT) final AbstractOpponentFormData currentOpponent,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final BindingResult bindingResult,
       final Model model) {
 
-    if (OPPONENT_TYPE_ORGANISATION.equals(currentOpponent.getType())) {
+    if (currentOpponent instanceof OrganisationOpponentFormData) {
       // Validate organisation opponent
       organisationOpponentValidator.validate(currentOpponent, bindingResult);
 
       if (bindingResult.hasErrors()) {
-        if (Boolean.TRUE.equals(currentOpponent.getShared())) {
+        if (Boolean.TRUE.equals(((OrganisationOpponentFormData) currentOpponent).getShared())) {
           populateConfirmSharedOrganisationDropdowns(model);
           return "application/opponents/opponents-organisation-shared-edit";
         } else {
@@ -462,7 +465,7 @@ public class OpponentsSectionController {
       }
     }
 
-    applicationService.updateOpponent(opponentId, currentOpponent, user);
+    opponentService.updateOpponent(opponentId, currentOpponent, user);
 
     return "redirect:/application/summary/opponents";
   }
@@ -477,8 +480,10 @@ public class OpponentsSectionController {
    */
   @GetMapping("/application/opponents/{opponent-id}/remove")
   public String removeOpponent(
-      @PathVariable("opponent-id") final Integer opponentId,
-      @SessionAttribute(APPLICATION_OPPONENTS) final List<OpponentFormData> applicationOpponents,
+      @PathVariable("opponent-id")
+      final Integer opponentId,
+      @SessionAttribute(APPLICATION_OPPONENTS)
+      final List<AbstractOpponentFormData> applicationOpponents,
       final Model model) {
 
     // First check that the opponentId refers to an Opponent in the current application, and that
@@ -508,8 +513,10 @@ public class OpponentsSectionController {
    */
   @PostMapping("/application/opponents/{opponent-id}/remove")
   public String removeOpponentPost(
-      @PathVariable("opponent-id") final Integer opponentId,
-      @SessionAttribute(APPLICATION_OPPONENTS) final List<OpponentFormData> applicationOpponents,
+      @PathVariable("opponent-id")
+      final Integer opponentId,
+      @SessionAttribute(APPLICATION_OPPONENTS)
+      final List<AbstractOpponentFormData> applicationOpponents,
       @SessionAttribute(USER_DETAILS) final UserDetail user) {
 
     // First check that the opponentId refers to an Opponent in the current application, and that
@@ -523,7 +530,7 @@ public class OpponentsSectionController {
       throw new CaabApplicationException(String.format("Invalid Opponent Id: %s", opponentId));
     }
 
-    applicationService.deleteOpponent(opponentId, user);
+    opponentService.deleteOpponent(opponentId, user);
 
     return "redirect:/application/summary/opponents";
   }

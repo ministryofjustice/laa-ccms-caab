@@ -9,7 +9,7 @@
         <a href="/application/summary/opponents" class="govuk-back-link">Cancel and return to opponents and other parties</a>
     </div>
     <div id="main-content">
-        <form action="#" th:action="@{/application/opponents/organisation/confirm}" th:object="${opponent}" method="post">
+        <form action="#" th:action="@{/application/opponents/organisation/shared/create}" th:object="${opponent}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l">Search for an organisation</span>
             <h1 class="govuk-heading-l">

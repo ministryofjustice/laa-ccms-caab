@@ -13,7 +13,7 @@ import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.OrganisationSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 
 @ExtendWith(SpringExtension.class)
 class OrganisationSearchCriteriaValidatorTest {

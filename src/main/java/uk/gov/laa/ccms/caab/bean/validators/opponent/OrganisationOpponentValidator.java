@@ -6,7 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.STANDARD
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.OpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
 
 /**
  * Validates the organisation opponent details provided by the user.
@@ -22,7 +22,7 @@ public class OrganisationOpponentValidator extends AbstractOpponentValidator {
    */
   @Override
   public boolean supports(Class<?> clazz) {
-    return OpponentFormData.class.isAssignableFrom(clazz);
+    return OrganisationOpponentFormData.class.isAssignableFrom(clazz);
   }
 
   /**
@@ -33,7 +33,7 @@ public class OrganisationOpponentValidator extends AbstractOpponentValidator {
    */
   @Override
   public void validate(final Object target, final Errors errors) {
-    final OpponentFormData opponentFormData = (OpponentFormData) target;
+    final OrganisationOpponentFormData opponentFormData = (OrganisationOpponentFormData) target;
     // Validate the organisation name and type if this is not a shared organisation.
     if (!Boolean.TRUE.equals(opponentFormData.getShared())) {
       validateOrganisationName(errors, opponentFormData);
@@ -60,7 +60,8 @@ public class OrganisationOpponentValidator extends AbstractOpponentValidator {
     validateOtherInformation(opponentFormData, errors);
   }
 
-  private void validateOtherInformation(OpponentFormData opponentFormData, Errors errors) {
+  private void validateOtherInformation(OrganisationOpponentFormData opponentFormData,
+      Errors errors) {
     if (StringUtils.hasText(opponentFormData.getOtherInformation())) {
       validateFieldFormat("otherInformation", opponentFormData.getOtherInformation(),
           STANDARD_CHARACTER_SET, "Other information", errors);
@@ -69,7 +70,8 @@ public class OrganisationOpponentValidator extends AbstractOpponentValidator {
     }
   }
 
-  private void validateOrganisationName(Errors errors, OpponentFormData opponentFormData) {
+  private void validateOrganisationName(Errors errors,
+      OrganisationOpponentFormData opponentFormData) {
     validateRequiredField("organisationName", opponentFormData.getOrganisationName(),
         "Organisation name", errors);
 

@@ -6,8 +6,10 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import uk.gov.laa.ccms.caab.bean.OpponentFormData;
-import uk.gov.laa.ccms.caab.bean.OrganisationSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
+import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -18,6 +20,7 @@ import uk.gov.laa.ccms.caab.model.OrganisationResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 
@@ -29,6 +32,8 @@ import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 @Slf4j
 public class OpponentService {
   private final SoaApiClient soaApiClient;
+
+  private final CaabApiClient caabApiClient;
 
   private final LookupService lookupService;
 
@@ -88,9 +93,9 @@ public class OpponentService {
    * @param organisationId        The id of the organisation to retrieve and convert to an opponent.
    * @param loginId               The login identifier for the user.
    * @param userType              Type of the user (e.g., admin, user).
-   * @return OpponentFormData based on the organisation data.
+   * @return AbstractOpponentFormData based on the organisation data.
    */
-  public OpponentFormData getOrganisationOpponent(
+  public OrganisationOpponentFormData getOrganisationOpponent(
       final String organisationId,
       final String loginId,
       final String userType) {
@@ -113,7 +118,36 @@ public class OpponentService {
             .orElseThrow(
                 () -> new CaabApplicationException("Failed to retrieve organisation type lookup"));
 
-    return opponentMapper.toOpponentFormData(organisation, orgType);
+    return opponentMapper.toOrganisationOpponentFormData(organisation, orgType);
+  }
+
+  /**
+   * Update an opponent based on the supplied form data.
+   *
+   * @param opponentFormData - the opponent form data.
+   * @param userDetail - the user related user.
+   */
+  public void updateOpponent(
+      final Integer opponentId,
+      final AbstractOpponentFormData opponentFormData,
+      final UserDetail userDetail) {
+
+    caabApiClient.updateOpponent(
+        opponentId,
+        opponentMapper.toOpponent(opponentFormData),
+        userDetail.getLoginId()).block();
+  }
+
+  /**
+   * Deletes a specified opponent.
+   *
+   * @param opponentId the ID of the opponent to delete
+   * @param user the user details initiating the deletion
+   */
+  public void deleteOpponent(
+      final Integer opponentId,
+      final UserDetail user) {
+    caabApiClient.deleteOpponent(opponentId, user.getLoginId()).block();
   }
 
 }

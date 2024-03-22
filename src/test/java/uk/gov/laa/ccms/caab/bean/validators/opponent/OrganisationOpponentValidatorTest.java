@@ -16,7 +16,7 @@ import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.OpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
 
 @ExtendWith(SpringExtension.class)
 class OrganisationOpponentValidatorTest {
@@ -24,20 +24,20 @@ class OrganisationOpponentValidatorTest {
   @InjectMocks
   private OrganisationOpponentValidator validator;
 
-  private OpponentFormData opponentFormData;
+  private OrganisationOpponentFormData opponentFormData;
 
   private Errors errors;
 
   @BeforeEach
   public void setUp() {
     opponentFormData =
-        new OpponentFormData();
+        new OrganisationOpponentFormData();
     errors = new BeanPropertyBindingResult(opponentFormData, CURRENT_OPPONENT);
   }
 
   @Test
   public void supports_ReturnsTrueForCorrectClass() {
-    assertTrue(validator.supports(OpponentFormData.class));
+    assertTrue(validator.supports(OrganisationOpponentFormData.class));
   }
 
   @Test

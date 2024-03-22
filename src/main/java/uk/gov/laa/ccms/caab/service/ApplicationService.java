@@ -18,6 +18,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_C
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_LEVEL_OF_SERVICE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MATTER_TYPES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
@@ -42,14 +43,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
 import reactor.util.function.Tuple4;
 import reactor.util.function.Tuple5;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.OpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.builders.ApplicationBuilder;
 import uk.gov.laa.ccms.caab.builders.ApplicationSummaryBuilder;
 import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
@@ -978,12 +978,12 @@ public class ApplicationService {
   /**
    * Fetches the opponents associated with a specific application id.
    * This method communicates with the CAAB API client to fetch the proceedings and
-   * transforms them into a {@code OpponentFormData} format.
+   * transforms them into a {@code AbstractOpponentFormData} format.
    *
    * @param applicationId The id of the application for which proceedings should be retrieved.
-   * @return List of OpponentFormData.
+   * @return List of AbstractOpponentFormData.
    */
-  public List<OpponentFormData> getOpponents(final String applicationId) {
+  public List<AbstractOpponentFormData> getOpponents(final String applicationId) {
     // Get the list of opponents for the application.
     final List<Opponent> opponentList = caabApiClient.getOpponents(applicationId)
         .blockOptional()
@@ -1002,7 +1002,7 @@ public class ApplicationService {
    */
   public void addOpponent(
       final String applicationId,
-      final OpponentFormData opponentFormData,
+      final AbstractOpponentFormData opponentFormData,
       final UserDetail userDetail) {
 
     Opponent opponent = opponentMapper.toOpponent(opponentFormData);
@@ -1022,42 +1022,13 @@ public class ApplicationService {
   }
 
   /**
-   * Update an opponent based on the supplied form data.
-   *
-   * @param opponentFormData - the opponent form data.
-   * @param userDetail - the user related user.
-   */
-  public void updateOpponent(
-      final Integer opponentId,
-      final OpponentFormData opponentFormData,
-      final UserDetail userDetail) {
-
-    caabApiClient.updateOpponent(
-        opponentId,
-        opponentMapper.toOpponent(opponentFormData),
-        userDetail.getLoginId()).block();
-  }
-
-  /**
-   * Deletes a specified opponent.
-   *
-   * @param opponentId the ID of the opponent to delete
-   * @param user the user details initiating the deletion
-   */
-  public void deleteOpponent(
-      final Integer opponentId,
-      final UserDetail user) {
-    caabApiClient.deleteOpponent(opponentId, user.getLoginId()).block();
-  }
-
-  /**
-   * Build an OpponentFormData for the provided Opponent.
+   * Build an AbstractOpponentFormData for the provided Opponent.
    * Codes will be translated to their display value depending on the type of opponent.
    *
    * @param opponent - the opponent
-   * @return OpponentFormData for the Opponent
+   * @return AbstractOpponentFormData for the Opponent
    */
-  protected OpponentFormData buildOpponentFormData(final Opponent opponent) {
+  protected AbstractOpponentFormData buildOpponentFormData(final Opponent opponent) {
 
     final boolean isOrganisation = OPPONENT_TYPE_ORGANISATION.equals(opponent.getType());
     final boolean isEditable = isOrganisation
@@ -1067,33 +1038,47 @@ public class ApplicationService {
     final String partyName = isOrganisation ? opponent.getOrganisationName()
         : toIndividualOpponentPartyName(opponent);
 
+    // Look up the organisation type display value, if this is an organisation
+    final Mono<Optional<CommonLookupValueDetail>> organisationTypeLookupMono =
+        isOrganisation
+            ? lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES,
+              opponent.getOrganisationType().getId()) : Mono.just(Optional.empty());
+
     // Look up the relationship to case display value depending on opponent type.
     final Mono<Optional<RelationshipToCaseLookupValueDetail>> relationshipToCaseMono =
         isOrganisation
             ? lookupService.getOrganisationToCaseRelationship(opponent.getRelationshipToCase()) :
             lookupService.getPersonToCaseRelationship(opponent.getRelationshipToCase());
 
-    Tuple2<Optional<RelationshipToCaseLookupValueDetail>,
+    Tuple3<Optional<CommonLookupValueDetail>,
+        Optional<RelationshipToCaseLookupValueDetail>,
         Optional<CommonLookupValueDetail>> combinedResult = Mono.zip(
+            organisationTypeLookupMono,
             relationshipToCaseMono,
             lookupService.getCommonValue(COMMON_VALUE_RELATIONSHIP_TO_CLIENT,
                 opponent.getRelationshipToClient()))
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
 
-    final String relationshipToCaseDisplayValue =
+    final String organisationTypeDisplayValue =
         combinedResult.getT1()
+            .map(CommonLookupValueDetail::getDescription)
+            .orElse(isOrganisation ? opponent.getOrganisationType().getId() : null);
+
+    final String relationshipToCaseDisplayValue =
+        combinedResult.getT2()
             .map(RelationshipToCaseLookupValueDetail::getDescription)
             .orElse(opponent.getRelationshipToCase());
 
     final String relationshipToClientDisplayValue =
-        combinedResult.getT2()
+        combinedResult.getT3()
             .map(CommonLookupValueDetail::getDescription)
             .orElse(opponent.getRelationshipToClient());
 
     return opponentMapper.toOpponentFormData(
         opponent,
         partyName,
+        organisationTypeDisplayValue,
         relationshipToCaseDisplayValue,
         relationshipToClientDisplayValue,
         isEditable);

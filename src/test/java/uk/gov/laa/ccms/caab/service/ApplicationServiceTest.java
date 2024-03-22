@@ -12,6 +12,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -31,6 +32,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_C
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_LEVEL_OF_SERVICE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MATTER_TYPES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
@@ -68,10 +70,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.OpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
@@ -1739,16 +1743,18 @@ class ApplicationServiceTest {
     when(opponentMapper.toOpponentFormData(
         opponent,
         expectedPartyName,
+        null,
         opponent.getRelationshipToCase(),
         opponent.getRelationshipToClient(),
-        true)).thenReturn(new OpponentFormData());
+        true)).thenReturn(new IndividualOpponentFormData());
 
-    OpponentFormData result = applicationService.buildOpponentFormData(opponent);
+    AbstractOpponentFormData result = applicationService.buildOpponentFormData(opponent);
 
     assertNotNull(result);
     verify(opponentMapper).toOpponentFormData(
         opponent,
         expectedPartyName,
+        null,
         opponent.getRelationshipToCase(),
         opponent.getRelationshipToClient(),
         true);
@@ -1759,6 +1765,9 @@ class ApplicationServiceTest {
     Opponent opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_ORGANISATION);
 
+    when(lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES,
+        opponent.getOrganisationType().getId())).thenReturn(
+        Mono.just(Optional.empty()));
     when(lookupService.getOrganisationToCaseRelationship(opponent.getRelationshipToCase())).thenReturn(
         Mono.just(Optional.empty()));
     when(lookupService.getCommonValue(COMMON_VALUE_RELATIONSHIP_TO_CLIENT,
@@ -1770,16 +1779,18 @@ class ApplicationServiceTest {
     when(opponentMapper.toOpponentFormData(
         opponent,
         expectedPartyName,
+        opponent.getOrganisationType().getId(),
         opponent.getRelationshipToCase(),
         opponent.getRelationshipToClient(),
-        true)).thenReturn(new OpponentFormData());
+        true)).thenReturn(new OrganisationOpponentFormData());
 
-    OpponentFormData result = applicationService.buildOpponentFormData(opponent);
+    AbstractOpponentFormData result = applicationService.buildOpponentFormData(opponent);
 
     assertNotNull(result);
     verify(opponentMapper).toOpponentFormData(
         opponent,
         expectedPartyName,
+        opponent.getOrganisationType().getId(),
         opponent.getRelationshipToCase(),
         opponent.getRelationshipToClient(),
         true);
@@ -1789,6 +1800,14 @@ class ApplicationServiceTest {
   void testBuildOrgOpponentFormData_lookupMatchesReturnDisplayValues() {
     Opponent opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_ORGANISATION);
+
+    CommonLookupValueDetail organisationTypeLookup = new CommonLookupValueDetail()
+        .code(opponent.getOrganisationType().getId())
+        .description("org type");
+
+    when(lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES,
+        opponent.getOrganisationType().getId())).thenReturn(
+        Mono.just(Optional.of(organisationTypeLookup)));
 
     RelationshipToCaseLookupValueDetail orgRelationshipToCase =
         new RelationshipToCaseLookupValueDetail()
@@ -1812,16 +1831,18 @@ class ApplicationServiceTest {
     when(opponentMapper.toOpponentFormData(
         opponent,
         expectedPartyName,
+        organisationTypeLookup.getDescription(),
         orgRelationshipToCase.getDescription(),
         relationshipToClient.getDescription(),
-        true)).thenReturn(new OpponentFormData());
+        true)).thenReturn(new OrganisationOpponentFormData());
 
-    OpponentFormData result = applicationService.buildOpponentFormData(opponent);
+    AbstractOpponentFormData result = applicationService.buildOpponentFormData(opponent);
 
     assertNotNull(result);
     verify(opponentMapper).toOpponentFormData(
         opponent,
         expectedPartyName,
+        organisationTypeLookup.getDescription(),
         orgRelationshipToCase.getDescription(),
         relationshipToClient.getDescription(),
         true);
@@ -1858,15 +1879,17 @@ class ApplicationServiceTest {
     when(opponentMapper.toOpponentFormData(
         opponent,
         expectedPartyName,
+        null,
         personRelationshipToCase.getDescription(),
         relationshipToClient.getDescription(),
-        true)).thenReturn(new OpponentFormData());
+        true)).thenReturn(new IndividualOpponentFormData());
 
-    OpponentFormData result = applicationService.buildOpponentFormData(opponent);
+    AbstractOpponentFormData result = applicationService.buildOpponentFormData(opponent);
 
     assertNotNull(result);
     verify(opponentMapper).toOpponentFormData(opponent,
         expectedPartyName,
+        null,
         personRelationshipToCase.getDescription(),
         relationshipToClient.getDescription(),
         true);
@@ -1887,16 +1910,16 @@ class ApplicationServiceTest {
     when(lookupService.getCommonValue(COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
         .thenReturn(Mono.just(Optional.empty()));
 
-    when(opponentMapper.toOpponentFormData(eq(opponent), anyString(), anyString(), anyString(), anyBoolean()))
-        .thenReturn(new OpponentFormData());
+    when(opponentMapper.toOpponentFormData(eq(opponent), anyString(), isNull(), anyString(), anyString(), anyBoolean()))
+        .thenReturn(new IndividualOpponentFormData());
 
-    List<OpponentFormData> result =
+    List<AbstractOpponentFormData> result =
         applicationService.getOpponents(applicationId);
 
     assertNotNull(result);
     assertEquals(1, result.size());
 
-    verify(opponentMapper).toOpponentFormData(eq(opponent), anyString(), anyString(), anyString(), anyBoolean());
+    verify(opponentMapper).toOpponentFormData(eq(opponent), anyString(), isNull(), anyString(), anyString(), anyBoolean());
   }
 
   private ApplicationFormData buildApplicationFormData() {
@@ -2250,7 +2273,7 @@ class ApplicationServiceTest {
     UserDetail user = new UserDetail().loginId("userLoginId");
     ApplicationDetail application = getApplicationDetail();
 
-    OpponentFormData opponentFormData = new OpponentFormData();
+    AbstractOpponentFormData opponentFormData = new IndividualOpponentFormData();
     Opponent opponent = new Opponent();
 
     when(opponentMapper.toOpponent(opponentFormData)).thenReturn(opponent);

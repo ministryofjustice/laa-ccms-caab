@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.bean;
+package uk.gov.laa.ccms.caab.bean.opponent;
 
 import java.io.Serializable;
 import lombok.Data;

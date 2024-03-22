@@ -13,8 +13,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.OpponentFormData;
-import uk.gov.laa.ccms.caab.bean.OrganisationSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
@@ -107,18 +108,18 @@ public class OpponentServiceTest {
     OrganisationDetail organisationDetail = new OrganisationDetail()
         .type("type1");
 
-    OpponentFormData expectedResults = new OpponentFormData();
+    OrganisationOpponentFormData expectedResults = new OrganisationOpponentFormData();
 
     when(soaApiClient.getOrganisation(orgId, loginId, userType))
         .thenReturn(Mono.just(organisationDetail));
     CommonLookupValueDetail orgLookup = new CommonLookupValueDetail();
     when(lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES, organisationDetail.getType()))
         .thenReturn(Mono.just(Optional.of(orgLookup)));
-    when(opponentMapper.toOpponentFormData(
+    when(opponentMapper.toOrganisationOpponentFormData(
         organisationDetail, orgLookup))
         .thenReturn(expectedResults);
 
-    OpponentFormData result = opponentService.getOrganisationOpponent(
+    AbstractOpponentFormData result = opponentService.getOrganisationOpponent(
         orgId, loginId, userType);
 
     assertEquals(expectedResults, result);
