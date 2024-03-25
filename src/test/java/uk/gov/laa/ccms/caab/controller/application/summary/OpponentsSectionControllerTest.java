@@ -795,7 +795,7 @@ class OpponentsSectionControllerTest {
                 .sessionAttr(USER_DETAILS, user))
             .andDo(print())
             .andExpect(status().isOk())
-            .andExpect(model().attribute("opponentId", selectedOpponentId))
+            .andExpect(model().attribute(CURRENT_OPPONENT, organisationOpponent))
             .andExpect(view().name("application/opponents/opponents-remove"));
     }
 
