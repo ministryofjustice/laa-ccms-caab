@@ -12,7 +12,6 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -27,9 +26,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuple4;
 import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
@@ -45,7 +41,6 @@ import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.OpponentService;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -488,17 +483,15 @@ public class OpponentsSectionController {
 
     // First check that the opponentId refers to an Opponent in the current application, and that
     // it is deletable.
-    boolean validOpponent =
+    AbstractOpponentFormData currentOpponent =
         applicationOpponents.stream()
-            .anyMatch(opponentFormData ->
-                opponentFormData.getId().equals(opponentId)
-                && Boolean.TRUE.equals(opponentFormData.getDeletable()));
+            .filter(opponentFormData -> opponentFormData.getId().equals(opponentId)
+                && Boolean.TRUE.equals(opponentFormData.getDeletable()))
+            .findFirst()
+            .orElseThrow(() -> new CaabApplicationException(
+                String.format("Invalid Opponent Id: %s", opponentId)));
 
-    if (!validOpponent) {
-      throw new CaabApplicationException(String.format("Invalid Opponent Id: %s", opponentId));
-    }
-
-    model.addAttribute("opponentId", opponentId);
+    model.addAttribute(CURRENT_OPPONENT, currentOpponent);
 
     return "application/opponents/opponents-remove";
   }
@@ -544,59 +537,63 @@ public class OpponentsSectionController {
   }
 
   private void populateConfirmSharedOrganisationDropdowns(final Model model) {
-    Tuple2<RelationshipToCaseLookupDetail, CommonLookupDetail> combinedLookup =
-        Optional.ofNullable(Mono.zip(
-            lookupService.getOrganisationToCaseRelationships(),
-            lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).block())
-            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+          lookupService.getOrganisationToCaseRelationships()
+              .blockOptional()
+              .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
 
-    model.addAttribute("relationshipsToCase", combinedLookup.getT1().getContent());
-    model.addAttribute("relationshipsToClient", combinedLookup.getT2().getContent());
+    model.addAttribute("relationshipsToCase",
+        relationshipToCaseLookupDetail.getContent());
+
+    new DropdownBuilder(model)
+        .addDropdown("relationshipsToClient",
+            lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .build();
   }
 
   private void populateOrganisationCreateDropdowns(final Model model) {
-    Tuple4<CommonLookupDetail,
-            RelationshipToCaseLookupDetail,
-            CommonLookupDetail,
-        CommonLookupDetail> combinedLookup =
-          Optional.ofNullable(Mono.zip(
-                  lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES),
-                  lookupService.getOrganisationToCaseRelationships(),
-                  lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT),
-                  lookupService.getCountries()).block())
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        lookupService.getOrganisationToCaseRelationships()
+            .blockOptional()
             .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
-
-    model.addAttribute("organisationTypes", combinedLookup.getT1().getContent());
-    model.addAttribute("relationshipsToCase", combinedLookup.getT2().getContent());
-    model.addAttribute("relationshipsToClient", combinedLookup.getT3().getContent());
-    model.addAttribute("countries", combinedLookup.getT4().getContent());
+    model.addAttribute("relationshipsToCase",
+        relationshipToCaseLookupDetail.getContent());
 
     List<Pair<Boolean, String>> currentlyTradingOptions = List.of(
         Pair.of(Boolean.FALSE, "No"),
         Pair.of(Boolean.TRUE, "Yes"));
     model.addAttribute("currentlyTradingOptions", currentlyTradingOptions);
+
+    new DropdownBuilder(model)
+        .addDropdown("organisationTypes",
+            lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
+        .addDropdown("relationshipsToClient",
+            lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .addDropdown("countries",
+            lookupService.getCountries())
+        .build();
   }
 
   private void populateIndividualCreateDropdowns(final Model model) {
-    Tuple4<CommonLookupDetail,
-        RelationshipToCaseLookupDetail,
-        CommonLookupDetail,
-        CommonLookupDetail> combinedLookup =
-        Optional.ofNullable(Mono.zip(
-                lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE),
-                lookupService.getPersonToCaseRelationships(),
-                lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT),
-                lookupService.getCountries()).block())
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        lookupService.getPersonToCaseRelationships()
+            .blockOptional()
             .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
-
-    model.addAttribute("contactTitles", combinedLookup.getT1().getContent());
-    model.addAttribute("relationshipsToCase", combinedLookup.getT2().getContent());
-    model.addAttribute("relationshipsToClient", combinedLookup.getT3().getContent());
-    model.addAttribute("countries", combinedLookup.getT4().getContent());
+    model.addAttribute("relationshipsToCase",
+        relationshipToCaseLookupDetail.getContent());
 
     List<Pair<Boolean, String>> legalAidedOptions = List.of(
         Pair.of(Boolean.FALSE, "No"),
         Pair.of(Boolean.TRUE, "Yes"));
     model.addAttribute("legalAidedOptions", legalAidedOptions);
+
+    new DropdownBuilder(model)
+        .addDropdown("contactTitles",
+            lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+        .addDropdown("relationshipsToClient",
+            lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .addDropdown("countries",
+            lookupService.getCountries())
+        .build();
   }
 }

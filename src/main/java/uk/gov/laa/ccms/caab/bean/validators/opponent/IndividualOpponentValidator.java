@@ -94,6 +94,19 @@ public class IndividualOpponentValidator extends AbstractOpponentValidator {
     }
   }
 
+  /**
+   * Validate a name component (title, surname, etc).
+   * If required is true, then it will be validated as mandatory.
+   * Additionally, it will be validated for the provided character set restrictcion,
+   * the first character must be alpha, and must contain no double spaces.
+   *
+   * @param fieldId - the id of the field.
+   * @param fieldValue - the value of the field.
+   * @param displayValue - the display value for validation failure messages.
+   * @param required - flag to indicate that the field is mandatory.
+   * @param characterSetRestriction - the character set restriction for the field.
+   * @param errors - the errors.
+   */
   private void validateNameComponent(final String fieldId,
       final String fieldValue,
       final String displayValue,
@@ -111,6 +124,17 @@ public class IndividualOpponentValidator extends AbstractOpponentValidator {
     }
   }
 
+  /**
+   * Validate a date component (day, month, year).
+   * If required is true, then it will be validated as mandatory.
+   * Furthermore the field must be numeric.
+   *
+   * @param fieldId - the id of the field.
+   * @param fieldValue - the value of the field.
+   * @param displayValue - the display value for validation failure messages.
+   * @param required - flag to indicate that the field is mandatory.
+   * @param errors - the errors.
+   */
   private void validateDateComponent(final String fieldId, final String fieldValue,
       final String displayValue, boolean required, Errors errors) {
     if (required) {
