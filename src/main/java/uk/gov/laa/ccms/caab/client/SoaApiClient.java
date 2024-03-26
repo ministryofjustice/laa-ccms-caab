@@ -16,7 +16,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.OrganisationSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
@@ -475,7 +475,7 @@ public class SoaApiClient {
       final String userType) {
     return soaApiWebClient
         .get()
-        .uri(builder -> builder.path("/organisation/{organisation-id}").build(organisationId))
+        .uri(builder -> builder.path("/organisations/{organisation-id}").build(organisationId))
         .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()

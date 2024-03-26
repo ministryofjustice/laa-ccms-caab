@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.service;
 
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_COURTS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_ORDER_TYPE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +29,7 @@ import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProceedingDetails;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
@@ -69,20 +69,16 @@ public class LookupService {
    * Get a Country Common Value.
    *
    * @param code The country code to look up
-   * @return CommonLookupValueDetail containing the common lookup value.
+   * @return Optional CommonLookupValueDetail containing the common lookup value.
    */
-  public Mono<CommonLookupValueDetail> getCountry(final String code) {
+  public Mono<Optional<CommonLookupValueDetail>> getCountry(final String code) {
     return getCountries()
-        .flatMap(commonLookupDetail -> {
-          final Optional<CommonLookupValueDetail> country = commonLookupDetail
+        .map(commonLookupDetail -> commonLookupDetail
               .getContent()
               .stream()
               .filter(Objects::nonNull)
               .filter(countryDetail -> code.equals(countryDetail.getCode()))
-              .findFirst();
-
-          return country.map(Mono::just).orElse(Mono.empty());
-        });
+              .findFirst());
   }
 
   /**
@@ -254,16 +250,15 @@ public class LookupService {
    * Retrieve a single prior authority type matching the specified code.
    *
    * @param code - the prior authority code.
-   * @return A Mono containing the PriorAuthorityTypeDetail
+   * @return A Mono containing an Optional PriorAuthorityTypeDetail
    *     or an error handler if an error occurs.
    */
-  public Mono<PriorAuthorityTypeDetail> getPriorAuthorityType(
+  public Mono<Optional<PriorAuthorityTypeDetail>> getPriorAuthorityType(
       final String code) {
     return this.getPriorAuthorityTypes(code, null)
         .mapNotNull(priorAuthorityTypeDetails -> priorAuthorityTypeDetails.getContent()
             .stream()
-            .findFirst()
-            .orElse(null));
+            .findFirst());
   }
 
   /**
@@ -302,13 +297,12 @@ public class LookupService {
    * Get the Category Of Law Lookup Value with the specified code.
    *
    * @param code - the category of law code.
-   * @return Mono containing the category of law or null if not found.
+   * @return Mono containing an Optional category of law.
    */
-  public Mono<CategoryOfLawLookupValueDetail> getCategoryOfLaw(final String code) {
+  public Mono<Optional<CategoryOfLawLookupValueDetail>> getCategoryOfLaw(final String code) {
     return ebsApiClient.getCategoriesOfLaw(code, null, null)
         .mapNotNull(categoryOfLawLookupDetail -> categoryOfLawLookupDetail.getContent().stream()
-            .findFirst()
-            .orElse(null));
+            .findFirst());
   }
 
   /**
@@ -321,12 +315,36 @@ public class LookupService {
   }
 
   /**
+   * Get a single Person Relationship To Case Lookup Value.
+   *
+   * @return Mono containing an Optional relationship lookup value.
+   */
+  public Mono<Optional<RelationshipToCaseLookupValueDetail>> getPersonToCaseRelationship(
+      final String code) {
+    return ebsApiClient.getPersonToCaseRelationships(code, null)
+        .mapNotNull(relationshipToCaseLookupDetail -> relationshipToCaseLookupDetail.getContent()
+            .stream().findFirst());
+  }
+
+  /**
    * Get a list of all Organisation Relationship To Case Lookup Values.
    *
    * @return Mono containing all relationship lookup values or null if an error occurs.
    */
   public Mono<RelationshipToCaseLookupDetail> getOrganisationToCaseRelationships() {
     return ebsApiClient.getOrganisationToCaseRelationshipValues(null, null);
+  }
+
+  /**
+   * Get a single Organisation Relationship To Case Lookup Value.
+   *
+   * @return Mono containing the Optional relationship lookup value.
+   */
+  public Mono<Optional<RelationshipToCaseLookupValueDetail>> getOrganisationToCaseRelationship(
+      final String code) {
+    return ebsApiClient.getOrganisationToCaseRelationshipValues(code, null)
+        .mapNotNull(relationshipToCaseLookupDetail -> relationshipToCaseLookupDetail.getContent()
+            .stream().findFirst());
   }
 
   /**
@@ -353,16 +371,15 @@ public class LookupService {
    *
    * @param type - the value type.
    * @param code - the value code.
-   * @return a Mono containing the CommonLookupValueDetail
+   * @return a Mono containing the Optional CommonLookupValueDetail
    *     or an error handler if an error occurs.
    */
-  public Mono<CommonLookupValueDetail> getCommonValue(
+  public Mono<Optional<CommonLookupValueDetail>> getCommonValue(
       final String type, final String code) {
     return ebsApiClient.getCommonValues(type, code)
         .mapNotNull(commonLookupDetail -> commonLookupDetail
             .getContent().stream()
-            .findFirst()
-            .orElse(null));
+            .findFirst());
   }
 
   /**

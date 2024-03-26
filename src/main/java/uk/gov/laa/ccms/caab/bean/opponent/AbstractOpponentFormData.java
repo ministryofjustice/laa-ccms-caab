@@ -1,13 +1,16 @@
-package uk.gov.laa.ccms.caab.bean;
+package uk.gov.laa.ccms.caab.bean.opponent;
 
 import lombok.Data;
 
 /**
- * Represents the opponent details stored during opponent creation/edit flows.
+ * Represents the basic opponent details stored during opponent creation/edit flows.
  */
 @Data
-public class OpponentFormData {
-
+public abstract class AbstractOpponentFormData {
+  /**
+   * The id of the opponent.
+   */
+  private Integer id;
 
   /**
    * The partyId of the opponent.
@@ -15,29 +18,14 @@ public class OpponentFormData {
   private String partyId;
 
   /**
-   * The type of Opponent.
+   * The party type of the Opponent.
    */
   private String type;
 
   /**
-   * The name of the organisation Opponent (for opponents of type ORGANISATION only).
+   * The party name, which depends on the type of Opponent (Organisation or Individual).
    */
-  private String organisationName;
-
-  /**
-   * The type of organisation (for opponents of type ORGANISATION only).
-   */
-  private String organisationType;
-
-  /**
-   * The display value for the type of organisation (for opponents of type ORGANISATION only).
-   */
-  private String organisationTypeDisplayValue;
-
-  /**
-   * Flag to indicate that an organisation is currently trading.
-   */
-  private boolean currentlyTrading;
+  private String partyName;
 
   /**
    * The opponent's relationship to the case.
@@ -45,14 +33,19 @@ public class OpponentFormData {
   private String relationshipToCase;
 
   /**
+   * The display value for the opponent's relationship to the case.
+   */
+  private String relationshipToCaseDisplayValue;
+
+  /**
    * The opponent's relationship to the client.
    */
   private String relationshipToClient;
 
   /**
-   * The contact name and role.
+   * The display value for the opponent's relationship to the client.
    */
-  private String contactNameRole;
+  private String relationshipToClientDisplayValue;
 
   /**
    * The opponent house name/number.
@@ -90,19 +83,9 @@ public class OpponentFormData {
   private String postcode;
 
   /**
-   * The home telephone number for the opponent.
-   */
-  private String telephoneHome;
-
-  /**
    * The work telephone number for the opponent.
    */
   private String telephoneWork;
-
-  /**
-   * The mobile number for the opponent.
-   */
-  private String telephoneMobile;
 
   /**
    * The fax number for the opponent.
@@ -120,9 +103,22 @@ public class OpponentFormData {
   private String otherInformation;
 
   /**
-   * Flag to indicate this is a shared opponent.
+   * Flag to indicate that this opponent can be modified.
    */
-  private boolean shared;
+  private Boolean editable;
 
+  /**
+   * Flag to indicate that this opponent can be deleted.
+   */
+  private Boolean deletable;
 
+  /**
+   * The app mode flag.
+   */
+  private Boolean appMode;
+
+  /**
+   * The amendment flag.
+   */
+  private Boolean amendment;
 }

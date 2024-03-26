@@ -1,8 +1,10 @@
 package uk.gov.laa.ccms.caab.bean.validators;
 
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CURRENCY_PATTERN;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.FIRST_CHARACTER_MUST_BE_ALPHA;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.INTERNATIONAL_POSTCODE;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NUMERIC_PATTERN;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.TELEPHONE_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.UK_POSTCODE;
 
 import java.math.BigDecimal;
@@ -34,10 +36,19 @@ public abstract class AbstractValidator implements Validator {
   protected static String GENERIC_INCORRECT_FORMAT = "Your input for '%s' is in an incorrect "
       + "format. Please amend your entry.";
 
+  protected static String GENERIC_FIRST_CHAR_ALPHA = "Your input for %s is invalid. "
+      + "The first character must be a letter. Please amend your entry.";
+
   protected static String GENERIC_NUMERIC_LIMIT_ERROR = "'%s' must be less than %s";
 
   protected static final String GENERIC_MAX_LENGTH =
       "Please enter a maximum of %s characters for %s.";
+
+  protected static final String GENERIC_MIN_LENGTH =
+      "Please enter a minimum of %s characters for %s.";
+
+  protected static final String GENERIC_DOUBLE_SPACES =
+      "Your input for '%s' contains double spaces. Please amend your entry.";
 
   protected void validateRequiredField(
       final String field, final String fieldValue, final String displayValue, Errors errors) {
@@ -100,6 +111,25 @@ public abstract class AbstractValidator implements Validator {
     }
   }
 
+  protected void validateFirstCharAlpha(
+      final String field, final String fieldValue, String displayValue, Errors errors) {
+
+    if (fieldValue == null
+        || (!fieldValue.matches(FIRST_CHARACTER_MUST_BE_ALPHA) && !fieldValue.isEmpty())) {
+      errors.rejectValue(field, "first.char.alpha",
+          String.format(GENERIC_FIRST_CHAR_ALPHA, displayValue));
+    }
+  }
+
+  protected void validateDoubleSpaces(
+      final String field, final String fieldValue, String displayValue, Errors errors) {
+
+    if (fieldValue != null && fieldValue.contains("\s\s")) {
+      errors.rejectValue(field, "double.spaces",
+          String.format(GENERIC_DOUBLE_SPACES, displayValue));
+    }
+  }
+
   protected void validateFieldMaxLength(
       final String field, final String fieldValue, final int maxLength,
       String displayValue, Errors errors) {
@@ -110,22 +140,65 @@ public abstract class AbstractValidator implements Validator {
     }
   }
 
+  protected void validateFieldMinLength(
+      final String field, final String fieldValue, final int minLength,
+      String displayValue, Errors errors) {
+
+    if (fieldValue == null || fieldValue.length() < minLength) {
+      errors.rejectValue(field, "length.below.min",
+          String.format(GENERIC_MIN_LENGTH, minLength, displayValue));
+    }
+  }
+
   protected void validatePostcodeFormat(
       final String country, final String postcode, Errors errors) {
 
     if (StringUtils.hasText(country)) {
       if (country.equals("GBR")) {
-        validateRequiredField("postcode", postcode, "Postcode", errors);
-        if (StringUtils.hasText(postcode)) {
-          validateFieldFormat("postcode", postcode, UK_POSTCODE, "Postcode",
-              errors);
-        }
+        validateUkPostcodeFormat(postcode, true, errors);
       } else {
-        if (StringUtils.hasText(postcode)) {
-          validateFieldFormat("postcode", postcode, INTERNATIONAL_POSTCODE,
-              "Postcode", errors);
-        }
+        validateInternationalPostcodeFormat(postcode, false, errors);
       }
+    }
+  }
+
+  protected void validateUkPostcodeFormat(
+      final String postcode, final boolean required, Errors errors) {
+
+    if (required) {
+      validateRequiredField("postcode", postcode, "Postcode", errors);
+    }
+
+    if (StringUtils.hasText(postcode)) {
+      validateFieldFormat("postcode", postcode, UK_POSTCODE, "Postcode",
+          errors);
+    }
+  }
+
+  protected void validateInternationalPostcodeFormat(
+      final String postcode, final boolean required, Errors errors) {
+
+    if (required) {
+      validateRequiredField("postcode", postcode, "Postcode", errors);
+    }
+
+    if (StringUtils.hasText(postcode)) {
+      validateFieldFormat("postcode", postcode, INTERNATIONAL_POSTCODE, "Postcode",
+          errors);
+    }
+  }
+
+  protected void validateTelephoneNumber(final String field, final String fieldValue,
+      final boolean required, final String displayValue, final Errors errors) {
+
+    if (required) {
+      validateRequiredField(field, fieldValue, displayValue, errors);
+    }
+
+    if (StringUtils.hasText(fieldValue)) {
+      validateFieldMinLength(field, fieldValue, 8, displayValue, errors);
+      validateFieldFormat(field, fieldValue, TELEPHONE_PATTERN, displayValue, errors);
+      validateDoubleSpaces(field, fieldValue, displayValue, errors);
     }
   }
 

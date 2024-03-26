@@ -1,9 +1,9 @@
-package uk.gov.laa.ccms.caab.bean.validators.application;
+package uk.gov.laa.ccms.caab.bean.validators.opponent;
 
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.OrganisationSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**

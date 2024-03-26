@@ -8,9 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.AdditionalAnswers.returnsSecondArg;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -30,6 +32,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_C
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_LEVEL_OF_SERVICE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MATTER_TYPES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
@@ -55,6 +58,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -66,10 +70,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.OpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
@@ -99,7 +105,6 @@ import uk.gov.laa.ccms.caab.model.CostStructure;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.Opponent;
-import uk.gov.laa.ccms.caab.model.OpponentRowDisplay;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -459,7 +464,7 @@ class ApplicationServiceTest {
     when(soaApiClient.getContractDetails(anyInt(), anyInt(), anyString(),
         anyString())).thenReturn(Mono.just(contractDetails));
     when(lookupService.getCategoryOfLaw(applicationFormData.getCategoryOfLawId())).thenReturn(
-        Mono.just(categoryOfLawValue));
+        Mono.just(Optional.of(categoryOfLawValue)));
     when(ebsApiClient.getAmendmentTypes(any())).thenReturn(Mono.just(amendmentTypes));
     when(caabApiClient.createApplication(anyString(), any())).thenReturn(Mono.empty());
 
@@ -513,11 +518,11 @@ class ApplicationServiceTest {
         buildPriorAuthorityTypeDetails("dataType");
 
     when(lookupService.getCommonValue(COMMON_VALUE_APPLICATION_TYPE, soaCase.getCertificateType()))
-        .thenReturn(Mono.just(applicationTypeLookup));
+        .thenReturn(Mono.just(Optional.of(applicationTypeLookup)));
 
     when(lookupService.getCommonValue(COMMON_VALUE_APPLICATION_TYPE,
         soaCase.getApplicationDetails().getApplicationAmendmentType()))
-        .thenReturn(Mono.just(applicationTypeLookup));
+        .thenReturn(Mono.just(Optional.of(applicationTypeLookup)));
 
     when(providerService.getProvider(Integer.parseInt(
         soaCase.getApplicationDetails().getProviderDetails().getProviderFirmId())))
@@ -533,25 +538,25 @@ class ApplicationServiceTest {
     CommonLookupValueDetail matterTypeLookup =
         new CommonLookupValueDetail().code("mat1").description("mat 1");
     when(lookupService.getCommonValue(eq(COMMON_VALUE_MATTER_TYPES), anyString()))
-        .thenReturn(Mono.just(matterTypeLookup));
+        .thenReturn(Mono.just(Optional.of(matterTypeLookup)));
 
     CommonLookupValueDetail levelOfServiceLookup =
         new CommonLookupValueDetail().code("los1").description("los 1");
     when(lookupService.getCommonValue(eq(COMMON_VALUE_LEVEL_OF_SERVICE), anyString()))
-        .thenReturn(Mono.just(levelOfServiceLookup));
+        .thenReturn(Mono.just(Optional.of(levelOfServiceLookup)));
 
     CommonLookupValueDetail clientInvolvementLookup =
         new CommonLookupValueDetail().code("ci1").description("ci 1");
     when(lookupService.getCommonValue(eq(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES), anyString()))
-        .thenReturn(Mono.just(clientInvolvementLookup));
+        .thenReturn(Mono.just(Optional.of(clientInvolvementLookup)));
 
     CommonLookupValueDetail proceedingStatusLookup =
         new CommonLookupValueDetail();
     when(lookupService.getCommonValue(COMMON_VALUE_PROCEEDING_STATUS, soaProceeding.getStatus()))
-        .thenReturn(Mono.just(proceedingStatusLookup));
+        .thenReturn(Mono.just(Optional.of(proceedingStatusLookup)));
 
     when(lookupService.getCommonValue(eq(COMMON_VALUE_SCOPE_LIMITATIONS), anyString()))
-        .thenReturn(Mono.just(new CommonLookupValueDetail()));
+        .thenReturn(Mono.just(Optional.of(new CommonLookupValueDetail())));
 
     // Mock the call for scopeLimitationDetails, used to calculate the max cost limitation.
     ScopeLimitationDetails scopeLimitationOne = new ScopeLimitationDetails()
@@ -603,7 +608,7 @@ class ApplicationServiceTest {
 
     /* START PriorAuthorityMappingContext */
     when(lookupService.getPriorAuthorityType(anyString())).thenReturn(
-        Mono.just(priorAuthorityTypes.getContent().get(0)));
+        Mono.just(Optional.of(priorAuthorityTypes.getContent().get(0))));
 
     /* END PriorAuthorityMappingContext */
 
@@ -621,7 +626,7 @@ class ApplicationServiceTest {
 
     // Mock out the additional calls for copying the application
     when(lookupService.getCategoryOfLaw(applicationToCopy.getCategoryOfLaw().getId()))
-        .thenReturn(Mono.just(new CategoryOfLawLookupValueDetail()));
+        .thenReturn(Mono.just(Optional.of(new CategoryOfLawLookupValueDetail())));
     when(lookupService.getPersonToCaseRelationships()).thenReturn(
         Mono.just(new RelationshipToCaseLookupDetail()));
     when(soaApiClient.getContractDetails(
@@ -691,7 +696,7 @@ class ApplicationServiceTest {
     categoryOfLawLookupValueDetail.setCopyCostLimit(copyCostLimit);
 
     when(lookupService.getCategoryOfLaw(applicationToCopy.getCategoryOfLaw().getId()))
-        .thenReturn(Mono.just(categoryOfLawLookupValueDetail));
+        .thenReturn(Mono.just(Optional.of(categoryOfLawLookupValueDetail)));
 
     RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
         buildRelationshipToCaseLookupDetail();
@@ -1087,7 +1092,7 @@ class ApplicationServiceTest {
     PriorAuthorityDetail priorAuthoritiesItem = priorAuthorityTypeDetail.getPriorAuthorities().get(0);
 
     when(lookupService.getPriorAuthorityType(soaPriorAuthority.getPriorAuthorityType()))
-        .thenReturn(Mono.just(priorAuthorityTypeDetail));
+        .thenReturn(Mono.just(Optional.of(priorAuthorityTypeDetail)));
 
     CommonLookupValueDetail lookup = new CommonLookupValueDetail()
         .code("thecode")
@@ -1095,7 +1100,7 @@ class ApplicationServiceTest {
 
     when(lookupService.getCommonValue(priorAuthoritiesItem.getLovCode(),
         soaPriorAuthority.getDetails().get(0).getValue()))
-        .thenReturn(Mono.just(lookup));
+        .thenReturn(Mono.just(Optional.of(lookup)));
 
     PriorAuthorityMappingContext result = applicationService.buildPriorAuthorityMappingContext(
         soaPriorAuthority);
@@ -1127,7 +1132,7 @@ class ApplicationServiceTest {
     PriorAuthorityTypeDetail priorAuthorityTypeDetail = priorAuthorityTypeDetails.getContent().get(0);
 
     when(lookupService.getPriorAuthorityType(soaPriorAuthority.getPriorAuthorityType()))
-        .thenReturn(Mono.just(priorAuthorityTypeDetail));
+        .thenReturn(Mono.just(Optional.of(priorAuthorityTypeDetail)));
 
     PriorAuthorityMappingContext result = applicationService.buildPriorAuthorityMappingContext(
         soaPriorAuthority);
@@ -1178,7 +1183,7 @@ class ApplicationServiceTest {
         .addPriorAuthoritiesItem(priorAuthoritiesItem);
 
     when(lookupService.getPriorAuthorityType(soaPriorAuthority.getPriorAuthorityType()))
-        .thenReturn(Mono.just(priorAuthorityTypeDetail));
+        .thenReturn(Mono.just(Optional.of(priorAuthorityTypeDetail)));
 
     when(lookupService.getCommonValue(priorAuthoritiesItem.getLovCode(),
         soaPriorAuthority.getDetails().get(0).getValue()))
@@ -1206,43 +1211,43 @@ class ApplicationServiceTest {
     CommonLookupValueDetail proceedingStatusLookup =
         new CommonLookupValueDetail();
     when(lookupService.getCommonValue(COMMON_VALUE_PROCEEDING_STATUS,  soaProceeding.getStatus()))
-        .thenReturn(Mono.just(proceedingStatusLookup));
+        .thenReturn(Mono.just(Optional.of(proceedingStatusLookup)));
 
     CommonLookupValueDetail matterTypeLookup = new CommonLookupValueDetail()
         .code(soaProceeding.getMatterType())
         .description("the matter type");
     when(lookupService.getCommonValue(COMMON_VALUE_MATTER_TYPES, soaProceeding.getMatterType()))
-        .thenReturn(Mono.just(matterTypeLookup));
+        .thenReturn(Mono.just(Optional.of(matterTypeLookup)));
 
     CommonLookupValueDetail levelOfServiceLookup = new CommonLookupValueDetail()
         .code(soaProceeding.getLevelOfService())
         .description("the los");
     when(lookupService.getCommonValue(COMMON_VALUE_LEVEL_OF_SERVICE,soaProceeding.getLevelOfService()))
-        .thenReturn(Mono.just(levelOfServiceLookup));
+        .thenReturn(Mono.just(Optional.of(levelOfServiceLookup)));
 
     CommonLookupValueDetail clientInvLookup = new CommonLookupValueDetail()
         .code(soaProceeding.getClientInvolvementType())
         .description("the involvement");
     when(lookupService.getCommonValue(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES, soaProceeding.getClientInvolvementType()))
-        .thenReturn(Mono.just(clientInvLookup));
+        .thenReturn(Mono.just(Optional.of(clientInvLookup)));
 
     CommonLookupValueDetail scopeLimitationOneLookup = new CommonLookupValueDetail()
         .code(soaProceeding.getScopeLimitations().get(0).getScopeLimitation())
         .description("the limitation 1");
     when(lookupService.getCommonValue(COMMON_VALUE_SCOPE_LIMITATIONS, soaProceeding.getScopeLimitations().get(0).getScopeLimitation()))
-        .thenReturn(Mono.just(scopeLimitationOneLookup));
+        .thenReturn(Mono.just(Optional.of(scopeLimitationOneLookup)));
 
     CommonLookupValueDetail scopeLimitationTwoLookup = new CommonLookupValueDetail()
         .code(soaProceeding.getScopeLimitations().get(1).getScopeLimitation())
         .description("the limitation 2");
     when(lookupService.getCommonValue(COMMON_VALUE_SCOPE_LIMITATIONS, soaProceeding.getScopeLimitations().get(1).getScopeLimitation()))
-        .thenReturn(Mono.just(scopeLimitationTwoLookup));
+        .thenReturn(Mono.just(Optional.of(scopeLimitationTwoLookup)));
 
     CommonLookupValueDetail scopeLimitationThreeLookup = new CommonLookupValueDetail()
         .code(soaProceeding.getScopeLimitations().get(2).getScopeLimitation())
         .description("the limitation 3");
     when(lookupService.getCommonValue(COMMON_VALUE_SCOPE_LIMITATIONS, soaProceeding.getScopeLimitations().get(2).getScopeLimitation()))
-        .thenReturn(Mono.just(scopeLimitationThreeLookup));
+        .thenReturn(Mono.just(Optional.of(scopeLimitationThreeLookup)));
 
     // Mock the call for scopeLimitationDetails, used to calculate the max cost limitation.
     ScopeLimitationDetails scopeLimitationOne = new ScopeLimitationDetails()
@@ -1410,11 +1415,11 @@ class ApplicationServiceTest {
         soaCase.getApplicationDetails().getProviderDetails().getSupervisorContactId());
 
     when(lookupService.getCommonValue(COMMON_VALUE_APPLICATION_TYPE, soaCase.getCertificateType()))
-        .thenReturn(Mono.just(applicationTypeLookup));
+        .thenReturn(Mono.just(Optional.of(applicationTypeLookup)));
 
     when(lookupService.getCommonValue(COMMON_VALUE_APPLICATION_TYPE,
         soaCase.getApplicationDetails().getApplicationAmendmentType()))
-        .thenReturn(Mono.just(applicationTypeLookup));
+        .thenReturn(Mono.just(Optional.of(applicationTypeLookup)));
 
     when(providerService.getProvider(Integer.parseInt(
         soaCase.getApplicationDetails().getProviderDetails().getProviderFirmId())))
@@ -1422,22 +1427,22 @@ class ApplicationServiceTest {
 
     CommonLookupValueDetail matterTypeLookup =
         new CommonLookupValueDetail().code("mat1").description("mat 1");
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_MATTER_TYPES), anyString())).thenReturn(Mono.just(matterTypeLookup));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_MATTER_TYPES), anyString())).thenReturn(Mono.just(Optional.of(matterTypeLookup)));
 
     CommonLookupValueDetail levelOfServiceLookup =
         new CommonLookupValueDetail().code("los1").description("los 1");
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_LEVEL_OF_SERVICE), anyString())).thenReturn(Mono.just(levelOfServiceLookup));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_LEVEL_OF_SERVICE), anyString())).thenReturn(Mono.just(Optional.of(levelOfServiceLookup)));
 
     CommonLookupValueDetail clientInvolvementLookup =
         new CommonLookupValueDetail().code("ci1").description("ci 1");
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES), anyString())).thenReturn(Mono.just(clientInvolvementLookup));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES), anyString())).thenReturn(Mono.just(Optional.of(clientInvolvementLookup)));
 
     // Also need to mock calls for the 'sub' mapping contexts, but we aren't testing their
     // content here.
     when(ebsApiClient.getProceeding(any(String.class)))
         .thenReturn(Mono.just(new uk.gov.laa.ccms.data.model.ProceedingDetail()));
     when(lookupService.getCommonValue(eq(COMMON_VALUE_PROCEEDING_STATUS),  any(String.class)))
-        .thenReturn(Mono.just(new CommonLookupValueDetail()));
+        .thenReturn(Mono.just(Optional.of(new CommonLookupValueDetail())));
     when(lookupService.getAwardTypes()).thenReturn(Mono.just(
         new AwardTypeLookupDetail()
             .addContentItem(new AwardTypeLookupValueDetail())));
@@ -1498,11 +1503,11 @@ class ApplicationServiceTest {
         soaCase.getApplicationDetails().getProviderDetails().getSupervisorContactId());
 
     when(lookupService.getCommonValue(COMMON_VALUE_APPLICATION_TYPE,soaCase.getCertificateType()))
-        .thenReturn(Mono.just(applicationTypeLookup));
+        .thenReturn(Mono.just(Optional.of(applicationTypeLookup)));
 
     when(lookupService.getCommonValue(COMMON_VALUE_APPLICATION_TYPE,
         soaCase.getApplicationDetails().getApplicationAmendmentType()))
-        .thenReturn(Mono.just(applicationTypeLookup));
+        .thenReturn(Mono.just(Optional.of(applicationTypeLookup)));
 
     when(providerService.getProvider(Integer.parseInt(
         soaCase.getApplicationDetails().getProviderDetails().getProviderFirmId())))
@@ -1510,22 +1515,22 @@ class ApplicationServiceTest {
 
     CommonLookupValueDetail matterTypeLookup =
         new CommonLookupValueDetail().code("mat1").description("mat 1");
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_MATTER_TYPES),anyString())).thenReturn(Mono.just(matterTypeLookup));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_MATTER_TYPES),anyString())).thenReturn(Mono.just(Optional.of(matterTypeLookup)));
 
     CommonLookupValueDetail levelOfServiceLookup =
         new CommonLookupValueDetail().code("los1").description("los 1");
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_LEVEL_OF_SERVICE),anyString())).thenReturn(Mono.just(levelOfServiceLookup));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_LEVEL_OF_SERVICE),anyString())).thenReturn(Mono.just(Optional.of(levelOfServiceLookup)));
 
     CommonLookupValueDetail clientInvolvementLookup =
         new CommonLookupValueDetail().code("ci1").description("ci 1");
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES),anyString())).thenReturn(Mono.just(clientInvolvementLookup));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES),anyString())).thenReturn(Mono.just(Optional.of(clientInvolvementLookup)));
 
     // Also need to mock calls for the 'sub' mapping contexts, but we aren't testing their
     // content here.
     when(ebsApiClient.getProceeding(any(String.class)))
         .thenReturn(Mono.just(new uk.gov.laa.ccms.data.model.ProceedingDetail()));
     when(lookupService.getCommonValue(eq(COMMON_VALUE_PROCEEDING_STATUS),  any(String.class)))
-        .thenReturn(Mono.just(new CommonLookupValueDetail()));
+        .thenReturn(Mono.just(Optional.of(new CommonLookupValueDetail())));
     when(lookupService.getAwardTypes()).thenReturn(Mono.just(
         new AwardTypeLookupDetail()
             .addContentItem(new AwardTypeLookupValueDetail())));
@@ -1565,7 +1570,7 @@ class ApplicationServiceTest {
 
     CommonLookupValueDetail certificateTypeLookup = new CommonLookupValueDetail();
     when(lookupService.getCommonValue(COMMON_VALUE_APPLICATION_TYPE, soaCase.getCertificateType()))
-        .thenReturn(Mono.just(certificateTypeLookup));
+        .thenReturn(Mono.just(Optional.of(certificateTypeLookup)));
 
     when(providerService.getProvider(Integer.parseInt(
         soaCase.getApplicationDetails().getProviderDetails().getProviderFirmId())))
@@ -1573,15 +1578,15 @@ class ApplicationServiceTest {
 
     CommonLookupValueDetail matterTypeLookup =
         new CommonLookupValueDetail().code("mat1").description("mat 1");
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_MATTER_TYPES),anyString())).thenReturn(Mono.just(matterTypeLookup));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_MATTER_TYPES),anyString())).thenReturn(Mono.just(Optional.of(matterTypeLookup)));
 
     CommonLookupValueDetail levelOfServiceLookup =
         new CommonLookupValueDetail().code("los1").description("los 1");
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_LEVEL_OF_SERVICE),anyString())).thenReturn(Mono.just(levelOfServiceLookup));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_LEVEL_OF_SERVICE),anyString())).thenReturn(Mono.just(Optional.of(levelOfServiceLookup)));
 
     CommonLookupValueDetail clientInvolvementLookup =
         new CommonLookupValueDetail().code("ci1").description("ci 1");
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES),anyString())).thenReturn(Mono.just(clientInvolvementLookup));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES),anyString())).thenReturn(Mono.just(Optional.of(clientInvolvementLookup)));
 
 
     // Also need to mock calls for the 'sub' mapping contexts, but we aren't testing their
@@ -1589,7 +1594,7 @@ class ApplicationServiceTest {
     when(ebsApiClient.getProceeding(any(String.class)))
         .thenReturn(Mono.just(new uk.gov.laa.ccms.data.model.ProceedingDetail()));
     when(lookupService.getCommonValue(eq(COMMON_VALUE_PROCEEDING_STATUS),  any(String.class)))
-        .thenReturn(Mono.just(new CommonLookupValueDetail()));
+        .thenReturn(Mono.just(Optional.of(new CommonLookupValueDetail())));
     when(lookupService.getAwardTypes()).thenReturn(Mono.just(
         new AwardTypeLookupDetail()
             .addContentItem(new AwardTypeLookupValueDetail())));
@@ -1641,17 +1646,17 @@ class ApplicationServiceTest {
   void testToIndividualOpponentPartyName_buildsFullName() {
     Opponent opponent = buildOpponent(new Date());
 
-    CommonLookupDetail contactTitles = new CommonLookupDetail();
-    CommonLookupValueDetail title = new CommonLookupValueDetail()
+    CommonLookupValueDetail titleLookup = new CommonLookupValueDetail()
         .code(opponent.getTitle())
         .description("test");
-    contactTitles.addContentItem(title);
+    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle())).thenReturn(
+        Mono.just(Optional.of(titleLookup)));
 
     String fullName =
-        applicationService.toIndividualOpponentPartyName(opponent, contactTitles);
+        applicationService.toIndividualOpponentPartyName(opponent);
 
     assertNotNull(fullName);
-    String expectedResult = title.getDescription() + " " + opponent.getFirstName() + " " + opponent.getSurname();
+    String expectedResult = titleLookup.getDescription() + " " + opponent.getFirstName() + " " + opponent.getSurname();
     assertEquals(expectedResult, fullName);
   }
 
@@ -1659,10 +1664,11 @@ class ApplicationServiceTest {
   void testToIndividualOpponentPartyName_noTitleMatchReturnsCode() {
     Opponent opponent = buildOpponent(new Date());
 
-    CommonLookupDetail contactTitles = new CommonLookupDetail();
+    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle())).thenReturn(
+        Mono.just(Optional.empty()));
 
     String fullName =
-        applicationService.toIndividualOpponentPartyName(opponent, contactTitles);
+        applicationService.toIndividualOpponentPartyName(opponent);
 
     assertNotNull(fullName);
     String expectedResult = opponent.getTitle() + " " + opponent.getFirstName() + " " + opponent.getSurname();
@@ -1673,14 +1679,8 @@ class ApplicationServiceTest {
   void testToIndividualOpponentPartyName_noNameElementsReturnsUndefined() {
     Opponent opponent = new Opponent();
 
-    CommonLookupDetail contactTitles = new CommonLookupDetail();
-    CommonLookupValueDetail title = new CommonLookupValueDetail()
-        .code(opponent.getTitle())
-        .description("test");
-    contactTitles.addContentItem(title);
-
     String fullName =
-        applicationService.toIndividualOpponentPartyName(opponent, contactTitles);
+        applicationService.toIndividualOpponentPartyName(opponent);
 
     assertNotNull(fullName);
     String expectedResult = "undefined";
@@ -1692,10 +1692,11 @@ class ApplicationServiceTest {
     Opponent opponent = buildOpponent(new Date());
     opponent.setFirstName(null);
 
-    CommonLookupDetail contactTitles = new CommonLookupDetail();
+    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle())).thenReturn(
+        Mono.just(Optional.empty()));
 
     String fullName =
-        applicationService.toIndividualOpponentPartyName(opponent, contactTitles);
+        applicationService.toIndividualOpponentPartyName(opponent);
 
     assertNotNull(fullName);
     String expectedResult = opponent.getTitle() + " " + opponent.getSurname();
@@ -1707,10 +1708,11 @@ class ApplicationServiceTest {
     Opponent opponent = buildOpponent(new Date());
     opponent.setSurname(null);
 
-    CommonLookupDetail contactTitles = new CommonLookupDetail();
+    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle())).thenReturn(
+        Mono.just(Optional.empty()));
 
     String fullName =
-        applicationService.toIndividualOpponentPartyName(opponent, contactTitles);
+        applicationService.toIndividualOpponentPartyName(opponent);
 
     assertNotNull(fullName);
     String expectedResult = opponent.getTitle() + " " + opponent.getFirstName();
@@ -1723,10 +1725,11 @@ class ApplicationServiceTest {
     opponent.setFirstName(null);
     opponent.setSurname(null);
 
-    CommonLookupDetail contactTitles = new CommonLookupDetail();
+    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle())).thenReturn(
+        Mono.just(Optional.empty()));
 
     String fullName =
-        applicationService.toIndividualOpponentPartyName(opponent, contactTitles);
+        applicationService.toIndividualOpponentPartyName(opponent);
 
     assertNotNull(fullName);
     String expectedResult = opponent.getTitle();
@@ -1734,142 +1737,201 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void testBuildIndividualOpponentRowDisplay_noLookupMatchReturnsCodes() {
+  void testBuildIndividualOpponentFormData_noLookupMatchReturnsCodes() {
     Opponent opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_INDIVIDUAL);
 
-    OpponentRowDisplay result = applicationService.buildOpponentRowDisplay(
-        opponent,
-        new CommonLookupDetail(),
-        new RelationshipToCaseLookupDetail(),
-        new RelationshipToCaseLookupDetail(),
-        new CommonLookupDetail());
+    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle())).thenReturn(
+        Mono.just(Optional.empty()));
+    when(lookupService.getPersonToCaseRelationship(opponent.getRelationshipToCase())).thenReturn(
+        Mono.just(Optional.empty()));
+    when(lookupService.getCommonValue(COMMON_VALUE_RELATIONSHIP_TO_CLIENT,
+        opponent.getRelationshipToClient())).thenReturn(
+        Mono.just(Optional.empty()));
 
     String expectedPartyName =
         opponent.getTitle() + " " + opponent.getFirstName() + " " + opponent.getSurname();
 
-    assertNotNull(result);
-    assertEquals(opponent.getId(), result.getId());
-    assertEquals(expectedPartyName, result.getPartyName());
-    assertEquals(opponent.getType(), result.getPartyType());
-    assertEquals(opponent.getRelationshipToCase(), result.getRelationshipToCase());
-    assertEquals(opponent.getRelationshipToClient(), result.getRelationshipToClient());
-  }
-
-  @Test
-  void testBuildOrgOpponentRowDisplay_ReturnsOrganisationName() {
-    Opponent opponent = buildOpponent(new Date());
-    opponent.setType(OPPONENT_TYPE_ORGANISATION);
-
-    OpponentRowDisplay result = applicationService.buildOpponentRowDisplay(
+    when(opponentMapper.toOpponentFormData(
         opponent,
-        new CommonLookupDetail(),
-        new RelationshipToCaseLookupDetail(),
-        new RelationshipToCaseLookupDetail(),
-        new CommonLookupDetail());
+        expectedPartyName,
+        null,
+        opponent.getRelationshipToCase(),
+        opponent.getRelationshipToClient(),
+        true)).thenReturn(new IndividualOpponentFormData());
 
-    String expectedPartyName =
-        opponent.getOrganisationName();
+    AbstractOpponentFormData result = applicationService.buildOpponentFormData(opponent);
 
     assertNotNull(result);
-    assertEquals(opponent.getId(), result.getId());
-    assertEquals(expectedPartyName, result.getPartyName());
-    assertEquals(opponent.getType(), result.getPartyType());
-    assertEquals(opponent.getRelationshipToCase(), result.getRelationshipToCase());
-    assertEquals(opponent.getRelationshipToClient(), result.getRelationshipToClient());
+    verify(opponentMapper).toOpponentFormData(
+        opponent,
+        expectedPartyName,
+        null,
+        opponent.getRelationshipToCase(),
+        opponent.getRelationshipToClient(),
+        true);
   }
 
   @Test
-  void testBuildOrgOpponentRowDisplay_lookupMatchesReturnDisplayValues() {
+  void testBuildOrgOpponentFormData_ReturnsOrganisationName() {
     Opponent opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_ORGANISATION);
+
+    when(lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES,
+        opponent.getOrganisationType().getId())).thenReturn(
+        Mono.just(Optional.empty()));
+    when(lookupService.getOrganisationToCaseRelationship(opponent.getRelationshipToCase())).thenReturn(
+        Mono.just(Optional.empty()));
+    when(lookupService.getCommonValue(COMMON_VALUE_RELATIONSHIP_TO_CLIENT,
+        opponent.getRelationshipToClient())).thenReturn(
+        Mono.just(Optional.empty()));
+
+    String expectedPartyName = opponent.getOrganisationName();
+
+    when(opponentMapper.toOpponentFormData(
+        opponent,
+        expectedPartyName,
+        opponent.getOrganisationType().getId(),
+        opponent.getRelationshipToCase(),
+        opponent.getRelationshipToClient(),
+        true)).thenReturn(new OrganisationOpponentFormData());
+
+    AbstractOpponentFormData result = applicationService.buildOpponentFormData(opponent);
+
+    assertNotNull(result);
+    verify(opponentMapper).toOpponentFormData(
+        opponent,
+        expectedPartyName,
+        opponent.getOrganisationType().getId(),
+        opponent.getRelationshipToCase(),
+        opponent.getRelationshipToClient(),
+        true);
+  }
+
+  @Test
+  void testBuildOrgOpponentFormData_lookupMatchesReturnDisplayValues() {
+    Opponent opponent = buildOpponent(new Date());
+    opponent.setType(OPPONENT_TYPE_ORGANISATION);
+
+    CommonLookupValueDetail organisationTypeLookup = new CommonLookupValueDetail()
+        .code(opponent.getOrganisationType().getId())
+        .description("org type");
+
+    when(lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES,
+        opponent.getOrganisationType().getId())).thenReturn(
+        Mono.just(Optional.of(organisationTypeLookup)));
 
     RelationshipToCaseLookupValueDetail orgRelationshipToCase =
         new RelationshipToCaseLookupValueDetail()
             .code(opponent.getRelationshipToCase())
             .description("org rel");
-    RelationshipToCaseLookupDetail orgRelationshipsToCase =
-        new RelationshipToCaseLookupDetail()
-            .addContentItem(orgRelationshipToCase);
+
+    when(lookupService.getOrganisationToCaseRelationship(opponent.getRelationshipToCase())).thenReturn(
+        Mono.just(Optional.of(orgRelationshipToCase)));
 
     CommonLookupValueDetail relationshipToClient = new CommonLookupValueDetail()
         .code(opponent.getRelationshipToClient())
         .description("rel 2 client");
-    CommonLookupDetail relationshipsToClient = new CommonLookupDetail()
-        .addContentItem(relationshipToClient);
 
-    OpponentRowDisplay result = applicationService.buildOpponentRowDisplay(
-        opponent,
-        new CommonLookupDetail(),
-        new RelationshipToCaseLookupDetail(),
-        orgRelationshipsToCase,
-        relationshipsToClient);
+    when(lookupService.getCommonValue(COMMON_VALUE_RELATIONSHIP_TO_CLIENT,
+        opponent.getRelationshipToClient())).thenReturn(
+        Mono.just(Optional.of(relationshipToClient)));
 
     String expectedPartyName =
         opponent.getOrganisationName();
 
+    when(opponentMapper.toOpponentFormData(
+        opponent,
+        expectedPartyName,
+        organisationTypeLookup.getDescription(),
+        orgRelationshipToCase.getDescription(),
+        relationshipToClient.getDescription(),
+        true)).thenReturn(new OrganisationOpponentFormData());
+
+    AbstractOpponentFormData result = applicationService.buildOpponentFormData(opponent);
+
     assertNotNull(result);
-    assertEquals(opponent.getId(), result.getId());
-    assertEquals(expectedPartyName, result.getPartyName());
-    assertEquals(opponent.getType(), result.getPartyType());
-    assertEquals(orgRelationshipToCase.getDescription(), result.getRelationshipToCase());
-    assertEquals(relationshipToClient.getDescription(), result.getRelationshipToClient());
+    verify(opponentMapper).toOpponentFormData(
+        opponent,
+        expectedPartyName,
+        organisationTypeLookup.getDescription(),
+        orgRelationshipToCase.getDescription(),
+        relationshipToClient.getDescription(),
+        true);
   }
 
   @Test
-  void testBuildIndividualOpponentRowDisplay_lookupMatchesReturnDisplayValues() {
+  void testBuildIndividualOpponentFormData_lookupMatchesReturnDisplayValues() {
     Opponent opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_INDIVIDUAL);
+
+    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE,
+        opponent.getTitle())).thenReturn(
+        Mono.just(Optional.empty()));
 
     RelationshipToCaseLookupValueDetail personRelationshipToCase =
         new RelationshipToCaseLookupValueDetail()
             .code(opponent.getRelationshipToCase())
             .description("ind rel");
-    RelationshipToCaseLookupDetail personRelationshipsToCase =
-        new RelationshipToCaseLookupDetail()
-            .addContentItem(personRelationshipToCase);
+
+    when(lookupService.getPersonToCaseRelationship(opponent.getRelationshipToCase())).thenReturn(
+        Mono.just(Optional.of(personRelationshipToCase)));
 
     CommonLookupValueDetail relationshipToClient = new CommonLookupValueDetail()
         .code(opponent.getRelationshipToClient())
         .description("rel 2 client");
-    CommonLookupDetail relationshipsToClient = new CommonLookupDetail()
-        .addContentItem(relationshipToClient);
 
-    OpponentRowDisplay result = applicationService.buildOpponentRowDisplay(
-        opponent,
-        new CommonLookupDetail(),
-        personRelationshipsToCase,
-        new RelationshipToCaseLookupDetail(),
-        relationshipsToClient);
+    when(lookupService.getCommonValue(COMMON_VALUE_RELATIONSHIP_TO_CLIENT,
+        opponent.getRelationshipToClient())).thenReturn(
+        Mono.just(Optional.of(relationshipToClient)));
 
     String expectedPartyName =
         opponent.getTitle() + " " + opponent.getFirstName() + " " + opponent.getSurname();
 
+    when(opponentMapper.toOpponentFormData(
+        opponent,
+        expectedPartyName,
+        null,
+        personRelationshipToCase.getDescription(),
+        relationshipToClient.getDescription(),
+        true)).thenReturn(new IndividualOpponentFormData());
+
+    AbstractOpponentFormData result = applicationService.buildOpponentFormData(opponent);
+
     assertNotNull(result);
-    assertEquals(opponent.getId(), result.getId());
-    assertEquals(expectedPartyName, result.getPartyName());
-    assertEquals(opponent.getType(), result.getPartyType());
-    assertEquals(personRelationshipToCase.getDescription(), result.getRelationshipToCase());
-    assertEquals(relationshipToClient.getDescription(), result.getRelationshipToClient());
+    verify(opponentMapper).toOpponentFormData(opponent,
+        expectedPartyName,
+        null,
+        personRelationshipToCase.getDescription(),
+        relationshipToClient.getDescription(),
+        true);
   }
 
   @Test
   void testGetOpponents_queriesLookupData() {
     final String applicationId = "123";
     Opponent opponent = buildOpponent(new Date());
-
-    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(Mono.just(new CommonLookupDetail()));
-    when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.just(new RelationshipToCaseLookupDetail()));
-    when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.just(new RelationshipToCaseLookupDetail()));
-    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(new CommonLookupDetail()));
+    opponent.setType(OPPONENT_TYPE_INDIVIDUAL);
 
     when(caabApiClient.getOpponents(applicationId)).thenReturn(Mono.just(List.of(opponent)));
-    ResultsDisplay<OpponentRowDisplay> result =
+
+    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle()))
+        .thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getPersonToCaseRelationship(opponent.getRelationshipToCase()))
+        .thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getCommonValue(COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
+        .thenReturn(Mono.just(Optional.empty()));
+
+    when(opponentMapper.toOpponentFormData(eq(opponent), anyString(), isNull(), anyString(), anyString(), anyBoolean()))
+        .thenReturn(new IndividualOpponentFormData());
+
+    List<AbstractOpponentFormData> result =
         applicationService.getOpponents(applicationId);
 
     assertNotNull(result);
-    assertEquals(1, result.getContent().size());
+    assertEquals(1, result.size());
 
+    verify(opponentMapper).toOpponentFormData(eq(opponent), anyString(), isNull(), anyString(), anyString(), anyBoolean());
   }
 
   private ApplicationFormData buildApplicationFormData() {
@@ -2223,7 +2285,7 @@ class ApplicationServiceTest {
     UserDetail user = new UserDetail().loginId("userLoginId");
     ApplicationDetail application = getApplicationDetail();
 
-    OpponentFormData opponentFormData = new OpponentFormData();
+    AbstractOpponentFormData opponentFormData = new IndividualOpponentFormData();
     Opponent opponent = new Opponent();
 
     when(opponentMapper.toOpponent(opponentFormData)).thenReturn(opponent);

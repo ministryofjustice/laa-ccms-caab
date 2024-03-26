@@ -25,7 +25,7 @@ import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.OrganisationSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
@@ -815,7 +815,7 @@ class SoaApiClientTest {
     String userType = "userType";
     String orgId = "123";
 
-    String expectedUri = String.format("/organisation/%s", orgId);
+    String expectedUri = String.format("/organisations/%s", orgId);
 
     OrganisationDetail mockOrganisationDetail = new OrganisationDetail();
 

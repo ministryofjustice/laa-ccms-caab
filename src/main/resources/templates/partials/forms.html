@@ -137,3 +137,63 @@
            th:field="*{__${fieldId}__}">
   </div>
 </div>
+
+<div th:fragment="radios(fieldId, formLabel, list, itemValue, itemLabel, isSingleQuestion)"
+     class="govuk-form-group"
+     th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
+
+  <span th:if="${#fields.hasErrors(fieldId)}" th:errors="*{__${fieldId}__}" class="govuk-error-message"></span>
+
+  <fieldset class="govuk-fieldset">
+    <div th:if="${isSingleQuestion}">
+        <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+          <h2 class="govuk-fieldset__heading" th:text="${formLabel}"></h2>
+        </legend>
+    </div>
+    <div th:unless="${isSingleQuestion}">
+      <label class="govuk-fieldset__legend govuk-label"  th:for="${fieldId}" th:text="${formLabel}">
+      </label>
+    </div>
+
+    <div class="govuk-radios govuk-radios--inline" data-module="govuk-radios">
+      <div th:each="item : ${list}"
+           th:class="govuk-radios__item">
+        <input class="govuk-radios__input"
+               th:id="${fieldId + '-' + item[itemValue]}"
+               th:field="*{__${fieldId}__}"
+               th:errorclass="govuk-select--error"
+               th:name="${fieldId}"
+               type="radio"
+               th:value="${item[itemValue]}">
+
+        <label class="govuk-label govuk-radios__label"
+               th:for="${fieldId + '-' + item[itemValue]}"
+               th:text="${item[itemLabel]}">
+        </label>
+      </div>
+    </div>
+  </fieldset>
+</div>
+
+<div th:fragment="dateOfBirth(dobDayId, dobMonthId, dobYearId, formLabel)"
+     class="govuk-form-group" th:classappend="${#fields.hasErrors(dobDayId) || #fields.hasErrors(dobMonthId) || #fields.hasErrors(dobYearId)} ? 'govuk-form-group--error' : ''">
+  <fieldset class="govuk-fieldset" role="group" aria-describedby="dob-hint dob-error">
+    <legend class="govuk-fieldset__legend" th:text="${formLabel}">
+    </legend>
+    <div id="dob-hint" class="govuk-hint">
+      For example, 27 3 2007
+    </div>
+    <p id="dob-error" class="govuk-error-message">
+      <span th:each="error : ${#fields.detailedErrors()}">
+          <span th:inline="text" th:if="${error.fieldName == dobDayId || error.fieldName == dobMonthId || error.fieldName == dobYearId}">
+              <span th:utext="${error.message + '<br>'}"></span>
+          </span>
+      </span>
+    </p>
+    <div class="govuk-date-input" id="dob">
+      <div th:replace="partials/forms::numericInput(${dobDayId}, 'Day', '2')"></div>
+      <div th:replace="partials/forms::numericInput(${dobMonthId}, 'Month', '2')"></div>
+      <div th:replace="partials/forms::numericInput(${dobYearId}, 'Year', '4')"></div>
+    </div>
+  </fieldset>
+</div>

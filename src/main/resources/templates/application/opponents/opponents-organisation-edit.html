@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>LAA CCMS - Start new application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a href="/application/summary/opponents" class="govuk-back-link">Cancel and return to opponents and other parties</a>
+    </div>
+    <div id="main-content">
+        <form action="#" th:action="@{/application/opponents/{id}/edit(id=${opponent.id})}" th:object="${opponent}" method="post">
+            <div th:replace="~{partials/error-summary :: error-summary}"></div>
+            <span class="govuk-caption-l">Create application</span>
+            <h1 class="govuk-heading-l">
+                Opponents and other parties
+            </h1>
+            <p class="govuk-body-l">
+                Please enter the details for any opponents and other parties involved in this application/amendment.
+            </p>
+            <h1 class="govuk-heading-m">
+                Edit organisation
+            </h1>
+            <div th:replace="~{application/partials/opponent-fragments :: createOrganisation}"></div>
+            <div class="govuk-button-group">
+                <button type="submit" class="govuk-button" data-module="govuk-button">
+                    Confirm
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -9,6 +9,12 @@ import lombok.Data;
 public class ValidationPatternConstants {
 
   /**
+   * The standard set of allowable characters.
+   */
+  public static final String STANDARD_CHARACTER_SET =
+      "^[A-Za-z0-9 ~!\",#$%&\\'\\r\\n\\(\\)\\*\\+\\/:;\\.\\-=\\?\\[\\]_\\{\\}^£€]*$";
+
+  /**
    * Validation pattern to check for numerical values.
    */
   public static final String NUMERIC_PATTERN = "[0-9]+";
@@ -17,6 +23,12 @@ public class ValidationPatternConstants {
    * Validation pattern to check for currency values.
    */
   public static final String CURRENCY_PATTERN = "[0-9]+(.[0-9]{1,2})?";
+
+  /**
+   * Validation pattern for an email address.
+   */
+  public static final String EMAIL_ADDRESS =
+      "^[A-Za-z0-9!#$%&amp;&apos;\\*\\+\\-/=\\?^_`\\.\\{\\|\\}~]+@[A-Za-z0-9\\-\\.]+$";
 
   /**
    * Validation pattern for national insurance numbers.
@@ -85,6 +97,11 @@ public class ValidationPatternConstants {
       + ")|(" + UK_POSTCODE_6 + "))*$";
 
   /**
+   * Pattern for telephone numbers.
+   */
+  public static final String TELEPHONE_PATTERN = "^[0-9 \\+\\-\\(\\)]*$";
+
+  /**
    * pattern for double-space.
    */
   public static final String DOUBLE_SPACE = "[ ]{2,}";
@@ -96,15 +113,33 @@ public class ValidationPatternConstants {
   public static final String ALPHA_NUMERIC_SLASH_SPACE_STRING = "^[A-Za-z0-9\\s/]*$";
 
   /**
+   * pattern primarily for address house name or number. Alphanumerics with spaces and commas.
+   */
+  public static final String ALPHA_NUMERIC_SPACES_COMMAS = "^([A-Za-z0-9 ,])*$";
+
+  /**
    * pattern to test that the first character in a string is alphabetic.
    */
   public static final String FIRST_CHARACTER_MUST_BE_ALPHA = "^[A-Za-z].*";
+
+  /**
+   * pattern to match what is known in provider-ui as 'characterSetA'.
+   */
+  public static final String CHARACTER_SET_A =
+      "^[A-Za-z0-9 \\.,\\-\\(\\)/=!\"%&\\*;<>'\\r\\n\\+:\\?]*$";
 
   /**
    * pattern to match what is known in provider-ui as 'characterSetC'.
    * Valid characters are alphabetic, space, apostrophe and hyphen.
    */
   public static final String CHARACTER_SET_C = "^[A-Za-z\\'\\- ]*$";
+
+  /**
+   * pattern to match what is known in provider-ui as 'characterSetE'.
+   * Valid characters are alphabetic, numeric, space, apostrophe and hyphen.
+   */
+  public static final String CHARACTER_SET_E = "^[A-Za-z0-9\\'\\- ]*$";
+
 
   /**
    * pattern to match what is known in provider-ui as 'characterSetF.

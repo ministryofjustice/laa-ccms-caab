@@ -18,6 +18,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_C
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_LEVEL_OF_SERVICE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MATTER_TYPES;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
@@ -49,7 +50,7 @@ import reactor.util.function.Tuple5;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.OpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.builders.ApplicationBuilder;
 import uk.gov.laa.ccms.caab.builders.ApplicationSummaryBuilder;
 import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
@@ -81,7 +82,6 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.LinkedCase;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.Opponent;
-import uk.gov.laa.ccms.caab.model.OpponentRowDisplay;
 import uk.gov.laa.ccms.caab.model.PriorAuthority;
 import uk.gov.laa.ccms.caab.model.Proceeding;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
@@ -349,7 +349,7 @@ public class ApplicationService {
     // get case reference Number, category of law value, contractual devolved powers,
     // amendment types
     Mono<Tuple4<CaseReferenceSummary,
-        CategoryOfLawLookupValueDetail,
+        Optional<CategoryOfLawLookupValueDetail>,
         ContractDetails,
         AmendmentTypeLookupDetail>> combinedResult =
         Mono.zip(
@@ -366,7 +366,11 @@ public class ApplicationService {
 
     return combinedResult.map(tuple -> {
       CaseReferenceSummary caseReferenceSummary = tuple.getT1();
-      CategoryOfLawLookupValueDetail categoryOfLawLookup = tuple.getT2();
+      CategoryOfLawLookupValueDetail categoryOfLawLookup = tuple.getT2()
+          .orElse(new CategoryOfLawLookupValueDetail()
+              .code(applicationFormData.getCategoryOfLawId())
+              .matterTypeDescription(applicationFormData.getCategoryOfLawId()));
+
       ContractDetails contractDetails = tuple.getT3();
       AmendmentTypeLookupDetail amendmentTypes = tuple.getT4();
 
@@ -398,7 +402,7 @@ public class ApplicationService {
     // get case reference Number, category of law value, contractual devolved powers,
     // amendment types
     Mono<Tuple4<CaseReferenceSummary,
-        CategoryOfLawLookupValueDetail,
+        Optional<CategoryOfLawLookupValueDetail>,
         ContractDetails,
         RelationshipToCaseLookupDetail>> combinedResult =
         Mono.zip(
@@ -414,7 +418,12 @@ public class ApplicationService {
 
     return combinedResult.map(tuple -> {
       final CaseReferenceSummary caseReferenceSummary = tuple.getT1();
-      final CategoryOfLawLookupValueDetail categoryOfLawLookupValueDetail = tuple.getT2();
+
+      final CategoryOfLawLookupValueDetail categoryOfLawLookupValueDetail = tuple.getT2()
+          .orElse(new CategoryOfLawLookupValueDetail()
+              .code(applicationToCopy.getCategoryOfLaw().getId())
+              .matterTypeDescription(applicationToCopy.getCategoryOfLaw().getId()));
+
       final ContractDetails contractDetails = tuple.getT3();
       final RelationshipToCaseLookupDetail relationshipToCaseLookupDetail = tuple.getT4();
 
@@ -989,41 +998,19 @@ public class ApplicationService {
   /**
    * Fetches the opponents associated with a specific application id.
    * This method communicates with the CAAB API client to fetch the proceedings and
-   * transforms them into a {@code ResultsDisplay<Opponent>} format.
+   * transforms them into a {@code AbstractOpponentFormData} format.
    *
    * @param applicationId The id of the application for which proceedings should be retrieved.
-   * @return A {@code Mono<ResultsDisplay<OpponentRowDisplay>>} containing the opponents.
+   * @return List of AbstractOpponentFormData.
    */
-  public ResultsDisplay<OpponentRowDisplay> getOpponents(final String applicationId) {
-    final ResultsDisplay<OpponentRowDisplay> results = new ResultsDisplay<>();
+  public List<AbstractOpponentFormData> getOpponents(final String applicationId) {
+    // Get the list of opponents for the application.
+    final List<Opponent> opponentList = caabApiClient.getOpponents(applicationId)
+        .blockOptional()
+        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve opponents"));
 
-    // Retrieve the lookup data required to translate the opponent attributes to display data.
-    Tuple4<CommonLookupDetail,
-        RelationshipToCaseLookupDetail,
-        RelationshipToCaseLookupDetail,
-        CommonLookupDetail> combinedResponse = Optional.ofNullable(Mono.zip(
-            lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE),
-            lookupService.getPersonToCaseRelationships(),
-            lookupService.getOrganisationToCaseRelationships(),
-            lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).block())
-        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
-
-    // Get the list of opponents for the application, and transform to display model.
-    return caabApiClient.getOpponents(applicationId)
-        .flatMapMany(Flux::fromIterable) // Convert to Flux<LinkedCase>
-        .map(opponent ->
-          buildOpponentRowDisplay(
-              opponent,
-              combinedResponse.getT1(),
-              combinedResponse.getT2(),
-              combinedResponse.getT3(),
-              combinedResponse.getT4())
-        )
-        .collectList() // Collect into a List
-        .map(list -> {
-          results.setContent(list); // Set the content of ResultsDisplay
-          return results; // Return the populated ResultsDisplay
-        }).block();
+    // Transform the opponents to the form data model.
+    return opponentList.stream().map(this::buildOpponentFormData).toList();
   }
 
   /**
@@ -1035,7 +1022,7 @@ public class ApplicationService {
    */
   public void addOpponent(
       final String applicationId,
-      final OpponentFormData opponentFormData,
+      final AbstractOpponentFormData opponentFormData,
       final UserDetail userDetail) {
 
     Opponent opponent = opponentMapper.toOpponent(opponentFormData);
@@ -1055,75 +1042,87 @@ public class ApplicationService {
   }
 
   /**
-   * Build an OpponentRowDisplay for the provided Opponent.
+   * Build an AbstractOpponentFormData for the provided Opponent.
    * Codes will be translated to their display value depending on the type of opponent.
    *
    * @param opponent - the opponent
-   * @param contactTitles - a lookup of all contact titles
-   * @param personRelationshipsToCase - a lookup of all person relationships to case
-   * @param orgRelationshipsToCase - a lookup of all organisation relationships to case
-   * @param relationshipsToClient - a lookup of all relationships to client
-   * @return OpponentRowDisplay for the Opponent
+   * @return AbstractOpponentFormData for the Opponent
    */
-  protected OpponentRowDisplay buildOpponentRowDisplay(
-      final Opponent opponent,
-      final CommonLookupDetail contactTitles,
-      final RelationshipToCaseLookupDetail personRelationshipsToCase,
-      final RelationshipToCaseLookupDetail orgRelationshipsToCase,
-      final CommonLookupDetail relationshipsToClient) {
+  protected AbstractOpponentFormData buildOpponentFormData(final Opponent opponent) {
 
-    boolean isOrganisation = OPPONENT_TYPE_ORGANISATION.equals(opponent.getType());
+    final boolean isOrganisation = OPPONENT_TYPE_ORGANISATION.equals(opponent.getType());
+    final boolean isEditable = isOrganisation
+        || OPPONENT_TYPE_INDIVIDUAL.equals(opponent.getType());
 
     // Build a name for the opponent depending on the opponent type.
-    String partyName = isOrganisation ? opponent.getOrganisationName()
-        : toIndividualOpponentPartyName(opponent, contactTitles);
+    final String partyName = isOrganisation ? opponent.getOrganisationName()
+        : toIndividualOpponentPartyName(opponent);
+
+    // Look up the organisation type display value, if this is an organisation
+    final Mono<Optional<CommonLookupValueDetail>> organisationTypeLookupMono =
+        isOrganisation
+            ? lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES,
+              opponent.getOrganisationType().getId()) : Mono.just(Optional.empty());
 
     // Look up the relationship to case display value depending on opponent type.
-    List<RelationshipToCaseLookupValueDetail> relationships = isOrganisation
-        ? orgRelationshipsToCase.getContent() : personRelationshipsToCase.getContent();
+    final Mono<Optional<RelationshipToCaseLookupValueDetail>> relationshipToCaseMono =
+        isOrganisation
+            ? lookupService.getOrganisationToCaseRelationship(opponent.getRelationshipToCase()) :
+            lookupService.getPersonToCaseRelationship(opponent.getRelationshipToCase());
 
-    String relationshipToCase = relationships.stream()
-        .filter(relationship -> relationship.getCode().equals(opponent.getRelationshipToCase()))
-        .findFirst()
-        .map(RelationshipToCaseLookupValueDetail::getDescription)
-        .orElse(opponent.getRelationshipToCase());
+    Tuple3<Optional<CommonLookupValueDetail>,
+        Optional<RelationshipToCaseLookupValueDetail>,
+        Optional<CommonLookupValueDetail>> combinedResult = Mono.zip(
+            organisationTypeLookupMono,
+            relationshipToCaseMono,
+            lookupService.getCommonValue(COMMON_VALUE_RELATIONSHIP_TO_CLIENT,
+                opponent.getRelationshipToClient()))
+        .blockOptional()
+        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
 
-    // Look up the relationship to client display value.
-    String relationshipToClient = relationshipsToClient.getContent().stream()
-        .filter(relationship -> relationship.getCode().equals(opponent.getRelationshipToClient()))
-        .findFirst()
-        .map(CommonLookupValueDetail::getDescription)
-        .orElse(opponent.getRelationshipToClient());
+    final String organisationTypeDisplayValue =
+        combinedResult.getT1()
+            .map(CommonLookupValueDetail::getDescription)
+            .orElse(isOrganisation ? opponent.getOrganisationType().getId() : null);
 
-    return OpponentRowDisplay.builder()
-        .id(opponent.getId())
-        .partyName(partyName)
-        .partyType(opponent.getType())
-        .relationshipToCase(relationshipToCase)
-        .relationshipToClient(relationshipToClient)
-        .editable(isOrganisation || OPPONENT_TYPE_INDIVIDUAL.equals(opponent.getType()))
-        .deletable(opponent.getDeleteInd())
-        .build();
+    final String relationshipToCaseDisplayValue =
+        combinedResult.getT2()
+            .map(RelationshipToCaseLookupValueDetail::getDescription)
+            .orElse(opponent.getRelationshipToCase());
+
+    final String relationshipToClientDisplayValue =
+        combinedResult.getT3()
+            .map(CommonLookupValueDetail::getDescription)
+            .orElse(opponent.getRelationshipToClient());
+
+    return opponentMapper.toOpponentFormData(
+        opponent,
+        partyName,
+        organisationTypeDisplayValue,
+        relationshipToCaseDisplayValue,
+        relationshipToClientDisplayValue,
+        isEditable);
   }
 
   /**
    * Build the full name for an Individual Opponent.
    *
    * @param opponent - the opponent
-   * @param contactTitles - a lookup of all contact titles
    * @return The opponent's full name
    */
-  protected String toIndividualOpponentPartyName(final Opponent opponent,
-      final CommonLookupDetail contactTitles) {
+  protected String toIndividualOpponentPartyName(final Opponent opponent) {
     StringBuilder builder = new StringBuilder();
 
     if (StringUtils.hasText(opponent.getTitle())) {
       // Lookup the display value for the contact title
-      final String titleDisplayValue = contactTitles.getContent().stream()
-          .filter(title -> title.getCode().equals(opponent.getTitle()))
-          .findFirst()
-          .map(CommonLookupValueDetail::getDescription)
-          .orElse(opponent.getTitle());
+      final String titleDisplayValue =
+          Optional.ofNullable(
+              lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle()).block())
+              .map(commonLookupValueDetail -> commonLookupValueDetail
+                  .map(CommonLookupValueDetail::getDescription)
+                  .orElse(opponent.getTitle()))
+              .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup value"));
+
       builder.append(titleDisplayValue);
     }
 
@@ -1174,9 +1173,13 @@ public class ApplicationService {
 
     // Lookup the certificate display value
     CommonLookupValueDetail certificateLookup = soaCase.getCertificateType() != null
-        ? Optional.ofNullable(lookupService.getCommonValue(
-            COMMON_VALUE_APPLICATION_TYPE, soaCase.getCertificateType())
-        .block()).orElseThrow(() -> new CaabApplicationException(
+        ? lookupService.getCommonValue(COMMON_VALUE_APPLICATION_TYPE, soaCase.getCertificateType())
+        .map(commonLookupValueDetail -> commonLookupValueDetail
+            .orElse(new CommonLookupValueDetail()
+                .code(soaCase.getCertificateType())
+                .description(soaCase.getCertificateType())))
+        .blockOptional()
+        .orElseThrow(() -> new CaabApplicationException(
             String.format("Failed to retrieve applicationtype with code: %s",
                 soaCase.getCertificateType()))) : null;
 
@@ -1184,12 +1187,14 @@ public class ApplicationService {
     // application/amendment type (if it has one), or the certificate type.
     CommonLookupValueDetail applicationTypeLookup =
         soaApplicationDetails.getApplicationAmendmentType() != null
-        ? Optional.ofNullable(
-            lookupService.getCommonValue(
+        ? lookupService.getCommonValue(
                 COMMON_VALUE_APPLICATION_TYPE, soaApplicationDetails.getApplicationAmendmentType())
-        .block()).orElseThrow(() -> new CaabApplicationException(
+            .mapNotNull(commonLookupValueDetail -> commonLookupValueDetail
+                .orElse(certificateLookup))
+            .blockOptional()
+            .orElseThrow(() -> new CaabApplicationException(
             String.format("Failed to retrieve applicationtype with code: %s",
-                soaCase.getCertificateType()))) : certificateLookup;
+                soaApplicationDetails.getApplicationAmendmentType()))) : certificateLookup;
 
     // Find the correct provider office.
     OfficeDetail providerOffice = providerDetail.getOffices().stream()
@@ -1310,10 +1315,10 @@ public class ApplicationService {
       final CaseDetail soaCase) {
 
     Tuple5<uk.gov.laa.ccms.data.model.ProceedingDetail,
-                CommonLookupValueDetail,
-                CommonLookupValueDetail,
-                CommonLookupValueDetail,
-                CommonLookupValueDetail> lookupTuple = Optional.ofNullable(
+        Optional<CommonLookupValueDetail>,
+        Optional<CommonLookupValueDetail>,
+        Optional<CommonLookupValueDetail>,
+        Optional<CommonLookupValueDetail>> lookupTuple = Optional.ofNullable(
         Mono.zip(ebsApiClient.getProceeding(soaProceeding.getProceedingType()),
             lookupService.getCommonValue(
                 COMMON_VALUE_PROCEEDING_STATUS, soaProceeding.getStatus()),
@@ -1338,18 +1343,46 @@ public class ApplicationService {
                 scopeLimitation,
                 lookupService.getCommonValue(
                     COMMON_VALUE_SCOPE_LIMITATIONS,
-                    scopeLimitation.getScopeLimitation()).block()))
+                    scopeLimitation.getScopeLimitation())
+                    .map(commonLookupValueDetail -> commonLookupValueDetail
+                        .orElse(new CommonLookupValueDetail()
+                            .code(scopeLimitation.getScopeLimitation())
+                            .description(scopeLimitation.getScopeLimitation())))
+                    .block()))
             .toList();
+
+    final uk.gov.laa.ccms.data.model.ProceedingDetail proceedingLookup =
+        lookupTuple.getT1();
+
+    final CommonLookupValueDetail proceedingStatusLookup =
+        lookupTuple.getT2().orElse(new CommonLookupValueDetail()
+            .code(soaProceeding.getStatus())
+            .description(soaProceeding.getStatus()));
+
+    final CommonLookupValueDetail matterTypeLookup =
+        lookupTuple.getT3().orElse(new CommonLookupValueDetail()
+            .code(soaProceeding.getMatterType())
+            .description(soaProceeding.getMatterType()));
+
+    final CommonLookupValueDetail levelOfServiceLookup =
+        lookupTuple.getT4().orElse(new CommonLookupValueDetail()
+            .code(soaProceeding.getLevelOfService())
+            .description(soaProceeding.getLevelOfService()));
+
+    final CommonLookupValueDetail clientInvolvementLookup =
+        lookupTuple.getT5().orElse(new CommonLookupValueDetail()
+            .code(soaProceeding.getClientInvolvementType())
+            .description(soaProceeding.getClientInvolvementType()));
 
     ProceedingMappingContext.ProceedingMappingContextBuilder contextBuilder =
         ProceedingMappingContext.builder()
             .soaProceeding(soaProceeding)
-            .proceedingLookup(lookupTuple.getT1())
-            .proceedingStatusLookup(lookupTuple.getT2())
+            .proceedingLookup(proceedingLookup)
+            .proceedingStatusLookup(proceedingStatusLookup)
             .proceedingCostLimitation(proceedingCostLimitation)
-            .matterType(lookupTuple.getT3())
-            .levelOfService(lookupTuple.getT4())
-            .clientInvolvement(lookupTuple.getT5())
+            .matterType(matterTypeLookup)
+            .levelOfService(levelOfServiceLookup)
+            .clientInvolvement(clientInvolvementLookup)
             .scopeLimitations(scopeLimitations);
 
     this.addProceedingOutcomeContext(contextBuilder, soaProceeding);
@@ -1417,8 +1450,12 @@ public class ApplicationService {
 
     // Find the correct PriorAuthorityType lookup
     PriorAuthorityTypeDetail priorAuthorityType =
-        Optional.ofNullable(
-            lookupService.getPriorAuthorityType(soaPriorAuthority.getPriorAuthorityType()).block())
+        lookupService.getPriorAuthorityType(soaPriorAuthority.getPriorAuthorityType())
+            .map(priorAuthorityTypeDetail -> priorAuthorityTypeDetail
+                .orElse(new PriorAuthorityTypeDetail()
+                    .code(soaPriorAuthority.getPriorAuthorityType())
+                    .description(soaPriorAuthority.getPriorAuthorityType())))
+            .blockOptional()
             .orElseThrow(() -> new CaabApplicationException(
                 String.format("Failed to find PriorAuthorityType with code: %s",
                     soaPriorAuthority.getPriorAuthorityType())));
@@ -1456,9 +1493,12 @@ public class ApplicationService {
     // display value.
     if (priorAuthorityDetail != null
         && REFERENCE_DATA_ITEM_TYPE_LOV.equals(priorAuthorityDetail.getDataType())) {
-      description = Optional.ofNullable(lookupService.getCommonValue(
-          priorAuthorityDetail.getLovCode(), priorAuthorityAttribute.getValue()).block())
-          .map(CommonLookupValueDetail::getDescription)
+      description = lookupService.getCommonValue(
+          priorAuthorityDetail.getLovCode(), priorAuthorityAttribute.getValue())
+          .map(commonLookupValueDetail -> commonLookupValueDetail
+              .map(CommonLookupValueDetail::getDescription)
+              .orElse(priorAuthorityAttribute.getValue()))
+          .blockOptional()
           .orElseThrow(() -> new CaabApplicationException(
               String.format("Failed to find common value with code: %s",
                   priorAuthorityAttribute.getValue())));

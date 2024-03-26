@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>LAA CCMS - Start new application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/application/summary/opponents}" class="govuk-back-link">Cancel and return to opponents and other parties</a>
+  </div>
+  <div id="main-content">
+    <form action="#" th:action="@{/application/opponents/{opponentId}/remove(opponentId=${opponent.id})}" method="post">
+      <h1 class="govuk-heading-l">
+        Remove opponent - <span th:text="${opponent.partyName}"></span>
+      </h1>
+      <p class="govuk-body-l">
+        Are you sure you want to remove <span th:text="${opponent.partyName}"></span>?
+      </p>
+      <p class="govuk-body-l">Please click 'Confirm' to delete
+        this information. Otherwise, click 'Cancel and return to opponents and other parties' to go back.
+      </p>
+      <div class="govuk-button-group">
+        <button type="submit" class="govuk-button" data-module="govuk-button">
+          Confirm
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>
