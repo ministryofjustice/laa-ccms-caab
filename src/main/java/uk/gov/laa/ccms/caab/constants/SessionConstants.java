@@ -87,6 +87,12 @@ public class SessionConstants {
   public static final String NOTIFICATIONS_SEARCH_RESULTS = "notificationsSearchResults";
 
   /**
+   * Session attribute used to keep track of the Case Reference Number, used for
+   * case summary page.
+   */
+  public static final String CASE_REFERENCE_NUMBER = "caseReferenceNumber";
+
+  /**
    * Session attribute used to keep track of the application, used for application summary page.
    */
   public static final String APPLICATION_ID = "applicationId";

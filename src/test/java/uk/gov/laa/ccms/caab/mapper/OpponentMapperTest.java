@@ -68,8 +68,7 @@ public class OpponentMapperTest {
     assertEquals(opponentFormData.getEmailAddress(), result.getEmailAddress());
     assertEquals(opponentFormData.getFaxNumber(), result.getFaxNumber());
     assertEquals(opponentFormData.getOrganisationName(), result.getOrganisationName());
-    assertEquals(opponentFormData.getOrganisationType(), result.getOrganisationType().getId());
-    assertEquals(opponentFormData.getOrganisationTypeDisplayValue(), result.getOrganisationType().getDisplayValue());
+    assertEquals(opponentFormData.getOrganisationType(), result.getOrganisationType());
     assertEquals(opponentFormData.getOtherInformation(), result.getOtherInformation());
     assertEquals(opponentFormData.getPartyId(), result.getPartyId());
     assertEquals(opponentFormData.getPartyId(), result.getEbsId());
@@ -154,7 +153,7 @@ public class OpponentMapperTest {
     assertEquals(opponent.getEmailAddress(), orgResult.getEmailAddress());
     assertEquals(opponent.getFaxNumber(), orgResult.getFaxNumber());
     assertEquals(opponent.getOrganisationName(), orgResult.getOrganisationName());
-    assertEquals(opponent.getOrganisationType().getId(), orgResult.getOrganisationType());
+    assertEquals(opponent.getOrganisationType(), orgResult.getOrganisationType());
     assertEquals(organisationTypeDisplayValue, orgResult.getOrganisationTypeDisplayValue());
     assertEquals(opponent.getOtherInformation(), orgResult.getOtherInformation());
     assertEquals(opponent.getPartyId(), orgResult.getPartyId());

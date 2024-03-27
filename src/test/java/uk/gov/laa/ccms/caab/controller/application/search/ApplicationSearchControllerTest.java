@@ -165,7 +165,7 @@ public class ApplicationSearchControllerTest {
   public void testPostApplicationSearch_NoResults() throws Exception {
     List<BaseApplication> baseApplications = new ArrayList<>();
 
-    when(applicationService.getCases(any(), any(), any())).thenReturn(baseApplications);
+    when(applicationService.getCases(any(), any())).thenReturn(baseApplications);
 
     CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     this.mockMvc.perform(post("/application/search")
@@ -174,12 +174,12 @@ public class ApplicationSearchControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-search-no-results"));
 
-    verify(applicationService).getCases(eq(caseSearchCriteria), any(), any());
+    verify(applicationService).getCases(eq(caseSearchCriteria), any());
   }
 
   @Test
   public void testPostApplicationSearch_WithTooManyResults() throws Exception {
-    when(applicationService.getCases(any(), any(), any())).thenThrow(
+    when(applicationService.getCases(any(), any())).thenThrow(
         new TooManyResultsException(""));
 
     this.mockMvc.perform(post("/application/search")
@@ -194,7 +194,7 @@ public class ApplicationSearchControllerTest {
   public void testPostApplicationSearch_WithResults() throws Exception {
     List<BaseApplication> caseSearchResults = List.of(new BaseApplication());
 
-    when(applicationService.getCases(any(), any(), any())).thenReturn(caseSearchResults);
+    when(applicationService.getCases(any(), any())).thenReturn(caseSearchResults);
 
     this.mockMvc.perform(post("/application/search")
             .sessionAttr(USER_DETAILS, user)

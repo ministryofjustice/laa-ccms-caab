@@ -1,10 +1,14 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +19,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
@@ -83,9 +88,9 @@ public class ApplicationSearchController {
 
   @GetMapping("/application/search")
   public String applicationSearch(
-      @ModelAttribute(CASE_SEARCH_CRITERIA) CaseSearchCriteria searchCriteria,
-      @SessionAttribute(USER_DETAILS) UserDetail userDetails,
-      Model model) {
+      @ModelAttribute(CASE_SEARCH_CRITERIA) final CaseSearchCriteria searchCriteria,
+      @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
+      final Model model) {
 
     populateDropdowns(userDetails, model);
 
@@ -103,11 +108,11 @@ public class ApplicationSearchController {
    */
   @PostMapping("/application/search")
   public String applicationSearch(
-      @ModelAttribute(CASE_SEARCH_CRITERIA) CaseSearchCriteria caseSearchCriteria,
-      @SessionAttribute(USER_DETAILS) UserDetail user,
-      RedirectAttributes redirectAttributes,
-      BindingResult bindingResult,
-      Model model) {
+      @ModelAttribute(CASE_SEARCH_CRITERIA) final CaseSearchCriteria caseSearchCriteria,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final RedirectAttributes redirectAttributes,
+      final BindingResult bindingResult,
+      final Model model) {
 
     searchCriteriaValidator.validate(caseSearchCriteria, bindingResult);
     if (bindingResult.hasErrors()) {
@@ -118,9 +123,7 @@ public class ApplicationSearchController {
     List<BaseApplication> searchResults;
 
     try {
-      searchResults = applicationService.getCases(caseSearchCriteria,
-          user.getLoginId(),
-          user.getUserType());
+      searchResults = applicationService.getCases(caseSearchCriteria, user);
 
       if (searchResults.isEmpty()) {
         return "application/application-search-no-results";
@@ -146,11 +149,11 @@ public class ApplicationSearchController {
    */
   @GetMapping("/application/search/results")
   public String applicationSearchResults(
-      @RequestParam(value = "page", defaultValue = "0") int page,
-      @RequestParam(value = "size", defaultValue = "10") int size,
-      @ModelAttribute(CASE_SEARCH_RESULTS) List<BaseApplication> caseSearchResults,
-      HttpServletRequest request,
-      Model model) {
+      @RequestParam(value = "page", defaultValue = "0") final int page,
+      @RequestParam(value = "size", defaultValue = "10") final int size,
+      @ModelAttribute(CASE_SEARCH_RESULTS) final List<BaseApplication> caseSearchResults,
+      final HttpServletRequest request,
+      final Model model) {
 
     // Paginate the results list, and convert to the Page wrapper object for display
     ApplicationDetails applicationDetails = applicationMapper.toApplicationDetails(
@@ -159,6 +162,42 @@ public class ApplicationSearchController {
     model.addAttribute(CURRENT_URL,  request.getRequestURL().toString());
     model.addAttribute(CASE_RESULTS_PAGE, applicationDetails);
     return "application/application-search-results";
+  }
+
+  /**
+   * Redirects to the correct endpoint to view a Case or Application.
+   *
+   * @param caseReferenceNumber The caseReferenceNumber of the application of case to view.
+   * @param caseSearchResults The full un-paginated search results list.
+   * @return The appropriate redirect based on the type of application or case selected.
+   */
+  @GetMapping("/application/{case-reference-number}/view")
+  public String applicationCaseView(
+      @PathVariable("case-reference-number") final String caseReferenceNumber,
+      @SessionAttribute(CASE_SEARCH_RESULTS) final List<BaseApplication> caseSearchResults,
+      HttpSession session) {
+
+    // First ensure that the supplied caseReferenceNumber refers to an
+    // application/case from the search results in the session.
+    final BaseApplication selectedApplication =
+        caseSearchResults.stream()
+            .filter(baseApplication -> baseApplication.getCaseReferenceNumber().equals(
+                caseReferenceNumber))
+            .findFirst()
+            .orElseThrow(() -> new CaabApplicationException(
+                String.format("Invalid case reference: %s", caseReferenceNumber)));
+
+    //
+    // TODO: Spike CCLS-2120 to investigate poll and cleanup of pending submissions.
+    //
+
+    if (STATUS_UNSUBMITTED_ACTUAL_VALUE.equals(selectedApplication.getStatus().getId())) {
+      session.setAttribute(APPLICATION_ID, selectedApplication.getId());
+      return "redirect:/application/summary";
+    } else {
+      session.setAttribute(CASE_REFERENCE_NUMBER, selectedApplication.getCaseReferenceNumber());
+      return "redirect:/case/summary/todo";
+    }
   }
 
 

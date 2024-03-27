@@ -124,12 +124,14 @@ public class CaabApiClientTest {
     caseSearchCriteria.setClientSurname("asurname");
     caseSearchCriteria.setStatus("thestatus");
 
+    final Integer providerId = 9876;
     final int page = 0;
     final int size = 2;
 
     final String expectedUri = String.format(
-        "/applications?case-reference-number=%s&provider-case-ref=%s&client-surname=%s&client-reference=%s&fee-earner=%s&office-id=%s&status=%s&page=%s&size=%s",
+        "/applications?case-reference-number=%s&provider-id=%s&provider-case-ref=%s&client-surname=%s&client-reference=%s&fee-earner=%s&office-id=%s&status=%s&page=%s&size=%s",
         caseSearchCriteria.getCaseReference(),
+        providerId,
         caseSearchCriteria.getProviderCaseReference(),
         caseSearchCriteria.getClientSurname(),
         caseSearchCriteria.getClientReference(),
@@ -150,7 +152,7 @@ public class CaabApiClientTest {
         .thenReturn(Mono.just(mockApplicationDetails));
 
     final Mono<ApplicationDetails> applicationDetailsMono
-        = caabApiClient.getApplications(caseSearchCriteria, page, size);
+        = caabApiClient.getApplications(caseSearchCriteria, providerId, page, size);
 
     StepVerifier.create(applicationDetailsMono)
         .expectNext(Objects.requireNonNull(applicationDetailsMono.block()))

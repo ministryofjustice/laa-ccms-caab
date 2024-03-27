@@ -154,7 +154,7 @@ public class CopyCaseSearchControllerTest {
   public void testPostCopyCaseSearch_NoCopyCaseStatus() throws Exception {
     List<BaseApplication> baseApplications = new ArrayList<>();
 
-    when(applicationService.getCases(any(), any(), any())).thenReturn(baseApplications);
+    when(applicationService.getCases(any(), any())).thenReturn(baseApplications);
 
     CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     this.mockMvc.perform(post("/application/copy-case/search")
@@ -165,7 +165,7 @@ public class CopyCaseSearchControllerTest {
         .andExpect(view().name("application/application-copy-case-search-no-results"));
 
     verify(applicationService).getCopyCaseStatus();
-    verify(applicationService).getCases(eq(caseSearchCriteria), any(), any());
+    verify(applicationService).getCases(eq(caseSearchCriteria), any());
     // No copy case status, so search criteria shouldn't have been updated
     assertNull(caseSearchCriteria.getStatus());
   }
@@ -174,7 +174,7 @@ public class CopyCaseSearchControllerTest {
   public void testPostCopyCaseSearch_NoResults() throws Exception {
     List<BaseApplication> baseApplications = new ArrayList<>();
 
-    when(applicationService.getCases(any(), any(), any())).thenReturn(baseApplications);
+    when(applicationService.getCases(any(), any())).thenReturn(baseApplications);
 
     String COPY_STATUS_CODE = "APP";
     when(applicationService.getCopyCaseStatus()).thenReturn(
@@ -188,13 +188,13 @@ public class CopyCaseSearchControllerTest {
         .andExpect(view().name("application/application-copy-case-search-no-results"));
 
     verify(applicationService).getCopyCaseStatus();
-    verify(applicationService).getCases(eq(caseSearchCriteria), any(), any());
+    verify(applicationService).getCases(eq(caseSearchCriteria), any());
     assertEquals(COPY_STATUS_CODE, caseSearchCriteria.getStatus());
   }
 
   @Test
   public void testPostCopyCaseSearch_WithTooManyResults() throws Exception {
-    when(applicationService.getCases(any(), any(), any())).thenThrow(
+    when(applicationService.getCases(any(), any())).thenThrow(
         new TooManyResultsException(""));
 
     this.mockMvc.perform(post("/application/copy-case/search")
@@ -209,7 +209,7 @@ public class CopyCaseSearchControllerTest {
   public void testPostCopyCaseSearch_WithResults() throws Exception {
     List<BaseApplication> caseSearchResults = List.of(new BaseApplication());
 
-    when(applicationService.getCases(any(), any(), any())).thenReturn(caseSearchResults);
+    when(applicationService.getCases(any(), any())).thenReturn(caseSearchResults);
 
     this.mockMvc.perform(post("/application/copy-case/search")
             .sessionAttr(USER_DETAILS, user)
