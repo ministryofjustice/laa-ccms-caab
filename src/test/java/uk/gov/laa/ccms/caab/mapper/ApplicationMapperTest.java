@@ -555,7 +555,7 @@ public class ApplicationMapperTest {
     assertEquals(soaOtherParty.getOrganisation().getOrganizationName(),
         result.getOrganisationName());
     assertEquals(soaOtherParty.getOrganisation().getOrganizationType(),
-        result.getOrganisationType().getId());
+        result.getOrganisationType());
     assertEquals(soaOtherParty.getOrganisation().getContactName(),
         result.getContactNameRole());
     assertEquals(soaOtherParty.getOrganisation().getRelationToCase(),

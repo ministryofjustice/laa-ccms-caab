@@ -122,9 +122,7 @@ public class CopyCaseSearchController {
     // Call the service to query for Cases
     List<BaseApplication> searchResults;
     try {
-      searchResults = applicationService.getCases(caseSearchCriteria,
-          user.getLoginId(),
-          user.getUserType());
+      searchResults = applicationService.getCases(caseSearchCriteria, user);
 
       if (searchResults.isEmpty()) {
         return "application/application-copy-case-search-no-results";

@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.controller.application.search;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -13,9 +12,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
-import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -32,9 +34,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
@@ -43,6 +47,7 @@ import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplication;
+import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
@@ -88,7 +93,10 @@ public class ApplicationSearchControllerTest {
 
   @BeforeEach
   public void setup() {
-    mockMvc = standaloneSetup(applicationSearchController).build();
+    mockMvc = MockMvcBuilders
+        .standaloneSetup(applicationSearchController)
+        .setControllerAdvice(new GlobalExceptionHandler())
+        .build();
     this.user = buildUser();
 
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(200);
@@ -117,19 +125,17 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testGetApplicationSearch_HandlesMissingLookupData() {
+  public void testGetApplicationSearch_HandlesMissingLookupData() throws Exception {
     when(providerService.getProvider(user.getProvider().getId()))
         .thenReturn(Mono.empty());
     when(lookupService.getCaseStatusValues())
         .thenReturn(Mono.empty());
 
-    Exception exception = assertThrows(Exception.class, () ->
-        this.mockMvc.perform(get("/application/search")
-            .sessionAttr(USER_DETAILS, user)));
-
-    assertInstanceOf(CaabApplicationException.class, exception.getCause());
-    assertEquals("Failed to retrieve lookup data",
-        exception.getCause().getMessage());
+    this.mockMvc.perform(get("/application/search")
+            .sessionAttr(USER_DETAILS, user))
+        .andExpect(result -> assertEquals("Failed to retrieve lookup data",
+            assertInstanceOf(CaabApplicationException.class,
+                result.getResolvedException()).getMessage()));
   }
 
   @Test
@@ -165,7 +171,7 @@ public class ApplicationSearchControllerTest {
   public void testPostApplicationSearch_NoResults() throws Exception {
     List<BaseApplication> baseApplications = new ArrayList<>();
 
-    when(applicationService.getCases(any(), any(), any())).thenReturn(baseApplications);
+    when(applicationService.getCases(any(), any())).thenReturn(baseApplications);
 
     CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     this.mockMvc.perform(post("/application/search")
@@ -174,12 +180,12 @@ public class ApplicationSearchControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-search-no-results"));
 
-    verify(applicationService).getCases(eq(caseSearchCriteria), any(), any());
+    verify(applicationService).getCases(eq(caseSearchCriteria), any());
   }
 
   @Test
   public void testPostApplicationSearch_WithTooManyResults() throws Exception {
-    when(applicationService.getCases(any(), any(), any())).thenThrow(
+    when(applicationService.getCases(any(), any())).thenThrow(
         new TooManyResultsException(""));
 
     this.mockMvc.perform(post("/application/search")
@@ -194,7 +200,7 @@ public class ApplicationSearchControllerTest {
   public void testPostApplicationSearch_WithResults() throws Exception {
     List<BaseApplication> caseSearchResults = List.of(new BaseApplication());
 
-    when(applicationService.getCases(any(), any(), any())).thenReturn(caseSearchResults);
+    when(applicationService.getCases(any(), any())).thenReturn(caseSearchResults);
 
     this.mockMvc.perform(post("/application/search")
             .sessionAttr(USER_DETAILS, user)
@@ -221,6 +227,66 @@ public class ApplicationSearchControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-search-results"))
         .andExpect(model().attributeExists(CopyCaseSearchController.CASE_RESULTS_PAGE));
+  }
+
+  @Test
+  public void testSelectApplication_rejectsInvalidCaseReference() throws Exception {
+    final String selectedCaseRef = "3";
+
+    List<BaseApplication> caseSearchResults = List.of(
+        new BaseApplication().caseReferenceNumber("1"),
+        new BaseApplication().caseReferenceNumber("2"));
+
+    mockMvc.perform(get("/application/{case-reference-number}/view", selectedCaseRef)
+            .sessionAttr(USER_DETAILS, user)
+            .sessionAttr(CASE_SEARCH_RESULTS, caseSearchResults))
+        .andDo(print())
+        .andExpect(result -> assertInstanceOf(CaabApplicationException.class,
+            result.getResolvedException()));
+  }
+
+  @Test
+  public void testSelectApplication_unsubmittedApplication_redirectsToApplicationSummary() throws Exception {
+    final String selectedCaseRef = "1";
+
+    List<BaseApplication> caseSearchResults = List.of(
+        new BaseApplication()
+            .id(100)
+            .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
+            .caseReferenceNumber("1"),
+        new BaseApplication()
+            .caseReferenceNumber("2")
+            .status(new StringDisplayValue().id("anotherstatus")));
+
+    mockMvc.perform(get("/application/{case-reference-number}/view", selectedCaseRef)
+            .sessionAttr(USER_DETAILS, user)
+            .sessionAttr(CASE_SEARCH_RESULTS, caseSearchResults))
+        .andDo(print())
+        .andExpect(request().sessionAttribute(APPLICATION_ID, caseSearchResults.get(0).getId()))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/summary"));
+  }
+
+  @Test
+  public void testSelectApplication_otherStatus_redirectsToCaseSummary() throws Exception {
+    final String selectedCaseRef = "2";
+
+    List<BaseApplication> caseSearchResults = List.of(
+        new BaseApplication()
+            .id(100)
+            .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
+            .caseReferenceNumber("1"),
+        new BaseApplication()
+            .caseReferenceNumber("2")
+            .status(new StringDisplayValue().id("anotherstatus")));
+
+    mockMvc.perform(get("/application/{case-reference-number}/view", selectedCaseRef)
+            .sessionAttr(USER_DETAILS, user)
+            .sessionAttr(CASE_SEARCH_RESULTS, caseSearchResults))
+        .andDo(print())
+        .andExpect(request().sessionAttribute(CASE_REFERENCE_NUMBER, caseSearchResults.get(1).getCaseReferenceNumber()))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/case/summary/todo"));
   }
 
   private UserDetail buildUser() {

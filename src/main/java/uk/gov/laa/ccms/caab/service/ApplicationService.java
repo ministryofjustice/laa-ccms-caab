@@ -43,7 +43,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
 import reactor.util.function.Tuple4;
 import reactor.util.function.Tuple5;
@@ -166,14 +165,12 @@ public class ApplicationService {
    * Each result is mapped to a BaseApplication to summarise the details.
    *
    * @param caseSearchCriteria The search criteria to use when fetching cases.
-   * @param loginId                The login identifier for the user.
-   * @param userType               Type of the user (e.g., admin, user).
+   * @param user               The currently logged in user.
    * @return A List of BaseApplication.
    */
   public List<BaseApplication> getCases(
       final CaseSearchCriteria caseSearchCriteria,
-      final String loginId,
-      final String userType) throws TooManyResultsException {
+      final UserDetail user) throws TooManyResultsException {
 
     ReflectionUtils.nullifyStrings(caseSearchCriteria);
 
@@ -186,8 +183,8 @@ public class ApplicationService {
       final CaseDetails caseDetails = Optional.ofNullable(
               soaApiClient.getCases(
                   caseSearchCriteria,
-                  loginId,
-                  userType,
+                  user.getLoginId(),
+                  user.getUserType(),
                   0,
                   searchConstants.getMaxSearchResultsCases()).block())
           .orElseThrow(() -> new CaabApplicationException("Failed to retrieve SOA Cases"));
@@ -205,6 +202,7 @@ public class ApplicationService {
     // Now retrieve applications from the Transient Data Store
     final List<BaseApplication> tdsApplications = this.getTdsApplications(
         caseSearchCriteria,
+        user,
         0,
         searchConstants.getMaxSearchResultsCases()).getContent();
 
@@ -254,17 +252,23 @@ public class ApplicationService {
    * Query for Applications in the TDS based on the supplied search criteria.
    *
    * @param caseSearchCriteria - the search criteria
+   * @param user               - the currently logged in user
    * @param page               - the page number
    * @param size               - the page size
    * @return ApplicationDetails containing a List of BaseApplication.
    */
   public ApplicationDetails getTdsApplications(
       final CaseSearchCriteria caseSearchCriteria,
+      final UserDetail user,
       final Integer page,
       final Integer size) {
 
     return Optional.ofNullable(
-        caabApiClient.getApplications(caseSearchCriteria, page, size).block())
+        caabApiClient.getApplications(
+            caseSearchCriteria,
+            user.getProvider().getId(),
+            page,
+            size).block())
         .orElseThrow(() -> new CaabApplicationException("Failed to query for applications"));
   }
 
@@ -1062,7 +1066,7 @@ public class ApplicationService {
     final Mono<Optional<CommonLookupValueDetail>> organisationTypeLookupMono =
         isOrganisation
             ? lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES,
-              opponent.getOrganisationType().getId()) : Mono.just(Optional.empty());
+              opponent.getOrganisationType()) : Mono.just(Optional.empty());
 
     // Look up the relationship to case display value depending on opponent type.
     final Mono<Optional<RelationshipToCaseLookupValueDetail>> relationshipToCaseMono =
@@ -1083,7 +1087,7 @@ public class ApplicationService {
     final String organisationTypeDisplayValue =
         combinedResult.getT1()
             .map(CommonLookupValueDetail::getDescription)
-            .orElse(isOrganisation ? opponent.getOrganisationType().getId() : null);
+            .orElse(isOrganisation ? opponent.getOrganisationType() : null);
 
     final String relationshipToCaseDisplayValue =
         combinedResult.getT2()

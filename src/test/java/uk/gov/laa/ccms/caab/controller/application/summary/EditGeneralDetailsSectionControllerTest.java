@@ -223,7 +223,7 @@ class EditGeneralDetailsSectionControllerTest {
     final String applicationId = "123";
     final UserDetail user = new UserDetail();
     final AddressFormData addressDetails = new AddressFormData();
-    final ResultsDisplay<AddressResultRowDisplay> addressSearchResults = new ResultsDisplay<AddressResultRowDisplay>();
+    final ResultsDisplay<AddressResultRowDisplay> addressSearchResults = new ResultsDisplay<>();
 
     addressSearchResults.setContent(Collections.singletonList(new AddressResultRowDisplay()));
 
@@ -247,7 +247,7 @@ class EditGeneralDetailsSectionControllerTest {
     final String applicationId = "123";
     final UserDetail user = new UserDetail();
     final AddressFormData addressDetails = new AddressFormData();
-    final ResultsDisplay<AddressResultRowDisplay> addressSearchResults = new ResultsDisplay<AddressResultRowDisplay>();
+    final ResultsDisplay<AddressResultRowDisplay> addressSearchResults = new ResultsDisplay<>();
 
     when(addressService.getAddresses(addressDetails.getPostcode())).thenReturn(addressSearchResults);
 
@@ -271,7 +271,7 @@ class EditGeneralDetailsSectionControllerTest {
 
   @Test
   public void testCorrespondenceAddressSearchGet() throws Exception {
-    final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<AddressResultRowDisplay>();
+    final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
 
     this.mockMvc.perform(get("/application/summary/correspondence-address/search")
             .sessionAttr(ADDRESS_SEARCH_RESULTS, results))
@@ -285,7 +285,7 @@ class EditGeneralDetailsSectionControllerTest {
 
   @Test
   public void testCorrespondenceAddressSearchPost_successful() throws Exception {
-    final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<AddressResultRowDisplay>();
+    final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
 
     this.mockMvc.perform(post("/application/summary/correspondence-address/search")
             .sessionAttr(ADDRESS_SEARCH_RESULTS, results)
@@ -300,7 +300,7 @@ class EditGeneralDetailsSectionControllerTest {
 
   @Test
   public void testCorrespondenceAddressSearchPost_handlesValidationError() throws Exception {
-    final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<AddressResultRowDisplay>();
+    final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
 
     doAnswer(invocation -> {
       final Errors errors = (Errors) invocation.getArguments()[1];
@@ -481,7 +481,7 @@ class EditGeneralDetailsSectionControllerTest {
   @Test
   public void testLinkedCasesSearchPost_emptySearchResults() throws Exception {
     final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
-    when(applicationService.getCases(any(), anyString(), anyString())).thenReturn(Collections.emptyList());
+    when(applicationService.getCases(any(), any())).thenReturn(Collections.emptyList());
 
     this.mockMvc.perform(post("/application/summary/linked-cases/search")
             .sessionAttr(ACTIVE_CASE,  ActiveCase.builder().build())
@@ -499,7 +499,7 @@ class EditGeneralDetailsSectionControllerTest {
     final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
 
     // Mock the applicationService to throw TooManyResultsException
-    when(applicationService.getCases(any(), anyString(), anyString()))
+    when(applicationService.getCases(any(), any()))
         .thenThrow(new TooManyResultsException("test"));
 
     // Act & Assert

@@ -79,6 +79,7 @@ public interface ApplicationMapper {
 
   ApplicationDetails toApplicationDetails(Page<BaseApplication> applicationPage);
 
+  @Mapping(target = "id", ignore = true)
   @Mapping(target = "status", source = "caseStatusDisplay")
   @Mapping(target = "providerDetails", source = ".")
   BaseApplication toBaseApplication(CaseSummary soaCaseSummary);
@@ -115,6 +116,7 @@ public interface ApplicationMapper {
   @Mapping(target = "amendmentProceedingsInEbs", source = "amendmentProceedingsInEbs")
   @Mapping(target = "submitted", source = "caseWithOnlyDraftProceedings")
   @Mapping(target = "priorAuthorities", source = "priorAuthorities")
+  @Mapping(target = "id", ignore = true)
   @Mapping(target = "relationToLinkedCase", ignore = true)
   @Mapping(target = "quickEditType", ignore = true)
   @Mapping(target = "opponentMode", ignore = true)
@@ -280,8 +282,7 @@ public interface ApplicationMapper {
   @Mapping(target = ".", source = "organisation")
   @Mapping(target = "address", source = "organisation.address")
   @Mapping(target = "organisationName", source = "organisation.organizationName")
-  @Mapping(target = "organisationType.id", source = "organisation.organizationType")
-  @Mapping(target = "organisationType.displayValue", ignore = true)
+  @Mapping(target = "organisationType", source = "organisation.organizationType")
   @Mapping(target = "contactNameRole", source = "organisation.contactName")
   @Mapping(target = "relationshipToCase", source = "organisation.relationToCase")
   @Mapping(target = "relationshipToClient", source = "organisation.relationToClient")

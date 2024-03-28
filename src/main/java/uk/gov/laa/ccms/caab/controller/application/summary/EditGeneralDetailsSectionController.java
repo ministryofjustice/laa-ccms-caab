@@ -445,9 +445,7 @@ public class EditGeneralDetailsSectionController {
     final List<BaseApplication> searchResults;
 
     try {
-      searchResults = applicationService.getCases(caseSearchCriteria,
-          user.getLoginId(),
-          user.getUserType());
+      searchResults = applicationService.getCases(caseSearchCriteria, user);
 
       //filter out current linked cases and where application id is the same as the current
       //application
