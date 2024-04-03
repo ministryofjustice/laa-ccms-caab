@@ -106,12 +106,15 @@ public class CaabApiClient {
    */
   public Mono<ApplicationDetails> getApplications(
       final CaseSearchCriteria caseSearchCriteria,
+      final Integer providerId,
       final Integer page,
       final Integer size) {
 
     final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
     Optional.ofNullable(caseSearchCriteria.getCaseReference())
         .ifPresent(ref -> queryParams.add("case-reference-number", ref));
+    Optional.ofNullable(providerId)
+        .ifPresent(ref -> queryParams.add("provider-id", String.valueOf(providerId)));
     Optional.ofNullable(caseSearchCriteria.getProviderCaseReference())
         .ifPresent(ref -> queryParams.add("provider-case-ref", ref));
     Optional.ofNullable(caseSearchCriteria.getClientSurname())

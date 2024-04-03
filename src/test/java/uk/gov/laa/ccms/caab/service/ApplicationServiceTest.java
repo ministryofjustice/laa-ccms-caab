@@ -210,23 +210,23 @@ class ApplicationServiceTest {
 
     caseSearchCriteria.setStatus(STATUS_UNSUBMITTED_ACTUAL_VALUE);
 
-    String loginId = "user1";
-    String userType = "userType";
+    UserDetail userDetail = buildUserDetail();
     int page = 0;
     int size = 10;
 
     ApplicationDetails mockApplicationDetails = new ApplicationDetails()
         .addContentItem(new BaseApplication());
 
-    when(caabApiClient.getApplications(caseSearchCriteria, page, size))
-        .thenReturn(Mono.just(mockApplicationDetails));
+    when(caabApiClient.getApplications(caseSearchCriteria, userDetail.getProvider().getId(),
+        page, size)).thenReturn(Mono.just(mockApplicationDetails));
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
 
     List<BaseApplication> results =
-        applicationService.getCases(caseSearchCriteria, loginId, userType);
+        applicationService.getCases(caseSearchCriteria, userDetail);
 
     verifyNoInteractions(soaApiClient);
-    verify(caabApiClient).getApplications(caseSearchCriteria, page, size);
+    verify(caabApiClient).getApplications(caseSearchCriteria, userDetail.getProvider().getId(),
+        page, size);
 
     assertNotNull(results);
     assertEquals(mockApplicationDetails.getContent(), results);
@@ -243,8 +243,8 @@ class ApplicationServiceTest {
 
     caseSearchCriteria.setStatus(STATUS_DRAFT);
 
-    String loginId = "user1";
-    String userType = "userType";
+    UserDetail userDetail = buildUserDetail();
+
     int page = 0;
     int size = 10;
 
@@ -266,19 +266,22 @@ class ApplicationServiceTest {
     List<BaseApplication> expectedResult = List.of(mockTdsApplicationDetails.getContent().get(0),
         mockSoaApplication);
 
-    when(soaApiClient.getCases(caseSearchCriteria, loginId, userType, page, size))
+    when(soaApiClient.getCases(
+        caseSearchCriteria, userDetail.getLoginId(), userDetail.getUserType(), page, size))
         .thenReturn(Mono.just(mockCaseDetails));
     when(applicationMapper.toBaseApplication(mockCaseDetails.getContent().get(0)))
         .thenReturn(mockSoaApplication);
-    when(caabApiClient.getApplications(caseSearchCriteria, page, size))
-        .thenReturn(Mono.just(mockTdsApplicationDetails));
+    when(caabApiClient.getApplications(caseSearchCriteria, userDetail.getProvider().getId(),
+            page, size)).thenReturn(Mono.just(mockTdsApplicationDetails));
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
 
     List<BaseApplication> result =
-        applicationService.getCases(caseSearchCriteria, loginId, userType);
+        applicationService.getCases(caseSearchCriteria, userDetail);
 
-    verify(soaApiClient).getCases(caseSearchCriteria, loginId, userType, page, size);
-    verify(caabApiClient).getApplications(caseSearchCriteria, page, size);
+    verify(soaApiClient).getCases(caseSearchCriteria, userDetail.getLoginId(),
+        userDetail.getUserType(), page, size);
+    verify(caabApiClient).getApplications(caseSearchCriteria,
+        userDetail.getProvider().getId(), page, size);
 
     assertNotNull(result);
     assertEquals(expectedResult, result);
@@ -295,8 +298,8 @@ class ApplicationServiceTest {
 
     caseSearchCriteria.setStatus(STATUS_DRAFT);
 
-    String loginId = "user1";
-    String userType = "userType";
+    UserDetail userDetail = buildUserDetail();
+
     int page = 0;
     int size = 10;
 
@@ -325,19 +328,22 @@ class ApplicationServiceTest {
     // expected result, only the soa case retained
     List<BaseApplication> expectedResult = List.of(mockSoaApplication);
 
-    when(soaApiClient.getCases(caseSearchCriteria, loginId, userType, page, size))
-        .thenReturn(Mono.just(mockCaseDetails));
+    when(soaApiClient.getCases(caseSearchCriteria, userDetail.getLoginId(),
+        userDetail.getUserType(), page, size)).thenReturn(Mono.just(mockCaseDetails));
     when(applicationMapper.toBaseApplication(mockCaseDetails.getContent().get(0)))
         .thenReturn(mockSoaApplication);
-    when(caabApiClient.getApplications(caseSearchCriteria, page, size))
+    when(caabApiClient.getApplications(caseSearchCriteria,
+        userDetail.getProvider().getId(), page, size))
         .thenReturn(Mono.just(mockTdsApplicationDetails));
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
 
     List<BaseApplication> result =
-        applicationService.getCases(caseSearchCriteria, loginId, userType);
+        applicationService.getCases(caseSearchCriteria, userDetail);
 
-    verify(soaApiClient).getCases(caseSearchCriteria, loginId, userType, page, size);
-    verify(caabApiClient).getApplications(caseSearchCriteria, page, size);
+    verify(soaApiClient).getCases(caseSearchCriteria, userDetail.getLoginId(),
+        userDetail.getUserType(), page, size);
+    verify(caabApiClient).getApplications(caseSearchCriteria,
+        userDetail.getProvider().getId(), page, size);
 
     assertNotNull(result);
     assertEquals(expectedResult, result);
@@ -351,8 +357,9 @@ class ApplicationServiceTest {
     caseSearchCriteria.setFeeEarnerId(789);
     caseSearchCriteria.setOfficeId(999);
     caseSearchCriteria.setClientSurname("asurname");
-    String loginId = "user1";
-    String userType = "userType";
+
+    UserDetail userDetail = buildUserDetail();
+
     int page = 0;
     int size = 1;
 
@@ -364,12 +371,12 @@ class ApplicationServiceTest {
         .addContentItem(new CaseSummary())
         .addContentItem(new CaseSummary());
 
-    when(soaApiClient.getCases(caseSearchCriteria, loginId, userType, page, size))
-        .thenReturn(Mono.just(mockCaseDetails));
+    when(soaApiClient.getCases(caseSearchCriteria, userDetail.getLoginId(),
+        userDetail.getUserType(), page, size)).thenReturn(Mono.just(mockCaseDetails));
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
 
     assertThrows(TooManyResultsException.class, () ->
-        applicationService.getCases(caseSearchCriteria, loginId, userType));
+        applicationService.getCases(caseSearchCriteria, userDetail));
   }
 
   @Test
@@ -380,8 +387,9 @@ class ApplicationServiceTest {
     caseSearchCriteria.setFeeEarnerId(789);
     caseSearchCriteria.setOfficeId(999);
     caseSearchCriteria.setClientSurname("asurname");
-    String loginId = "user1";
-    String userType = "userType";
+
+    UserDetail userDetail = buildUserDetail();
+
     int page = 0;
     int size = 2;
 
@@ -398,7 +406,8 @@ class ApplicationServiceTest {
         .size(1)
         .addContentItem(new BaseApplication().caseReferenceNumber("3"));
 
-    when(soaApiClient.getCases(caseSearchCriteria, loginId, userType, page, size))
+    when(soaApiClient.getCases(caseSearchCriteria,
+        userDetail.getLoginId(), userDetail.getUserType(), page, size))
         .thenReturn(Mono.just(mockCaseDetails));
     when(applicationMapper.toBaseApplication(mockCaseDetails.getContent().get(0)))
         .thenReturn(new BaseApplication()
@@ -406,12 +415,12 @@ class ApplicationServiceTest {
     when(applicationMapper.toBaseApplication(mockCaseDetails.getContent().get(1)))
         .thenReturn(new BaseApplication()
             .caseReferenceNumber(mockCaseDetails.getContent().get(1).getCaseReferenceNumber()));
-    when(caabApiClient.getApplications(caseSearchCriteria, page, size))
-        .thenReturn(Mono.just(mockTdsApplicationDetails));
+    when(caabApiClient.getApplications(caseSearchCriteria, userDetail.getProvider().getId(),
+        page, size)).thenReturn(Mono.just(mockTdsApplicationDetails));
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
 
     assertThrows(TooManyResultsException.class, () ->
-        applicationService.getCases(caseSearchCriteria, loginId, userType));
+        applicationService.getCases(caseSearchCriteria, userDetail));
   }
 
   @Test
@@ -1778,7 +1787,7 @@ class ApplicationServiceTest {
     opponent.setType(OPPONENT_TYPE_ORGANISATION);
 
     when(lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES,
-        opponent.getOrganisationType().getId())).thenReturn(
+        opponent.getOrganisationType())).thenReturn(
         Mono.just(Optional.empty()));
     when(lookupService.getOrganisationToCaseRelationship(opponent.getRelationshipToCase())).thenReturn(
         Mono.just(Optional.empty()));
@@ -1791,7 +1800,7 @@ class ApplicationServiceTest {
     when(opponentMapper.toOpponentFormData(
         opponent,
         expectedPartyName,
-        opponent.getOrganisationType().getId(),
+        opponent.getOrganisationType(),
         opponent.getRelationshipToCase(),
         opponent.getRelationshipToClient(),
         true)).thenReturn(new OrganisationOpponentFormData());
@@ -1802,7 +1811,7 @@ class ApplicationServiceTest {
     verify(opponentMapper).toOpponentFormData(
         opponent,
         expectedPartyName,
-        opponent.getOrganisationType().getId(),
+        opponent.getOrganisationType(),
         opponent.getRelationshipToCase(),
         opponent.getRelationshipToClient(),
         true);
@@ -1814,11 +1823,11 @@ class ApplicationServiceTest {
     opponent.setType(OPPONENT_TYPE_ORGANISATION);
 
     CommonLookupValueDetail organisationTypeLookup = new CommonLookupValueDetail()
-        .code(opponent.getOrganisationType().getId())
+        .code(opponent.getOrganisationType())
         .description("org type");
 
     when(lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES,
-        opponent.getOrganisationType().getId())).thenReturn(
+        opponent.getOrganisationType())).thenReturn(
         Mono.just(Optional.of(organisationTypeLookup)));
 
     RelationshipToCaseLookupValueDetail orgRelationshipToCase =

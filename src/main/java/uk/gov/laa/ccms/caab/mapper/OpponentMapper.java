@@ -44,7 +44,7 @@ public interface OpponentMapper {
   @Mapping(target = "relationshipToCaseDisplayValue", source = "relationshipToCaseDisplayValue")
   @Mapping(target = "relationshipToClientDisplayValue", source = "relationshipToClientDisplayValue")
   @Mapping(target = ".", source = "opponent.address")
-  @Mapping(target = "organisationType", source = "opponent.organisationType.id")
+  @Mapping(target = "organisationType", source = "opponent.organisationType")
   @Mapping(target = "organisationTypeDisplayValue", source = "organisationTypeDisplayValue")
   @Mapping(target = "deletable", source = "opponent.deleteInd")
   @Mapping(target = "shared", source = "opponent.sharedInd")
@@ -115,8 +115,7 @@ public interface OpponentMapper {
   @Mapping(target = "address.postcode", source = "postcode")
   @Mapping(target = "sharedInd", source = "shared")
   @Mapping(target = "organisationName", source = "organisationName")
-  @Mapping(target = "organisationType.id", source = "organisationType")
-  @Mapping(target = "organisationType.displayValue", source = "organisationTypeDisplayValue")
+  @Mapping(target = "organisationType", source = "organisationType")
   @Mapping(target = "currentlyTrading", source = "currentlyTrading")
   Opponent toOrganisationOpponent(OrganisationOpponentFormData opponentFormData);
 
