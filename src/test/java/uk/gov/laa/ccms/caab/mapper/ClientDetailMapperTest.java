@@ -410,6 +410,7 @@ public class ClientDetailMapperTest {
 
   private ClientDetailDetails buildClientDetailDetails(){
     ClientDetailDetails clientDetailDetails = new ClientDetailDetails();
+    clientDetailDetails.setNoFixedAbode(false);
     clientDetailDetails.setName(buildNameDetail());
     clientDetailDetails.setPersonalInformation(buildClientPersonalDetail());
     clientDetailDetails.setContacts(buildContactDetail());
