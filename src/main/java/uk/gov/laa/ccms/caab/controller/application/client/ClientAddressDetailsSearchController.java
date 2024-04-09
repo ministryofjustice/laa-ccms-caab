@@ -50,9 +50,9 @@ public class ClientAddressDetailsSearchController {
   @GetMapping("/application/client/details/address/search")
   public String clientDetailsAddressSearch(
       @SessionAttribute(ADDRESS_SEARCH_RESULTS)
-      ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults,
-      @ModelAttribute("addressSearch") AddressSearchFormData addressSearch,
-      Model model) {
+      final ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults,
+      @ModelAttribute("addressSearch") final AddressSearchFormData addressSearch,
+      final Model model) {
 
     model.addAttribute(ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
 

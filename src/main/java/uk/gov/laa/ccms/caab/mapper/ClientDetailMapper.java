@@ -50,6 +50,7 @@ public interface ClientDetailMapper {
   @Mapping(target = "personalInformation", source = "basicDetails")
   @Mapping(target = "contacts", source = "contactDetails")
   @Mapping(target = "address", source = "addressDetails")
+  @Mapping(target = "noFixedAbode", source = "addressDetails.noFixedAbode")
   ClientDetailDetails toClientDetailDetails(ClientFlowFormData clientFlowFormData);
 
   @Mapping(target = "middleName", source = "middleNames")

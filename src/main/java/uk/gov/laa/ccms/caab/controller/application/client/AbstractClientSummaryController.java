@@ -106,11 +106,15 @@ public abstract class AbstractClientSummaryController {
     );
 
     // Fetch all Monos asynchronously
-    Mono<List<Optional<CommonLookupValueDetail>>> allMonos = Flux.fromIterable(lookups)
-        .flatMap(pair -> pair.getRight().map(value -> Pair.of(pair.getLeft(), value)))
+    Mono<List<CommonLookupValueDetail>> allMonos = Flux.fromIterable(lookups)
+        .flatMap(pair -> pair.getRight()
+            .map(optionalValue -> optionalValue.orElseGet(CommonLookupValueDetail::new))
+            .map(value -> Pair.of(pair.getLeft(), value)))
         .collectList()
         .doOnNext(list -> list.forEach(pair -> model.addAttribute(pair.getLeft(), pair.getRight())))
-        .map(list -> list.stream().map(Pair::getRight).collect(Collectors.toList()));
+        .map(list -> list.stream()
+            .map(Pair::getRight)
+            .collect(Collectors.toList()));
 
     // Block until all results are available
     allMonos.block();
