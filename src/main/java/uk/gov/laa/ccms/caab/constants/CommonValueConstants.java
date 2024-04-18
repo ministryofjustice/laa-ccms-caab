@@ -122,4 +122,9 @@ public class CommonValueConstants {
    */
   public static final String COMMON_VALUE_PROCEEDING_ORDER_TYPE = "XXCCMS_PROCEEDING_ORDER_TYPE";
 
+  /**
+   * Type used to retrieve the Progress status types.
+   */
+  public static final String COMMON_VALUE_PROGRESS_STATUS_TYPES = "XXCCMS_OPA_PROGRESS_STATUS";
+
 }

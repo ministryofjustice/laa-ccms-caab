@@ -22,6 +22,8 @@ public class ApplicationConfig implements WebMvcConfigurer {
 
   private final String caabApiUrl;
 
+  private final String assessmentApiUrl;
+
   private final String osApiUrl;
 
   private final LoggingInterceptor loggingInterceptor;
@@ -41,14 +43,16 @@ public class ApplicationConfig implements WebMvcConfigurer {
    * @param osApiUrl           The URL of the ordinance survey API.
    * @param loggingInterceptor A logging interceptor for the caab.
    */
-  public ApplicationConfig(@Value("${laa.ccms.ebs-api.url}") String ebsApiUrl,
-                           @Value("${laa.ccms.soa-api.url}") String soaApiUrl,
-                           @Value("${laa.ccms.caab-api.url}") String caabApiUrl,
-                           @Value("${os.api.url}") String osApiUrl,
-                           LoggingInterceptor loggingInterceptor) {
+  public ApplicationConfig(@Value("${laa.ccms.ebs-api.url}") final String ebsApiUrl,
+                           @Value("${laa.ccms.soa-api.url}") final String soaApiUrl,
+                           @Value("${laa.ccms.caab-api.url}") final String caabApiUrl,
+                           @Value("${laa.ccms.assessment-api.url}") final String assessmentApiUrl,
+                           @Value("${os.api.url}") final String osApiUrl,
+                           final LoggingInterceptor loggingInterceptor) {
     this.ebsApiUrl = ebsApiUrl;
     this.soaApiUrl = soaApiUrl;
     this.caabApiUrl = caabApiUrl;
+    this.assessmentApiUrl = assessmentApiUrl;
     this.osApiUrl = osApiUrl;
     this.loggingInterceptor = loggingInterceptor;
   }
@@ -81,6 +85,16 @@ public class ApplicationConfig implements WebMvcConfigurer {
   @Bean("caabApiWebClient")
   WebClient caabApiWebClient() {
     return WebClient.create(caabApiUrl);
+  }
+
+  /**
+   * Creates a WebClient bean for interacting with the Assessment API.
+   *
+   * @return A WebClient instance configured for the Assessment API URL.
+   */
+  @Bean("assessmentApiWebClient")
+  WebClient assessmentApiWebClient() {
+    return WebClient.create(assessmentApiUrl);
   }
 
   /**

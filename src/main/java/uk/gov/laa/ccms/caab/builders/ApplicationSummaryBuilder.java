@@ -4,7 +4,9 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEP
 
 import java.util.List;
 import org.springframework.util.StringUtils;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.model.Address;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryStatusDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
@@ -27,6 +29,7 @@ public class ApplicationSummaryBuilder {
   private static final String COMPLETE = "Complete";
   private static final String NOT_STARTED = "Not started";
   private static final String STARTED = "Started";
+  public static final String NOT_AVAILABLE = "Not available";
   public static final String TYPE_ORGANISATION = "Organisation";
 
   /**
@@ -34,8 +37,9 @@ public class ApplicationSummaryBuilder {
    *
    * @param auditDetail used to populate multiple summary status displays
    */
-  public ApplicationSummaryBuilder(AuditDetail auditDetail) {
-    ApplicationSummaryStatusDisplay commonStatusDisplay = ApplicationSummaryStatusDisplay.builder()
+  public ApplicationSummaryBuilder(final AuditDetail auditDetail) {
+    final ApplicationSummaryStatusDisplay commonStatusDisplay =
+        ApplicationSummaryStatusDisplay.builder()
         .lastSavedBy(auditDetail.getLastSavedBy())
         .lastSaved(auditDetail.getLastSaved())
         .build();
@@ -161,7 +165,7 @@ public class ApplicationSummaryBuilder {
       if (!priorAuthorities.isEmpty()) {
         status = STARTED;
       }
-      boolean isComplete = proceedings.stream()
+      final boolean isComplete = proceedings.stream()
             .anyMatch(proc -> proc.getStage() != null);
       if (isComplete) {
         status = COMPLETE;
@@ -171,7 +175,7 @@ public class ApplicationSummaryBuilder {
     }
     applicationSummary.getProceedingsAndCosts().setStatus(status);
 
-    for (Proceeding proceeding : proceedings) {
+    for (final Proceeding proceeding : proceedings) {
       checkAndSetLastSaved(
           applicationSummary.getProceedingsAndCosts(),
           proceeding.getAuditTrail());
@@ -181,7 +185,7 @@ public class ApplicationSummaryBuilder {
         applicationSummary.getProceedingsAndCosts(),
         costs.getAuditTrail());
 
-    for (PriorAuthority priorAuthority : priorAuthorities) {
+    for (final PriorAuthority priorAuthority : priorAuthorities) {
       checkAndSetLastSaved(
           applicationSummary.getProceedingsAndCosts(),
           priorAuthority.getAuditTrail());
@@ -206,7 +210,7 @@ public class ApplicationSummaryBuilder {
     if (opponents.isEmpty()) {
       applicationSummary.getOpponentsAndOtherParties().setStatus(NOT_STARTED);
     } else {
-      boolean opponentCreated = opponents.stream()
+      final boolean opponentCreated = opponents.stream()
           .anyMatch(opponent -> isOpponentCreated(
               opponent,
               organisationRelationships,
@@ -215,11 +219,55 @@ public class ApplicationSummaryBuilder {
           opponentCreated ? COMPLETE : STARTED);
     }
 
-    for (Opponent opponent : opponents) {
+    for (final Opponent opponent : opponents) {
       checkAndSetLastSaved(
           applicationSummary.getOpponentsAndOtherParties(),
           opponent.getAuditTrail());
     }
+
+    return this;
+  }
+
+  /**
+   * Builder method for opponents and other parties.
+   *
+   * @param application the application details.
+   * @param meritsAssessment the merits assessment details.
+   * @param meansAssessment the means assessment details.
+   * @param organisationRelationships the list of organisation relationships.
+   * @param personRelationships the list of person relationships.
+   * @return the builder with amended opponents and other parties details.
+   */
+  public ApplicationSummaryBuilder assessments(
+      final ApplicationDetail application,
+      final AssessmentDetail meritsAssessment,
+      final AssessmentDetail meansAssessment,
+      final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
+      final List<RelationshipToCaseLookupValueDetail> personRelationships
+  ) {
+
+    // Check if any opponent has been created
+    final boolean opponentCreated = application.getOpponents().stream()
+        .anyMatch(opponent -> isOpponentCreated(
+            opponent,
+            organisationRelationships,
+            personRelationships));
+
+    //merits
+    updateAssessmentStatus(
+        application,
+        meritsAssessment,
+        application.getMeritsAssessmentStatus(),
+        applicationSummary.getMeritsAssessment(),
+        opponentCreated);
+
+    //means
+    updateAssessmentStatus(
+        application,
+        meansAssessment,
+        application.getMeansAssessmentStatus(),
+        applicationSummary.getMeansAssessment(),
+        opponentCreated);
 
     return this;
   }
@@ -251,7 +299,7 @@ public class ApplicationSummaryBuilder {
       final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
       final List<RelationshipToCaseLookupValueDetail> personRelationships) {
 
-    List<RelationshipToCaseLookupValueDetail> relationships =
+    final List<RelationshipToCaseLookupValueDetail> relationships =
         opponent.getType().equalsIgnoreCase(TYPE_ORGANISATION)
         ? organisationRelationships
         : personRelationships;
@@ -259,5 +307,33 @@ public class ApplicationSummaryBuilder {
     return relationships.stream()
         .anyMatch(item -> item.getCode().equals(
             opponent.getRelationshipToCase()) && item.getOpponentInd());
+  }
+
+  private void updateAssessmentStatus(
+      final ApplicationDetail application,
+      final AssessmentDetail assessment,
+      final String assessmentStatus,
+      final ApplicationSummaryStatusDisplay assessmentStatusDisplay,
+      final boolean opponentCreated) {
+    boolean assessmentsEnabled = true;
+
+    if (application.getProceedings().isEmpty() || !opponentCreated) {
+      assessmentStatusDisplay.setStatus(NOT_AVAILABLE);
+      assessmentsEnabled = false;
+
+    } else {
+
+      if (assessment != null) {
+        // Update the assessment details
+        assessmentStatusDisplay.setStatus(assessmentStatus);
+        assessmentStatusDisplay.setLastSaved(assessment.getAuditDetail().getLastSaved());
+        assessmentStatusDisplay.setLastSavedBy(assessment.getAuditDetail().getLastSavedBy());
+      } else {
+        assessmentStatusDisplay.setStatus(NOT_STARTED);
+      }
+    }
+
+    // Enable the assessment
+    assessmentStatusDisplay.setEnabled(assessmentsEnabled);
   }
 }

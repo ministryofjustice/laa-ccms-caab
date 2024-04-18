@@ -26,8 +26,7 @@ services:
 
   laa-ccms-caab-liquibase:
     container_name: laa-ccms-caab-liquibase
-    build:
-      context: https://github.com/ministryofjustice/docker-liquibase.git
+    image: caab-liquibase
     volumes:
       - ../laa-ccms-caab-db/sql:/migrations
       - ../laa-ccms-caab-db/waitfor:/waitfor
