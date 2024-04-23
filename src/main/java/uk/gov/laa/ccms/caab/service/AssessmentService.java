@@ -11,10 +11,8 @@ import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus.NOT_STA
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus.REQUIRED;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus.UNCHANGED;
 
-import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -100,18 +98,9 @@ public class AssessmentService {
       final UserDetail user) {
     log.info("Calculating assessment statuses");
 
-    boolean isMeansLast = false;
-
-    if (meansAssessment != null && meritsAssessment != null) {
-      if (!meansAssessment.getAuditDetail().getLastSaved()
-          .before(meritsAssessment.getAuditDetail().getLastSaved())) {
-        isMeansLast = true;
-      }
-    }
-
     if (meansAssessment != null) {
       if (application.getMeansAssessmentStatus() == null) {
-        if (!meansAssessment.getStatus().equals(NOT_STARTED.getStatus())) {
+        if (!NOT_STARTED.getStatus().equals(meansAssessment.getStatus())) {
           application.setMeansAssessmentAmended(true);
         }
       } else if (!application.getMeansAssessmentStatus().equals(meansAssessment.getStatus())) {
@@ -120,18 +109,10 @@ public class AssessmentService {
     }
 
     log.info("Calculating means assessment status");
-    calculateAssessmentStatus(
-        meansAssessment,
-        application,
-        isMeansLast,
-        user);
+    calculateAssessmentStatus(meansAssessment, application, user);
 
     log.info("Calculating merits assessment status");
-    calculateAssessmentStatus(
-        meritsAssessment,
-        application,
-        isMeansLast,
-        user);
+    calculateAssessmentStatus(meritsAssessment, application, user);
   }
 
   /**
@@ -141,17 +122,15 @@ public class AssessmentService {
    *
    * @param currentAssessment the assessment whose status needs to be evaluated
    * @param application the application related to the assessment
-   * @param isMeansLast flag indicating if the means assessment is the oldest assessment
    * @param user the user performing the update operation
    */
   private void calculateAssessmentStatus(
       final AssessmentDetail currentAssessment,
       final ApplicationDetail application,
-      final boolean isMeansLast,
       final UserDetail user) {
 
-    String statusKey = getStatus(currentAssessment);
     boolean statusChanged = false;
+    String statusKey = getStatus(currentAssessment);
 
     if (!application.getAmendment()
         || (isApplicationsAssessmentAmended(application, currentAssessment))) {
@@ -159,13 +138,13 @@ public class AssessmentService {
       if (COMPLETE.getStatus().equalsIgnoreCase(statusKey)
           || ERROR.getStatus().equalsIgnoreCase(statusKey)) {
 
-        if (isReassessmentRequired(application, currentAssessment, isMeansLast)) {
+        if (isReassessmentRequired(application, currentAssessment)) {
           statusKey = REQUIRED.getStatus();
           statusChanged = true;
         }
       }
     } else {
-      if (isReassessmentRequired(application, currentAssessment, isMeansLast)) {
+      if (isReassessmentRequired(application, currentAssessment)) {
         statusKey = REQUIRED.getStatus();
       } else {
         statusKey = UNCHANGED.getStatus();
@@ -174,7 +153,7 @@ public class AssessmentService {
     }
 
     // update the assessment status if it has changed
-    if (statusChanged) {
+    if (statusChanged && currentAssessment != null) {
       assessmentApiClient.updateAssessment(
               currentAssessment.getId(),
               user.getLoginId(),
@@ -242,66 +221,93 @@ public class AssessmentService {
     return false;
   }
 
-  /**
-   * Determines if a reassessment for either means or merits is required based on the type of
-   * assessment provided. It utilizes specific checks for means and merits reassessments.
-   *
-   * @param application the application under consideration for reassessment
-   * @param assessment the current assessment details (means or merits)
-   * @param isMeansLast flag indicating if the means assessment is the oldest assessment.
-   * @return true if reassessment is needed; false otherwise
-   */
-  private boolean isReassessmentRequired(
-      final ApplicationDetail application,
-      final AssessmentDetail assessment,
-      final boolean isMeansLast) {
-
-    if (assessment != null) {
-      if (MEANS.getName().equalsIgnoreCase(assessment.getName())) {
-        return isMeansReassessmentRequired(application, assessment);
-      } else if (MERITS.getName().equalsIgnoreCase(assessment.getName())) {
-        return isMeritsReassessmentRequired(application, assessment, isMeansLast);
-      }
-    }
-    return false;
-  }
 
   /**
-   * Determines if a means reassessment is required based on changes to the proceedings within
-   * the application, deletions of proceedings, or specific amendment scenarios outlined for
-   * the application.
+   * Determines if a reassessment is required based on changes between an
+   * application and its latest assessment.
    *
-   * @param application the application under review for reassessment
-   * @param meansAssessment the current assessment of means
-   * @return true if reassessment is needed; false otherwise
+   * @param application the application details to compare against the assessment
+   * @param assessment the assessment details to compare against the application
+   * @return true if a reassessment is necessary; false otherwise
    */
-  private boolean isMeansReassessmentRequired(
+  protected boolean isReassessmentRequired(
       final ApplicationDetail application,
-      final AssessmentDetail meansAssessment) {
+      final AssessmentDetail assessment) {
 
     if (!application.getAmendment()) {
-      if (meansAssessment == null) {
-        return false;
-      }
+      if (assessment != null) {
 
-      final AssessmentEntityTypeDetail assessmentEntityType =
-          getAssessmentEntityType(meansAssessment, PROCEEDING.getType());
+        final AssessmentEntityTypeDetail assessmentEntityType =
+            getAssessmentEntityType(assessment, PROCEEDING.getType());
 
-      //check key change for means
-      if (checkAssessmentForProceedingKeyChange(application, assessmentEntityType)) {
-        return true;
-      }
-
-      if (application.getProceedings() != null) {
-        log.debug("app.getProceedings().size(): {} - opaListEntity.getOpaEntities().size(): {}",
-            application.getProceedings().size(), assessmentEntityType.getEntities().size());
-
-        if (application.getProceedings().size() < assessmentEntityType.getEntities().size()) {
-          log.debug("When proceeding is deleted condition - returns TRUE");
+        //check for any proceeding attribute changes between assessment and application
+        if (checkAssessmentForProceedingKeyChange(application, assessmentEntityType)) {
           return true;
         }
-      }
 
+        //check if proceeding is deleted
+        if (application.getProceedings() != null) {
+          log.debug("app.getProceedings().size(): {} - opaListEntity.getOpaEntities().size(): {}",
+              application.getProceedings().size(), assessmentEntityType.getEntities().size());
+
+          if (application.getProceedings().size() < assessmentEntityType.getEntities().size()) {
+            log.debug("When proceeding is deleted condition - returns TRUE");
+            return true;
+          }
+        }
+
+        //used to check if the proceeding is deleted - this should be included for both assessments,
+        //although not specifically needed for means, both assessments and application data should
+        //be kept in sync.
+        if (Boolean.TRUE.equals(application.getMeritsReassessmentRequired())) {
+          log.info(
+              "Reassessment Required for {} as application.getMeritsReassessmentRequired() "
+                  + "IS TRUE", application.getCaseReferenceNumber());
+          return true;
+        }
+
+        //used specifically for merits - this should be included for both assessments,
+        //although not specifically needed for means, both assessments and application data should
+        //be kept in sync.
+        for (final Opponent opponent : application.getOpponents()) {
+          if ("Individual".equalsIgnoreCase(opponent.getType()) && differenceGreaterThanTenSecs(
+              opponent.getAuditTrail().getLastSaved(),
+              assessment.getAuditDetail().getCreated())) {
+
+            log.info("Reassessment Required for {} as When individual is updated - IS TRUE",
+                application.getCaseReferenceNumber());
+            return true;
+          }
+        }
+
+        //When Individual/Organisation deleted
+        //used specifically for merits - this should be included for both assessments,
+        //although not specifically needed for means, both assessments and application data should
+        //be kept in sync.
+        final AssessmentEntityTypeDetail opponentEntityType =
+            getAssessmentEntityType(assessment, OPPONENT.getType());
+        if ((application.getOpponents() != null) && (opponentEntityType != null)) {
+          if (application.getOpponents().size() < opponentEntityType.getEntities().size()) {
+            log.info(
+                "Reassessment Required for {} as When organisation/individual is deleted "
+                    + "condition - IS TRUE", application.getCaseReferenceNumber());
+            return true;
+          }
+        }
+
+        if (application.getCostLimit() == null
+            || application.getCostLimit().getLimitAtTimeOfMerits() == null
+            || application.getCostLimit().getLimitAtTimeOfMerits()
+            .compareTo(application.getCosts().getRequestedCostLimitation()) < 0) {
+
+          log.info("Merit Reassessment Required for {} as app.getCostLimitAtTimeOfMerits() == null "
+                  + "|| app.getCostLimitAtTimeOfMerits().compareTo(app.getCosts()"
+                  + ".getRequestedOrDefaultCostLimitation()) < 0 IS TRUE",
+              application.getCaseReferenceNumber());
+          return true;
+        }
+
+      }
     } else {
       //todo amendment - need an EBS Case to workout if its required
       //if (application.getAmendment()){
@@ -318,131 +324,6 @@ public class AssessmentService {
   }
 
   /**
-   * Determines if a merits reassessment is required for the application based on various criteria
-   * including changes in application details, assessment dates, and cost limits.
-   *
-   * @param application the application under consideration
-   * @param meritsAssessment the current merits assessment details
-   * @param isMeansLast flag indicating if the means assessment is the oldest assessment.
-   * @return true if a reassessment is required; false otherwise
-   */
-  private boolean isMeritsReassessmentRequired(
-      final ApplicationDetail application,
-      final AssessmentDetail meritsAssessment,
-      final boolean isMeansLast) {
-    final Date meritsCreated;
-
-    //todo amendment - need an EBS Case to workout if its required
-    //if (application.getAmendment()){
-    //  if (meritsAssessment == null && !ebsCase.hasEbsAmendments()
-    //    && application.getApplicationType().getId().equals("SUBSTANTIVE")
-    //    && ebsCase.getCertificateType().getId().equals("EMERGENCY")
-    //  ){
-    //    return true;
-    //  }
-    //}
-
-    final Date lastKeyChangeDate = getDateOfLatestKeyChange(application);
-    log.debug("getDateOfLatestKeyChange(application) : {}", lastKeyChangeDate);
-    if (lastKeyChangeDate == null) {
-      return false;
-    }
-
-    log.debug("application.getAuditTrail() : {}", application.getAuditTrail());
-    if (application.getAmendment() && !application.getMeritsAssessmentAmended()) {
-
-      final Calendar calendar = new GregorianCalendar();
-      if (application.getAuditTrail() != null) {
-        calendar.setTime(application.getAuditTrail().getCreated());
-        log.debug("Audit trial date set");
-      } else {
-        calendar.setTime(new Date());
-        log.debug("System date set");
-      }
-      calendar.add(Calendar.SECOND, 2);
-      meritsCreated = calendar.getTime();
-      log.debug("meritsCreated @1 : {}", meritsCreated);
-    } else {
-      // an application without any assessment, cannot need a re-assessment
-      if (meritsAssessment == null) {
-        return false;
-      }
-      meritsCreated = meritsAssessment.getAuditDetail().getCreated();
-      log.debug("meritsCreated @2 : {}", meritsCreated);
-    }
-
-    log.debug("meansLast : {}", isMeansLast);
-    log.debug("app.getDateOfLatestKeyChange() : {}", lastKeyChangeDate);
-    log.debug("meritsCreated : {}", meritsCreated);
-    log.debug("differenceGreaterThanTenSecs(app.getDateOfLatestKeyChange(), meritsCreated) : {}",
-        differenceGreaterThanTenSecs(lastKeyChangeDate, meritsCreated));
-
-    if (!isMeansLast && differenceGreaterThanTenSecs(lastKeyChangeDate, meritsCreated)) {
-      log.info("Merit Reassessment Required for {} as !meansLast "
-              + "&& differenceGreaterThanTenSecs(lastKeyChangeDate, meritsCreated) IS TRUE",
-          application.getCaseReferenceNumber());
-      return true;
-    }
-
-    if (application.getMeritsReassessmentRequired()) {
-      log.info("Merit Reassessment Required for {} as application.getMeritsReassessmentRequired() "
-              + "IS TRUE", application.getCaseReferenceNumber());
-      return true;
-    }
-
-    if (application.getCostLimit() == null
-        || application.getCostLimit().getLimitAtTimeOfMerits() == null
-        || application.getCostLimit().getLimitAtTimeOfMerits()
-        .compareTo(application.getCosts().getRequestedCostLimitation()) < 0) {
-
-      log.info("Merit Reassessment Required for {} as app.getCostLimitAtTimeOfMerits() == null "
-          + "|| app.getCostLimitAtTimeOfMerits().compareTo(app.getCosts()"
-          + ".getRequestedOrDefaultCostLimitation()) < 0 IS TRUE",
-          application.getCaseReferenceNumber());
-      return true;
-    }
-
-    final AssessmentEntityTypeDetail assessmentEntityType =
-        getAssessmentEntityType(meritsAssessment, PROCEEDING.getType());
-
-    //check key change for means
-    if (checkAssessmentForProceedingKeyChange(application, assessmentEntityType)) {
-      return true;
-    }
-
-    //When Individual is updated
-    if (meritsAssessment != null) {
-      for (final Opponent opponent : application.getOpponents()) {
-        if ("Individual".equalsIgnoreCase(opponent.getType()) && differenceGreaterThanTenSecs(
-            opponent.getAuditTrail().getLastSaved(),
-            meritsAssessment.getAuditDetail().getCreated())) {
-
-          log.info("Merit Reassessment Required for {} as When individual is updated - IS TRUE",
-              application.getCaseReferenceNumber());
-          return true;
-        }
-      }
-
-      //When Individual/Organisation deleted
-      final AssessmentEntityTypeDetail opponentEntityType =
-          getAssessmentEntityType(meritsAssessment, OPPONENT.getType());
-      if ((application.getOpponents() != null) && (opponentEntityType != null)) {
-        if (application.getOpponents().size() < opponentEntityType.getEntities().size()) {
-          log.info(
-              "Merit Reassessment Required for {} as When organisation/individual is deleted "
-                  + "condition - IS TRUE", application.getCaseReferenceNumber());
-          return true;
-        }
-      }
-    }
-
-    log.info("Merit Reassessment NOT Required for {} as none of the conditions were met",
-        application.getCaseReferenceNumber());
-
-    return false;
-  }
-
-  /**
    * Checks if there are any discrepancies between the key data of the proceedings in the
    * application and their corresponding assessment records based on the specified assessment
    * entity type.
@@ -451,11 +332,11 @@ public class AssessmentService {
    * @param assessmentEntityType the type of assessment entity to match against proceedings
    * @return true if any discrepancies are found; false otherwise
    */
-  private boolean checkAssessmentForProceedingKeyChange(
+  protected boolean checkAssessmentForProceedingKeyChange(
       final ApplicationDetail application,
       final AssessmentEntityTypeDetail assessmentEntityType) {
 
-    if (assessmentEntityType != null) {
+    if (assessmentEntityType != null && application.getProceedings() != null) {
       for (final Proceeding proceeding : application.getProceedings()) {
         final String matterType = proceeding.getMatterType().getId();
         final String proceedingType = proceeding.getProceedingType().getId();
@@ -483,7 +364,8 @@ public class AssessmentService {
             return true;
           }
 
-          //scope limitations
+          //Check scope limitations for both, although not specifically needed for means, both
+          //assessments and application data should be kept in sync.
           final AssessmentAttributeDetail scopeLimitationAttribute =
               getAssessmentAttribute(assessmentEntity,
                   AssessmentAttribute.REQUESTED_SCOPE.getAttribute());

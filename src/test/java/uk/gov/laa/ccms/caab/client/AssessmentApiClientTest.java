@@ -1,0 +1,102 @@
+package uk.gov.laa.ccms.caab.client;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.net.URI;
+import java.util.function.Function;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriBuilder;
+import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
+import uk.gov.laa.ccms.caab.assessment.model.PatchAssessmentDetail;
+
+@ExtendWith(MockitoExtension.class)
+@SuppressWarnings({"unchecked", "rawtypes"})
+class AssessmentApiClientTest {
+
+  @Mock
+  private WebClient assessmentApiWebClient;
+
+  @Mock
+  private WebClient.RequestBodyUriSpec requestBodyUriMock;
+
+  @Mock
+  private WebClient.RequestBodySpec requestBodyMock;
+
+  @Mock
+  private WebClient.RequestHeadersSpec requestHeadersMock;
+
+  @Mock
+  private WebClient.RequestHeadersUriSpec requestHeadersUriMock;
+
+  @Mock
+  private WebClient.ResponseSpec responseMock;
+
+  @Mock
+  private AssessmentApiClientErrorHandler apiClientErrorHandler;
+
+  @InjectMocks
+  private AssessmentApiClient assessmentApiClient;
+
+  @Test
+  void getAssessments_success() {
+    final String assessmentName = "meansAssessment";
+    final String providerId = "987";
+    final String caseReferenceNumber = "case456";
+    final String status = "COMPLETE";
+    final AssessmentDetails mockAssessmentDetails = new AssessmentDetails();
+
+    when(assessmentApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(AssessmentDetails.class)).thenReturn(Mono.just(mockAssessmentDetails));
+
+    final Mono<AssessmentDetails> result = assessmentApiClient.getAssessments(assessmentName, providerId, caseReferenceNumber, status);
+
+    StepVerifier.create(result)
+        .expectNext(mockAssessmentDetails)
+        .verifyComplete();
+
+    final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    assertEquals("/assessments?name=meansAssessment&provider-id=987&case-reference-number=case456&status=COMPLETE", actualUri.toString());
+  }
+
+  @Test
+  void updateAssessment_success() {
+    final String assessmentId = "assessment123";
+    final String userLoginId = "user456";
+    final PatchAssessmentDetail patchDetails = new PatchAssessmentDetail(); // Populate this as needed for the test
+
+    when(assessmentApiWebClient.patch()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri("/assessments/{assessment-id}", assessmentId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", userLoginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(patchDetails)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = assessmentApiClient.updateAssessment(assessmentId, userLoginId, patchDetails);
+
+    StepVerifier.create(result)
+        .verifyComplete();
+
+    verify(responseMock).bodyToMono(Void.class);
+  }
+
+
+
+
+
+}

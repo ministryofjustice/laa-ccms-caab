@@ -169,7 +169,7 @@ public class ApplicationService {
    * Each result is mapped to a BaseApplication to summarise the details.
    *
    * @param caseSearchCriteria The search criteria to use when fetching cases.
-   * @param user               The currently logged in user.
+   * @param user               The currently logged-in user.
    * @return A List of BaseApplication.
    */
   public List<BaseApplication> getCases(

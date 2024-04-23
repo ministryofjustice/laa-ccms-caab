@@ -18,6 +18,9 @@ import uk.gov.laa.ccms.caab.assessment.model.PatchAssessmentDetail;
 public class AssessmentApiClient {
   private final WebClient assessmentApiWebClient;
 
+  private final AssessmentApiClientErrorHandler assessmentApiClientErrorHandler;
+  private static final String RESOURCE_TYPE_ASSESSMENT = "assessments";
+
   /**
    * Get assessments from the assessment API.
    *
@@ -50,8 +53,9 @@ public class AssessmentApiClient {
             .queryParams(queryParams)
             .build())
         .retrieve()
-        .bodyToMono(AssessmentDetails.class);
-    //todo errors
+        .bodyToMono(AssessmentDetails.class)
+        .onErrorResume(e -> assessmentApiClientErrorHandler
+          .handleApiRetrieveError(e, RESOURCE_TYPE_ASSESSMENT, queryParams));
   }
 
   /**
@@ -73,8 +77,13 @@ public class AssessmentApiClient {
         .header("Caab-User-Login-Id", userLoginId)
         .bodyValue(patch)
         .retrieve()
-        .bodyToMono(Void.class);
-    //todo errors
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> assessmentApiClientErrorHandler
+            .handleApiUpdateError(
+                e,
+                RESOURCE_TYPE_ASSESSMENT,
+                "assessment-id",
+                assessmentId));
   }
 
 
