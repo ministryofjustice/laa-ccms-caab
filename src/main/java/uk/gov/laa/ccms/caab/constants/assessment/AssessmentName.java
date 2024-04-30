@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.constants.assessment;
 
+import java.util.Arrays;
 import lombok.Getter;
 
 /**
@@ -19,5 +20,18 @@ public enum AssessmentName {
    */
   AssessmentName(final String name) {
     this.name = name;
+  }
+
+  /**
+   * Retrieves an AssessmentName enum by its name.
+   *
+   * @param name the name string to match against AssessmentName enums.
+   * @return the matched AssessmentName enum, or null if no match is found.
+   */
+  public static AssessmentName findByName(final String name) {
+    return Arrays.stream(AssessmentName.values())
+        .filter(assessmentName -> assessmentName.getName().equals(name))
+        .findFirst()
+        .orElse(null);
   }
 }

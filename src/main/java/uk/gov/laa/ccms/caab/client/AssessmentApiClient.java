@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.client;
 
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,21 +25,21 @@ public class AssessmentApiClient {
   /**
    * Get assessments from the assessment API.
    *
-   * @param assessmentName the name of the assessment
+   * @param assessmentNames the list of assessment names to filter
    * @param providerId the provider id
    * @param caseReferenceNumber the case reference number
    * @param status the status of the assessment
    * @return the assessment details
    */
   public Mono<AssessmentDetails> getAssessments(
-      final String assessmentName,
+      final List<String> assessmentNames,
       final String providerId,
       final String caseReferenceNumber,
       final String status) {
 
     final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
-    Optional.ofNullable(assessmentName)
-        .ifPresent(param -> queryParams.add("name", param));
+    Optional.ofNullable(assessmentNames)
+        .ifPresent(names -> queryParams.add("name", String.join(",", names)));
     Optional.ofNullable(providerId)
         .ifPresent(param -> queryParams.add("provider-id", param));
     Optional.ofNullable(caseReferenceNumber)

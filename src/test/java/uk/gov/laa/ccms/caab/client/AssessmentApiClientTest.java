@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
+import java.util.List;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -62,7 +63,7 @@ class AssessmentApiClientTest {
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(AssessmentDetails.class)).thenReturn(Mono.just(mockAssessmentDetails));
 
-    final Mono<AssessmentDetails> result = assessmentApiClient.getAssessments(assessmentName, providerId, caseReferenceNumber, status);
+    final Mono<AssessmentDetails> result = assessmentApiClient.getAssessments(List.of(assessmentName), providerId, caseReferenceNumber, status);
 
     StepVerifier.create(result)
         .expectNext(mockAssessmentDetails)

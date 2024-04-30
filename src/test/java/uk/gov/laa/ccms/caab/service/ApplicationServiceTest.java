@@ -799,10 +799,10 @@ class ApplicationServiceTest {
         Mono.just(orgRelationshipsDetail));
     when(lookupService.getPersonToCaseRelationships()).thenReturn(
         Mono.just(personRelationshipsDetail));
-    when(assessmentService.getAssessments("meansAssessment",
+    when(assessmentService.getAssessments(List.of("meansAssessment"),
         user.getProvider().getId().toString(), mockApplicationDetail.getCaseReferenceNumber(), null))
         .thenReturn(Mono.just(meansAssessmentDetails));
-    when(assessmentService.getAssessments("meritsAssessment",
+    when(assessmentService.getAssessments(List.of("meritsAssessment"),
         user.getProvider().getId().toString(), mockApplicationDetail.getCaseReferenceNumber(), null))
         .thenReturn(Mono.just(meritsAssessmentDetails));
 

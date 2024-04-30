@@ -229,14 +229,14 @@ public class ApplicationSummaryBuilder {
   }
 
   /**
-   * Builder method for opponents and other parties.
+   * Builder method for both means and merits assessments.
    *
    * @param application the application details.
    * @param meritsAssessment the merits assessment details.
    * @param meansAssessment the means assessment details.
    * @param organisationRelationships the list of organisation relationships.
    * @param personRelationships the list of person relationships.
-   * @return the builder with amended opponents and other parties details.
+   * @return the builder with amended assessment details.
    */
   public ApplicationSummaryBuilder assessments(
       final ApplicationDetail application,

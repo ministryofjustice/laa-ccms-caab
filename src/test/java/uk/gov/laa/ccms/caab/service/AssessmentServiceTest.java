@@ -78,11 +78,11 @@ public class AssessmentServiceTest {
     final String caseReferenceNumber = "12345";
     final String status = "COMPLETE";
 
-    when(assessmentApiClient.getAssessments(anyString(), anyString(), anyString(), anyString()))
+    when(assessmentApiClient.getAssessments(any(), anyString(), anyString(), anyString()))
         .thenReturn(just(new AssessmentDetails()));
 
     final Mono<AssessmentDetails>
-        result = assessmentService.getAssessments(assessmentName, providerId, caseReferenceNumber, status);
+        result = assessmentService.getAssessments(List.of(assessmentName), providerId, caseReferenceNumber, status);
 
     StepVerifier.create(result)
         .expectNextMatches(Objects::nonNull)
@@ -159,7 +159,8 @@ public class AssessmentServiceTest {
         .amendment(false);
 
     final AssessmentDetail meansAssessment = new AssessmentDetail()
-        .name(MEANS.getName());
+        .name(MEANS.getName())
+        .status("INCOMPLETE");
 
     final UserDetail user = buildUserDetail();
 
@@ -279,7 +280,8 @@ public class AssessmentServiceTest {
 
     final AssessmentDetail meansAssessment = new AssessmentDetail()
         .id(ASSESSMENT_ID)
-        .name(MEANS.getName());
+        .name(MEANS.getName())
+        .status("INCOMPLETE");
 
     final UserDetail user = buildUserDetail();
 
@@ -309,7 +311,8 @@ public class AssessmentServiceTest {
 
     final AssessmentDetail meritsAssessment = new AssessmentDetail()
         .id(ASSESSMENT_ID)
-        .name(MERITS.getName());
+        .name(MERITS.getName())
+        .status("INCOMPLETE");
 
     final UserDetail user = buildUserDetail();
 
@@ -444,7 +447,8 @@ public class AssessmentServiceTest {
         .amendment(false);
 
     final AssessmentDetail meritsAssessment = new AssessmentDetail()
-        .name(MERITS.getName());
+        .name(MERITS.getName())
+        .status("INCOMPLETE");
 
     final UserDetail user = buildUserDetail();
 

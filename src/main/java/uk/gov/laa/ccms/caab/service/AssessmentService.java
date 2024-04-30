@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROGRESS_STATUS_TYPES;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.OPPONENT;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.PROCEEDING;
@@ -14,6 +15,7 @@ import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus.UNCHANG
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,7 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.PatchAssessmentDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.constants.assessment.InstanceMappingPrefix;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.Opponent;
@@ -51,19 +54,19 @@ public class AssessmentService {
   /**
    * Retrieves assessments matching the given criteria from the assessment API client.
    *
-   * @param assessmentName the name of the assessment to retrieve
+   * @param assessmentNames the list of assessment names to retrieve
    * @param providerId the ID of the provider associated with the assessment
    * @param caseReferenceNumber the case reference number associated with the assessment
    * @param status the status of the assessment to filter by
    * @return a Mono that emits the requested assessments
    */
   public Mono<AssessmentDetails> getAssessments(
-      final String assessmentName,
+      final List<String> assessmentNames,
       final String providerId,
       final String caseReferenceNumber,
       final String status) {
     return assessmentApiClient.getAssessments(
-        assessmentName, providerId, caseReferenceNumber, status);
+        assessmentNames, providerId, caseReferenceNumber, status);
   }
 
 
@@ -130,24 +133,23 @@ public class AssessmentService {
       final UserDetail user) {
 
     boolean statusChanged = false;
-    String statusKey = getStatus(currentAssessment);
+    AssessmentStatus assessmentStatus = getStatus(currentAssessment);
 
     if (!application.getAmendment()
         || (isApplicationsAssessmentAmended(application, currentAssessment))) {
 
-      if (COMPLETE.getStatus().equalsIgnoreCase(statusKey)
-          || ERROR.getStatus().equalsIgnoreCase(statusKey)) {
+      if (COMPLETE == assessmentStatus || ERROR == assessmentStatus) {
 
         if (isReassessmentRequired(application, currentAssessment)) {
-          statusKey = REQUIRED.getStatus();
+          assessmentStatus = REQUIRED;
           statusChanged = true;
         }
       }
     } else {
       if (isReassessmentRequired(application, currentAssessment)) {
-        statusKey = REQUIRED.getStatus();
+        assessmentStatus = REQUIRED;
       } else {
-        statusKey = UNCHANGED.getStatus();
+        assessmentStatus = UNCHANGED;
       }
       statusChanged = true;
     }
@@ -157,11 +159,11 @@ public class AssessmentService {
       assessmentApiClient.updateAssessment(
               currentAssessment.getId(),
               user.getLoginId(),
-              new PatchAssessmentDetail().status(statusKey))
+              new PatchAssessmentDetail().status(assessmentStatus.getStatus()))
           .block();
     }
 
-    setAssessmentStatusOnApplication(application, currentAssessment, statusKey);
+    setAssessmentStatusOnApplication(application, currentAssessment, assessmentStatus);
 
   }
 
@@ -172,16 +174,17 @@ public class AssessmentService {
    *
    * @param application the application to update with the new assessment status
    * @param assessment the assessment whose status is being updated
-   * @param statusKey the key used to retrieve the status description from a lookup service
+   * @param assessmentStatus the AsseessmentStatus to set on the application
    */
   private void setAssessmentStatusOnApplication(
       final ApplicationDetail application,
       final AssessmentDetail assessment,
-      final String statusKey) {
+      final AssessmentStatus assessmentStatus) {
 
-    if (assessment != null) {
+    if (assessment != null && assessmentStatus != null) {
       final String statusValue =
-          lookupService.getCommonValue(COMMON_VALUE_PROGRESS_STATUS_TYPES, statusKey)
+          lookupService.getCommonValue(COMMON_VALUE_PROGRESS_STATUS_TYPES,
+                  assessmentStatus.getStatus())
               .flatMap(commonLookupValueDetailOptional ->
                   commonLookupValueDetailOptional
                       .map(commonLookupValueDetail ->
@@ -189,7 +192,7 @@ public class AssessmentService {
                       .orElseGet(Mono::empty)
               )
               .blockOptional()
-              .orElse(statusKey);
+              .orElse(assessmentStatus.getStatus());
 
       if (MEANS.getName().equalsIgnoreCase(assessment.getName())) {
         application.setMeansAssessmentStatus(statusValue);
@@ -237,20 +240,20 @@ public class AssessmentService {
     if (!application.getAmendment()) {
       if (assessment != null) {
 
-        final AssessmentEntityTypeDetail assessmentEntityType =
+        final AssessmentEntityTypeDetail proceedingEntityType =
             getAssessmentEntityType(assessment, PROCEEDING.getType());
 
         //check for any proceeding attribute changes between assessment and application
-        if (checkAssessmentForProceedingKeyChange(application, assessmentEntityType)) {
+        if (checkAssessmentForProceedingKeyChange(application, proceedingEntityType)) {
           return true;
         }
 
         //check if proceeding is deleted
         if (application.getProceedings() != null) {
           log.debug("app.getProceedings().size(): {} - opaListEntity.getOpaEntities().size(): {}",
-              application.getProceedings().size(), assessmentEntityType.getEntities().size());
+              application.getProceedings().size(), proceedingEntityType.getEntities().size());
 
-          if (application.getProceedings().size() < assessmentEntityType.getEntities().size()) {
+          if (application.getProceedings().size() < proceedingEntityType.getEntities().size()) {
             log.debug("When proceeding is deleted condition - returns TRUE");
             return true;
           }
@@ -270,7 +273,8 @@ public class AssessmentService {
         //although not specifically needed for means, both assessments and application data should
         //be kept in sync.
         for (final Opponent opponent : application.getOpponents()) {
-          if ("Individual".equalsIgnoreCase(opponent.getType()) && differenceGreaterThanTenSecs(
+          if (OPPONENT_TYPE_INDIVIDUAL.equalsIgnoreCase(opponent.getType())
+              && differenceGreaterThanTenSecs(
               opponent.getAuditTrail().getLastSaved(),
               assessment.getAuditDetail().getCreated())) {
 
@@ -329,63 +333,64 @@ public class AssessmentService {
    * entity type.
    *
    * @param application the application containing proceedings to check
-   * @param assessmentEntityType the type of assessment entity to match against proceedings
+   * @param proceedingEntityType the type of assessment entity to match against proceedings
    * @return true if any discrepancies are found; false otherwise
    */
   protected boolean checkAssessmentForProceedingKeyChange(
       final ApplicationDetail application,
-      final AssessmentEntityTypeDetail assessmentEntityType) {
+      final AssessmentEntityTypeDetail proceedingEntityType) {
 
-    if (assessmentEntityType != null && application.getProceedings() != null) {
-      for (final Proceeding proceeding : application.getProceedings()) {
-        final String matterType = proceeding.getMatterType().getId();
-        final String proceedingType = proceeding.getProceedingType().getId();
-        final String clientInvolvementType = proceeding.getClientInvolvement().getId();
-        final String entityId = getOpaInstanceMappingId(proceeding);
+    if (proceedingEntityType == null && application.getProceedings() == null) {
+      return true;
+    }
 
-        //find entity in entity type where matched entity id
-        final AssessmentEntityDetail assessmentEntity =
-            getAssessmentEntity(assessmentEntityType, entityId);
+    for (final Proceeding proceeding : application.getProceedings()) {
+      final String matterType = proceeding.getMatterType().getId();
+      final String proceedingType = proceeding.getProceedingType().getId();
+      final String clientInvolvementType = proceeding.getClientInvolvement().getId();
+      final String entityId = getOpaInstanceMappingId(proceeding);
 
-        if (assessmentEntity != null) {
-          final AssessmentAttributeDetail matterTypeAttribute =
-              getAssessmentAttribute(assessmentEntity,
-                  AssessmentAttribute.MATTER_TYPE.getAttribute());
-          final AssessmentAttributeDetail proceedingTypeAttribute =
-              getAssessmentAttribute(assessmentEntity,
-                  AssessmentAttribute.PROCEEDING_NAME.getAttribute());
-          final AssessmentAttributeDetail clientInvolvementTypeAttribute =
-              getAssessmentAttribute(assessmentEntity,
-                  AssessmentAttribute.CLIENT_INVOLVEMENT_TYPE.getAttribute());
+      //find entity in entity type where matched entity id
+      final AssessmentEntityDetail proceedingEntity =
+          getAssessmentEntity(proceedingEntityType, entityId);
 
-          if (!matterType.equals(matterTypeAttribute.getValue())
-              || !proceedingType.equals(proceedingTypeAttribute.getValue())
-              || !clientInvolvementType.equals(clientInvolvementTypeAttribute.getValue())) {
-            return true;
-          }
+      if (proceedingEntity == null) {
+        return true;
+      }
 
-          //Check scope limitations for both, although not specifically needed for means, both
-          //assessments and application data should be kept in sync.
-          final AssessmentAttributeDetail scopeLimitationAttribute =
-              getAssessmentAttribute(assessmentEntity,
-                  AssessmentAttribute.REQUESTED_SCOPE.getAttribute());
+      final AssessmentAttributeDetail matterTypeAttribute =
+          getAssessmentAttribute(proceedingEntity,
+              AssessmentAttribute.MATTER_TYPE.getAttribute());
+      final AssessmentAttributeDetail proceedingTypeAttribute =
+          getAssessmentAttribute(proceedingEntity,
+              AssessmentAttribute.PROCEEDING_NAME.getAttribute());
+      final AssessmentAttributeDetail clientInvolvementTypeAttribute =
+          getAssessmentAttribute(proceedingEntity,
+              AssessmentAttribute.CLIENT_INVOLVEMENT_TYPE.getAttribute());
 
-          if (scopeLimitationAttribute != null) {
-            final String assessmentScopeLimitation = scopeLimitationAttribute.getValue();
-            final String applicationScopeLimitation =
-                getRequestedScopeForAssessmentInput(proceeding);
-            if (!assessmentScopeLimitation.equals(applicationScopeLimitation)) {
-              return true;
-            }
-          }
+      if (!matterType.equals(matterTypeAttribute.getValue())
+          || !proceedingType.equals(proceedingTypeAttribute.getValue())
+          || !clientInvolvementType.equals(clientInvolvementTypeAttribute.getValue())) {
+        return true;
+      }
 
-        } else {
+      //Check scope limitations for both, although not specifically needed for means, both
+      //assessments and application data should be kept in sync.
+      final AssessmentAttributeDetail scopeLimitationAttribute =
+          getAssessmentAttribute(proceedingEntity,
+              AssessmentAttribute.REQUESTED_SCOPE.getAttribute());
+
+      if (scopeLimitationAttribute != null) {
+        final String assessmentScopeLimitation = scopeLimitationAttribute.getValue();
+        final String applicationScopeLimitation =
+            getRequestedScopeForAssessmentInput(proceeding);
+        if (!assessmentScopeLimitation.equals(applicationScopeLimitation)) {
           return true;
         }
       }
-    } else {
-      return true;
+
     }
+
 
     return false;
   }
@@ -396,10 +401,10 @@ public class AssessmentService {
    * @param assessment the assessment to check the status of
    * @return the status of the assessment or "Not Started" if assessment is null
    */
-  private String getStatus(final AssessmentDetail assessment) {
-    String assessmentStatus = NOT_STARTED.getStatus();
+  private AssessmentStatus getStatus(final AssessmentDetail assessment) {
+    AssessmentStatus assessmentStatus = AssessmentStatus.NOT_STARTED;
     if (assessment != null) {
-      assessmentStatus = assessment.getStatus();
+      assessmentStatus = AssessmentStatus.findByStatus(assessment.getStatus());
     }
     return assessmentStatus;
   }
@@ -492,17 +497,13 @@ public class AssessmentService {
    * @return the scope limitation identifier or "MULTIPLE"
    */
   private String getRequestedScopeForAssessmentInput(final Proceeding proceeding) {
-    String scopeLimitations = null;
-    if (proceeding.getScopeLimitations().size() > 1) {
-      scopeLimitations = "MULTIPLE";
-    } else {
-      for (final ScopeLimitation scopeLimitation : proceeding.getScopeLimitations()) {
-        scopeLimitations = scopeLimitation.getScopeLimitation().getId();
-        break;
-      }
-    }
-    return scopeLimitations;
+    return Optional.ofNullable(proceeding.getScopeLimitations())
+        .filter(scopeLimitations -> !scopeLimitations.isEmpty())
+        .map(scopeLimitations -> scopeLimitations.size() > 1 ? "MULTIPLE" :
+            scopeLimitations.get(0).getScopeLimitation().getId())
+        .orElse(null);
   }
+
 
   /**
    * Retrieves the specific type of assessment entity from the assessment details.
