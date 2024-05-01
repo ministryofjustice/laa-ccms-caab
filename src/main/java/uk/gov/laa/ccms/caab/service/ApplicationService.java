@@ -46,6 +46,8 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple3;
 import reactor.util.function.Tuple4;
 import reactor.util.function.Tuple5;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
@@ -135,6 +137,8 @@ public class ApplicationService {
 
   private final CaabApiClient caabApiClient;
 
+  private final AssessmentService assessmentService;
+
   private final ProviderService providerService;
 
   private final ApplicationFormDataMapper applicationFormDataMapper;
@@ -165,7 +169,7 @@ public class ApplicationService {
    * Each result is mapped to a BaseApplication to summarise the details.
    *
    * @param caseSearchCriteria The search criteria to use when fetching cases.
-   * @param user               The currently logged in user.
+   * @param user               The currently logged-in user.
    * @return A List of BaseApplication.
    */
   public List<BaseApplication> getCases(
@@ -511,11 +515,12 @@ public class ApplicationService {
   /**
    * Retrieves the application Summary display values.
    *
-   * @param id the identifier of the application to retrieve a summary for.
+   * @param application the application to retrieve a summary for.
    * @return A Mono of ApplicationSummaryDisplay representing the case summary display values.
    */
-  public Mono<ApplicationSummaryDisplay> getApplicationSummary(
-      final String id) {
+  public ApplicationSummaryDisplay getApplicationSummary(
+      final ApplicationDetail application,
+      final UserDetail user) {
 
     final Mono<RelationshipToCaseLookupDetail> organisationRelationshipsMono =
         lookupService.getOrganisationToCaseRelationships();
@@ -523,47 +528,85 @@ public class ApplicationService {
     final Mono<RelationshipToCaseLookupDetail> personRelationshipsMono =
         lookupService.getPersonToCaseRelationships();
 
-    final Mono<ApplicationDetail> applicationMono
-        = caabApiClient.getApplication(id);
+    final Mono<AssessmentDetails> meansAssessmentsMono =
+        assessmentService.getAssessments(
+            List.of("meansAssessment"),
+            user.getProvider().getId().toString(),
+            application.getCaseReferenceNumber(),
+            null);
 
-    return Mono.zip(organisationRelationshipsMono,
+    final Mono<AssessmentDetails> meritsAssessmentsMono =
+        assessmentService.getAssessments(
+            List.of("meritsAssessment"),
+            user.getProvider().getId().toString(),
+            application.getCaseReferenceNumber(),
+            null);
+
+    final Tuple4<RelationshipToCaseLookupDetail,
+        RelationshipToCaseLookupDetail,
+        AssessmentDetails,
+        AssessmentDetails> applicationSummaryMonos = Mono.zip(
+            organisationRelationshipsMono,
             personRelationshipsMono,
-            applicationMono)
-        .map(tuple -> {
+            meansAssessmentsMono,
+            meritsAssessmentsMono)
+        .blockOptional().orElseThrow(() ->
+            new CaabApplicationException("Failed to retrieve application summary"));
 
-          final List<RelationshipToCaseLookupValueDetail> organisationRelationships
-              = tuple.getT1().getContent();
-          final List<RelationshipToCaseLookupValueDetail> personsRelationships
-              = tuple.getT2().getContent();
-          final ApplicationDetail application = tuple.getT3();
+    final List<RelationshipToCaseLookupValueDetail> organisationRelationships
+        = applicationSummaryMonos.getT1().getContent();
+    final List<RelationshipToCaseLookupValueDetail> personsRelationships
+        = applicationSummaryMonos.getT2().getContent();
 
-          return new ApplicationSummaryBuilder(application.getAuditTrail())
-              .clientFullName(
-                  application.getClient().getFirstName(),
-                  application.getClient().getSurname())
-              .clientReferenceNumber(
-                  application.getClient().getReference())
-              .caseReferenceNumber(
-                  application.getCaseReferenceNumber())
-              .providerCaseReferenceNumber(
-                  application.getProviderDetails().getProviderCaseReference())
-              .applicationType(
-                  application.getApplicationType())
-              .providerDetails(
-                  application.getProviderDetails().getProviderContact())
-              .generalDetails(
-                  application.getCorrespondenceAddress())
-              .proceedingsAndCosts(
-                  application.getProceedings(),
-                  application.getPriorAuthorities(),
-                  application.getCosts())
-              .opponentsAndOtherParties(
-                  application.getOpponents(),
-                  organisationRelationships,
-                  personsRelationships)
-              .build();
-        });
+    final AssessmentDetail meansAssessment =
+        assessmentService.getMostRecentAssessmentDetail(
+            applicationSummaryMonos.getT3().getContent());
+
+    final AssessmentDetail meritsAssessment =
+        assessmentService.getMostRecentAssessmentDetail(
+            applicationSummaryMonos.getT4().getContent());
+
+    //this not only gets the status but also updates them.
+    assessmentService.calculateAssessmentStatuses(
+        application,
+        meansAssessment,
+        meritsAssessment,
+        user);
+
+    return new ApplicationSummaryBuilder(application.getAuditTrail())
+        .clientFullName(
+            application.getClient().getFirstName(),
+            application.getClient().getSurname())
+        .clientReferenceNumber(
+            application.getClient().getReference())
+        .caseReferenceNumber(
+            application.getCaseReferenceNumber())
+        .providerCaseReferenceNumber(
+            application.getProviderDetails().getProviderCaseReference())
+        .applicationType(
+            application.getApplicationType())
+        .providerDetails(
+            application.getProviderDetails().getProviderContact())
+        .generalDetails(
+            application.getCorrespondenceAddress())
+        .proceedingsAndCosts(
+            application.getProceedings(),
+            application.getPriorAuthorities(),
+            application.getCosts())
+        .opponentsAndOtherParties(
+            application.getOpponents(),
+            organisationRelationships,
+            personsRelationships)
+        .assessments(application,
+            meritsAssessment,
+            meansAssessment,
+            organisationRelationships,
+            personsRelationships)
+        .build();
   }
+
+
+
 
   public ApplicationFormData getApplicationTypeFormData(final String id) {
     return caabApiClient.getApplicationType(id)
@@ -1066,7 +1109,7 @@ public class ApplicationService {
     final Mono<Optional<CommonLookupValueDetail>> organisationTypeLookupMono =
         isOrganisation
             ? lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES,
-              opponent.getOrganisationType()) : Mono.just(Optional.empty());
+            String.valueOf(opponent.getOrganisationType())) : Mono.just(Optional.empty());
 
     // Look up the relationship to case display value depending on opponent type.
     final Mono<Optional<RelationshipToCaseLookupValueDetail>> relationshipToCaseMono =
@@ -1087,7 +1130,7 @@ public class ApplicationService {
     final String organisationTypeDisplayValue =
         combinedResult.getT1()
             .map(CommonLookupValueDetail::getDescription)
-            .orElse(isOrganisation ? opponent.getOrganisationType() : null);
+            .orElse(isOrganisation ? String.valueOf(opponent.getOrganisationType()) : null);
 
     final String relationshipToCaseDisplayValue =
         combinedResult.getT2()

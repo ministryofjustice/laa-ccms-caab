@@ -203,7 +203,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
         mockMvc.perform(get("/application/proceedings/{proceeding-id}/remove", proceedingId))
             .andExpect(status().isOk())
-            .andExpect(view().name("/application/proceedings-remove"))
+            .andExpect(view().name("application/proceedings-remove"))
             .andExpect(model().attribute("proceedingId", proceedingId));
     }
 

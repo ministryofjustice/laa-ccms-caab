@@ -33,5 +33,14 @@ public class ApplicationSummaryDisplay {
   @Builder.Default
   private ApplicationSummaryStatusDisplay opponentsAndOtherParties =
       new ApplicationSummaryStatusDisplay();
+  @Builder.Default
+  private ApplicationSummaryStatusDisplay meansAssessment =
+      new ApplicationSummaryStatusDisplay();
+  @Builder.Default
+  private ApplicationSummaryStatusDisplay meritsAssessment =
+      new ApplicationSummaryStatusDisplay();
+  @Builder.Default
+  private ApplicationSummaryStatusDisplay documentUpload =
+      new ApplicationSummaryStatusDisplay();
 
 }

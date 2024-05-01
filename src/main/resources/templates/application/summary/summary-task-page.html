@@ -83,20 +83,14 @@
             <td class="govuk-table__cell" th:text="${summary.opponentsAndOtherParties.lastSavedBy}"></td>
             <td class="govuk-table__cell"></td>
           </tr>
-          <tr class="govuk-table__row">
-            <td class="govuk-table__cell">Means assessment</td>
-            <td class="govuk-table__cell"><strong class="govuk-tag govuk-tag--grey">Not available</strong></td>
-            <td class="govuk-table__cell"></td>
-            <td class="govuk-table__cell"></td>
-            <td class="govuk-table__cell"></td>
-          </tr>
-          <tr class="govuk-table__row">
-            <td class="govuk-table__cell">Merits assessment</td>
-            <td class="govuk-table__cell"><strong class="govuk-tag govuk-tag--grey">Not available</strong></td>
-            <td class="govuk-table__cell"></td>
-            <td class="govuk-table__cell"></td>
-            <td class="govuk-table__cell"></td>
-          </tr>
+          <th:block th:if="${summary.applicationType.status} == 'Exceptional Case Funding'">
+            <th:block th:insert="~{application/partials/summary-fragments :: meritsAssessmentFragment}"></th:block>
+            <th:block th:insert="~{application/partials/summary-fragments :: meansAssessmentFragment}"></th:block>
+          </th:block>
+          <th:block th:unless="${summary.applicationType.status} == 'Exceptional Case Funding'">
+            <th:block th:insert="~{application/partials/summary-fragments :: meansAssessmentFragment}"></th:block>
+            <th:block th:insert="~{application/partials/summary-fragments :: meritsAssessmentFragment}"></th:block>
+          </th:block>
           <tr class="govuk-table__row">
             <td class="govuk-table__cell">Document upload</td>
             <td class="govuk-table__cell"><strong class="govuk-tag govuk-tag--grey">Not available</strong></td>
@@ -129,3 +123,5 @@
 </div>
 </body>
 </html>
+
+
