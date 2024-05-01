@@ -208,7 +208,7 @@ public class EditProceedingsAndCostsSectionController {
 
     model.addAttribute("proceedingId", proceedingId);
 
-    return "/application/proceedings-remove";
+    return "application/proceedings-remove";
   }
 
   /**
