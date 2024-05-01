@@ -103,7 +103,7 @@ dependencies {
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 	implementation 'org.springframework.security:spring-security-saml2-service-provider'
 	implementation "org.opensaml:opensaml-core:4.3.0"
-	implementation "org.opensaml:opensaml-saml-api:4.3.0"
+	implementation "org.opensaml:opensaml-saml-api:5.1.2"
 	implementation "org.opensaml:opensaml-saml-impl:4.3.0"
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
