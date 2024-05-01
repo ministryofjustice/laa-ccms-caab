@@ -47,6 +47,10 @@ laa:
     caab-api:
         hostname: ${CAAB_API_HOSTNAME}
         url: ${laa.ccms.caab-api.hostname}
+    assessment-api:
+        hostname: ${ASSESSMENT_API_HOSTNAME}
+        url: ${laa.ccms.assessment-api.hostname}
+
 os:
   api:
     url: ${OS_API_HOSTNAME}

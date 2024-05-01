@@ -70,10 +70,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
@@ -144,16 +145,15 @@ import uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail;
 class ApplicationServiceTest {
   @Mock
   private CaabApiClient caabApiClient;
-
   @Mock
   private SoaApiClient soaApiClient;
-
   @Mock
   private EbsApiClient ebsApiClient;
 
   @Mock
   private LookupService lookupService;
-
+  @Mock
+  private AssessmentService assessmentService;
   @Mock
   private ProviderService providerService;
 
@@ -178,20 +178,22 @@ class ApplicationServiceTest {
   @Mock
   private SearchConstants searchConstants;
 
+
+
   @InjectMocks
   private ApplicationService applicationService;
 
   @Test
   void getCaseReference_returnsCaseReferenceSummary_Successful() {
-    String loginId = "user1";
-    String userType = "userType";
+    final String loginId = "user1";
+    final String userType = "userType";
 
-    CaseReferenceSummary mockCaseReferenceSummary = new CaseReferenceSummary();
+    final CaseReferenceSummary mockCaseReferenceSummary = new CaseReferenceSummary();
 
     when(soaApiClient.getCaseReference(loginId, userType)).thenReturn(
         Mono.just(mockCaseReferenceSummary));
 
-    Mono<CaseReferenceSummary> caseReferenceSummaryMono =
+    final Mono<CaseReferenceSummary> caseReferenceSummaryMono =
         applicationService.getCaseReference(loginId, userType);
 
     StepVerifier.create(caseReferenceSummaryMono)
@@ -201,7 +203,7 @@ class ApplicationServiceTest {
 
   @Test
   void getCases_UnSubmittedStatusDoesNotQuerySOA() {
-    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     caseSearchCriteria.setCaseReference("123");
     caseSearchCriteria.setProviderCaseReference("456");
     caseSearchCriteria.setFeeEarnerId(789);
@@ -210,18 +212,18 @@ class ApplicationServiceTest {
 
     caseSearchCriteria.setStatus(STATUS_UNSUBMITTED_ACTUAL_VALUE);
 
-    UserDetail userDetail = buildUserDetail();
-    int page = 0;
-    int size = 10;
+    final UserDetail userDetail = buildUserDetail();
+    final int page = 0;
+    final int size = 10;
 
-    ApplicationDetails mockApplicationDetails = new ApplicationDetails()
+    final ApplicationDetails mockApplicationDetails = new ApplicationDetails()
         .addContentItem(new BaseApplication());
 
     when(caabApiClient.getApplications(caseSearchCriteria, userDetail.getProvider().getId(),
         page, size)).thenReturn(Mono.just(mockApplicationDetails));
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
 
-    List<BaseApplication> results =
+    final List<BaseApplication> results =
         applicationService.getCases(caseSearchCriteria, userDetail);
 
     verifyNoInteractions(soaApiClient);
@@ -234,7 +236,7 @@ class ApplicationServiceTest {
 
   @Test
   void getCases_DraftStatusQueriesSOAAndTDS() {
-    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     caseSearchCriteria.setCaseReference("123");
     caseSearchCriteria.setProviderCaseReference("456");
     caseSearchCriteria.setFeeEarnerId(789);
@@ -243,27 +245,27 @@ class ApplicationServiceTest {
 
     caseSearchCriteria.setStatus(STATUS_DRAFT);
 
-    UserDetail userDetail = buildUserDetail();
+    final UserDetail userDetail = buildUserDetail();
 
-    int page = 0;
-    int size = 10;
+    final int page = 0;
+    final int size = 10;
 
-    CaseDetails mockCaseDetails = new CaseDetails()
+    final CaseDetails mockCaseDetails = new CaseDetails()
         .totalElements(1)
         .size(1)
         .addContentItem(new CaseSummary().caseReferenceNumber("2"));
 
-    BaseApplication mockSoaApplication = new BaseApplication()
+    final BaseApplication mockSoaApplication = new BaseApplication()
             .caseReferenceNumber("2");
 
-    ApplicationDetails mockTdsApplicationDetails = new ApplicationDetails()
+    final ApplicationDetails mockTdsApplicationDetails = new ApplicationDetails()
         .totalElements(1)
         .size(1)
         .addContentItem(new BaseApplication()
             .caseReferenceNumber("1"));
 
     // expected result, sorted by case reference
-    List<BaseApplication> expectedResult = List.of(mockTdsApplicationDetails.getContent().get(0),
+    final List<BaseApplication> expectedResult = List.of(mockTdsApplicationDetails.getContent().get(0),
         mockSoaApplication);
 
     when(soaApiClient.getCases(
@@ -275,7 +277,7 @@ class ApplicationServiceTest {
             page, size)).thenReturn(Mono.just(mockTdsApplicationDetails));
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
 
-    List<BaseApplication> result =
+    final List<BaseApplication> result =
         applicationService.getCases(caseSearchCriteria, userDetail);
 
     verify(soaApiClient).getCases(caseSearchCriteria, userDetail.getLoginId(),
@@ -289,7 +291,7 @@ class ApplicationServiceTest {
 
   @Test
   void getCases_RemovesDuplicates_RetainingSoaCase() {
-    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     caseSearchCriteria.setCaseReference("123");
     caseSearchCriteria.setProviderCaseReference("456");
     caseSearchCriteria.setFeeEarnerId(789);
@@ -298,35 +300,35 @@ class ApplicationServiceTest {
 
     caseSearchCriteria.setStatus(STATUS_DRAFT);
 
-    UserDetail userDetail = buildUserDetail();
+    final UserDetail userDetail = buildUserDetail();
 
-    int page = 0;
-    int size = 10;
+    final int page = 0;
+    final int size = 10;
 
-    CaseSummary soaCaseSummary = new CaseSummary()
+    final CaseSummary soaCaseSummary = new CaseSummary()
         .caseReferenceNumber("1")
         .caseStatusDisplay("the soa one");
 
-    BaseApplication mockSoaApplication = new BaseApplication()
+    final BaseApplication mockSoaApplication = new BaseApplication()
         .caseReferenceNumber(soaCaseSummary.getCaseReferenceNumber())
         .status(new StringDisplayValue().displayValue(soaCaseSummary.getCaseStatusDisplay()));
 
-    BaseApplication mockTdsApplication = new BaseApplication()
+    final BaseApplication mockTdsApplication = new BaseApplication()
         .caseReferenceNumber("1")
         .status(new StringDisplayValue().displayValue("the tds one"));
 
-    CaseDetails mockCaseDetails = new CaseDetails()
+    final CaseDetails mockCaseDetails = new CaseDetails()
         .totalElements(1)
         .size(1)
         .addContentItem(soaCaseSummary);
 
-    ApplicationDetails mockTdsApplicationDetails = new ApplicationDetails()
+    final ApplicationDetails mockTdsApplicationDetails = new ApplicationDetails()
         .totalElements(1)
         .size(1)
         .addContentItem(mockTdsApplication);
 
     // expected result, only the soa case retained
-    List<BaseApplication> expectedResult = List.of(mockSoaApplication);
+    final List<BaseApplication> expectedResult = List.of(mockSoaApplication);
 
     when(soaApiClient.getCases(caseSearchCriteria, userDetail.getLoginId(),
         userDetail.getUserType(), page, size)).thenReturn(Mono.just(mockCaseDetails));
@@ -337,7 +339,7 @@ class ApplicationServiceTest {
         .thenReturn(Mono.just(mockTdsApplicationDetails));
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
 
-    List<BaseApplication> result =
+    final List<BaseApplication> result =
         applicationService.getCases(caseSearchCriteria, userDetail);
 
     verify(soaApiClient).getCases(caseSearchCriteria, userDetail.getLoginId(),
@@ -351,21 +353,21 @@ class ApplicationServiceTest {
 
   @Test
   void getCases_TooManySoaResults_ThrowsException() {
-    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     caseSearchCriteria.setCaseReference("123");
     caseSearchCriteria.setProviderCaseReference("456");
     caseSearchCriteria.setFeeEarnerId(789);
     caseSearchCriteria.setOfficeId(999);
     caseSearchCriteria.setClientSurname("asurname");
 
-    UserDetail userDetail = buildUserDetail();
+    final UserDetail userDetail = buildUserDetail();
 
-    int page = 0;
-    int size = 1;
+    final int page = 0;
+    final int size = 1;
 
     caseSearchCriteria.setStatus(STATUS_DRAFT);
 
-    CaseDetails mockCaseDetails = new CaseDetails()
+    final CaseDetails mockCaseDetails = new CaseDetails()
         .totalElements(2)
         .size(2)
         .addContentItem(new CaseSummary())
@@ -381,27 +383,27 @@ class ApplicationServiceTest {
 
   @Test
   void getCases_TooManyOverallResults_ThrowsException() {
-    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     caseSearchCriteria.setCaseReference("123");
     caseSearchCriteria.setProviderCaseReference("456");
     caseSearchCriteria.setFeeEarnerId(789);
     caseSearchCriteria.setOfficeId(999);
     caseSearchCriteria.setClientSurname("asurname");
 
-    UserDetail userDetail = buildUserDetail();
+    final UserDetail userDetail = buildUserDetail();
 
-    int page = 0;
-    int size = 2;
+    final int page = 0;
+    final int size = 2;
 
     caseSearchCriteria.setStatus(STATUS_DRAFT);
 
-    CaseDetails mockCaseDetails = new CaseDetails()
+    final CaseDetails mockCaseDetails = new CaseDetails()
         .totalElements(2)
         .size(2)
         .addContentItem(new CaseSummary().caseReferenceNumber("1"))
         .addContentItem(new CaseSummary().caseReferenceNumber("2"));
 
-    ApplicationDetails mockTdsApplicationDetails = new ApplicationDetails()
+    final ApplicationDetails mockTdsApplicationDetails = new ApplicationDetails()
         .totalElements(1)
         .size(1)
         .addContentItem(new BaseApplication().caseReferenceNumber("3"));
@@ -425,13 +427,13 @@ class ApplicationServiceTest {
 
   @Test
   void getCopyCaseStatus_returnsData() {
-    CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail();
+    final CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail();
     caseStatusLookupDetail.addContentItem(new CaseStatusLookupValueDetail());
 
     when(lookupService.getCaseStatusValues(Boolean.TRUE)).thenReturn(
         Mono.just(caseStatusLookupDetail));
 
-    CaseStatusLookupValueDetail lookupValue = applicationService.getCopyCaseStatus();
+    final CaseStatusLookupValueDetail lookupValue = applicationService.getCopyCaseStatus();
 
     assertNotNull(lookupValue);
     assertEquals(caseStatusLookupDetail.getContent().get(0), lookupValue);
@@ -442,30 +444,30 @@ class ApplicationServiceTest {
 
     when(lookupService.getCaseStatusValues(Boolean.TRUE)).thenReturn(Mono.empty());
 
-    CaseStatusLookupValueDetail lookupValue = applicationService.getCopyCaseStatus();
+    final CaseStatusLookupValueDetail lookupValue = applicationService.getCopyCaseStatus();
 
     assertNull(lookupValue);
   }
 
   @Test
   void createApplication_success() throws ParseException {
-    ApplicationFormData applicationFormData = buildApplicationFormData();
-    ClientDetail clientInformation = buildClientDetail();
-    UserDetail user = buildUserDetail();
+    final ApplicationFormData applicationFormData = buildApplicationFormData();
+    final ClientDetail clientInformation = buildClientDetail();
+    final UserDetail user = buildUserDetail();
 
     // Mocking dependencies
-    CaseReferenceSummary caseReferenceSummary =
+    final CaseReferenceSummary caseReferenceSummary =
         new CaseReferenceSummary().caseReferenceNumber("REF123");
-    CategoryOfLawLookupValueDetail categoryOfLawValue = new CategoryOfLawLookupValueDetail()
+    final CategoryOfLawLookupValueDetail categoryOfLawValue = new CategoryOfLawLookupValueDetail()
         .code(applicationFormData.getCategoryOfLawId()).matterTypeDescription("DESC1");
-    ContractDetails contractDetails = new ContractDetails();
+    final ContractDetails contractDetails = new ContractDetails();
 
-    AmendmentTypeLookupValueDetail amendmentType = new AmendmentTypeLookupValueDetail()
+    final AmendmentTypeLookupValueDetail amendmentType = new AmendmentTypeLookupValueDetail()
         .applicationTypeCode("TEST")
         .applicationTypeDescription("TEST")
         .defaultLarScopeFlag("Y");
 
-    AmendmentTypeLookupDetail amendmentTypes =
+    final AmendmentTypeLookupDetail amendmentTypes =
         new AmendmentTypeLookupDetail().addContentItem(amendmentType);
 
     when(soaApiClient.getCaseReference(user.getLoginId(), user.getUserType())).thenReturn(
@@ -477,7 +479,7 @@ class ApplicationServiceTest {
     when(ebsApiClient.getAmendmentTypes(any())).thenReturn(Mono.just(amendmentTypes));
     when(caabApiClient.createApplication(anyString(), any())).thenReturn(Mono.empty());
 
-    Mono<String> applicationMono = applicationService.createApplication(
+    final Mono<String> applicationMono = applicationService.createApplication(
         applicationFormData, clientInformation, user);
 
     StepVerifier.create(applicationMono)
@@ -754,31 +756,33 @@ class ApplicationServiceTest {
 
   @Test
   void getApplicationSummary_returnsApplicationSummary_Successful() {
-    String applicationId = "12345";
+    final String applicationId = "12345";
+
+    final UserDetail user = buildUserDetail();
 
     // Create mock data for successful Mono results
-    RelationshipToCaseLookupDetail orgRelationshipsDetail = new RelationshipToCaseLookupDetail();
+    final RelationshipToCaseLookupDetail orgRelationshipsDetail = new RelationshipToCaseLookupDetail();
     orgRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail());
 
-    RelationshipToCaseLookupDetail personRelationshipsDetail = new RelationshipToCaseLookupDetail();
+    final RelationshipToCaseLookupDetail personRelationshipsDetail = new RelationshipToCaseLookupDetail();
     personRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail());
 
-    AuditDetail auditDetail = new AuditDetail();
+    final AuditDetail auditDetail = new AuditDetail();
     auditDetail.setLastSaved(Date.from(Instant.now()));
     auditDetail.setLastSavedBy("TestUser");
 
-    CostStructure costStructure = new CostStructure();
+    final CostStructure costStructure = new CostStructure();
     costStructure.setAuditTrail(auditDetail);
 
-    Client client = new Client();
+    final Client client = new Client();
     client.setFirstName("bob");
     client.setSurname("ross");
 
-    ApplicationType applicationType = new ApplicationType();
+    final ApplicationType applicationType = new ApplicationType();
     applicationType.id("test 123");
     applicationType.setDisplayValue("testing123");
 
-    ApplicationDetail mockApplicationDetail = new ApplicationDetail();
+    final ApplicationDetail mockApplicationDetail = new ApplicationDetail();
     mockApplicationDetail.setProviderDetails(new ApplicationProviderDetails());
     mockApplicationDetail.setAuditTrail(auditDetail);
     mockApplicationDetail.setClient(client);
@@ -788,102 +792,30 @@ class ApplicationServiceTest {
     mockApplicationDetail.setOpponents(new ArrayList<>());
     mockApplicationDetail.setCosts(costStructure);
 
-    // Mock the behavior of your dependencies
+    final AssessmentDetails meansAssessmentDetails = new AssessmentDetails();
+    final AssessmentDetails meritsAssessmentDetails = new AssessmentDetails();
+
     when(lookupService.getOrganisationToCaseRelationships()).thenReturn(
         Mono.just(orgRelationshipsDetail));
-
     when(lookupService.getPersonToCaseRelationships()).thenReturn(
         Mono.just(personRelationshipsDetail));
+    when(assessmentService.getAssessments(List.of("meansAssessment"),
+        user.getProvider().getId().toString(), mockApplicationDetail.getCaseReferenceNumber(), null))
+        .thenReturn(Mono.just(meansAssessmentDetails));
+    when(assessmentService.getAssessments(List.of("meritsAssessment"),
+        user.getProvider().getId().toString(), mockApplicationDetail.getCaseReferenceNumber(), null))
+        .thenReturn(Mono.just(meritsAssessmentDetails));
 
-    when(caabApiClient.getApplication(applicationId)).thenReturn(
-        Mono.just(mockApplicationDetail));
+    final ApplicationSummaryDisplay summary = applicationService.getApplicationSummary(mockApplicationDetail, user);
 
-    Mono<ApplicationSummaryDisplay> summaryMono =
-        applicationService.getApplicationSummary(applicationId);
-
-    // Verify the result
-    StepVerifier.create(summaryMono)
-        .expectNextMatches(summary -> {
-          // Add assertions to check the content of the summary
-          assertNotNull(summary); // Check that summary is not null
-          assertEquals("bob ross", summary.getClientFullName());
-          assertEquals("testing123", summary.getApplicationType().getStatus());
-          assertEquals("Started", summary.getProviderDetails().getStatus());
-          assertEquals("Complete", summary.getClientDetails().getStatus());
-          assertEquals("Started", summary.getGeneralDetails().getStatus());
-          assertEquals("Not started", summary.getProceedingsAndCosts().getStatus());
-          assertEquals("Not started", summary.getOpponentsAndOtherParties().getStatus());
-          // Add more assertions as needed
-          return true; // Return true to indicate the match is successful
-        })
-        .verifyComplete();
-  }
-
-  @Test
-  void getApplicationSummary_returnsApplicationSummary() {
-    String applicationId = "12345";
-
-    // Create mock data for successful Mono results
-    RelationshipToCaseLookupDetail orgRelationshipsDetail = new RelationshipToCaseLookupDetail();
-    orgRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail());
-
-    RelationshipToCaseLookupDetail personRelationshipsDetail = new RelationshipToCaseLookupDetail();
-    personRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail());
-
-    AuditDetail auditDetail = new AuditDetail();
-    auditDetail.setLastSaved(Date.from(Instant.now()));
-    auditDetail.setLastSavedBy("TestUser");
-
-    CostStructure costStructure = new CostStructure();
-    costStructure.setAuditTrail(auditDetail);
-
-    Client client = new Client();
-    client.setFirstName("bob");
-    client.setSurname("ross");
-
-    ApplicationType applicationType = new ApplicationType();
-    applicationType.id("test 123");
-    applicationType.setDisplayValue("testing123");
-
-    ApplicationDetail mockApplicationDetail = new ApplicationDetail();
-    mockApplicationDetail.setProviderDetails(new ApplicationProviderDetails());
-    mockApplicationDetail.setAuditTrail(auditDetail);
-    mockApplicationDetail.setClient(client);
-    mockApplicationDetail.setApplicationType(applicationType);
-    mockApplicationDetail.setProceedings(new ArrayList<>());
-    mockApplicationDetail.setPriorAuthorities(new ArrayList<>());
-    mockApplicationDetail.setOpponents(new ArrayList<>());
-    mockApplicationDetail.setCosts(costStructure);
-
-    // Mock the behavior of your dependencies
-    when(lookupService.getOrganisationToCaseRelationships()).thenReturn(
-        Mono.just(orgRelationshipsDetail));
-
-    when(lookupService.getPersonToCaseRelationships()).thenReturn(
-        Mono.just(personRelationshipsDetail));
-
-    when(caabApiClient.getApplication(applicationId)).thenReturn(
-        Mono.just(mockApplicationDetail));
-
-    Mono<ApplicationSummaryDisplay> summaryMono =
-        applicationService.getApplicationSummary(applicationId);
-
-    // Verify the result
-    StepVerifier.create(summaryMono)
-        .expectNextMatches(summary -> {
-          // Add assertions to check the content of the summary
-          assertNotNull(summary); // Check that summary is not null
-          assertEquals("bob ross", summary.getClientFullName());
-          assertEquals("testing123", summary.getApplicationType().getStatus());
-          assertEquals("Started", summary.getProviderDetails().getStatus());
-          assertEquals("Complete", summary.getClientDetails().getStatus());
-          assertEquals("Started", summary.getGeneralDetails().getStatus());
-          assertEquals("Not started", summary.getProceedingsAndCosts().getStatus());
-          assertEquals("Not started", summary.getOpponentsAndOtherParties().getStatus());
-          // Add more assertions as needed
-          return true; // Return true to indicate the match is successful
-        })
-        .verifyComplete();
+    assertNotNull(summary);
+    assertEquals("bob ross", summary.getClientFullName());
+    assertEquals("testing123", summary.getApplicationType().getStatus());
+    assertEquals("Started", summary.getProviderDetails().getStatus());
+    assertEquals("Complete", summary.getClientDetails().getStatus());
+    assertEquals("Started", summary.getGeneralDetails().getStatus());
+    assertEquals("Not started", summary.getProceedingsAndCosts().getStatus());
+    assertEquals("Not started", summary.getOpponentsAndOtherParties().getStatus());
   }
 
   @Test

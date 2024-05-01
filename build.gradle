@@ -73,8 +73,12 @@ repositories {
 
 dependencies {
 	implementation 'uk.gov.laa.ccms.data:data-api:0.0.6'
+
 	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.16'
+
 	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.20'
+
+	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.6'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -93,14 +97,14 @@ dependencies {
 
 	implementation 'org.springframework.boot:spring-boot-devtools'
 
+	implementation 'org.json:json:20240303'
+
 	//SAML security
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 	implementation 'org.springframework.security:spring-security-saml2-service-provider'
 	implementation "org.opensaml:opensaml-core:4.3.0"
 	implementation "org.opensaml:opensaml-saml-api:4.3.0"
 	implementation "org.opensaml:opensaml-saml-impl:4.3.0"
-
-
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.mockito:mockito-core:5.8.0'
