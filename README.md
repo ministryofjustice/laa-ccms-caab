@@ -50,6 +50,16 @@ cd ..
 
 git clone git@github.com:ministryofjustice/laa-ccms-provider-ui-database.git laa-ccms-caab-db
 
+
+git clone https://github.com/ministryofjustice/docker-liquibase.git
+
+cd docker-liquibase
+
+docker build -t caab-liquibase .
+
+
+cd ..
+
 cd laa-ccms-caab
 
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-db laa-ccms-caab-liquibase
