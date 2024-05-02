@@ -90,6 +90,34 @@ public class AssessmentServiceTest {
   }
 
   @Test
+  void deleteAssessments_Success() {
+    final String assessmentName = "meansAssessment";
+    final String caseReferenceNumber = "12345";
+    final String status = "COMPLETE";
+
+    final UserDetail user = buildUserDetail();
+
+    when(assessmentApiClient.deleteAssessments(
+        eq(List.of(assessmentName)),
+        eq(user.getProvider().getId().toString()),
+        eq(caseReferenceNumber),
+        eq(status),
+        eq(user.getLoginId())))
+        .thenReturn(Mono.empty());
+
+    final Mono<Void> result =
+        assessmentService.deleteAssessments(
+            user,
+            List.of(assessmentName),
+            caseReferenceNumber,
+            status);
+
+    StepVerifier.create(result)
+        .expectComplete()
+        .verify();
+  }
+
+  @Test
   void getMostRecentAssessmentDetail_ReturnsNull_IfListIsNull() {
     assertNull(assessmentService.getMostRecentAssessmentDetail(null));
   }
