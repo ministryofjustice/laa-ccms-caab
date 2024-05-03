@@ -58,7 +58,7 @@
   <td class="govuk-table__cell" th:text="${summary.meritsAssessment.lastSavedBy}"></td>
   <th:block th:if="${summary.meritsAssessment.status} == 'In Progress'">
     <td class="govuk-table__cell">
-      <a href="/todo" class="govuk-link">Delete  </a>
+      <a href="/assessments/merits/remove" class="govuk-link">Delete  </a>
     </td>
   </th:block>
   <th:block th:unless="${summary.meritsAssessment.status} == 'In Progress'">
@@ -78,7 +78,7 @@
   <td class="govuk-table__cell" th:text="${summary.meansAssessment.lastSavedBy}"></td>
   <th:block th:if="${summary.meansAssessment.status} == 'In Progress'">
     <td class="govuk-table__cell">
-      <a href="/todo" class="govuk-link">Delete  </a>
+      <a href="/assessments/means/remove" class="govuk-link">Delete  </a>
     </td>
   </th:block>
   <th:block th:unless="${summary.meansAssessment.status} == 'In Progress'">

@@ -69,6 +69,28 @@ public class AssessmentService {
         assessmentNames, providerId, caseReferenceNumber, status);
   }
 
+  /**
+   * Deletes assessments matching the given criteria from the assessment API client.
+   *
+   * @param user the user performing the delete operation
+   * @param assessmentNames the list of assessment names to delete
+   * @param caseReferenceNumber the case reference number associated with the assessment
+   * @param status the status of the assessment to filter by
+   * @return a Mono that emits the result of the delete operation
+   */
+  public Mono<Void> deleteAssessments(
+      final UserDetail user,
+      final List<String> assessmentNames,
+      final String caseReferenceNumber,
+      final String status) {
+    return assessmentApiClient.deleteAssessments(
+        assessmentNames,
+        user.getProvider().getId().toString(),
+        caseReferenceNumber,
+        status,
+        user.getLoginId());
+  }
+
 
   /**
    * Retrieves the most recent assessment detail from a list of assessments based on the

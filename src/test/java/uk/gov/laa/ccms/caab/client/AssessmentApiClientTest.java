@@ -96,8 +96,33 @@ class AssessmentApiClientTest {
     verify(responseMock).bodyToMono(Void.class);
   }
 
+  @Test
+  void deleteAssessments_success() {
+    final List<String> assessmentNames = List.of("meansAssessment", "meritsAssessment");
+    final String providerId = "987";
+    final String caseReferenceNumber = "case456";
+    final String status = "PENDING";
+    final String userLoginId = "user789";
 
+    when(assessmentApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.header("Caab-User-Login-Id", userLoginId)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
 
+    final Mono<Void> result = assessmentApiClient.deleteAssessments(
+        assessmentNames, providerId, caseReferenceNumber, status, userLoginId
+    );
 
+    StepVerifier.create(result)
+        .verifyComplete();
 
+    final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    assertEquals("/assessments?name=meansAssessment,meritsAssessment&provider-id=987&case-reference-number=case456&status=PENDING", actualUri.toString());
+  }
+
+  
 }

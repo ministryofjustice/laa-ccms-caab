@@ -63,6 +63,27 @@ public abstract class AbstractApiClientErrorHandler {
   }
 
   /**
+   * Handles errors occurring during API delete operations using query parameters.
+   *
+   * @param e the exception thrown during the API operation.
+   * @param resourceType the type of resource involved in the delete operation.
+   * @param queryParams the query parameters used in the delete operation.
+   * @param <T> the type of the response expected from the operation.
+   * @return a Mono error signaling the exception.
+   */
+  public <T> Mono<T> handleApiDeleteError(
+      final Throwable e,
+      final String resourceType,
+      final MultiValueMap<String, String> queryParams) {
+
+    final StringBuilder messageBuilder = new StringBuilder(
+        String.format("Failed to delete %s",
+            resourceType));
+
+    return parameterizedError(e, queryParams, messageBuilder);
+  }
+
+  /**
    * Handles errors occurring during API update operations.
    *
    * @param e the exception thrown during the API operation.
@@ -126,6 +147,14 @@ public abstract class AbstractApiClientErrorHandler {
 
     final StringBuilder messageBuilder = new StringBuilder(
         String.format("Failed to retrieve %s", resourceType));
+
+    return parameterizedError(e, queryParams, messageBuilder);
+  }
+
+  private <T> Mono<T> parameterizedError(
+      final Throwable e,
+      final MultiValueMap<String, String> queryParams,
+      final StringBuilder messageBuilder) {
 
     if (queryParams != null && !queryParams.isEmpty()) {
       final String paramsString = queryParams.entrySet().stream()

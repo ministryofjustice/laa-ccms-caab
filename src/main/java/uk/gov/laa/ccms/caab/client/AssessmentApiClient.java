@@ -37,15 +37,8 @@ public class AssessmentApiClient {
       final String caseReferenceNumber,
       final String status) {
 
-    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
-    Optional.ofNullable(assessmentNames)
-        .ifPresent(names -> queryParams.add("name", String.join(",", names)));
-    Optional.ofNullable(providerId)
-        .ifPresent(param -> queryParams.add("provider-id", param));
-    Optional.ofNullable(caseReferenceNumber)
-        .ifPresent(param -> queryParams.add("case-reference-number", param));
-    Optional.ofNullable(status)
-        .ifPresent(param -> queryParams.add("status", param));
+    final MultiValueMap<String, String> queryParams =
+        retrieveAssessmentsQueryParams(assessmentNames, providerId, caseReferenceNumber, status);
 
     return assessmentApiWebClient
         .get()
@@ -57,6 +50,64 @@ public class AssessmentApiClient {
         .bodyToMono(AssessmentDetails.class)
         .onErrorResume(e -> assessmentApiClientErrorHandler
           .handleApiRetrieveError(e, RESOURCE_TYPE_ASSESSMENT, queryParams));
+  }
+
+  /**
+   * Delete assessments from the assessment API.
+   *
+   * @param assessmentNames the list of assessment names to filter
+   * @param providerId the provider id
+   * @param caseReferenceNumber the case reference number
+   * @param status the status of the assessment
+   * @param userLoginId the login ID of the user performing the delete
+   * @return a Mono of Void
+   */
+  public Mono<Void> deleteAssessments(
+      final List<String> assessmentNames,
+      final String providerId,
+      final String caseReferenceNumber,
+      final String status,
+      final String userLoginId) {
+
+    final MultiValueMap<String, String> queryParams =
+        retrieveAssessmentsQueryParams(assessmentNames, providerId, caseReferenceNumber, status);
+
+    return assessmentApiWebClient
+        .delete()
+        .uri(uriBuilder -> uriBuilder
+            .path("/assessments")
+            .queryParams(queryParams)
+            .build())
+        .header("Caab-User-Login-Id", userLoginId)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> assessmentApiClientErrorHandler
+            .handleApiDeleteError(e, RESOURCE_TYPE_ASSESSMENT, queryParams));
+  }
+
+
+  /**
+   * Retrieve the query parameters for the assessments API assessments endpoints.
+   *
+   * @param assessmentNames the list of assessment names to filter
+   * @param providerId the provider id
+   * @param caseReferenceNumber the case reference number
+   * @param status the status of the assessment
+   * @return the query parameters
+   */
+  private MultiValueMap<String, String> retrieveAssessmentsQueryParams(
+      final List<String> assessmentNames, final String providerId, final String caseReferenceNumber,
+      final String status) {
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    Optional.ofNullable(assessmentNames)
+        .ifPresent(names -> queryParams.add("name", String.join(",", names)));
+    Optional.ofNullable(providerId)
+        .ifPresent(param -> queryParams.add("provider-id", param));
+    Optional.ofNullable(caseReferenceNumber)
+        .ifPresent(param -> queryParams.add("case-reference-number", param));
+    Optional.ofNullable(status)
+        .ifPresent(param -> queryParams.add("status", param));
+    return queryParams;
   }
 
   /**
