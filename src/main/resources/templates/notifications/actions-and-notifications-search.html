@@ -26,15 +26,15 @@
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
           <div th:replace="~{partials/forms :: dropdown('assignedToUserId', 'Assigned to', ${users}, 'loginId', 'loginId', false)}"></div>
+          <h2 class="govuk-heading-m">
+            Notification dates
+          </h2>
           <div class="govuk-form-group"
                th:classappend="${#fields.hasErrors('notificationFromDateDay') || #fields.hasErrors('notificationFromDateMonth') || #fields.hasErrors('notificationFromDateYear')}  ? 'govuk-form-group--error' : ''">
             <fieldset class="govuk-fieldset" role="group"
                       aria-describedby="notf-hint not-from-date-error">
-              <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
-                <h3>Notification dates</h3>
-                <legend class="govuk-fieldset__legend--s">
-                  From:
-                </legend>
+              <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">
+                From
               </legend>
               <div id="notf-hint" class="govuk-hint">
                 For example, 27 3 2007
@@ -53,65 +53,63 @@
                 <div th:replace="partials/forms::numericInput('notificationFromDateYear', 'Year', '4')"></div>
               </div>
             </fieldset>
-            <div class="govuk-form-group"
-                 th:classappend="${#fields.hasErrors('notificationToDateDay') || #fields.hasErrors('notificationToDateMonth') || #fields.hasErrors('notificationToDateYear')} ? 'govuk-form-group--error' : ''">
-              <fieldset class="govuk-fieldset" role="group"
-                        aria-describedby="nott-hint nott-error">
-                <h2></h2>
-                <legend class="govuk-fieldset__legend--s">
-                  To:
-                </legend>
-                <div id="nott-hint" class="govuk-hint">
-                  For example, 27 3 2007
-                </div>
-                <p id="nott-error" class="govuk-error-message">
+          </div>
+          <div class="govuk-form-group"
+               th:classappend="${#fields.hasErrors('notificationToDateDay') || #fields.hasErrors('notificationToDateMonth') || #fields.hasErrors('notificationToDateYear')} ? 'govuk-form-group--error' : ''">
+            <fieldset class="govuk-fieldset" role="group"
+                      aria-describedby="nott-hint nott-error">
+              <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">
+                To
+              </legend>
+              <div id="nott-hint" class="govuk-hint">
+                For example, 27 3 2007
+              </div>
+              <p id="nott-error" class="govuk-error-message">
                     <span th:each="error : ${#fields.detailedErrors()}">
                         <span th:inline="text"
                               th:if="${error.fieldName == 'notificationToDateDay' || error.fieldName == 'notificationToDateMonth' || error.fieldName == 'notificationToDateYear'}">
                             <span th:utext="${error.message + '<br>'}"></span>
                         </span>
                     </span>
-                </p>
-                <div class="govuk-date-input" id="notificationToDate">
-                  <div th:replace="partials/forms::numericInput('notificationToDateDay', 'Day', '2')"></div>
-                  <div th:replace="partials/forms::numericInput('notificationToDateMonth', 'Month', '2')"></div>
-                  <div th:replace="partials/forms::numericInput('notificationToDateYear', 'Year', '4')"></div>
-                </div>
-              </fieldset>
-            </div>
-            <div th:replace="~{partials/forms :: textInput('providerCaseReference', 'Provider case reference', 'govuk-input--width-20')}"></div>
-            <div th:replace="~{partials/forms :: textInput('caseReference', 'LAA application / case reference', 'govuk-input--width-20')}"></div>
-            <div th:replace="~{partials/forms :: textInput('clientSurname', 'Client surname', 'govuk-input--width-20')}"></div>
-            <div th:replace="~{partials/forms :: dropdown('feeEarnerId', 'Fee earner', ${feeEarners}, 'id', 'name', false)}"></div>
-            <div th:replace="~{partials/forms :: dropdown('notificationType', 'Action / Notification Type', ${notificationTypes}, 'code', 'description', false)}"></div>
-            </div>
-            <div class="govuk-form-group">
-              <fieldset class="govuk-fieldset">
-                <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
-                  <h2 class="govuk-fieldset__heading">
-                    Include closed notifications?
-                  </h2>
-                </legend>
-                <div class="govuk-radios govuk-radios--inline" data-module="govuk-radios">
-                  <div class="govuk-radios__item">
-                    <input class="govuk-radios__input" id="includeClosed-yes" name="includeClosed"
-                           type="radio" value="true" th:checked="${notificationSearchCriteria.includeClosed}">
-                    <label class="govuk-label govuk-radios__label" for="includeClosed-yes">
-                      Yes
-                    </label>
-                  </div>
-                  <div class="govuk-radios__item">
-                    <input class="govuk-radios__input" id="includeClosed-no" name="includeClosed"
-                           type="radio" value="false" th:checked="${!notificationSearchCriteria.includeClosed}">
-                    <label class="govuk-label govuk-radios__label" for="includeClosed-no">
-                      No
-                    </label>
-                  </div>
-                </div>
-              </fieldset>
-            </div>
-            <button class="govuk-button" data-module="govuk-button">Search</button>
+              </p>
+              <div class="govuk-date-input" id="notificationToDate">
+                <div th:replace="partials/forms::numericInput('notificationToDateDay', 'Day', '2')"></div>
+                <div th:replace="partials/forms::numericInput('notificationToDateMonth', 'Month', '2')"></div>
+                <div th:replace="partials/forms::numericInput('notificationToDateYear', 'Year', '4')"></div>
+              </div>
+            </fieldset>
           </div>
+          <div th:replace="~{partials/forms :: textInput('providerCaseReference', 'Provider case reference', 'govuk-input--width-20')}"></div>
+          <div th:replace="~{partials/forms :: textInput('caseReference', 'LAA application / case reference', 'govuk-input--width-20')}"></div>
+          <div th:replace="~{partials/forms :: textInput('clientSurname', 'Client surname', 'govuk-input--width-20')}"></div>
+          <div th:replace="~{partials/forms :: dropdown('feeEarnerId', 'Fee earner', ${feeEarners}, 'id', 'name', false)}"></div>
+          <div th:replace="~{partials/forms :: dropdown('notificationType', 'Action / Notification Type', ${notificationTypes}, 'code', 'description', false)}"></div>
+          <div class="govuk-form-group">
+            <fieldset class="govuk-fieldset">
+              <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                <h2 class="govuk-fieldset__heading">
+                  Include closed notifications?
+                </h2>
+              </legend>
+              <div class="govuk-radios govuk-radios--inline" data-module="govuk-radios">
+                <div class="govuk-radios__item">
+                  <input class="govuk-radios__input" id="includeClosed-yes" name="includeClosed"
+                         type="radio" value="true" th:checked="${notificationSearchCriteria.includeClosed}">
+                  <label class="govuk-label govuk-radios__label" for="includeClosed-yes">
+                    Yes
+                  </label>
+                </div>
+                <div class="govuk-radios__item">
+                  <input class="govuk-radios__input" id="includeClosed-no" name="includeClosed"
+                         type="radio" value="false" th:checked="${!notificationSearchCriteria.includeClosed}">
+                  <label class="govuk-label govuk-radios__label" for="includeClosed-no">
+                    No
+                  </label>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+          <button class="govuk-button" data-module="govuk-button">Search</button>
         </div>
       </div>
     </form>
