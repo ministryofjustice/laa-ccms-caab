@@ -2,7 +2,7 @@
      role="navigation" aria-label="results">
   <div th:if="${page.number > 0}" class="govuk-pagination__prev">
     <a class="govuk-link govuk-pagination__link"
-       th:href="@{(${currentUrl})(page=${page.number - 1})}" rel="prev">
+       th:href="@{(${currentUrl})(page=${page.number - 1}__(${sortField != null ? ',sort=''' + sortField + ',' + sortDirection + '''' : ''})__)}" rel="prev">
       <svg class="govuk-pagination__icon govuk-pagination__icon--prev"
            xmlns="http://www.w3.org/2000/svg" height="13" width="15" aria-hidden="true"
            focusable="false" viewBox="0 0 15 13">
@@ -23,7 +23,7 @@
             <span th:text="${pageNumber + 1}"></span>
           </a>
           <a th:unless="${pageNumber == page.number}" class="govuk-link govuk-pagination__link"
-             th:href="@{(${currentUrl})(page=${pageNumber})}" href="#"
+             th:href="@{(${currentUrl})(page=${pageNumber}__(${sortField != null ? ',sort=''' + sortField + ',' + sortDirection + '''' : ''})__)}" href="#"
              aria-label="Page [[${pageNumber + 1}]]">
             <span th:text="${pageNumber + 1}"></span>
           </a>
@@ -39,7 +39,7 @@
   </ul>
   <div th:if="${page.number < page.totalPages - 1}" class="govuk-pagination__next">
     <a class="govuk-link govuk-pagination__link"
-       th:href="@{(${currentUrl})(page=${page.number + 1})}" rel="next">
+       th:href="@{(${currentUrl})(page=${page.number + 1}__(${sortField != null ? ',sort=''' + sortField + ',' + sortDirection + '''' : ''})__)}" rel="next">
       <span class="govuk-pagination__link-title">Next</span>
       <svg class="govuk-pagination__icon govuk-pagination__icon--next"
            xmlns="http://www.w3.org/2000/svg" height="13" width="15" aria-hidden="true"
@@ -55,9 +55,9 @@
     style="margin-top: 0; white-space: nowrap" th:fragment="sorting(page, field, label)">
   <a th:href="@{${currentUrl}
                 + '?page=' + ${page.number} + '&size=' + ${page.size}
-                + ${sortField!=null ? '&sort=' + field + ',' + (sortField == field ? reverseSortDirection : sortDirection) : ''}}">[[${label}]]
+                + '&sort=' + ${field} + ',' + ${sortField == field && sortDirection == 'asc' ? 'desc' : 'asc'}}">[[${label}]]
     <span th:if="${sortField == field}"
-          th:utext="${sortDirection == 'asc' || sortDrection == '' ? '&#x25b2;' : '&#x25bc;'}"></span>
+          th:utext="${sortDirection == 'asc' || sortDirection == '' ? '&#x25b2;' : '&#x25bc;'}"></span>
     <span th:if="${sortField != field}" th:utext="${'&#x25b6;'}"></span>
   </a>
 </th>

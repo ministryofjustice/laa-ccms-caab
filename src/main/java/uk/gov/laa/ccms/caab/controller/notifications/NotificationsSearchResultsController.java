@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.notifications;
 
-import static uk.gov.laa.ccms.caab.constants.NotificationConstants.REVERSE_SORT_DIRECTION;
 import static uk.gov.laa.ccms.caab.constants.NotificationConstants.SORT_DIRECTION;
 import static uk.gov.laa.ccms.caab.constants.NotificationConstants.SORT_FIELD;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
@@ -8,6 +7,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARC
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpServletRequest;
+
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +54,7 @@ public class NotificationsSearchResultsController {
   public String notificationsSearchResults(
       @RequestParam(value = "page", defaultValue = "0") int page,
       @RequestParam(value = "size", defaultValue = "10") int size,
+      @RequestParam(value = "sort", defaultValue = "assignDate,asc") String sort,
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
       @ModelAttribute(USER_DETAILS) UserDetail user,
       HttpServletRequest request,
@@ -61,6 +62,12 @@ public class NotificationsSearchResultsController {
     if (StringUtils.isBlank(criteria.getAssignedToUserId())) {
       criteria.setAssignedToUserId(user.getLoginId());
     }
+    if (!sort.equals(criteria.getSort())) {
+      // redirect to first page when sort criteria changes
+      page = 0;
+    }
+    // TODO: criteria in model keeps old value so the above doesn't work
+    criteria.setSort(sort);
     Notifications notificationsResponse =
         notificationService
             .getNotifications(criteria, page, size)
@@ -72,19 +79,14 @@ public class NotificationsSearchResultsController {
     if (notifications.isEmpty()) {
       return "notifications/actions-and-notifications-no-results";
     }
+
     String currentUrl = request.getRequestURL().toString();
-    model.addAttribute(String.valueOf(page), "page");
-    model.addAttribute(String.valueOf(size), "size");
     model.addAttribute("currentUrl", currentUrl);
-    populateModelWithDefaultValues(model);
+    String[] sortCriteria = sort.split(",");
+    model.addAttribute(SORT_FIELD, sortCriteria[0]);
+    model.addAttribute(SORT_DIRECTION, sortCriteria[1]);
     model.addAttribute(NOTIFICATIONS_SEARCH_RESULTS, notificationsResponse);
     return "notifications/actions-and-notifications";
-  }
-
-  private static void populateModelWithDefaultValues(Model model) {
-    model.addAttribute(SORT_FIELD, "assignDate");
-    model.addAttribute(SORT_DIRECTION, "asc");
-    model.addAttribute(REVERSE_SORT_DIRECTION, "desc");
   }
 
 }
