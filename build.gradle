@@ -109,7 +109,7 @@ dependencies {
 	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'io.projectreactor:reactor-test:3.6.1'
 
-	integrationTestImplementation 'org.wiremock:wiremock-standalone:3.3.1'
+	integrationTestImplementation 'org.wiremock:wiremock-standalone:3.5.4'
 
 }
 
