@@ -54,7 +54,7 @@ public class NotificationsSearchResultsController {
   public String notificationsSearchResults(
       @RequestParam(value = "page", defaultValue = "0") int page,
       @RequestParam(value = "size", defaultValue = "10") int size,
-      @RequestParam(value = "sort", defaultValue = "assignDate,asc") String sort,
+      @RequestParam(value = "pageSort", defaultValue = "assignDate,asc") String pageSort,
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
       @ModelAttribute(USER_DETAILS) UserDetail user,
       HttpServletRequest request,
@@ -62,12 +62,11 @@ public class NotificationsSearchResultsController {
     if (StringUtils.isBlank(criteria.getAssignedToUserId())) {
       criteria.setAssignedToUserId(user.getLoginId());
     }
-    if (!sort.equals(criteria.getSort())) {
+    if (!pageSort.equals(criteria.getSort())) {
       // redirect to first page when sort criteria changes
       page = 0;
     }
-    // TODO: criteria in model keeps old value so the above doesn't work
-    criteria.setSort(sort);
+    criteria.setSort(pageSort);
     Notifications notificationsResponse =
         notificationService
             .getNotifications(criteria, page, size)
@@ -82,7 +81,7 @@ public class NotificationsSearchResultsController {
 
     String currentUrl = request.getRequestURL().toString();
     model.addAttribute("currentUrl", currentUrl);
-    String[] sortCriteria = sort.split(",");
+    String[] sortCriteria = pageSort.split(",");
     model.addAttribute(SORT_FIELD, sortCriteria[0]);
     model.addAttribute(SORT_DIRECTION, sortCriteria[1]);
     model.addAttribute(NOTIFICATIONS_SEARCH_RESULTS, notificationsResponse);
