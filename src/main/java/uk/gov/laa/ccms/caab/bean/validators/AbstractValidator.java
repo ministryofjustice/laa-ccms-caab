@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
@@ -35,6 +36,9 @@ public abstract class AbstractValidator implements Validator {
       + " Please amend your entry for the %s field.";
   protected static String GENERIC_INCORRECT_FORMAT = "Your input for '%s' is in an incorrect "
       + "format. Please amend your entry.";
+
+  protected static String GENERIC_MISSING_DATE_FIELDS_FORMAT = "Your input for '%s' is incomplete. "
+      + "Please enter a value for day, month and year.";
 
   protected static String GENERIC_FIRST_CHAR_ALPHA = "Your input for %s is invalid. "
       + "The first character must be a letter. Please amend your entry.";
@@ -203,19 +207,30 @@ public abstract class AbstractValidator implements Validator {
   }
 
   protected Date validateValidDateField(final String dateString,
-      final String field, final String datePattern, Errors errors) {
+      final String field, final String displayName, final String datePattern, Errors errors) {
     SimpleDateFormat sdf = new SimpleDateFormat(datePattern);
     sdf.setLenient(false);
     ParsePosition pos = new ParsePosition(0);
     Date validDate = sdf.parse(dateString, pos);
     if (pos.getIndex() == 0) {
       validDate = null;
-      log.warn(String.format("invalid %s", field));
-      errors.rejectValue(field, "invalid.format",
-          String.format(GENERIC_INCORRECT_FORMAT, field));
+      reportInvalidDate(field, displayName, errors);
     }
     return validDate;
   }
+
+  protected static void reportInvalidDate(String field, String displayName, Errors errors) {
+    log.warn(String.format("invalid %s", field));
+    errors.rejectValue(field, "invalid.format",
+        String.format(GENERIC_INCORRECT_FORMAT, displayName));
+  }
+
+  protected static void reportMissingDateFields(String field, String displayName, Errors errors) {
+    log.warn(String.format("missing input for %s", field));
+    errors.rejectValue(field, "invalid.input",
+        String.format(GENERIC_MISSING_DATE_FIELDS_FORMAT, displayName));
+  }
+
 
   protected void validateFromAfterToDates(final Date fromDate, final String fieldName,
       final Date toDate, Errors errors) {

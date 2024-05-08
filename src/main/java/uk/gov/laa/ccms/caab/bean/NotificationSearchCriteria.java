@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.bean;
 
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 /**
  * Represents the search criteria to search for Notifications.
@@ -43,44 +45,44 @@ public class NotificationSearchCriteria {
   private String notificationType;
 
   /**
-   * The day of the {@see dateFrom}.
+   * The day of the {@see notificationFromDate}.
    */
   private String notificationFromDateDay;
 
   /**
-   * The month of the {@see dateFrom}.
+   * The month of the {@see notificationFromDate}.
    */
   private String notificationFromDateMonth;
 
   /**
-   * The year of the {@see dateFrom}.
+   * The year of the {@see notificationFromDate}.
    */
   private String notificationFromDateYear;
 
   /**
    * The date from which to start the search.
    */
-  private String dateFrom;
+  private String notificationFromDate;
 
   /**
-   * The day of the {@see dateTo}.
+   * The day of the {@see notificationToDate}.
    */
   private String notificationToDateDay;
 
   /**
-   * The month of the {@see dateTo}.
+   * The month of the {@see notificationToDate}.
    */
   private String notificationToDateMonth;
 
   /**
-   * The year of the {@see dateTo}.
+   * The year of the {@see notificationToDate}.
    */
   private String notificationToDateYear;
 
   /**
    * The date to search up to.
    */
-  private String dateTo;
+  private String notificationToDate;
 
   /**
    * the logged-in user.
@@ -98,20 +100,58 @@ public class NotificationSearchCriteria {
   private String sort;
 
   /**
+   * Retrieves the formatted from date based on the day, month, and year values.
+   *
+   * @return The formatted from date (yyyy-MM-dd), or null if the date components are not valid
+   *         integers.
+   */
+  public String getDateFrom() {
+    return getDate(notificationFromDateYear, notificationFromDateMonth, notificationFromDateDay);
+  }
+
+  /**
+   * Retrieves the formatted to date based on the day, month, and year values.
+   *
+   * @return The formatted to date (yyyy-MM-dd), or null if the date components are not valid
+   *         integers.
+   */
+  public String getDateTo() {
+    return getDate(notificationToDateYear, notificationToDateMonth, notificationToDateDay);
+  }
+
+  private String getDate(String yearInput, String monthInput, String dayInput) {
+    if (StringUtils.isBlank(yearInput)
+        && StringUtils.isBlank(monthInput)
+        && StringUtils.isBlank(dayInput)) {
+      return null;
+    }
+    try {
+      int year = Integer.parseInt(yearInput);
+      int month = Integer.parseInt(monthInput);
+      int day = Integer.parseInt(dayInput);
+
+      return String.format("%d-%02d-%02d", year, month, day);
+    } catch (NumberFormatException e) {
+      // Handle the exception if any of the year, month or day is not a valid integer
+      throw new CaabApplicationException("Unable to format date", e);
+    }
+  }
+
+  /**
    * reset the search criteria.
    *
    * @param criteria the criteria to reset
    */
   public static void reset(NotificationSearchCriteria criteria) {
     criteria.setSort("");
-    criteria.setDateFrom("");
     criteria.setNotificationFromDateDay("");
     criteria.setNotificationFromDateMonth("");
     criteria.setNotificationFromDateYear("");
+    criteria.setNotificationFromDate("");
     criteria.setNotificationToDateDay("");
     criteria.setNotificationToDateMonth("");
     criteria.setNotificationToDateYear("");
-    criteria.setDateTo("");
+    criteria.setNotificationToDate("");
     criteria.setNotificationType("");
     criteria.setCaseReference("");
     criteria.setFeeEarnerId(null);

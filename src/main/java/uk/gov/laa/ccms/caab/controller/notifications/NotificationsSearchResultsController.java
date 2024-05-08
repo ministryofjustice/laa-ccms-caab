@@ -7,7 +7,6 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARC
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpServletRequest;
-
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;

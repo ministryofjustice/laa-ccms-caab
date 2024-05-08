@@ -57,7 +57,7 @@ class NotificationSearchValidatorTest {
     validator.validate(criteria, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
-    assertNotNull(errors.getFieldError("dateFrom"));
+    assertNotNull(errors.getFieldError("notificationFromDate"));
 
   }
 
@@ -69,7 +69,7 @@ class NotificationSearchValidatorTest {
     validator.validate(criteria, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
-    assertNotNull(errors.getFieldError("dateTo"));
+    assertNotNull(errors.getFieldError("notificationToDate"));
   }
 
   @Test
@@ -79,8 +79,9 @@ class NotificationSearchValidatorTest {
     criteria.setNotificationToDateYear("2021/");
     validator.validate(criteria, errors);
     assertTrue(errors.hasErrors());
-    assertEquals(1, errors.getErrorCount());
+    assertEquals(2, errors.getErrorCount());
     assertNotNull(errors.getFieldError("notificationToDateYear"));
+    assertNotNull(errors.getFieldError("notificationToDate"));
   }
 
   @Test

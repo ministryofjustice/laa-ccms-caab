@@ -30,7 +30,7 @@
             Notification dates
           </h2>
           <div class="govuk-form-group"
-               th:classappend="${#fields.hasErrors('notificationFromDateDay') || #fields.hasErrors('notificationFromDateMonth') || #fields.hasErrors('notificationFromDateYear')}  ? 'govuk-form-group--error' : ''">
+               th:classappend="${#fields.hasErrors('notificationFromDateDay') || #fields.hasErrors('notificationFromDateMonth') || #fields.hasErrors('notificationFromDateYear') || #fields.hasErrors('notificationFromDate')}  ? 'govuk-form-group--error' : ''">
             <fieldset class="govuk-fieldset" role="group"
                       aria-describedby="notf-hint not-from-date-error">
               <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">
@@ -55,7 +55,7 @@
             </fieldset>
           </div>
           <div class="govuk-form-group"
-               th:classappend="${#fields.hasErrors('notificationToDateDay') || #fields.hasErrors('notificationToDateMonth') || #fields.hasErrors('notificationToDateYear')} ? 'govuk-form-group--error' : ''">
+               th:classappend="${#fields.hasErrors('notificationToDateDay') || #fields.hasErrors('notificationToDateMonth') || #fields.hasErrors('notificationToDateYear') || #fields.hasErrors('notificationToDate')} ? 'govuk-form-group--error' : ''">
             <fieldset class="govuk-fieldset" role="group"
                       aria-describedby="nott-hint nott-error">
               <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">
