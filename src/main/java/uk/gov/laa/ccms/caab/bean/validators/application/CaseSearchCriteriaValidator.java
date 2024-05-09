@@ -1,7 +1,7 @@
 package uk.gov.laa.ccms.caab.bean.validators.application;
 
-import org.springframework.util.StringUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;

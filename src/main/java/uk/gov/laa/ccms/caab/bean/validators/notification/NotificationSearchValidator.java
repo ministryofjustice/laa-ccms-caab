@@ -8,9 +8,9 @@ import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.FIRST_CH
 
 import java.util.Date;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
@@ -83,11 +83,9 @@ public class NotificationSearchValidator extends AbstractValidator {
 
 
   private void validateDateFieldFormats(NotificationSearchCriteria criteria, Errors errors) {
-    Date from = null;
     String dateFromFieldName = "notificationFromDate";
     String dateFromDisplayName = "date from";
 
-    Date to = null;
     String dateToFieldName = "notificationToDate";
     String dateToDisplayName = "date to";
 
@@ -117,6 +115,8 @@ public class NotificationSearchValidator extends AbstractValidator {
       reportMissingDateFields(dateFromFieldName, dateFromDisplayName, errors);
     }
 
+    Date from = null;
+
     if (fromDateFullyPopulated) {
       validateNumericField(fromYear.getRight(), fromYear.getLeft(), fromYear.getMiddle(), errors);
       validateNumericField(fromMonth.getRight(), fromMonth.getLeft(),
@@ -140,6 +140,8 @@ public class NotificationSearchValidator extends AbstractValidator {
     if (!toDateEmpty && !toDateFullyPopulated) {
       reportMissingDateFields(dateToFieldName, dateToDisplayName, errors);
     }
+
+    Date to = null;
 
     if (toDateFullyPopulated) {
       validateNumericField(toYear.getRight(), toYear.getLeft(), toYear.getMiddle(), errors);
