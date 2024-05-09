@@ -122,4 +122,14 @@ public class CommonValueConstants {
    */
   public static final String COMMON_VALUE_PROCEEDING_ORDER_TYPE = "XXCCMS_PROCEEDING_ORDER_TYPE";
 
+  /**
+   * Type used to retrieve OPA Evidence Document Types.
+   */
+  public static final String COMMON_VALUE_OPA_EVIDENCE_ITEMS = "XXCCMS_OPA_EVIDENCE_ITEMS";
+
+  /**
+   * Type used to retrieve Prior Authority Evidence Document Types.
+   */
+  public static final String COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS =
+      "XXCCMS_PA_EVIDENCE_ITEMS";
 }
