@@ -73,6 +73,23 @@ class NotificationSearchValidatorTest {
   }
 
   @Test
+  void validateNonNumericalDates() {
+    criteria.setNotificationFromDateDay("A");
+    criteria.setNotificationFromDateMonth("12");
+    criteria.setNotificationFromDateYear("2021");
+    criteria.setNotificationToDateDay("13");
+    criteria.setNotificationToDateMonth("12");
+    criteria.setNotificationToDateYear("B");
+    validator.validate(criteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(4, errors.getErrorCount());
+    assertNotNull(errors.getFieldError("notificationFromDate"));
+    assertNotNull(errors.getFieldError("notificationFromDateDay"));
+    assertNotNull(errors.getFieldError("notificationToDate"));
+    assertNotNull(errors.getFieldError("notificationToDateYear"));
+  }
+
+  @Test
   void validateInvalidDate() {
     criteria.setNotificationToDateDay("12");
     criteria.setNotificationToDateMonth("12");
