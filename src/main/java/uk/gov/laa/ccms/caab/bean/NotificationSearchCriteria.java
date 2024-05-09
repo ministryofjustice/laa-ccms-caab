@@ -1,7 +1,7 @@
 package uk.gov.laa.ccms.caab.bean;
 
 import lombok.Data;
-import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 /**
@@ -100,29 +100,33 @@ public class NotificationSearchCriteria {
   private String sort;
 
   /**
-   * Retrieves the formatted from date based on the day, month, and year values.
+   * Retrieves the formatted date to search from.
    *
-   * @return The formatted from date (yyyy-MM-dd), or null if the date components are not valid
-   *         integers.
+   * @return The formatted from date (yyyy-MM-dd).
    */
   public String getDateFrom() {
     return getDate(notificationFromDateYear, notificationFromDateMonth, notificationFromDateDay);
   }
 
   /**
-   * Retrieves the formatted to date based on the day, month, and year values.
+   * Retrieves the formatted date to search up to.
    *
-   * @return The formatted to date (yyyy-MM-dd), or null if the date components are not valid
-   *         integers.
+   * @return The formatted to date (yyyy-MM-dd).
    */
   public String getDateTo() {
     return getDate(notificationToDateYear, notificationToDateMonth, notificationToDateDay);
   }
 
+  /**
+   * Returns an ISO formatted date based on the day, month, and year values.
+   *
+   * @return The formatted to date (yyyy-MM-dd), or null if the date components are not valid
+   *         integers.
+   */
   private String getDate(String yearInput, String monthInput, String dayInput) {
-    if (StringUtils.isBlank(yearInput)
-        && StringUtils.isBlank(monthInput)
-        && StringUtils.isBlank(dayInput)) {
+    if (!StringUtils.hasText(yearInput)
+        && !StringUtils.hasText(monthInput)
+        && !StringUtils.hasText(dayInput)) {
       return null;
     }
     try {

@@ -8,7 +8,7 @@ import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.FIRST_CH
 
 import java.util.Date;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
@@ -63,16 +63,16 @@ public class NotificationSearchValidator extends AbstractValidator {
   private void validateAtLeastOneFieldValidated(Object target, Errors errors) {
     if (!errors.hasErrors()) {
       NotificationSearchCriteria searchCriteria = (NotificationSearchCriteria) target;
-      if (StringUtils.isEmpty(searchCriteria.getAssignedToUserId())
-          && StringUtils.isEmpty(searchCriteria.getNotificationFromDateDay())
-          && StringUtils.isEmpty(searchCriteria.getNotificationFromDateMonth())
-          && StringUtils.isEmpty(searchCriteria.getNotificationFromDateYear())
-          && StringUtils.isEmpty(searchCriteria.getNotificationToDateDay())
-          && StringUtils.isEmpty(searchCriteria.getNotificationToDateMonth())
-          && StringUtils.isEmpty(searchCriteria.getNotificationToDateYear())
-          && StringUtils.isEmpty(searchCriteria.getProviderCaseReference())
-          && StringUtils.isEmpty(searchCriteria.getCaseReference())
-          && StringUtils.isEmpty(searchCriteria.getClientSurname())
+      if (!StringUtils.hasText(searchCriteria.getAssignedToUserId())
+          && !StringUtils.hasText(searchCriteria.getNotificationFromDateDay())
+          && !StringUtils.hasText(searchCriteria.getNotificationFromDateMonth())
+          && !StringUtils.hasText(searchCriteria.getNotificationFromDateYear())
+          && !StringUtils.hasText(searchCriteria.getNotificationToDateDay())
+          && !StringUtils.hasText(searchCriteria.getNotificationToDateMonth())
+          && !StringUtils.hasText(searchCriteria.getNotificationToDateYear())
+          && !StringUtils.hasText(searchCriteria.getProviderCaseReference())
+          && !StringUtils.hasText(searchCriteria.getCaseReference())
+          && !StringUtils.hasText(searchCriteria.getClientSurname())
           && searchCriteria.getFeeEarnerId() == null) {
         errors.reject("invalid.criteria",
             "You must provide at least one search criteria below. "
@@ -165,19 +165,19 @@ public class NotificationSearchValidator extends AbstractValidator {
   }
 
   private boolean dateEmpty(String year, String month, String day) {
-    return StringUtils.isBlank(year)
-        && StringUtils.isBlank(month)
-        && StringUtils.isBlank(day);
+    return !StringUtils.hasText(year)
+        && !StringUtils.hasText(month)
+        && !StringUtils.hasText(day);
   }
 
   private boolean dateFullyPopulated(String year, String month, String day) {
-    return StringUtils.isNotBlank(year)
-        && StringUtils.isNotBlank(month)
-        && StringUtils.isNotBlank(day);
+    return StringUtils.hasText(year)
+        && StringUtils.hasText(month)
+        && StringUtils.hasText(day);
   }
 
   private void validateCaseRef(final String caseRef, Errors errors) {
-    if (StringUtils.isNotEmpty(caseRef)) {
+    if (StringUtils.hasText(caseRef)) {
       //check no double spaces
       if (!caseRef.matches(ALPHA_NUMERIC_SLASH_SPACE_STRING)) {
         errors.rejectValue("caseReference", "invalid.case-ref",
@@ -193,7 +193,7 @@ public class NotificationSearchValidator extends AbstractValidator {
   }
 
   private void validateClientSurname(String clientSurname, Errors errors) {
-    if (StringUtils.isNotEmpty(clientSurname)) {
+    if (StringUtils.hasText(clientSurname)) {
       if (!clientSurname.matches(FIRST_CHARACTER_MUST_BE_ALPHA)) {
         errors.rejectValue("clientSurname", "invalid.surname",
             "Your input for 'Client surname' is invalid. "
@@ -213,7 +213,7 @@ public class NotificationSearchValidator extends AbstractValidator {
 
 
   private void validateProviderCaseRef(String providerCaseReference, Errors errors) {
-    if (StringUtils.isNotEmpty(providerCaseReference)) {
+    if (StringUtils.hasText(providerCaseReference)) {
       if (!providerCaseReference.matches(CHARACTER_SET_F)) {
         errors.rejectValue("providerCaseReference",
             "invalid.providerCaseReference-char",

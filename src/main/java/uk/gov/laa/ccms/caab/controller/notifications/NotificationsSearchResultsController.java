@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -59,7 +59,7 @@ public class NotificationsSearchResultsController {
       @ModelAttribute(USER_DETAILS) UserDetail user,
       HttpServletRequest request,
       Model model) {
-    if (StringUtils.isBlank(criteria.getAssignedToUserId())) {
+    if (StringUtils.hasText(criteria.getAssignedToUserId())) {
       criteria.setAssignedToUserId(user.getLoginId());
     }
     if (!pageSort.equals(criteria.getSort())) {

@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.bean.validators.application;
 
-import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
@@ -44,12 +44,12 @@ public class CaseSearchCriteriaValidator extends AbstractValidator {
   public void validateAtLeastOneSearchCriteria(Object target, Errors errors) {
     CaseSearchCriteria searchCriteria = (CaseSearchCriteria) target;
 
-    if (StringUtils.isBlank(searchCriteria.getCaseReference())
-            && StringUtils.isBlank(searchCriteria.getClientSurname())
-            && StringUtils.isBlank(searchCriteria.getProviderCaseReference())
+    if (!StringUtils.hasText(searchCriteria.getCaseReference())
+            && !StringUtils.hasText(searchCriteria.getClientSurname())
+            && !StringUtils.hasText(searchCriteria.getProviderCaseReference())
             && searchCriteria.getFeeEarnerId() == null
             && searchCriteria.getOfficeId() == null
-            && StringUtils.isBlank(searchCriteria.getStatus())) {
+            && !StringUtils.hasText(searchCriteria.getStatus())) {
       errors.rejectValue(null, "required.atLeastOneSearchCriteria",
               "You must provide at least one search criteria below. Please amend your entry.");
     }

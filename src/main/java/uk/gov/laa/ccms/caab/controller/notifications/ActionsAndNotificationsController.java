@@ -8,7 +8,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -98,7 +98,7 @@ public class ActionsAndNotificationsController {
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
       @RequestParam(value = "notification_type", required = false) String notificationType,
       Model model) {
-    if (StringUtils.isNotEmpty(notificationType)) {
+    if (StringUtils.hasText(notificationType)) {
       criteria.setNotificationType(notificationType.equals("all") ? "" : notificationType);
       if (notificationType.equals("all")) {
         NotificationSearchCriteria.reset(criteria);
