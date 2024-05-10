@@ -10,9 +10,9 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
-import uk.gov.laa.ccms.caab.model.Opponent;
-import uk.gov.laa.ccms.caab.model.Proceeding;
-import uk.gov.laa.ccms.caab.model.ScopeLimitation;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 
 /**
  * Mapper class to copy a subset of attributes from one CAAB ApplicationDetail to another.
@@ -37,28 +37,29 @@ public interface CopyApplicationMapper {
   ApplicationProviderDetails copyApplicationProviderDetails(
       ApplicationProviderDetails providerDetailsToCopy);
 
-  List<Proceeding> copyProceedingList(List<Proceeding> proceedingList);
+  List<ProceedingDetail> copyProceedingList(List<ProceedingDetail> proceedingList);
 
   @Mapping(target = "ebsId", ignore = true)
   @Mapping(target = "status.id", constant = STATUS_DRAFT)
   @Mapping(target = "status.displayValue", constant = PROCEEDING_STATUS_UNCHANGED_DISPLAY)
-  Proceeding copyProceeding(Proceeding proceedingToCopy);
+  ProceedingDetail copyProceeding(ProceedingDetail proceedingToCopy);
 
-  List<ScopeLimitation> copyScopeLimitationList(List<ScopeLimitation> scopeLimitationList);
+  List<ScopeLimitationDetail> copyScopeLimitationList(
+      List<ScopeLimitationDetail> scopeLimitationList);
 
   @Mapping(target = "ebsId", ignore = true)
   @Mapping(target = "defaultInd", ignore = true)
   @Mapping(target = "nonDefaultWordingReqd", ignore = true)
   @Mapping(target = "stage", ignore = true)
-  uk.gov.laa.ccms.caab.model.ScopeLimitation copyScopeLimitation(
-      uk.gov.laa.ccms.caab.model.ScopeLimitation scopeLimitationToCopy);
+  uk.gov.laa.ccms.caab.model.ScopeLimitationDetail copyScopeLimitation(
+      uk.gov.laa.ccms.caab.model.ScopeLimitationDetail scopeLimitationToCopy);
 
-  List<Opponent> copyOpponentList(List<Opponent> opponentList);
+  List<OpponentDetail> copyOpponentList(List<OpponentDetail> opponentList);
 
   @Mapping(target = "confirmed", constant = "true")
   @Mapping(target = "deleteInd", constant = "true")
   @Mapping(target = "amendment", constant = "false")
   @Mapping(target = "appMode", constant = "true")
   @Mapping(target = "award", constant = "false")
-  Opponent copyOpponent(Opponent opponentToCopy);
+  OpponentDetail copyOpponent(OpponentDetail opponentToCopy);
 }

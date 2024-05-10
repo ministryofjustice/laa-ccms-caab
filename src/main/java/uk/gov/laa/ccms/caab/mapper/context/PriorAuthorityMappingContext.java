@@ -7,6 +7,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
+import uk.gov.laa.ccms.soa.gateway.model.PriorAuthority;
 
 /**
  * Class to hold a SOA PriorAuthority together with all additional data needed to
@@ -19,7 +20,7 @@ public class PriorAuthorityMappingContext {
   /**
    * The SOA Prior Authority to be mapped.
    */
-  uk.gov.laa.ccms.soa.gateway.model.PriorAuthority soaPriorAuthority;
+  PriorAuthority soaPriorAuthority;
 
   /**
    * Lookup of Prior Authority Type display data.

@@ -372,7 +372,7 @@ public class SoaModelUtils {
                         .addressLine3("add3"))
                 .recovery(buildRecovery())
                 .awardedBy("me")
-                .liableParties(Arrays.asList("a", "b", "c"))
+                .liableParties(Arrays.asList("1", "2", "3"))
                 .orderDate(new java.util.Date())
                 .orderDateServed(new java.util.Date())
                 .otherDetails("otherDets")
@@ -404,7 +404,7 @@ public class SoaModelUtils {
                 .interimAward(BigDecimal.TEN)
                 .amount(BigDecimal.ONE)
                 .awardJustifications("justified")
-                .liableParties(Arrays.asList("a", "b", "c"))
+                .liableParties(Arrays.asList("1", "2", "3"))
                 .orderDate(new java.util.Date())
                 .orderDateServed(new java.util.Date())
                 .otherDetails("otherDets")
@@ -443,7 +443,7 @@ public class SoaModelUtils {
                 .statChargeExemptReason("exempt")
                 .landChargeRegistration("landChargeReg")
                 .registrationRef("regRef")
-                .otherProprietors(Arrays.asList("a", "b", "c"))
+                .otherProprietors(Arrays.asList("1", "2", "3"))
                 .timeRelatedAward(buildTimeRelatedAward()));
   }
 
@@ -461,7 +461,7 @@ public class SoaModelUtils {
                 .awardedAmount(BigDecimal.ONE)
                 .recoveredAmount(BigDecimal.ZERO)
                 .disputedAmount(BigDecimal.TEN)
-                .heldBy(Arrays.asList("A", "B", "C"))
+                .heldBy(Arrays.asList("1", "2", "3"))
                 .awardedPercentage(BigDecimal.TEN)
                 .recoveredPercentage(BigDecimal.ONE)
                 .disputedPercentage(BigDecimal.ZERO)

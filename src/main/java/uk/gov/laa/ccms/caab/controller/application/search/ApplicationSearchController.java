@@ -33,7 +33,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
-import uk.gov.laa.ccms.caab.model.BaseApplication;
+import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
@@ -120,7 +120,7 @@ public class ApplicationSearchController {
       return "application/application-search";
     }
 
-    List<BaseApplication> searchResults;
+    List<BaseApplicationDetail> searchResults;
 
     try {
       searchResults = applicationService.getCases(caseSearchCriteria, user);
@@ -151,7 +151,7 @@ public class ApplicationSearchController {
   public String applicationSearchResults(
       @RequestParam(value = "page", defaultValue = "0") final int page,
       @RequestParam(value = "size", defaultValue = "10") final int size,
-      @ModelAttribute(CASE_SEARCH_RESULTS) final List<BaseApplication> caseSearchResults,
+      @ModelAttribute(CASE_SEARCH_RESULTS) final List<BaseApplicationDetail> caseSearchResults,
       final HttpServletRequest request,
       final Model model) {
 
@@ -174,12 +174,12 @@ public class ApplicationSearchController {
   @GetMapping("/application/{case-reference-number}/view")
   public String applicationCaseView(
       @PathVariable("case-reference-number") final String caseReferenceNumber,
-      @SessionAttribute(CASE_SEARCH_RESULTS) final List<BaseApplication> caseSearchResults,
+      @SessionAttribute(CASE_SEARCH_RESULTS) final List<BaseApplicationDetail> caseSearchResults,
       HttpSession session) {
 
     // First ensure that the supplied caseReferenceNumber refers to an
     // application/case from the search results in the session.
-    final BaseApplication selectedApplication =
+    final BaseApplicationDetail selectedApplication =
         caseSearchResults.stream()
             .filter(baseApplication -> baseApplication.getCaseReferenceNumber().equals(
                 caseReferenceNumber))

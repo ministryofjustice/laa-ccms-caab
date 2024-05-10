@@ -180,6 +180,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     assertEquals(userDetailsJson, objectMapper.writeValueAsString(result));
 
   }
+
   @Test
   public void testGetUsers_notFound() {
     Integer providerId = 123;

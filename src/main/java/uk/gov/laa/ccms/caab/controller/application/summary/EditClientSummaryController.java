@@ -20,14 +20,14 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
-import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
 import uk.gov.laa.ccms.caab.controller.application.client.AbstractClientSummaryController;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
-import uk.gov.laa.ccms.caab.model.BaseClient;
+import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -83,7 +83,9 @@ public class EditClientSummaryController extends AbstractClientSummaryController
       final ClientDetail clientInformation = clientService.getClient(
           activeCase.getClientReferenceNumber(),
           user.getLoginId(),
-          user.getUserType()).block();
+          user.getUserType())
+          .blockOptional()
+          .orElseThrow(() -> new CaabApplicationException("Failed to retrieve client"));
 
       //map data to the view
       clientFlowFormData = clientDetailsMapper.toClientFlowFormData(clientInformation.getDetails());
@@ -116,10 +118,13 @@ public class EditClientSummaryController extends AbstractClientSummaryController
         clientService.updateClient(
             activeCase.getClientReferenceNumber(),
             clientFlowFormData,
-            user).block();
+            user)
+            .blockOptional()
+            .orElseThrow(() -> new CaabApplicationException("Failed to update Client"));
 
 
-    final BaseClient applicationClientNames = clientDetailsMapper.toBaseClient(clientFlowFormData);
+    final BaseClientDetail applicationClientNames =
+        clientDetailsMapper.toBaseClient(clientFlowFormData);
 
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
     session.setAttribute(APPLICATION_CLIENT_NAMES, applicationClientNames);

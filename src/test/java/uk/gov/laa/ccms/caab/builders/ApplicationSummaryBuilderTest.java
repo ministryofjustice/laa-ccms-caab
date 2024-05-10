@@ -9,14 +9,14 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import uk.gov.laa.ccms.caab.model.Address;
+import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AuditDetail;
-import uk.gov.laa.ccms.caab.model.CostStructure;
-import uk.gov.laa.ccms.caab.model.Opponent;
-import uk.gov.laa.ccms.caab.model.PriorAuthority;
-import uk.gov.laa.ccms.caab.model.Proceeding;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
+import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 
@@ -80,8 +80,8 @@ class ApplicationSummaryBuilderTest {
 
   @Test
   void testGeneralDetails() {
-    // Create a non-empty Address
-    Address address = new Address();
+    // Create a non-empty AddressDetail
+    AddressDetail address = new AddressDetail();
     address.setPreferredAddress("123 Main St");
 
     builder.generalDetails(address);
@@ -95,22 +95,22 @@ class ApplicationSummaryBuilderTest {
     auditDetail.setLastSaved(Date.from(Instant.now()));
     auditDetail.setLastSavedBy("TestUser");
 
-    Proceeding proceeding1 = new Proceeding();
+    ProceedingDetail proceeding1 = new ProceedingDetail();
     proceeding1.setAuditTrail(auditDetail);
     proceeding1.setStage("Stage 1");
 
-    Proceeding proceeding2 = new Proceeding();
+    ProceedingDetail proceeding2 = new ProceedingDetail();
     proceeding2.setAuditTrail(auditDetail);
 
-    Proceeding proceeding3 = new Proceeding();
+    ProceedingDetail proceeding3 = new ProceedingDetail();
     proceeding3.setAuditTrail(auditDetail);
 
-    List<Proceeding> proceedings = Arrays.asList(proceeding1, proceeding2, proceeding3);
+    List<ProceedingDetail> proceedings = Arrays.asList(proceeding1, proceeding2, proceeding3);
 
-    PriorAuthority priorAuthority = new PriorAuthority();
+    PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
     priorAuthority.setAuditTrail(new AuditDetail());
 
-    CostStructure costStructure = new CostStructure();
+    CostStructureDetail costStructure = new CostStructureDetail();
     costStructure.setAuditTrail(new AuditDetail());
 
     builder.proceedingsAndCosts(proceedings, Collections.singletonList(priorAuthority), costStructure);
@@ -125,12 +125,12 @@ class ApplicationSummaryBuilderTest {
     auditDetail.setLastSavedBy("TestUser");
 
     // Create some sample data for opponents
-    Opponent opponent1 = new Opponent();
+    OpponentDetail opponent1 = new OpponentDetail();
     opponent1.setType("Organisation");
-    opponent1.setRelationshipToCase("REL1");;
+    opponent1.setRelationshipToCase("REL1");
     opponent1.setAuditTrail(auditDetail);
 
-    List<Opponent> opponents = Collections.singletonList(opponent1);
+    List<OpponentDetail> opponents = Collections.singletonList(opponent1);
 
     // Create some sample data for organization relationships
     RelationshipToCaseLookupValueDetail relationship1 = new RelationshipToCaseLookupValueDetail();

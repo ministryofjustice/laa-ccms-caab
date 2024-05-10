@@ -47,7 +47,7 @@ import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
-import uk.gov.laa.ccms.caab.model.BaseApplication;
+import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
@@ -442,7 +442,7 @@ public class EditGeneralDetailsSectionController {
       return "application/summary/application-linked-case-search";
     }
 
-    final List<BaseApplication> searchResults;
+    final List<BaseApplicationDetail> searchResults;
 
     try {
       searchResults = applicationService.getCases(caseSearchCriteria, user);
@@ -481,7 +481,7 @@ public class EditGeneralDetailsSectionController {
   public String linkedCasesSearchResults(
       @RequestParam(value = "page", defaultValue = "0") final int page,
       @RequestParam(value = "size", defaultValue = "10") final int size,
-      @ModelAttribute(CASE_SEARCH_RESULTS) final List<BaseApplication> caseSearchResults,
+      @ModelAttribute(CASE_SEARCH_RESULTS) final List<BaseApplicationDetail> caseSearchResults,
       final HttpServletRequest request,
       final Model model,
       final HttpSession session) {
@@ -513,8 +513,9 @@ public class EditGeneralDetailsSectionController {
       final Model model
   ) {
 
-    final BaseApplication baseApplication = linkedCaseSearchResults.getContent() == null ? null :
-        linkedCaseSearchResults.getContent().stream()
+    final BaseApplicationDetail baseApplication =
+        linkedCaseSearchResults.getContent() == null ? null :
+            linkedCaseSearchResults.getContent().stream()
             .filter(lc -> caseReferenceId.equals(lc.getCaseReferenceNumber()))
             .findFirst()
             .orElseThrow(() -> new CaabApplicationException(

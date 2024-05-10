@@ -5,16 +5,16 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEP
 import java.util.List;
 import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
-import uk.gov.laa.ccms.caab.model.Address;
+import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryStatusDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AuditDetail;
-import uk.gov.laa.ccms.caab.model.CostStructure;
-import uk.gov.laa.ccms.caab.model.Opponent;
-import uk.gov.laa.ccms.caab.model.PriorAuthority;
-import uk.gov.laa.ccms.caab.model.Proceeding;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
+import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 
@@ -139,7 +139,7 @@ public class ApplicationSummaryBuilder {
    * @param address the address information.
    * @return the builder with amended general details.
    */
-  public ApplicationSummaryBuilder generalDetails(final Address address) {
+  public ApplicationSummaryBuilder generalDetails(final AddressDetail address) {
     if (address != null && StringUtils.hasText(address.getPreferredAddress())) {
       applicationSummary.getGeneralDetails().setStatus(COMPLETE);
     } else {
@@ -157,9 +157,9 @@ public class ApplicationSummaryBuilder {
    * @return the builder with amended proceedings, prior authorities, and costs details.
    */
   public ApplicationSummaryBuilder proceedingsAndCosts(
-      final List<Proceeding> proceedings,
-      final List<PriorAuthority> priorAuthorities,
-      final CostStructure costs) {
+      final List<ProceedingDetail> proceedings,
+      final List<PriorAuthorityDetail> priorAuthorities,
+      final CostStructureDetail costs) {
     String status = NOT_STARTED;
     if (!proceedings.isEmpty()) {
       if (!priorAuthorities.isEmpty()) {
@@ -175,7 +175,7 @@ public class ApplicationSummaryBuilder {
     }
     applicationSummary.getProceedingsAndCosts().setStatus(status);
 
-    for (final Proceeding proceeding : proceedings) {
+    for (final ProceedingDetail proceeding : proceedings) {
       checkAndSetLastSaved(
           applicationSummary.getProceedingsAndCosts(),
           proceeding.getAuditTrail());
@@ -185,7 +185,7 @@ public class ApplicationSummaryBuilder {
         applicationSummary.getProceedingsAndCosts(),
         costs.getAuditTrail());
 
-    for (final PriorAuthority priorAuthority : priorAuthorities) {
+    for (final PriorAuthorityDetail priorAuthority : priorAuthorities) {
       checkAndSetLastSaved(
           applicationSummary.getProceedingsAndCosts(),
           priorAuthority.getAuditTrail());
@@ -203,7 +203,7 @@ public class ApplicationSummaryBuilder {
    * @return the builder with amended opponents and other parties details.
    */
   public ApplicationSummaryBuilder opponentsAndOtherParties(
-      final List<Opponent> opponents,
+      final List<OpponentDetail> opponents,
       final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
       final List<RelationshipToCaseLookupValueDetail> personRelationships) {
 
@@ -219,7 +219,7 @@ public class ApplicationSummaryBuilder {
           opponentCreated ? COMPLETE : STARTED);
     }
 
-    for (final Opponent opponent : opponents) {
+    for (final OpponentDetail opponent : opponents) {
       checkAndSetLastSaved(
           applicationSummary.getOpponentsAndOtherParties(),
           opponent.getAuditTrail());
@@ -295,7 +295,7 @@ public class ApplicationSummaryBuilder {
   }
 
   private boolean isOpponentCreated(
-      final Opponent opponent,
+      final OpponentDetail opponent,
       final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
       final List<RelationshipToCaseLookupValueDetail> personRelationships) {
 

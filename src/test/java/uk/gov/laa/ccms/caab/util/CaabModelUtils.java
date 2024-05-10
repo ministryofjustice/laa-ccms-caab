@@ -4,38 +4,38 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import uk.gov.laa.ccms.caab.model.Address;
+import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AssessmentResult;
 import uk.gov.laa.ccms.caab.model.AuditDetail;
-import uk.gov.laa.ccms.caab.model.BaseApplication;
+import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BooleanDisplayValue;
-import uk.gov.laa.ccms.caab.model.CaseOutcome;
-import uk.gov.laa.ccms.caab.model.Client;
-import uk.gov.laa.ccms.caab.model.CostEntry;
-import uk.gov.laa.ccms.caab.model.CostLimit;
-import uk.gov.laa.ccms.caab.model.CostStructure;
-import uk.gov.laa.ccms.caab.model.DevolvedPowers;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.ClientDetail;
+import uk.gov.laa.ccms.caab.model.CostEntryDetail;
+import uk.gov.laa.ccms.caab.model.CostLimitDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
-import uk.gov.laa.ccms.caab.model.LinkedCase;
-import uk.gov.laa.ccms.caab.model.Opponent;
-import uk.gov.laa.ccms.caab.model.PriorAuthority;
-import uk.gov.laa.ccms.caab.model.Proceeding;
-import uk.gov.laa.ccms.caab.model.ProceedingOutcome;
-import uk.gov.laa.ccms.caab.model.ScopeLimitation;
+import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
+import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 
 public class CaabModelUtils {
 
-  public static BaseApplication buildBaseApplication(Integer id) {
-    return new BaseApplication()
+  public static BaseApplicationDetail buildBaseApplication(Integer id) {
+    return new BaseApplicationDetail()
         .caseReferenceNumber(id + "")
         .categoryOfLaw(new StringDisplayValue().id(id + "cat1").displayValue(id + "catoflaw1"))
-        .client(new Client().firstName(id + "firstname"))
+        .client(new ClientDetail().firstName(id + "firstname"))
         .providerDetails(new ApplicationProviderDetails()
-            .provider(new IntDisplayValue().id(id).displayValue("Client " + id))
+            .provider(new IntDisplayValue().id(id).displayValue("ClientDetail " + id))
             .feeEarner(new StringDisplayValue().id("fee" + id).displayValue("Fee " + id))
             .supervisor(new StringDisplayValue().id("sup" + id).displayValue("super " + id))
             .office(new IntDisplayValue().id(id).displayValue("Office " + id))
@@ -49,9 +49,9 @@ public class CaabModelUtils {
         .caseReferenceNumber(id + "")
         .categoryOfLaw(new StringDisplayValue().id(id + "cat1").displayValue(id + "catoflaw1"))
         .certificate(new StringDisplayValue().id(id + "cert").displayValue(id + " certificate"))
-        .client(new Client().firstName(id + "firstname"))
+        .client(new ClientDetail().firstName(id + "firstname"))
         .providerDetails(new ApplicationProviderDetails()
-            .provider(new IntDisplayValue().id(id).displayValue("Client " + id))
+            .provider(new IntDisplayValue().id(id).displayValue("ClientDetail " + id))
             .feeEarner(new StringDisplayValue().id("fee" + id).displayValue("Fee " + id))
             .supervisor(new StringDisplayValue().id("sup" + id).displayValue("super " + id))
             .office(new IntDisplayValue().id(id).displayValue("Office " + id))
@@ -63,7 +63,7 @@ public class CaabModelUtils {
         .applicationType(new ApplicationType()
             .id("type" + id)
             .displayValue("the type " + id)
-            .devolvedPowers(new DevolvedPowers()
+            .devolvedPowers(new DevolvedPowersDetail()
                 .used(flag)
                 .dateUsed(flag ? date : null)
                 .contractFlag("flag" + id)))
@@ -71,14 +71,14 @@ public class CaabModelUtils {
         .auditTrail(new AuditDetail().createdBy("person" + id))
         .availableFunctions(new ArrayList<>(Arrays.asList("a" + id, "b" + id, "c" + id)))
         .award(flag)
-        .caseOutcome(new CaseOutcome()
+        .caseOutcome(new CaseOutcomeDetail()
             .caseReferenceNumber(id + ""))
         .certificate(new StringDisplayValue().id("cert" + id).displayValue("certificate " + id))
-        .correspondenceAddress(new Address().addressLine1("addressline1, " + id))
-        .costLimit(new CostLimit().limitAtTimeOfMerits(BigDecimal.ONE).changed(Boolean.TRUE))
-        .costs(new CostStructure()
+        .correspondenceAddress(new AddressDetail().addressLine1("addressline1, " + id))
+        .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.ONE).changed(Boolean.TRUE))
+        .costs(new CostStructureDetail()
             .auditTrail(new AuditDetail().createdBy("user" + id))
-            .addCostEntriesItem(new CostEntry()
+            .addCostEntriesItem(new CostEntryDetail()
                 .amountBilled(BigDecimal.TEN)
                 .costCategory("costcat")
                 .ebsId("ebsId")
@@ -95,7 +95,7 @@ public class CaabModelUtils {
         .editProceedingsAndCostsAllowed(flag)
         .larScopeFlag(flag)
         .leadProceedingChanged(flag)
-        .linkedCases(new ArrayList<>(Collections.singletonList(new LinkedCase())))
+        .linkedCases(new ArrayList<>(Collections.singletonList(new LinkedCaseDetail())))
         .meansAssessment(new AssessmentResult())
         .meansAssessmentAmended(flag)
         .meansAssessmentStatus("stat" + id)
@@ -106,7 +106,7 @@ public class CaabModelUtils {
         .opponentAppliedForFunding(flag)
         .opponentMode("mode" + id)
         .addOpponentsItem(buildOpponent(date))
-        .addPriorAuthoritiesItem(new PriorAuthority())
+        .addPriorAuthoritiesItem(new PriorAuthorityDetail())
         .addProceedingsItem(buildProceeding(date, BigDecimal.ONE))
         .addProceedingsItem(buildProceeding(date, BigDecimal.TEN))
         .quickEditType("quicktype" + id)
@@ -115,8 +115,8 @@ public class CaabModelUtils {
         .submitted(flag);
   }
 
-  public static Proceeding buildProceeding(java.util.Date date, BigDecimal costLimitation) {
-    return new Proceeding()
+  public static ProceedingDetail buildProceeding(java.util.Date date, BigDecimal costLimitation) {
+    return new ProceedingDetail()
         .auditTrail(new AuditDetail())
         .availableFunctions(new ArrayList<>(Arrays.asList("a", "b", "c")))
         .clientInvolvement(new StringDisplayValue().id("clientInv").displayValue("client inv"))
@@ -145,8 +145,8 @@ public class CaabModelUtils {
         .typeOfOrder(new StringDisplayValue().id("too").displayValue("type of order"));
   }
 
-  public static ProceedingOutcome buildProceedingOutcome(java.util.Date date) {
-    return new ProceedingOutcome()
+  public static ProceedingOutcomeDetail buildProceedingOutcome(java.util.Date date) {
+    return new ProceedingOutcomeDetail()
         .adrInfo("adr")
         .alternativeResolution("alt")
         .courtCode("court")
@@ -165,8 +165,8 @@ public class CaabModelUtils {
         .widerBenefits("widerBens");
   }
 
-  public static ScopeLimitation buildScopeLimitation() {
-    return new ScopeLimitation()
+  public static ScopeLimitationDetail buildScopeLimitation() {
+    return new ScopeLimitationDetail()
         .ebsId("ebsid")
         .delegatedFuncApplyInd(new BooleanDisplayValue()
             .flag(Boolean.TRUE)
@@ -177,9 +177,9 @@ public class CaabModelUtils {
         .nonDefaultWordingReqd(Boolean.TRUE);
   }
 
-  public static Opponent buildOpponent(java.util.Date date) {
-    return new Opponent()
-        .address(new Address().addressLine1("add1"))
+  public static OpponentDetail buildOpponent(java.util.Date date) {
+    return new OpponentDetail()
+        .address(new AddressDetail().addressLine1("add1"))
         .amendment(Boolean.TRUE)
         .appMode(Boolean.FALSE)
         .assessedAssets(BigDecimal.TEN)

@@ -43,11 +43,11 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.model.CostLimit;
-import uk.gov.laa.ccms.caab.model.CostStructure;
-import uk.gov.laa.ccms.caab.model.Opponent;
-import uk.gov.laa.ccms.caab.model.Proceeding;
-import uk.gov.laa.ccms.caab.model.ScopeLimitation;
+import uk.gov.laa.ccms.caab.model.CostLimitDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -380,12 +380,12 @@ public class AssessmentServiceTest {
     final String scopeLimitation = "TEST";
 
     final ApplicationDetail application = new ApplicationDetail()
-        .addProceedingsItem(new Proceeding()
+        .addProceedingsItem(new ProceedingDetail()
             .id(123)
             .matterType(new StringDisplayValue().id(matterType))
             .proceedingType(new StringDisplayValue().id(proceedingType))
             .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-            .addScopeLimitationsItem(new ScopeLimitation().scopeLimitation(
+            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
                 new StringDisplayValue().id(scopeLimitation))));
 
     final AssessmentEntityTypeDetail proceedingsEntityTypeDetail =
@@ -406,14 +406,14 @@ public class AssessmentServiceTest {
     final String scopeLimitation = "TEST";
 
     final ApplicationDetail application = new ApplicationDetail()
-        .addProceedingsItem(new Proceeding()
+        .addProceedingsItem(new ProceedingDetail()
             .id(789)
             .matterType(new StringDisplayValue().id(matterType))
             .proceedingType(new StringDisplayValue().id(proceedingType))
             .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-            .addScopeLimitationsItem(new ScopeLimitation().scopeLimitation(
+            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
                 new StringDisplayValue().id(scopeLimitation)))
-            .addScopeLimitationsItem(new ScopeLimitation().scopeLimitation(
+            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
                 new StringDisplayValue().id(scopeLimitation))));
 
     final AssessmentEntityTypeDetail proceedingsEntityTypeDetail =
@@ -450,12 +450,12 @@ public class AssessmentServiceTest {
       final String clientInvolvement,
       final String scopeLimitation) {
     final ApplicationDetail application = new ApplicationDetail()
-        .addProceedingsItem(new Proceeding()
+        .addProceedingsItem(new ProceedingDetail()
             .id(proceedingId)
             .matterType(new StringDisplayValue().id(matterType))
             .proceedingType(new StringDisplayValue().id(proceedingType))
             .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-            .addScopeLimitationsItem(new ScopeLimitation().scopeLimitation(
+            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
                 new StringDisplayValue().id(scopeLimitation))));
 
     final AssessmentEntityTypeDetail proceedingsEntityTypeDetail =
@@ -530,15 +530,15 @@ public class AssessmentServiceTest {
 
     final ApplicationDetail application = new ApplicationDetail()
         .amendment(false)
-        .addProceedingsItem(new Proceeding()
+        .addProceedingsItem(new ProceedingDetail()
             .id(123)
             .matterType(new StringDisplayValue().id(matterType))
             .proceedingType(new StringDisplayValue().id(proceedingType))
             .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-            .addScopeLimitationsItem(new ScopeLimitation().scopeLimitation(
+            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
                 new StringDisplayValue().id(scopeLimitation))))
-        .costLimit(new CostLimit().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
-        .costs(new CostStructure().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+        .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
+        .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
 
     final AssessmentDetail assessment = buildAssessmentDetailMultipleProceedings();
 
@@ -557,15 +557,15 @@ public class AssessmentServiceTest {
     final ApplicationDetail application = new ApplicationDetail()
         .meritsReassessmentRequired(true)
         .amendment(false)
-        .addProceedingsItem(new Proceeding()
+        .addProceedingsItem(new ProceedingDetail()
             .id(123)
             .matterType(new StringDisplayValue().id(matterType))
             .proceedingType(new StringDisplayValue().id(proceedingType))
             .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-            .addScopeLimitationsItem(new ScopeLimitation().scopeLimitation(
+            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
                 new StringDisplayValue().id(scopeLimitation))))
-        .costLimit(new CostLimit().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
-        .costs(new CostStructure().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+        .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
+        .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
 
     final AssessmentDetail assessment = buildAssessmentDetail(auditDate);
 
@@ -588,19 +588,19 @@ public class AssessmentServiceTest {
 
     final ApplicationDetail application = new ApplicationDetail()
         .amendment(false)
-        .addProceedingsItem(new Proceeding()
+        .addProceedingsItem(new ProceedingDetail()
             .id(123)
             .matterType(new StringDisplayValue().id(matterType))
             .proceedingType(new StringDisplayValue().id(proceedingType))
             .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-            .addScopeLimitationsItem(new ScopeLimitation().scopeLimitation(
+            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
                 new StringDisplayValue().id(scopeLimitation))))
-        .addOpponentsItem(new Opponent()
+        .addOpponentsItem(new OpponentDetail()
             .id(234)
             .type("Individual")
             .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(currentDate)))
-        .costLimit(new CostLimit().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
-        .costs(new CostStructure().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+        .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
+        .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
 
     final AssessmentDetail assessment = buildAssessmentDetail(lastSaved);
 
@@ -619,19 +619,19 @@ public class AssessmentServiceTest {
 
     final ApplicationDetail application = new ApplicationDetail()
         .amendment(false)
-        .addProceedingsItem(new Proceeding()
+        .addProceedingsItem(new ProceedingDetail()
             .id(123)
             .matterType(new StringDisplayValue().id(matterType))
             .proceedingType(new StringDisplayValue().id(proceedingType))
             .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-            .addScopeLimitationsItem(new ScopeLimitation().scopeLimitation(
+            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
                 new StringDisplayValue().id(scopeLimitation))))
-        .addOpponentsItem(new Opponent()
+        .addOpponentsItem(new OpponentDetail()
             .id(234)
             .type("Individual")
             .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(auditDate)))
-        .costLimit(new CostLimit().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
-        .costs(new CostStructure().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+        .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
+        .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
 
     final AssessmentDetail assessment = buildAssessmentDetailMultipleOpponents(auditDate);
 
@@ -650,19 +650,19 @@ public class AssessmentServiceTest {
 
     final ApplicationDetail application = new ApplicationDetail()
         .amendment(false)
-        .addProceedingsItem(new Proceeding()
+        .addProceedingsItem(new ProceedingDetail()
             .id(123)
             .matterType(new StringDisplayValue().id(matterType))
             .proceedingType(new StringDisplayValue().id(proceedingType))
             .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-            .addScopeLimitationsItem(new ScopeLimitation().scopeLimitation(
+            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
                 new StringDisplayValue().id(scopeLimitation))))
-        .addOpponentsItem(new Opponent()
+        .addOpponentsItem(new OpponentDetail()
             .id(234)
             .type("Individual")
             .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(auditDate)))
-        .costLimit(new CostLimit().limitAtTimeOfMerits(BigDecimal.valueOf(999.00)))
-        .costs(new CostStructure().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+        .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(999.00)))
+        .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
 
     final AssessmentDetail assessment = buildAssessmentDetail(auditDate);
 

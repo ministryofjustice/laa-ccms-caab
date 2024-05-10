@@ -71,21 +71,22 @@ import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
-import uk.gov.laa.ccms.caab.model.Address;
+import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
-import uk.gov.laa.ccms.caab.model.BaseApplication;
-import uk.gov.laa.ccms.caab.model.CostStructure;
+import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
-import uk.gov.laa.ccms.caab.model.LinkedCase;
+import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
-import uk.gov.laa.ccms.caab.model.Opponent;
-import uk.gov.laa.ccms.caab.model.PriorAuthority;
-import uk.gov.laa.ccms.caab.model.Proceeding;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
+import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
+import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
@@ -100,12 +101,10 @@ import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
-import uk.gov.laa.ccms.data.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
-import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
@@ -119,8 +118,8 @@ import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CostLimitation;
+import uk.gov.laa.ccms.soa.gateway.model.PriorAuthority;
 import uk.gov.laa.ccms.soa.gateway.model.PriorAuthorityAttribute;
-import uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ScopeLimitation;
 
 /**
@@ -166,19 +165,19 @@ public class ApplicationService {
 
   /**
    * Performs a combined search of SOA cases and TDS applications based on provided search criteria.
-   * Each result is mapped to a BaseApplication to summarise the details.
+   * Each result is mapped to a BaseApplicationDetail to summarise the details.
    *
    * @param caseSearchCriteria The search criteria to use when fetching cases.
    * @param user               The currently logged-in user.
-   * @return A List of BaseApplication.
+   * @return A List of BaseApplicationDetail.
    */
-  public List<BaseApplication> getCases(
+  public List<BaseApplicationDetail> getCases(
       final CaseSearchCriteria caseSearchCriteria,
       final UserDetail user) throws TooManyResultsException {
 
     ReflectionUtils.nullifyStrings(caseSearchCriteria);
 
-    final List<BaseApplication> searchResults = new ArrayList<>();
+    final List<BaseApplicationDetail> searchResults = new ArrayList<>();
 
     // Only search for SOA Cases if the user hasn't selected status 'UNSUBMITTED'.
     if (!STATUS_UNSUBMITTED_ACTUAL_VALUE.equals(caseSearchCriteria.getStatus())) {
@@ -204,7 +203,7 @@ public class ApplicationService {
     }
 
     // Now retrieve applications from the Transient Data Store
-    final List<BaseApplication> tdsApplications = this.getTdsApplications(
+    final List<BaseApplicationDetail> tdsApplications = this.getTdsApplications(
         caseSearchCriteria,
         user,
         0,
@@ -231,7 +230,7 @@ public class ApplicationService {
     }
 
     // Sort the combined list by Case Reference
-    searchResults.sort(Comparator.comparing(BaseApplication::getCaseReferenceNumber));
+    searchResults.sort(Comparator.comparing(BaseApplicationDetail::getCaseReferenceNumber));
 
     return searchResults;
   }
@@ -259,7 +258,7 @@ public class ApplicationService {
    * @param user               - the currently logged in user
    * @param page               - the page number
    * @param size               - the page size
-   * @return ApplicationDetails containing a List of BaseApplication.
+   * @return ApplicationDetails containing a List of BaseApplicationDetail.
    */
   public ApplicationDetails getTdsApplications(
       final CaseSearchCriteria caseSearchCriteria,
@@ -450,7 +449,7 @@ public class ApplicationService {
       BigDecimal defaultCostLimitation = BigDecimal.ZERO;
       if (applicationToCopy.getProceedings() != null) {
         defaultCostLimitation = applicationToCopy.getProceedings().stream()
-            .map(Proceeding::getCostLimitation)
+            .map(ProceedingDetail::getCostLimitation)
             .max(Comparator.comparingDouble(BigDecimal::doubleValue))
             .orElse(BigDecimal.ZERO);
       }
@@ -469,7 +468,7 @@ public class ApplicationService {
               contractDetails.getContracts(),
               applicationToCopy.getCategoryOfLaw().getId())
           .costStructure(
-              new CostStructure()
+              new CostStructureDetail()
                   .requestedCostLimitation(requestedCostLimitation)
                   .defaultCostLimitation(defaultCostLimitation))
           .status()
@@ -635,7 +634,7 @@ public class ApplicationService {
     final ResultsDisplay<LinkedCaseResultRowDisplay> results = new ResultsDisplay<>();
 
     return caabApiClient.getLinkedCases(applicationId)
-        .flatMapMany(Flux::fromIterable) // Convert to Flux<LinkedCase>
+        .flatMapMany(Flux::fromIterable) // Convert to Flux<LinkedCaseDetail>
         .map(resultDisplayMapper::toLinkedCaseResultRowDisplay) // Map to ResultRowDisplay
         .collectList() // Collect into a List
         .map(list -> {
@@ -665,7 +664,8 @@ public class ApplicationService {
       final String levelOfService,
       final String applicationType) {
 
-    final ScopeLimitationDetail criteria = new ScopeLimitationDetail()
+    final uk.gov.laa.ccms.data.model.ScopeLimitationDetail criteria =
+        new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
         .categoryOfLaw(categoryOfLaw)
         .matterType(matterType)
         .proceedingCode(proceedingCode)
@@ -702,13 +702,14 @@ public class ApplicationService {
       final String proceedingCode,
       final String levelOfService,
       final String applicationType,
-      final List<uk.gov.laa.ccms.caab.model.ScopeLimitation> scopeLimitations) {
+      final List<uk.gov.laa.ccms.caab.model.ScopeLimitationDetail> scopeLimitations) {
 
     BigDecimal maxValue = new BigDecimal(0);
     final List<Float> costLimitations = new ArrayList<>();
 
-    for (final uk.gov.laa.ccms.caab.model.ScopeLimitation scopeLimitation : scopeLimitations) {
-      final ScopeLimitationDetail criteria = new ScopeLimitationDetail()
+    for (final ScopeLimitationDetail scopeLimitation : scopeLimitations) {
+      final uk.gov.laa.ccms.data.model.ScopeLimitationDetail criteria =
+          new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
           .categoryOfLaw(categoryOfLaw)
           .matterType(matterType)
           .proceedingCode(proceedingCode)
@@ -725,7 +726,7 @@ public class ApplicationService {
           .getContent()
           .stream()
           .findFirst()
-          .map(ScopeLimitationDetail::getCostLimitation)
+          .map(uk.gov.laa.ccms.data.model.ScopeLimitationDetail::getCostLimitation)
           .ifPresent(costLimitation -> costLimitations.add(costLimitation.floatValue()));
 
     }
@@ -757,14 +758,14 @@ public class ApplicationService {
       final String matterType,
       final String proceedingCode,
       final String levelOfService,
-      final List<uk.gov.laa.ccms.caab.model.ScopeLimitation> scopeLimitations,
+      final List<ScopeLimitationDetail> scopeLimitations,
       final boolean isAmendment) {
 
     // String existingStage = null;
     //todo - see GetDefaultScopeLimitation in pui
     //    if (isAmendment) {
     //
-    //      // for (Proceeding caseProceeding : myCase.getProceedings()) {
+    //      // for (ProceedingDetail caseProceeding : myCase.getProceedings()) {
     //      //   if (caseProceeding.getEbsId().equalsIgnoreCase(proceeding.getEbsId())) {
     //      //     existingStage = caseProceeding.getStage();
     //      //   }
@@ -774,8 +775,9 @@ public class ApplicationService {
 
     final List<List<Integer>> allStages = new ArrayList<>();
     final List<Integer> minStageList = new ArrayList<>();
-    for (final uk.gov.laa.ccms.caab.model.ScopeLimitation scopeLimitation : scopeLimitations) {
-      final ScopeLimitationDetail criteria = new ScopeLimitationDetail()
+    for (final ScopeLimitationDetail scopeLimitation : scopeLimitations) {
+      final uk.gov.laa.ccms.data.model.ScopeLimitationDetail criteria =
+          new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
           .categoryOfLaw(categoryOfLaw)
           .matterType(matterType)
           .proceedingCode(proceedingCode)
@@ -788,7 +790,7 @@ public class ApplicationService {
                   "Failed to retrieve scope limitation details"))
               .getContent()
               .stream()
-              .map(ScopeLimitationDetail::getStage)
+              .map(uk.gov.laa.ccms.data.model.ScopeLimitationDetail::getStage)
               .toList();
 
       allStages.add(stageList);
@@ -843,7 +845,7 @@ public class ApplicationService {
       final Integer newLeadProceedingId,
       final UserDetail user) {
 
-    final List<Proceeding> proceedings = caabApiClient.getProceedings(applicationId).block();
+    final List<ProceedingDetail> proceedings = caabApiClient.getProceedings(applicationId).block();
 
     if (proceedings == null) {
       throw new CaabApplicationException(
@@ -852,7 +854,7 @@ public class ApplicationService {
 
     // Find and update the current lead proceeding if it exists
     proceedings.stream()
-        .filter(Proceeding::getLeadProceedingInd)
+        .filter(ProceedingDetail::getLeadProceedingInd)
         .findFirst()
         .ifPresent(proceeding -> {
           proceeding.setLeadProceedingInd(false);
@@ -863,7 +865,7 @@ public class ApplicationService {
         });
 
     // Set the new lead proceeding
-    final Proceeding newLeadProceeding = proceedings.stream()
+    final ProceedingDetail newLeadProceeding = proceedings.stream()
         .filter(proceeding -> proceeding.getId().equals(newLeadProceedingId))
         .findFirst()
         .orElseThrow(() ->
@@ -901,7 +903,7 @@ public class ApplicationService {
 
   /**
    * Updates a specific linked case with new data.
-   * This method maps the provided {@code data} to a {@code LinkedCase} object and updates
+   * This method maps the provided {@code data} to a {@code LinkedCaseDetail} object and updates
    * the linked case identified by {@code linkedCaseId} in relation to the primary case
    * identified by {@code id}.
    *
@@ -915,7 +917,7 @@ public class ApplicationService {
       final LinkedCaseResultRowDisplay data,
       final UserDetail user) {
 
-    final LinkedCase linkedCase = resultDisplayMapper.toLinkedCase(data);
+    final LinkedCaseDetail linkedCase = resultDisplayMapper.toLinkedCase(data);
     caabApiClient.updateLinkedCase(
         linkedCaseId,
         linkedCase, 
@@ -934,7 +936,7 @@ public class ApplicationService {
       final LinkedCaseResultRowDisplay data,
       final UserDetail user) {
 
-    final LinkedCase linkedCase = resultDisplayMapper.toLinkedCase(data);
+    final LinkedCaseDetail linkedCase = resultDisplayMapper.toLinkedCase(data);
     caabApiClient.addLinkedCase(
         applicationId,
         linkedCase,
@@ -953,7 +955,7 @@ public class ApplicationService {
       final AddressFormData addressFormData,
       final UserDetail user) {
 
-    final Address correspondenceAddress = addressFormDataMapper.toAddress(addressFormData);
+    final AddressDetail correspondenceAddress = addressFormDataMapper.toAddress(addressFormData);
 
     caabApiClient.putApplication(
         id,
@@ -1052,7 +1054,7 @@ public class ApplicationService {
    */
   public List<AbstractOpponentFormData> getOpponents(final String applicationId) {
     // Get the list of opponents for the application.
-    final List<Opponent> opponentList = caabApiClient.getOpponents(applicationId)
+    final List<OpponentDetail> opponentList = caabApiClient.getOpponents(applicationId)
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException("Failed to retrieve opponents"));
 
@@ -1061,7 +1063,7 @@ public class ApplicationService {
   }
 
   /**
-   * Add a new Opponent to an application based on the supplied form data.
+   * Add a new OpponentDetail to an application based on the supplied form data.
    *
    * @param applicationId - the id of the application.
    * @param opponentFormData - the opponent form data.
@@ -1072,7 +1074,7 @@ public class ApplicationService {
       final AbstractOpponentFormData opponentFormData,
       final UserDetail userDetail) {
 
-    Opponent opponent = opponentMapper.toOpponent(opponentFormData);
+    OpponentDetail opponent = opponentMapper.toOpponent(opponentFormData);
 
     // Set the remaining flags on the opponent based on the application state.
     ApplicationDetail application =
@@ -1089,13 +1091,13 @@ public class ApplicationService {
   }
 
   /**
-   * Build an AbstractOpponentFormData for the provided Opponent.
+   * Build an AbstractOpponentFormData for the provided OpponentDetail.
    * Codes will be translated to their display value depending on the type of opponent.
    *
    * @param opponent - the opponent
-   * @return AbstractOpponentFormData for the Opponent
+   * @return AbstractOpponentFormData for the OpponentDetail
    */
-  protected AbstractOpponentFormData buildOpponentFormData(final Opponent opponent) {
+  protected AbstractOpponentFormData buildOpponentFormData(final OpponentDetail opponent) {
 
     final boolean isOrganisation = OPPONENT_TYPE_ORGANISATION.equals(opponent.getType());
     final boolean isEditable = isOrganisation
@@ -1152,12 +1154,12 @@ public class ApplicationService {
   }
 
   /**
-   * Build the full name for an Individual Opponent.
+   * Build the full name for an Individual OpponentDetail.
    *
    * @param opponent - the opponent
    * @return The opponent's full name
    */
-  protected String toIndividualOpponentPartyName(final Opponent opponent) {
+  protected String toIndividualOpponentPartyName(final OpponentDetail opponent) {
     StringBuilder builder = new StringBuilder();
 
     if (StringUtils.hasText(opponent.getTitle())) {
@@ -1358,7 +1360,7 @@ public class ApplicationService {
   }
 
   protected ProceedingMappingContext buildProceedingMappingContext(
-      final ProceedingDetail soaProceeding,
+      final uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail soaProceeding,
       final CaseDetail soaCase) {
 
     Tuple5<uk.gov.laa.ccms.data.model.ProceedingDetail,
@@ -1377,7 +1379,7 @@ public class ApplicationService {
                 COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES, soaProceeding.getClientInvolvementType()))
             .block())
         .orElseThrow(() -> new CaabApplicationException(
-            "Failed to retrieve lookup data for Proceeding"));
+            "Failed to retrieve lookup data for ProceedingDetail"));
 
     // Calculate the overall cost limitation for this proceeding
     BigDecimal proceedingCostLimitation =
@@ -1439,13 +1441,13 @@ public class ApplicationService {
 
   protected void addProceedingOutcomeContext(
       final ProceedingMappingContext.ProceedingMappingContextBuilder contextBuilder,
-      final ProceedingDetail soaProceeding) {
+      final uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail soaProceeding) {
 
     if (soaProceeding.getOutcome() == null) {
       return; // Nothing to add
     }
 
-    // Lookup extra data relating to the Proceeding Outcome
+    // Lookup extra data relating to the ProceedingDetail Outcome
     final Tuple3<CommonLookupDetail,
         OutcomeResultLookupDetail,
         StageEndLookupDetail> combinedOutcomeResults = Optional.ofNullable(Mono.zip(
@@ -1485,15 +1487,15 @@ public class ApplicationService {
   }
 
   /**
-   * Build a mapping context to hold a SOA PriorAuthority and associated
+   * Build a mapping context to hold a SOA PriorAuthorityDetail and associated
    * lookup data.
    *
-   * @param soaPriorAuthority - the PriorAuthority to map.
+   * @param soaPriorAuthority - the PriorAuthorityDetail to map.
    * @return a PriorAuthorityMappingContext containing all data to support mapping
-   *     to a CAAB PriorAuthority.
+   *     to a CAAB PriorAuthorityDetail.
    */
   protected PriorAuthorityMappingContext buildPriorAuthorityMappingContext(
-      final uk.gov.laa.ccms.soa.gateway.model.PriorAuthority soaPriorAuthority) {
+      final PriorAuthority soaPriorAuthority) {
 
     // Find the correct PriorAuthorityType lookup
     PriorAuthorityTypeDetail priorAuthorityType =
@@ -1508,15 +1510,17 @@ public class ApplicationService {
                     soaPriorAuthority.getPriorAuthorityType())));
 
     // Build a Map of PriorAuthorityDetail keyed on code
-    Map<String, PriorAuthorityDetail> priorAuthDetailMap =
+    Map<String, uk.gov.laa.ccms.data.model.PriorAuthorityDetail> priorAuthDetailMap =
         priorAuthorityType.getPriorAuthorities().stream().collect(
-            Collectors.toMap(PriorAuthorityDetail::getCode, Function.identity()));
+            Collectors.toMap(uk.gov.laa.ccms.data.model.PriorAuthorityDetail::getCode,
+                Function.identity()));
 
     // Build a List of priorAuthorityDetails paired with the common lookup for display info.
-    List<Pair<PriorAuthorityDetail, CommonLookupValueDetail>> priorAuthorityDetails =
+    List<Pair<uk.gov.laa.ccms.data.model.PriorAuthorityDetail,
+        CommonLookupValueDetail>> priorAuthorityDetails =
         soaPriorAuthority.getDetails().stream()
             .map(priorAuthorityAttribute -> {
-              PriorAuthorityDetail priorAuthorityDetail =
+              uk.gov.laa.ccms.data.model.PriorAuthorityDetail priorAuthorityDetail =
                   priorAuthDetailMap.get(priorAuthorityAttribute.getName());
               return Pair.of(
                   priorAuthorityDetail,
@@ -1532,7 +1536,7 @@ public class ApplicationService {
   }
 
   private CommonLookupValueDetail getPriorAuthLookup(
-      final PriorAuthorityDetail priorAuthorityDetail,
+      final uk.gov.laa.ccms.data.model.PriorAuthorityDetail priorAuthorityDetail,
       final PriorAuthorityAttribute priorAuthorityAttribute) {
     String description;
 
@@ -1604,7 +1608,7 @@ public class ApplicationService {
   }
 
   protected BigDecimal calculateProceedingCostLimitation(
-      final ProceedingDetail proceeding,
+      final uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail proceeding,
       final CaseDetail soaCase) {
     BigDecimal maxCostLimitation = BigDecimal.ZERO;
     if (soaCase.getApplicationDetails().getCategoryOfLaw() != null
@@ -1620,7 +1624,8 @@ public class ApplicationService {
 
       // Build the scope limitation search criteria.
       // Only include the emergency flag in the criteria if the app type is classified as emergency.
-      ScopeLimitationDetail searchCriteria = new ScopeLimitationDetail()
+      uk.gov.laa.ccms.data.model.ScopeLimitationDetail searchCriteria =
+          new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
           .categoryOfLaw(soaCase.getApplicationDetails().getCategoryOfLaw().getCategoryOfLawCode())
           .matterType(proceeding.getMatterType())
           .proceedingCode(proceeding.getProceedingType())
@@ -1693,7 +1698,7 @@ public class ApplicationService {
 
     final boolean costManuallyChanged = currentDefault != null && currentRequested != null
         && currentDefault.compareTo(currentRequested) != 0;
-    for (final Proceeding proceeding : application.getProceedings()) {
+    for (final ProceedingDetail proceeding : application.getProceedings()) {
       if (proceeding.getCostLimitation() != null
           && defaultCostLimitation.compareTo(proceeding.getCostLimitation()) < 0) {
         defaultCostLimitation = proceeding.getCostLimitation();
@@ -1722,7 +1727,8 @@ public class ApplicationService {
    */
   public PriorAuthorityTypeDetail getPriorAuthorityTypeDetail(final String priorAuthorityType) {
     return lookupService.getPriorAuthorityTypes(priorAuthorityType, null)
-        .block()
+        .blockOptional()
+        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve PriorAuthority"))
         .getContent()
         .stream()
         .findFirst()
@@ -1738,7 +1744,7 @@ public class ApplicationService {
    */
   public void addProceeding(
       final String applicationId,
-      final Proceeding proceeding,
+      final ProceedingDetail proceeding,
       final UserDetail user) {
     caabApiClient.addProceeding(applicationId, proceeding, user.getLoginId()).block();
 
@@ -1756,7 +1762,7 @@ public class ApplicationService {
    * @param user the user details initiating the update
    */
   public void updateProceeding(
-      final Proceeding proceeding,
+      final ProceedingDetail proceeding,
       final UserDetail user) {
     caabApiClient.updateProceeding(proceeding.getId(), proceeding, user.getLoginId()).block();
   }
@@ -1789,7 +1795,7 @@ public class ApplicationService {
    * @param proceedingId the ID of the proceeding
    * @return List of scope limitations associated with the proceeding
    */
-  public List<uk.gov.laa.ccms.caab.model.ScopeLimitation> getScopeLimitations(
+  public List<ScopeLimitationDetail> getScopeLimitations(
       final Integer proceedingId) {
     return caabApiClient.getScopeLimitations(proceedingId).block();
   }
@@ -1803,7 +1809,7 @@ public class ApplicationService {
    */
   public void updateCostStructure(
       final String applicationId,
-      final CostStructure costStructure,
+      final CostStructureDetail costStructure,
       final UserDetail user) {
     caabApiClient.updateCostStructure(
         applicationId,
@@ -1820,7 +1826,7 @@ public class ApplicationService {
    */
   public void addPriorAuthority(
       final String applicationId,
-      final PriorAuthority priorAuthority,
+      final PriorAuthorityDetail priorAuthority,
       final UserDetail user) {
     caabApiClient.addPriorAuthority(applicationId, priorAuthority, user.getLoginId()).block();
   }
@@ -1832,7 +1838,7 @@ public class ApplicationService {
    * @param user the user details initiating the update
    */
   public void updatePriorAuthority(
-      final PriorAuthority priorAuthority,
+      final PriorAuthorityDetail priorAuthority,
       final UserDetail user) {
     caabApiClient.updatePriorAuthority(priorAuthority.getId(), priorAuthority,
         user.getLoginId()).block();

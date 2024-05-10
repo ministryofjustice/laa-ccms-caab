@@ -59,7 +59,7 @@ import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
-import uk.gov.laa.ccms.caab.model.BaseApplication;
+import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
@@ -517,7 +517,7 @@ class EditGeneralDetailsSectionControllerTest {
   public void testLinkedCasesSearchResults() throws Exception {
     final int page = 0;
     final int size = 10;
-    final List<BaseApplication> caseSearchResults = Arrays.asList(new BaseApplication(), new BaseApplication());
+    final List<BaseApplicationDetail> caseSearchResults = Arrays.asList(new BaseApplicationDetail(), new BaseApplicationDetail());
     final ApplicationDetails linkedCaseSearchResults = new ApplicationDetails();
 
     when(applicationMapper.toApplicationDetails(any())).thenReturn(linkedCaseSearchResults);
@@ -538,8 +538,8 @@ class EditGeneralDetailsSectionControllerTest {
   public void testAddLinkedCaseGet_Success() throws Exception {
     final String caseReferenceId = "123456789";
     final ApplicationDetails linkedCaseSearchResults = new ApplicationDetails();
-    final List<BaseApplication> applications = new ArrayList<>();
-    final BaseApplication baseApplication = new BaseApplication();
+    final List<BaseApplicationDetail> applications = new ArrayList<>();
+    final BaseApplicationDetail baseApplication = new BaseApplicationDetail();
     baseApplication.setCaseReferenceNumber(caseReferenceId);
     applications.add(baseApplication);
     linkedCaseSearchResults.setContent(applications);

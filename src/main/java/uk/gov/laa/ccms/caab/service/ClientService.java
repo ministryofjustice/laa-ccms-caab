@@ -9,7 +9,7 @@ import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
-import uk.gov.laa.ccms.caab.model.BaseClient;
+import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -141,7 +141,7 @@ public class ClientService {
   public Mono<Void> updateClientNames(
       final String clientReferenceNumber,
       final UserDetail user,
-      final BaseClient baseClient) {
+      final BaseClientDetail baseClient) {
 
     return caabApiClient.updateClient(
         clientReferenceNumber,
