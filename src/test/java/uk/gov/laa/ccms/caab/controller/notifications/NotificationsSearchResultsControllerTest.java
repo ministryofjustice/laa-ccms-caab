@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -18,6 +20,7 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,9 +74,6 @@ class NotificationsSearchResultsControllerTest {
 
   @Test
   void testGetSearchResults_noData() throws Exception {
-
-
-
     Notifications notificationsMock = new Notifications()
         .content(new ArrayList<>());
 
@@ -90,7 +90,6 @@ class NotificationsSearchResultsControllerTest {
 
   @Test
   void testSearchResults_WithoutAssignedUser_AndNoContent_ThrowsException() {
-    Notifications notificationsMock = new Notifications();
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     criteria.setAssignedToUserId("mildew@rot.com");
 
@@ -107,6 +106,55 @@ class NotificationsSearchResultsControllerTest {
     assertTrue(exception.getCause() instanceof CaabApplicationException);
     assertEquals("Error retrieving notifications", exception.getCause().getMessage());
 
+  }
+
+  @Test
+  void testGetSearchResults_SortIsApplied() throws Exception {
+    Notifications notificationsMock = getNotificationsMock();
+
+    when(notificationService.getNotifications(any(), any(), any()))
+        .thenReturn(Mono.just(notificationsMock));
+
+    NotificationSearchCriteria searchCriteria = buildNotificationSearchCritieria();
+    searchCriteria.setSort("assignedDate,asc");
+
+    ArgumentCaptor<NotificationSearchCriteria> criteriaArg =
+        ArgumentCaptor.forClass(NotificationSearchCriteria.class);
+
+    this.mockMvc.perform(get("/notifications/search-results")
+            .sessionAttr("user", userDetails)
+            .queryParam("pageSort", "assignedDate,asc")
+            .sessionAttr("notificationSearchCriteria", searchCriteria))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("notifications/actions-and-notifications"));
+
+    verify(notificationService).getNotifications(criteriaArg.capture(), any(), any());
+
+    assertEquals("assignedDate,asc", criteriaArg.getValue().getSort());
+  }
+
+  @Test
+  void testGetSearchResults_WhenSortCriteriaChanged_ResetPage() throws Exception {
+    Notifications notificationsMock = getNotificationsMock();
+
+    when(notificationService.getNotifications(any(), any(), any()))
+        .thenReturn(Mono.just(notificationsMock));
+
+    NotificationSearchCriteria searchCriteria = buildNotificationSearchCritieria();
+    searchCriteria.setSort("assignedDate,asc");
+
+    this.mockMvc.perform(get("/notifications/search-results")
+            .sessionAttr("user", userDetails)
+            .queryParam("page", "2")
+            .queryParam("size", "10")
+            .queryParam("pageSort", "assignedDate,desc")
+            .sessionAttr("notificationSearchCriteria", searchCriteria))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("notifications/actions-and-notifications"));
+
+    verify(notificationService).getNotifications(any(), eq(0), eq(10));
   }
 
   private static Notifications getNotificationsMock() {

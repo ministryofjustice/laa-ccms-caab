@@ -94,3 +94,6 @@ laa-saml-mock/
 /kubectl_deploy/deploy.yaml
 /.java-version
 secrets.gradle
+
+# Generated HTML test reports
+htmlReport/
