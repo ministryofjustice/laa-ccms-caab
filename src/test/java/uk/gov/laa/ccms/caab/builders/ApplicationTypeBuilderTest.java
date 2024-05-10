@@ -5,14 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 
 public class ApplicationTypeBuilderTest {
 
-  @InjectMocks
-  private ApplicationTypeBuilder builder;
+  private final ApplicationTypeBuilder builder = new ApplicationTypeBuilder();
 
   @Test
   void testApplicationTypeForSubstantiveWithoutDelegatedFunctions() {
