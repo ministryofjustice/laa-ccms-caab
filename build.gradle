@@ -12,7 +12,12 @@ ext {
 }
 
 group = 'uk.gov.laa'
-sourceCompatibility = '17'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(JAVA_VERSION)
+	}
+}
 
 release {
 	tagTemplate = '$name-$version'
