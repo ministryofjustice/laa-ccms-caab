@@ -32,11 +32,13 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
-import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -637,5 +639,132 @@ public class CaabApiClientTest {
 
     StepVerifier.create(result).verifyComplete();
   }
+
+  @Test
+  void createCaseOutcome_success() {
+    final CaseOutcomeDetail caseOutcomeDetail = new CaseOutcomeDetail(); // Populate this as needed
+    final String loginId = "user789";
+    final String expectedUri = "/case-outcomes";
+    final String locationId = "123";
+
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(CaseOutcomeDetail.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.exchangeToMono(any(Function.class))).thenReturn(Mono.just(locationId));
+
+    final Mono<String> result = caabApiClient.createCaseOutcome(loginId, caseOutcomeDetail);
+
+    StepVerifier.create(result)
+        .expectNext(locationId)
+        .verifyComplete();
+
+    verify(requestHeadersMock, times(1)).exchangeToMono(any(Function.class));
+  }
+
+  @Test
+  void deleteCaseOutcome_success() {
+    final Integer caseOutcomeId = 123;
+    final String loginId = "user123";
+    final String expectedUri = "/case-outcomes/{case-outcome-id}";
+
+    when(caabApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, caseOutcomeId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.deleteCaseOutcome(caseOutcomeId, loginId);
+
+    StepVerifier.create(result).verifyComplete();
+  }
+
+  @Test
+  void deleteCaseOutcomes_success() {
+    final String caseReferenceNumber = "123";
+    final String loginId = "user123";
+    final Integer providerId = 456;
+
+    final String expectedUri = String.format(
+        "/case-outcomes?case-reference-number=%s&provider-id=%s",
+        caseReferenceNumber,
+        providerId);
+
+    final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(caabApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> resultMono
+        = caabApiClient.deleteCaseOutcomes(caseReferenceNumber, providerId, loginId);
+
+    StepVerifier.create(resultMono).verifyComplete();
+
+    final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    // Assert the URI
+    assertEquals(expectedUri, actualUri.toString());
+
+  }
+
+  @Test
+  void getCaseOutcomes_success() {
+    final String caseReferenceNumber = "123";
+    final Integer providerId = 456;
+
+    final String expectedUri = String.format(
+        "/case-outcomes?case-reference-number=%s&provider-id=%s",
+        caseReferenceNumber,
+        providerId);
+
+    final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CaseOutcomeDetails.class))
+        .thenReturn(Mono.just(new CaseOutcomeDetails()));
+
+    final Mono<CaseOutcomeDetails> resultMono
+        = caabApiClient.getCaseOutcomes(caseReferenceNumber, providerId);
+
+    StepVerifier.create(resultMono)
+        .expectNext(Objects.requireNonNull(resultMono.block()))
+        .verifyComplete();
+
+    final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    // Assert the URI
+    assertEquals(expectedUri, actualUri.toString());
+
+  }
+
+  @Test
+  void getCaseOutcome_success() {
+
+    final String id = "123";
+    final String expectedUri = "/case-outcomes/{case-outcome-id}";
+
+    final CaseOutcomeDetail caseOutcomeDetail = new CaseOutcomeDetail();
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, id)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CaseOutcomeDetail.class)).thenReturn(Mono.just(caseOutcomeDetail));
+
+    final Mono<CaseOutcomeDetail> result
+        = caabApiClient.getCaseOutcome(id);
+
+    StepVerifier.create(result)
+        .expectNext(caseOutcomeDetail)
+        .verifyComplete();
+  }
+
 
 }
