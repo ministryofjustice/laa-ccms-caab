@@ -83,7 +83,7 @@ dependencies {
 
 	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.22'
 
-	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.6'
+	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.7'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
