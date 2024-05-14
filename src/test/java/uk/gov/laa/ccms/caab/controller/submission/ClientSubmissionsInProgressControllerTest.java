@@ -23,7 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
-import uk.gov.laa.ccms.caab.model.BaseClient;
+import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
@@ -138,7 +138,7 @@ public class ClientSubmissionsInProgressControllerTest {
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
 
-    final BaseClient baseClient = new BaseClient().firstName("testFirstName").surname("testSurname");
+    final BaseClientDetail baseClient = new BaseClientDetail().firstName("testFirstName").surname("testSurname");
 
     final TransactionStatus clientStatus = new TransactionStatus();
     clientStatus.setReferenceNumber("123456");
@@ -161,7 +161,7 @@ public class ClientSubmissionsInProgressControllerTest {
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
 
-    final BaseClient baseClient = new BaseClient().firstName("testFirstName").surname("testSurname");
+    final BaseClientDetail baseClient = new BaseClientDetail().firstName("testFirstName").surname("testSurname");
 
     final TransactionStatus clientStatus = new TransactionStatus();
 

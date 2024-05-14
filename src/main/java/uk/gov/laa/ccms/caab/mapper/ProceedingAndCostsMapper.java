@@ -15,18 +15,16 @@ import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataDetails;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataDynamicOption;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
-import uk.gov.laa.ccms.caab.model.CostStructure;
-import uk.gov.laa.ccms.caab.model.PriorAuthority;
-import uk.gov.laa.ccms.caab.model.Proceeding;
-import uk.gov.laa.ccms.caab.model.ReferenceDataItem;
-import uk.gov.laa.ccms.caab.model.ScopeLimitation;
-import uk.gov.laa.ccms.data.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ReferenceDataItemDetail;
+import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
-import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 
 /**
  * This interface provides methods for mapping between {@link ProceedingFlowFormData} and
- * {@link Proceeding} objects. It uses MapStruct for the mapping, with the Spring framework
+ * {@link ProceedingDetail} objects. It uses MapStruct for the mapping, with the Spring framework
  * providing the implementation at runtime.
  */
 @Mapper(componentModel = "spring")
@@ -77,7 +75,7 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "deleteScopeLimitationFlag", ignore = true)
   @Mapping(target = "availableFunctions", ignore = true)
   //used for mapping a new proceeding
-  Proceeding toProceeding(
+  ProceedingDetail toProceeding(
       ProceedingFlowFormData proceedingFlowFormData,
       BigDecimal costLimitation,
       String stage);
@@ -126,7 +124,7 @@ public interface ProceedingAndCostsMapper {
   //used for mapping an existing proceeding
   //notice that some fields are ignored
   void toProceeding(
-      @MappingTarget Proceeding proceeding,
+      @MappingTarget ProceedingDetail proceeding,
       ProceedingFlowFormData proceedingFlowFormData,
       BigDecimal costLimitation,
       String stage);
@@ -160,10 +158,11 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "editingScopeLimitations", constant = "false")
   @Mapping(target = "existingProceedingId", source = "proceeding.id")
   @Mapping(target = "leadProceeding", source = "proceeding.leadProceedingInd")
-  ProceedingFlowFormData toProceedingFlow(Proceeding proceeding, String typeOfOrderDisplayValue);
+  ProceedingFlowFormData toProceedingFlow(
+      ProceedingDetail proceeding, String typeOfOrderDisplayValue);
 
-  List<ScopeLimitation> toScopeLimitationList(
-      List<ScopeLimitationDetail> scopeLimitationDetailList);
+  List<ScopeLimitationDetail> toScopeLimitationList(
+      List<uk.gov.laa.ccms.data.model.ScopeLimitationDetail> scopeLimitationDetailList);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "scopeLimitation.id", source = "scopeLimitations")
@@ -175,13 +174,14 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "stage", source = "stage")
   @Mapping(target = "auditTrail", ignore = true)
   @Mapping(target = "ebsId", ignore = true)
-  ScopeLimitation toScopeLimitation(ScopeLimitationDetail scopeLimitationDetail);
+  ScopeLimitationDetail toScopeLimitation(
+      uk.gov.laa.ccms.data.model.ScopeLimitationDetail scopeLimitation);
 
   @Mapping(target = "action", constant = "edit")
   @Mapping(target = "scopeLimitationId", source = "id")
   @Mapping(target = "scopeLimitationDetails.scopeLimitation", source = "scopeLimitation.id")
   @Mapping(target = "scopeLimitationIndex", ignore = true)
-  ScopeLimitationFlowFormData toScopeLimitationFlow(ScopeLimitation scopeLimitation);
+  ScopeLimitationFlowFormData toScopeLimitationFlow(ScopeLimitationDetail scopeLimitation);
 
   @Mapping(target = "requestedCostLimitation", source = "costLimitation")
   CostsFormData toCostsFormData(BigDecimal costLimitation);
@@ -192,7 +192,7 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "currentProviderBilledAmount", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
   void toCostStructure(
-      @MappingTarget CostStructure costStructure,
+      @MappingTarget CostStructureDetail costStructure,
       CostsFormData costsFormData);
 
 
@@ -213,17 +213,17 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "priorAuthorityFormDataDetails.dynamicOptions",
         source = "priorAuthority.items", qualifiedByName = "toDynamicOptions")
   PriorAuthorityFlowFormData toPriorAuthorityFlowFormData(
-      final PriorAuthority priorAuthority);
+      final PriorAuthorityDetail priorAuthority);
 
   /**
-   * Converts ReferenceDataItem list to a map with dynamic options.
+   * Converts ReferenceDataItemDetail list to a map with dynamic options.
    *
    * @param items the list to convert; returns null if this is null.
    * @return a map of dynamic options or null if items is null.
    */
   @Named("toDynamicOptions")
   default Map<String, PriorAuthorityFormDataDynamicOption> toDynamicOptions(
-      final List<ReferenceDataItem> items) {
+      final List<ReferenceDataItemDetail> items) {
 
     if (items != null) {
       return items.stream().collect(
@@ -287,7 +287,7 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "fieldValue", ignore = true)
   @Mapping(target = "fieldValueDisplayValue", ignore = true)
   PriorAuthorityFormDataDynamicOption toPriorAuthorityFormDataDynamicOption(
-      PriorAuthorityDetail formOption);
+      uk.gov.laa.ccms.data.model.PriorAuthorityDetail formOption);
 
   /**
    * Populates dynamic options in PriorAuthorityFormDataDetails.
@@ -300,7 +300,8 @@ public interface ProceedingAndCostsMapper {
       @MappingTarget final PriorAuthorityFormDataDetails priorAuthorityDetails,
       final PriorAuthorityTypeDetail priorAuthorityTypeDetail) {
 
-    for (final PriorAuthorityDetail formOption : priorAuthorityTypeDetail.getPriorAuthorities()) {
+    for (final uk.gov.laa.ccms.data.model.PriorAuthorityDetail formOption :
+        priorAuthorityTypeDetail.getPriorAuthorities()) {
       final PriorAuthorityFormDataDynamicOption dynamicOption =
           toPriorAuthorityFormDataDynamicOption(formOption);
       priorAuthorityDetails.getDynamicOptions().put(formOption.getCode(), dynamicOption);
@@ -329,26 +330,26 @@ public interface ProceedingAndCostsMapper {
           + "priorAuthorityDynamicForm))")
   @Mapping(target = "ebsId", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
-  PriorAuthority toPriorAuthority(PriorAuthorityFlowFormData priorAuthorityFlowFormData,
+  PriorAuthorityDetail toPriorAuthority(PriorAuthorityFlowFormData priorAuthorityFlowFormData,
                                   PriorAuthorityTypeDetail priorAuthorityDynamicForm);
 
   /**
-   * Converts dynamic options map to ReferenceDataItem list.
+   * Converts dynamic options map to ReferenceDataItemDetail list.
    *
    * @param dynamicOptionsMap the map of dynamic options.
    * @param priorAuthorityDynamicForm the form details for LOV updates.
    * @return the list of converted ReferenceDataItems.
    */
-  default List<ReferenceDataItem> toReferenceDataItems(
+  default List<ReferenceDataItemDetail> toReferenceDataItems(
       final Map<String, PriorAuthorityFormDataDynamicOption> dynamicOptionsMap,
       final PriorAuthorityTypeDetail priorAuthorityDynamicForm) {
 
-    final List<ReferenceDataItem> referenceDataItems = new ArrayList<>();
+    final List<ReferenceDataItemDetail> referenceDataItems = new ArrayList<>();
 
     for (final Map.Entry<String, PriorAuthorityFormDataDynamicOption> entry :
         dynamicOptionsMap.entrySet()) {
 
-      final ReferenceDataItem referenceDataItem = toReferenceDataItem(
+      final ReferenceDataItemDetail referenceDataItem = toReferenceDataItem(
           entry.getKey(),
           entry.getValue());
 
@@ -358,9 +359,8 @@ public interface ProceedingAndCostsMapper {
       priorAuthorityDynamicForm.getPriorAuthorities().stream().filter(priorAuthorityDetail ->
           priorAuthorityDetail.getCode().equals(entry.getKey()))
             .findFirst()
-            .ifPresent(priorAuthorityDetail -> {
-              referenceDataItem.lovLookUp(priorAuthorityDetail.getLovCode());
-            });
+            .ifPresent(priorAuthorityDetail -> referenceDataItem.lovLookUp(
+                priorAuthorityDetail.getLovCode()));
     }
     return referenceDataItems;
   }
@@ -373,7 +373,7 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "type", source = "dynamicOption.fieldType")
   @Mapping(target = "mandatory", source = "dynamicOption.mandatory")
   @Mapping(target = "lovLookUp", ignore = true)
-  ReferenceDataItem toReferenceDataItem(
+  ReferenceDataItemDetail toReferenceDataItem(
       final String key,
       final PriorAuthorityFormDataDynamicOption dynamicOption);
 

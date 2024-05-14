@@ -6,13 +6,13 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMI
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
-import uk.gov.laa.ccms.caab.model.Address;
+import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
-import uk.gov.laa.ccms.caab.model.Client;
-import uk.gov.laa.ccms.caab.model.CostStructure;
-import uk.gov.laa.ccms.caab.model.DevolvedPowers;
+import uk.gov.laa.ccms.caab.model.ClientDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
@@ -21,7 +21,6 @@ import uk.gov.laa.ccms.data.model.BaseOffice;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 
 /**
@@ -86,8 +85,9 @@ public class ApplicationBuilder {
    * @param clientInformation The client information.
    * @return The builder instance.
    */
-  public ApplicationBuilder client(final ClientDetail clientInformation) {
-    Client client = new Client()
+  public ApplicationBuilder client(
+      final uk.gov.laa.ccms.soa.gateway.model.ClientDetail clientInformation) {
+    ClientDetail client = new ClientDetail()
             .firstName(clientInformation.getDetails().getName().getFirstName())
             .surname(clientInformation.getDetails().getName().getSurname())
             .reference(clientInformation.getClientReferenceNumber());
@@ -160,7 +160,7 @@ public class ApplicationBuilder {
       application.setApplicationType(new ApplicationType());
     }
     if (application.getApplicationType().getDevolvedPowers() == null) {
-      application.getApplicationType().setDevolvedPowers(new DevolvedPowers());
+      application.getApplicationType().setDevolvedPowers(new DevolvedPowersDetail());
     }
 
     // Set the contractFlag
@@ -208,7 +208,7 @@ public class ApplicationBuilder {
    */
   public ApplicationBuilder costStructure() {
     application.costs(
-        new CostStructure()
+        new CostStructureDetail()
             .grantedCostLimitation(BigDecimal.valueOf(0))
             .defaultCostLimitation(BigDecimal.valueOf(0))
             .requestedCostLimitation(BigDecimal.valueOf(0))
@@ -222,7 +222,7 @@ public class ApplicationBuilder {
    * @param costStructure - the cost structure.
    * @return The builder instance.
    */
-  public ApplicationBuilder costStructure(final CostStructure costStructure) {
+  public ApplicationBuilder costStructure(final CostStructureDetail costStructure) {
     application.costs(costStructure);
     return this;
   }
@@ -234,7 +234,7 @@ public class ApplicationBuilder {
    */
   public ApplicationBuilder correspondenceAddress() {
     application.correspondenceAddress(
-        new Address()
+        new AddressDetail()
             .noFixedAbode(false));
     return this;
   }

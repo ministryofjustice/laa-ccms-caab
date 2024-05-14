@@ -31,9 +31,9 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.constants.assessment.InstanceMappingPrefix;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.model.Opponent;
-import uk.gov.laa.ccms.caab.model.Proceeding;
-import uk.gov.laa.ccms.caab.model.ScopeLimitation;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -294,7 +294,7 @@ public class AssessmentService {
         //used specifically for merits - this should be included for both assessments,
         //although not specifically needed for means, both assessments and application data should
         //be kept in sync.
-        for (final Opponent opponent : application.getOpponents()) {
+        for (final OpponentDetail opponent : application.getOpponents()) {
           if (OPPONENT_TYPE_INDIVIDUAL.equalsIgnoreCase(opponent.getType())
               && differenceGreaterThanTenSecs(
               opponent.getAuditTrail().getLastSaved(),
@@ -366,7 +366,7 @@ public class AssessmentService {
       return true;
     }
 
-    for (final Proceeding proceeding : application.getProceedings()) {
+    for (final ProceedingDetail proceeding : application.getProceedings()) {
       final String matterType = proceeding.getMatterType().getId();
       final String proceedingType = proceeding.getProceedingType().getId();
       final String clientInvolvementType = proceeding.getClientInvolvement().getId();
@@ -457,7 +457,7 @@ public class AssessmentService {
   private Date getDateOfLatestKeyChange(final ApplicationDetail application) {
     Date latestKeyChange = null;
 
-    for (final Proceeding proceeding : application.getProceedings()) {
+    for (final ProceedingDetail proceeding : application.getProceedings()) {
       if (proceeding.getAuditTrail() != null
           && (latestKeyChange == null || latestKeyChange
               .before(proceeding.getAuditTrail().getLastSaved()))) {
@@ -465,7 +465,7 @@ public class AssessmentService {
       }
 
       if (proceeding.getScopeLimitations() != null && !proceeding.getScopeLimitations().isEmpty()) {
-        for (final ScopeLimitation scopeLimitation : proceeding.getScopeLimitations()) {
+        for (final ScopeLimitationDetail scopeLimitation : proceeding.getScopeLimitations()) {
           if (scopeLimitation.getAuditTrail() != null
               && (latestKeyChange == null || latestKeyChange
                   .before(scopeLimitation.getAuditTrail().getLastSaved()))) {
@@ -476,7 +476,7 @@ public class AssessmentService {
 
     }
 
-    for (final Opponent opponent : application.getOpponents()) {
+    for (final OpponentDetail opponent : application.getOpponents()) {
       if (opponent.getAuditTrail() != null
           && (latestKeyChange == null || latestKeyChange
               .before(opponent.getAuditTrail().getLastSaved()))) {
@@ -488,21 +488,22 @@ public class AssessmentService {
   }
 
   /**
-   * Determines the unique mapping ID for an object, which could be either a Proceeding or an
-   * Opponent. If the object's EBS ID is null, constructs a new ID using the appropriate prefix and
-   * object's ID. If EBS ID is not null, it returns the EBS ID directly.
+   * Determines the unique mapping ID for an object, which could be either a ProceedingDetail or an
+   * OpponentDetail. If the object's EBS ID is null, constructs a new ID using the appropriate
+   * prefix and object's ID. If EBS ID is not null, it returns the EBS ID directly.
    *
    * @param opponentOrProceeding the object to determine the mapping ID for, which could be an
-   *                             instance of Proceeding or Opponent.
-   * @return the mapping ID or null if the object type is neither Proceeding nor Opponent
+   *                             instance of ProceedingDetail or OpponentDetail.
+   * @return the mapping ID or null if the object type is neither
+   *     ProceedingDetail nor OpponentDetail
    */
   private String getOpaInstanceMappingId(final Object opponentOrProceeding) {
-    if (opponentOrProceeding instanceof final Proceeding proceeding) {
+    if (opponentOrProceeding instanceof final ProceedingDetail proceeding) {
       if (proceeding.getEbsId() == null) {
         return InstanceMappingPrefix.PROCEEDING.getPrefix() + proceeding.getId();
       }
       return proceeding.getEbsId();
-    } else if (opponentOrProceeding instanceof final Opponent opponent) {
+    } else if (opponentOrProceeding instanceof final OpponentDetail opponent) {
       if (opponent.getEbsId() == null) {
         return InstanceMappingPrefix.OPPONENT.getPrefix() + opponent.getId();
       }
@@ -518,7 +519,7 @@ public class AssessmentService {
    * @param proceeding the proceeding to evaluate for scope limitations
    * @return the scope limitation identifier or "MULTIPLE"
    */
-  private String getRequestedScopeForAssessmentInput(final Proceeding proceeding) {
+  private String getRequestedScopeForAssessmentInput(final ProceedingDetail proceeding) {
     return Optional.ofNullable(proceeding.getScopeLimitations())
         .filter(scopeLimitations -> !scopeLimitations.isEmpty())
         .map(scopeLimitations -> scopeLimitations.size() > 1 ? "MULTIPLE" :

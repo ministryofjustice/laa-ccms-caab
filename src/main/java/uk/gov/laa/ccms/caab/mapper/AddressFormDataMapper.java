@@ -5,24 +5,24 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
-import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
-import uk.gov.laa.ccms.caab.model.Address;
+import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 
 /**
- * Maps between AddressFormData and Address models.
+ * Maps between AddressFormData and AddressDetail models.
  */
 @Mapper(componentModel = "spring")
 public interface AddressFormDataMapper {
 
   @Mapping(target = "houseNameNumber", source = "houseNameOrNumber")
   @Mapping(target = "cityTown", source = "city")
-  AddressFormData toAddressFormData(Address address);
+  AddressFormData toAddressFormData(AddressDetail address);
 
   @InheritInverseConfiguration
+  @Mapping(target = "id", ignore = true)
   @Mapping(target = "noFixedAbode", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
-  Address toAddress(AddressFormData addressFormData);
+  AddressDetail toAddress(AddressFormData addressFormData);
 
   /**
    * Updates the AddressFormData object with information from the AddressResultRowDisplay

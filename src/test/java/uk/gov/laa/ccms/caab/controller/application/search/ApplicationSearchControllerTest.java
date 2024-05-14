@@ -46,7 +46,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
-import uk.gov.laa.ccms.caab.model.BaseApplication;
+import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -169,7 +169,7 @@ public class ApplicationSearchControllerTest {
 
   @Test
   public void testPostApplicationSearch_NoResults() throws Exception {
-    List<BaseApplication> baseApplications = new ArrayList<>();
+    List<BaseApplicationDetail> baseApplications = new ArrayList<>();
 
     when(applicationService.getCases(any(), any())).thenReturn(baseApplications);
 
@@ -198,7 +198,7 @@ public class ApplicationSearchControllerTest {
 
   @Test
   public void testPostApplicationSearch_WithResults() throws Exception {
-    List<BaseApplication> caseSearchResults = List.of(new BaseApplication());
+    List<BaseApplicationDetail> caseSearchResults = List.of(new BaseApplicationDetail());
 
     when(applicationService.getCases(any(), any())).thenReturn(caseSearchResults);
 
@@ -211,9 +211,9 @@ public class ApplicationSearchControllerTest {
 
   @Test
   public void testGetApplicationSearchResults_PaginatesResults() throws Exception {
-    List<BaseApplication> caseSearchResults = List.of(
-        new BaseApplication(),
-        new BaseApplication());
+    List<BaseApplicationDetail> caseSearchResults = List.of(
+        new BaseApplicationDetail(),
+        new BaseApplicationDetail());
 
     when(applicationMapper.toApplicationDetails(any()))
         .thenReturn(new ApplicationDetails());
@@ -233,9 +233,9 @@ public class ApplicationSearchControllerTest {
   public void testSelectApplication_rejectsInvalidCaseReference() throws Exception {
     final String selectedCaseRef = "3";
 
-    List<BaseApplication> caseSearchResults = List.of(
-        new BaseApplication().caseReferenceNumber("1"),
-        new BaseApplication().caseReferenceNumber("2"));
+    List<BaseApplicationDetail> caseSearchResults = List.of(
+        new BaseApplicationDetail().caseReferenceNumber("1"),
+        new BaseApplicationDetail().caseReferenceNumber("2"));
 
     mockMvc.perform(get("/application/{case-reference-number}/view", selectedCaseRef)
             .sessionAttr(USER_DETAILS, user)
@@ -249,12 +249,12 @@ public class ApplicationSearchControllerTest {
   public void testSelectApplication_unsubmittedApplication_redirectsToApplicationSummary() throws Exception {
     final String selectedCaseRef = "1";
 
-    List<BaseApplication> caseSearchResults = List.of(
-        new BaseApplication()
+    List<BaseApplicationDetail> caseSearchResults = List.of(
+        new BaseApplicationDetail()
             .id(100)
             .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
             .caseReferenceNumber("1"),
-        new BaseApplication()
+        new BaseApplicationDetail()
             .caseReferenceNumber("2")
             .status(new StringDisplayValue().id("anotherstatus")));
 
@@ -271,12 +271,12 @@ public class ApplicationSearchControllerTest {
   public void testSelectApplication_otherStatus_redirectsToCaseSummary() throws Exception {
     final String selectedCaseRef = "2";
 
-    List<BaseApplication> caseSearchResults = List.of(
-        new BaseApplication()
+    List<BaseApplicationDetail> caseSearchResults = List.of(
+        new BaseApplicationDetail()
             .id(100)
             .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
             .caseReferenceNumber("1"),
-        new BaseApplication()
+        new BaseApplicationDetail()
             .caseReferenceNumber("2")
             .status(new StringDisplayValue().id("anotherstatus")));
 

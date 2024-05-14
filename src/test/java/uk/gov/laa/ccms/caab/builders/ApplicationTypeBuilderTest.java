@@ -1,29 +1,16 @@
 package uk.gov.laa.ccms.caab.builders;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
-import uk.gov.laa.ccms.caab.model.DevolvedPowers;
+import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 
 public class ApplicationTypeBuilderTest {
 
-  @Mock
-  private ApplicationType applicationType;
-
-  private ApplicationTypeBuilder builder;
-
-  @BeforeEach
-  void setUp() {
-    MockitoAnnotations.openMocks(this);
-    builder = new ApplicationTypeBuilder();
-  }
+  private final ApplicationTypeBuilder builder = new ApplicationTypeBuilder();
 
   @Test
   void testApplicationTypeForSubstantiveWithoutDelegatedFunctions() {
@@ -63,7 +50,7 @@ public class ApplicationTypeBuilderTest {
   @Test
   void testDevolvedPowers() throws ParseException {
     SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-    DevolvedPowers devolvedPowers = new DevolvedPowers();
+    DevolvedPowersDetail devolvedPowers = new DevolvedPowersDetail();
     devolvedPowers.setUsed(true);
     devolvedPowers.setDateUsed(sdf.parse("01-01-2022"));
 
@@ -73,10 +60,9 @@ public class ApplicationTypeBuilderTest {
 
   @Test
   void testDevolvedPowersContractFlag() {
-    DevolvedPowers devolvedPowers = new DevolvedPowers();
+    DevolvedPowersDetail devolvedPowers = new DevolvedPowersDetail();
     devolvedPowers.setContractFlag("ContractFlag");
 
-    when(applicationType.getDevolvedPowers()).thenReturn(devolvedPowers);
     ApplicationType result = builder.devolvedPowersContractFlag("ContractFlag").build();
     assertEquals("ContractFlag", result.getDevolvedPowers().getContractFlag());
   }

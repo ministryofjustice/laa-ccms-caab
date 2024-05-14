@@ -8,7 +8,7 @@ import org.mapstruct.ReportingPolicy;
 import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
-import uk.gov.laa.ccms.caab.model.Opponent;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 
@@ -50,7 +50,7 @@ public interface OpponentMapper {
   @Mapping(target = "shared", source = "opponent.sharedInd")
   @Mapping(target = "editable", source = "editable")
   OrganisationOpponentFormData toOrganisationOpponentFormData(
-      final Opponent opponent,
+      final OpponentDetail opponent,
       final String partyName,
       final String organisationTypeDisplayValue,
       final String relationshipToCaseDisplayValue,
@@ -69,7 +69,7 @@ public interface OpponentMapper {
   @Mapping(target = "editable", source = "editable")
   @Mapping(target = "dateOfBirthMandatory", ignore = true)
   IndividualOpponentFormData toIndividualOpponentFormData(
-      final Opponent opponent,
+      final OpponentDetail opponent,
       final String partyName,
       final String relationshipToCaseDisplayValue,
       final String relationshipToClientDisplayValue,
@@ -88,7 +88,7 @@ public interface OpponentMapper {
    * @return mapped AbstractOpponentFormData.
    */
   default AbstractOpponentFormData toOpponentFormData(
-      final Opponent opponent,
+      final OpponentDetail opponent,
       final String partyName,
       final String organisationTypeDisplayValue,
       final String relationshipToCaseDisplayValue,
@@ -117,7 +117,7 @@ public interface OpponentMapper {
   @Mapping(target = "organisationName", source = "organisationName")
   @Mapping(target = "organisationType", source = "organisationType")
   @Mapping(target = "currentlyTrading", source = "currentlyTrading")
-  Opponent toOrganisationOpponent(OrganisationOpponentFormData opponentFormData);
+  OpponentDetail toOrganisationOpponent(OrganisationOpponentFormData opponentFormData);
 
   @Mapping(target = "type", source = "type", defaultValue = "Individual")
   @Mapping(target = "ebsId", source = "partyId")
@@ -140,15 +140,15 @@ public interface OpponentMapper {
   @Mapping(target = "telephoneMobile", source = "telephoneMobile")
   @Mapping(target = "legalAided", source = "legalAided")
   @Mapping(target = "certificateNumber", source = "certificateNumber")
-  Opponent toIndividualOpponent(IndividualOpponentFormData opponentFormData);
+  OpponentDetail toIndividualOpponent(IndividualOpponentFormData opponentFormData);
 
   /**
    * Convert form data to an opponent, depending on opponent type.
    *
    * @param opponentFormData - the opponent form data.
-   * @return mapped Opponent.
+   * @return mapped OpponentDetail.
    */
-  default Opponent toOpponent(
+  default OpponentDetail toOpponent(
       final AbstractOpponentFormData opponentFormData) {
     return opponentFormData instanceof OrganisationOpponentFormData
         ? toOrganisationOpponent((OrganisationOpponentFormData) opponentFormData)

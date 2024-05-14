@@ -6,10 +6,10 @@ import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
-import uk.gov.laa.ccms.caab.model.BaseApplication;
+import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ClientResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ClientResultsDisplay;
-import uk.gov.laa.ccms.caab.model.LinkedCase;
+import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.OrganisationResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
@@ -40,7 +40,7 @@ public interface ResultDisplayMapper {
   @Mapping(target = "clientFirstName", source = "client.firstName")
   @Mapping(target = "clientSurname", source = "client.surname")
   @Mapping(target = "clientReferenceNumber", source = "client.reference")
-  LinkedCaseResultRowDisplay toLinkedCaseResultRowDisplay(LinkedCase linkedCase);
+  LinkedCaseResultRowDisplay toLinkedCaseResultRowDisplay(LinkedCaseDetail linkedCase);
 
   @Mapping(target = "clientFirstName", source = "client.firstName")
   @Mapping(target = "clientSurname", source = "client.surname")
@@ -52,11 +52,11 @@ public interface ResultDisplayMapper {
   @Mapping(target = "status", source = "status.displayValue")
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "relationToCase", ignore = true)
-  LinkedCaseResultRowDisplay toLinkedCaseResultRowDisplay(BaseApplication baseApplication);
+  LinkedCaseResultRowDisplay toLinkedCaseResultRowDisplay(BaseApplicationDetail baseApplication);
 
   @Mapping(target = "auditTrail", ignore = true)
   @InheritInverseConfiguration(name = "toLinkedCaseResultRowDisplay")
-  LinkedCase toLinkedCase(LinkedCaseResultRowDisplay linkedCaseResultRowDisplay);
+  LinkedCaseDetail toLinkedCase(LinkedCaseResultRowDisplay linkedCaseResultRowDisplay);
 
   @Mapping(target = "typeDisplayValue", source = "type", qualifiedByName = "toDisplayValue")
   OrganisationResultRowDisplay toOrganisationResultRowDisplay(

@@ -47,7 +47,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
-import uk.gov.laa.ccms.caab.model.BaseApplication;
+import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.data.model.BaseOffice;
@@ -152,7 +152,7 @@ public class CopyCaseSearchControllerTest {
 
   @Test
   public void testPostCopyCaseSearch_NoCopyCaseStatus() throws Exception {
-    List<BaseApplication> baseApplications = new ArrayList<>();
+    List<BaseApplicationDetail> baseApplications = new ArrayList<>();
 
     when(applicationService.getCases(any(), any())).thenReturn(baseApplications);
 
@@ -172,7 +172,7 @@ public class CopyCaseSearchControllerTest {
 
   @Test
   public void testPostCopyCaseSearch_NoResults() throws Exception {
-    List<BaseApplication> baseApplications = new ArrayList<>();
+    List<BaseApplicationDetail> baseApplications = new ArrayList<>();
 
     when(applicationService.getCases(any(), any())).thenReturn(baseApplications);
 
@@ -207,7 +207,7 @@ public class CopyCaseSearchControllerTest {
 
   @Test
   public void testPostCopyCaseSearch_WithResults() throws Exception {
-    List<BaseApplication> caseSearchResults = List.of(new BaseApplication());
+    List<BaseApplicationDetail> caseSearchResults = List.of(new BaseApplicationDetail());
 
     when(applicationService.getCases(any(), any())).thenReturn(caseSearchResults);
 
@@ -220,9 +220,9 @@ public class CopyCaseSearchControllerTest {
 
   @Test
   public void testGetCopyCaseSearchResults_PaginatesResults() throws Exception {
-    List<BaseApplication> caseSearchResults = List.of(
-        new BaseApplication(),
-        new BaseApplication());
+    List<BaseApplicationDetail> caseSearchResults = List.of(
+        new BaseApplicationDetail(),
+        new BaseApplicationDetail());
 
     when(applicationMapper.toApplicationDetails(any()))
         .thenReturn(new ApplicationDetails());
@@ -243,7 +243,7 @@ public class CopyCaseSearchControllerTest {
   public void testSelectCopyCaseReferenceNumber_InvalidCaseRef() {
     Exception exception = assertThrows(ServletException.class, () ->
         this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm", "123")
-            .sessionAttr(CASE_SEARCH_RESULTS, new ArrayList<BaseApplication>())
+            .sessionAttr(CASE_SEARCH_RESULTS, new ArrayList<BaseApplicationDetail>())
             .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())));
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
@@ -256,8 +256,8 @@ public class CopyCaseSearchControllerTest {
 
   @Test
   public void testSelectCopyCaseReferenceNumber_ValidCaseRef() throws Exception {
-    List<BaseApplication> caseSearchResults =
-        List.of(new BaseApplication().caseReferenceNumber("123"));
+    List<BaseApplicationDetail> caseSearchResults =
+        List.of(new BaseApplicationDetail().caseReferenceNumber("123"));
 
     ApplicationFormData applicationFormData = new ApplicationFormData();
     this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm", "123")

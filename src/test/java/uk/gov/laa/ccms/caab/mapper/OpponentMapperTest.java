@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
-import uk.gov.laa.ccms.caab.model.Opponent;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 
@@ -54,7 +54,7 @@ public class OpponentMapperTest {
   void testOrganisationOpponentFormData_toOpponent() {
     OrganisationOpponentFormData opponentFormData = buildOrganisationOpponentFormData();
 
-    Opponent result = opponentMapper.toOpponent(opponentFormData);
+    OpponentDetail result = opponentMapper.toOpponent(opponentFormData);
 
     assertNotNull(result);
     assertEquals(opponentFormData.getHouseNameOrNumber(), result.getAddress().getHouseNameOrNumber());
@@ -82,7 +82,7 @@ public class OpponentMapperTest {
   void testIndividualOpponentFormData_toOpponent() {
     IndividualOpponentFormData opponentFormData = buildIndividualOpponentFormData();
 
-    Opponent result = opponentMapper.toOpponent(opponentFormData);
+    OpponentDetail result = opponentMapper.toOpponent(opponentFormData);
 
     assertNotNull(result);
     assertEquals(opponentFormData.getHouseNameOrNumber(), result.getAddress().getHouseNameOrNumber());
@@ -117,7 +117,7 @@ public class OpponentMapperTest {
 
   @Test
   void testOrganisationOpponent_toOrganisationOpponentFormData() {
-    Opponent opponent = buildOpponent(new Date());
+    OpponentDetail opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_ORGANISATION);
 
     final String partyName = "party";
@@ -167,7 +167,7 @@ public class OpponentMapperTest {
   @Test
   void testIndividualOpponent_toIndividualOpponentFormData() {
     Date date = new Date();
-    Opponent opponent = buildOpponent(date);
+    OpponentDetail opponent = buildOpponent(date);
     opponent.setType(OPPONENT_TYPE_INDIVIDUAL);
 
     final String partyName = "party";

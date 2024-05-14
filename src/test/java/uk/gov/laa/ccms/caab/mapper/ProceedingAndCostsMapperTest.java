@@ -25,15 +25,13 @@ import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataFurtherDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
-import uk.gov.laa.ccms.caab.model.CostStructure;
-import uk.gov.laa.ccms.caab.model.PriorAuthority;
-import uk.gov.laa.ccms.caab.model.Proceeding;
-import uk.gov.laa.ccms.caab.model.ReferenceDataItem;
-import uk.gov.laa.ccms.caab.model.ScopeLimitation;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ReferenceDataItemDetail;
+import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
-import uk.gov.laa.ccms.data.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
-import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 
 @ExtendWith(SpringExtension.class)
 class ProceedingAndCostsMapperTest {
@@ -54,7 +52,7 @@ class ProceedingAndCostsMapperTest {
 
     final ProceedingFormDataProceedingDetails proceedingDetails = new ProceedingFormDataProceedingDetails();
     proceedingDetails.setProceedingType("PT001");
-    proceedingDetails.setProceedingTypeDisplayValue("Proceeding Type 1");
+    proceedingDetails.setProceedingTypeDisplayValue("ProceedingDetail Type 1");
     proceedingDetails.setLarScope("Scope");
 
     final ProceedingFormDataFurtherDetails furtherDetails = new ProceedingFormDataFurtherDetails();
@@ -75,7 +73,7 @@ class ProceedingAndCostsMapperTest {
     final String stage = "Initial";
 
     // Call the mapper method
-    final Proceeding proceeding = mapper.toProceeding(proceedingFlowFormData, costLimitation, stage);
+    final ProceedingDetail proceeding = mapper.toProceeding(proceedingFlowFormData, costLimitation, stage);
 
     // Assert the mapped values
     assertEquals(matterTypeDetails.getMatterType(), proceeding.getMatterType().getId());
@@ -103,7 +101,7 @@ class ProceedingAndCostsMapperTest {
 
     final ProceedingFormDataProceedingDetails proceedingDetails = new ProceedingFormDataProceedingDetails();
     proceedingDetails.setProceedingType("PT002");
-    proceedingDetails.setProceedingTypeDisplayValue("Proceeding Type 2");
+    proceedingDetails.setProceedingTypeDisplayValue("ProceedingDetail Type 2");
 
     final ProceedingFormDataFurtherDetails furtherDetails = new ProceedingFormDataFurtherDetails();
     furtherDetails.setClientInvolvementType("CI002");
@@ -117,8 +115,8 @@ class ProceedingAndCostsMapperTest {
     proceedingFlowFormData.setProceedingDetails(proceedingDetails);
     proceedingFlowFormData.setFurtherDetails(furtherDetails);
 
-    // Existing Proceeding object
-    final Proceeding proceeding = new Proceeding();
+    // Existing ProceedingDetail object
+    final ProceedingDetail proceeding = new ProceedingDetail();
 
     // Set different values to verify that they will be updated
     proceeding.setStage("Initial Stage");
@@ -128,7 +126,7 @@ class ProceedingAndCostsMapperTest {
     final BigDecimal costLimitation = new BigDecimal("6000");
     final String stage = "Updated Stage";
 
-    // Update the existing Proceeding object
+    // Update the existing ProceedingDetail object
     mapper.toProceeding(proceeding, proceedingFlowFormData, costLimitation, stage);
 
     // Validate the updated fields
@@ -148,9 +146,9 @@ class ProceedingAndCostsMapperTest {
 
   @Test
   void testToProceedingFlow() {
-    final Proceeding proceeding = new Proceeding();
+    final ProceedingDetail proceeding = new ProceedingDetail();
     proceeding.setMatterType(new StringDisplayValue().id("MT001").displayValue("Matter Type 1"));
-    proceeding.setProceedingType(new StringDisplayValue().id("PT001").displayValue("Proceeding Type 1"));
+    proceeding.setProceedingType(new StringDisplayValue().id("PT001").displayValue("ProceedingDetail Type 1"));
     proceeding.setDescription("Description");
     proceeding.setLarScope("Scope");
     proceeding.setClientInvolvement(new StringDisplayValue().id("CI001").displayValue("Client Involvement 1"));
@@ -184,44 +182,48 @@ class ProceedingAndCostsMapperTest {
 
   @Test
   void testToScopeLimitationList() {
-    final List<ScopeLimitationDetail> scopeLimitationDetailList = new ArrayList<>();
-    final ScopeLimitationDetail detail1 = new ScopeLimitationDetail();
-    detail1.setScopeLimitations("SL001");
-    detail1.setDescription("Description 1");
-    detail1.setDefaultCode(true);
-    detail1.setEmergencyScopeDefault(false);
-    detail1.setNonStandardWordingRequired(true);
+    final List<uk.gov.laa.ccms.data.model.ScopeLimitationDetail> scopeLimitationDetailList =
+        new ArrayList<>();
+    final uk.gov.laa.ccms.data.model.ScopeLimitationDetail ebsScopeLimitation1 =
+        new uk.gov.laa.ccms.data.model.ScopeLimitationDetail();
+    ebsScopeLimitation1.setScopeLimitations("SL001");
+    ebsScopeLimitation1.setDescription("Description 1");
+    ebsScopeLimitation1.setDefaultCode(true);
+    ebsScopeLimitation1.setEmergencyScopeDefault(false);
+    ebsScopeLimitation1.setNonStandardWordingRequired(true);
 
-    final ScopeLimitationDetail detail2 = new ScopeLimitationDetail();
-    detail2.setScopeLimitations("SL002");
-    detail2.setDescription("Description 2");
-    detail2.setDefaultCode(false);
-    detail2.setEmergencyScopeDefault(true);
-    detail2.setNonStandardWordingRequired(false);
+    final uk.gov.laa.ccms.data.model.ScopeLimitationDetail ebsScopeLimitation2 =
+        new uk.gov.laa.ccms.data.model.ScopeLimitationDetail();
+    ebsScopeLimitation2.setScopeLimitations("SL002");
+    ebsScopeLimitation2.setDescription("Description 2");
+    ebsScopeLimitation2.setDefaultCode(false);
+    ebsScopeLimitation2.setEmergencyScopeDefault(true);
+    ebsScopeLimitation2.setNonStandardWordingRequired(false);
 
-    scopeLimitationDetailList.add(detail1);
-    scopeLimitationDetailList.add(detail2);
+    scopeLimitationDetailList.add(ebsScopeLimitation1);
+    scopeLimitationDetailList.add(ebsScopeLimitation2);
 
-    final List<ScopeLimitation> result = mapper.toScopeLimitationList(scopeLimitationDetailList);
+    final List<ScopeLimitationDetail> result =
+        mapper.toScopeLimitationList(scopeLimitationDetailList);
 
     assertNotNull(result);
     assertEquals(2, result.size());
-    assertEquals(detail1.getScopeLimitations(), result.get(0).getScopeLimitation().getId());
-    assertEquals(detail1.getDescription(), result.get(0).getScopeLimitation().getDisplayValue());
-    assertEquals(detail2.getScopeLimitations(), result.get(1).getScopeLimitation().getId());
-    assertEquals(detail2.getDescription(), result.get(1).getScopeLimitation().getDisplayValue());
+    assertEquals(ebsScopeLimitation1.getScopeLimitations(), result.get(0).getScopeLimitation().getId());
+    assertEquals(ebsScopeLimitation1.getDescription(), result.get(0).getScopeLimitation().getDisplayValue());
+    assertEquals(ebsScopeLimitation2.getScopeLimitations(), result.get(1).getScopeLimitation().getId());
+    assertEquals(ebsScopeLimitation2.getDescription(), result.get(1).getScopeLimitation().getDisplayValue());
   }
 
 
   @Test
   void testToScopeLimitationList_withNull() {
-    final List<ScopeLimitation> result = mapper.toScopeLimitationList(null);
+    final List<ScopeLimitationDetail> result = mapper.toScopeLimitationList(null);
     assertNull(result);
   }
 
   @Test
   void testToScopeLimitationFlow() {
-    final ScopeLimitation scopeLimitation = new ScopeLimitation();
+    final ScopeLimitationDetail scopeLimitation = new ScopeLimitationDetail();
     scopeLimitation.setId(123);
     final StringDisplayValue displayValue = new StringDisplayValue().id("SL001").displayValue("Scope Limitation Description");
     scopeLimitation.setScopeLimitation(displayValue);
@@ -258,7 +260,7 @@ class ProceedingAndCostsMapperTest {
 
   @Test
   void testToCostStructure() {
-    final CostStructure costStructure = new CostStructure();
+    final CostStructureDetail costStructure = new CostStructureDetail();
     final CostsFormData costsFormData = new CostsFormData();
     costsFormData.setRequestedCostLimitation("10000.00");
 
@@ -270,7 +272,7 @@ class ProceedingAndCostsMapperTest {
 
   @Test
   void testToCostStructure_withNull() {
-    final CostStructure costStructure = new CostStructure();
+    final CostStructureDetail costStructure = new CostStructureDetail();
     mapper.toCostStructure(costStructure, null);
 
     assertNull(costStructure.getRequestedCostLimitation());
@@ -278,7 +280,7 @@ class ProceedingAndCostsMapperTest {
 
   @Test
   void testToPriorAuthorityFlowFormData() {
-    final PriorAuthority priorAuthority = new PriorAuthority();
+    final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
     priorAuthority.setId(123);
     priorAuthority.setType(new StringDisplayValue().id("PA001").displayValue("Prior Authority Type"));
     final PriorAuthorityFormDataDetails formDataDetails = new PriorAuthorityFormDataDetails();
@@ -301,14 +303,14 @@ class ProceedingAndCostsMapperTest {
 
   @Test
   void testToDynamicOptions() {
-    final List<ReferenceDataItem> items = new ArrayList<>();
-    final ReferenceDataItem item1 = new ReferenceDataItem();
+    final List<ReferenceDataItemDetail> items = new ArrayList<>();
+    final ReferenceDataItemDetail item1 = new ReferenceDataItemDetail();
     item1.setCode(new StringDisplayValue().id("Item1").displayValue("Item 1 Description"));
     item1.setValue(new StringDisplayValue().id("Value1").displayValue("Value 1 Description"));
     item1.setType("Type1");
     item1.setMandatory(true);
 
-    final ReferenceDataItem item2 = new ReferenceDataItem();
+    final ReferenceDataItemDetail item2 = new ReferenceDataItemDetail();
     item2.setCode(new StringDisplayValue().id("Item2").displayValue("Item 2 Description"));
     item2.setValue(new StringDisplayValue().id("Value2").displayValue("Value 2 Description"));
     item2.setType("Type2");
@@ -406,22 +408,24 @@ class ProceedingAndCostsMapperTest {
     priorAuthorityDetails.setDynamicOptions(new HashMap<>());
 
     final PriorAuthorityTypeDetail priorAuthorityTypeDetail = new PriorAuthorityTypeDetail();
-    List<PriorAuthorityDetail> priorAuthorityDetailsList = new ArrayList<>();
+    List<uk.gov.laa.ccms.data.model.PriorAuthorityDetail> priorAuthorityDetailsList = new ArrayList<>();
 
-    PriorAuthorityDetail detail1 = new PriorAuthorityDetail();
-    detail1.setCode("Detail1");
-    detail1.setDescription("Description 1");
-    detail1.setDataType("Type1");
-    detail1.setMandatoryFlag(true);
+    uk.gov.laa.ccms.data.model.PriorAuthorityDetail ebsPriorAuth1 =
+        new uk.gov.laa.ccms.data.model.PriorAuthorityDetail();
+    ebsPriorAuth1.setCode("Detail1");
+    ebsPriorAuth1.setDescription("Description 1");
+    ebsPriorAuth1.setDataType("Type1");
+    ebsPriorAuth1.setMandatoryFlag(true);
 
-    PriorAuthorityDetail detail2 = new PriorAuthorityDetail();
-    detail2.setCode("Detail2");
-    detail2.setDescription("Description 2");
-    detail2.setDataType("Type2");
-    detail2.setMandatoryFlag(false);
+    uk.gov.laa.ccms.data.model.PriorAuthorityDetail ebsPriorAuth2 =
+        new uk.gov.laa.ccms.data.model.PriorAuthorityDetail();
+    ebsPriorAuth2.setCode("Detail2");
+    ebsPriorAuth2.setDescription("Description 2");
+    ebsPriorAuth2.setDataType("Type2");
+    ebsPriorAuth2.setMandatoryFlag(false);
 
-    priorAuthorityDetailsList.add(detail1);
-    priorAuthorityDetailsList.add(detail2);
+    priorAuthorityDetailsList.add(ebsPriorAuth1);
+    priorAuthorityDetailsList.add(ebsPriorAuth2);
     priorAuthorityTypeDetail.setPriorAuthorities(priorAuthorityDetailsList);
 
     mapper.populatePriorAuthorityDetailsForm(priorAuthorityDetails, priorAuthorityTypeDetail);
@@ -459,7 +463,8 @@ class ProceedingAndCostsMapperTest {
 
   @Test
   void testToPriorAuthorityFormDataDynamicOption() {
-    final PriorAuthorityDetail formOption = new PriorAuthorityDetail();
+    final uk.gov.laa.ccms.data.model.PriorAuthorityDetail formOption =
+        new uk.gov.laa.ccms.data.model.PriorAuthorityDetail();
     formOption.setMandatoryFlag(true);
     formOption.setDescription("Option Description");
     formOption.setDataType("Option Type");
@@ -474,16 +479,18 @@ class ProceedingAndCostsMapperTest {
 
   @Test
   void testToPriorAuthorityFormDataDynamicOption_withNull() {
-    final PriorAuthorityDetail formOption = null;
+    final uk.gov.laa.ccms.data.model.PriorAuthorityDetail formOption = null;
 
-    final PriorAuthorityFormDataDynamicOption result = mapper.toPriorAuthorityFormDataDynamicOption(formOption);
+    final PriorAuthorityFormDataDynamicOption result =
+        mapper.toPriorAuthorityFormDataDynamicOption(formOption);
 
     assertNull(result);
   }
 
   @Test
   void testToPriorAuthority() {
-    final PriorAuthorityFlowFormData priorAuthorityFlowFormData = new PriorAuthorityFlowFormData("edit");
+    final PriorAuthorityFlowFormData priorAuthorityFlowFormData =
+        new PriorAuthorityFlowFormData("edit");
     priorAuthorityFlowFormData.setPriorAuthorityId(123);
 
     final PriorAuthorityFormDataTypeDetails typeDetails = new PriorAuthorityFormDataTypeDetails();
@@ -500,7 +507,7 @@ class ProceedingAndCostsMapperTest {
 
     final PriorAuthorityTypeDetail priorAuthorityDynamicForm = new PriorAuthorityTypeDetail();
 
-    final PriorAuthority result = mapper.toPriorAuthority(priorAuthorityFlowFormData, priorAuthorityDynamicForm);
+    final PriorAuthorityDetail result = mapper.toPriorAuthority(priorAuthorityFlowFormData, priorAuthorityDynamicForm);
 
     assertNotNull(result);
     assertEquals(Integer.valueOf(123), result.getId());
@@ -513,7 +520,7 @@ class ProceedingAndCostsMapperTest {
 
   @Test
   void testToPriorAuthority_withNull() {
-    final PriorAuthority result = mapper.toPriorAuthority(null, null);
+    final PriorAuthorityDetail result = mapper.toPriorAuthority(null, null);
     assertNull(result);
   }
 
@@ -528,18 +535,19 @@ class ProceedingAndCostsMapperTest {
     dynamicOptionsMap.put("Key1", dynamicOption1);
 
     final PriorAuthorityTypeDetail priorAuthorityDynamicForm = new PriorAuthorityTypeDetail();
-    final List<PriorAuthorityDetail> detailsList = new ArrayList<>();
-    final PriorAuthorityDetail detail1 = new PriorAuthorityDetail();
+    final List<uk.gov.laa.ccms.data.model.PriorAuthorityDetail> detailsList = new ArrayList<>();
+    final uk.gov.laa.ccms.data.model.PriorAuthorityDetail detail1 =
+        new uk.gov.laa.ccms.data.model.PriorAuthorityDetail();
     detail1.setCode("Key1");
     detail1.setLovCode("LOV1");
     detailsList.add(detail1);
     priorAuthorityDynamicForm.setPriorAuthorities(detailsList);
 
-    final List<ReferenceDataItem> result = mapper.toReferenceDataItems(dynamicOptionsMap, priorAuthorityDynamicForm);
+    final List<ReferenceDataItemDetail> result = mapper.toReferenceDataItems(dynamicOptionsMap, priorAuthorityDynamicForm);
 
     assertNotNull(result);
     assertEquals(1, result.size());
-    ReferenceDataItem item = result.get(0);
+    ReferenceDataItemDetail item = result.get(0);
     assertEquals("Key1", item.getCode().getId());
     assertEquals("Description 1", item.getCode().getDisplayValue());
     assertEquals("LOV1", item.getLovLookUp());
@@ -555,7 +563,7 @@ class ProceedingAndCostsMapperTest {
     dynamicOption.setFieldValue("Value1");
     dynamicOption.setFieldValueDisplayValue("Value Display 1");
 
-    final ReferenceDataItem result = mapper.toReferenceDataItem(key, dynamicOption);
+    final ReferenceDataItemDetail result = mapper.toReferenceDataItem(key, dynamicOption);
 
     assertNotNull(result);
     assertNotNull(result.getCode());
@@ -570,7 +578,7 @@ class ProceedingAndCostsMapperTest {
 
   @Test
   void testToReferenceDataItem_withNull() {
-    final ReferenceDataItem result = mapper.toReferenceDataItem(null, null);
+    final ReferenceDataItemDetail result = mapper.toReferenceDataItem(null, null);
     assertNull(result);
   }
 
