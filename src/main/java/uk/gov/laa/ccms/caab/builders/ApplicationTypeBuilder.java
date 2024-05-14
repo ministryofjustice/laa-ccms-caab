@@ -13,9 +13,8 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBST
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
-import uk.gov.laa.ccms.caab.model.DevolvedPowers;
+import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 
 /**
  * Helper class for constructing an {@link ApplicationType} instance using a builder pattern.
@@ -34,7 +33,7 @@ public class ApplicationTypeBuilder {
   /**
    * Builder method for application type.
    *
-   * @param applicationTypeCategory the category selected for the appliocation type.
+   * @param applicationTypeCategory the category selected for the application type.
    * @param isDelegatedFunctions the boolean whether delegate functions used.
    * @return the builder with amended contract flag.
    */
@@ -77,7 +76,7 @@ public class ApplicationTypeBuilder {
       final String month,
       final String year) throws ParseException {
 
-    DevolvedPowers devolvedPowers = new DevolvedPowers();
+    DevolvedPowersDetail devolvedPowers = new DevolvedPowersDetail();
     devolvedPowers.setUsed(isDelegatedFunctions);
 
     if (isDelegatedFunctions) {
@@ -99,7 +98,7 @@ public class ApplicationTypeBuilder {
   public ApplicationTypeBuilder devolvedPowersContractFlag(
       final String contractFlag) {
     if (applicationType.getDevolvedPowers() == null) {
-      applicationType.setDevolvedPowers(new DevolvedPowers());
+      applicationType.setDevolvedPowers(new DevolvedPowersDetail());
     }
     applicationType.getDevolvedPowers().setContractFlag(contractFlag);
     return this;

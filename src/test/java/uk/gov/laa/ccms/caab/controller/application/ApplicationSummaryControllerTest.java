@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,8 +25,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.controller.application.summary.ApplicationSummaryController;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -50,23 +53,33 @@ class ApplicationSummaryControllerTest {
 
   @Test
   public void testGetApplicationTypeAddsApplicationTypesToModel() throws Exception {
-    String id = "123";
+    final String id = "123";
 
-    ApplicationSummaryDisplay applicationSummaryDisplay =
+    final ApplicationSummaryDisplay applicationSummaryDisplay =
         ApplicationSummaryDisplay.builder()
             .build();
 
-    when(applicationService.getApplicationSummary(id)).thenReturn(
-        Mono.just(applicationSummaryDisplay));
+    final UserDetail user = new UserDetail();
+    user.setLoginId("testLogin");
+    user.setUserType("testUserType");
+
+    final ApplicationDetail application = new ApplicationDetail();
+
+    when(applicationService.getApplication(anyString())).thenReturn(Mono.just(application));
+    when(applicationService.getApplicationSummary(any(ApplicationDetail.class), any(UserDetail.class)))
+        .thenReturn(applicationSummaryDisplay);
 
     this.mockMvc.perform(get("/application/summary")
-            .sessionAttr("applicationId", id))
+            .sessionAttr("applicationId", id)
+            .sessionAttr("user", user))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/summary/summary-task-page"))
-        .andExpect(model().attributeExists("activeCase"));
+        .andExpect(model().attributeExists("activeCase"))
+        .andExpect(model().attribute("summary", applicationSummaryDisplay));
 
-    verify(applicationService, times(1)).getApplicationSummary(id);
+    verify(applicationService, times(1)).getApplicationSummary(
+        any(ApplicationDetail.class), any(UserDetail.class));
   }
 
 }

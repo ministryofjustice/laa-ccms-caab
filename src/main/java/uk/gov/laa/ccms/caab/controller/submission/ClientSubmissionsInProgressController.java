@@ -19,7 +19,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
-import uk.gov.laa.ccms.caab.model.BaseClient;
+import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
@@ -78,7 +78,7 @@ public class ClientSubmissionsInProgressController {
   public String clientUpdateSubmission(
       @SessionAttribute(SUBMISSION_TRANSACTION_ID) final String transactionId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @SessionAttribute(APPLICATION_CLIENT_NAMES) final BaseClient baseClient,
+      @SessionAttribute(APPLICATION_CLIENT_NAMES) final BaseClientDetail baseClient,
       final HttpSession session, final Model model) {
 
     model.addAttribute("submissionType", SUBMISSION_UPDATE_CLIENT);

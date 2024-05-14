@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
-import uk.gov.laa.ccms.caab.model.Address;
+import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 
 @ExtendWith(SpringExtension.class)
@@ -22,7 +22,7 @@ class AddressFormDataMapperTest {
 
   @Test
   void testToAddressFormDataNotNull() {
-    final Address address = new Address();
+    final AddressDetail address = new AddressDetail();
     address.setHouseNameOrNumber("123");
     address.setCity("CityName");
     address.setPostcode("Postcode");
@@ -65,7 +65,7 @@ class AddressFormDataMapperTest {
     addressFormData.setCareOf("CareOf");
     addressFormData.setPreferredAddress("Yes");
 
-    final Address result = mapper.toAddress(addressFormData);
+    final AddressDetail result = mapper.toAddress(addressFormData);
 
     assertEquals("123", result.getHouseNameOrNumber());
     assertEquals("CityName", result.getCity());
@@ -80,7 +80,7 @@ class AddressFormDataMapperTest {
 
   @Test
   void testToAddressWithNull() {
-    final Address result = mapper.toAddress(null);
+    final AddressDetail result = mapper.toAddress(null);
     assertNull(result);
   }
 

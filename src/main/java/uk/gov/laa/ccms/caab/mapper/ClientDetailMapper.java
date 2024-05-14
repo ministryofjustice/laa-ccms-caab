@@ -17,7 +17,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
-import uk.gov.laa.ccms.caab.model.BaseClient;
+import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
@@ -34,7 +34,7 @@ public interface ClientDetailMapper {
 
   @Mapping(target = "firstName", source = "basicDetails.firstName")
   @Mapping(target = "surname", source = "basicDetails.surname")
-  BaseClient toBaseClient(ClientFlowFormData clientFlowFormData);
+  BaseClientDetail toBaseClient(ClientFlowFormData clientFlowFormData);
 
   @Mapping(target = "details", source = ".")
   ClientDetail toClientDetail(ClientFlowFormData clientFlowFormData);
@@ -165,12 +165,10 @@ public interface ClientDetailMapper {
    * Adds address details to the client flow form data, overriding the vulnerable client state.
    *
    * @param clientFlowFormData The client flow form data with basic details to be amended.
-   * @param clientDetailDetails The returned soa client details to map from.
    */
   @AfterMapping
   default void setAddressDetailsIfNull(
-      @MappingTarget final ClientFlowFormData clientFlowFormData,
-      final ClientDetailDetails clientDetailDetails) {
+      @MappingTarget final ClientFlowFormData clientFlowFormData) {
     if (clientFlowFormData.getAddressDetails() == null) {
       final ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
       addressDetails.setVulnerableClient(

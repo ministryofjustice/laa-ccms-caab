@@ -57,7 +57,7 @@ class NotificationSearchValidatorTest {
     validator.validate(criteria, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
-    assertNotNull(errors.getFieldError("dateFrom"));
+    assertNotNull(errors.getFieldError("notificationFromDate"));
 
   }
 
@@ -69,7 +69,24 @@ class NotificationSearchValidatorTest {
     validator.validate(criteria, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
-    assertNotNull(errors.getFieldError("dateTo"));
+    assertNotNull(errors.getFieldError("notificationToDate"));
+  }
+
+  @Test
+  void validateNonNumericalDates() {
+    criteria.setNotificationFromDateDay("A");
+    criteria.setNotificationFromDateMonth("12");
+    criteria.setNotificationFromDateYear("2021");
+    criteria.setNotificationToDateDay("13");
+    criteria.setNotificationToDateMonth("12");
+    criteria.setNotificationToDateYear("B");
+    validator.validate(criteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(4, errors.getErrorCount());
+    assertNotNull(errors.getFieldError("notificationFromDate"));
+    assertNotNull(errors.getFieldError("notificationFromDateDay"));
+    assertNotNull(errors.getFieldError("notificationToDate"));
+    assertNotNull(errors.getFieldError("notificationToDateYear"));
   }
 
   @Test
@@ -79,8 +96,9 @@ class NotificationSearchValidatorTest {
     criteria.setNotificationToDateYear("2021/");
     validator.validate(criteria, errors);
     assertTrue(errors.hasErrors());
-    assertEquals(1, errors.getErrorCount());
+    assertEquals(2, errors.getErrorCount());
     assertNotNull(errors.getFieldError("notificationToDateYear"));
+    assertNotNull(errors.getFieldError("notificationToDate"));
   }
 
   @Test

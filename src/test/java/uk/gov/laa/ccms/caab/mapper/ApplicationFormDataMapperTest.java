@@ -13,7 +13,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
-import uk.gov.laa.ccms.caab.model.DevolvedPowers;
+import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 
@@ -23,8 +23,8 @@ class ApplicationFormDataMapperTest {
 
   @Test
   void testToApplicationTypeFormData() {
-    // Create a sample DevolvedPowers
-    DevolvedPowers devolvedPowers = new DevolvedPowers();
+    // Create a sample DevolvedPowersDetail
+    DevolvedPowersDetail devolvedPowers = new DevolvedPowersDetail();
     devolvedPowers.setUsed(true);
     Date dateUsed = createDate(2023, 10, 23);
     devolvedPowers.setDateUsed(dateUsed);

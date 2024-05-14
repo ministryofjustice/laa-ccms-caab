@@ -60,7 +60,7 @@ public class ClientDeceasedDetailsValidator extends AbstractValidator {
       Date date = validateValidDateField(
           deceasedDetails.getDateOfDeath(),
           "dateOfDeath",
-          SOA_DATE_FORMAT, errors);
+          "date of death", SOA_DATE_FORMAT,  errors);
       validateDateInPast(date, "dateOfDeath", "date of death", errors);
     }
   }

@@ -1,7 +1,7 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.2.0'
-	id 'io.spring.dependency-management' version '1.1.3'
+	id 'org.springframework.boot' version '3.2.5'
+	id 'io.spring.dependency-management' version '1.1.4'
 	id 'jacoco'
 	id 'net.researchgate.release' version '3.0.2'
 	id 'checkstyle'
@@ -12,7 +12,12 @@ ext {
 }
 
 group = 'uk.gov.laa'
-sourceCompatibility = '17'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(JAVA_VERSION)
+	}
+}
 
 release {
 	tagTemplate = '$name-$version'
@@ -72,9 +77,13 @@ repositories {
 }
 
 dependencies {
-	implementation 'uk.gov.laa.ccms.data:data-api:0.0.5'
-	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.16'
-	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.20'
+	implementation 'uk.gov.laa.ccms.data:data-api:0.0.8'
+
+	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.19'
+
+	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.24'
+
+	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.8'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -93,18 +102,15 @@ dependencies {
 
 	implementation 'org.springframework.boot:spring-boot-devtools'
 
+	implementation 'org.json:json:20240303'
+
 	//SAML security
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 	implementation 'org.springframework.security:spring-security-saml2-service-provider'
-	implementation "org.opensaml:opensaml-core:4.3.0"
-	implementation "org.opensaml:opensaml-saml-api:4.3.0"
-	implementation "org.opensaml:opensaml-saml-impl:4.3.0"
-
-
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.mockito:mockito-core:5.8.0'
-	testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+	testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'io.projectreactor:reactor-test:3.6.1'
 

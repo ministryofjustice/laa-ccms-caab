@@ -66,6 +66,10 @@ laa:
       hostname: localhost
       port: 8005
       url: http://${laa.ccms.caab-api.hostname}:${laa.ccms.caab-api.port}
+    assessment-api:
+      hostname: localhost
+      port: 8008
+      url: http://${laa.ccms.assessment-api.hostname}:${laa.ccms.assessment-api.port}
 
 server:
   port: 8010

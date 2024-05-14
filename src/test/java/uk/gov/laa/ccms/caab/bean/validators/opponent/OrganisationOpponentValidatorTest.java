@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_OPPONENT;
 
-import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,7 +56,7 @@ class OrganisationOpponentValidatorTest {
 
   @Test
   public void validate_sharedOrg_allErrors() {
-    opponentFormData.setOtherInformation(StringUtils.repeat("a", 2001));
+    opponentFormData.setOtherInformation("a".repeat(2001));
 
     validator.validate(opponentFormData, errors);
     assertTrue(errors.hasErrors());
@@ -137,7 +136,7 @@ class OrganisationOpponentValidatorTest {
     opponentFormData.setOrganisationName("orgname");
     opponentFormData.setOrganisationType("orgtype");
 
-    opponentFormData.setOtherInformation(StringUtils.repeat("<", 2001));
+    opponentFormData.setOtherInformation("<".repeat(2001));
 
     validator.validate(opponentFormData, errors);
     // Should be two errors on otherInformation. Length and format.

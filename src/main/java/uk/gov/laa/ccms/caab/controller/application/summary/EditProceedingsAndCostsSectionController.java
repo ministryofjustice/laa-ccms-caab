@@ -59,10 +59,10 @@ import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.model.CostStructure;
-import uk.gov.laa.ccms.caab.model.PriorAuthority;
-import uk.gov.laa.ccms.caab.model.Proceeding;
-import uk.gov.laa.ccms.caab.model.ScopeLimitation;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -74,12 +74,9 @@ import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupValueDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupValueDetail;
-import uk.gov.laa.ccms.data.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
-import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProceedingDetails;
-import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -150,13 +147,13 @@ public class EditProceedingsAndCostsSectionController {
 
     model.addAttribute(APPLICATION_COSTS, application.getCosts());
 
-    final List<Proceeding> proceedings =
+    final List<ProceedingDetail> proceedings =
         Optional.ofNullable(application.getProceedings())
             .orElse(Collections.emptyList());
 
     model.addAttribute(APPLICATION_PROCEEDINGS, proceedings);
 
-    final List<PriorAuthority> priorAuthorities =
+    final List<PriorAuthorityDetail> priorAuthorities =
         Optional.ofNullable(application.getPriorAuthorities())
             .orElse(Collections.emptyList());
 
@@ -179,7 +176,7 @@ public class EditProceedingsAndCostsSectionController {
   @GetMapping("/application/proceedings/{proceeding-id}/make-lead")
   public String proceedingsMakeLead(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
-      @SessionAttribute(APPLICATION_PROCEEDINGS) final List<Proceeding> proceedings,
+      @SessionAttribute(APPLICATION_PROCEEDINGS) final List<ProceedingDetail> proceedings,
       @PathVariable("proceeding-id") final Integer proceedingId,
       @SessionAttribute(USER_DETAILS) final UserDetail user) {
 
@@ -208,7 +205,7 @@ public class EditProceedingsAndCostsSectionController {
 
     model.addAttribute("proceedingId", proceedingId);
 
-    return "/application/proceedings-remove";
+    return "application/proceedings-remove";
   }
 
   /**
@@ -224,7 +221,7 @@ public class EditProceedingsAndCostsSectionController {
   public String proceedingsRemovePost(
       @PathVariable("proceeding-id") final Integer proceedingId,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
-      @SessionAttribute(APPLICATION_PROCEEDINGS) final List<Proceeding> proceedings,
+      @SessionAttribute(APPLICATION_PROCEEDINGS) final List<ProceedingDetail> proceedings,
       @SessionAttribute(USER_DETAILS) final UserDetail user) {
 
     final boolean proceedingExists = proceedings.stream()
@@ -255,12 +252,12 @@ public class EditProceedingsAndCostsSectionController {
   public String proceedingsSummary(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
-      @SessionAttribute(APPLICATION_PROCEEDINGS) final List<Proceeding> proceedings,
+      @SessionAttribute(APPLICATION_PROCEEDINGS) final List<ProceedingDetail> proceedings,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @PathVariable("proceeding-id") final Integer proceedingId,
       final Model model) {
 
-    final Proceeding proceeding = proceedings.stream()
+    final ProceedingDetail proceeding = proceedings.stream()
         .filter(proceeding1 -> proceeding1.getId().equals(proceedingId))
         .findFirst()
         .orElseThrow();
@@ -314,7 +311,8 @@ public class EditProceedingsAndCostsSectionController {
           proceedingFlow.getMatterTypeDetails());
 
     } else {
-      final Proceeding proceeding = (Proceeding) session.getAttribute(CURRENT_PROCEEDING);
+      final ProceedingDetail proceeding =
+          (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
       model.addAttribute(PROCEEDING_SCOPE_LIMITATIONS, proceeding.getScopeLimitations());
 
       final ProceedingFlowFormData proceedingFlow = proceedingAndCostsMapper.toProceedingFlow(
@@ -501,7 +499,8 @@ public class EditProceedingsAndCostsSectionController {
       final String matterType,
       final boolean isLead) {
 
-    final ProceedingDetail searchCriteria = new ProceedingDetail()
+    final uk.gov.laa.ccms.data.model.ProceedingDetail searchCriteria =
+        new uk.gov.laa.ccms.data.model.ProceedingDetail()
         .amendmentOnly(application.getAmendment())
         .matterType(matterType)
         .categoryOfLawCode(application.getCategoryOfLaw().getId());
@@ -509,8 +508,9 @@ public class EditProceedingsAndCostsSectionController {
     final Boolean larScopeFlag = application.getLarScopeFlag();
     final String applicationType = application.getApplicationType().getId();
 
-    final List<ProceedingDetail> proceedingDetails = Optional.ofNullable(
-        lookupService.getProceedings(searchCriteria, larScopeFlag, applicationType, isLead).block())
+    final List<uk.gov.laa.ccms.data.model.ProceedingDetail> proceedingDetails =
+        Optional.ofNullable(lookupService.getProceedings(
+            searchCriteria, larScopeFlag, applicationType, isLead).block())
         .map(ProceedingDetails::getContent)
         .orElse(Collections.emptyList());
 
@@ -667,7 +667,8 @@ public class EditProceedingsAndCostsSectionController {
 
     //coming directly from proceeding summary - editing scope limitations
     if (isRoutedFromSummaryPage(action, session)) {
-      final Proceeding proceeding = (Proceeding) session.getAttribute(CURRENT_PROCEEDING);
+      final ProceedingDetail proceeding =
+          (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
 
       //get order type display value to be visible for the page
       //this is not stored in the proceeding db object so we have to look it up
@@ -685,7 +686,7 @@ public class EditProceedingsAndCostsSectionController {
       model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
       //refresh the scope limitations
-      final List<ScopeLimitation> scopeLimitations =
+      final List<ScopeLimitationDetail> scopeLimitations =
           applicationService.getScopeLimitations(proceeding.getId());
       proceeding.setScopeLimitations(scopeLimitations);
       model.addAttribute(CURRENT_PROCEEDING, proceeding);
@@ -709,7 +710,7 @@ public class EditProceedingsAndCostsSectionController {
               .block();
 
       if (scopeLimitationDetails != null) {
-        final List<ScopeLimitation> scopeLimitations =
+        final List<ScopeLimitationDetail> scopeLimitations =
             proceedingAndCostsMapper.toScopeLimitationList(
                 scopeLimitationDetails.getContent());
 
@@ -721,7 +722,8 @@ public class EditProceedingsAndCostsSectionController {
       proceedingFlow.setAmended(Boolean.FALSE);
     } else {
       if (action.equals(ACTION_EDIT)) {
-        final Proceeding proceeding = (Proceeding) session.getAttribute(CURRENT_PROCEEDING);
+        final ProceedingDetail proceeding =
+            (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
         model.addAttribute(PROCEEDING_SCOPE_LIMITATIONS, proceeding.getScopeLimitations());
       } else {
         model.addAttribute(PROCEEDING_SCOPE_LIMITATIONS,
@@ -771,8 +773,9 @@ public class EditProceedingsAndCostsSectionController {
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
-      @SessionAttribute(PROCEEDING_SCOPE_LIMITATIONS) final List<ScopeLimitation> scopeLimitations,
-      @SessionAttribute(APPLICATION_PROCEEDINGS) final List<Proceeding> proceedings,
+      @SessionAttribute(PROCEEDING_SCOPE_LIMITATIONS)
+      final List<ScopeLimitationDetail> scopeLimitations,
+      @SessionAttribute(APPLICATION_PROCEEDINGS) final List<ProceedingDetail> proceedings,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @PathVariable("action") final String action,
       final HttpSession session) {
@@ -798,7 +801,7 @@ public class EditProceedingsAndCostsSectionController {
 
     if (action.equals(ACTION_ADD)) {
 
-      final Proceeding proceeding = proceedingAndCostsMapper.toProceeding(
+      final ProceedingDetail proceeding = proceedingAndCostsMapper.toProceeding(
           proceedingFlow,
           costLimitation,
           stage);
@@ -818,7 +821,8 @@ public class EditProceedingsAndCostsSectionController {
 
     } else {
 
-      final Proceeding proceeding = (Proceeding) session.getAttribute(CURRENT_PROCEEDING);
+      final ProceedingDetail proceeding =
+          (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
       proceedingAndCostsMapper.toProceeding(
           proceeding,
           proceedingFlow,
@@ -861,10 +865,10 @@ public class EditProceedingsAndCostsSectionController {
     // being edited
     if (proceedingFlow.getAction().equals(ACTION_ADD)) {
       // we need to get the scope limitations from the session
-      final List<ScopeLimitation> scopeLimitations =
-          (List<ScopeLimitation>) session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS);
+      final List<ScopeLimitationDetail> scopeLimitations =
+          (List<ScopeLimitationDetail>) session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS);
 
-      final ScopeLimitation scopeLimitation = scopeLimitations.get(scopeLimitationId);
+      final ScopeLimitationDetail scopeLimitation = scopeLimitations.get(scopeLimitationId);
       model.addAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
 
       final ScopeLimitationFlowFormData scopeLimitationFlow =
@@ -875,8 +879,9 @@ public class EditProceedingsAndCostsSectionController {
 
     } else {
       // we need to get the scope limitations from the stored proceeding
-      final Proceeding proceeding = (Proceeding) session.getAttribute(CURRENT_PROCEEDING);
-      final ScopeLimitation scopeLimitation = proceeding.getScopeLimitations().stream()
+      final ProceedingDetail proceeding =
+          (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
+      final ScopeLimitationDetail scopeLimitation = proceeding.getScopeLimitations().stream()
           .filter(sl -> sl.getId().equals(scopeLimitationId))
           .findFirst()
           .orElseThrow();
@@ -988,15 +993,16 @@ public class EditProceedingsAndCostsSectionController {
       final ApplicationDetail application,
       final ProceedingFlowFormData proceedingFlow) {
 
-    final ScopeLimitationDetail criteria = createScopeLimitationCriteria(
-        application, proceedingFlow);
+    final uk.gov.laa.ccms.data.model.ScopeLimitationDetail criteria =
+        createScopeLimitationCriteria(application, proceedingFlow);
 
-    final List<ScopeLimitationDetail> scopeLimitationTypes = Optional.ofNullable(
-            lookupService.getScopeLimitationDetails(criteria).block())
+    final List<uk.gov.laa.ccms.data.model.ScopeLimitationDetail> scopeLimitationTypes =
+        Optional.ofNullable(lookupService.getScopeLimitationDetails(criteria).block())
         .map(result ->
             result.getContent() != null
                 ? result.getContent().stream()
-                .sorted(Comparator.comparing(ScopeLimitationDetail::getDescription))
+                .sorted(Comparator.comparing(
+                    uk.gov.laa.ccms.data.model.ScopeLimitationDetail::getDescription))
                 .collect(Collectors.toList())
                 : null)
         .orElse(Collections.emptyList());
@@ -1025,30 +1031,31 @@ public class EditProceedingsAndCostsSectionController {
       final ProceedingFlowFormData proceedingFlow,
       final ScopeLimitationFlowFormData scopeLimitationFlow) {
 
-    final ScopeLimitationDetail criteria = createScopeLimitationCriteria(
-        application, proceedingFlow);
+    final uk.gov.laa.ccms.data.model.ScopeLimitationDetail criteria =
+        createScopeLimitationCriteria(application, proceedingFlow);
     criteria.scopeLimitations(scopeLimitationFlow.getScopeLimitationDetails()
         .getScopeLimitation());
 
-    final ScopeLimitationDetail scopeLimitationDetail = Optional.ofNullable(
-        lookupService.getScopeLimitationDetails(criteria).block())
+    final uk.gov.laa.ccms.data.model.ScopeLimitationDetail scopeLimitationDetail =
+        Optional.ofNullable(lookupService.getScopeLimitationDetails(criteria).block())
         .map(result -> result.getContent() != null
             ? result.getContent().stream().findFirst().orElse(null)
             : null)
         .orElseThrow(() -> new CaabApplicationException("No ScopeLimitationDetail found"));
 
-    final ScopeLimitation scopeLimitation =
+    final ScopeLimitationDetail scopeLimitation =
         proceedingAndCostsMapper.toScopeLimitation(scopeLimitationDetail);
     scopeLimitation.setId(scopeLimitationFlow.getScopeLimitationId());
 
     model.addAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
   }
 
-  private ScopeLimitationDetail createScopeLimitationCriteria(
+  private uk.gov.laa.ccms.data.model.ScopeLimitationDetail createScopeLimitationCriteria(
       final ApplicationDetail application,
       final ProceedingFlowFormData proceedingFlow) {
 
-    final ScopeLimitationDetail criteria = new ScopeLimitationDetail()
+    final uk.gov.laa.ccms.data.model.ScopeLimitationDetail criteria =
+        new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
         .categoryOfLaw(application.getCategoryOfLaw().getId())
         .matterType(proceedingFlow.getMatterTypeDetails().getMatterType())
         .proceedingCode(proceedingFlow.getProceedingDetails().getProceedingType())
@@ -1073,7 +1080,7 @@ public class EditProceedingsAndCostsSectionController {
 
   @GetMapping("/application/proceedings/scope-limitations/confirm")
   public String scopeLimitationConfirm(
-      @SessionAttribute(CURRENT_SCOPE_LIMITATION) final ScopeLimitation scopeLimitation,
+      @SessionAttribute(CURRENT_SCOPE_LIMITATION) final ScopeLimitationDetail scopeLimitation,
       @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA)
       final ScopeLimitationFlowFormData scopeLimitationFlow,
       final Model model) {
@@ -1100,7 +1107,7 @@ public class EditProceedingsAndCostsSectionController {
    */
   @PostMapping("/application/proceedings/scope-limitations/confirm")
   public String scopeLimitationConfirmPost(
-      @SessionAttribute(CURRENT_SCOPE_LIMITATION) final ScopeLimitation scopeLimitation,
+      @SessionAttribute(CURRENT_SCOPE_LIMITATION) final ScopeLimitationDetail scopeLimitation,
       @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
       @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA)
       final ScopeLimitationFlowFormData scopeLimitationFlow,
@@ -1110,8 +1117,8 @@ public class EditProceedingsAndCostsSectionController {
 
 
     if (proceedingFlow.getAction().equals(ACTION_ADD)) {
-      final List<ScopeLimitation> scopeLimitations =
-          (List<ScopeLimitation>) session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS);
+      final List<ScopeLimitationDetail> scopeLimitations =
+          (List<ScopeLimitationDetail>) session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS);
 
       model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
@@ -1128,13 +1135,14 @@ public class EditProceedingsAndCostsSectionController {
 
     } else {
       //when we are adding a scope limitation to an existing proceeding
-      final Proceeding proceeding = (Proceeding) session.getAttribute(CURRENT_PROCEEDING);
+      final ProceedingDetail proceeding =
+          (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
 
       if (scopeLimitation.getId() == null) {
         proceeding.getScopeLimitations().add(scopeLimitation);
       } else {
         //replace the scope limitation in the list with the one that matched the id
-        final List<ScopeLimitation> scopeLimitations = proceeding.getScopeLimitations();
+        final List<ScopeLimitationDetail> scopeLimitations = proceeding.getScopeLimitations();
         IntStream.range(0, scopeLimitations.size())
             .filter(i -> scopeLimitations.get(i).getId().equals(scopeLimitation.getId()))
             .findFirst()
@@ -1144,7 +1152,7 @@ public class EditProceedingsAndCostsSectionController {
       applicationService.updateProceeding(proceeding, user);
 
       //need to refresh current proceeding for new scope limitation id
-      final List<ScopeLimitation> scopeLimitations =
+      final List<ScopeLimitationDetail> scopeLimitations =
           applicationService.getScopeLimitations(proceeding.getId());
       proceeding.setScopeLimitations(scopeLimitations);
 
@@ -1198,8 +1206,8 @@ public class EditProceedingsAndCostsSectionController {
 
     //remove the scope limitation from the session list
     if (proceedingFlow.getAction().equals(ACTION_ADD)) {
-      final List<ScopeLimitation> scopeLimitations =
-          (List<ScopeLimitation>) session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS);
+      final List<ScopeLimitationDetail> scopeLimitations =
+          (List<ScopeLimitationDetail>) session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS);
 
       scopeLimitations.remove(scopeLimitationId);
 
@@ -1207,8 +1215,9 @@ public class EditProceedingsAndCostsSectionController {
 
     } else {
       //remove the scope limitation from the proceeding and update the db
-      final Proceeding proceeding = (Proceeding) session.getAttribute(CURRENT_PROCEEDING);
-      final List<ScopeLimitation> scopeLimitations = proceeding.getScopeLimitations();
+      final ProceedingDetail proceeding =
+          (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
+      final List<ScopeLimitationDetail> scopeLimitations = proceeding.getScopeLimitations();
 
       scopeLimitations.removeIf(scopeLimitation ->
           scopeLimitation.getId().equals(scopeLimitationId));
@@ -1233,7 +1242,7 @@ public class EditProceedingsAndCostsSectionController {
   @GetMapping("/application/case-costs")
   public String caseCosts(
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
-      @SessionAttribute(APPLICATION_COSTS) final CostStructure costs,
+      @SessionAttribute(APPLICATION_COSTS) final CostStructureDetail costs,
       final Model model) {
 
     final CostsFormData costsFormData =
@@ -1262,7 +1271,7 @@ public class EditProceedingsAndCostsSectionController {
   public String caseCostsPost(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
-      @SessionAttribute(APPLICATION_COSTS) final CostStructure costs,
+      @SessionAttribute(APPLICATION_COSTS) final CostStructureDetail costs,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @ModelAttribute("costDetails") final CostsFormData costsFormData,
       final Model model,
@@ -1439,7 +1448,7 @@ public class EditProceedingsAndCostsSectionController {
     }
 
     //convert all this to mapper
-    final PriorAuthority priorAuthority =
+    final PriorAuthorityDetail priorAuthority =
         proceedingAndCostsMapper.toPriorAuthority(priorAuthorityFlow, priorAuthorityDynamicForm);
 
     if (ACTION_ADD.equals(priorAuthorityAction)) {
@@ -1465,7 +1474,7 @@ public class EditProceedingsAndCostsSectionController {
       final PriorAuthorityTypeDetail priorAuthorityTypeDetail) {
 
     //collect list of Prior authority detail where dataType is LOV
-    final List<PriorAuthorityDetail> lookups =
+    final List<uk.gov.laa.ccms.data.model.PriorAuthorityDetail> lookups =
         priorAuthorityTypeDetail.getPriorAuthorities().stream()
         .filter(priorAuthorityDetail ->
             REFERENCE_DATA_ITEM_TYPE_LOV.equals(priorAuthorityDetail.getDataType()))
@@ -1474,7 +1483,7 @@ public class EditProceedingsAndCostsSectionController {
     // Create a list to hold all the Mono<Void> objects
     final List<Mono<Void>> listOfMonos = new ArrayList<>();
 
-    for (final PriorAuthorityDetail lookup : lookups) {
+    for (final uk.gov.laa.ccms.data.model.PriorAuthorityDetail lookup : lookups) {
       final Mono<List<CommonLookupValueDetail>> commonValuesMono =
           lookupService.getCommonValues(lookup.getLovCode())
               .mapNotNull(CommonLookupDetail::getContent);
@@ -1499,10 +1508,11 @@ public class EditProceedingsAndCostsSectionController {
   @GetMapping("/application/prior-authorities/{prior-authority-id}/confirm")
   public String priorAuthorityConfirm(
       @PathVariable("prior-authority-id") final int priorAuthorityId,
-      @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES) final List<PriorAuthority> priorAuthorities,
+      @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES)
+      final List<PriorAuthorityDetail> priorAuthorities,
       final Model model) {
 
-    final PriorAuthority priorAuthority = priorAuthorities.stream()
+    final PriorAuthorityDetail priorAuthority = priorAuthorities.stream()
         .filter(pa -> pa.getId().equals(priorAuthorityId))
         .findFirst()
         .orElseThrow(() ->
@@ -1530,10 +1540,11 @@ public class EditProceedingsAndCostsSectionController {
   @GetMapping("/application/prior-authorities/{prior-authority-id}/remove")
   public String priorAuthorityRemove(
       @PathVariable("prior-authority-id") final int priorAuthorityId,
-      @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES) final List<PriorAuthority> priorAuthorities,
+      @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES)
+      final List<PriorAuthorityDetail> priorAuthorities,
       final Model model) {
 
-    final PriorAuthority priorAuthority = priorAuthorities.stream()
+    final PriorAuthorityDetail priorAuthority = priorAuthorities.stream()
         .filter(pa -> pa.getId().equals(priorAuthorityId))
         .findFirst()
         .orElseThrow(() ->
@@ -1556,7 +1567,8 @@ public class EditProceedingsAndCostsSectionController {
   @PostMapping("/application/prior-authorities/{prior-authority-id}/remove")
   public String priorAuthorityRemovePost(
       @PathVariable("prior-authority-id") final int priorAuthorityId,
-      @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES) final List<PriorAuthority> priorAuthorities,
+      @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES)
+      final List<PriorAuthorityDetail> priorAuthorities,
       @SessionAttribute(USER_DETAILS) final UserDetail user) {
 
     //existence check
@@ -1571,7 +1583,4 @@ public class EditProceedingsAndCostsSectionController {
 
     return "redirect:/application/proceedings-and-costs#prior-authority";
   }
-
-
-
 }

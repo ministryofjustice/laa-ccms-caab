@@ -28,7 +28,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
-import uk.gov.laa.ccms.caab.model.BaseApplication;
+import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.util.PaginationUtil;
@@ -120,7 +120,7 @@ public class CopyCaseSearchController {
     }
 
     // Call the service to query for Cases
-    List<BaseApplication> searchResults;
+    List<BaseApplicationDetail> searchResults;
     try {
       searchResults = applicationService.getCases(caseSearchCriteria, user);
 
@@ -150,7 +150,7 @@ public class CopyCaseSearchController {
   public String copyCaseSearchResults(
       @RequestParam(value = "page", defaultValue = "0") int page,
       @RequestParam(value = "size", defaultValue = "10") int size,
-      @ModelAttribute(CASE_SEARCH_RESULTS) List<BaseApplication> caseSearchResults,
+      @ModelAttribute(CASE_SEARCH_RESULTS) List<BaseApplicationDetail> caseSearchResults,
       HttpServletRequest request,
       Model model) {
 
@@ -174,7 +174,7 @@ public class CopyCaseSearchController {
   @GetMapping("/application/copy-case/{case-reference-number}/confirm")
   public String selectCopyCaseReferenceNumber(
       @PathVariable("case-reference-number") String copyCaseReferenceNumber,
-      @SessionAttribute(CASE_SEARCH_RESULTS) List<BaseApplication> caseSearchResults,
+      @SessionAttribute(CASE_SEARCH_RESULTS) List<BaseApplicationDetail> caseSearchResults,
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData) {
 
     // Validate that the supplied caseRef is one from the search results in the session

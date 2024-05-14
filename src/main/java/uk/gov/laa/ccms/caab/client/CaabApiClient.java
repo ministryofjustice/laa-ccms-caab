@@ -14,19 +14,21 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
-import uk.gov.laa.ccms.caab.model.Address;
+import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
-import uk.gov.laa.ccms.caab.model.BaseClient;
-import uk.gov.laa.ccms.caab.model.CostStructure;
+import uk.gov.laa.ccms.caab.model.BaseClientDetail;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
-import uk.gov.laa.ccms.caab.model.LinkedCase;
-import uk.gov.laa.ccms.caab.model.Opponent;
-import uk.gov.laa.ccms.caab.model.PriorAuthority;
-import uk.gov.laa.ccms.caab.model.Proceeding;
-import uk.gov.laa.ccms.caab.model.ScopeLimitation;
+import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
+import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 
 /**
  * Client responsible for interactions with the CAAB API.
@@ -49,7 +51,7 @@ public class CaabApiClient {
   public static final String RESOURCE_TYPE_SCOPE_LIMITATIONS = "scope limitations";
   public static final String RESOURCE_TYPE_CLIENT = "client";
   public static final String RESOURCE_TYPE_OPPONENTS = "opponents";
-
+  public static final String RESOURCE_TYPE_CASE_OUTCOME = "case outcome";
   public static final String RESOURCE_TYPE_EVIDENCE = "evidence";
 
   /**
@@ -231,13 +233,13 @@ public class CaabApiClient {
    * @param id the ID associated with the application
    * @return a Mono containing application's correspondence address
    */
-  public Mono<Address> getCorrespondenceAddress(
+  public Mono<AddressDetail> getCorrespondenceAddress(
       final String id) {
     return caabApiWebClient
         .get()
         .uri("/applications/{id}/correspondence-address", id)
         .retrieve()
-        .bodyToMono(Address.class)
+        .bodyToMono(AddressDetail.class)
         .onErrorResume(e -> caabApiClientErrorHandler
             .handleApiRetrieveError(e,
                 RESOURCE_TYPE_CORRESPONDENCE_ADDRESS, "application id", id));
@@ -247,15 +249,15 @@ public class CaabApiClient {
    * Retrieves a list of linked cases associated with a given application ID.
    *
    * @param id the ID of the application for which linked cases are to be retrieved
-   * @return a Mono containing a list of LinkedCase objects associated with the application
+   * @return a Mono containing a list of LinkedCaseDetail objects associated with the application
    */
-  public Mono<List<LinkedCase>> getLinkedCases(
+  public Mono<List<LinkedCaseDetail>> getLinkedCases(
       final String id) {
     return caabApiWebClient
         .get()
         .uri("/applications/{id}/linked-cases", id)
         .retrieve()
-        .bodyToMono(new ParameterizedTypeReference<List<LinkedCase>>() {})
+        .bodyToMono(new ParameterizedTypeReference<List<LinkedCaseDetail>>() {})
         .onErrorResume(e -> caabApiClientErrorHandler
             .handleApiRetrieveError(e,
                 RESOURCE_TYPE_LINKED_CASES, "application id", id));
@@ -293,7 +295,7 @@ public class CaabApiClient {
    */
   public Mono<Void> addLinkedCase(
       final String applicationId,
-      final LinkedCase data,
+      final LinkedCaseDetail data,
       final String loginId) {
     return caabApiWebClient
         .post()
@@ -318,7 +320,7 @@ public class CaabApiClient {
    */
   public Mono<Void> updateLinkedCase(
       final String linkedCaseId,
-      final LinkedCase data,
+      final LinkedCaseDetail data,
       final String loginId) {
     return caabApiWebClient
         .patch()
@@ -338,15 +340,15 @@ public class CaabApiClient {
    * This method communicates with the CAAB API client to fetch the cost structure.
    *
    * @param id The id of the application for which the cost structure should be retrieved.
-   * @return A {@code Mono<CostStructure>} containing the cost structure.
+   * @return A {@code Mono<CostStructureDetail>} containing the cost structure.
    */
-  public Mono<CostStructure> getCostStructure(
+  public Mono<CostStructureDetail> getCostStructure(
       final String id) {
     return caabApiWebClient
         .get()
         .uri("/applications/{id}/cost-structure", id)
         .retrieve()
-        .bodyToMono(new ParameterizedTypeReference<CostStructure>() {})
+        .bodyToMono(new ParameterizedTypeReference<CostStructureDetail>() {})
         .onErrorResume(e -> caabApiClientErrorHandler.handleApiRetrieveError(e,
             RESOURCE_TYPE_COSTS, "application id", id));
   }
@@ -361,7 +363,7 @@ public class CaabApiClient {
    */
   public Mono<Void> updateCostStructure(
       final String id,
-      final CostStructure costs,
+      final CostStructureDetail costs,
       final String loginId) {
     return caabApiWebClient
         .put()
@@ -380,15 +382,15 @@ public class CaabApiClient {
    * This method communicates with the CAAB API client to fetch the proceedings.
    *
    * @param id The id of the application for which proceedings should be retrieved.
-   * @return A {@code Mono<List<Proceeding>>} containing the proceedings.
+   * @return A {@code Mono<List<ProceedingDetail>>} containing the proceedings.
    */
-  public Mono<List<Proceeding>> getProceedings(
+  public Mono<List<ProceedingDetail>> getProceedings(
       final String id) {
     return caabApiWebClient
         .get()
         .uri("/applications/{id}/proceedings", id)
         .retrieve()
-        .bodyToMono(new ParameterizedTypeReference<List<Proceeding>>() {})
+        .bodyToMono(new ParameterizedTypeReference<List<ProceedingDetail>>() {})
         .onErrorResume(e -> caabApiClientErrorHandler.handleApiRetrieveError(e,
             RESOURCE_TYPE_PROCEEDINGS, "application id", id));
   }
@@ -403,7 +405,7 @@ public class CaabApiClient {
    */
   public Mono<Void> updateProceeding(
       final Integer proceedingId,
-      final Proceeding data,
+      final ProceedingDetail data,
       final String loginId) {
     return caabApiWebClient
         .patch()
@@ -428,7 +430,7 @@ public class CaabApiClient {
    */
   public Mono<Void> addProceeding(
       final String applicationId,
-      final Proceeding proceeding,
+      final ProceedingDetail proceeding,
       final String loginId) {
     return caabApiWebClient
         .post()
@@ -468,16 +470,16 @@ public class CaabApiClient {
    * This method communicates with the CAAB API client to fetch the scope limitations.
    *
    * @param proceedingId The id of the proceeding for which scope limitations should be retrieved.
-   * @return A {@code Mono<List<ScopeLimitation>>} containing the scope limitations.
+   * @return A {@code Mono<List<ScopeLimitationDetail>>} containing the scope limitations.
    * @throws RuntimeException if an error occurs during the retrieval operation
    */
-  public Mono<List<ScopeLimitation>> getScopeLimitations(
+  public Mono<List<ScopeLimitationDetail>> getScopeLimitations(
       final Integer proceedingId) {
     return caabApiWebClient
         .get()
         .uri("/proceedings/{id}/scope-limitations", proceedingId)
         .retrieve()
-        .bodyToMono(new ParameterizedTypeReference<List<ScopeLimitation>>() {})
+        .bodyToMono(new ParameterizedTypeReference<List<ScopeLimitationDetail>>() {})
         .onErrorResume(e -> caabApiClientErrorHandler.handleApiRetrieveError(e,
             RESOURCE_TYPE_SCOPE_LIMITATIONS, "proceeding id", String.valueOf(proceedingId)));
   }
@@ -493,7 +495,7 @@ public class CaabApiClient {
   public Mono<Void> updateClient(
       final String clientReferenceId,
       final String loginId,
-      final BaseClient data) {
+      final BaseClientDetail data) {
     return caabApiWebClient
         .patch()
         .uri("/applications/clients/{clientReferenceId}", clientReferenceId)
@@ -511,15 +513,15 @@ public class CaabApiClient {
    * This method communicates with the CAAB API client to fetch the opponents.
    *
    * @param id The id of the application for which opponents should be retrieved.
-   * @return A {@code Mono<List<Opponent>>} containing the opponents.
+   * @return A {@code Mono<List<OpponentDetail>>} containing the opponents.
    */
-  public Mono<List<Opponent>> getOpponents(
+  public Mono<List<OpponentDetail>> getOpponents(
       final String id) {
     return caabApiWebClient
         .get()
         .uri("/applications/{id}/opponents", id)
         .retrieve()
-        .bodyToMono(new ParameterizedTypeReference<List<Opponent>>() {})
+        .bodyToMono(new ParameterizedTypeReference<List<OpponentDetail>>() {})
         .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(e,
             RESOURCE_TYPE_OPPONENTS, "application id", id));
   }
@@ -534,7 +536,7 @@ public class CaabApiClient {
    */
   public Mono<Void> addOpponent(
       final String applicationId,
-      final Opponent data,
+      final OpponentDetail data,
       final String loginId) {
     return caabApiWebClient
         .post()
@@ -559,7 +561,7 @@ public class CaabApiClient {
    */
   public Mono<Void> updateOpponent(
       final Integer opponentId,
-      final Opponent data,
+      final OpponentDetail data,
       final String loginId) {
     return caabApiWebClient
         .patch()
@@ -600,15 +602,15 @@ public class CaabApiClient {
    * This method communicates with the CAAB API client to fetch the prior authorities.
    *
    * @param id The id of the application for which prior authorities should be retrieved.
-   * @return A {@code Mono<List<PriorAuthority>>} containing the prior authorities.
+   * @return A {@code Mono<List<PriorAuthorityDetail>>} containing the prior authorities.
    */
-  public Mono<List<PriorAuthority>> getPriorAuthorities(
+  public Mono<List<PriorAuthorityDetail>> getPriorAuthorities(
       final String id) {
     return caabApiWebClient
         .get()
         .uri("/applications/{id}/prior-authorities", id)
         .retrieve()
-        .bodyToMono(new ParameterizedTypeReference<List<PriorAuthority>>() {})
+        .bodyToMono(new ParameterizedTypeReference<List<PriorAuthorityDetail>>() {})
         .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(e,
             RESOURCE_TYPE_PRIOR_AUTHORITIES, "application id", id));
   }
@@ -623,7 +625,7 @@ public class CaabApiClient {
    */
   public Mono<Void> addPriorAuthority(
       final String applicationId,
-      final PriorAuthority priorAuthority,
+      final PriorAuthorityDetail priorAuthority,
       final String loginId) {
     return caabApiWebClient
         .post()
@@ -647,7 +649,7 @@ public class CaabApiClient {
    */
   public Mono<Void> updatePriorAuthority(
       final Integer priorAuthorityId,
-      final PriorAuthority data,
+      final PriorAuthorityDetail data,
       final String loginId) {
     return caabApiWebClient
         .patch()
@@ -683,6 +685,137 @@ public class CaabApiClient {
             RESOURCE_TYPE_PRIOR_AUTHORITIES, "id", String.valueOf(priorAuthorityId)));
   }
 
+  /**
+   * Fetches the case outcomes with the specified case reference number and provider id.
+   * This method communicates with the CAAB API client to fetch the case outcomes.
+   *
+   * @param caseReferenceNumber The case reference number of the case outcome.
+   * @param providerId The provider id of the case outcome.
+   * @return A {@code Mono<CaseOutcomeDetails>} containing the case outcomes.
+   */
+  public Mono<CaseOutcomeDetails> getCaseOutcomes(
+      final String caseReferenceNumber,
+      final Integer providerId) {
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    Optional.ofNullable(caseReferenceNumber)
+        .ifPresent(ref -> queryParams.add("case-reference-number", caseReferenceNumber));
+    Optional.ofNullable(providerId)
+        .ifPresent(ref -> queryParams.add("provider-id", String.valueOf(providerId)));
+
+    return caabApiWebClient
+        .get()
+        .uri(builder -> builder.path("/case-outcomes")
+            .queryParams(queryParams)
+            .build())
+        .retrieve()
+        .bodyToMono(CaseOutcomeDetails.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiRetrieveError(e,
+            RESOURCE_TYPE_CASE_OUTCOME, queryParams));
+  }
+
+  /**
+   * Fetches the case outcome with the specified id.
+   * This method communicates with the CAAB API client to fetch the case outcome.
+   *
+   * @param id The id of the case outcome.
+   * @return A {@code Mono<CaseOutcomeDetail>} containing the case outcome.
+   */
+  public Mono<CaseOutcomeDetail> getCaseOutcome(
+      final String id) {
+
+    return caabApiWebClient
+        .get()
+        .uri("/case-outcomes/{case-outcome-id}", id)
+        .retrieve()
+        .bodyToMono(CaseOutcomeDetail.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiRetrieveError(e,
+            RESOURCE_TYPE_CASE_OUTCOME, "id", id));
+  }
+
+  /**
+   * Creates a case outcome using the CAAB API.
+   *
+   * @param loginId the ID associated with the user login
+   * @param caseOutcome the details of the case outcome to be created
+   * @return a Mono signaling the completion of the application creation
+   */
+  public Mono<String> createCaseOutcome(
+      final String loginId,
+      final CaseOutcomeDetail caseOutcome) {
+
+    return caabApiWebClient
+        .post()
+        .uri("/case-outcomes")
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
+        .bodyValue(caseOutcome) // Add the case outcome detail to the request body
+        .exchangeToMono(clientResponse -> {
+          final HttpHeaders headers = clientResponse.headers().asHttpHeaders();
+          final URI locationUri = headers.getLocation();
+          if (locationUri != null) {
+            final String path = locationUri.getPath();
+            final String id = path.substring(path.lastIndexOf('/') + 1);
+            return Mono.just(id);
+          } else {
+            // Handle the case where the Location header is missing or the URI is invalid
+            return Mono.error(new RuntimeException("Location header missing or URI invalid"));
+          }
+        })
+        .onErrorResume(e -> caabApiClientErrorHandler
+            .handleApiCreateError(e, RESOURCE_TYPE_CASE_OUTCOME));
+  }
+
+  /**
+   * Deletes a case outcome from the CAAB API.
+   *
+   * @param caseOutcomeId the ID of the case outcome to be deleted
+   * @param loginId the ID associated with the user login
+   * @return a Mono Void indicating the completion of the delete operation
+   */
+  public Mono<Void> deleteCaseOutcome(
+      final Integer caseOutcomeId,
+      final String loginId) {
+    return caabApiWebClient
+        .delete()
+        .uri("/case-outcomes/{case-outcome-id}",
+            caseOutcomeId)
+        .header("Caab-User-Login-Id", loginId)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiDeleteError(e,
+            RESOURCE_TYPE_CASE_OUTCOME, "id", String.valueOf(caseOutcomeId)));
+  }
+
+  /**
+   * Deletes all case outcomes with the specified case reference number and/or provider id.
+   * This method communicates with the CAAB API client to delete the case outcomes.
+   *
+   * @param caseReferenceNumber The case reference number criteria.
+   * @param providerId The provider id criteria.
+   * @param loginId the ID associated with the user login
+   * @return a Mono Void indicating the completion of the delete operation
+   */
+  public Mono<Void> deleteCaseOutcomes(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String loginId) {
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    Optional.ofNullable(caseReferenceNumber)
+        .ifPresent(ref -> queryParams.add("case-reference-number", caseReferenceNumber));
+    Optional.ofNullable(providerId)
+        .ifPresent(ref -> queryParams.add("provider-id", String.valueOf(providerId)));
+
+    return caabApiWebClient
+        .delete()
+        .uri(builder -> builder.path("/case-outcomes")
+            .queryParams(queryParams)
+            .build())
+        .header("Caab-User-Login-Id", loginId)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiDeleteError(e,
+            RESOURCE_TYPE_CASE_OUTCOME, queryParams));
+  }
   /**
    * Asynchronously creates an evidence document.
    *
