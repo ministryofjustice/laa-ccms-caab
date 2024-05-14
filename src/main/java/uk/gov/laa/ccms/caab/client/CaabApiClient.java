@@ -796,13 +796,13 @@ public class CaabApiClient {
   }
 
   /**
-   * Fetches the case outcomes with the specified case reference number and provider id.
-   * This method communicates with the CAAB API client to fetch the case outcomes.
+   * Deletes all case outcomes with the specified case reference number and/or provider id.
+   * This method communicates with the CAAB API client to delete the case outcomes.
    *
-   * @param caseReferenceNumber The case reference number of the case outcome.
-   * @param providerId The provider id of the case outcome.
+   * @param caseReferenceNumber The case reference number criteria.
+   * @param providerId The provider id criteria.
    * @param loginId the ID associated with the user login
-   * @return A {@code Mono<CaseOutcomeDetails>} containing the case outcomes.
+   * @return a Mono Void indicating the completion of the delete operation
    */
   public Mono<Void> deleteCaseOutcomes(
       final String caseReferenceNumber,
