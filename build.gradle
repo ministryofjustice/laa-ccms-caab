@@ -112,7 +112,7 @@ dependencies {
 	testImplementation 'org.mockito:mockito-core:5.8.0'
 	testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
 	testImplementation 'org.springframework.security:spring-security-test'
-	testImplementation 'io.projectreactor:reactor-test:3.6.1'
+	testImplementation 'io.projectreactor:reactor-test:3.6.6'
 
 	integrationTestImplementation 'org.wiremock:wiremock-standalone:3.3.1'
 
