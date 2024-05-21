@@ -1,9 +1,31 @@
 plugins {
-	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.1-d85b520-SNAPSHOT'
+	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.1-10a3a74-SNAPSHOT'
 }
 
 subprojects {
 	group = 'uk.gov.laa.ccms.caab'
+}
+
+repositories {
+
+	// Latest version of saml requires this
+	maven { url "https://build.shibboleth.net/nexus/content/repositories/releases/" }
+
+	// Define the common configuration block for GitHub repositories
+	def githubRepoConfig = { repoUrl ->
+		maven {
+			url repoUrl
+			credentials {
+				username = System.getenv("GITHUB_ACTOR")?.trim() ?: project.findProperty('project.ext.gitPackageUser')
+				password = System.getenv("GITHUB_TOKEN")?.trim() ?: project.findProperty('project.ext.gitPackageKey')
+			}
+		}
+	}
+
+	// Configure repositories using the defined GitHub config
+	githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-data-api')
+	githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-caab-api')
+	githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-soa-gateway-api')
 }
 
 dependencies {
