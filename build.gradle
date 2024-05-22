@@ -1,5 +1,5 @@
 plugins {
-	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.1-10a3a74-SNAPSHOT'
+	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.1'
 }
 
 subprojects {
