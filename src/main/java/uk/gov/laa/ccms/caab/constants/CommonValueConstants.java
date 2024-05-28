@@ -137,4 +137,14 @@ public class CommonValueConstants {
    */
   public static final String COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS =
       "XXCCMS_PA_EVIDENCE_ITEMS";
+
+  /**
+   * Type used to retrieve Document Types.
+   */
+  public static final String COMMON_VALUE_DOCUMENT_TYPES = "XXCCMS_DOCUMENT_TYPES";
+
+  /**
+   * Lookup code for Case Outcome document types.
+   */
+  public static final String COMMON_VALUE_OUTCOME_DOCUMENT_CODE = "OUT_EV";
 }

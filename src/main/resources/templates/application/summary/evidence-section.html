@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>LAA CCMS - Create application</title>
+
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a href="/application/summary" class="govuk-back-link">Return to create application</a>
+  </div>
+  <div id="main-content">
+    <h1 class="govuk-heading-l">
+      Document upload
+    </h1>
+    <p class="govuk-hint">
+      This list has been created from your answers within means and merits.
+    </p>
+    <table class="govuk-table">
+      <thead class="govuk-table__head">
+        <tr class="govuk-table__row">
+          <th scope="row" colspan="2" class="govuk-table__header">Item</th>
+        </tr>
+      </thead>
+      <tbody class="govuk-table__body">
+        <tr class="govuk-table__row" th:each="document : ${evidenceRequired}" th:unless="${evidenceRequired.isEmpty()}">
+          <td class="govuk-table__cell" th:text="${documentStat.count}"/>
+          <td class="govuk-table__cell" th:text="${document.description}"></td>
+        <tr>
+        <tr class="govuk-table__row" th:if="${evidenceRequired.isEmpty()}">
+          <td class="govuk-table__cell" colspan="2">None</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="govuk-form-group" th:unless="${evidenceUploaded.content.isEmpty()}">
+      <fieldset class="govuk-fieldset">
+        <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+          <h1 class="govuk-fieldset__heading">
+            Do you have all the required documents to upload?
+          </h1>
+        </legend>
+        <div class="govuk-radios govuk-radios--inline" data-module="govuk-radios">
+          <div class="govuk-radios__item">
+            <input class="govuk-radios__input" id="showFileUpload-yes" name="showFileUpload" type="radio" value="yes" data-aria-controls="conditional-add-file">
+            <label class="govuk-label govuk-radios__label" for="showFileUpload-yes">
+              Yes
+            </label>
+            <div id="showFileUpload-yes-hint" class="govuk-hint govuk-radios__hint">
+              You can upload the documents as part of this application. Caseworkers will be only
+              be able to view your documents once the application has been submitted.
+            </div>
+          </div>
+          <div class="govuk-radios__conditional govuk-radios__conditional--hidden" id="conditional-add-file">
+            <div class="govuk-form-group">
+              <a th:href="@{/application/evidence/add}" role="button" draggable="false" class="govuk-button govuk-button--start" data-module="govuk-button">
+                Upload evidence
+              </a>
+            </div>
+          </div>
+          <div class="govuk-radios__item">
+            <input class="govuk-radios__input" id="showFileUpload-no" name="showFileUpload" type="radio" value="no">
+            <label class="govuk-label govuk-radios__label" for="showFileUpload-no">
+              No
+            </label>
+            <div id="showFileUpload-no-hint" class="govuk-hint govuk-radios__hint">
+              You will be sent a notification to upload the required documents once the
+              application has been submitted. Please return to the Application Summary
+              page to continue.
+            </div>
+          </div>
+        </div>
+      </fieldset>
+    </div>
+
+    <th:block th:unless="${!evidenceUploaded.content.isEmpty()}">
+      <table class="govuk-table">
+        <caption class="govuk-table__caption govuk-table__caption--s">Files uploaded</caption>
+        <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header">File</th>
+            <th scope="col" class="govuk-table__header">Type</th>
+            <th scope="col" class="govuk-table__header">Document Description</th>
+            <th scope="col" class="govuk-table__header">Date</th>
+            <th scope="col" class="govuk-table__header">Doc Id</th>
+            <th scope="col" class="govuk-table__header"></th>
+          </tr>
+        </thead>
+        <tbody class="govuk-table__body">
+          <tr class="govuk-table__row" th:each="uploadedDoc: ${evidenceUploaded.content}" th:unless="${evidenceUploaded.content.isEmpty()}">
+            <td class="govuk-table__cell" th:text="${uploadedDoc.fileName}"></td>
+            <td class="govuk-table__cell" th:text="${uploadedDoc.documentType.displayValue}"></td>
+            <td class="govuk-table__cell" th:text="${uploadedDoc.description}"></td>
+            <td class="govuk-table__cell" th:text="${uploadedDoc.auditTrail.created}"></td>
+            <td class="govuk-table__cell" th:text="${uploadedDoc.registeredDocumentId}"></td>
+            <td class="govuk-table__cell">Remove</td>
+          </tr>
+        </tbody>
+      </table>
+      <a th:href="@{/application/evidence/add}" role="button" draggable="false" class="govuk-button govuk-button--start" data-module="govuk-button">
+        Add new file
+      </a>
+    </th:block>
+  </div>
+</div>
+</body>
+</html>

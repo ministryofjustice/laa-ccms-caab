@@ -24,6 +24,7 @@ import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
@@ -816,6 +817,7 @@ public class CaabApiClient {
         .onErrorResume(e -> caabApiClientErrorHandler.handleApiDeleteError(e,
             RESOURCE_TYPE_CASE_OUTCOME, queryParams));
   }
+
   /**
    * Asynchronously creates an evidence document.
    *
@@ -847,9 +849,9 @@ public class CaabApiClient {
    * @param documentType The type of evidence document.
    * @param ccmsModule The ccms module for the evidence.
    * @param transferPending whether transfer has been attempted for the evidence document.
-   * @return A {@code Mono<EvidenceDocumentDetail} containing the evidence documents.
+   * @return A {@code Mono<EvidenceDocumentDetails} containing the evidence documents.
    */
-  public Mono<EvidenceDocumentDetail> getEvidenceDocuments(
+  public Mono<EvidenceDocumentDetails> getEvidenceDocuments(
       final String applicationOrOutcomeId,
       final String caseReferenceNumber,
       final String providerId,
@@ -877,7 +879,7 @@ public class CaabApiClient {
             .queryParams(queryParams)
             .build())
         .retrieve()
-        .bodyToMono(EvidenceDocumentDetail.class)
+        .bodyToMono(EvidenceDocumentDetails.class)
         .onErrorResume(e -> caabApiClientErrorHandler.handleApiRetrieveError(e,
             RESOURCE_TYPE_EVIDENCE, queryParams));
   }
