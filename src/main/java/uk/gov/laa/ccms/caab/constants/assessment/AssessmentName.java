@@ -28,19 +28,6 @@ public enum AssessmentName {
   }
 
   /**
-   * Retrieves an AssessmentName enum by its name.
-   *
-   * @param name the name string to match against AssessmentName enums.
-   * @return the matched AssessmentName enum, or null if no match is found.
-   */
-  public static AssessmentName findByName(final String name) {
-    return Arrays.stream(AssessmentName.values())
-        .filter(assessmentName -> assessmentName.getName().equals(name))
-        .findFirst()
-        .orElse(null);
-  }
-
-  /**
    * Retrieves a list of strings containing the assessment name by category.
    *
    * @param category the category to match against AssessmentName enums.

@@ -3,11 +3,13 @@ package uk.gov.laa.ccms.caab.client;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.assessment.model.PatchAssessmentDetail;
 
@@ -21,6 +23,7 @@ public class AssessmentApiClient {
 
   private final AssessmentApiClientErrorHandler assessmentApiClientErrorHandler;
   private static final String RESOURCE_TYPE_ASSESSMENT = "assessments";
+  private static final String RESOURCE_TYPE_ASSESSMENT_CHECKPOINT = "assessment checkpoint";
 
   /**
    * Get assessments from the assessment API.
@@ -85,6 +88,81 @@ public class AssessmentApiClient {
             .handleApiDeleteError(e, RESOURCE_TYPE_ASSESSMENT, queryParams));
   }
 
+  /**
+   * Creates a new assessment.
+   *
+   * @param assessment the assessment details
+   * @param userLoginId the login ID of the user
+   * @return a Mono that completes when the creation is finished
+   */
+  public Mono<Void> createAssessment(
+      final AssessmentDetail assessment,
+      final String userLoginId) {
+
+    return assessmentApiWebClient
+        .post()
+        .uri("/assessments")
+        .header("Caab-User-Login-Id", userLoginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(assessment)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> assessmentApiClientErrorHandler
+            .handleApiCreateError(e, RESOURCE_TYPE_ASSESSMENT));
+  }
+
+  /**
+   * Updates an existing assessment.
+   *
+   * @param assessmentId the ID of the assessment to update
+   * @param assessment the updated assessment details
+   * @param userLoginId the login ID of the user
+   * @return a Mono that completes when the update is finished
+   */
+  public Mono<Void> updateAssessment(
+      final Long assessmentId,
+      final AssessmentDetail assessment,
+      final String userLoginId) {
+
+    return assessmentApiWebClient
+        .put()
+        .uri("/assessments/{assessment-id}", assessmentId)
+        .header("Caab-User-Login-Id", userLoginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(assessment)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> assessmentApiClientErrorHandler
+            .handleApiUpdateError(e,
+                RESOURCE_TYPE_ASSESSMENT,
+                "id",
+                String.valueOf(assessmentId)));
+  }
+
+  /**
+   * Deletes a checkpoint for a given assessment.
+   *
+   * @param assessmentId the ID of the assessment
+   * @param userLoginId the login ID of the user
+   * @return a Mono that completes when the deletion is finished
+   */
+  public Mono<Void> deleteAssessmentCheckpoint(
+      final Long assessmentId,
+      final String userLoginId) {
+
+    return assessmentApiWebClient
+        .delete()
+        .uri("/assessments/{assessment-id}", assessmentId)
+        .header("Caab-User-Login-Id", userLoginId)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> assessmentApiClientErrorHandler
+            .handleApiDeleteError(e,
+                RESOURCE_TYPE_ASSESSMENT_CHECKPOINT,
+                "id",
+                String.valueOf(assessmentId)));
+  }
+
 
   /**
    * Retrieve the query parameters for the assessments API assessments endpoints.
@@ -118,8 +196,8 @@ public class AssessmentApiClient {
    * @param patch The updated assessment details.
    * @return a Mono of AssessmentDetails containing the updated assessment.
    */
-  public Mono<Void> updateAssessment(
-      final String assessmentId,
+  public Mono<Void> patchAssessment(
+      final Long assessmentId,
       final String userLoginId,
       final PatchAssessmentDetail patch) {
 
@@ -135,7 +213,7 @@ public class AssessmentApiClient {
                 e,
                 RESOURCE_TYPE_ASSESSMENT,
                 "assessment-id",
-                assessmentId));
+                String.valueOf(assessmentId)));
   }
 
 

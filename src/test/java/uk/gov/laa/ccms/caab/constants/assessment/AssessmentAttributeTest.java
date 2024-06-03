@@ -8,21 +8,21 @@ public class AssessmentAttributeTest {
 
   @Test
   void testMatterTypeAttribute() {
-    assertEquals("MATTER_TYPE", AssessmentAttribute.MATTER_TYPE.getAttribute());
+    assertEquals("MATTER_TYPE", AssessmentAttribute.MATTER_TYPE.getName());
   }
 
   @Test
   void testProceedingNameAttribute() {
-    assertEquals("PROCEEDING_NAME", AssessmentAttribute.PROCEEDING_NAME.getAttribute());
+    assertEquals("PROCEEDING_NAME", AssessmentAttribute.PROCEEDING_NAME.getName());
   }
 
   @Test
   void testClientInvolvementTypeAttribute() {
-    assertEquals("CLIENT_INVOLVEMENT_TYPE", AssessmentAttribute.CLIENT_INVOLVEMENT_TYPE.getAttribute());
+    assertEquals("CLIENT_INVOLVEMENT_TYPE", AssessmentAttribute.CLIENT_INVOLVEMENT_TYPE.getName());
   }
 
   @Test
   void testRequestedScopeAttribute() {
-    assertEquals("REQUESTED_SCOPE", AssessmentAttribute.REQUESTED_SCOPE.getAttribute());
+    assertEquals("REQUESTED_SCOPE", AssessmentAttribute.REQUESTED_SCOPE.getName());
   }
 }

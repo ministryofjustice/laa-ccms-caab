@@ -22,6 +22,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_O
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDetail;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -558,12 +559,10 @@ public class ApplicationService {
         = applicationSummaryMonos.getT2().getContent();
 
     final AssessmentDetail meansAssessment =
-        assessmentService.getMostRecentAssessmentDetail(
-            applicationSummaryMonos.getT3().getContent());
+        getMostRecentAssessmentDetail(applicationSummaryMonos.getT3().getContent());
 
     final AssessmentDetail meritsAssessment =
-        assessmentService.getMostRecentAssessmentDetail(
-            applicationSummaryMonos.getT4().getContent());
+        getMostRecentAssessmentDetail(applicationSummaryMonos.getT4().getContent());
 
     //this not only gets the status but also updates them.
     assessmentService.calculateAssessmentStatuses(

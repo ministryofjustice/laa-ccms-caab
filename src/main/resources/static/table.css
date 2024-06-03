@@ -9,6 +9,6 @@
 }
 
 /* Allow font size to scale on table size */
-.govuk-table {
+.ccms-compact-table {
   font-size: unset;
 }

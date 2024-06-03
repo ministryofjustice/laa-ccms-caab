@@ -77,7 +77,7 @@ class AssessmentApiClientTest {
 
   @Test
   void updateAssessment_success() {
-    final String assessmentId = "assessment123";
+    final Long assessmentId = 123L;
     final String userLoginId = "user456";
     final PatchAssessmentDetail patchDetails = new PatchAssessmentDetail(); // Populate this as needed for the test
 
@@ -88,7 +88,7 @@ class AssessmentApiClientTest {
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
 
-    final Mono<Void> result = assessmentApiClient.updateAssessment(assessmentId, userLoginId, patchDetails);
+    final Mono<Void> result = assessmentApiClient.patchAssessment(assessmentId, userLoginId, patchDetails);
 
     StepVerifier.create(result)
         .verifyComplete();
