@@ -2,9 +2,9 @@ package uk.gov.laa.ccms.caab.config;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import fi.solita.clamav.ClamAVClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,7 +19,10 @@ import org.springframework.web.reactive.function.client.WebClient;
     "laa.ccms.ebs-api.url=http://mockUrl",
     "laa.ccms.soa-api.url=http://mockUrl",
     "laa.ccms.caab-api.url=http://mockUrl",
-    "os.api.url=http://mockUrl"
+    "os.api.url=http://mockUrl",
+    "av.api.hostname=http://mockUrl",
+    "av.api.port=3000",
+    "av.api.timeout=100"
 })
 class ApplicationConfigTest {
 
@@ -38,6 +41,10 @@ class ApplicationConfigTest {
   @Qualifier("osApiWebClient")
   @Autowired
   private WebClient osApiWebClient;
+
+  @Qualifier("avApiClient")
+  @Autowired
+  private ClamAVClient clamAvClient;
 
   @MockBean
   private LoggingInterceptor loggingInterceptor;
@@ -60,5 +67,10 @@ class ApplicationConfigTest {
   @Test
   void osApiWebClientBeanExists() {
     assertNotNull(osApiWebClient, "osApiWebClient bean should not be null");
+  }
+
+  @Test
+  void avApiClientBeanExists() {
+    assertNotNull(clamAvClient, "clamAvClient bean should not be null");
   }
 }

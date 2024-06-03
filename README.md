@@ -2,7 +2,7 @@
 
 ## How to run this application:
 
-The laa-ccms-caab-ui requires multiple other microservcies in order to run locally and  function 
+The laa-ccms-caab-ui requires multiple other microservices in order to run locally and function 
 correctly. They are:
 
 - [laa-ccms-caab-api](https://github.com/ministryofjustice/laa-ccms-caab-api)
@@ -88,6 +88,15 @@ The wiremock can handle and postcode request.
 
 ```
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-wiremock
+```
+
+## ClamAV 
+
+To facilitate local virus scan when uploading files in the UI, a ClamAV container can be started using
+the following command:
+
+```
+docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-clam-av
 ```
 
 ## secrets.gradle (required for gradle build)

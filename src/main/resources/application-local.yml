@@ -52,6 +52,13 @@ os:
     url: http://${os.api.hostname}:${os.api.port}
     key: TEST_KEY
 
+av:
+  api:
+    enabled: true
+    hostname: dev.clamav.legalservices.gov.uk
+    port: 3310
+    timeout: 20000
+
 laa:
   ccms:
     ebs-api:
