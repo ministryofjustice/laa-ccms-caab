@@ -48,3 +48,10 @@ os:
     port: 8126
     url: ${os.api.hostname}:${os.api.port}
     key: key
+
+av:
+  enabled: false
+  api:
+    hostname: localhost
+    port: 8128
+    timeout: 20000

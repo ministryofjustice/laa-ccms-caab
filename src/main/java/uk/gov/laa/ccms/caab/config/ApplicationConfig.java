@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.config;
 
+import fi.solita.clamav.ClamAVClient;
 import java.util.Locale;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +27,12 @@ public class ApplicationConfig implements WebMvcConfigurer {
 
   private final String osApiUrl;
 
+  private final String avApiHostName;
+
+  private final Integer avApiPort;
+
+  private final Integer avApiTimeout;
+
   private final LoggingInterceptor loggingInterceptor;
 
 
@@ -48,12 +55,18 @@ public class ApplicationConfig implements WebMvcConfigurer {
                            @Value("${laa.ccms.caab-api.url}") final String caabApiUrl,
                            @Value("${laa.ccms.assessment-api.url}") final String assessmentApiUrl,
                            @Value("${os.api.url}") final String osApiUrl,
+                           @Value("${av.api.hostname}") final String avApiHostName,
+                           @Value("${av.api.port}") final Integer avApiPort,
+                           @Value("${av.api.timeout}") final Integer avApiTimeout,
                            final LoggingInterceptor loggingInterceptor) {
     this.ebsApiUrl = ebsApiUrl;
     this.soaApiUrl = soaApiUrl;
     this.caabApiUrl = caabApiUrl;
     this.assessmentApiUrl = assessmentApiUrl;
     this.osApiUrl = osApiUrl;
+    this.avApiHostName = avApiHostName;
+    this.avApiPort = avApiPort;
+    this.avApiTimeout = avApiTimeout;
     this.loggingInterceptor = loggingInterceptor;
   }
 
@@ -105,6 +118,16 @@ public class ApplicationConfig implements WebMvcConfigurer {
   @Bean("osApiWebClient")
   WebClient osApiWebClient() {
     return WebClient.create(osApiUrl);
+  }
+
+  /**
+   * Creates a bean for interacting with the ClamAV API.
+   *
+   * @return A ClamAVClient instance.
+   */
+  @Bean("clamAvClient")
+  ClamAVClient clamAvClient() {
+    return new ClamAVClient(avApiHostName, avApiPort, avApiTimeout);
   }
 
   /**
