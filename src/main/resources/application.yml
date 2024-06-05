@@ -57,8 +57,8 @@ os:
     key: ${OS_API_KEY}
 
 av:
+  enabled: ${AV_API_ENABLED}
   api:
-    enabled: ${AV_API_ENABLED}
     hostname: ${AV_API_HOSTNAME}
     port: ${AV_API_PORT}
     timeout: ${AV_API_TIMEOUT}

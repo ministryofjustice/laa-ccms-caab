@@ -1,14 +1,14 @@
 package uk.gov.laa.ccms.caab.service;
 
-import static fi.solita.clamav.ClamAVClient.isCleanReply;
-
-import fi.solita.clamav.ClamAVClient;
-import java.io.IOException;
 import java.io.InputStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import uk.gov.laa.ccms.caab.client.AvApiClient;
+import uk.gov.laa.ccms.caab.client.AvApiClientException;
 import uk.gov.laa.ccms.caab.exception.AvScanException;
+import uk.gov.laa.ccms.caab.exception.AvScanNotEnabledException;
 
 /**
  * Service class to handle calls to an external Antivirus Scanning facility.
@@ -18,56 +18,53 @@ import uk.gov.laa.ccms.caab.exception.AvScanException;
 @Slf4j
 public class AvScanService {
 
-  /**
-   * Indicator for a virus being found.
-   */
-  protected static final String VIRUS_FOUND_INDICATOR = "FOUND";
-
-  /**
-   * Indicator for the start of a response stream from the external antivirus service.
-   */
-  protected static final String STREAM_INDICATOR = "stream: ";
-
-  /**
-   * Message to return in an exception when a virus has been found.
-   */
-  protected static final String VIRUS_FOUND_MSG = "Virus found by av scanning service: %s";
-
-  /**
-   * Message to return in an exception when an error has occurred while calling the external
-   * antivirus service.
-   */
-  public static final String AV_SERVICE_ERROR_MSG = "Error while calling av scanning service: %s";
+  protected static final String SCAN_ERROR_FORMAT =
+      "Error while scanning %s for viruses: %s. File has not been uploaded";
 
   /**
    * A client which handles calls to the antivirus service.
    */
-  private final ClamAVClient clamAvClient;
+  private final AvApiClient avApiClient;
+
+  /**
+   * Flag to indicate whether the antivirus scanning service is enabled.
+   */
+  @Value("${av.enabled}")
+  private final Boolean enabled;
 
   /**
    * Perform an antivirus scan on the provided input stream.
    *
+   * @param caseReferenceNumber - the related case reference for auditing purposes
+   * @param providerId - the related provider id for auditing purposes.
+   * @param userId - the user requesting the file upload.
+   * @param source - the source of the file upload.
    * @param inputStream - the input stream to scan for viruses.
    * @throws AvScanException if a virus is reported, or an error occurs in the av service.
    */
-  public void performAvScan(final InputStream inputStream) {
+  public void performAvScan(
+      final String caseReferenceNumber,
+      final String providerId,
+      final String userId,
+      final String source,
+      final String filename,
+      final InputStream inputStream) {
+
+    if (!enabled) {
+      throw new AvScanNotEnabledException();
+    }
 
     try {
-      byte[] reply = clamAvClient.scan(inputStream);
-      final String stringResult =  new String(reply).replace(STREAM_INDICATOR, "");
+      avApiClient.scan(inputStream);
+    } catch (AvApiClientException e) {
+      /*
+       * todo: Log common audit event to record the scan failure once audit microservice in place.
+       *  Include caseReferenceNumber etc in audit log.
+       */
 
-      log.info("********** VIRUS SCAN RESULT ********** {}", stringResult);
-
-      if (!isCleanReply(reply)) {
-        final String formattedResponse = stringResult.replace(VIRUS_FOUND_INDICATOR, "");
-
-        log.error("********** Malware scan service non-clean response **********: {}",
-            formattedResponse);
-        throw new AvScanException(String.format(VIRUS_FOUND_MSG, formattedResponse));
-      }
-    } catch (IOException e) {
-      log.error("********** Malware scan service IOEXCEPTION ********** {}", e.getMessage());
-      throw new AvScanException(String.format(AV_SERVICE_ERROR_MSG, e.getMessage()));
+      log.error("********** Malware scan service threw exception **********", e);
+      throw new AvScanException(
+          String.format(SCAN_ERROR_FORMAT, filename, e.getMessage()), e);
     }
   }
 

@@ -6,6 +6,14 @@ package uk.gov.laa.ccms.caab.exception;
 public class CaabApplicationException extends RuntimeException {
 
   /**
+   * Constructs a new exception.
+   *
+   */
+  public CaabApplicationException() {
+    super();
+  }
+
+  /**
    * Constructs a new exception with the specified message.
    *
    * @param message The error message.

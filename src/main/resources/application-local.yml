@@ -53,8 +53,8 @@ os:
     key: TEST_KEY
 
 av:
+  enabled: true
   api:
-    enabled: true
     hostname: dev.clamav.legalservices.gov.uk
     port: 3310
     timeout: 20000
