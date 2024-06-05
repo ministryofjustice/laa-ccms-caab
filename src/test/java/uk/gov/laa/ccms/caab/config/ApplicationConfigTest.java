@@ -42,7 +42,7 @@ class ApplicationConfigTest {
   @Autowired
   private WebClient osApiWebClient;
 
-  @Qualifier("avApiClient")
+  @Qualifier("clamAvClient")
   @Autowired
   private ClamAVClient clamAvClient;
 
