@@ -121,12 +121,12 @@ public class ApplicationConfig implements WebMvcConfigurer {
   }
 
   /**
-   * Creates a WebClient bean for interacting with the Ordinance Survey API.
+   * Creates a bean for interacting with the ClamAV API.
    *
-   * @return A WebClient instance configured for the Ordinance Survey API.
+   * @return A ClamAVClient instance.
    */
-  @Bean("avApiClient")
-  ClamAVClient avApiClient() {
+  @Bean("clamAvClient")
+  ClamAVClient clamAvClient() {
     return new ClamAVClient(avApiHostName, avApiPort, avApiTimeout);
   }
 
