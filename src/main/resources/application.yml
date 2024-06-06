@@ -62,3 +62,10 @@ os:
   api:
     url: ${OS_API_HOSTNAME}
     key: ${OS_API_KEY}
+
+av:
+  enabled: ${AV_API_ENABLED}
+  api:
+    hostname: ${AV_API_HOSTNAME}
+    port: ${AV_API_PORT}
+    timeout: ${AV_API_TIMEOUT}

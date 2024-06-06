@@ -44,6 +44,14 @@ services:
     volumes:
       - ./wiremock:/home/wiremock
 
+  laa-ccms-caab-clam-av:
+    image: mkodockx/docker-clamav:alpine
+    restart: unless-stopped
+    volumes:
+      - clam:/var/lib/clamav
+    ports:
+      - 3310:3310
+
 volumes:
   laa-ccms-caab-data:
   clam:
