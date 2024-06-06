@@ -38,18 +38,23 @@ spring:
 
 laa:
   ccms:
-    ebs-api:
-      hostname: ${CAAB_EBS_API_HOSTNAME}
-      url: ${laa.ccms.ebs-api.hostname}
-    soa-api:
-      hostname: ${CAAB_SOA_API_HOSTNAME}
-      url: ${laa.ccms.soa-api.hostname}
-    caab-api:
+    apis:
+      ebs-api:
+        hostname: ${CAAB_EBS_API_HOSTNAME}
+        url: ${laa.ccms.ebs-api.hostname}
+        accessToken: ${CAAB_EBS_API_ACCESS_TOKEN}
+      soa-api:
+        hostname: ${CAAB_SOA_API_HOSTNAME}
+        url: ${laa.ccms.soa-api.hostname}
+        accessToken: ${CAAB_SOA_API_ACCESS_TOKEN}
+      caab-api:
         hostname: ${CAAB_API_HOSTNAME}
         url: ${laa.ccms.caab-api.hostname}
-    assessment-api:
+        accessToken: ${CAAB_API_ACCESS_TOKEN}
+      assessment-api:
         hostname: ${ASSESSMENT_API_HOSTNAME}
         url: ${laa.ccms.assessment-api.hostname}
+        accessToken: ${ASSESSMENT_API_ACCESS_TOKEN}
 
 os:
   api:

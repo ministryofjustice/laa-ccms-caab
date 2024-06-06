@@ -65,18 +65,22 @@ laa:
       hostname: localhost
       port: 8009
       url: http://${laa.ccms.ebs-api.hostname}:${laa.ccms.ebs-api.port}
+      access-token: d594f93f-e767-4b88-a9e9-2913441edfba
     soa-api:
       hostname: localhost
       port: 8007
       url: http://${laa.ccms.soa-api.hostname}:${laa.ccms.soa-api.port}
+      access-token: 94549740-5aaa-4cd9-b9d9-666159d268a9
     caab-api:
       hostname: localhost
       port: 8005
       url: http://${laa.ccms.caab-api.hostname}:${laa.ccms.caab-api.port}
+      access-token: c196393a-f279-45ba-b5d5-f93e6d30465a
     assessment-api:
       hostname: localhost
       port: 8008
       url: http://${laa.ccms.assessment-api.hostname}:${laa.ccms.assessment-api.port}
+      access-token: 78bd752c-814c-4fb5-801b-193839c8e768
 
 server:
   port: 8010
