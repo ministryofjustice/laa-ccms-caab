@@ -121,18 +121,19 @@ public class AssessmentUtil {
 
     return assessmentEntity.getAttributes().stream()
         .filter(attributeDetail -> attributeDetail.getName()
-            .equalsIgnoreCase(attribute.getName()))
+            .equalsIgnoreCase(attribute.name()))
         .findFirst()
         .orElse(null);
   }
 
   /**
-   * Checks if the OPA session for the given assessment detail is clean.
+   * Checks if the Assessment details has a consistent reference to the session,
+   * this checks over the global entities and attributes to ensure the case reference is consistent.
    *
    * @param assessment the assessment detail to check
-   * @return {@code true} if the session is clean, {@code false} otherwise
+   * @return {@code true} if the assessment is consistent, {@code false} otherwise
    */
-  public static boolean isOpaSessionClean(final AssessmentDetail assessment) {
+  public static boolean isAssessmentReferenceConsistent(final AssessmentDetail assessment) {
 
     final List<AssessmentEntityDetail> globalEntites =
         getAssessmentEntitiesForEntityType(assessment, GLOBAL);
@@ -141,8 +142,8 @@ public class AssessmentUtil {
     for (final AssessmentEntityDetail globalEntity : globalEntites) {
       if (!assessment.getCaseReferenceNumber().equalsIgnoreCase(globalEntity.getName())) {
         log.info(
-            "CORRUPTED : OPASESSION : " + assessment.getCaseReferenceNumber() + "Assessment : "
-                + assessment.getName() + ", OPA-ENTITYID : " + globalEntity.getName());
+            "CORRUPTED : Assessment : " + assessment.getCaseReferenceNumber() + "Assessment : "
+                + assessment.getName() + ", EntityId : " + globalEntity.getName());
 
         return false;
       }
@@ -161,9 +162,9 @@ public class AssessmentUtil {
             && attribute.getValue().equalsIgnoreCase(assessment.getCaseReferenceNumber())) {
           return true;
         } else {
-          log.info("CORRUPTED : OPASESSION : " + assessment.getCaseReferenceNumber()
-              + ", OPA-ENTITYID : " + globalEntity.getName()
-              + ", OPAATTRIBUTE : " + attribute.getValue());
+          log.info("CORRUPTED : Assessment : " + assessment.getCaseReferenceNumber()
+              + ", EntityId : " + globalEntity.getName()
+              + ", Attribute : " + attribute.getValue());
 
           return false;
         }

@@ -13,7 +13,15 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @Getter
 public class AssessmentOpponentMappingContext {
 
+  /**
+   * The opponent details.
+   */
   private final OpponentDetail opponent;
+
+  /**
+   * The title common lookup value details, containing code and description.
+   */
   private final CommonLookupValueDetail titleCommonLookupValue;
+
 
 }

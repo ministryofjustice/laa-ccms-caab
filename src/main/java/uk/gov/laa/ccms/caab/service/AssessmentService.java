@@ -22,10 +22,10 @@ import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentEntity;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentEntityType;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getEntityRelationship;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDetail;
-import static uk.gov.laa.ccms.caab.util.AssessmentUtil.isOpaSessionClean;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.isAssessmentReferenceConsistent;
 import static uk.gov.laa.ccms.caab.util.OpponentUtil.getOpponentByEbsId;
 import static uk.gov.laa.ccms.caab.util.OpponentUtil.getOpponentById;
-import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getOpaInstanceMappingId;
+import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getAssessmentMappingId;
 import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getProceedingByEbsId;
 import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getProceedingById;
 import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getRequestedScopeForAssessmentInput;
@@ -408,7 +408,7 @@ public class AssessmentService {
       final String matterType = proceeding.getMatterType().getId();
       final String proceedingType = proceeding.getProceedingType().getId();
       final String clientInvolvementType = proceeding.getClientInvolvement().getId();
-      final String entityId = ProceedingUtil.getOpaInstanceMappingId(proceeding);
+      final String entityId = ProceedingUtil.getAssessmentMappingId(proceeding);
 
       //find entity in entity type where matched entity id
       final AssessmentEntityDetail proceedingEntity =
@@ -729,14 +729,12 @@ public class AssessmentService {
    *
    * @param application the application detail for the assessment
    * @param assessmentRulebase the rulebase for the assessment
-   * @param caseReferenceNumber the case reference number
    * @param client the client detail for the assessment
    * @param user the user detail initiating the assessment
    */
   public void startAssessment(
       final ApplicationDetail application,
       final AssessmentRulebase assessmentRulebase,
-      final String caseReferenceNumber,
       final ClientDetail client,
       final UserDetail user) {
 
@@ -744,7 +742,7 @@ public class AssessmentService {
     deleteAssessments(
         user,
         List.of(assessmentRulebase.getName()),
-        caseReferenceNumber,
+        application.getCaseReferenceNumber(),
         null).block();
 
     //start new assessment
@@ -773,8 +771,7 @@ public class AssessmentService {
 
     final List<AssessmentEntityType> opaEntitiesRetrievedFromEbs = null;
 
-    // find or create an opa session
-    boolean createdNewPrepopAssessment = false;
+    
 
     //find or Create
     final AssessmentDetail assessment = findOrCreate(
@@ -782,9 +779,8 @@ public class AssessmentService {
     final AssessmentDetail prepopAssessment = findOrCreate(
         providerId, referenceId, assessmentRulebase.getPrePopAssessmentName());
 
-    if (prepopAssessment.getId() == null) {
-      createdNewPrepopAssessment = true;
-    }
+    // find or create an opa session
+    final boolean createdNewPrepopAssessment = (prepopAssessment.getId() == null);
 
     //used to populate the lookups for title for the opponent
     final List<AssessmentOpponentMappingContext>
@@ -803,6 +799,7 @@ public class AssessmentService {
     if (createdNewPrepopAssessment) {
       assessmentMapper.toAssessmentDetail(prepopAssessment, assessmentContext);
     }
+
     //always map to the assessment as it should always be new here.
     assessmentMapper.toAssessmentDetail(assessment, assessmentContext);
 
@@ -814,8 +811,8 @@ public class AssessmentService {
 
     //if means and merits:
     if (!assessmentRulebase.isFinancialAssessment()) {
-      if (isOpaSessionClean(prepopAssessment)
-          && isOpaSessionClean(assessment)) {
+      if (isAssessmentReferenceConsistent(prepopAssessment)
+          && isAssessmentReferenceConsistent(assessment)) {
 
         //call opa - save to database
         saveAssessment(user, assessment).block();
@@ -931,7 +928,7 @@ public class AssessmentService {
         getAssessmentEntitiesForEntityType(assessment, PROCEEDING);
 
     return (application.getProceedings().size() != proceedingEntities.size()
-        || isOpaProceedingsMatchApplication(application, assessment));
+        || isAssessmentProceedingsMatchingApplication(application, assessment));
   }
 
   /**
@@ -943,7 +940,7 @@ public class AssessmentService {
    * @return true if a proceeding entity in the assessment does not exist in the application, or
    *         if there is a mismatch with application proceedings, otherwise false
    */
-  protected boolean isOpaProceedingsMatchApplication(
+  protected boolean isAssessmentProceedingsMatchingApplication(
       final ApplicationDetail application,
       final AssessmentDetail assessment) {
 
@@ -968,11 +965,11 @@ public class AssessmentService {
       }
 
     }
-    return (isMatching || isAppProceedingsExistInOpa(application, assessment));
+    return (isMatching || isApplicationProceedingsMatchingAssessment(application, assessment));
   }
 
   /**
-   * Checks if the proceedings in the application exist in the assessment's OPA session and if
+   * Checks if the proceedings in the application exist in the assessment's session and if
    * their scopes match.
    *
    * @param application the application details containing proceedings
@@ -980,7 +977,7 @@ public class AssessmentService {
    * @return true if a proceeding in the application does not exist in the assessment or if the
    *         scope of any proceeding has changed, otherwise false
    */
-  protected boolean isAppProceedingsExistInOpa(
+  protected boolean isApplicationProceedingsMatchingAssessment(
       final ApplicationDetail application,
       final AssessmentDetail assessment) {
 
@@ -989,7 +986,7 @@ public class AssessmentService {
       log.debug(
           "App proceedings ID - " + proceeding.getId() + ", EBS-ID - " + proceeding.getEbsId());
 
-      final String proceedingId = getOpaInstanceMappingId(proceeding);
+      final String proceedingId = getAssessmentMappingId(proceeding);
       log.debug("Proceeding ID is " + proceedingId);
 
       final AssessmentEntityTypeDetail proceedingEntityType =
@@ -1013,7 +1010,7 @@ public class AssessmentService {
         isMatching = true;
       }
     }
-    return (isMatching || isOpponentCountMatchOpa(application, assessment));
+    return (isMatching || isOpponentCountMatchingAssessments(application, assessment));
   }
 
   /**
@@ -1025,7 +1022,7 @@ public class AssessmentService {
    * @return true if the opponent counts do not match or if an opponent entity in the assessment
    *         does not exist in the application, otherwise false
    */
-  protected boolean isOpponentCountMatchOpa(
+  protected boolean isOpponentCountMatchingAssessments(
       final ApplicationDetail application,
       final AssessmentDetail assessment) {
 
@@ -1033,7 +1030,7 @@ public class AssessmentService {
         getAssessmentEntitiesForEntityType(assessment, OPPONENT);
 
     return application.getOpponents().size() != opponentEntities.size()
-        || isOpaOpponentsMatchApplication(application, assessment);
+        || isAssessmentOpponentsMatchingApplication(application, assessment);
   }
 
   /**
@@ -1044,7 +1041,7 @@ public class AssessmentService {
    * @return true if an opponent entity in the assessment does not exist in the application,
    *         otherwise false
    */
-  protected boolean isOpaOpponentsMatchApplication(
+  protected boolean isAssessmentOpponentsMatchingApplication(
       final ApplicationDetail application,
       final AssessmentDetail assessment) {
 
@@ -1069,7 +1066,7 @@ public class AssessmentService {
         isMatching = true;
       }
     }
-    return isMatching || isApplicationMatchOpaOpponents(application, assessment);
+    return isMatching || isApplicationOpponentsMatchingAssessments(application, assessment);
   }
 
   /**
@@ -1080,14 +1077,14 @@ public class AssessmentService {
    * @return true if an opponent in the application does not exist in the assessment, otherwise
    *         false
    */
-  protected boolean isApplicationMatchOpaOpponents(
+  protected boolean isApplicationOpponentsMatchingAssessments(
       final ApplicationDetail application,
       final AssessmentDetail assessment) {
 
     for (final OpponentDetail opponent : application.getOpponents()) {
       log.debug("App opponent ID - " + opponent.getId() + ", EBS-ID - " + opponent.getEbsId());
 
-      final String opponentId = OpponentUtil.getOpaInstanceMappingId(opponent);
+      final String opponentId = OpponentUtil.getAssessmentMappingId(opponent);
 
       log.debug("Opponent ID is " + opponentId);
 

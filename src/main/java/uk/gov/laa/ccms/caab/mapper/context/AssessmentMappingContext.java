@@ -18,10 +18,30 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 @Setter
 public class AssessmentMappingContext {
 
+  /**
+   * The assessment details.
+   */
   private AssessmentDetail assessment;
+
+  /**
+   * The application details.
+   */
   private ApplicationDetail application;
+
+  /**
+   * The client details.
+   */
   private ClientDetail client;
+
+  /**
+   * The user details.
+   */
   private UserDetail user;
+
+  /**
+   * The opponent context details, stores the common lookup values for the title of the opponent,
+   * and the opponent object.
+   */
   private List<AssessmentOpponentMappingContext> opponentContext;
 
 }

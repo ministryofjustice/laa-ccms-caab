@@ -14,34 +14,38 @@ public class OpponentUtil {
   private static final String OPPONENT_TYPE_ORGANISATION = "ORGANISATION";
   private static final String OPPONENT_TYPE_PERSON = "PERSON";
   public static final String INDIVIDUAL_OPPONENT = "Individual";
-  public static final String ORGANISATION_OPPONENT = "Organisation";
-
 
   /**
-   * Retrieves the OPA instance mapping ID for the given opponent detail.
+   * Retrieves the assessment mapping ID for the given opponent detail.
    *
    * @param opponent the opponent detail
-   * @return the OPA instance mapping ID, prefixed if EBS ID is not available
+   * @return the assessment mapping ID, prefixed if EBS ID is not available
    */
-  public static String getOpaInstanceMappingId(final OpponentDetail opponent) {
-    if (opponent.getEbsId() == null) {
-      return InstanceMappingPrefix.OPPONENT.getPrefix() + opponent.getId();
-    }
-    return opponent.getEbsId();
+  public static String getAssessmentMappingId(final OpponentDetail opponent) {
+    return opponent.getEbsId() == null
+        ? InstanceMappingPrefix.OPPONENT.getPrefix() + opponent.getId() :
+        opponent.getEbsId();
   }
 
   /**
-   * Determines the OPA opponent type based on the given type string.
+   * Determines the assessment opponent type based on the given type string.
    *
    * @param type the type string to check
    * @return the opponent type, either as an organisation or a person
    */
-  public static String getOpaOpponentType(final String type) {
-    if (OPPONENT_TYPE_ORGANISATION.equalsIgnoreCase(type)) {
-      return OPPONENT_TYPE_ORGANISATION;
-    } else {
-      return OPPONENT_TYPE_PERSON;
-    }
+  public static String getAssessmentOpponentType(final String type) {
+    return INDIVIDUAL_OPPONENT.equalsIgnoreCase(type)
+        ? OPPONENT_TYPE_PERSON : OPPONENT_TYPE_ORGANISATION;
+  }
+
+  /**
+   * Determines if the given opponent detail represents an organisation.
+   *
+   * @param opponent the opponent detail
+   * @return {@code true} if the opponent is an organisation, {@code false} otherwise
+   */
+  public static boolean isOrganisation(final OpponentDetail opponent) {
+    return OPPONENT_TYPE_ORGANISATION.equalsIgnoreCase(opponent.getType());
   }
 
   /**
@@ -51,17 +55,12 @@ public class OpponentUtil {
    * @param titleLookup the common lookup value detail for title descriptions
    * @return the display name of the opponent
    */
-  public static String getDisplayName(
+  public static String getPartyName(
       final OpponentDetail opponent,
       final CommonLookupValueDetail titleLookup) {
 
-    if (INDIVIDUAL_OPPONENT.equalsIgnoreCase(opponent.getType())) {
-      return getFullName(opponent, titleLookup);
-    } else if (ORGANISATION_OPPONENT.equalsIgnoreCase(opponent.getType())) {
-      return opponent.getOrganisationName();
-    } else {
-      return getFullName(opponent, titleLookup);
-    }
+    return isOrganisation(opponent)
+        ? opponent.getOrganisationName() : getFullName(opponent, titleLookup);
   }
 
   /**
@@ -76,39 +75,28 @@ public class OpponentUtil {
       final CommonLookupValueDetail titleLookup) {
     final StringBuilder builder = new StringBuilder();
 
-    if (INDIVIDUAL_OPPONENT.equalsIgnoreCase(opponent.getType())) {
-      if (StringUtils.hasText(opponent.getTitle())) {
-        final String displayTitle = titleLookup.getDescription();
-        if (displayTitle != null) {
-          builder.append(displayTitle);
-        } else {
-          builder.append(opponent.getTitle());
-        }
-      }
-      if (StringUtils.hasText(opponent.getFirstName())) {
-        if (!builder.isEmpty()) {
-          builder.append(" ");
-        }
-        builder.append(opponent.getFirstName());
-      }
-
-      if (StringUtils.hasText(opponent.getSurname())) {
-        if (!builder.isEmpty()) {
-          builder.append(" ");
-        }
-        builder.append(opponent.getSurname());
-      }
-    } else if (ORGANISATION_OPPONENT.equalsIgnoreCase(opponent.getType())) {
-      if (StringUtils.hasText(opponent.getContactNameRole())) {
-        builder.append(opponent.getContactNameRole());
+    if (StringUtils.hasText(opponent.getTitle())) {
+      final String displayTitle = titleLookup.getDescription();
+      if (displayTitle != null) {
+        builder.append(displayTitle);
+      } else {
+        builder.append(opponent.getTitle());
       }
     }
-
-    if (builder.isEmpty()) {
-      return "undefined";
-    } else {
-      return builder.toString();
+    if (StringUtils.hasText(opponent.getFirstName())) {
+      if (!builder.isEmpty()) {
+        builder.append(" ");
+      }
+      builder.append(opponent.getFirstName());
     }
+
+    if (StringUtils.hasText(opponent.getSurname())) {
+      if (!builder.isEmpty()) {
+        builder.append(" ");
+      }
+      builder.append(opponent.getSurname());
+    }
+    return builder.isEmpty() ? "undefined" : builder.toString();
   }
 
   /**

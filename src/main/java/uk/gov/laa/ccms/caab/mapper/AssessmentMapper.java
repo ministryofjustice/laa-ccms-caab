@@ -49,20 +49,18 @@ import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.USER
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.GLOBAL;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.OPPONENT;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.PROCEEDING;
-import static uk.gov.laa.ccms.caab.util.ApplicationUtil.getAppAmendTypeOpaInput;
-import static uk.gov.laa.ccms.caab.util.ApplicationUtil.getEcfFlagOpaInput;
-import static uk.gov.laa.ccms.caab.util.ApplicationUtil.getLarScopeFlagOpaInput;
+import static uk.gov.laa.ccms.caab.util.ApplicationUtil.getAppAmendTypeAssessmentInput;
+import static uk.gov.laa.ccms.caab.util.ApplicationUtil.getEcfFlagAssessmentInput;
+import static uk.gov.laa.ccms.caab.util.ApplicationUtil.getLarScopeFlagAssessmentInput;
 import static uk.gov.laa.ccms.caab.util.ApplicationUtil.getNewApplicationOrAmendment;
-import static uk.gov.laa.ccms.caab.util.ApplicationUtil.getProviderHasContractOpaInput;
+import static uk.gov.laa.ccms.caab.util.ApplicationUtil.getProviderHasContractAssessmentInput;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentEntityType;
-import static uk.gov.laa.ccms.caab.util.OpponentUtil.getDisplayName;
+import static uk.gov.laa.ccms.caab.util.OpponentUtil.getPartyName;
 
-import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -74,7 +72,6 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipTargetDetail;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
-import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRelationship;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -149,28 +146,24 @@ public interface AssessmentMapper {
 
       //opponent relationships
       final List<AssessmentRelationshipTargetDetail> opponentRelationshipTargets =
-          new ArrayList<>();
-      for (final OpponentDetail opponent : context.getApplication().getOpponents()) {
-        final AssessmentRelationshipTargetDetail relationshipTarget =
-            new AssessmentRelationshipTargetDetail()
-                .targetEntityId(getOpponentOpaInstanceMappingId(opponent));
-        opponentRelationshipTargets.add(relationshipTarget);
-      }
-      final AssessmentRelationshipDetail opponentRelationship =
-          new AssessmentRelationshipDetail()
+          context.getApplication().getOpponents().stream()
+              .map(opponent -> new AssessmentRelationshipTargetDetail()
+                  .targetEntityId(getOpponentOpaInstanceMappingId(opponent)))
+              .collect(Collectors.toList());
+
+      final AssessmentRelationshipDetail opponentRelationship = new AssessmentRelationshipDetail()
           .name(OPPONENT.getType().toLowerCase().replace("_", ""))
           .relationshipTargets(opponentRelationshipTargets)
           .prepopulated(true);
 
+
       //proceeding relationships
       final List<AssessmentRelationshipTargetDetail> proceedingRelationshipTargets =
-          new ArrayList<>();
-      for (final ProceedingDetail proceeding : context.getApplication().getProceedings()) {
-        final AssessmentRelationshipTargetDetail relationshipTarget =
-            new AssessmentRelationshipTargetDetail()
-                .targetEntityId(getProceedingOpaInstanceMappingId(proceeding));
-        proceedingRelationshipTargets.add(relationshipTarget);
-      }
+          context.getApplication().getProceedings().stream()
+              .map(proceeding -> new AssessmentRelationshipTargetDetail()
+                  .targetEntityId(getProceedingOpaInstanceMappingId(proceeding)))
+              .collect(Collectors.toList());
+
       final AssessmentRelationshipDetail proceedingRelationship = new AssessmentRelationshipDetail()
           .name(PROCEEDING.getType().toLowerCase())
           .relationshipTargets(proceedingRelationshipTargets)
@@ -276,26 +269,103 @@ public interface AssessmentMapper {
   default List<AssessmentAttributeDetail> proceedingToAttributeList(
       final ProceedingDetail proceeding) {
     return List.of(
-        toAttribute(CLIENT_INVOLVEMENT_TYPE,
-            proceeding.getClientInvolvement().getId()),
-        toAttribute(LEAD_PROCEEDING,
-            proceeding.getLeadProceedingInd()),
-        toAttribute(LEVEL_OF_SERVICE,
-            proceeding.getLevelOfService().getId()),
-        toAttribute(MATTER_TYPE,
-            proceeding.getMatterType().getId()),
-        toAttribute(NEW_OR_EXISTING,
-            ProceedingUtil.getNewOrExisting(proceeding)),
-        toAttribute(PROCEEDING_ID,
-            ProceedingUtil.getOpaInstanceMappingId(proceeding)),
-        toAttribute(PROCEEDING_NAME,
-            proceeding.getProceedingType().getId()),
-        toAttribute(PROCEEDING_ORDER_TYPE,
-            proceeding.getTypeOfOrder().getId()),
-        toAttribute(REQUESTED_SCOPE,
-            ProceedingUtil.getRequestedScopeForAssessmentInput(proceeding)),
-        toAttribute(SCOPE_LIMIT_IS_DEFAULT,
-            ProceedingUtil.isScopeLimitDefault(proceeding)));
+        toClientInvolvementTypeAttribute(proceeding, CLIENT_INVOLVEMENT_TYPE),
+        toLeadProceedingAttribute(proceeding, LEAD_PROCEEDING),
+        toLevelOfServiceAttribute(proceeding, LEVEL_OF_SERVICE),
+        toMatterTypeAttribute(proceeding, MATTER_TYPE),
+        toNewOrExistingAttribute(proceeding, NEW_OR_EXISTING),
+        toProceedingIdAttribute(proceeding, PROCEEDING_ID),
+        toProceedingNameAttribute(proceeding, PROCEEDING_NAME),
+        toProceedingOrderTypeAttribute(proceeding, PROCEEDING_ORDER_TYPE),
+        toRequestedScopeAttribute(proceeding, REQUESTED_SCOPE),
+        toScopeLimitIsDefaultAttribute(proceeding, SCOPE_LIMIT_IS_DEFAULT));
+  }
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "proceeding.clientInvolvement.id")
+  @Mapping(target = "name", source = "attribute")
+  AssessmentAttributeDetail toClientInvolvementTypeAttribute(
+      ProceedingDetail proceeding, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "proceeding.leadProceedingInd")
+  @Mapping(target = "name", source = "attribute")
+  AssessmentAttributeDetail toLeadProceedingAttribute(
+      ProceedingDetail proceeding, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "proceeding.levelOfService.id")
+  @Mapping(target = "name", source = "attribute")
+  AssessmentAttributeDetail toLevelOfServiceAttribute(
+      ProceedingDetail proceeding, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "proceeding.matterType.id")
+  @Mapping(target = "name", source = "attribute")
+  AssessmentAttributeDetail toMatterTypeAttribute(
+      ProceedingDetail proceeding, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "proceeding",
+      qualifiedByName = "mapNewOrExistingAttribute")
+  @Mapping(target = "name", source = "attribute")
+  AssessmentAttributeDetail toNewOrExistingAttribute(
+      ProceedingDetail proceeding, AssessmentAttribute attribute);
+
+  @Named("mapNewOrExistingAttribute")
+  default String mapNewOrExistingAttribute(final ProceedingDetail proceeding) {
+    return ProceedingUtil.getNewOrExisting(proceeding);
+  }
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "proceeding",
+      qualifiedByName = "mapProceedingIdAttribute")
+  @Mapping(target = "name", source = "attribute")
+  AssessmentAttributeDetail toProceedingIdAttribute(
+      ProceedingDetail proceeding, AssessmentAttribute attribute);
+
+  @Named("mapProceedingIdAttribute")
+  default String mapProceedingIdAttribute(
+      final ProceedingDetail proceeding) {
+    return ProceedingUtil.getAssessmentMappingId(proceeding);
+  }
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "proceeding.proceedingType.id")
+  @Mapping(target = "name", source = "attribute")
+  AssessmentAttributeDetail toProceedingNameAttribute(
+      ProceedingDetail proceeding, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "proceeding.typeOfOrder.id")
+  @Mapping(target = "name", source = "attribute")
+  AssessmentAttributeDetail toProceedingOrderTypeAttribute(
+      ProceedingDetail proceeding, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "proceeding",
+      qualifiedByName = "mapRequestedScopeAttribute")
+  @Mapping(target = "name", source = "attribute")
+  AssessmentAttributeDetail toRequestedScopeAttribute(
+      ProceedingDetail proceeding, AssessmentAttribute attribute);
+
+  @Named("mapRequestedScopeAttribute")
+  default String mapRequestedScopeAttribute(
+      final ProceedingDetail proceeding) {
+    return ProceedingUtil.getRequestedScopeForAssessmentInput(proceeding);
+  }
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "proceeding",
+      qualifiedByName = "mapScopeLimitIsDefaultAttribute")
+  @Mapping(target = "name", source = "attribute")
+  AssessmentAttributeDetail toScopeLimitIsDefaultAttribute(
+      ProceedingDetail proceeding, AssessmentAttribute attribute);
+
+  @Named("mapScopeLimitIsDefaultAttribute")
+  default boolean mapScopeLimitIsDefaultAttribute(
+      final ProceedingDetail proceeding) {
+    return ProceedingUtil.isScopeLimitDefault(proceeding);
   }
 
   @Mapping(target = "id", ignore = true)
@@ -353,21 +423,72 @@ public interface AssessmentMapper {
 
     final OpponentDetail opponent = opponentContext.getOpponent();
     return List.of(
-        toAttribute(OPPONENT_DOB,
-            opponent.getDateOfBirth()),
-        toAttribute(OTHER_PARTY_ID,
-            getOpponentOpaInstanceMappingId(opponent)),
-        toAttribute(OTHER_PARTY_NAME,
-            getDisplayName(opponent,
-                opponentContext.getTitleCommonLookupValue())),
-        toAttribute(OTHER_PARTY_TYPE,
-            OpponentUtil.getOpaOpponentType(opponent.getType())),
-        toAttribute(RELATIONSHIP_TO_CASE,
-            opponent.getRelationshipToCase()),
-        toAttribute(RELATIONSHIP_TO_CLIENT,
-            opponent.getRelationshipToClient())
+        toOpponentDobAttribute(opponent, OPPONENT_DOB),
+        toOtherPartyIdAttribute(opponent, OTHER_PARTY_ID),
+        toOtherPartyNameAttribute(opponentContext, OTHER_PARTY_NAME),
+        toOtherPartyTypeAttribute(opponent, OTHER_PARTY_TYPE),
+        toRelationshipToCaseAttribute(opponent, RELATIONSHIP_TO_CASE),
+        toRelationshipToClientAttribute(opponent, RELATIONSHIP_TO_CLIENT)
     );
   }
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "opponent.dateOfBirth", dateFormat = "dd-MM-yyyy")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toOpponentDobAttribute(
+      OpponentDetail opponent, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "opponent",
+      qualifiedByName = "mapOpponentOpaInstanceMappingId")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toOtherPartyIdAttribute(
+      OpponentDetail opponent, AssessmentAttribute attribute);
+
+  @Named("mapOpponentOpaInstanceMappingId")
+  default String mapOpponentOpaInstanceMappingId(final OpponentDetail opponent) {
+    return getOpponentOpaInstanceMappingId(opponent);
+  }
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "opponentContext", qualifiedByName = "mapPartyName")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toOtherPartyNameAttribute(
+      AssessmentOpponentMappingContext opponentContext, AssessmentAttribute attribute);
+
+  @Named("mapPartyName")
+  default String mapPartyName(final AssessmentOpponentMappingContext opponentContext) {
+    return getPartyName(opponentContext.getOpponent(), opponentContext.getTitleCommonLookupValue());
+  }
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "opponent", qualifiedByName = "mapOpponentType")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toOtherPartyTypeAttribute(
+      OpponentDetail opponent, AssessmentAttribute attribute);
+
+  @Named("mapOpponentType")
+  default String mapOpponentType(final OpponentDetail opponent) {
+    return OpponentUtil.getAssessmentOpponentType(opponent.getType());
+  }
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "opponent.relationshipToCase")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toRelationshipToCaseAttribute(
+      OpponentDetail opponent, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "opponent.relationshipToClient")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toRelationshipToClientAttribute(
+      OpponentDetail opponent, AssessmentAttribute attribute);
 
   /**
    * Converts global assessment data to a list of {@link AssessmentAttributeDetail} objects.
@@ -384,114 +505,290 @@ public interface AssessmentMapper {
     final UserDetail user = context.getUser();
 
     return List.of(
-        toAttribute(APPLICATION_CASE_REF,
-            application.getCaseReferenceNumber()),
-        toAttribute(APP_AMEND_TYPE,
-            getAppAmendTypeOpaInput(application)),
-        toAttribute(CATEGORY_OF_LAW,
-            application.getCategoryOfLaw().getId()),
-        toAttribute(CLIENT_VULNERABLE,
-            client.getPersonalInformation().isVulnerableClient()),
-        toAttribute(COST_LIMIT_CHANGED_FLAG,
-            application.getCostLimit().getChanged()),
-        toAttribute(COUNTRY,
-            client.getAddress().getCountry()),
-        toAttribute(COUNTY,
-            client.getAddress().getCounty()),
-
-        //When the mapper is used the created date will match that of the assessment
-        toAttribute(DATE_ASSESSMENT_STARTED,
-            new Date()),
-
-        toAttribute(DATE_OF_BIRTH,
-            client.getPersonalInformation().getDateOfBirth()),
-        toAttribute(DEFAULT_COST_LIMITATION,
-            application.getCosts().getDefaultCostLimitation()),
-        toAttribute(DELEGATED_FUNCTIONS_DATE,
-            application.getApplicationType().getDevolvedPowers().getDateUsed()),
-        toAttribute(DEVOLVED_POWERS_CONTRACT_FLAG,
-            application.getApplicationType().getDevolvedPowers().getContractFlag()),
-        toAttribute(ECF_FLAG,
-            getEcfFlagOpaInput(application)),
-        toAttribute(FIRST_NAME,
-            client.getName().getFirstName()),
-        toAttribute(HIGH_PROFILE,
-            client.getPersonalInformation().isHighProfileClient()),
-        toAttribute(HOME_OFFICE_NO,
-            client.getPersonalInformation().getHomeOfficeNumber()),
-        toAttribute(LAR_SCOPE_FLAG,
-            getLarScopeFlagOpaInput(application)),
-        toAttribute(LEAD_PROCEEDING_CHANGED,
-            application.getLeadProceedingChanged()),
-        toAttribute(MARITIAL_STATUS,
-            client.getPersonalInformation().getMaritalStatus()),
-        toAttribute(NEW_APPL_OR_AMENDMENT,
-            getNewApplicationOrAmendment(application)),
-        toAttribute(NI_NO,
-            client.getPersonalInformation().getNationalInsuranceNumber()),
-        toAttribute(POA_OR_BILL_FLAG, "N/A"),
-        toAttribute(POST_CODE,
-            client.getAddress().getPostalCode()),
-        toAttribute(PROVIDER_CASE_REFERENCE,
-            application.getProviderDetails().getProviderCaseReference()),
-        toAttribute(PROVIDER_HAS_CONTRACT,
-            getProviderHasContractOpaInput(application)),
-        toAttribute(REQ_COST_LIMITATION,
-            application.getCosts().getRequestedCostLimitation()),
-        toAttribute(SURNAME,
-            client.getName().getSurname()),
-        toAttribute(SURNAME_AT_BIRTH,
-            client.getName().getSurnameAtBirth()),
-        toAttribute(USER_PROVIDER_FIRM_ID,
-            user.getProvider().getId()),
-        toAttribute(USER_TYPE,
-            user.getUserType())
+        toApplicationCaseRefAttribute(application, APPLICATION_CASE_REF),
+        toAppAmendTypeAttribute(application, APP_AMEND_TYPE),
+        toCategoryOfLawAttribute(application, CATEGORY_OF_LAW),
+        toClientVulnerableAttribute(client, CLIENT_VULNERABLE),
+        toCostLimitChangedFlagAttribute(application, COST_LIMIT_CHANGED_FLAG),
+        toCountryAttribute(client, COUNTRY),
+        toCountyAttribute(client, COUNTY),
+        toDateAssessmentStartedAttribute(DATE_ASSESSMENT_STARTED),
+        toDateOfBirthAttribute(client, DATE_OF_BIRTH),
+        toDefaultCostLimitationAttribute(application, DEFAULT_COST_LIMITATION),
+        toDelegatedFunctionsDateAttribute(application, DELEGATED_FUNCTIONS_DATE),
+        toDevolvedPowersContractFlagAttribute(application, DEVOLVED_POWERS_CONTRACT_FLAG),
+        toEcfFlagAttribute(application, ECF_FLAG),
+        toFirstNameAttribute(client, FIRST_NAME),
+        toHighProfileAttribute(client, HIGH_PROFILE),
+        toHomeOfficeNoAttribute(client, HOME_OFFICE_NO),
+        toLarScopeFlagAttribute(application, LAR_SCOPE_FLAG),
+        toLeadProceedingChangedAttribute(application, LEAD_PROCEEDING_CHANGED),
+        toMaritalStatusAttribute(client, MARITIAL_STATUS),
+        toNewApplOrAmendmentAttribute(application, NEW_APPL_OR_AMENDMENT),
+        toNiNoAttribute(client, NI_NO),
+        toPoaOrBillFlagAttribute(POA_OR_BILL_FLAG),
+        toPostCodeAttribute(client, POST_CODE),
+        toProviderCaseReferenceAttribute(application, PROVIDER_CASE_REFERENCE),
+        toProviderHasContractAttribute(application, PROVIDER_HAS_CONTRACT),
+        toReqCostLimitationAttribute(application, REQ_COST_LIMITATION),
+        toSurnameAttribute(client, SURNAME),
+        toSurnameAtBirthAttribute(client, SURNAME_AT_BIRTH),
+        toUserProviderFirmIdAttribute(user, USER_PROVIDER_FIRM_ID),
+        toUserTypeAttribute(user, USER_TYPE)
     );
   }
 
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "application.caseReferenceNumber")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toApplicationCaseRefAttribute(
+      ApplicationDetail application, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "application", qualifiedByName = "mapAppAmendType")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toAppAmendTypeAttribute(
+      ApplicationDetail application, AssessmentAttribute attribute);
+
+  @Named("mapAppAmendType")
+  default String mapAppAmendType(final ApplicationDetail application) {
+    return getAppAmendTypeAssessmentInput(application);
+  }
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "application.categoryOfLaw.id")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toCategoryOfLawAttribute(
+      ApplicationDetail application, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "client.personalInformation.vulnerableClient")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toClientVulnerableAttribute(
+      ClientDetailDetails client, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "application.costLimit.changed")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toCostLimitChangedFlagAttribute(
+      ApplicationDetail application, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "client.address.country")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toCountryAttribute(
+      ClientDetailDetails client, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "client.address.county")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toCountyAttribute(
+      ClientDetailDetails client, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "attribute",
+      qualifiedByName = "mapDateAssessmentStarted",
+      dateFormat = "dd-MM-yyyy")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toDateAssessmentStartedAttribute(AssessmentAttribute attribute);
+
+  @Named("mapDateAssessmentStarted")
+  default Date mapDateAssessmentStarted(final AssessmentAttribute attribute) {
+    return new Date();
+  }
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value",
+      source = "client.personalInformation.dateOfBirth", dateFormat = "dd-MM-yyyy")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toDateOfBirthAttribute(
+      ClientDetailDetails client, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "application.costs.defaultCostLimitation")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toDefaultCostLimitationAttribute(
+      ApplicationDetail application, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value",
+      source = "application.applicationType.devolvedPowers.dateUsed", dateFormat = "dd-MM-yyyy")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toDelegatedFunctionsDateAttribute(
+      ApplicationDetail application, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "application.applicationType.devolvedPowers.contractFlag")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toDevolvedPowersContractFlagAttribute(
+      ApplicationDetail application, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "application", qualifiedByName = "mapEcfFlag")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toEcfFlagAttribute(
+      ApplicationDetail application, AssessmentAttribute attribute);
+
+  @Named("mapEcfFlag")
+  default boolean mapEcfFlag(final ApplicationDetail application) {
+    return getEcfFlagAssessmentInput(application);
+  }
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "client.name.firstName")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toFirstNameAttribute(
+      ClientDetailDetails client, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "client.personalInformation.highProfileClient")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toHighProfileAttribute(
+      ClientDetailDetails client, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "client.personalInformation.homeOfficeNumber")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toHomeOfficeNoAttribute(
+      ClientDetailDetails client, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "application", qualifiedByName = "mapLarScopeFlag")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toLarScopeFlagAttribute(
+      ApplicationDetail application, AssessmentAttribute attribute);
+
+  @Named("mapLarScopeFlag")
+  default boolean mapLarScopeFlag(final ApplicationDetail application) {
+    return getLarScopeFlagAssessmentInput(application);
+  }
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "application.leadProceedingChanged")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toLeadProceedingChangedAttribute(
+      ApplicationDetail application, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "client.personalInformation.maritalStatus")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toMaritalStatusAttribute(
+      ClientDetailDetails client, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "application", qualifiedByName = "mapNewApplOrAmendment")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toNewApplOrAmendmentAttribute(
+      ApplicationDetail application, AssessmentAttribute attribute);
+
+  @Named("mapNewApplOrAmendment")
+  default String mapNewApplOrAmendment(final ApplicationDetail application) {
+    return getNewApplicationOrAmendment(application);
+  }
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "client.personalInformation.nationalInsuranceNumber")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toNiNoAttribute(
+      ClientDetailDetails client, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", constant = "N/A")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toPoaOrBillFlagAttribute(
+      AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "client.address.postalCode")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toPostCodeAttribute(
+      ClientDetailDetails client, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "application.providerDetails.providerCaseReference")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toProviderCaseReferenceAttribute(
+      ApplicationDetail application, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "application", qualifiedByName = "mapProviderHasContract")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toProviderHasContractAttribute(
+      ApplicationDetail application, AssessmentAttribute attribute);
+
+  @Named("mapProviderHasContract")
+  default boolean mapProviderHasContract(final ApplicationDetail application) {
+    return getProviderHasContractAssessmentInput(application);
+  }
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "application.costs.requestedCostLimitation")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toReqCostLimitationAttribute(
+      ApplicationDetail application, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "client.name.surname")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toSurnameAttribute(
+      ClientDetailDetails client, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "client.name.surnameAtBirth")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toSurnameAtBirthAttribute(
+      ClientDetailDetails client, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "user.provider.id")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toUserProviderFirmIdAttribute(
+      UserDetail user, AssessmentAttribute attribute);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "user.userType")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", constant = "attribute.type")
+  AssessmentAttributeDetail toUserTypeAttribute(
+      UserDetail user, AssessmentAttribute attribute);
+
   @Named("getOpponentOpaInstanceMappingId")
   default String getOpponentOpaInstanceMappingId(final OpponentDetail opponent) {
-    return OpponentUtil.getOpaInstanceMappingId(opponent);
+    return OpponentUtil.getAssessmentMappingId(opponent);
   }
 
   @Named("getProceedingOpaInstanceMappingId")
   default String getProceedingOpaInstanceMappingId(final ProceedingDetail proceeding) {
-    return ProceedingUtil.getOpaInstanceMappingId(proceeding);
+    return ProceedingUtil.getAssessmentMappingId(proceeding);
   }
-
-  /**
-   * Converts the given assessment attribute and value to an {@link AssessmentAttributeDetail}.
-   *
-   * @param attribute the assessment attribute to convert
-   * @param value the value of the attribute
-   * @return the converted {@link AssessmentAttributeDetail}
-   */
-  default AssessmentAttributeDetail toAttribute(
-      final AssessmentAttribute attribute,
-      final Object value) {
-    final String valueString = switch (value) {
-      case final Date date
-          when attribute.getType().equals("date") ->
-          new SimpleDateFormat("dd-MM-yyyy").format(date);
-      case final Boolean b
-          when attribute.getType().equals("boolean") -> b ? "true" : "false";
-      case final BigDecimal bigDecimal
-          when attribute.getType().equals("currency") -> value.toString();
-      case final Integer i
-          when attribute.getType().equals("number") -> value.toString();
-      case null,
-          default -> value != null ? value.toString() : null;
-    };
-
-    return new AssessmentAttributeDetail()
-        .name(attribute.getName())
-        .type(attribute.getType())
-        .value(valueString)
-        .prepopulated(attribute.isPrepopulated())
-        .asked(attribute.isAsked());
-  }
-
-
-
 
 }

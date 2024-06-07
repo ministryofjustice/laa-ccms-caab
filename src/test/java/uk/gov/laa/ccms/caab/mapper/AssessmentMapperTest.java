@@ -134,85 +134,6 @@ class AssessmentMapperTest {
     assertEquals(expectedOpaInstanceMappingId, result);
   }
 
-
-  @Test
-  public void shouldConvertToAttributeDetailForDateType() {
-    final Date date = new Date();
-    final SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
-    final String dateString = formatter.format(date);
-
-    final AssessmentAttributeDetail result = assessmentMapper.toAttribute(
-        AssessmentAttribute.DATE_OF_BIRTH, date);
-
-    assertEquals(AssessmentAttribute.DATE_OF_BIRTH.getName(), result.getName());
-    assertEquals(AssessmentAttribute.DATE_OF_BIRTH.getType(), result.getType());
-    assertEquals(dateString, result.getValue());
-    assertTrue(result.getPrepopulated());
-    assertTrue(result.getAsked());
-  }
-
-  @Test
-  public void shouldConvertToAttributeDetailForBooleanType() {
-    final AssessmentAttributeDetail result = assessmentMapper.toAttribute(
-        AssessmentAttribute.CLIENT_VULNERABLE, true);
-
-    assertEquals(AssessmentAttribute.CLIENT_VULNERABLE.getName(), result.getName());
-    assertEquals(AssessmentAttribute.CLIENT_VULNERABLE.getType(), result.getType());
-    assertEquals("true", result.getValue());
-    assertTrue(result.getPrepopulated());
-    assertTrue(result.getAsked());
-  }
-
-  @Test
-  public void shouldConvertToAttributeDetailForCurrencyType() {
-    final BigDecimal bigDecimal = new BigDecimal("123.45");
-
-    final AssessmentAttributeDetail result = assessmentMapper.toAttribute(
-        AssessmentAttribute.DEFAULT_COST_LIMITATION, bigDecimal);
-
-    assertEquals(AssessmentAttribute.DEFAULT_COST_LIMITATION.getName(), result.getName());
-    assertEquals(AssessmentAttribute.DEFAULT_COST_LIMITATION.getType(), result.getType());
-    assertEquals("123.45", result.getValue());
-    assertTrue(result.getPrepopulated());
-    assertTrue(result.getAsked());
-  }
-
-  @Test
-  public void shouldConvertToAttributeDetailForNumberType() {
-    final AssessmentAttributeDetail result = assessmentMapper.toAttribute(
-        AssessmentAttribute.USER_PROVIDER_FIRM_ID, 123);
-
-    assertEquals(AssessmentAttribute.USER_PROVIDER_FIRM_ID.getName(), result.getName());
-    assertEquals(AssessmentAttribute.USER_PROVIDER_FIRM_ID.getType(), result.getType());
-    assertEquals("123", result.getValue());
-    assertTrue(result.getPrepopulated());
-    assertTrue(result.getAsked());
-  }
-
-  @Test
-  public void shouldConvertToAttributeDetailForNullValue() {
-    final AssessmentAttributeDetail result = assessmentMapper.toAttribute(
-        AssessmentAttribute.SURNAME, null);
-
-    assertEquals(AssessmentAttribute.SURNAME.getName(), result.getName());
-    assertEquals(AssessmentAttribute.SURNAME.getType(), result.getType());
-    assertNull(result.getValue());
-    assertTrue(result.getPrepopulated());
-    assertTrue(result.getAsked());
-  }
-
-  @Test
-  public void shouldConvertToAttributeDetailForNonNullValue() {
-    final AssessmentAttributeDetail result = assessmentMapper.toAttribute(
-        AssessmentAttribute.FIRST_NAME, "value");
-
-    assertEquals(AssessmentAttribute.FIRST_NAME.getName(), result.getName());
-    assertEquals(AssessmentAttribute.FIRST_NAME.getType(), result.getType());
-    assertEquals("value", result.getValue());
-    assertTrue(result.getPrepopulated());
-    assertTrue(result.getAsked());
-  }
-
   private void assertGlobalAttributes(final List<AssessmentAttributeDetail> attributes){
 
     assertEquals(30, attributes.size());
@@ -264,8 +185,8 @@ class AssessmentMapperTest {
     assertEquals(6, attributes.size());
     assertContainsAttribute(attributes, AssessmentAttribute.OPPONENT_DOB, dateStr);
     assertContainsAttribute(attributes, AssessmentAttribute.OTHER_PARTY_ID, "ebsid");
-    assertContainsAttribute(attributes, AssessmentAttribute.OTHER_PARTY_NAME, "undefined");
-    assertContainsAttribute(attributes, AssessmentAttribute.OTHER_PARTY_TYPE, "PERSON");
+    assertContainsAttribute(attributes, AssessmentAttribute.OTHER_PARTY_NAME, "Mr firstname surname");
+    assertContainsAttribute(attributes, AssessmentAttribute.OTHER_PARTY_TYPE, "ORGANISATION");
     assertContainsAttribute(attributes, AssessmentAttribute.RELATIONSHIP_TO_CASE, "relToCase");
     assertContainsAttribute(attributes, AssessmentAttribute.RELATIONSHIP_TO_CLIENT, "relToClient");
   }
@@ -276,14 +197,14 @@ class AssessmentMapperTest {
       final String expectedValue) {
     boolean found = false;
     for (final AssessmentAttributeDetail attributeDetail : attributeDetails) {
-      if (attributeDetail.getName().equals(expectedAttribute.getName())) {
+      if (attributeDetail.getName().equals(expectedAttribute.name())) {
         assertEquals(expectedValue, attributeDetail.getValue(),
-            "Value for attribute " + expectedAttribute.getName() + " does not match expected value.");
+            "Value for attribute " + expectedAttribute.name() + " does not match expected value.");
         found = true;
         break;
       }
     }
-    assertTrue(found, "Attribute " + expectedAttribute.getName() + " not found in the list.");
+    assertTrue(found, "Attribute " + expectedAttribute.name() + " not found in the list.");
   }
 
   @Test

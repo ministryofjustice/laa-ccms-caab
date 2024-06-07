@@ -29,7 +29,6 @@ import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -39,7 +38,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.Copy;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -61,7 +59,6 @@ import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
-import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -891,7 +888,7 @@ public class AssessmentServiceTest {
     entityTypeDetail.setEntities(List.of(entityDetail));
     assessment.setEntityTypes(List.of(entityTypeDetail));
 
-    final boolean result = assessmentService.isOpaProceedingsMatchApplication(application, assessment);
+    final boolean result = assessmentService.isAssessmentProceedingsMatchingApplication(application, assessment);
 
     // assert true as the proceeding does not exist in the application
     assertTrue(result);
@@ -916,7 +913,7 @@ public class AssessmentServiceTest {
     entityTypeDetail.setEntities(List.of(entityDetail));
     assessment.setEntityTypes(List.of(entityTypeDetail));
 
-    final boolean result = assessmentService.isAppProceedingsExistInOpa(application, assessment);
+    final boolean result = assessmentService.isApplicationProceedingsMatchingAssessment(application, assessment);
 
     // we expect true as the scope is different
     assertTrue(result);
@@ -934,7 +931,7 @@ public class AssessmentServiceTest {
     entityTypeDetail.setName("PROCEEDING");
     assessment.setEntityTypes(List.of(entityTypeDetail));
 
-    final boolean result = assessmentService.isAppProceedingsExistInOpa(application, assessment);
+    final boolean result = assessmentService.isApplicationProceedingsMatchingAssessment(application, assessment);
 
     //we expect true as the proceeding does not exist in OPA
     assertTrue(result);
@@ -964,7 +961,7 @@ public class AssessmentServiceTest {
     }
 
     final boolean result =
-        assessmentService.isOpponentCountMatchOpa(application, assessment);
+        assessmentService.isOpponentCountMatchingAssessments(application, assessment);
 
     assertEquals(result, expected);
   }
@@ -993,7 +990,7 @@ public class AssessmentServiceTest {
     application.setOpponents(Collections.singletonList(opponent));
 
     final boolean result =
-        assessmentService.isOpaOpponentsMatchApplication(application, assessment);
+        assessmentService.isAssessmentOpponentsMatchingApplication(application, assessment);
 
     assertEquals(result, expected);
   }
@@ -1019,7 +1016,7 @@ public class AssessmentServiceTest {
     application.setOpponents(Collections.singletonList(opponent));
 
     final boolean result =
-        assessmentService.isApplicationMatchOpaOpponents(application, assessment);
+        assessmentService.isApplicationOpponentsMatchingAssessments(application, assessment);
 
     assertEquals(result, expected);
   }

@@ -140,31 +140,6 @@ public class AssessmentApiClient {
   }
 
   /**
-   * Deletes a checkpoint for a given assessment.
-   *
-   * @param assessmentId the ID of the assessment
-   * @param userLoginId the login ID of the user
-   * @return a Mono that completes when the deletion is finished
-   */
-  public Mono<Void> deleteAssessmentCheckpoint(
-      final Long assessmentId,
-      final String userLoginId) {
-
-    return assessmentApiWebClient
-        .delete()
-        .uri("/assessments/{assessment-id}", assessmentId)
-        .header("Caab-User-Login-Id", userLoginId)
-        .retrieve()
-        .bodyToMono(Void.class)
-        .onErrorResume(e -> assessmentApiClientErrorHandler
-            .handleApiDeleteError(e,
-                RESOURCE_TYPE_ASSESSMENT_CHECKPOINT,
-                "id",
-                String.valueOf(assessmentId)));
-  }
-
-
-  /**
    * Retrieve the query parameters for the assessments API assessments endpoints.
    *
    * @param assessmentNames the list of assessment names to filter

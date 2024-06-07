@@ -3,7 +3,6 @@ package uk.gov.laa.ccms.caab.util;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
 
-import java.math.BigDecimal;
 import java.util.Date;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
@@ -16,13 +15,13 @@ import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 public class ApplicationUtil {
 
   /**
-   * Gets the application type or amendment type for OPA input.
+   * Gets the application type or amendment type for Assessment input.
    *
    * @param application the application details
    * @return "APP_TYPE_SUBSTANTIVE" if the application type is "EXCEPTIONAL_CASE_FUNDING",
    *         otherwise the application type ID
    */
-  public static String getAppAmendTypeOpaInput(final ApplicationDetail application) {
+  public static String getAppAmendTypeAssessmentInput(final ApplicationDetail application) {
     if (application.getApplicationType().getId()
         .equalsIgnoreCase(APP_TYPE_EXCEPTIONAL_CASE_FUNDING)) {
       return APP_TYPE_SUBSTANTIVE;
@@ -37,7 +36,8 @@ public class ApplicationUtil {
    * @param application the application details
    * @return true if the devolved powers contract flag starts with "yes", otherwise false
    */
-  public static boolean getProviderHasContractOpaInput(final ApplicationDetail application) {
+  public static boolean getProviderHasContractAssessmentInput(
+      final ApplicationDetail application) {
     final String devolvedPowersContractFlag =
         application.getApplicationType().getDevolvedPowers().getContractFlag();
 
@@ -53,7 +53,7 @@ public class ApplicationUtil {
    * @param application the application details
    * @return true if the application type is "EXCEPTIONAL_CASE_FUNDING", otherwise false
    */
-  public static boolean getEcfFlagOpaInput(final ApplicationDetail application) {
+  public static boolean getEcfFlagAssessmentInput(final ApplicationDetail application) {
     return application
         .getApplicationType()
         .getId()
@@ -66,7 +66,7 @@ public class ApplicationUtil {
    * @param application the application details
    * @return true if the LAR scope flag is not null and true, otherwise false
    */
-  public static boolean getLarScopeFlagOpaInput(final ApplicationDetail application) {
+  public static boolean getLarScopeFlagAssessmentInput(final ApplicationDetail application) {
     return application.getLarScopeFlag() != null
         && Boolean.TRUE.equals(application.getLarScopeFlag());
   }

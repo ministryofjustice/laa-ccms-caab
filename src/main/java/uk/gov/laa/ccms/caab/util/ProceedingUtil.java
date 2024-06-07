@@ -18,12 +18,12 @@ public class ProceedingUtil {
 
 
   /**
-   * Returns the OPA instance mapping ID for the given proceeding.
+   * Returns the assessment mapping ID for the given proceeding.
    *
    * @param proceeding the proceeding to get the OPA instance mapping ID for
-   * @return the OPA instance mapping ID
+   * @return the assessment mapping ID
    */
-  public static String getOpaInstanceMappingId(final ProceedingDetail proceeding) {
+  public static String getAssessmentMappingId(final ProceedingDetail proceeding) {
     if (proceeding.getEbsId() == null) {
       return InstanceMappingPrefix.PROCEEDING.getPrefix() + proceeding.getId();
     }

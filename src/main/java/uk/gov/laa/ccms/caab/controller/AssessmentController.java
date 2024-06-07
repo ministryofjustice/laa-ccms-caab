@@ -112,7 +112,7 @@ public class AssessmentController {
       final HttpSession session,
       final HttpServletRequest request) {
 
-    ApplicationDetail application = null;
+    final ApplicationDetail application;
 
     //get the assessment or case data, check if application id is in the session if is then we get
     // the application, otherwise it's a case
@@ -123,6 +123,7 @@ public class AssessmentController {
               .orElseThrow(() -> new CaabApplicationException(
                   "Failed to retrieve application"));
     } else {
+      application = null;
       //todo - get case details (not part of application process)
       // map case into application object
     }
@@ -142,11 +143,8 @@ public class AssessmentController {
           application.getCaseReferenceNumber(),
           null).block();
 
-      for (final AssessmentDetail prepopAssessment : assessmentDetails.getContent()) {
-
-        if (prepopAssessment.getName()
-            .equalsIgnoreCase(assessmentRulebase.getPrePopAssessmentName())) {
-
+      if (assessmentDetails != null && assessmentDetails.getContent() != null) {
+        assessmentDetails.getContent().stream().findFirst().ifPresent(prepopAssessment -> {
           //is deletion of checkpoint required
           if (assessmentService.isAssessmentCheckpointToBeDeleted(application, prepopAssessment)) {
             if (prepopAssessment.getCheckpoint() != null) {
@@ -156,9 +154,8 @@ public class AssessmentController {
             assessmentService.cleanupData(prepopAssessment, application);
             //save the assessment
             assessmentService.saveAssessment(user, prepopAssessment).block();
-            break;
           }
-        }
+        });
       }
     }
 
@@ -171,7 +168,9 @@ public class AssessmentController {
         user.getLoginId(),
         user.getUserType()).block();
 
-    if (assessment.equalsIgnoreCase("means") || assessment.equalsIgnoreCase("merits")) {
+    //if means or merits assessment
+    if (!assessmentRulebase.isFinancialAssessment()) {
+
       final String assessmentType = assessment.toUpperCase();
 
       //Create temporary context token
@@ -184,7 +183,6 @@ public class AssessmentController {
       assessmentService.startAssessment(
           application,
           assessmentRulebase,
-          application.getCaseReferenceNumber(),
           client,
           user);
 

@@ -101,26 +101,26 @@ public class AssessmentModelUtils {
 
   public static AssessmentAttributeDetail buildMatterTypeAttribute() {
     return new AssessmentAttributeDetail()
-        .name(MATTER_TYPE.getName())
+        .name(MATTER_TYPE.name())
         .value("TEST");
   }
 
   public static AssessmentAttributeDetail buildProceedingNameAttribute() {
     return new AssessmentAttributeDetail()
-        .name(PROCEEDING_NAME.getName())
+        .name(PROCEEDING_NAME.name())
         .value("TEST");
   }
 
   public static AssessmentAttributeDetail buildClientInvolvementAttribute() {
     return new AssessmentAttributeDetail()
-        .name(CLIENT_INVOLVEMENT_TYPE.getName())
+        .name(CLIENT_INVOLVEMENT_TYPE.name())
         .value("TEST");
   }
 
   public static AssessmentAttributeDetail buildRequestedScopeAttribute(
       final String value) {
     return new AssessmentAttributeDetail()
-        .name(REQUESTED_SCOPE.getName())
+        .name(REQUESTED_SCOPE.name())
         .value(value);
   }
 
