@@ -36,7 +36,7 @@ public class ContextToken {
   public static final String RULE_BASE_ID = "rb";
   // pui Provider Id AKA OwnerId
   public static final String PROVIDER_ID = "pid";
-  // timestamp An attempt to determine if thi context is valid within a time window -
+  // timestamp An attempt to determine if this context is valid within a time window -
   // to guard against bookmarking of reinjection of an old link.
   public static final String TIME_TO_LIVE = "ttl";
   // invoked form
