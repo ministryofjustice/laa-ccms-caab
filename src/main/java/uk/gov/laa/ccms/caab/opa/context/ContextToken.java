@@ -21,7 +21,7 @@ import uk.gov.laa.ccms.caab.opa.context.exception.ConnectorSecurityContextExcept
 public class ContextToken {
 
 
-  // query String associate to this context
+  // query String associated to this context
   // i.e. {url}?val=xxxxxxx  used in checking the context within the PUI Connector Load() operation
   // - e.g. TTL procesing 5-10 seconds.
   public static final String QUERY_KEY = "val";
