@@ -60,7 +60,9 @@ public class ApplicationSummaryController {
     model.addAttribute("summary", summary);
 
     final ActiveCase activeCase = ActiveCase.builder()
+        .applicationId(application.getId())
         .caseReferenceNumber(summary.getCaseReferenceNumber())
+        .providerId(application.getProviderDetails().getProvider().getId())
         .client(summary.getClientFullName())
         .clientReferenceNumber(summary.getClientReferenceNumber())
         .providerCaseReferenceNumber(summary.getProviderCaseReferenceNumber())

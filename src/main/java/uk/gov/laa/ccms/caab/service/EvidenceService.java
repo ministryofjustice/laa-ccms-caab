@@ -17,11 +17,17 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
+import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.BaseDocument;
+import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 /**
  * Service class to handle Evidence.
@@ -33,13 +39,13 @@ public class EvidenceService {
 
   private final AssessmentService assessmentService;
 
-  private final ApplicationService applicationService;
-
   private final CaseOutcomeService caseOutcomeService;
 
   private final CaabApiClient caabApiClient;
 
   private final EbsApiClient ebsApiClient;
+
+  private final SoaApiClient soaApiClient;
 
   /**
    * Get a List of uploaded evidence documents by case reference number and CCMS module.
@@ -80,6 +86,50 @@ public class EvidenceService {
                 combinedResult.getT1().stream(),
                 combinedResult.getT2().stream(),
                 combinedResult.getT3().stream()).toList());
+  }
+
+  /**
+   * Register a new evidence document in EBS to get a document id.
+   *
+   * @param documentType - the document type.
+   * @param fileExtension - the file extension.
+   * @param documentDescription - the document description.
+   * @param userDetail - the user detail.
+   * @return Mono wrapping the EBS registered document id.
+   */
+  public String registerDocument(
+      final String documentType,
+      final String fileExtension,
+      final String documentDescription,
+      final UserDetail userDetail) {
+
+    final BaseDocument baseDocument = new BaseDocument()
+        .documentType(documentType)
+        .fileExtension(fileExtension)
+        .text(documentDescription);
+
+    return soaApiClient.registerDocument(
+            baseDocument,
+            userDetail.getLoginId(),
+            userDetail.getUserType())
+        .mapNotNull(ClientTransactionResponse::getReferenceNumber)
+        .blockOptional()
+        .orElseThrow(() -> new CaabApplicationException("Failed to register document"));
+  }
+
+  /**
+   * Store an evidence document in the TDS, prior to submission to EBS.
+   *
+   * @param userDetail - the user detail.
+   * @return Mono wrapping the EBS registered document id.
+   */
+  public Mono<String> addDocument(
+      final EvidenceDocumentDetail evidenceDocumentDetail,
+      final UserDetail userDetail) {
+
+    return caabApiClient.createEvidenceDocument(
+            evidenceDocumentDetail,
+            userDetail.getLoginId());
   }
 
   /**

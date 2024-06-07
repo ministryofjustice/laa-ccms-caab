@@ -29,7 +29,7 @@
         <input class="govuk-file-upload" id="file" name="file" type="file">
       </div>
 
-      <div th:replace="~{partials/forms :: dropdown('documentType', 'Document type', ${evidenceTypes.content}, 'code', 'description', false)}"></div>
+      <div th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', 'Document type', ${evidenceTypes.content}, 'code', 'description')}"></div>
       <div th:replace="~{partials/forms :: largeTextInput('documentDescription', 'Document description (Maximum 255 characters allowed)')}"></div>
 
       <div class="govuk-form-group">

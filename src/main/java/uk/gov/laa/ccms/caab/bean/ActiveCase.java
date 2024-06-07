@@ -12,6 +12,8 @@ public class ActiveCase {
   private String client;
   private String clientReferenceNumber;
 
+  private Integer applicationId;
   private String caseReferenceNumber;
   private String providerCaseReferenceNumber;
+  private Integer providerId;
 }

@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
+import org.springframework.web.multipart.MultipartFile;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
@@ -88,29 +89,29 @@ public class EvidenceUploadValidator extends AbstractValidator {
     }
 
     // Check the file extension is within the accepted list.
-    validateFileExtension(evidenceUploadFormData.getFile().getOriginalFilename(), errors);
+    evidenceUploadFormData.setFileExtension(getFileExtension(evidenceUploadFormData.getFile()));
+    validateFileExtension(evidenceUploadFormData.getFileExtension(), errors);
 
     validateFieldMaxLength("documentDescription",
         evidenceUploadFormData.getDocumentDescription(),
         DOCUMENT_DESCRIPTION_MAX_LENGTH, "description", errors);
   }
 
-  private void validateFileExtension(String filename, Errors errors) {
-    String name = Optional.ofNullable(filename).orElse("");
-
-    if (!isValidExtension(name)) {
+  private void validateFileExtension(String fileExtension, Errors errors) {
+    if (!isValidExtension(fileExtension)) {
       errors.rejectValue("file", "invalid.extension",
           String.format(INVALID_EXTENSION_ERROR, getExtensionDisplayString()));
     }
   }
 
-  protected boolean isValidExtension(final String filename) {
-    final String fileExtension = getFileExtension(filename).toUpperCase();
+  protected boolean isValidExtension(final String fileExtension) {
     return validExtensions.stream().anyMatch(ext -> ext.toUpperCase().equals(fileExtension));
   }
 
-  protected String getFileExtension(String filename) {
-    return filename.substring(filename.lastIndexOf(".") + 1);
+  protected String getFileExtension(MultipartFile file) {
+    return Optional.ofNullable(file.getOriginalFilename())
+        .map(s -> s.substring(s.lastIndexOf(".") + 1).toUpperCase())
+        .orElse("");
   }
 
   protected String getExtensionDisplayString() {

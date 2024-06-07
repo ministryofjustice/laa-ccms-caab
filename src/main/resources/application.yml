@@ -9,11 +9,11 @@ search:
     organisations: 500
 
 upload:
-  valid-extensions:
-    - pdf
-    - rtf
-    - tiff
-    - docx
+  valid-extensions: >
+    pdf,
+    rtf,
+    tiff,
+    docx
 
 submission:
   max-poll-count: 6
