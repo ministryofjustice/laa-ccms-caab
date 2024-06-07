@@ -3,8 +3,10 @@ package uk.gov.laa.ccms.caab.config;
 import fi.solita.clamav.ClamAVClient;
 import java.util.Locale;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -15,15 +17,17 @@ import org.springframework.web.servlet.i18n.FixedLocaleResolver;
  * Configuration class for creating WebClient instances used for making HTTP requests.
  */
 @Configuration
+@EnableConfigurationProperties({AssessmentApiProperties.class, CaabApiProperties.class,
+    EbsApiProperties.class, SoaApiProperties.class})
 public class ApplicationConfig implements WebMvcConfigurer {
 
-  private final String ebsApiUrl;
+  private final EbsApiProperties ebsApiProperties;
 
-  private final String soaApiUrl;
+  private final SoaApiProperties soaApiProperties;
 
-  private final String caabApiUrl;
+  private final CaabApiProperties caabApiProperties;
 
-  private final String assessmentApiUrl;
+  private final AssessmentApiProperties assessmentApiProperties;
 
   private final String osApiUrl;
 
@@ -44,25 +48,25 @@ public class ApplicationConfig implements WebMvcConfigurer {
   /**
    * Constructs the ApplicationConfig instance with API URLs.
    *
-   * @param ebsApiUrl          The URL of the data API.
-   * @param soaApiUrl          The URL of the SOA Gateway API.
-   * @param caabApiUrl         The URL of the CAAB API.
-   * @param osApiUrl           The URL of the ordinance survey API.
-   * @param loggingInterceptor A logging interceptor for the caab.
+   * @param ebsApiProperties        The connection details for the data API.
+   * @param soaApiProperties        The connection details for the SOA Gateway API.
+   * @param caabApiProperties       The connection details for the CAAB API.
+   * @param osApiUrl                The URL of the ordinance survey API.
+   * @param loggingInterceptor      A logging interceptor for the caab.
    */
-  public ApplicationConfig(@Value("${laa.ccms.ebs-api.url}") final String ebsApiUrl,
-                           @Value("${laa.ccms.soa-api.url}") final String soaApiUrl,
-                           @Value("${laa.ccms.caab-api.url}") final String caabApiUrl,
-                           @Value("${laa.ccms.assessment-api.url}") final String assessmentApiUrl,
+  public ApplicationConfig(final EbsApiProperties ebsApiProperties,
+                           final SoaApiProperties soaApiProperties,
+                           final CaabApiProperties caabApiProperties,
+                           final AssessmentApiProperties assessmentApiProperties,
                            @Value("${os.api.url}") final String osApiUrl,
                            @Value("${av.api.hostname}") final String avApiHostName,
                            @Value("${av.api.port}") final Integer avApiPort,
                            @Value("${av.api.timeout}") final Integer avApiTimeout,
                            final LoggingInterceptor loggingInterceptor) {
-    this.ebsApiUrl = ebsApiUrl;
-    this.soaApiUrl = soaApiUrl;
-    this.caabApiUrl = caabApiUrl;
-    this.assessmentApiUrl = assessmentApiUrl;
+    this.ebsApiProperties = ebsApiProperties;
+    this.soaApiProperties = soaApiProperties;
+    this.caabApiProperties = caabApiProperties;
+    this.assessmentApiProperties = assessmentApiProperties;
     this.osApiUrl = osApiUrl;
     this.avApiHostName = avApiHostName;
     this.avApiPort = avApiPort;
@@ -77,7 +81,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
    */
   @Bean("ebsApiWebClient")
   WebClient ebsApiWebClient() {
-    return WebClient.create(ebsApiUrl);
+    return createWebClient(ebsApiProperties);
   }
 
   /**
@@ -87,7 +91,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
    */
   @Bean("soaApiWebClient")
   WebClient soaApiWebClient() {
-    return WebClient.create(soaApiUrl);
+    return createWebClient(soaApiProperties);
   }
 
   /**
@@ -97,7 +101,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
    */
   @Bean("caabApiWebClient")
   WebClient caabApiWebClient() {
-    return WebClient.create(caabApiUrl);
+    return createWebClient(caabApiProperties);
   }
 
   /**
@@ -107,7 +111,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
    */
   @Bean("assessmentApiWebClient")
   WebClient assessmentApiWebClient() {
-    return WebClient.create(assessmentApiUrl);
+    return createWebClient(assessmentApiProperties);
   }
 
   /**
@@ -141,4 +145,12 @@ public class ApplicationConfig implements WebMvcConfigurer {
     localeResolver.setDefaultLocale(Locale.UK);
     return localeResolver;
   }
+
+  private WebClient createWebClient(ApiProperties apiProperties) {
+    return WebClient.builder()
+        .baseUrl(apiProperties.getUrl())
+        .defaultHeader(HttpHeaders.AUTHORIZATION, apiProperties.getAccessToken())
+        .build();
+  }
+
 }
