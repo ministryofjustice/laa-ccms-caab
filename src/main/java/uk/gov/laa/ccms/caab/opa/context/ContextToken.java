@@ -23,7 +23,7 @@ public class ContextToken {
 
   // query String associated to this context
   // i.e. {url}?val=xxxxxxx  used in checking the context within the PUI Connector Load() operation
-  // - e.g. TTL procesing 5-10 seconds.
+  // - e.g. TTL processing 5-10 seconds.
   public static final String QUERY_KEY = "val";
   // i.e. {url}?valret=xxxxxxx  may be used in PUI during contextToken validation for the return
   // journey OWD->PUI. set during the save operation TTL ?
