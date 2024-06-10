@@ -1,7 +1,9 @@
 package uk.gov.laa.ccms.caab.opa.context.exception;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 class ConnectorSecurityContextExceptionTest {
 
