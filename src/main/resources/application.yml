@@ -41,15 +41,19 @@ laa:
     ebs-api:
       hostname: ${CAAB_EBS_API_HOSTNAME}
       url: ${laa.ccms.ebs-api.hostname}
+      accessToken: ${CAAB_EBS_API_ACCESS_TOKEN}
     soa-api:
       hostname: ${CAAB_SOA_API_HOSTNAME}
       url: ${laa.ccms.soa-api.hostname}
+      accessToken: ${CAAB_SOA_API_ACCESS_TOKEN}
     caab-api:
-        hostname: ${CAAB_API_HOSTNAME}
-        url: ${laa.ccms.caab-api.hostname}
+      hostname: ${CAAB_API_HOSTNAME}
+      url: ${laa.ccms.caab-api.hostname}
+      accessToken: ${CAAB_API_ACCESS_TOKEN}
     assessment-api:
-        hostname: ${ASSESSMENT_API_HOSTNAME}
-        url: ${laa.ccms.assessment-api.hostname}
+      hostname: ${ASSESSMENT_API_HOSTNAME}
+      url: ${laa.ccms.assessment-api.hostname}
+      accessToken: ${ASSESSMENT_API_ACCESS_TOKEN}
     oracle-web-determination-server:
       redirect-hostname: ${OWD_REDIRECT_URL}
       redirect-url: ${laa.ccms.oracle-web-determination-server.redirect-hostname}
@@ -58,8 +62,14 @@ laa:
         security:
           password:  ${OPA_SECURITY_PASSWORD}
 
-
 os:
   api:
     url: ${OS_API_HOSTNAME}
     key: ${OS_API_KEY}
+
+av:
+  enabled: ${AV_API_ENABLED}
+  api:
+    hostname: ${AV_API_HOSTNAME}
+    port: ${AV_API_PORT}
+    timeout: ${AV_API_TIMEOUT}

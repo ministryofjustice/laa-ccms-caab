@@ -1,24 +1,16 @@
 package uk.gov.laa.ccms.caab.exception;
 
 /**
- * RuntimeException class for errors originating in the CAAB's Controllers.
+ * RuntimeException class to report a non-clean or error response from an external anti virus
+ * scanning service.
  */
-public class CaabApplicationException extends RuntimeException {
-
-  /**
-   * Constructs a new exception.
-   *
-   */
-  public CaabApplicationException() {
-    super();
-  }
-
+public class AvScanException extends CaabApplicationException {
   /**
    * Constructs a new exception with the specified message.
    *
    * @param message The error message.
    */
-  public CaabApplicationException(String message) {
+  public AvScanException(String message) {
     super(message);
   }
 
@@ -28,7 +20,7 @@ public class CaabApplicationException extends RuntimeException {
    * @param message The error message.
    * @param cause The cause of the exception.
    */
-  public CaabApplicationException(String message, Throwable cause) {
+  public AvScanException(String message, Throwable cause) {
     super(message, cause);
   }
 }

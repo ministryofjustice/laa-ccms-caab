@@ -67,6 +67,9 @@ dependencies {
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 	implementation 'org.springframework.security:spring-security-saml2-service-provider'
 
+	//ClamAV virus scan
+	implementation 'fi.solita.clamav:clamav-client:1.0.1'
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.mockito:mockito-core:5.8.0'
 	testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
