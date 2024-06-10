@@ -8,7 +8,8 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a href="/notifications" class="govuk-back-link">Cancel and return to search results</a>
+    <a href="/notifications/search?notification_type=N" class="govuk-back-link">Cancel and return
+      to search results</a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/notifications/search}" th:object="${notificationSearchCriteria}"
@@ -48,9 +49,9 @@
                 </span>
               </p>
               <div class="govuk-date-input" id="notificationFromDate">
-                <div th:replace="partials/forms::numericInput('notificationFromDateDay', 'Day', '2')"></div>
-                <div th:replace="partials/forms::numericInput('notificationFromDateMonth', 'Month', '2')"></div>
-                <div th:replace="partials/forms::numericInput('notificationFromDateYear', 'Year', '4')"></div>
+                <div th:replace="~{partials/forms::numericInput('notificationFromDateDay', 'Day', '2')}"></div>
+                <div th:replace="~{partials/forms::numericInput('notificationFromDateMonth', 'Month', '2')}"></div>
+                <div th:replace="~{partials/forms::numericInput('notificationFromDateYear', 'Year', '4')}"></div>
               </div>
             </fieldset>
           </div>
@@ -73,9 +74,9 @@
                     </span>
               </p>
               <div class="govuk-date-input" id="notificationToDate">
-                <div th:replace="partials/forms::numericInput('notificationToDateDay', 'Day', '2')"></div>
-                <div th:replace="partials/forms::numericInput('notificationToDateMonth', 'Month', '2')"></div>
-                <div th:replace="partials/forms::numericInput('notificationToDateYear', 'Year', '4')"></div>
+                <div th:replace="~{partials/forms::numericInput('notificationToDateDay', 'Day', '2')}"></div>
+                <div th:replace="~{partials/forms::numericInput('notificationToDateMonth', 'Month', '2')}"></div>
+                <div th:replace="~{partials/forms::numericInput('notificationToDateYear', 'Year', '4')}"></div>
               </div>
             </fieldset>
           </div>

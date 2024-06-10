@@ -19,16 +19,24 @@
             notifications you are looking for, please review your search criteria
             using the Refine search button at the top of the results table.
         </p>
-        <p class="govuk-body govuk-!-text-align-right">
-            <a class="govuk-button govuk-button--secondary"
-               data-module="govuk-button"
-               href="/notifications/search">
-                Refine search
-            </a>
-        </p>
 
+        <div class="moj-page-header-actions">
+            <div class="moj-page-header-actions__title">
+                <h3 class="govuk-heading-m">Your actions /
+                    notifications</h3>
+            </div>
+            <div class="moj-page-header-actions__actions">
+                <div class="moj-button-menu">
+                    <div class="moj-button-menu__wrapper">
+                        <a class="govuk-button moj-button-menu__item govuk-button--secondary moj-page-header-actions__action" href="/notifications/search" data-module="govuk-button">
+                            Refine search
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <table class="govuk-table ccms-compact-table">
-            <caption class="govuk-table__caption govuk-table__caption--m">Your actions / notifications</caption>
             <thead class="govuk-table__head">
             <tr class="govuk-table__row">
                 <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'assignDate','Date Assigned')}"></th>
