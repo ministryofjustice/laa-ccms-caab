@@ -174,6 +174,7 @@ public class CaabModelUtils {
         .scopeLimitation(new StringDisplayValue().id("scopelim").displayValue("scope lim"))
         .scopeLimitationWording("wording")
         .stage("stage")
+        .defaultInd(Boolean.TRUE)
         .nonDefaultWordingReqd(Boolean.TRUE);
   }
 

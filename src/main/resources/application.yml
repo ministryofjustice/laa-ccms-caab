@@ -54,6 +54,13 @@ laa:
       hostname: ${ASSESSMENT_API_HOSTNAME}
       url: ${laa.ccms.assessment-api.hostname}
       accessToken: ${ASSESSMENT_API_ACCESS_TOKEN}
+    oracle-web-determination-server:
+      redirect-hostname: ${OWD_REDIRECT_URL}
+      redirect-url: ${laa.ccms.oracle-web-determination-server.redirect-hostname}
+    caab:
+      opa:
+        security:
+          password:  ${OPA_SECURITY_PASSWORD}
 
 os:
   api:

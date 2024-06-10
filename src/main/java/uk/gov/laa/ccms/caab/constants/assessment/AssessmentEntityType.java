@@ -8,7 +8,8 @@ import lombok.Getter;
 @Getter
 public enum AssessmentEntityType {
   PROCEEDING("PROCEEDING"),
-  OPPONENT("OPPONENT_OTHER_PARTIES");
+  OPPONENT("OPPONENT_OTHER_PARTIES"),
+  GLOBAL("global");
 
   private final String type;
 

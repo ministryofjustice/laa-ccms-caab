@@ -48,7 +48,7 @@
 
 <tr th:fragment="meritsAssessmentFragment" class="govuk-table__row">
   <td class="govuk-table__cell" th:if="${summary.meritsAssessment.enabled}">
-    <a href="/opa?assessment=merits&invoked-from=CCMS_CA01" class="govuk-link">Merits assessment</a>
+    <a href="/assessments?assessment=merits&invoked-from=CCMS_CA01" class="govuk-link">Merits assessment</a>
   </td>
   <td class="govuk-table__cell" th:unless="${summary.meritsAssessment.enabled}">
     Merits assessment
@@ -68,7 +68,7 @@
 
 <tr th:fragment="meansAssessmentFragment" class="govuk-table__row">
   <td class="govuk-table__cell" th:if="${summary.meansAssessment.enabled}">
-    <a href="/opa?assessment=means&invoked-from=CCMS_CA01" class="govuk-link">Means assessment</a>
+    <a href="/assessments?assessment=means&invoked-from=CCMS_CA01" class="govuk-link">Means assessment</a>
   </td>
   <td class="govuk-table__cell" th:unless="${summary.meansAssessment.enabled}">
     Means assessment

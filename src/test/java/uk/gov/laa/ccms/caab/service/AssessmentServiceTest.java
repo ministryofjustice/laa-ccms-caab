@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -11,18 +12,23 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static reactor.core.publisher.Mono.just;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROGRESS_STATUS_TYPES;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.OPPONENT;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MERITS;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus.INCOMPLETE;
 import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildAssessmentDetail;
 import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildAssessmentDetailMultipleOpponents;
 import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildAssessmentDetailMultipleProceedings;
 import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildProceedingsEntityTypeDetail;
 import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildProceedingsEntityTypeDetailWithMultipleScopes;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentEntitiesForEntityType;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -34,14 +40,18 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
+import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
@@ -67,9 +77,40 @@ public class AssessmentServiceTest {
 
   private static final String PROGRESS_STATUS_CODE = "TEST";
   private static final String PROGRESS_STATUS_DESC = "Test";
-  private static final String ASSESSMENT_ID = "1234567";
+  private static final Long ASSESSMENT_ID = 1234567L;
 
   private final Date auditDate = new Date(System.currentTimeMillis());
+
+  @Test
+  public void testSaveAssessment_createAssessment() {
+    when(assessmentApiClient.createAssessment(
+        any(AssessmentDetail.class), anyString())).thenReturn(Mono.empty());
+
+    final UserDetail user = new UserDetail();
+    user.setLoginId("testUser");
+
+    final AssessmentDetail assessmentWithoutId = new AssessmentDetail();
+
+    assessmentService.saveAssessment(user, assessmentWithoutId).block();
+    Mockito.verify(assessmentApiClient).createAssessment(
+        assessmentWithoutId, user.getLoginId());
+  }
+
+  @Test
+  public void testSaveAssessment_updateAssessment() {
+    when(assessmentApiClient.updateAssessment(
+        any(), any(AssessmentDetail.class), anyString())).thenReturn(Mono.empty());
+
+    final UserDetail user = new UserDetail();
+    user.setLoginId("testUser");
+
+    final AssessmentDetail assessmentWithId = new AssessmentDetail();
+    assessmentWithId.setId(123L);
+
+    assessmentService.saveAssessment(user, assessmentWithId).block();
+    Mockito.verify(assessmentApiClient).updateAssessment(
+        assessmentWithId.getId(), assessmentWithId, user.getLoginId());
+  }
 
   @Test
   void getAssessments_ReturnsAssessmentDetails_Success() {
@@ -115,53 +156,6 @@ public class AssessmentServiceTest {
     StepVerifier.create(result)
         .expectComplete()
         .verify();
-  }
-
-  @Test
-  void getMostRecentAssessmentDetail_ReturnsNull_IfListIsNull() {
-    assertNull(assessmentService.getMostRecentAssessmentDetail(null));
-  }
-
-  @Test
-  void getMostRecentAssessmentDetail_ReturnsNull_IfListIsEmpty() {
-    assertNull(assessmentService.getMostRecentAssessmentDetail(Collections.emptyList()));
-  }
-
-  @Test
-  void getMostRecentAssessmentDetail_ReturnsMostRecent_IfListHasMultipleElements() {
-    final AssessmentDetail oldest = new AssessmentDetail();
-    oldest.setAuditDetail(new AuditDetail());
-    oldest.getAuditDetail().setLastSaved(new Date(1000)); // oldest date
-
-    final AssessmentDetail newest = new AssessmentDetail();
-    newest.setAuditDetail(new AuditDetail());
-    newest.getAuditDetail().setLastSaved(new Date(3000)); // newest date
-
-    final AssessmentDetail middle = new AssessmentDetail();
-    middle.setAuditDetail(new AuditDetail());
-    middle.getAuditDetail().setLastSaved(new Date(2000)); // middle date
-
-    final List<AssessmentDetail> assessments = Arrays.asList(oldest, newest, middle);
-
-    final AssessmentDetail result = assessmentService.getMostRecentAssessmentDetail(assessments);
-
-    assertEquals(newest, result);
-  }
-
-  @Test
-  void getMostRecentAssessmentDetail_HandlesNullDates_Correctly() {
-    final AssessmentDetail withDate = new AssessmentDetail();
-    withDate.setAuditDetail(new AuditDetail());
-    withDate.getAuditDetail().setLastSaved(new Date(2000)); // valid date
-
-    final AssessmentDetail withoutDate = new AssessmentDetail();
-    withoutDate.setAuditDetail(new AuditDetail()); // null date
-
-    final List<AssessmentDetail> assessments = Arrays.asList(withDate, withoutDate);
-
-    final AssessmentDetail result = assessmentService.getMostRecentAssessmentDetail(assessments);
-
-    assertEquals(withDate, result);
   }
 
   @Test
@@ -235,7 +229,7 @@ public class AssessmentServiceTest {
     when(lookupService.getCommonValue(eq(COMMON_VALUE_PROGRESS_STATUS_TYPES), any())).thenReturn(
         Mono.just(Optional.of(progressStatusTypes)));
 
-    when(assessmentApiClient.updateAssessment(
+    when(assessmentApiClient.patchAssessment(
         eq(ASSESSMENT_ID),
         eq(user.getLoginId()),
         any())).thenReturn(Mono.empty());
@@ -249,7 +243,7 @@ public class AssessmentServiceTest {
     assertEquals(application.getMeansAssessmentStatus(), PROGRESS_STATUS_DESC);
     assertNull(application.getMeritsAssessmentStatus());
 
-    verify(assessmentApiClient).updateAssessment(
+    verify(assessmentApiClient).patchAssessment(
         eq(ASSESSMENT_ID),
         eq(user.getLoginId()),
         any());
@@ -280,7 +274,7 @@ public class AssessmentServiceTest {
     when(lookupService.getCommonValue(eq(COMMON_VALUE_PROGRESS_STATUS_TYPES), any())).thenReturn(
         Mono.just(Optional.of(progressStatusTypes)));
 
-    when(assessmentApiClient.updateAssessment(
+    when(assessmentApiClient.patchAssessment(
         eq(ASSESSMENT_ID),
         eq(user.getLoginId()),
         any())).thenReturn(Mono.empty());
@@ -294,7 +288,7 @@ public class AssessmentServiceTest {
     assertNull(application.getMeansAssessment());
     assertEquals(application.getMeritsAssessmentStatus(), PROGRESS_STATUS_DESC);
 
-    verify(assessmentApiClient).updateAssessment(
+    verify(assessmentApiClient).patchAssessment(
         eq(ASSESSMENT_ID),
         eq(user.getLoginId()),
         any());
@@ -668,7 +662,365 @@ public class AssessmentServiceTest {
 
     final boolean result = assessmentService.isReassessmentRequired(application, assessment);
 
+    //we expect true as the cost limit is different
     assertTrue(result);
   }
+
+  @ParameterizedTest
+  @CsvSource({
+      "proceeding1,,opponent1,,0,0",
+      "P_123,,OPPONENT_234,,1,1",
+      ",123,,234,1,1"
+  })
+  void testCleanupData(
+      final String proceedingEbsId,
+      final Integer proceedingId,
+      final String opponentEbsId,
+      final Integer opponentId,
+      final int proceedingsExpected,
+      final int opponentsExpected) {
+    // Contains proceeding P_123 and opponent OPPONENT_234
+    final AssessmentDetail assessment = buildAssessmentDetail(new Date());
+
+    // Set up opponents and proceedings for the application
+    final ApplicationDetail application = new ApplicationDetail().amendment(false);
+
+    if (proceedingEbsId != null || proceedingId != null) {
+      final ProceedingDetail proceeding = new ProceedingDetail();
+      if (proceedingEbsId != null) {
+        proceeding.setEbsId(proceedingEbsId);
+      }
+      if (proceedingId != null) {
+        proceeding.setId(proceedingId);
+      }
+      application.addProceedingsItem(proceeding);
+    }
+
+    if (opponentEbsId != null || opponentId != null) {
+      final OpponentDetail opponent = new OpponentDetail();
+      if (opponentEbsId != null) {
+        opponent.setEbsId(opponentEbsId);
+      }
+      if (opponentId != null) {
+        opponent.setId(opponentId);
+      }
+      application.addOpponentsItem(opponent);
+    }
+
+    // Call the cleanupData method
+    assessmentService.cleanupData(assessment, application);
+
+    final List<AssessmentEntityDetail> proceedingEntities =
+        getAssessmentEntitiesForEntityType(assessment, PROCEEDING);
+    final List<AssessmentEntityDetail> opponentEntities =
+        getAssessmentEntitiesForEntityType(assessment, OPPONENT);
+
+    assertEquals(proceedingsExpected, proceedingEntities.size());
+    assertEquals(opponentsExpected, opponentEntities.size());
+  }
+
+  @Test
+  void testGetAssessmentOpponentMappingContexts() {
+    final ApplicationDetail application = new ApplicationDetail();
+    final OpponentDetail opponent1 = new OpponentDetail().title("MR");
+    final OpponentDetail opponent2 = new OpponentDetail().title("MS");
+    application.addOpponentsItem(opponent1);
+    application.addOpponentsItem(opponent2);
+
+    final CommonLookupValueDetail titleLookupMr = new CommonLookupValueDetail().code("MR").description("Mr");
+    final CommonLookupValueDetail titleLookupMs = new CommonLookupValueDetail().code("MS").description("Ms");
+
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_CONTACT_TITLE), eq("MR")))
+        .thenReturn(Mono.just(Optional.of(titleLookupMr)));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_CONTACT_TITLE), eq("MS")))
+        .thenReturn(Mono.just(Optional.of(titleLookupMs)));
+
+    final List<AssessmentOpponentMappingContext> result = assessmentService.getAssessmentOpponentMappingContexts(application);
+
+    assertNotNull(result);
+    assertEquals(2, result.size());
+
+    final AssessmentOpponentMappingContext context1 = result.getFirst();
+    assertEquals(opponent1, context1.getOpponent());
+    assertEquals(titleLookupMr, context1.getTitleCommonLookupValue());
+
+    final AssessmentOpponentMappingContext context2 = result.get(1);
+    assertEquals(opponent2, context2.getOpponent());
+    assertEquals(titleLookupMs, context2.getTitleCommonLookupValue());
+
+    verify(lookupService).getCommonValue(COMMON_VALUE_CONTACT_TITLE, "MR");
+    verify(lookupService).getCommonValue(COMMON_VALUE_CONTACT_TITLE, "MS");
+  }
+
+
+  @Test
+  void testFindOrCreate_existingAssessment() {
+    final String providerId = "providerId";
+    final String referenceId = "referenceId";
+    final String assessmentName = "assessmentName";
+
+    final AssessmentDetail existingAssessment = new AssessmentDetail()
+        .caseReferenceNumber(referenceId)
+        .providerId(providerId)
+        .name(assessmentName)
+        .status(INCOMPLETE.getStatus());
+    final AssessmentDetails assessmentDetails = new AssessmentDetails();
+    assessmentDetails.setContent(List.of(existingAssessment));
+
+    when(assessmentService.getAssessments(
+        eq(List.of(assessmentName)),
+        eq(providerId),
+        eq(referenceId),
+        eq(null))).thenReturn(Mono.just(assessmentDetails));
+
+    final AssessmentDetail result = assessmentService.findOrCreate(providerId, referenceId, assessmentName);
+
+    assertNotNull(result);
+    assertEquals(existingAssessment, result);
+  }
+
+  @Test
+  void testFindOrCreate_newAssessment() {
+    final String providerId = "providerId";
+    final String referenceId = "referenceId";
+    final String assessmentName = "assessmentName";
+
+    when(assessmentService.getAssessments(
+        eq(List.of(assessmentName)),
+        eq(providerId),
+        eq(referenceId),
+        eq(null))).thenReturn(Mono.just(new AssessmentDetails()));
+
+    final AssessmentDetail result = assessmentService.findOrCreate(providerId, referenceId, assessmentName);
+
+    assertNotNull(result);
+    assertEquals(referenceId, result.getCaseReferenceNumber());
+    assertEquals(providerId, result.getProviderId());
+    assertEquals(assessmentName, result.getName());
+    assertEquals(INCOMPLETE.getStatus(), result.getStatus());
+  }
+
+
+  @Test
+  void testIsAssessmentCheckpointToBeDeleted_dateOfLastChangeAfterLastSaved() {
+    final Date lastSaved = new Date(System.currentTimeMillis() - 10000); // 10 seconds ago
+    final Date dateOfLastChange = new Date(System.currentTimeMillis() - 5000); // 5 seconds ago
+
+    final ApplicationDetail application = new ApplicationDetail();
+    final ProceedingDetail proceeding = new ProceedingDetail();
+    proceeding.setAuditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail()
+        .lastSaved(dateOfLastChange));
+    application.addProceedingsItem(proceeding);
+
+    final OpponentDetail opponent = new OpponentDetail();
+    opponent.setAuditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail()
+        .lastSaved(dateOfLastChange));
+    application.addOpponentsItem(opponent);
+
+    final AssessmentDetail assessment = new AssessmentDetail();
+    assessment.setAuditDetail(new AuditDetail().lastSaved(lastSaved));
+
+    final boolean result = assessmentService.isAssessmentCheckpointToBeDeleted(application, assessment);
+
+    // assert true, since dateOfLastChange is after assessment's last saved date
+    assertTrue(result);
+  }
+
+
+  @Test
+  void testIsProceedingsCountMismatch_proceedingsCountMismatch() {
+    final ApplicationDetail application = new ApplicationDetail();
+    final ProceedingDetail proceeding1 = new ProceedingDetail().id(123);
+    final ProceedingDetail proceeding2 = new ProceedingDetail().id(456);
+    application.addProceedingsItem(proceeding1);
+    application.addProceedingsItem(proceeding2);
+
+    final AssessmentDetail assessment = buildAssessmentDetail(new Date());
+
+    final AssessmentEntityTypeDetail entityTypeDetail = new AssessmentEntityTypeDetail();
+    entityTypeDetail.setName("PROCEEDING");
+    final AssessmentEntityDetail entityDetail = new AssessmentEntityDetail();
+    entityDetail.setName("P_123");
+    entityTypeDetail.setEntities(List.of(entityDetail));
+    assessment.setEntityTypes(List.of(entityTypeDetail));
+
+    final boolean result = assessmentService.isProceedingsCountMismatch(application, assessment);
+
+    //assert true, as the number of proceedings in the application and assessment do not match
+    assertTrue(result);
+  }
+
+  @Test
+  void testIsProceedingsCountMismatch_proceedingsExistInApplication() {
+    final ApplicationDetail application = new ApplicationDetail();
+    final ProceedingDetail proceeding1 = new ProceedingDetail().id(123);
+    application.addProceedingsItem(proceeding1);
+
+    final AssessmentDetail assessment = buildAssessmentDetail(new Date());
+
+    final AssessmentEntityTypeDetail entityTypeDetail = new AssessmentEntityTypeDetail();
+    entityTypeDetail.setName("PROCEEDING");
+    final AssessmentEntityDetail entityDetail1 = new AssessmentEntityDetail();
+    entityDetail1.setName("P_123");
+    final AssessmentEntityDetail entityDetail2 = new AssessmentEntityDetail();
+    entityDetail2.setName("P_456");
+    entityTypeDetail.setEntities(List.of(entityDetail1, entityDetail2));
+    assessment.setEntityTypes(List.of(entityTypeDetail));
+
+    final boolean result = assessmentService.isProceedingsCountMismatch(application, assessment);
+
+    // assert true, as the number of proceedings in the application and assessment do not match
+    assertTrue(result);
+  }
+
+  @Test
+  void testIsOpaProceedingsMatchApplication_proceedingsDoNotExistInApplication() {
+    final ApplicationDetail application = new ApplicationDetail();
+    final ProceedingDetail proceeding = new ProceedingDetail().id(123);
+    application.addProceedingsItem(proceeding);
+
+    final AssessmentDetail assessment = buildAssessmentDetail(new Date());
+
+    final AssessmentEntityTypeDetail entityTypeDetail = new AssessmentEntityTypeDetail();
+    entityTypeDetail.setName("PROCEEDING");
+    final AssessmentEntityDetail entityDetail = new AssessmentEntityDetail();
+    entityDetail.setName("P_456");
+    entityTypeDetail.setEntities(List.of(entityDetail));
+    assessment.setEntityTypes(List.of(entityTypeDetail));
+
+    final boolean result = assessmentService.isAssessmentProceedingsMatchingApplication(application, assessment);
+
+    // assert true as the proceeding does not exist in the application
+    assertTrue(result);
+  }
+
+  @Test
+  void testIsAppProceedingsExistInOpa_proceedingsExistWithNonMatchingScope() {
+    final ApplicationDetail application = new ApplicationDetail();
+    final ProceedingDetail proceeding = new ProceedingDetail().id(123);
+    proceeding.addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
+        new StringDisplayValue().id("TEST_SCOPE")));
+    application.addProceedingsItem(proceeding);
+
+    final AssessmentDetail assessment = buildAssessmentDetail(new Date());
+
+    final AssessmentEntityTypeDetail entityTypeDetail = new AssessmentEntityTypeDetail();
+    entityTypeDetail.setName("PROCEEDING");
+    final AssessmentEntityDetail entityDetail = new AssessmentEntityDetail();
+    entityDetail.setName("P_123");
+    entityDetail.addAttributesItem(new AssessmentAttributeDetail()
+        .name("REQUESTED_SCOPE").value("DIFFERENT_SCOPE"));
+    entityTypeDetail.setEntities(List.of(entityDetail));
+    assessment.setEntityTypes(List.of(entityTypeDetail));
+
+    final boolean result = assessmentService.isApplicationProceedingsMatchingAssessment(application, assessment);
+
+    // we expect true as the scope is different
+    assertTrue(result);
+  }
+
+  @Test
+  void testIsAppProceedingsExistInOpa_proceedingsDoNotExistInOpa() {
+    final ApplicationDetail application = new ApplicationDetail();
+    final ProceedingDetail proceeding = new ProceedingDetail().id(123);
+    application.addProceedingsItem(proceeding);
+
+    final AssessmentDetail assessment = buildAssessmentDetail(new Date());
+
+    final AssessmentEntityTypeDetail entityTypeDetail = new AssessmentEntityTypeDetail();
+    entityTypeDetail.setName("PROCEEDING");
+    assessment.setEntityTypes(List.of(entityTypeDetail));
+
+    final boolean result = assessmentService.isApplicationProceedingsMatchingAssessment(application, assessment);
+
+    //we expect true as the proceeding does not exist in OPA
+    assertTrue(result);
+  }
+
+
+  @ParameterizedTest
+  @CsvSource(value ={
+      "2, true",
+      "10, true",
+      "0, true"
+  }, nullValues = {"null"})
+  void isOpaOpponentsMatchApplication(
+      final Integer applicationOpponents,
+      final boolean expected) {
+
+    //An assessment contains 1 opponent, 1 proceeding
+    final AssessmentDetail assessment = buildAssessmentDetail(new Date());
+
+    final ApplicationDetail application = new ApplicationDetail();
+    application.setOpponents(new ArrayList<>());
+
+    for (int i = 0; i < applicationOpponents; i++) {
+      final OpponentDetail opponent = new OpponentDetail();
+      opponent.setId(123);
+      application.addOpponentsItem(opponent);
+    }
+
+    final boolean result =
+        assessmentService.isOpponentCountMatchingAssessments(application, assessment);
+
+    assertEquals(result, expected);
+  }
+
+
+  @ParameterizedTest
+  @CsvSource(value ={
+      "987, null, true",
+      "987, OPPONENT_987, true",
+      "234, null, false",
+      "234, OPPONENT_234, false"
+  }, nullValues = {"null"})
+  void isOpaOpponentsMatchApplication(
+      final Integer opponentId,
+      final String ebsId,
+      final boolean expected) {
+
+    //An assessment contains 1 opponent, 1 proceeding
+    final AssessmentDetail assessment = buildAssessmentDetail(new Date());
+
+    final ApplicationDetail application = new ApplicationDetail();
+    final OpponentDetail opponent = new OpponentDetail();
+    opponent.setId(opponentId);
+    opponent.setEbsId(ebsId);
+
+    application.setOpponents(Collections.singletonList(opponent));
+
+    final boolean result =
+        assessmentService.isAssessmentOpponentsMatchingApplication(application, assessment);
+
+    assertEquals(result, expected);
+  }
+
+  @ParameterizedTest
+  @CsvSource(value ={
+      "234, null, false",
+      "1, 'OPPONENT_234', false",
+      "1, null,  true",
+      "1, OPPONENT_1, true"
+  }, nullValues = {"null"})
+  void testIsApplicationMatchOpaOpponents(
+      final Integer opponentId,
+      final String ebsId,
+      final boolean expected) {
+    //An assessment contains 1 opponent, 1 proceeding
+    final AssessmentDetail assessment = buildAssessmentDetail(new Date());
+
+    final ApplicationDetail application = new ApplicationDetail();
+    final OpponentDetail opponent = new OpponentDetail();
+    opponent.setId(opponentId);
+    opponent.setEbsId(ebsId);
+    application.setOpponents(Collections.singletonList(opponent));
+
+    final boolean result =
+        assessmentService.isApplicationOpponentsMatchingAssessments(application, assessment);
+
+    assertEquals(result, expected);
+  }
+
+
 
 }

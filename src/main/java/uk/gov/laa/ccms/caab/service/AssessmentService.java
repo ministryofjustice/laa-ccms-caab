@@ -1,21 +1,42 @@
 package uk.gov.laa.ccms.caab.service;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROGRESS_STATUS_TYPES;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.REQUESTED_SCOPE;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.GLOBAL;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.OPPONENT;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MERITS;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus.COMPLETE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus.ERROR;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus.INCOMPLETE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus.NOT_STARTED;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus.REQUIRED;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus.UNCHANGED;
+import static uk.gov.laa.ccms.caab.util.ApplicationUtil.getDateOfLatestKeyChange;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentAttribute;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentEntitiesForEntityType;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentEntity;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentEntityType;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getEntityRelationship;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDetail;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.isAssessmentReferenceConsistent;
+import static uk.gov.laa.ccms.caab.util.OpponentUtil.getOpponentByEbsId;
+import static uk.gov.laa.ccms.caab.util.OpponentUtil.getOpponentById;
+import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getAssessmentMappingId;
+import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getProceedingByEbsId;
+import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getProceedingById;
+import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getRequestedScopeForAssessmentInput;
 
-import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,23 +46,33 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipDetail;
 import uk.gov.laa.ccms.caab.assessment.model.PatchAssessmentDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRelationship;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.constants.assessment.InstanceMappingPrefix;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.AssessmentMapper;
+import uk.gov.laa.ccms.caab.mapper.context.AssessmentMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
-import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
+import uk.gov.laa.ccms.caab.util.OpponentUtil;
+import uk.gov.laa.ccms.caab.util.ProceedingUtil;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 /**
  * Service class for handling operations related to assessments. This class provides
  * methods to retrieve, manipulate, and evaluate assessment data using the assessment
  * API client and a lookup service. It facilitates operations such as fetching assessments
- * based on specific criteria, determining the status of assessments, and retrieving
- * detailed information about assessment entities and attributes.
+ * based on specific criteria, determining the status of assessments.
  */
 @Service
 @RequiredArgsConstructor
@@ -49,6 +80,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class AssessmentService {
 
   private final AssessmentApiClient assessmentApiClient;
+  private final AssessmentMapper assessmentMapper;
   private final LookupService lookupService;
 
   /**
@@ -93,17 +125,23 @@ public class AssessmentService {
 
 
   /**
-   * Retrieves the most recent assessment detail from a list of assessments based on the
-   * last saved date within their audit details.
+   * Saves an assessment by creating a new one or updating an existing one based on the
+   * assessment ID.
    *
-   * @param assessments the list of assessment details
-   * @return the most recent assessment detail, or null if the list is empty or null
+   * @param user the user details
+   * @param assessment the assessment details
+   * @return a Mono indicating when the save operation has completed
    */
-  public AssessmentDetail getMostRecentAssessmentDetail(final List<AssessmentDetail> assessments) {
-    return assessments != null ? assessments.stream()
-        .max(Comparator.comparing(assessment -> assessment.getAuditDetail().getLastSaved(),
-            Comparator.nullsFirst(Comparator.naturalOrder())))
-        .orElse(null) : null;
+  public Mono<Void> saveAssessment(
+      final UserDetail user,
+      final AssessmentDetail assessment) {
+    if (assessment.getId() == null) {
+      return assessmentApiClient.createAssessment(
+          assessment, user.getLoginId());
+    } else {
+      return assessmentApiClient.updateAssessment(
+          assessment.getId(), assessment, user.getLoginId());
+    }
   }
 
   /**
@@ -178,7 +216,7 @@ public class AssessmentService {
 
     // update the assessment status if it has changed
     if (statusChanged && currentAssessment != null) {
-      assessmentApiClient.updateAssessment(
+      assessmentApiClient.patchAssessment(
               currentAssessment.getId(),
               user.getLoginId(),
               new PatchAssessmentDetail().status(assessmentStatus.getStatus()))
@@ -263,7 +301,7 @@ public class AssessmentService {
       if (assessment != null) {
 
         final AssessmentEntityTypeDetail proceedingEntityType =
-            getAssessmentEntityType(assessment, PROCEEDING.getType());
+            getAssessmentEntityType(assessment, PROCEEDING);
 
         //check for any proceeding attribute changes between assessment and application
         if (checkAssessmentForProceedingKeyChange(application, proceedingEntityType)) {
@@ -311,7 +349,7 @@ public class AssessmentService {
         //although not specifically needed for means, both assessments and application data should
         //be kept in sync.
         final AssessmentEntityTypeDetail opponentEntityType =
-            getAssessmentEntityType(assessment, OPPONENT.getType());
+            getAssessmentEntityType(assessment, OPPONENT);
         if ((application.getOpponents() != null) && (opponentEntityType != null)) {
           if (application.getOpponents().size() < opponentEntityType.getEntities().size()) {
             log.info(
@@ -370,7 +408,7 @@ public class AssessmentService {
       final String matterType = proceeding.getMatterType().getId();
       final String proceedingType = proceeding.getProceedingType().getId();
       final String clientInvolvementType = proceeding.getClientInvolvement().getId();
-      final String entityId = getOpaInstanceMappingId(proceeding);
+      final String entityId = ProceedingUtil.getAssessmentMappingId(proceeding);
 
       //find entity in entity type where matched entity id
       final AssessmentEntityDetail proceedingEntity =
@@ -382,13 +420,13 @@ public class AssessmentService {
 
       final AssessmentAttributeDetail matterTypeAttribute =
           getAssessmentAttribute(proceedingEntity,
-              AssessmentAttribute.MATTER_TYPE.getAttribute());
+              AssessmentAttribute.MATTER_TYPE);
       final AssessmentAttributeDetail proceedingTypeAttribute =
           getAssessmentAttribute(proceedingEntity,
-              AssessmentAttribute.PROCEEDING_NAME.getAttribute());
+              AssessmentAttribute.PROCEEDING_NAME);
       final AssessmentAttributeDetail clientInvolvementTypeAttribute =
           getAssessmentAttribute(proceedingEntity,
-              AssessmentAttribute.CLIENT_INVOLVEMENT_TYPE.getAttribute());
+              AssessmentAttribute.CLIENT_INVOLVEMENT_TYPE);
 
       if (!matterType.equals(matterTypeAttribute.getValue())
           || !proceedingType.equals(proceedingTypeAttribute.getValue())
@@ -400,7 +438,7 @@ public class AssessmentService {
       //assessments and application data should be kept in sync.
       final AssessmentAttributeDetail scopeLimitationAttribute =
           getAssessmentAttribute(proceedingEntity,
-              AssessmentAttribute.REQUESTED_SCOPE.getAttribute());
+              AssessmentAttribute.REQUESTED_SCOPE);
 
       if (scopeLimitationAttribute != null) {
         final String assessmentScopeLimitation = scopeLimitationAttribute.getValue();
@@ -447,137 +485,637 @@ public class AssessmentService {
   }
 
   /**
-   * Retrieves the most recent date on which any key data was modified within the given
-   * application. This includes checks across proceedings and opponents involved in the
+   * Cleans up data by deleting redundant opponents and proceedings from the assessment.
+   *
+   * @param assessment the assessment detail to clean up
+   * @param application the application detail for reference
+   */
+  public void cleanupData(
+      final AssessmentDetail assessment,
+      final ApplicationDetail application) {
+
+    if (assessment != null) {
+      deleteRedundantOpponents(assessment, application);
+      deleteRedundantProceedings(assessment, application);
+
+      if (application != null && application.getAmendment()) {
+        //todo - future implementation for amendments
+      }
+    }
+  }
+
+  /**
+   * Deletes redundant opponents from the assessment that are not present in the application.
+   *
+   * @param assessment the assessment details
+   * @param application the application details
+   */
+  private void deleteRedundantOpponents(
+      final AssessmentDetail assessment,
+      final ApplicationDetail application) {
+    final List<String> opponentsToDelete =  getEntitiesToDelete(
+        assessment,
+        OPPONENT,
+        AssessmentRelationship.OPPONENT,
+        (list, id) -> addRedundantOpponent(list, id, application));
+
+    deleteEntityAndRelationship(
+        assessment,
+        OPPONENT,
+        AssessmentRelationship.OPPONENT,
+        opponentsToDelete);
+  }
+
+  /**
+   * Deletes redundant proceedings from the assessment that are not present in the application.
+   *
+   * @param assessment the assessment details
+   * @param application the application details
+   */
+  private void deleteRedundantProceedings(
+      final AssessmentDetail assessment,
+      final ApplicationDetail application) {
+    final List<String> proceedingsToDelete = getEntitiesToDelete(
+        assessment,
+        PROCEEDING,
+        AssessmentRelationship.PROCEEDING,
+        (list, id) -> addRedundantProceeding(list, id, application));
+
+    deleteEntityAndRelationship(
+        assessment,
+        PROCEEDING,
+        AssessmentRelationship.PROCEEDING,
+        proceedingsToDelete);
+  }
+
+  /**
+   * Deletes entities and their relationships from the assessment based on the given entity type
+   * and relationship type.
+   *
+   * @param assessment the assessment details
+   * @param entityType the type of entities to delete
+   * @param relationshipType the type of relationships to delete
+   * @param entitiesToDelete the list of entity names to delete
+   */
+  private void deleteEntityAndRelationship(
+      final AssessmentDetail assessment,
+      final AssessmentEntityType entityType,
+      final AssessmentRelationship relationshipType,
+      final List<String> entitiesToDelete) {
+
+    final List<AssessmentEntityDetail> entities =
+        getAssessmentEntitiesForEntityType(assessment, entityType);
+
+    for (final String entityName : entitiesToDelete) {
+      entities.stream()
+          .filter(entity -> entity.getName().equals(entityName))
+          .findFirst()
+          .ifPresent(entity -> {
+            log.debug("Removing entity: {}", entityName);
+            entities.remove(entity);
+          });
+      removeOpaRelationshipTarget(assessment, relationshipType, entityName);
+    }
+  }
+
+  /**
+   * Retrieves entities to delete based on the given entity type, relationship type, and redundant
+   * entity method.
+   *
+   * @param assessment the assessment details
+   * @param entityType the type of entities to retrieve
+   * @param relationshipType the type of relationships to retrieve
+   * @param addRedundantEntityMethod the method to identify redundant entities
+   * @return a list of entity names to delete
+   */
+  private List<String> getEntitiesToDelete(
+      final AssessmentDetail assessment,
+      final AssessmentEntityType entityType,
+      final AssessmentRelationship relationshipType,
+      final BiConsumer<List<String>, String> addRedundantEntityMethod) {
+    final List<String> entitiesToDelete = new ArrayList<>();
+
+    // Retrieve entities for the specified type
+    final List<AssessmentEntityDetail> entities =
+        getAssessmentEntitiesForEntityType(assessment, entityType);
+
+    for (final AssessmentEntityDetail entity : entities) {
+      log.debug(String.format("%s entity ID : %s", entityType, entity.getName()));
+      addRedundantEntityMethod.accept(entitiesToDelete, entity.getName());
+    }
+
+    // Process global entities specific to the relationship type
+    final List<AssessmentEntityDetail> globalEntities =
+        getAssessmentEntitiesForEntityType(assessment, GLOBAL);
+
+    globalEntities.stream()
+        .filter(globalEntity -> assessment.getCaseReferenceNumber()
+            .equalsIgnoreCase(globalEntity.getName()))
+        .map(globalEntity -> getEntityRelationship(globalEntity, relationshipType))
+        .filter(Objects::nonNull)
+        .flatMap(relationship -> relationship.getRelationshipTargets().stream())
+        .forEach(target -> {
+          log.debug(String.format("%s relationship target entity ID : %s",
+              relationshipType,
+              target.getTargetEntityId()));
+          addRedundantEntityMethod.accept(entitiesToDelete, target.getTargetEntityId());
+        });
+
+    return entitiesToDelete;
+  }
+
+  /**
+   * Adds a redundant opponent to the list of opponents to delete if it does not exist in the
    * application.
    *
-   * @param application the application to check for recent key data changes
-   * @return the most recent date of modification, or null if no modifications have occurred
+   * @param opponentsToDelete the list of opponents to delete
+   * @param entityName the name of the opponent entity
+   * @param application the application details
    */
-  private Date getDateOfLatestKeyChange(final ApplicationDetail application) {
-    Date latestKeyChange = null;
+  private void addRedundantOpponent(
+      final List<String> opponentsToDelete,
+      final String entityName,
+      final ApplicationDetail application) {
 
-    for (final ProceedingDetail proceeding : application.getProceedings()) {
-      if (proceeding.getAuditTrail() != null
-          && (latestKeyChange == null || latestKeyChange
-              .before(proceeding.getAuditTrail().getLastSaved()))) {
-        latestKeyChange = proceeding.getAuditTrail().getLastSaved();
-      }
+    addRedundantEntity(opponentsToDelete, entityName, application.getOpponents(), opponent ->
+        (opponent.getEbsId() != null && entityName.equalsIgnoreCase(opponent.getEbsId()))
+            || (opponent.getId() != null && entityName.equalsIgnoreCase(
+                InstanceMappingPrefix.OPPONENT.getPrefix().concat(opponent.getId().toString())))
+    );
+  }
 
-      if (proceeding.getScopeLimitations() != null && !proceeding.getScopeLimitations().isEmpty()) {
-        for (final ScopeLimitationDetail scopeLimitation : proceeding.getScopeLimitations()) {
-          if (scopeLimitation.getAuditTrail() != null
-              && (latestKeyChange == null || latestKeyChange
-                  .before(scopeLimitation.getAuditTrail().getLastSaved()))) {
-            latestKeyChange = scopeLimitation.getAuditTrail().getLastSaved();
-          }
-        }
-      }
+  /**
+   * Adds a redundant proceeding to the list of proceedings to delete if it does not exist in the
+   * application.
+   *
+   * @param proceedingsToDelete the list of proceedings to delete
+   * @param entityName the name of the proceeding entity
+   * @param application the application details
+   */
+  private void addRedundantProceeding(
+      final List<String> proceedingsToDelete,
+      final String entityName,
+      final ApplicationDetail application) {
 
+    addRedundantEntity(proceedingsToDelete, entityName, application.getProceedings(), proceeding ->
+        (proceeding.getEbsId() != null && entityName.equalsIgnoreCase(proceeding.getEbsId()))
+            || (proceeding.getId() != null && entityName.equalsIgnoreCase(
+                InstanceMappingPrefix.PROCEEDING.getPrefix().concat(proceeding.getId().toString())))
+    );
+  }
+
+  /**
+   * Adds a redundant entity to the list of entities to delete if it does not exist in the provided
+   * list of entities.
+   *
+   * @param <T> the type of entities in the list
+   * @param entitiesToDelete the list of entities to delete
+   * @param entityName the name of the entity
+   * @param entities the list of entities to check against
+   * @param matchCondition the condition to match entities
+   */
+  private <T> void addRedundantEntity(
+      final List<String> entitiesToDelete,
+      final String entityName,
+      final List<T> entities,
+      final Predicate<T> matchCondition) {
+
+    final boolean exists = entities.stream().anyMatch(matchCondition);
+    if (!exists) {
+      log.debug("Entity ID is redundant:::" + entityName);
+      entitiesToDelete.add(entityName);
+    } else {
+      log.debug("Entity ID isn't redundant:::" + entityName);
     }
+  }
+
+  /**
+   * Removes a relationship target from the assessment based on the specified entity ID.
+   *
+   * @param assessment the assessment details
+   * @param assessmentRelationship the relationship details
+   * @param removeEntityId the ID of the entity to be removed
+   */
+  protected void removeOpaRelationshipTarget(
+      final AssessmentDetail assessment,
+      final AssessmentRelationship assessmentRelationship,
+      final String removeEntityId) {
+    log.debug("removeOpaRelationshipTarget()");
+
+    final List<AssessmentEntityDetail> globalEntities =
+        getAssessmentEntitiesForEntityType(assessment, GLOBAL);
+    log.debug("globalEntities size : " + globalEntities.size());
+
+    final Optional<AssessmentEntityDetail> globalEntity = globalEntities.stream()
+        .filter(entity -> assessment.getCaseReferenceNumber().equalsIgnoreCase(entity.getName()))
+        .findFirst();
+
+    globalEntity.ifPresent(entity -> {
+      final AssessmentRelationshipDetail relationship =
+          getEntityRelationship(globalEntity.get(), assessmentRelationship);
+
+      if (relationship != null) {
+        relationship.getRelationshipTargets().removeIf(target -> {
+          log.debug("Target Entity ID to be removed : " + target.getTargetEntityId());
+          return removeEntityId != null
+              && removeEntityId.equalsIgnoreCase(target.getTargetEntityId());
+        });
+      }
+    });
+  }
+
+  /**
+   * Starts a new assessment by removing any previous assessments and initiating a new one.
+   *
+   * @param application the application detail for the assessment
+   * @param assessmentRulebase the rulebase for the assessment
+   * @param client the client detail for the assessment
+   * @param user the user detail initiating the assessment
+   */
+  public void startAssessment(
+      final ApplicationDetail application,
+      final AssessmentRulebase assessmentRulebase,
+      final ClientDetail client,
+      final UserDetail user) {
+
+    //remove previous assessment
+    deleteAssessments(
+        user,
+        List.of(assessmentRulebase.getName()),
+        application.getCaseReferenceNumber(),
+        null).block();
+
+    //start new assessment
+    startNewAssessment(assessmentRulebase, application, client, user);
+  }
+
+  /**
+   * Starts a new assessment based on the given rulebase, application, client, and user details.
+   *
+   * @param assessmentRulebase the rulebase for the assessment
+   * @param application the application details
+   * @param client the client details
+   * @param user the user details
+   */
+  protected void startNewAssessment(
+      final AssessmentRulebase assessmentRulebase,
+      final ApplicationDetail application,
+      final ClientDetail client,
+      final UserDetail user) {
+    log.debug("Name - {}, AssessmentType - {}",
+        user.getUsername(), assessmentRulebase.getType());
+    final String referenceId = application.getCaseReferenceNumber();
+    final String providerId = user.getProvider().getId().toString();
+
+    final boolean prepopulateFromEbs = application.getAmendment();
+
+    final List<AssessmentEntityType> opaEntitiesRetrievedFromEbs = null;
+
+    
+
+    //find or Create
+    final AssessmentDetail assessment = findOrCreate(
+        providerId, referenceId, assessmentRulebase.getName());
+    final AssessmentDetail prepopAssessment = findOrCreate(
+        providerId, referenceId, assessmentRulebase.getPrePopAssessmentName());
+
+    // find or create an opa session
+    final boolean createdNewPrepopAssessment = (prepopAssessment.getId() == null);
+
+    //used to populate the lookups for title for the opponent
+    final List<AssessmentOpponentMappingContext>
+        opponentContext = getAssessmentOpponentMappingContexts(application);
+
+    final AssessmentMappingContext assessmentContext = AssessmentMappingContext.builder()
+        .application(application)
+        .opponentContext(opponentContext)
+        .assessment(assessment)
+        .client(client)
+        .user(user)
+        .build();
+
+    //if we create a new prepop assessment, we need to map the context to it,
+    // otherwise we will just use the existing one
+    if (createdNewPrepopAssessment) {
+      assessmentMapper.toAssessmentDetail(prepopAssessment, assessmentContext);
+    }
+
+    //always map to the assessment as it should always be new here.
+    assessmentMapper.toAssessmentDetail(assessment, assessmentContext);
+
+    updateCostLimitIfMeritsAssessment(assessmentRulebase, application);
+
+    if (prepopulateFromEbs) {
+      //todo - later implementation in future story
+    }
+
+    //if means and merits:
+    if (!assessmentRulebase.isFinancialAssessment()) {
+      if (isAssessmentReferenceConsistent(prepopAssessment)
+          && isAssessmentReferenceConsistent(assessment)) {
+
+        //call opa - save to database
+        saveAssessment(user, assessment).block();
+        saveAssessment(user, prepopAssessment).block();
+      } else {
+        log.info("pre-pop assessment or assessment data is corrupted!");
+        throw new CaabApplicationException("pre-pop assessment or assessment data is corrupted!");
+      }
+
+    } else {
+      //todo - later implementation in future story
+    }
+
+  }
+
+  /**
+   * Generates a list of assessment opponent mapping contexts for each opponent in the application.
+   *
+   * @param application the application details containing opponents
+   * @return a list of assessment opponent mapping contexts
+   */
+  protected List<AssessmentOpponentMappingContext> getAssessmentOpponentMappingContexts(
+      final ApplicationDetail application) {
+    final List<AssessmentOpponentMappingContext> opponentContext = new ArrayList<>();
 
     for (final OpponentDetail opponent : application.getOpponents()) {
-      if (opponent.getAuditTrail() != null
-          && (latestKeyChange == null || latestKeyChange
-              .before(opponent.getAuditTrail().getLastSaved()))) {
-        latestKeyChange = opponent.getAuditTrail().getLastSaved();
+
+      final CommonLookupValueDetail titleCommonLookup = lookupService.getCommonValue(
+              COMMON_VALUE_CONTACT_TITLE, opponent.getTitle())
+          .map(commonLookupValueDetail -> commonLookupValueDetail
+              .orElse(new CommonLookupValueDetail()
+                  .code(opponent.getTitle())
+                  .description(opponent.getTitle())))
+          .blockOptional()
+          .orElseThrow();
+
+      opponentContext.add(AssessmentOpponentMappingContext.builder()
+          .opponent(opponent)
+          .titleCommonLookupValue(titleCommonLookup)
+          .build());
+    }
+    return opponentContext;
+  }
+
+  /**
+   * Finds the most recent assessment with the given provider ID, reference ID, and assessment name,
+   * or creates a new assessment if none exists.
+   *
+   * @param providerId the ID of the provider
+   * @param referenceId the reference ID
+   * @param assessmentName the name of the assessment
+   * @return the found or newly created assessment detail
+   */
+  protected AssessmentDetail findOrCreate(
+      final String providerId,
+      final String referenceId,
+      final String assessmentName) {
+
+    final AssessmentDetails assessments = getAssessments(
+        List.of(assessmentName),
+        providerId,
+        referenceId,
+        null).block();
+
+    if (assessments != null && !assessments.getContent().isEmpty()) {
+      return getMostRecentAssessmentDetail(assessments.getContent());
+    } else {
+      final AssessmentDetail assessment = new AssessmentDetail()
+          .caseReferenceNumber(referenceId)
+          .providerId(providerId)
+          .name(assessmentName)
+          .status(INCOMPLETE.getStatus());
+      log.debug("Created Assessment {} ", assessment.toString());
+      return assessment;
+    }
+  }
+
+  /**
+   * Determines if the assessment checkpoint should be deleted based on the application detail and
+   * assessment detail.
+   *
+   * @param application the application detail to compare
+   * @param assessment the assessment detail to compare
+   * @return {@code true} if the checkpoint should be deleted, {@code false} otherwise
+   */
+  public boolean isAssessmentCheckpointToBeDeleted(
+      final ApplicationDetail application,
+      final AssessmentDetail assessment) {
+    boolean isMatching = false;
+    final Date dateOfLastChange = getDateOfLatestKeyChange(application);
+
+    if (dateOfLastChange != null) {
+      isMatching = dateOfLastChange.after(assessment.getAuditDetail().getLastSaved());
+    }
+
+    return (isMatching || isProceedingsCountMismatch(application, assessment));
+  }
+
+  /**
+   * Checks if any proceeding entity in the assessment does not exist in the application's
+   * proceedings.
+   *
+   * @param application the application details containing proceedings
+   * @param assessment the assessment details containing proceeding entities
+   * @return true if a proceeding entity in the assessment does not exist in the application, or
+   *         if there is a mismatch with application proceedings, otherwise false
+   */
+  protected boolean isProceedingsCountMismatch(
+      final ApplicationDetail application,
+      final AssessmentDetail assessment) {
+
+    final List<AssessmentEntityDetail> proceedingEntities =
+        getAssessmentEntitiesForEntityType(assessment, PROCEEDING);
+
+    return (application.getProceedings().size() != proceedingEntities.size()
+        || isAssessmentProceedingsMatchingApplication(application, assessment));
+  }
+
+  /**
+   * Checks if any proceeding entity in the assessment does not exist in the application's
+   * proceedings.
+   *
+   * @param application the application details containing proceedings
+   * @param assessment the assessment details containing proceeding entities
+   * @return true if a proceeding entity in the assessment does not exist in the application, or
+   *         if there is a mismatch with application proceedings, otherwise false
+   */
+  protected boolean isAssessmentProceedingsMatchingApplication(
+      final ApplicationDetail application,
+      final AssessmentDetail assessment) {
+
+    boolean isMatching = false;
+
+    final List<AssessmentEntityDetail> proceedingEntities =
+        getAssessmentEntitiesForEntityType(assessment, PROCEEDING);
+
+    for (final AssessmentEntityDetail proceedingEntity : proceedingEntities) {
+      final String proceedingId = proceedingEntity
+          .getName()
+          .replaceFirst(InstanceMappingPrefix.PROCEEDING.getPrefix(), "");
+
+      // Check if proceedingEntity with the given name or proceedingId exists in the application
+      final boolean proceedingExists =
+          getProceedingByEbsId(application, proceedingEntity.getName()) != null
+              || getProceedingById(application, Integer.parseInt(proceedingId)) != null;
+
+      if (!proceedingExists) {
+        // If no proceeding exists, set isMatching to true
+        isMatching = true;
+      }
+
+    }
+    return (isMatching || isApplicationProceedingsMatchingAssessment(application, assessment));
+  }
+
+  /**
+   * Checks if the proceedings in the application exist in the assessment's session and if
+   * their scopes match.
+   *
+   * @param application the application details containing proceedings
+   * @param assessment the assessment details to check against
+   * @return true if a proceeding in the application does not exist in the assessment or if the
+   *         scope of any proceeding has changed, otherwise false
+   */
+  protected boolean isApplicationProceedingsMatchingAssessment(
+      final ApplicationDetail application,
+      final AssessmentDetail assessment) {
+
+    boolean isMatching = false;
+    for (final ProceedingDetail proceeding : application.getProceedings()) {
+      log.debug(
+          "App proceedings ID - " + proceeding.getId() + ", EBS-ID - " + proceeding.getEbsId());
+
+      final String proceedingId = getAssessmentMappingId(proceeding);
+      log.debug("Proceeding ID is " + proceedingId);
+
+      final AssessmentEntityTypeDetail proceedingEntityType =
+          getAssessmentEntityType(assessment, PROCEEDING);
+
+      final AssessmentEntityDetail proceedingEntity =
+          getAssessmentEntity(proceedingEntityType, proceedingId);
+
+      if (proceedingEntity != null) {
+        final String attributeValue =
+            getAssessmentAttribute(proceedingEntity, REQUESTED_SCOPE).getValue();
+        log.debug("Assessment Scope Request value : " + attributeValue);
+
+        final String scopeInAssessment = getRequestedScopeForAssessmentInput(proceeding);
+        if (scopeInAssessment != null && !scopeInAssessment.equalsIgnoreCase(attributeValue)) {
+          log.debug("Looks like scope is change, hence return true");
+          isMatching = true;
+        }
+      } else {
+        log.debug("APP PROCEEDINGS DOESN'T EXIST IN OPASESSION OBJECT");
+        isMatching = true;
       }
     }
-    return latestKeyChange;
-
+    return (isMatching || isOpponentCountMatchingAssessments(application, assessment));
   }
 
   /**
-   * Determines the unique mapping ID for an object, which could be either a ProceedingDetail or an
-   * OpponentDetail. If the object's EBS ID is null, constructs a new ID using the appropriate
-   * prefix and object's ID. If EBS ID is not null, it returns the EBS ID directly.
+   * Checks if the number of opponents in the application matches the number of opponent entities
+   * in the assessment and verifies the opponent details.
    *
-   * @param opponentOrProceeding the object to determine the mapping ID for, which could be an
-   *                             instance of ProceedingDetail or OpponentDetail.
-   * @return the mapping ID or null if the object type is neither
-   *     ProceedingDetail nor OpponentDetail
+   * @param application the application details containing opponents
+   * @param assessment the assessment details containing opponent entities
+   * @return true if the opponent counts do not match or if an opponent entity in the assessment
+   *         does not exist in the application, otherwise false
    */
-  private String getOpaInstanceMappingId(final Object opponentOrProceeding) {
-    if (opponentOrProceeding instanceof final ProceedingDetail proceeding) {
-      if (proceeding.getEbsId() == null) {
-        return InstanceMappingPrefix.PROCEEDING.getPrefix() + proceeding.getId();
+  protected boolean isOpponentCountMatchingAssessments(
+      final ApplicationDetail application,
+      final AssessmentDetail assessment) {
+
+    final List<AssessmentEntityDetail> opponentEntities =
+        getAssessmentEntitiesForEntityType(assessment, OPPONENT);
+
+    return application.getOpponents().size() != opponentEntities.size()
+        || isAssessmentOpponentsMatchingApplication(application, assessment);
+  }
+
+  /**
+   * Checks if any opponent entity in the assessment does not exist in the application's opponents.
+   *
+   * @param application the application details containing opponents
+   * @param assessment the assessment details containing opponent entities
+   * @return true if an opponent entity in the assessment does not exist in the application,
+   *         otherwise false
+   */
+  protected boolean isAssessmentOpponentsMatchingApplication(
+      final ApplicationDetail application,
+      final AssessmentDetail assessment) {
+
+    boolean isMatching = false;
+
+    final List<AssessmentEntityDetail> opponentEntities =
+        getAssessmentEntitiesForEntityType(assessment, OPPONENT);
+
+    for (final AssessmentEntityDetail opponentEntity : opponentEntities) {
+      log.debug("Assessment Opponent EntityID : " + opponentEntity.getName());
+
+      final String opponentId = opponentEntity
+          .getName()
+          .replaceFirst(InstanceMappingPrefix.OPPONENT.getPrefix(), "");
+
+      final boolean opponentExists =
+          getOpponentByEbsId(application, opponentEntity.getName()) != null
+              || getOpponentById(application, Integer.parseInt(opponentId)) != null;
+
+      if (!opponentExists) {
+        log.debug("OPA SESSION OPPONENT DOESN'T EXIST IN APPLICATION OBJECT");
+        isMatching = true;
       }
-      return proceeding.getEbsId();
-    } else if (opponentOrProceeding instanceof final OpponentDetail opponent) {
-      if (opponent.getEbsId() == null) {
-        return InstanceMappingPrefix.OPPONENT.getPrefix() + opponent.getId();
-      }
-      return opponent.getEbsId();
     }
-    return null;
+    return isMatching || isApplicationOpponentsMatchingAssessments(application, assessment);
   }
 
   /**
-   * Retrieves the scope limitation identifier for a given proceeding. If multiple scope limitations
-   * exist, returns "MULTIPLE". Otherwise, returns the identifier of the single scope limitation.
+   * Checks if any opponent in the application does not exist in the assessment's OPA session.
    *
-   * @param proceeding the proceeding to evaluate for scope limitations
-   * @return the scope limitation identifier or "MULTIPLE"
+   * @param application the application details containing opponents
+   * @param assessment the assessment details to check against
+   * @return true if an opponent in the application does not exist in the assessment, otherwise
+   *         false
    */
-  private String getRequestedScopeForAssessmentInput(final ProceedingDetail proceeding) {
-    return Optional.ofNullable(proceeding.getScopeLimitations())
-        .filter(scopeLimitations -> !scopeLimitations.isEmpty())
-        .map(scopeLimitations -> scopeLimitations.size() > 1 ? "MULTIPLE" :
-            scopeLimitations.get(0).getScopeLimitation().getId())
-        .orElse(null);
+  protected boolean isApplicationOpponentsMatchingAssessments(
+      final ApplicationDetail application,
+      final AssessmentDetail assessment) {
+
+    for (final OpponentDetail opponent : application.getOpponents()) {
+      log.debug("App opponent ID - " + opponent.getId() + ", EBS-ID - " + opponent.getEbsId());
+
+      final String opponentId = OpponentUtil.getAssessmentMappingId(opponent);
+
+      log.debug("Opponent ID is " + opponentId);
+
+      final AssessmentEntityTypeDetail opponentEntityType =
+          getAssessmentEntityType(assessment, OPPONENT);
+
+      final AssessmentEntityDetail opponentEntity =
+          getAssessmentEntity(opponentEntityType, opponentId);
+
+      if (opponentEntity == null) {
+        log.debug("APP OPPONENTS DOESN'T EXIST IN OPASESSION OBJECT");
+        return true;
+      }
+
+    }
+    return false;
   }
 
 
   /**
-   * Retrieves the specific type of assessment entity from the assessment details.
+   * Updates the cost limit if the assessment rulebase is for merits assessment.
    *
-   * @param assessment the assessment containing entity types
-   * @param entityTypeName the name of the entity type to retrieve
-   * @return the matching assessment entity type detail, or null if not found
+   * @param assessmentRulebase the rulebase for the assessment
+   * @param application the application detail to update
    */
-  private AssessmentEntityTypeDetail getAssessmentEntityType(
-      final AssessmentDetail assessment,
-      final String entityTypeName) {
-
-    return assessment.getEntityTypes().stream()
-        .filter(entityType -> entityType.getName().equalsIgnoreCase(entityTypeName))
-        .findFirst()
-        .orElse(null);
+  protected void updateCostLimitIfMeritsAssessment(
+      final AssessmentRulebase assessmentRulebase,
+      final ApplicationDetail application) {
+    if (assessmentRulebase != null && assessmentRulebase.equals(AssessmentRulebase.MERITS)) {
+      //todo - update cost limit in future story: CCLS-2222
+    }
   }
-
-  /**
-   * Retrieves a specific assessment entity from the given assessment entity type.
-   *
-   * @param assessmentEntityType the assessment entity type containing entities
-   * @param entityName the name of the entity to retrieve
-   * @return the matching assessment entity detail, or null if not found
-   */
-  private AssessmentEntityDetail getAssessmentEntity(
-      final AssessmentEntityTypeDetail assessmentEntityType,
-      final String entityName) {
-
-    return assessmentEntityType.getEntities().stream()
-        .filter(entity -> entity.getName().equals(entityName))
-        .findFirst()
-        .orElse(null);
-  }
-
-  /**
-   * Retrieves a specific assessment attribute from the given assessment entity.
-   *
-   * @param assessmentEntity the assessment entity containing attributes
-   * @param attributeName the name of the attribute to retrieve
-   * @return the matching assessment attribute detail, or null if not found
-   */
-  private AssessmentAttributeDetail getAssessmentAttribute(
-      final AssessmentEntityDetail assessmentEntity,
-      final String attributeName) {
-
-    return assessmentEntity.getAttributes().stream()
-        .filter(attribute -> attribute.getName().equalsIgnoreCase(attributeName))
-        .findFirst()
-        .orElse(null);
-  }
-
 
 }
