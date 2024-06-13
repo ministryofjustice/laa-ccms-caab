@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.bean.evidence;
 
+import java.io.Serializable;
 import java.util.List;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +12,7 @@ import uk.gov.laa.ccms.caab.constants.CcmsModule;
  */
 @Data
 @Slf4j
-public class EvidenceUploadFormData {
+public class EvidenceUploadFormData implements Serializable {
 
   /**
    * The multipart file data to upload.

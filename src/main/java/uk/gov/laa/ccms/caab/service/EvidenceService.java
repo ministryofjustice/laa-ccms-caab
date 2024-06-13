@@ -54,7 +54,7 @@ public class EvidenceService {
    * @param ccmsModule - the document's related CCMS module.
    * @return EvidenceDocumentDetails containing the list of EvidenceDocumentDetail.
    */
-  public Mono<EvidenceDocumentDetails> getUploadedDocuments(
+  public Mono<EvidenceDocumentDetails> getEvidenceDocuments(
       final String caseReferenceNumber, final CcmsModule ccmsModule) {
     return caabApiClient.getEvidenceDocuments(
         null,
@@ -63,6 +63,16 @@ public class EvidenceService {
         null,
         ccmsModule.getCode(),
         Boolean.TRUE);
+  }
+
+  /**
+   * Get a single EvidenceDocumentDetail by its id.
+   *
+   * @param evidenceDocumentId - the id of the document.
+   * @return EvidenceDocumentDetail for the supplied id.
+   */
+  public Mono<EvidenceDocumentDetail> getEvidenceDocument(final Integer evidenceDocumentId) {
+    return caabApiClient.getEvidenceDocument(evidenceDocumentId);
   }
 
   /**
@@ -130,6 +140,22 @@ public class EvidenceService {
     return caabApiClient.createEvidenceDocument(
             evidenceDocumentDetail,
             userDetail.getLoginId());
+  }
+
+  /**
+   * Remove an evidence document from the TDS.
+   *
+   * @param documentId - the id of the document to remove.
+   * @param userDetail - the user detail.
+   * @return Mono wrapping the EBS registered document id.
+   */
+  public Mono<Void> removeDocument(
+      final Integer documentId,
+      final UserDetail userDetail) {
+
+    return caabApiClient.deleteEvidenceDocument(
+        documentId,
+        userDetail.getLoginId());
   }
 
   /**

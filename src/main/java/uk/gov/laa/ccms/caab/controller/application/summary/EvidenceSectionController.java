@@ -8,6 +8,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_REQUIRED;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -15,15 +16,21 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.bean.evidence.EvidenceRequired;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.validators.evidence.EvidenceUploadValidator;
 import uk.gov.laa.ccms.caab.exception.AvScanException;
@@ -31,6 +38,7 @@ import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AvScanService;
@@ -61,6 +69,7 @@ public class EvidenceSectionController {
 
   private final EvidenceMapper evidenceMapper;
 
+
   /**
    * Handles the GET request for the evidence upload screen.
    *
@@ -88,7 +97,7 @@ public class EvidenceSectionController {
 
     // Retrieve the list of previously uploaded documents.
     final Mono<EvidenceDocumentDetails> evidenceUploadedMono =
-        evidenceService.getUploadedDocuments(
+        evidenceService.getEvidenceDocuments(
             application.getCaseReferenceNumber(),
             APPLICATION);
 
@@ -99,8 +108,14 @@ public class EvidenceSectionController {
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException("Failed to retrieve evidence data"));
 
-    model.addAttribute(EVIDENCE_REQUIRED, combinedResult.getT1());
-    model.addAttribute("evidenceUploaded", combinedResult.getT2());
+    List<EvidenceDocumentTypeLookupValueDetail> evidenceRequiredLookups = combinedResult.getT1();
+    List<BaseEvidenceDocumentDetail> evidenceUploaded = combinedResult.getT2().getContent();
+
+    final List<EvidenceRequired> evidenceRequired =
+        evidenceMapper.toEvidenceRequiredList(evidenceRequiredLookups, evidenceUploaded);
+
+    model.addAttribute(EVIDENCE_REQUIRED, evidenceRequired);
+    model.addAttribute("evidenceUploaded", evidenceUploaded);
 
     return "application/summary/evidence-section";
   }
@@ -119,7 +134,7 @@ public class EvidenceSectionController {
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       @SessionAttribute(EVIDENCE_REQUIRED)
-      final List<EvidenceDocumentTypeLookupValueDetail> evidenceRequired,
+      final List<EvidenceRequired> evidenceRequired,
       final Model model) {
 
     // Initialise the form data object.
@@ -149,12 +164,12 @@ public class EvidenceSectionController {
    */
   @PostMapping("/application/evidence/add")
   public String uploadEvidenceDocument(
-      @SessionAttribute(EVIDENCE_UPLOAD_FORM_DATA)
-      final EvidenceUploadFormData evidenceUploadFormData,
       @SessionAttribute(EVIDENCE_REQUIRED)
-      final List<EvidenceDocumentTypeLookupValueDetail> evidenceRequired,
+      final List<EvidenceRequired> evidenceRequired,
       @SessionAttribute(USER_DETAILS)
       final UserDetail userDetail,
+      @ModelAttribute(EVIDENCE_UPLOAD_FORM_DATA)
+      final EvidenceUploadFormData evidenceUploadFormData,
       final BindingResult bindingResult,
       Model model) {
 
@@ -176,8 +191,7 @@ public class EvidenceSectionController {
           evidenceUploadFormData.getFile().getOriginalFilename(),
           evidenceUploadFormData.getFile().getInputStream());
     } catch (AvVirusFoundException | AvScanException | IOException e) {
-      model.addAttribute("errors", e.getMessage());
-      bindingResult.rejectValue("file", e.getMessage());
+      bindingResult.rejectValue("file", "scan.failure", e.getMessage());
 
       populateAddEvidenceModel(evidenceRequired, model);
       return "application/evidence/evidence-add";
@@ -203,8 +217,75 @@ public class EvidenceSectionController {
     return "redirect:/application/summary/evidence";
   }
 
+  /**
+   * Exception handler to catch when the uploaded file is too large.
+   *
+   * @param model - the model
+   * @return the
+   */
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public String handleUploadFileTooLarge(
+      @SessionAttribute(EVIDENCE_REQUIRED)
+      final List<EvidenceRequired> evidenceRequired,
+      @SessionAttribute(EVIDENCE_UPLOAD_FORM_DATA)
+      final EvidenceUploadFormData evidenceUploadFormData,
+      final HttpServletRequest request,
+      final Model model) {
+
+    // Manually construct a BindingResult to hold the file size error.
+    BindingResult bindingResult = new BeanPropertyBindingResult(
+        evidenceUploadFormData, EVIDENCE_UPLOAD_FORM_DATA);
+    evidenceUploadValidator.rejectFileSize(bindingResult);
+
+    /*
+     * todo: Find a way to retain the posted form data (doc type, description,
+     *  selected evidence types)
+     */
+    model.addAttribute(EVIDENCE_UPLOAD_FORM_DATA, evidenceUploadFormData);
+    model.addAttribute(BindingResult.MODEL_KEY_PREFIX + EVIDENCE_UPLOAD_FORM_DATA,
+        bindingResult);
+
+    populateAddEvidenceModel(evidenceRequired, model);
+    return "application/evidence/evidence-add";
+  }
+
+  /**
+   * Handles the GET request to remove an uploaded evidence document.
+   *
+   * @param evidenceDocumentId The id of the evidence document to remove.
+   * @param activeCase Basic details of the active case.
+   * @param userDetail The user details.
+   * @param model              The model for the view.
+   * @return Redirect to the evidence summary view.
+   */
+  @GetMapping("/application/evidence/{evidence-document-id}/remove")
+  public String removeEvidenceDocument(
+      @PathVariable("evidence-document-id") final Integer evidenceDocumentId,
+      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
+      final Model model) {
+
+    // First ensure that the document exists and is related to the active case.
+    evidenceService.getEvidenceDocuments(activeCase.getCaseReferenceNumber(), APPLICATION)
+        .map(EvidenceDocumentDetails::getContent)
+        .mapNotNull(baseEvidenceDocumentDetails ->
+          baseEvidenceDocumentDetails.stream()
+              .filter(baseEvidenceDocumentDetail -> baseEvidenceDocumentDetail
+                  .getApplicationOrOutcomeId().equals(
+                      String.valueOf(activeCase.getApplicationId())))
+              .findFirst()
+              .orElse(null))
+        .blockOptional()
+        .orElseThrow(() -> new CaabApplicationException(
+            String.format("Invalid document id: %s", evidenceDocumentId)));
+
+    evidenceService.removeDocument(evidenceDocumentId, userDetail).block();
+
+    return "redirect:/application/summary/evidence";
+  }
+
   private void populateAddEvidenceModel(
-      List<EvidenceDocumentTypeLookupValueDetail> evidenceRequired,
+      List<EvidenceRequired> evidenceRequired,
       Model model) {
     // Get the full list of document types to display in a dropdown in the view.
     final CommonLookupDetail evidenceTypes =
@@ -214,7 +295,7 @@ public class EvidenceSectionController {
                 "Failed to retrieve evidence types"));
 
     model.addAttribute(EVIDENCE_REQUIRED, evidenceRequired);
-    model.addAttribute("evidenceTypes", evidenceTypes);
+    model.addAttribute("evidenceTypes", evidenceTypes.getContent());
   }
 
   private String getFileExtension(MultipartFile file) {
