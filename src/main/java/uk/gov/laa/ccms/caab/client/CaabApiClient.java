@@ -836,7 +836,7 @@ public class CaabApiClient {
         .bodyValue(data)
         .exchangeToMono(CaabApiClient::getIdResponse)
         .onErrorResume(e -> caabApiClientErrorHandler.handleApiCreateError(e,
-            RESOURCE_TYPE_OPPONENTS));
+            RESOURCE_TYPE_EVIDENCE));
   }
 
   /**
@@ -891,14 +891,15 @@ public class CaabApiClient {
    * @param evidenceDocumentId The id of the evidence document to be retrieved.
    * @return A {@code Mono<EvidenceDocumentDetail>} containing the evidence document data.
    */
-  public Mono<EvidenceDocumentDetail> getEvidenceDocument(final String evidenceDocumentId) {
+  public Mono<EvidenceDocumentDetail> getEvidenceDocument(final Integer evidenceDocumentId) {
     return caabApiWebClient
         .get()
         .uri("/evidence/{evidence-document-id}", evidenceDocumentId)
         .retrieve()
         .bodyToMono(EvidenceDocumentDetail.class)
         .onErrorResume(e -> caabApiClientErrorHandler.handleApiRetrieveError(e,
-            RESOURCE_TYPE_EVIDENCE, "evidence document id", evidenceDocumentId));
+            RESOURCE_TYPE_EVIDENCE, "evidence document id",
+            String.valueOf(evidenceDocumentId)));
   }
 
   /**

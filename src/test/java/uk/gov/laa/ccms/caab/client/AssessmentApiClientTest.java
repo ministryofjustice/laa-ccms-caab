@@ -77,7 +77,7 @@ class AssessmentApiClientTest {
 
   @Test
   void updateAssessment_success() {
-    final String assessmentId = "assessment123";
+    final Long assessmentId = 123L;
     final String userLoginId = "user456";
     final PatchAssessmentDetail patchDetails = new PatchAssessmentDetail(); // Populate this as needed for the test
 

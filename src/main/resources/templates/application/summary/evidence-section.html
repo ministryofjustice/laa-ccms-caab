@@ -18,13 +18,16 @@
     <table class="govuk-table">
       <thead class="govuk-table__head">
         <tr class="govuk-table__row">
-          <th scope="row" colspan="2" class="govuk-table__header">Item</th>
+          <th scope="row" colspan="3" class="govuk-table__header">Item</th>
         </tr>
       </thead>
       <tbody class="govuk-table__body">
         <tr class="govuk-table__row" th:each="document : ${evidenceRequired}" th:unless="${evidenceRequired.isEmpty()}">
           <td class="govuk-table__cell" th:text="${documentStat.count}"/>
           <td class="govuk-table__cell" th:text="${document.description}"></td>
+          <td class="govuk-table__cell">
+            <img th:if="${document.provided}" th:src="@{/tick.gif}" alt="Evidence provided"/>
+          </td>
         <tr>
         <tr class="govuk-table__row" th:if="${evidenceRequired.isEmpty()}">
           <td class="govuk-table__cell" colspan="2">None</td>
@@ -32,7 +35,7 @@
       </tbody>
     </table>
 
-    <div class="govuk-form-group" th:if="${evidenceUploaded.content.isEmpty()}">
+    <div class="govuk-form-group" th:if="${evidenceUploaded.isEmpty()}">
       <fieldset class="govuk-fieldset">
         <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
           <h1 class="govuk-fieldset__heading">
@@ -72,7 +75,7 @@
       </fieldset>
     </div>
 
-    <th:block th:unless="${evidenceUploaded.content.isEmpty()}">
+    <th:block th:unless="${evidenceUploaded.isEmpty()}">
       <table class="govuk-table">
         <caption class="govuk-table__caption govuk-table__caption--s">Files uploaded</caption>
         <thead class="govuk-table__head">
@@ -81,18 +84,19 @@
             <th scope="col" class="govuk-table__header">Type</th>
             <th scope="col" class="govuk-table__header">Document Description</th>
             <th scope="col" class="govuk-table__header">Date</th>
-            <th scope="col" class="govuk-table__header">Doc Id</th>
             <th scope="col" class="govuk-table__header"></th>
           </tr>
         </thead>
         <tbody class="govuk-table__body">
-          <tr class="govuk-table__row" th:each="uploadedDoc: ${evidenceUploaded.content}" th:unless="${evidenceUploaded.content.isEmpty()}">
+          <tr class="govuk-table__row" th:each="uploadedDoc: ${evidenceUploaded}" th:unless="${evidenceUploaded.isEmpty()}">
             <td class="govuk-table__cell" th:text="${uploadedDoc.fileName}"></td>
             <td class="govuk-table__cell" th:text="${uploadedDoc.documentType.displayValue}"></td>
             <td class="govuk-table__cell" th:text="${uploadedDoc.description}"></td>
             <td class="govuk-table__cell" th:text="${uploadedDoc.auditTrail.created}"></td>
-            <td class="govuk-table__cell" th:text="${uploadedDoc.registeredDocumentId}"></td>
-            <td class="govuk-table__cell">Remove</td>
+            <td class="govuk-table__cell">
+              <a th:href="@{/application/evidence/{id}/remove(id=${uploadedDoc.id})}"
+                 class="govuk-link"
+                 th:text="Remove"></a></td>
           </tr>
         </tbody>
       </table>

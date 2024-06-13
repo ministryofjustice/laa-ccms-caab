@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.mapper;
 
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -28,8 +29,8 @@ public interface CommonMapper {
         .orElse(null);
   }
 
-  default String toCommaSeparatedString(List<String> items) {
-    return String.join(", ", items);
+  default String toCaretSeparatedString(List<String> items) {
+    return String.join("^", items);
   }
 
 }

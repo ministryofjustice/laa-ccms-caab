@@ -119,7 +119,7 @@ public class AssessmentApiClient {
    * @return a Mono of AssessmentDetails containing the updated assessment.
    */
   public Mono<Void> updateAssessment(
-      final String assessmentId,
+      final Long assessmentId,
       final String userLoginId,
       final PatchAssessmentDetail patch) {
 
@@ -135,7 +135,7 @@ public class AssessmentApiClient {
                 e,
                 RESOURCE_TYPE_ASSESSMENT,
                 "assessment-id",
-                assessmentId));
+                String.valueOf(assessmentId)));
   }
 
 

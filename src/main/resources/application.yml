@@ -42,6 +42,11 @@ spring:
       static-locations: classpath:/static/
       cache:
         period: 0
+  servlet:
+    multipart:
+      max-file-size: 8MB
+      max-request-size: 10MB
+      resolve-lazily: true
 
 laa:
   ccms:

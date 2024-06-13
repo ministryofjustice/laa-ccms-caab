@@ -67,7 +67,7 @@ public class AssessmentServiceTest {
 
   private static final String PROGRESS_STATUS_CODE = "TEST";
   private static final String PROGRESS_STATUS_DESC = "Test";
-  private static final String ASSESSMENT_ID = "1234567";
+  private static final Long ASSESSMENT_ID = 1234567L;
 
   private final Date auditDate = new Date(System.currentTimeMillis());
 

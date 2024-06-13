@@ -34,13 +34,13 @@ repositories {
 }
 
 dependencies {
-	implementation 'uk.gov.laa.ccms.data:data-api:0.0.8'
+	implementation 'uk.gov.laa.ccms.data:data-api:0.0.10'
 
-	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.21'
+	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.22'
 
-	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.24'
+	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.27'
 
-	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.8'
+	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.12'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'

@@ -1,19 +1,24 @@
 package uk.gov.laa.ccms.caab.bean.validators.evidence;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.unit.DataSize;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 /**
  * Validate the evidence document details provided by evidence upload flow.
  */
 @Component
+@RequiredArgsConstructor
 public class EvidenceUploadValidator extends AbstractValidator {
 
   /**
@@ -34,6 +39,12 @@ public class EvidenceUploadValidator extends AbstractValidator {
       "Invalid file extension.  We can only accept %s files.";
 
   /**
+   * The error message for an invalid file extension.
+   */
+  public static final String MAX_FILESIZE_ERROR =
+      "File is too large. The file must be less than %s";
+
+  /**
    * The maximum length of the document description text area.
    */
   protected static final Integer DOCUMENT_DESCRIPTION_MAX_LENGTH = 255;
@@ -41,13 +52,11 @@ public class EvidenceUploadValidator extends AbstractValidator {
   /**
    * The configurable list of valid file extensions.
    */
+  @Value("${upload.valid-extensions}")
   private final List<String> validExtensions;
 
-  public EvidenceUploadValidator(
-      @Value("${upload.valid-extensions}")
-      final List<String> validExtensions) {
-    this.validExtensions = validExtensions;
-  }
+  @Value("${spring.servlet.multipart.max-file-size}")
+  private final String maxFileSize;
 
   /**
    * Determines if the Validator supports the provided class.
@@ -77,6 +86,11 @@ public class EvidenceUploadValidator extends AbstractValidator {
     if (evidenceUploadFormData.getFile() == null
         || evidenceUploadFormData.getFile().isEmpty()) {
       errors.rejectValue("file", "required.file", FILE_REQUIRED_ERROR);
+    } else {
+      evidenceUploadFormData.setFileExtension(getFileExtension(evidenceUploadFormData.getFile()));
+
+      // Check the file extension and file length.
+      validateFile(evidenceUploadFormData, errors);
     }
 
     validateRequiredField("documentType", evidenceUploadFormData.getDocumentType(),
@@ -88,20 +102,33 @@ public class EvidenceUploadValidator extends AbstractValidator {
           "required.evidenceTypes", EVIDENCE_TYPES_REQUIRED_ERROR);
     }
 
-    // Check the file extension is within the accepted list.
-    evidenceUploadFormData.setFileExtension(getFileExtension(evidenceUploadFormData.getFile()));
-    validateFileExtension(evidenceUploadFormData.getFileExtension(), errors);
-
     validateFieldMaxLength("documentDescription",
         evidenceUploadFormData.getDocumentDescription(),
         DOCUMENT_DESCRIPTION_MAX_LENGTH, "description", errors);
   }
 
-  private void validateFileExtension(String fileExtension, Errors errors) {
-    if (!isValidExtension(fileExtension)) {
+  private void validateFile(EvidenceUploadFormData formData, Errors errors) {
+    if (!isValidExtension(formData.getFileExtension())) {
       errors.rejectValue("file", "invalid.extension",
           String.format(INVALID_EXTENSION_ERROR, getExtensionDisplayString()));
+    } else {
+      try {
+        // Check the file size is within limits
+        final int fileSize = formData.getFile().getBytes().length;
+        final long maxSize = DataSize.parse(maxFileSize).toBytes();
+
+        if (fileSize > maxSize) {
+          rejectFileSize(errors);
+        }
+      } catch (IOException ioe) {
+        throw new CaabApplicationException("Failed to read file data", ioe);
+      }
     }
+  }
+
+  public void rejectFileSize(Errors errors) {
+    errors.rejectValue("file", "max.filesize.exceeded",
+        String.format(MAX_FILESIZE_ERROR, maxFileSize));
   }
 
   protected boolean isValidExtension(final String fileExtension) {
