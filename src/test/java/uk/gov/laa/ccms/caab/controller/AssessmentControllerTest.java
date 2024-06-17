@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.controller;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -12,7 +14,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
+import java.util.Date;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,14 +26,22 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.opa.util.SecurityUtils;
+import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
+import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 @ExtendWith(SpringExtension.class)
 @WebAppConfiguration
@@ -36,6 +49,15 @@ public class AssessmentControllerTest {
 
   @Mock
   private AssessmentService assessmentService;
+
+  @Mock
+  private ApplicationService applicationService;
+
+  @Mock
+  private ClientService clientService;
+
+  @Mock
+  private SecurityUtils contextSecurityUtil;
 
   @InjectMocks
   private AssessmentController assessmentController;
@@ -50,10 +72,7 @@ public class AssessmentControllerTest {
     mockMvc = standaloneSetup(assessmentController).build();
   }
 
-  private static final UserDetail userDetails = new UserDetail()
-      .userId(1)
-      .userType("testUserType")
-      .loginId("testLoginId");
+  private static final UserDetail userDetails = buildUserDetail();
 
   private static final ActiveCase activeCase = ActiveCase.builder()
       .caseReferenceNumber("testCaseReferenceNumber")
@@ -65,7 +84,7 @@ public class AssessmentControllerTest {
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/assessments/assessment-remove"))
-        .andExpect(model().attribute("assessmentCategory", "testCategory"));
+        .andExpect(model().attribute("assessment", "testCategory"));
   }
 
   @ParameterizedTest

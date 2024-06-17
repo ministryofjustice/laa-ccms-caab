@@ -11,3 +11,9 @@ laa:
       url: http://localhost:8008
     caab-api:
       url: http://localhost:8007
+    oracle-web-determination-server:
+      redirect-url: http://localhost:8010
+    caab:
+      opa:
+        security:
+          password: passw0rd

@@ -31,6 +31,7 @@ repositories {
 	githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-data-api')
 	githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-caab-api')
 	githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-soa-gateway-api')
+	githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-caab-assessment-api')
 }
 
 dependencies {

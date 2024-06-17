@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" class="govuk-template">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="blue">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <link rel="shortcut icon" sizes="16x16 32x32 48x48" href="/assets/images/favicon.ico" type="image/x-icon">
+  <link rel="mask-icon" href="/assets/images/govuk-mask-icon.svg" color="blue">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/govuk-apple-touch-icon-180x180.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="/assets/images/govuk-apple-touch-icon-167x167.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/assets/images/govuk-apple-touch-icon-152x152.png">
+  <link rel="apple-touch-icon" href="/assets/images/govuk-apple-touch-icon.png">
+  <link href="/govuk-frontend/all.css" rel="stylesheet">
+  <link href="/ccms/ccms.css" rel="stylesheet">
+  <script src="/ccms/ccms.js"></script>
+  <link th:href="${interviewsCSS}" rel="stylesheet" type="text/css"/>
+  <link th:href="${fontsCSS}" rel="stylesheet" type="text/css"/>
+  <script th:src="${interviewsJS}"></script>
+  <title th:text="${'LAA CCMS - ' + frameTitle}">LAA CCMS - Assessment</title>
+</head>
+
+<body class="govuk-template__body">
+<script>
+    document.body.className += ' js-enabled' + ('noModule' in HTMLScriptElement.prototype ? ' govuk-frontend-supported' : '');</script>
+
+<a href="#main-content" class="govuk-skip-link" data-module="govuk-skip-link">Skip to main content</a>
+
+<header th:replace="~{partials/header :: header}"></header>
+
+<div class="govuk-width-container">
+  <div th:replace="~{partials/phase-banner :: phase-banner}"></div>
+
+  <th:block th:if="${assessmentType == 'MEANS' || assessmentType == 'MERITS'}">
+    <div id="breadcrumbs">
+      <a th:href="${cancelUrl}" class="govuk-back-link" th:text="${returnLinkText}"></a>
+    </div>
+  </th:block>
+
+
+    <main class="govuk-main-wrapper" id="main-content" role="main" style="padding-top: 0;">
+      <div class="formInputArea">
+
+      <th:block th:if="${assessmentType == 'MEANS' || assessmentType == 'MERITS'}">
+        <h1 class="govuk-heading-l" th:text="${frameTitle}"></h1>
+      </th:block>
+
+      <div style="display: inline-block; width:100%;">
+        <div id="interview-wrapper"
+             style="width: 100%; display: block; margin-left: auto; margin-right: auto; float: left">
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<footer th:replace="~{partials/footer :: footer}"></footer>
+
+<!--OPA SCRIPT-->
+<script th:inline="javascript">
+    var url = [[${submitReturnUrl}]];
+    var el = document.getElementById("interview-wrapper");
+    var resumeId = [[${resumeID}]];
+    var checkpoint = "RESUME";
+    var val = [[${params}]];
+    var user = [[${username}]];
+
+    var paramData = {
+        "val": val,
+        "user": user,
+        "resume-id": resumeId
+    };
+
+    var owdUrl = [[${owdUrl}]];
+    var deploymentName = [[${deploymentName}]];
+
+    console.log("paramData: " + JSON.stringify(paramData));
+    console.log("checkpoint: " + checkpoint);
+    console.log("resumeId: " + resumeId);
+    console.log("url: " + url);
+    console.log("owdUrl: " + owdUrl);
+    console.log("deploymentName: " + deploymentName);
+
+    function doExit(url) {
+        window.location = url;
+    }
+
+    if (checkpoint === 'START') {
+        console.log("Starting interview");
+        OraclePolicyAutomationEmbedded.StartInterview(el,
+            owdUrl,
+            deploymentName,
+            "en-GB",
+            undefined,
+            paramData,
+            undefined,
+            undefined,
+            doExit);
+    } else {
+        console.log("Resuming interview");
+        OraclePolicyAutomationEmbedded.ResumeInterview(el,
+            owdUrl,
+            deploymentName,
+            "en-GB",
+            undefined,
+            paramData,
+            undefined,
+            doExit);
+    }
+</script>
+
+<script type="module" src="/govuk-frontend/all.js"></script>
+<script type="module">
+    import { initAll } from '/govuk-frontend/all.js'
+    initAll()
+</script>
+<script
+        src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+        crossorigin="anonymous">
+</script>
+<script src="/moj-frontend/javascript/moj-frontend.min.js"></script>
+<script>
+    window.MOJFrontend.initAll();
+</script>
+</body>
+</html>

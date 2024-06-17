@@ -1589,100 +1589,6 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void testToIndividualOpponentPartyName_buildsFullName() {
-    OpponentDetail opponent = buildOpponent(new Date());
-
-    CommonLookupValueDetail titleLookup = new CommonLookupValueDetail()
-        .code(opponent.getTitle())
-        .description("test");
-    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle())).thenReturn(
-        Mono.just(Optional.of(titleLookup)));
-
-    String fullName =
-        applicationService.toIndividualOpponentPartyName(opponent);
-
-    assertNotNull(fullName);
-    String expectedResult = titleLookup.getDescription() + " " + opponent.getFirstName() + " " + opponent.getSurname();
-    assertEquals(expectedResult, fullName);
-  }
-
-  @Test
-  void testToIndividualOpponentPartyName_noTitleMatchReturnsCode() {
-    OpponentDetail opponent = buildOpponent(new Date());
-
-    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle())).thenReturn(
-        Mono.just(Optional.empty()));
-
-    String fullName =
-        applicationService.toIndividualOpponentPartyName(opponent);
-
-    assertNotNull(fullName);
-    String expectedResult = opponent.getTitle() + " " + opponent.getFirstName() + " " + opponent.getSurname();
-    assertEquals(expectedResult, fullName);
-  }
-
-  @Test
-  void testToIndividualOpponentPartyName_noNameElementsReturnsUndefined() {
-    OpponentDetail opponent = new OpponentDetail();
-
-    String fullName =
-        applicationService.toIndividualOpponentPartyName(opponent);
-
-    assertNotNull(fullName);
-    String expectedResult = "undefined";
-    assertEquals(expectedResult, fullName);
-  }
-
-  @Test
-  void testToIndividualOpponentPartyName_noFirstnameReturnsCorrectly() {
-    OpponentDetail opponent = buildOpponent(new Date());
-    opponent.setFirstName(null);
-
-    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle())).thenReturn(
-        Mono.just(Optional.empty()));
-
-    String fullName =
-        applicationService.toIndividualOpponentPartyName(opponent);
-
-    assertNotNull(fullName);
-    String expectedResult = opponent.getTitle() + " " + opponent.getSurname();
-    assertEquals(expectedResult, fullName);
-  }
-
-  @Test
-  void testToIndividualOpponentPartyName_noSurnameReturnsCorrectly() {
-    OpponentDetail opponent = buildOpponent(new Date());
-    opponent.setSurname(null);
-
-    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle())).thenReturn(
-        Mono.just(Optional.empty()));
-
-    String fullName =
-        applicationService.toIndividualOpponentPartyName(opponent);
-
-    assertNotNull(fullName);
-    String expectedResult = opponent.getTitle() + " " + opponent.getFirstName();
-    assertEquals(expectedResult, fullName);
-  }
-
-  @Test
-  void testToIndividualOpponentPartyName_noFirstnameSurnameReturnsTitleonly() {
-    OpponentDetail opponent = buildOpponent(new Date());
-    opponent.setFirstName(null);
-    opponent.setSurname(null);
-
-    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle())).thenReturn(
-        Mono.just(Optional.empty()));
-
-    String fullName =
-        applicationService.toIndividualOpponentPartyName(opponent);
-
-    assertNotNull(fullName);
-    String expectedResult = opponent.getTitle();
-    assertEquals(expectedResult, fullName);
-  }
-
-  @Test
   void testBuildIndividualOpponentFormData_noLookupMatchReturnsCodes() {
     OpponentDetail opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_INDIVIDUAL);
@@ -1730,6 +1636,9 @@ class ApplicationServiceTest {
         Mono.just(Optional.empty()));
     when(lookupService.getCommonValue(COMMON_VALUE_RELATIONSHIP_TO_CLIENT,
         opponent.getRelationshipToClient())).thenReturn(
+        Mono.just(Optional.empty()));
+    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE,
+        opponent.getTitle())).thenReturn(
         Mono.just(Optional.empty()));
 
     String expectedPartyName = opponent.getOrganisationName();
@@ -1782,6 +1691,14 @@ class ApplicationServiceTest {
     when(lookupService.getCommonValue(COMMON_VALUE_RELATIONSHIP_TO_CLIENT,
         opponent.getRelationshipToClient())).thenReturn(
         Mono.just(Optional.of(relationshipToClient)));
+
+    CommonLookupValueDetail titleLookup = new CommonLookupValueDetail()
+        .code(opponent.getTitle())
+        .description("Mr");
+
+    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE,
+        opponent.getTitle())).thenReturn(
+        Mono.just(Optional.of(titleLookup)));
 
     String expectedPartyName =
         opponent.getOrganisationName();
