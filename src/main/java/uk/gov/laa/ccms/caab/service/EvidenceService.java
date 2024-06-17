@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.service;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OPA_EVIDENCE_ITEMS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_DOCUMENT_CODE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MERITS;
 
@@ -25,7 +26,6 @@ import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupValueDetail;
-import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.BaseDocument;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
@@ -48,13 +48,31 @@ public class EvidenceService {
   private final SoaApiClient soaApiClient;
 
   /**
+   * Get a List of uploaded evidence documents by application/outcome id and CCMS module.
+   *
+   * @param applicationOrOutcomeId - the application or outcome id.
+   * @param ccmsModule - the document's related CCMS module.
+   * @return EvidenceDocumentDetails containing the list of EvidenceDocumentDetail.
+   */
+  public Mono<EvidenceDocumentDetails> getEvidenceDocumentsForApplicationOrOutcome(
+      final String applicationOrOutcomeId, final CcmsModule ccmsModule) {
+    return caabApiClient.getEvidenceDocuments(
+        applicationOrOutcomeId,
+        null,
+        null,
+        null,
+        ccmsModule.getCode(),
+        Boolean.TRUE);
+  }
+
+  /**
    * Get a List of uploaded evidence documents by case reference number and CCMS module.
    *
    * @param caseReferenceNumber - the case reference number.
    * @param ccmsModule - the document's related CCMS module.
    * @return EvidenceDocumentDetails containing the list of EvidenceDocumentDetail.
    */
-  public Mono<EvidenceDocumentDetails> getEvidenceDocuments(
+  public Mono<EvidenceDocumentDetails> getEvidenceDocumentsForCase(
       final String caseReferenceNumber, final CcmsModule ccmsModule) {
     return caabApiClient.getEvidenceDocuments(
         null,
@@ -104,14 +122,16 @@ public class EvidenceService {
    * @param documentType - the document type.
    * @param fileExtension - the file extension.
    * @param documentDescription - the document description.
-   * @param userDetail - the user detail.
+   * @param userId - the user registering the document.
+   * @param userType - the user type.
    * @return Mono wrapping the EBS registered document id.
    */
-  public String registerDocument(
+  public Mono<String> registerDocument(
       final String documentType,
       final String fileExtension,
       final String documentDescription,
-      final UserDetail userDetail) {
+      final String userId,
+      final String userType) {
 
     final BaseDocument baseDocument = new BaseDocument()
         .documentType(documentType)
@@ -120,42 +140,55 @@ public class EvidenceService {
 
     return soaApiClient.registerDocument(
             baseDocument,
-            userDetail.getLoginId(),
-            userDetail.getUserType())
-        .mapNotNull(ClientTransactionResponse::getReferenceNumber)
-        .blockOptional()
-        .orElseThrow(() -> new CaabApplicationException("Failed to register document"));
+            userId,
+            userType)
+        .mapNotNull(ClientTransactionResponse::getReferenceNumber);
   }
 
   /**
    * Store an evidence document in the TDS, prior to submission to EBS.
    *
-   * @param userDetail - the user detail.
+   * @param evidenceDocumentDetail - the evidence document detail.
+   * @param userId - the user adding the document.
    * @return Mono wrapping the EBS registered document id.
    */
   public Mono<String> addDocument(
       final EvidenceDocumentDetail evidenceDocumentDetail,
-      final UserDetail userDetail) {
+      final String userId) {
 
-    return caabApiClient.createEvidenceDocument(
-            evidenceDocumentDetail,
-            userDetail.getLoginId());
+    return caabApiClient.createEvidenceDocument(evidenceDocumentDetail, userId);
   }
 
   /**
    * Remove an evidence document from the TDS.
    *
    * @param documentId - the id of the document to remove.
-   * @param userDetail - the user detail.
-   * @return Mono wrapping the EBS registered document id.
+   * @param userId - the user removing a document.
    */
-  public Mono<Void> removeDocument(
+  public void removeDocument(
+      final String applicationOrOutcomeId,
       final Integer documentId,
-      final UserDetail userDetail) {
+      final CcmsModule ccmsModule,
+      final String userId) {
 
-    return caabApiClient.deleteEvidenceDocument(
-        documentId,
-        userDetail.getLoginId());
+    // First ensure that the document exists and is related to the active case.
+    // (We don't want to retrieve the document by its id, as that will include the (possibly)
+    // 8MB of file data.
+    getEvidenceDocumentsForApplicationOrOutcome(
+            applicationOrOutcomeId,
+            ccmsModule)
+        .map(EvidenceDocumentDetails::getContent)
+        .mapNotNull(baseEvidenceDocumentDetails ->
+            baseEvidenceDocumentDetails.stream()
+                .filter(baseEvidenceDocumentDetail -> baseEvidenceDocumentDetail
+                    .getId().equals(documentId))
+                .findFirst()
+                .orElse(null))
+        .blockOptional()
+        .orElseThrow(() -> new CaabApplicationException(
+            String.format("Invalid document id: %s", documentId)));
+
+    caabApiClient.deleteEvidenceDocument(documentId, userId).block();
   }
 
   /**
@@ -201,11 +234,11 @@ public class EvidenceService {
     // If the application has prior auths, return all evidence of type XXCCMS_PA_EVIDENCE_ITEMS,
     // otherwise return an empty LookupDetail.
     return caabApiClient.getPriorAuthorities(applicationId)
-        .map(priorAuthorityDetails -> !priorAuthorityDetails.isEmpty())
-        .flatMap(hasPriorAuthority -> hasPriorAuthority
-            ? ebsApiClient.getEvidenceDocumentTypes(
-                COMMON_VALUE_DOCUMENT_TYPES, COMMON_VALUE_OUTCOME_DOCUMENT_CODE) :
-            Mono.just(new EvidenceDocumentTypeLookupDetail()))
+        .flatMap(priorAuthorityDetails -> priorAuthorityDetails.isEmpty()
+            ? Mono.just(new EvidenceDocumentTypeLookupDetail()) :
+            ebsApiClient.getEvidenceDocumentTypes(
+                COMMON_VALUE_DOCUMENT_TYPES,
+                COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS))
         .map(EvidenceDocumentTypeLookupDetail::getContent);
   }
 
@@ -227,7 +260,8 @@ public class EvidenceService {
     // code 'OUT_EV'. Otherwise return an empty LookupDetail.
     return caseOutcomeService.getCaseOutcome(caseReferenceNumber, providerId)
         .map(caseOutcomeDetail -> ebsApiClient.getEvidenceDocumentTypes(
-            COMMON_VALUE_DOCUMENT_TYPES, COMMON_VALUE_OUTCOME_DOCUMENT_CODE))
+            COMMON_VALUE_DOCUMENT_TYPES,
+            COMMON_VALUE_OUTCOME_DOCUMENT_CODE))
         .orElse(Mono.just(new EvidenceDocumentTypeLookupDetail()))
         .map(EvidenceDocumentTypeLookupDetail::getContent);
   }

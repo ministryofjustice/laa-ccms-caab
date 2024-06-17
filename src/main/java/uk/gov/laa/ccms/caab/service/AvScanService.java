@@ -51,7 +51,7 @@ public class AvScanService {
   public void performAvScan(
       final String caseReferenceNumber,
       final Integer providerId,
-      final Integer userId,
+      final String userId,
       final CcmsModule ccmsModule,
       final String filename,
       final InputStream inputStream) {

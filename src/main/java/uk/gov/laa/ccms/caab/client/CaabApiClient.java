@@ -854,7 +854,7 @@ public class CaabApiClient {
   public Mono<EvidenceDocumentDetails> getEvidenceDocuments(
       final String applicationOrOutcomeId,
       final String caseReferenceNumber,
-      final String providerId,
+      final Integer providerId,
       final String documentType,
       final String ccmsModule,
       final Boolean transferPending) {
@@ -865,7 +865,7 @@ public class CaabApiClient {
     Optional.ofNullable(caseReferenceNumber)
         .ifPresent(param -> queryParams.add("case-reference-number", param));
     Optional.ofNullable(providerId)
-        .ifPresent(param -> queryParams.add("provider-id", param));
+        .ifPresent(param -> queryParams.add("provider-id", String.valueOf(param)));
     Optional.ofNullable(documentType)
         .ifPresent(param -> queryParams.add("document-type", param));
     Optional.ofNullable(ccmsModule)

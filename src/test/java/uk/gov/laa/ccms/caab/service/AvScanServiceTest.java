@@ -29,7 +29,7 @@ public class AvScanServiceTest {
 
   private final Integer providerId = 456;
 
-  private final Integer userId = 789;
+  private final String userId = "789";
 
   private final CcmsModule source = CcmsModule.APPLICATION;
 

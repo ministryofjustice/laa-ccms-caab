@@ -35,6 +35,8 @@ import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
@@ -766,5 +768,114 @@ public class CaabApiClientTest {
         .verifyComplete();
   }
 
+  @Test
+  void createEvidenceDocument_success() {
+    final EvidenceDocumentDetail evidenceDocument = new EvidenceDocumentDetail(); // Populate this as needed
+    final String loginId = "user789";
+    final String expectedUri = "/evidence";
+    final String locationId = "123";
+
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(EvidenceDocumentDetail.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.exchangeToMono(any(Function.class))).thenReturn(Mono.just(locationId));
+
+    final Mono<String> result = caabApiClient.createEvidenceDocument(evidenceDocument, loginId);
+
+    StepVerifier.create(result)
+        .expectNext(locationId)
+        .verifyComplete();
+
+    verify(requestHeadersMock, times(1)).exchangeToMono(any(Function.class));
+  }
+
+  @Test
+  void deleteEvidenceDocument_success() {
+    final Integer evidenceDocumentId = 123;
+    final String loginId = "user123";
+    final String expectedUri = "/evidence/{evidence-document-id}";
+
+    when(caabApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, evidenceDocumentId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.deleteEvidenceDocument(evidenceDocumentId, loginId);
+
+    StepVerifier.create(result).verifyComplete();
+  }
+
+  @Test
+  void getEvidenceDocuments_success() {
+    final String applicationOrOutcomeId = "234";
+    final String caseReferenceNumber = "123";
+    final Integer providerId = 456;
+    final String documentType = "docType";
+    final String ccmsModule = "A";
+    final Boolean transferPending = true;
+    final String size = "1000";
+
+    final String expectedUri = String.format(
+        "/evidence?size=%s&application-or-outcome-id=%s&case-reference-number=%s&provider-id=%s&document-type=%s&ccms-module=%s&transfer-pending=%s",
+        size,
+        applicationOrOutcomeId,
+        caseReferenceNumber,
+        providerId,
+        documentType,
+        ccmsModule,
+        transferPending);
+
+    final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(EvidenceDocumentDetails.class))
+        .thenReturn(Mono.just(new EvidenceDocumentDetails()));
+
+    final Mono<EvidenceDocumentDetails> resultMono = caabApiClient.getEvidenceDocuments(
+        applicationOrOutcomeId,
+        caseReferenceNumber,
+        providerId,
+        documentType,
+        ccmsModule,
+        transferPending);
+
+    StepVerifier.create(resultMono)
+        .expectNext(Objects.requireNonNull(resultMono.block()))
+        .verifyComplete();
+
+    final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    // Assert the URI
+    assertEquals(expectedUri, actualUri.toString());
+
+  }
+
+  @Test
+  void getEvidenceDocument_success() {
+
+    final Integer id = 123;
+    final String expectedUri = "/evidence/{evidence-document-id}";
+
+    final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, id)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(EvidenceDocumentDetail.class)).thenReturn(
+        Mono.just(evidenceDocumentDetail));
+
+    final Mono<EvidenceDocumentDetail> result
+        = caabApiClient.getEvidenceDocument(id);
+
+    StepVerifier.create(result)
+        .expectNext(evidenceDocumentDetail)
+        .verifyComplete();
+  }
 
 }

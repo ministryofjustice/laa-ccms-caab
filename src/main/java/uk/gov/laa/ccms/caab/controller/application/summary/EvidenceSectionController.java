@@ -3,12 +3,10 @@ package uk.gov.laa.ccms.caab.controller.application.summary;
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_REQUIRED;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -37,10 +35,8 @@ import uk.gov.laa.ccms.caab.exception.AvScanException;
 import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
-import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
-import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -61,8 +57,6 @@ public class EvidenceSectionController {
 
   private final AvScanService avScanService;
 
-  private final ApplicationService applicationService;
-
   private final LookupService lookupService;
 
   private final EvidenceUploadValidator evidenceUploadValidator;
@@ -73,32 +67,26 @@ public class EvidenceSectionController {
   /**
    * Handles the GET request for the evidence upload screen.
    *
-   * @param applicationId The id of the active application.
+   * @param activeCase         The details of the active case.
    * @param model              The model for the view.
    * @return The view name for the evidence upload view.
    */
   @GetMapping("/application/summary/evidence")
   public String viewEvidenceRequired(
-      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       final Model model) {
-
-    // Retrieve the application detail
-    final ApplicationDetail application = applicationService.getApplication(applicationId)
-        .blockOptional()
-        .orElseThrow(() -> new CaabApplicationException(
-            String.format("Failed to retrieve application with id: %s", applicationId)));
 
     // Get the list of required evidence docs for this application.
     final Mono<List<EvidenceDocumentTypeLookupValueDetail>> evidenceRequiredMono =
         evidenceService.getDocumentsRequired(
-            applicationId,
-            application.getCaseReferenceNumber(),
-            application.getProviderDetails().getProvider().getId());
+            String.valueOf(activeCase.getApplicationId()),
+            activeCase.getCaseReferenceNumber(),
+            activeCase.getProviderId());
 
     // Retrieve the list of previously uploaded documents.
     final Mono<EvidenceDocumentDetails> evidenceUploadedMono =
-        evidenceService.getEvidenceDocuments(
-            application.getCaseReferenceNumber(),
+        evidenceService.getEvidenceDocumentsForCase(
+            activeCase.getCaseReferenceNumber(),
             APPLICATION);
 
     Tuple2<List<EvidenceDocumentTypeLookupValueDetail>,
@@ -142,7 +130,7 @@ public class EvidenceSectionController {
     evidenceUploadFormData.setApplicationOrOutcomeId(activeCase.getApplicationId());
     evidenceUploadFormData.setCaseReferenceNumber(activeCase.getCaseReferenceNumber());
     evidenceUploadFormData.setProviderId(activeCase.getProviderId());
-    evidenceUploadFormData.setDocumentSender(userDetail.getUserId());
+    evidenceUploadFormData.setDocumentSender(userDetail.getLoginId());
     evidenceUploadFormData.setCcmsModule(APPLICATION);
 
     model.addAttribute(EVIDENCE_UPLOAD_FORM_DATA, evidenceUploadFormData);
@@ -204,13 +192,16 @@ public class EvidenceSectionController {
         evidenceUploadFormData.getDocumentType(),
         fileExtension,
         evidenceUploadFormData.getDocumentDescription(),
-        userDetail);
+        userDetail.getLoginId(),
+        userDetail.getUserType())
+        .blockOptional()
+        .orElseThrow(() -> new CaabApplicationException("Failed to register document"));
 
     evidenceUploadFormData.setRegisteredDocumentId(registeredDocumentId);
 
     evidenceService.addDocument(
         evidenceMapper.toEvidenceDocumentDetail(evidenceUploadFormData),
-        userDetail)
+            userDetail.getLoginId())
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException("Failed to save document"));
 
@@ -229,7 +220,6 @@ public class EvidenceSectionController {
       final List<EvidenceRequired> evidenceRequired,
       @SessionAttribute(EVIDENCE_UPLOAD_FORM_DATA)
       final EvidenceUploadFormData evidenceUploadFormData,
-      final HttpServletRequest request,
       final Model model) {
 
     // Manually construct a BindingResult to hold the file size error.
@@ -255,31 +245,19 @@ public class EvidenceSectionController {
    * @param evidenceDocumentId The id of the evidence document to remove.
    * @param activeCase Basic details of the active case.
    * @param userDetail The user details.
-   * @param model              The model for the view.
    * @return Redirect to the evidence summary view.
    */
   @GetMapping("/application/evidence/{evidence-document-id}/remove")
   public String removeEvidenceDocument(
       @PathVariable("evidence-document-id") final Integer evidenceDocumentId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
-      @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
-      final Model model) {
+      @SessionAttribute(USER_DETAILS) final UserDetail userDetail) {
 
-    // First ensure that the document exists and is related to the active case.
-    evidenceService.getEvidenceDocuments(activeCase.getCaseReferenceNumber(), APPLICATION)
-        .map(EvidenceDocumentDetails::getContent)
-        .mapNotNull(baseEvidenceDocumentDetails ->
-          baseEvidenceDocumentDetails.stream()
-              .filter(baseEvidenceDocumentDetail -> baseEvidenceDocumentDetail
-                  .getApplicationOrOutcomeId().equals(
-                      String.valueOf(activeCase.getApplicationId())))
-              .findFirst()
-              .orElse(null))
-        .blockOptional()
-        .orElseThrow(() -> new CaabApplicationException(
-            String.format("Invalid document id: %s", evidenceDocumentId)));
-
-    evidenceService.removeDocument(evidenceDocumentId, userDetail).block();
+    evidenceService.removeDocument(
+        String.valueOf(activeCase.getApplicationId()),
+        evidenceDocumentId,
+        APPLICATION,
+        userDetail.getLoginId());
 
     return "redirect:/application/summary/evidence";
   }

@@ -67,7 +67,7 @@ public class EvidenceUploadFormData implements Serializable {
   /**
    * The user id performing the upload.
    */
-  private Integer documentSender;
+  private String documentSender;
 
   /**
    * The area of the site performing the upload.
