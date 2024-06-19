@@ -36,6 +36,12 @@ spring:
       cache:
         period: 0
 
+# required to be on civil in order for OPA integration with OWD,
+# otherwise issues occur with the JSESSIONID cookie
+server:
+  servlet:
+    context-path: /civil
+
 laa:
   ccms:
     ebs-api:
@@ -55,8 +61,15 @@ laa:
       url: ${laa.ccms.assessment-api.hostname}
       accessToken: ${ASSESSMENT_API_ACCESS_TOKEN}
     oracle-web-determination-server:
-      redirect-hostname: ${OWD_REDIRECT_URL}
-      redirect-url: ${laa.ccms.oracle-web-determination-server.redirect-hostname}
+      hostname: ${OWD_URL}
+      url: ${laa.ccms.oracle-web-determination-server.hostname}
+      resources:
+        interview-styling: ${laa.ccms.oracle-web-determination-server.url}/staticresource/interviews.css
+        font-styling: ${laa.ccms.oracle-web-determination-server.url}/staticresource/fonts/fonts.css
+        interview-javascript: ${laa.ccms.oracle-web-determination-server.url}/staticresource/interviews.js
+      redirect:
+        hostname: ${OWD_REDIRECT_URL}
+        url: ${laa.ccms.oracle-web-determination-server.redirect.hostname}
     caab:
       opa:
         security:

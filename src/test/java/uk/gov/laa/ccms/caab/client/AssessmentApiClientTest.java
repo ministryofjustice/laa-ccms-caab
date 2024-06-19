@@ -54,7 +54,6 @@ class AssessmentApiClientTest {
     final String assessmentName = "meansAssessment";
     final String providerId = "987";
     final String caseReferenceNumber = "case456";
-    final String status = "COMPLETE";
     final AssessmentDetails mockAssessmentDetails = new AssessmentDetails();
 
     when(assessmentApiWebClient.get()).thenReturn(requestHeadersUriMock);
@@ -63,7 +62,7 @@ class AssessmentApiClientTest {
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(AssessmentDetails.class)).thenReturn(Mono.just(mockAssessmentDetails));
 
-    final Mono<AssessmentDetails> result = assessmentApiClient.getAssessments(List.of(assessmentName), providerId, caseReferenceNumber, status);
+    final Mono<AssessmentDetails> result = assessmentApiClient.getAssessments(List.of(assessmentName), providerId, caseReferenceNumber);
 
     StepVerifier.create(result)
         .expectNext(mockAssessmentDetails)
@@ -72,7 +71,7 @@ class AssessmentApiClientTest {
     final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
     final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
-    assertEquals("/assessments?name=meansAssessment&provider-id=987&case-reference-number=case456&status=COMPLETE", actualUri.toString());
+    assertEquals("/assessments?name=meansAssessment&provider-id=987&case-reference-number=case456", actualUri.toString());
   }
 
   @Test

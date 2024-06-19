@@ -1,15 +1,20 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title>LAA CCMS - Start new application</title>
+  <title>LAA CCMS - Assessment</title>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a href="/civil/application/summary/linked-cases" class="govuk-back-link">Return to linked cases summary</a>
+    <a href="/civil/application/summary" class="govuk-back-link">Return to application summary</a>
   </div>
   <div id="main-content">
-    <th:block th:replace="~{application/partials/linked-cases :: confirmLinkedCase(action=${'/application/summary/linked-cases/add'})}"></th:block>
+      <h1 class="govuk-heading-l">
+        Confirmation
+      </h1>
+      <p class="govuk-body-l">
+        Assessment completed.
+      </p>
   </div>
 </div>
 </body>

@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a href="/application/summary/linked-cases" class="govuk-back-link">Return to linked cases summary</a>
+        <a href="/civil/application/summary/linked-cases" class="govuk-back-link">Return to linked cases summary</a>
     </div>
     <div id="main-content">
       <th:block th:replace="~{application/partials/linked-cases :: confirmLinkedCase(action=${'/application/summary/linked-cases/'+ currentLinkedCase.id +'/confirm'})}"></th:block>

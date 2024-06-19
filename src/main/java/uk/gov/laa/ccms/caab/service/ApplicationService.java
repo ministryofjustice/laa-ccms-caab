@@ -533,15 +533,13 @@ public class ApplicationService {
         assessmentService.getAssessments(
             List.of("meansAssessment"),
             user.getProvider().getId().toString(),
-            application.getCaseReferenceNumber(),
-            null);
+            application.getCaseReferenceNumber());
 
     final Mono<AssessmentDetails> meritsAssessmentsMono =
         assessmentService.getAssessments(
             List.of("meritsAssessment"),
             user.getProvider().getId().toString(),
-            application.getCaseReferenceNumber(),
-            null);
+            application.getCaseReferenceNumber());
 
     final Tuple4<RelationshipToCaseLookupDetail,
         RelationshipToCaseLookupDetail,

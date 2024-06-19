@@ -31,17 +31,15 @@ public class AssessmentApiClient {
    * @param assessmentNames the list of assessment names to filter
    * @param providerId the provider id
    * @param caseReferenceNumber the case reference number
-   * @param status the status of the assessment
    * @return the assessment details
    */
   public Mono<AssessmentDetails> getAssessments(
       final List<String> assessmentNames,
       final String providerId,
-      final String caseReferenceNumber,
-      final String status) {
+      final String caseReferenceNumber) {
 
     final MultiValueMap<String, String> queryParams =
-        retrieveAssessmentsQueryParams(assessmentNames, providerId, caseReferenceNumber, status);
+        retrieveAssessmentsQueryParams(assessmentNames, providerId, caseReferenceNumber, null);
 
     return assessmentApiWebClient
         .get()

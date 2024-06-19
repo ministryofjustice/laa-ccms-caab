@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="blue">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <link rel="shortcut icon" sizes="16x16 32x32 48x48" href="/assets/images/favicon.ico" type="image/x-icon">
-  <link rel="mask-icon" href="/assets/images/govuk-mask-icon.svg" color="blue">
-  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/govuk-apple-touch-icon-180x180.png">
-  <link rel="apple-touch-icon" sizes="167x167" href="/assets/images/govuk-apple-touch-icon-167x167.png">
-  <link rel="apple-touch-icon" sizes="152x152" href="/assets/images/govuk-apple-touch-icon-152x152.png">
-  <link rel="apple-touch-icon" href="/assets/images/govuk-apple-touch-icon.png">
-  <link href="/govuk-frontend/all.css" rel="stylesheet">
-  <link href="/ccms/ccms.css" rel="stylesheet">
-  <script src="/ccms/ccms.js"></script>
+  <link rel="shortcut icon" sizes="16x16 32x32 48x48" href="/civil/assets/images/favicon.ico" type="image/x-icon">
+  <link rel="mask-icon" href="/civil/assets/images/govuk-mask-icon.svg" color="blue">
+  <link rel="apple-touch-icon" sizes="180x180" href="/civil/assets/images/govuk-apple-touch-icon-180x180.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="/civil/assets/images/govuk-apple-touch-icon-167x167.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/civil/assets/images/govuk-apple-touch-icon-152x152.png">
+  <link rel="apple-touch-icon" href="/civil/assets/images/govuk-apple-touch-icon.png">
+  <link href="/civil/govuk-frontend/all.css" rel="stylesheet">
+  <link href="/civil/ccms/ccms.css" rel="stylesheet">
+  <script src="/civil/ccms/ccms.js"></script>
   <link th:href="${interviewsCSS}" rel="stylesheet" type="text/css"/>
   <link th:href="${fontsCSS}" rel="stylesheet" type="text/css"/>
   <script th:src="${interviewsJS}"></script>
@@ -58,10 +58,11 @@
 
 <!--OPA SCRIPT-->
 <script th:inline="javascript">
+    var returnUrl = [[${submitReturnUrl}]];
     var url = [[${submitReturnUrl}]];
     var el = document.getElementById("interview-wrapper");
-    var resumeId = [[${resumeID}]];
-    var checkpoint = "RESUME";
+    var resumeId = [[${resumeId}]];
+    var checkpoint = [[${checkpoint}]];;
     var val = [[${params}]];
     var user = [[${username}]];
 
@@ -74,15 +75,9 @@
     var owdUrl = [[${owdUrl}]];
     var deploymentName = [[${deploymentName}]];
 
-    console.log("paramData: " + JSON.stringify(paramData));
-    console.log("checkpoint: " + checkpoint);
-    console.log("resumeId: " + resumeId);
-    console.log("url: " + url);
-    console.log("owdUrl: " + owdUrl);
-    console.log("deploymentName: " + deploymentName);
-
     function doExit(url) {
-        window.location = url;
+        console.log("exiting to url: " + returnUrl);
+        window.location = returnUrl;
     }
 
     if (checkpoint === 'START') {
@@ -90,7 +85,7 @@
         OraclePolicyAutomationEmbedded.StartInterview(el,
             owdUrl,
             deploymentName,
-            "en-GB",
+            undefined,
             undefined,
             paramData,
             undefined,
@@ -109,9 +104,9 @@
     }
 </script>
 
-<script type="module" src="/govuk-frontend/all.js"></script>
+<script type="module" src="/civil/govuk-frontend/all.js"></script>
 <script type="module">
-    import { initAll } from '/govuk-frontend/all.js'
+    import { initAll } from '/civil/govuk-frontend/all.js'
     initAll()
 </script>
 <script
@@ -119,7 +114,7 @@
         integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
         crossorigin="anonymous">
 </script>
-<script src="/moj-frontend/javascript/moj-frontend.min.js"></script>
+<script src="/civil/moj-frontend/javascript/moj-frontend.min.js"></script>
 <script>
     window.MOJFrontend.initAll();
 </script>

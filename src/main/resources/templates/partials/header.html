@@ -3,7 +3,7 @@
         <div class="govuk-header__logo">
             <a href="#" class="govuk-header__link govuk-header__link--homepage">
                   <span class="govuk-header__logotype">
-                        <img src="/assets/images/moj-logotype-crest.png" class="govuk-header__logotype-crown-fallback-image" width="36" height="32" alt="">
+                        <img src="/civil/assets/images/moj-logotype-crest.png" class="govuk-header__logotype-crown-fallback-image" width="36" height="32" alt="">
                       <span class="govuk-header__product-name">
                           Legal Aid Agency
                       </span>
@@ -18,7 +18,7 @@
                 <button type="button" class="govuk-header__menu-button govuk-js-header-toggle" aria-controls="navigation" aria-label="Show or hide menu" hidden>Menu</button>
                 <ul id="navigation" class="govuk-header__navigation-list">
                     <li class="govuk-header__navigation-item" th:classappend="${pageCategory == 'home'} ? 'govuk-header__navigation-item--active'">
-                        <a class="govuk-header__link" href="/">
+                        <a class="govuk-header__link" href="/civil/">
                             Home
                         </a>
                     </li>
@@ -28,7 +28,7 @@
                         </a>
                     </li>
                     <li class="govuk-header__navigation-item" th:classappend="${pageCategory == 'actions'} ? 'govuk-header__navigation-item--active'">
-                        <a class="govuk-header__link" href="/notifications/search?notification_type=all">
+                        <a class="govuk-header__link" href="/civil/notifications/search?notification_type=all">
                             Actions and notifications
                         </a>
                     </li>

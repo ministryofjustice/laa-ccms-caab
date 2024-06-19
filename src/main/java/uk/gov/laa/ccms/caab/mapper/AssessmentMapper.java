@@ -435,7 +435,7 @@ public interface AssessmentMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "opponent.dateOfBirth", dateFormat = "dd-MM-yyyy")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toOpponentDobAttribute(
       OpponentDetail opponent, AssessmentAttribute attribute);
 
@@ -443,7 +443,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "opponent",
       qualifiedByName = "mapOpponentOpaInstanceMappingId")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toOtherPartyIdAttribute(
       OpponentDetail opponent, AssessmentAttribute attribute);
 
@@ -455,7 +455,7 @@ public interface AssessmentMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "opponentContext", qualifiedByName = "mapPartyName")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toOtherPartyNameAttribute(
       AssessmentOpponentMappingContext opponentContext, AssessmentAttribute attribute);
 
@@ -467,7 +467,7 @@ public interface AssessmentMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "opponent", qualifiedByName = "mapOpponentType")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toOtherPartyTypeAttribute(
       OpponentDetail opponent, AssessmentAttribute attribute);
 
@@ -479,14 +479,14 @@ public interface AssessmentMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "opponent.relationshipToCase")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toRelationshipToCaseAttribute(
       OpponentDetail opponent, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "opponent.relationshipToClient")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toRelationshipToClientAttribute(
       OpponentDetail opponent, AssessmentAttribute attribute);
 
@@ -541,14 +541,14 @@ public interface AssessmentMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application.caseReferenceNumber")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toApplicationCaseRefAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application", qualifiedByName = "mapAppAmendType")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toAppAmendTypeAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -560,35 +560,35 @@ public interface AssessmentMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application.categoryOfLaw.id")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toCategoryOfLawAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "client.personalInformation.vulnerableClient")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toClientVulnerableAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application.costLimit.changed")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toCostLimitChangedFlagAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "client.address.country")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toCountryAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "client.address.county")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toCountyAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
@@ -597,7 +597,7 @@ public interface AssessmentMapper {
       qualifiedByName = "mapDateAssessmentStarted",
       dateFormat = "dd-MM-yyyy")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toDateAssessmentStartedAttribute(AssessmentAttribute attribute);
 
   @Named("mapDateAssessmentStarted")
@@ -609,14 +609,14 @@ public interface AssessmentMapper {
   @Mapping(target = "value",
       source = "client.personalInformation.dateOfBirth", dateFormat = "dd-MM-yyyy")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toDateOfBirthAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application.costs.defaultCostLimitation")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toDefaultCostLimitationAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -624,21 +624,21 @@ public interface AssessmentMapper {
   @Mapping(target = "value",
       source = "application.applicationType.devolvedPowers.dateUsed", dateFormat = "dd-MM-yyyy")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toDelegatedFunctionsDateAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application.applicationType.devolvedPowers.contractFlag")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toDevolvedPowersContractFlagAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application", qualifiedByName = "mapEcfFlag")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toEcfFlagAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -650,28 +650,28 @@ public interface AssessmentMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "client.name.firstName")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toFirstNameAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "client.personalInformation.highProfileClient")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toHighProfileAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "client.personalInformation.homeOfficeNumber")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toHomeOfficeNoAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application", qualifiedByName = "mapLarScopeFlag")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toLarScopeFlagAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -683,21 +683,21 @@ public interface AssessmentMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application.leadProceedingChanged")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toLeadProceedingChangedAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "client.personalInformation.maritalStatus")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toMaritalStatusAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application", qualifiedByName = "mapNewApplOrAmendment")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toNewApplOrAmendmentAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -709,35 +709,35 @@ public interface AssessmentMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "client.personalInformation.nationalInsuranceNumber")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toNiNoAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", constant = "N/A")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toPoaOrBillFlagAttribute(
       AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "client.address.postalCode")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toPostCodeAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application.providerDetails.providerCaseReference")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toProviderCaseReferenceAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application", qualifiedByName = "mapProviderHasContract")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toProviderHasContractAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -749,35 +749,35 @@ public interface AssessmentMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application.costs.requestedCostLimitation")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toReqCostLimitationAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "client.name.surname")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toSurnameAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "client.name.surnameAtBirth")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toSurnameAtBirthAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "user.provider.id")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toUserProviderFirmIdAttribute(
       UserDetail user, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "user.userType")
   @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", constant = "attribute.type")
+  @Mapping(target = "type", source = "attribute.type")
   AssessmentAttributeDetail toUserTypeAttribute(
       UserDetail user, AssessmentAttribute attribute);
 

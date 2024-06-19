@@ -45,7 +45,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
       .build();
 
   @DynamicPropertySource
-  public static void properties(DynamicPropertyRegistry registry) {
+  public static void properties(final DynamicPropertyRegistry registry) {
     registry.add("laa.ccms.ebs-api.port", wiremock::getPort);
   }
 
@@ -55,32 +55,31 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   private static final String USER_ERROR_MESSAGE = "Failed to retrieve User with login id: %s";
-  private static final String USERS_ERROR_MESSAGE = "Failed to retrieve Users for provider: (id: %s)";
 
   @Test
   public void testGetUser_returnData() throws Exception {
-    UserDetail expectedUserDetail = buildUserDetail();
-    String userJson = objectMapper.writeValueAsString(expectedUserDetail);
+    final UserDetail expectedUserDetail = buildUserDetail();
+    final String userJson = objectMapper.writeValueAsString(expectedUserDetail);
 
     wiremock.stubFor(get(String.format("/users/%s", expectedUserDetail.getLoginId()))
         .willReturn(okJson(userJson)));
 
-    Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(expectedUserDetail.getLoginId());
+    final Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(expectedUserDetail.getLoginId());
 
-    UserDetail userDetails = userDetailsMono.block();
+    final UserDetail userDetails = userDetailsMono.block();
 
     assertEquals(userJson, objectMapper.writeValueAsString(userDetails));
   }
 
   @Test
   public void testGetUser_notFound() {
-    String loginId = "user1";
-    String expectedMessage = String.format(USER_ERROR_MESSAGE, loginId);
+    final String loginId = "user1";
+    final String expectedMessage = String.format(USER_ERROR_MESSAGE, loginId);
 
     wiremock.stubFor(get(String.format("/users/%s", loginId))
         .willReturn(notFound()));
 
-    Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(loginId);
+    final Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(loginId);
 
     StepVerifier.create(userDetailsMono)
         .expectErrorMatches(throwable -> throwable instanceof EbsApiClientException
@@ -90,13 +89,13 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
   @Test
   public void testGetCommonValues_returnData() throws Exception {
-    CommonLookupDetail expectedCommonValues = buildCommonLookupDetail();
-    String commonValuesJson = objectMapper.writeValueAsString(expectedCommonValues);
+    final CommonLookupDetail expectedCommonValues = buildCommonLookupDetail();
+    final String commonValuesJson = objectMapper.writeValueAsString(expectedCommonValues);
 
-    String type = "testType";
-    String code = "testCode";
-    String descr = "testDescr";
-    String sort = "testSort";
+    final String type = "testType";
+    final String code = "testCode";
+    final String descr = "testDescr";
+    final String sort = "testSort";
 
     wiremock.stubFor(get(urlPathMatching("/lookup/common.*"))
         .withQueryParam("type", equalTo(type))
@@ -105,39 +104,39 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
         .withQueryParam("sort", equalTo(sort))
         .willReturn(okJson(commonValuesJson)));
 
-    Mono<CommonLookupDetail> commonValuesMono = ebsApiClient.getCommonValues(type, code, descr, sort);
+    final Mono<CommonLookupDetail> commonValuesMono = ebsApiClient.getCommonValues(type, code, descr, sort);
 
-    CommonLookupDetail commonValues = commonValuesMono.block();
+    final CommonLookupDetail commonValues = commonValuesMono.block();
 
     assertEquals(commonValuesJson, objectMapper.writeValueAsString(commonValues));
   }
 
   @Test
   public void testGetCaseStatusValues_returnData() throws Exception {
-    String caseStatusValuesJson = objectMapper.writeValueAsString(buildCaseStatusLookupDetail());
+    final String caseStatusValuesJson = objectMapper.writeValueAsString(buildCaseStatusLookupDetail());
 
-    Boolean copyAllowed = true;
+    final Boolean copyAllowed = true;
 
     wiremock.stubFor(get(urlPathMatching("/lookup/case-status.*"))
         .withQueryParam("copy-allowed", equalTo(copyAllowed.toString()))
         .willReturn(okJson(caseStatusValuesJson)));
 
-    Mono<CaseStatusLookupDetail> lookupDetailMono = ebsApiClient.getCaseStatusValues(copyAllowed);
+    final Mono<CaseStatusLookupDetail> lookupDetailMono = ebsApiClient.getCaseStatusValues(copyAllowed);
 
-    CaseStatusLookupDetail response = lookupDetailMono.block();
+    final CaseStatusLookupDetail response = lookupDetailMono.block();
 
     assertEquals(caseStatusValuesJson, objectMapper.writeValueAsString(response));
   }
 
   @Test
   public void testGetProvider() throws Exception {
-    ProviderDetail provider = buildProviderDetail();
-    String providerJson = objectMapper.writeValueAsString(provider);
+    final ProviderDetail provider = buildProviderDetail();
+    final String providerJson = objectMapper.writeValueAsString(provider);
 
     wiremock.stubFor(get(String.format("/providers/%s", provider.getId()))
         .willReturn(okJson(providerJson)));
 
-    ProviderDetail result = ebsApiClient.getProvider(provider.getId()).block();
+    final ProviderDetail result = ebsApiClient.getProvider(provider.getId()).block();
 
     assertNotNull(result);
     assertEquals(providerJson, objectMapper.writeValueAsString(result));
@@ -145,36 +144,36 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
   @Test
   public void testGetAmendmentTypes_returnData() throws Exception {
-    AmendmentTypeLookupDetail expectedAmendmentTypes = buildAmendmentTypeLookupDetail();
-    String amendmentTypesJson = objectMapper.writeValueAsString(expectedAmendmentTypes);
-    String applicationType = "testApplicationType";
+    final AmendmentTypeLookupDetail expectedAmendmentTypes = buildAmendmentTypeLookupDetail();
+    final String amendmentTypesJson = objectMapper.writeValueAsString(expectedAmendmentTypes);
+    final String applicationType = "testApplicationType";
 
     wiremock.stubFor(get(urlPathEqualTo("/lookup/amendment-types"))
         .withQueryParam("application-type", equalTo(applicationType))
         .willReturn(okJson(amendmentTypesJson)));
 
-    Mono<AmendmentTypeLookupDetail> amendmentTypesMono =
+    final Mono<AmendmentTypeLookupDetail> amendmentTypesMono =
         ebsApiClient.getAmendmentTypes(applicationType);
 
-    AmendmentTypeLookupDetail amendmentTypes = amendmentTypesMono.block();
+    final AmendmentTypeLookupDetail amendmentTypes = amendmentTypesMono.block();
 
     assertEquals(amendmentTypesJson, objectMapper.writeValueAsString(amendmentTypes));
   }
 
   @Test
   void testGetUsers_returnsData() throws JsonProcessingException {
-    String username = "user1";
-    Integer providerId = 123;
-    BaseUser user = new BaseUser()
+    final String username = "user1";
+    final Integer providerId = 123;
+    final BaseUser user = new BaseUser()
         .username(username)
         .userId(123);
-    UserDetails userDetails = new UserDetails()
+    final UserDetails userDetails = new UserDetails()
         .addContentItem(user);
 
-    String userDetailsJson = objectMapper.writeValueAsString(userDetails);
+    final String userDetailsJson = objectMapper.writeValueAsString(userDetails);
     wiremock.stubFor(get(String.format("/users?size=1000&provider-id=%s", providerId))
         .willReturn(okJson(userDetailsJson)));
-    UserDetails result = ebsApiClient.getUsers(providerId).block();
+    final UserDetails result = ebsApiClient.getUsers(providerId).block();
 
     assertNotNull(result);
     assertEquals(userDetailsJson, objectMapper.writeValueAsString(result));
@@ -183,11 +182,11 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
   @Test
   public void testGetUsers_notFound() {
-    Integer providerId = 123;
-    String expectedMessage = "Failed to retrieve Users with parameters: size=1000, provider-id=123";
+    final Integer providerId = 123;
+    final String expectedMessage = "Failed to retrieve Users with parameters: size=1000, provider-id=123";
     wiremock.stubFor(get(String.format("/users?size=1000&provider-id=%s", providerId))
         .willReturn(notFound()));
-    Mono<UserDetails> userDetailsMono = ebsApiClient.getUsers(providerId);
+    final Mono<UserDetails> userDetailsMono = ebsApiClient.getUsers(providerId);
 
     StepVerifier.create(userDetailsMono)
         .expectErrorMatches(throwable -> throwable instanceof EbsApiClientException
@@ -198,7 +197,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
   // You may need to build the AmendmentTypeLookupDetail for the test
   private AmendmentTypeLookupDetail buildAmendmentTypeLookupDetail() {
-    AmendmentTypeLookupDetail detail = new AmendmentTypeLookupDetail();
+    final AmendmentTypeLookupDetail detail = new AmendmentTypeLookupDetail();
     detail.setContent(new ArrayList<>());
 
     detail.getContent().add(new AmendmentTypeLookupValueDetail()

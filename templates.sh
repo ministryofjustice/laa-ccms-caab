@@ -11,6 +11,9 @@ mkdir src/main/resources/static/govuk-frontend
 mv src/main/resources/static/govuk-frontend-5.3.1.min.css src/main/resources/static/govuk-frontend/all.css
 mv src/main/resources/static/govuk-frontend-5.3.1.min.js src/main/resources/static/govuk-frontend/all.js
 
+# Update paths in CSS
+sed -i '' 's|/assets/|/civil/assets/|g' src/main/resources/static/govuk-frontend/all.css
+
 # Tidy up
 rm -rf src/main/resources/static/govuk-frontend-*
 rm -rf govuk_frontend.zip
@@ -23,6 +26,9 @@ mkdir src/main/resources/static/moj-frontend/javascript
 mv src/main/resources/static/all.min.css src/main/resources/static/moj-frontend/moj-frontend.min.css
 mv src/main/resources/static/moj-frontend.min.js src/main/resources/static/moj-frontend/javascript/moj-frontend.min.js
 mv src/main/resources/static/assets/* src/main/resources/static/assets/
+
+# Update paths in CSS
+sed -i '' 's|/assets/|/civil/assets/|g' src/main/resources/static/moj-frontend/moj-frontend.min.css
 
 # Tidy up
 rm -rf moj_frontend.zip
