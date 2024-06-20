@@ -100,3 +100,7 @@ laa:
 
 server:
   port: 8010
+  servlet:
+    session:
+      cookie:
+        name: CAAB_JSESSIONID
