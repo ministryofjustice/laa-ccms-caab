@@ -22,6 +22,18 @@ spring:
       static-locations: file:src/main/resources/static/
       cache:
         period: 0
+  servlet:
+    multipart:
+      max-file-size: 8MB
+      max-request-size: 10MB
+      resolve-lazily: true
+
+upload:
+  valid-extensions: >
+    pdf,
+    rtf,
+    tiff,
+    docx
 
 laa:
   ccms:
