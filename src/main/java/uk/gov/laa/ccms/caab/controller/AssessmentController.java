@@ -186,7 +186,7 @@ public class AssessmentController {
       //Required for the connector
       final String ezgovId = UUID.randomUUID().toString();
 
-      //Create  context token
+      //Create context token
       final String contextToken = contextSecurityUtil.createHubContext(
           application.getCaseReferenceNumber(), assessmentRulebase.getId(), user.getUsername(),
           user.getProvider().getId().longValue(), session.getId(), invokedFrom,
