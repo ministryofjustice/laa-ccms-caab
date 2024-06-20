@@ -70,6 +70,7 @@ jobs:
           arguments: integrationTest
 
   ecr:
+    environment: development
     needs: [ build-test, define-image-tag ]
     runs-on: ubuntu-latest
     permissions:
