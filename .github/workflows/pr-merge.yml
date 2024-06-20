@@ -88,9 +88,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.DEV_ECR_ROLE_TO_ASSUME }}
-          aws-region: ${{ vars.DEV_ECR_REGION }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          aws-region: eu-west-2
 
       - name: Login ecr
         uses: aws-actions/amazon-ecr-login@v1
