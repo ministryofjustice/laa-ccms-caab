@@ -12,6 +12,10 @@
     <h1 class="govuk-heading-l">
       Document upload
     </h1>
+    <p class="govuk-body-l">
+      If you have all the documents available at application you can upload them here. Caseworkers will be only
+      be able to view your documents once the application has been submitted.
+    </p>
     <p class="govuk-hint">
       This list has been created from your answers within means and merits.
     </p>
@@ -42,34 +46,48 @@
             Do you have all the required documents to upload?
           </h1>
         </legend>
-        <div class="govuk-radios govuk-radios--inline" data-module="govuk-radios">
+        <div class="govuk-radios" data-module="govuk-radios">
           <div class="govuk-radios__item">
-            <input class="govuk-radios__input" id="showFileUpload-yes" name="showFileUpload" type="radio" value="yes" data-aria-controls="conditional-add-file">
+            <input class="govuk-radios__input" id="showFileUpload-yes" name="showFileUpload" type="radio" value="yes" data-aria-controls="conditional-add-file"/>
             <label class="govuk-label govuk-radios__label" for="showFileUpload-yes">
               Yes
             </label>
-            <div id="showFileUpload-yes-hint" class="govuk-hint govuk-radios__hint">
-              You can upload the documents as part of this application. Caseworkers will be only
-              be able to view your documents once the application has been submitted.
-            </div>
           </div>
           <div class="govuk-radios__conditional govuk-radios__conditional--hidden" id="conditional-add-file">
             <div class="govuk-form-group">
-              <a th:href="@{/application/evidence/add}" role="button" draggable="false" class="govuk-button govuk-button--start" data-module="govuk-button">
+              <p class="govuk-hint">
+                You can upload the documents as part of this application.
+              </p>
+              <div class="govuk-warning-text">
+                <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+                <strong class="govuk-warning-text__text">
+                  <span class="govuk-visually-hidden">Warning</span>
+                  Caseworkers will be only be able to view your documents once the application has been submitted.
+                </strong>
+              </div>
+              <a th:href="@{/application/evidence/add}" role="button" draggable="false" class="govuk-button" data-module="govuk-button">
                 Upload evidence
               </a>
             </div>
           </div>
           <div class="govuk-radios__item">
-            <input class="govuk-radios__input" id="showFileUpload-no" name="showFileUpload" type="radio" value="no">
+            <input class="govuk-radios__input" id="showFileUpload-no" name="showFileUpload" type="radio" value="no" data-aria-controls="conditional-no-evidence"/>
             <label class="govuk-label govuk-radios__label" for="showFileUpload-no">
               No
             </label>
-            <div id="showFileUpload-no-hint" class="govuk-hint govuk-radios__hint">
-              You will be sent a notification to upload the required documents once the
-              application has been submitted. Please return to the Application Summary
-              page to continue.
+          </div>
+          <div class="govuk-radios__conditional govuk-radios__conditional--hidden" id="conditional-no-evidence">
+            <div class="govuk-warning-text">
+              <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+              <strong class="govuk-warning-text__text">
+                <span class="govuk-visually-hidden">Warning</span>
+                You will be sent a notification to upload the required documents once the
+                application has been submitted.
+              </strong>
             </div>
+            <a th:href="@{/application/summary}" role="button" draggable="false" class="govuk-button" data-module="govuk-button">
+              Return to application summary
+            </a>
           </div>
         </div>
       </fieldset>
@@ -100,7 +118,7 @@
           </tr>
         </tbody>
       </table>
-      <a th:href="@{/application/evidence/add}" role="button" draggable="false" class="govuk-button govuk-button--start" data-module="govuk-button">
+      <a th:href="@{/application/evidence/add}" role="button" draggable="false" class="govuk-button" data-module="govuk-button">
         Add new file
       </a>
     </th:block>

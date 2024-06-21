@@ -62,6 +62,8 @@ dependencies {
 
 	implementation 'org.json:json:20240303'
 
+	implementation 'io.swagger.core.v3:swagger-annotations:2.2.22'
+
 	//SAML security
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 	implementation 'org.springframework.security:spring-security-saml2-service-provider'
@@ -81,6 +83,9 @@ dependencies {
 
 test {
 	useJUnitPlatform()
+
+	// Hide warning for dynamic loading of agents https://github.com/mockito/mockito/issues/3037
+	jvmArgs '-XX:+EnableDynamicAgentLoading'
 }
 
 jacocoTestReport {

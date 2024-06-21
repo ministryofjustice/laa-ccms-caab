@@ -8,13 +8,6 @@ search:
 #    statement-of-accounts: 400
     organisations: 500
 
-upload:
-  valid-extensions: >
-    pdf,
-    rtf,
-    tiff,
-    docx
-
 submission:
   max-poll-count: 6
 
@@ -75,6 +68,12 @@ laa:
       redirect-hostname: ${OWD_REDIRECT_URL}
       redirect-url: ${laa.ccms.oracle-web-determination-server.redirect-hostname}
     caab:
+      upload:
+        valid-extensions: >
+          PDF,
+          DOCX,
+          RTF,
+          TIFF
       opa:
         security:
           password:  ${OPA_SECURITY_PASSWORD}

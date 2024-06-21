@@ -17,6 +17,7 @@ import uk.gov.laa.ccms.caab.controller.application.summary.EditClientEqualOpport
 import uk.gov.laa.ccms.caab.controller.application.summary.EditClientSummaryController;
 import uk.gov.laa.ccms.caab.controller.application.summary.EditGeneralDetailsSectionController;
 import uk.gov.laa.ccms.caab.controller.application.summary.EditProceedingsAndCostsSectionController;
+import uk.gov.laa.ccms.caab.controller.application.summary.EvidenceSectionController;
 import uk.gov.laa.ccms.caab.controller.application.summary.OpponentsSectionController;
 import uk.gov.laa.ccms.caab.controller.application.summary.ProviderDetailsSectionController;
 
@@ -38,6 +39,7 @@ import uk.gov.laa.ccms.caab.controller.application.summary.ProviderDetailsSectio
     EditGeneralDetailsSectionController.class,
     EditProceedingsAndCostsSectionController.class,
     OpponentsSectionController.class,
+    EvidenceSectionController.class,
     AssessmentController.class
 })
 public class ActiveCaseModelAdvice {

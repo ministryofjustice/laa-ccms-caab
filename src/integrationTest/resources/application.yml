@@ -28,13 +28,6 @@ spring:
       max-request-size: 10MB
       resolve-lazily: true
 
-upload:
-  valid-extensions: >
-    pdf,
-    rtf,
-    tiff,
-    docx
-
 laa:
   ccms:
     ebs-api:
@@ -56,6 +49,12 @@ laa:
     oracle-web-determination-server:
       redirect-url: http://localhost:8010
     caab:
+      upload:
+        valid-extensions: >
+          PDF,
+          DOCX,
+          RTF,
+          TIFF
       opa:
         security:
           password: passw0rd

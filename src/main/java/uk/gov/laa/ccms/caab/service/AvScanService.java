@@ -63,8 +63,8 @@ public class AvScanService {
         avApiClient.scan(inputStream);
       } catch (AvApiVirusFoundException virusFoundException) {
         /*
-         * todo: Log common audit event to record the scan failure once audit microservice in place.
-         *  Include caseReferenceNumber etc in audit log.
+         * todo: CCLS-2228 - Log common audit event to record the scan failure once audit
+         *  microservice in place. Include caseReferenceNumber etc in audit log.
          */
         log.error("********** Malware scan service reported virus found **********",
             virusFoundException);
@@ -74,8 +74,8 @@ public class AvScanService {
 
       } catch (AvApiClientException avApiClientException) {
         /*
-         * todo: Log common audit event to record the scan failure once audit microservice in place.
-         *  Include caseReferenceNumber etc in audit log.
+         * todo: CCLS-2228 - Log common audit event to record the scan failure once audit
+         *  microservice in place. Include caseReferenceNumber etc in audit log.
          */
 
         log.error("********** Malware scan service threw exception **********",

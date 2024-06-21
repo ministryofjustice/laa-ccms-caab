@@ -274,6 +274,10 @@ public class EvidenceSectionController {
 
     model.addAttribute(EVIDENCE_REQUIRED, evidenceRequired);
     model.addAttribute("evidenceTypes", evidenceTypes.getContent());
+    model.addAttribute("validExtensions",
+        evidenceUploadValidator.getValidExtensionsDisplayString());
+    model.addAttribute("maxFileSize",
+        evidenceUploadValidator.getMaxFileSizeDisplayString());
   }
 
   private String getFileExtension(MultipartFile file) {

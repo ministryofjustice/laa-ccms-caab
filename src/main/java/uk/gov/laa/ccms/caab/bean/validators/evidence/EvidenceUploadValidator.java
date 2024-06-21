@@ -52,7 +52,7 @@ public class EvidenceUploadValidator extends AbstractValidator {
   /**
    * The configurable list of valid file extensions.
    */
-  @Value("${upload.valid-extensions}")
+  @Value("${laa.ccms.caab.upload.valid-extensions}")
   private final List<String> validExtensions;
 
   @Value("${spring.servlet.multipart.max-file-size}")
@@ -107,10 +107,19 @@ public class EvidenceUploadValidator extends AbstractValidator {
         DOCUMENT_DESCRIPTION_MAX_LENGTH, "description", errors);
   }
 
+  public String getValidExtensionsDisplayString() {
+    return validExtensions.stream().collect(Collectors.collectingAndThen(Collectors.toList(),
+            EvidenceUploadValidator::joiningLastDelimiter));
+  }
+
+  public String getMaxFileSizeDisplayString() {
+    return maxFileSize;
+  }
+
   private void validateFile(EvidenceUploadFormData formData, Errors errors) {
     if (!isValidExtension(formData.getFileExtension())) {
       errors.rejectValue("file", "invalid.extension",
-          String.format(INVALID_EXTENSION_ERROR, getExtensionDisplayString()));
+          String.format(INVALID_EXTENSION_ERROR, getValidExtensionsDisplayString()));
     } else {
       try {
         // Check the file size is within limits
@@ -141,10 +150,7 @@ public class EvidenceUploadValidator extends AbstractValidator {
         .orElse("");
   }
 
-  protected String getExtensionDisplayString() {
-    return validExtensions.stream().collect(Collectors.collectingAndThen(Collectors.toList(),
-        EvidenceUploadValidator::joiningLastDelimiter));
-  }
+
 
   /**
    * Method to handle concatenating a list of Strings into a comma-separated string,
