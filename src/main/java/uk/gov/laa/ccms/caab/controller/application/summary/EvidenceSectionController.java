@@ -6,10 +6,11 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_REQUIRED;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
+import static uk.gov.laa.ccms.caab.util.FileUtil.getFileExtension;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -24,7 +25,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
-import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
@@ -211,8 +211,10 @@ public class EvidenceSectionController {
   /**
    * Exception handler to catch when the uploaded file is too large.
    *
+   * @param evidenceRequired - the list of required evidence from the session.
+   * @param evidenceUploadFormData - the form data for the page.
    * @param model - the model
-   * @return the
+   * @return the view name for the evidence-add screen.
    */
   @ExceptionHandler(MaxUploadSizeExceededException.class)
   public String handleUploadFileTooLarge(
@@ -275,14 +277,10 @@ public class EvidenceSectionController {
     model.addAttribute(EVIDENCE_REQUIRED, evidenceRequired);
     model.addAttribute("evidenceTypes", evidenceTypes.getContent());
     model.addAttribute("validExtensions",
-        evidenceUploadValidator.getValidExtensionsDisplayString());
+        getCommaDelimitedString(evidenceUploadValidator.getValidExtensions()));
     model.addAttribute("maxFileSize",
-        evidenceUploadValidator.getMaxFileSizeDisplayString());
+        evidenceUploadValidator.getMaxFileSize());
   }
 
-  private String getFileExtension(MultipartFile file) {
-    return Optional.ofNullable(file.getOriginalFilename())
-        .map(s -> s.substring(s.lastIndexOf(".") + 1))
-        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve upload filename"));
-  }
+
 }

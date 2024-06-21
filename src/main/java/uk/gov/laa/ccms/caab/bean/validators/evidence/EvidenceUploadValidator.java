@@ -1,15 +1,16 @@
 package uk.gov.laa.ccms.caab.bean.validators.evidence;
 
+import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
+import static uk.gov.laa.ccms.caab.util.FileUtil.getFileExtension;
+
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.unit.DataSize;
 import org.springframework.validation.Errors;
-import org.springframework.web.multipart.MultipartFile;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -19,6 +20,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
  */
 @Component
 @RequiredArgsConstructor
+@Getter
 public class EvidenceUploadValidator extends AbstractValidator {
 
   /**
@@ -107,19 +109,10 @@ public class EvidenceUploadValidator extends AbstractValidator {
         DOCUMENT_DESCRIPTION_MAX_LENGTH, "description", errors);
   }
 
-  public String getValidExtensionsDisplayString() {
-    return validExtensions.stream().collect(Collectors.collectingAndThen(Collectors.toList(),
-            EvidenceUploadValidator::joiningLastDelimiter));
-  }
-
-  public String getMaxFileSizeDisplayString() {
-    return maxFileSize;
-  }
-
   private void validateFile(EvidenceUploadFormData formData, Errors errors) {
     if (!isValidExtension(formData.getFileExtension())) {
       errors.rejectValue("file", "invalid.extension",
-          String.format(INVALID_EXTENSION_ERROR, getValidExtensionsDisplayString()));
+          String.format(INVALID_EXTENSION_ERROR, getCommaDelimitedString(validExtensions)));
     } else {
       try {
         // Check the file size is within limits
@@ -141,36 +134,6 @@ public class EvidenceUploadValidator extends AbstractValidator {
   }
 
   protected boolean isValidExtension(final String fileExtension) {
-    return validExtensions.stream().anyMatch(ext -> ext.toUpperCase().equals(fileExtension));
-  }
-
-  protected String getFileExtension(MultipartFile file) {
-    return Optional.ofNullable(file.getOriginalFilename())
-        .map(s -> s.substring(s.lastIndexOf(".") + 1).toUpperCase())
-        .orElse("");
-  }
-
-
-
-  /**
-   * Method to handle concatenating a list of Strings into a comma-separated string,
-   * with an alternative delimiter of ' or ' before the final entry.
-   *
-   * @param list - the list of strings.
-   * @return Delimited String.
-   */
-  protected static String joiningLastDelimiter(List<String> list) {
-    final String delimiter = ", ";
-    final String lastDelimiter = " or ";
-
-    int last = list.size() - 1;
-    if (last < 1) {
-      return String.join(delimiter, list);
-    }
-
-    return String.join(
-        lastDelimiter,
-        String.join(delimiter, list.subList(0, last)),
-        list.get(last));
+    return validExtensions.stream().anyMatch(ext -> ext.equalsIgnoreCase(fileExtension));
   }
 }
