@@ -180,7 +180,7 @@ public class CaabModelUtils {
 
   public static OpponentDetail buildOpponent(java.util.Date date) {
     return new OpponentDetail()
-        .address(new AddressDetail().addressLine1("add1"))
+        .address(buildAddressDetail())
         .amendment(Boolean.TRUE)
         .appMode(Boolean.FALSE)
         .assessedAssets(BigDecimal.TEN)
@@ -205,6 +205,7 @@ public class CaabModelUtils {
         .employmentStatus("empSt")
         .faxNumber("fax")
         .firstName("firstname")
+        .id(123)
         .legalAided(Boolean.TRUE)
         .middleNames("midnames")
         .nationalInsuranceNumber("nino")
@@ -224,6 +225,21 @@ public class CaabModelUtils {
         .type("thetype");
   }
 
+  public static AddressDetail buildAddressDetail() {
+    return new AddressDetail()
+        .addressLine1("add1")
+        .addressLine2("add2")
+        .auditTrail(new AuditDetail())
+        .careOf("careOf")
+        .city("thecity")
+        .country("thecountry")
+        .county("thecounty")
+        .houseNameOrNumber("name")
+        .id(789)
+        .noFixedAbode(Boolean.TRUE)
+        .postcode("post")
+        .preferredAddress("prefAdd");
+  }
 
 
 }
