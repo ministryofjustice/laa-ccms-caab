@@ -39,6 +39,7 @@ public interface OpponentMapper {
   OrganisationOpponentFormData toOrganisationOpponentFormData(OrganisationDetail organisation,
       CommonLookupValueDetail orgTypeLookup);
 
+  @Mapping(target = "id", source = "opponent.id")
   @Mapping(target = ".", source = "opponent")
   @Mapping(target = "partyName", source = "partyName")
   @Mapping(target = "relationshipToCaseDisplayValue", source = "relationshipToCaseDisplayValue")
@@ -57,6 +58,7 @@ public interface OpponentMapper {
       final String relationshipToClientDisplayValue,
       final boolean editable);
 
+  @Mapping(target = "id", source = "opponent.id")
   @Mapping(target = ".", source = "opponent")
   @Mapping(target = "partyName", source = "partyName")
   @Mapping(target = "relationshipToCaseDisplayValue", source = "relationshipToCaseDisplayValue")
