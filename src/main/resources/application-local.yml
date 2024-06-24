@@ -55,7 +55,7 @@ os:
 av:
   enabled: true
   api:
-    hostname: dev.clamav.legalservices.gov.uk
+    hostname: localhost
     port: 3310
     timeout: 20000
 
@@ -81,6 +81,8 @@ laa:
       port: 8008
       url: http://${laa.ccms.assessment-api.hostname}:${laa.ccms.assessment-api.port}
       access-token: 78bd752c-814c-4fb5-801b-193839c8e768
-
+    oracle-web-determination-server:
+      redirect-hostname: localhost
+      redirect-url: ${laa.ccms.oracle-web-determination-server.redirect-hostname}
 server:
   port: 8010

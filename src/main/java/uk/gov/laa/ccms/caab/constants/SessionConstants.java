@@ -190,6 +190,16 @@ public class SessionConstants {
 
   public static final String PRIOR_AUTHORITY_FLOW_FORM_DATA = "priorAuthorityFlow";
 
+  /**
+   * Session attribute used to hold the required evidence for an application.
+   */
+  public static final String EVIDENCE_REQUIRED = "evidenceRequired";
+
+  /**
+   * Session attribute used to hold the form data for uploading an evidence document.
+   */
+  public static final String EVIDENCE_UPLOAD_FORM_DATA = "evidenceUploadForm";
+
 
 
 

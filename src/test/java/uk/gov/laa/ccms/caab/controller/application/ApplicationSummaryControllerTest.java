@@ -11,7 +11,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 
+import java.util.Date;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,7 +65,7 @@ class ApplicationSummaryControllerTest {
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
 
-    final ApplicationDetail application = new ApplicationDetail();
+    final ApplicationDetail application = buildApplicationDetail(1, true, new Date());
 
     when(applicationService.getApplication(anyString())).thenReturn(Mono.just(application));
     when(applicationService.getApplicationSummary(any(ApplicationDetail.class), any(UserDetail.class)))

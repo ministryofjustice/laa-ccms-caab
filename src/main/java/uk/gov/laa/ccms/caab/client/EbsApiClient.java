@@ -14,6 +14,7 @@ import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
@@ -629,5 +630,35 @@ public class EbsApiClient {
         .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
             e, "Person to case relationships", queryParams));
   }
+
+  /**
+   * Retrieves evidence document type lookup detail based on the provided type
+   * and code values.
+   *
+   * @param type - the subset of evidence document types to retrieve.
+   * @param code - the evidence document type code.
+   * @return A Mono containing EvidenceDocumentTypeLookupDetail or error handler if an error occurs.
+   */
+  public Mono<EvidenceDocumentTypeLookupDetail> getEvidenceDocumentTypes(
+      final String type,
+      final String code) {
+    final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
+    Optional.ofNullable(type)
+        .ifPresent(param -> queryParams.add("type", param));
+    Optional.ofNullable(code)
+        .ifPresent(param -> queryParams.add("code", param));
+
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/lookup/evidence-document-types")
+            .queryParams(queryParams)
+            .build())
+        .retrieve()
+        .bodyToMono(EvidenceDocumentTypeLookupDetail.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
+            e, "Evidence document types", queryParams));
+  }
+
+
 }
 

@@ -22,6 +22,11 @@ spring:
       static-locations: file:src/main/resources/static/
       cache:
         period: 0
+  servlet:
+    multipart:
+      max-file-size: 8MB
+      max-request-size: 10MB
+      resolve-lazily: true
 
 laa:
   ccms:
@@ -44,6 +49,12 @@ laa:
     oracle-web-determination-server:
       redirect-url: http://localhost:8010
     caab:
+      upload:
+        valid-extensions: >
+          PDF,
+          DOCX,
+          RTF,
+          TIFF
       opa:
         security:
           password: passw0rd

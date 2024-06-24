@@ -17,6 +17,7 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
+import uk.gov.laa.ccms.soa.gateway.model.BaseDocument;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
@@ -482,6 +483,31 @@ public class SoaApiClient {
         .bodyToMono(OrganisationDetail.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
             e, "Organisation", "id", organisationId));
+  }
+
+  /**
+   * Post basic document details to register the document in EBS.
+   *
+   * @param baseDocument          The document details to register.
+   * @param loginId               The login identifier for the user.
+   * @param userType              Type of the user (e.g., admin, user).
+   * @return A Mono wrapping the ClientTransactionResponse with transaction id and reference number.
+   */
+  public Mono<ClientTransactionResponse> registerDocument(
+      final BaseDocument baseDocument,
+      final String loginId,
+      final String userType) {
+    return soaApiWebClient
+        .post()
+        .uri("/documents")
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(baseDocument)
+        .retrieve()
+        .bodyToMono(ClientTransactionResponse.class)
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiCreateError(
+            e, "Document"));
   }
 
 }

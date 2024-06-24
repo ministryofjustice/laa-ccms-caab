@@ -38,14 +38,14 @@ public class AvApiClientErrorHandler {
 
   /**
    * Handles a non-clean response from the ClamAv scan, wrapping and throwing
-   * a {@link AvVirusFoundException}.
+   * a {@link AvApiVirusFoundException}.
    *
    * @param responseMsg the response from ClamAv indicating a non-clean scan result.
-   * @throws AvVirusFoundException wrapping the response from ClamAv.
+   * @throws AvApiVirusFoundException wrapping the response from ClamAv.
    */
-  public void handleVirusFoundError(final String responseMsg) throws AvVirusFoundException {
+  public void handleVirusFoundError(final String responseMsg) throws AvApiVirusFoundException {
     final String message = String.format(VIRUS_FOUND_MSG, responseMsg);
     log.error(message);
-    throw new AvVirusFoundException(message);
+    throw new AvApiVirusFoundException(message);
   }
 }

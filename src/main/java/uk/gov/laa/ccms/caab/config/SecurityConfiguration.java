@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.saml2.provider.service.authentication.OpenSaml4AuthenticationProvider;
@@ -40,6 +41,7 @@ public class SecurityConfiguration {
     return http
             .authorizeHttpRequests(authorize -> authorize
                     .anyRequest().authenticated())
+            .csrf(AbstractHttpConfigurer::disable)
             .saml2Login(saml2 -> saml2
                     .authenticationManager(new ProviderManager(authenticationProvider)))
             .saml2Logout(withDefaults())

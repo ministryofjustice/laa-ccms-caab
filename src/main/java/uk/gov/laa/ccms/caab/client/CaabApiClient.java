@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
@@ -22,6 +23,8 @@ import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
@@ -49,8 +52,8 @@ public class CaabApiClient {
   public static final String RESOURCE_TYPE_SCOPE_LIMITATIONS = "scope limitations";
   public static final String RESOURCE_TYPE_CLIENT = "client";
   public static final String RESOURCE_TYPE_OPPONENTS = "opponents";
-
   public static final String RESOURCE_TYPE_CASE_OUTCOME = "case outcome";
+  public static final String RESOURCE_TYPE_EVIDENCE = "evidence";
 
   /**
    * Creates an application using the CAAB API.
@@ -69,18 +72,7 @@ public class CaabApiClient {
             .header("Caab-User-Login-Id", loginId)
             .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
             .bodyValue(application) // Add the application details to the request body
-            .exchangeToMono(clientResponse -> {
-              final HttpHeaders headers = clientResponse.headers().asHttpHeaders();
-              final URI locationUri = headers.getLocation();
-              if (locationUri != null) {
-                final String path = locationUri.getPath();
-                final String id = path.substring(path.lastIndexOf('/') + 1);
-                return Mono.just(id);
-              } else {
-                // Handle the case where the Location header is missing or the URI is invalid
-                return Mono.error(new RuntimeException("Location header missing or URI invalid"));
-              }
-            })
+            .exchangeToMono(CaabApiClient::getIdResponse)
         .onErrorResume(e -> caabApiClientErrorHandler
             .handleApiCreateError(e, RESOURCE_TYPE_APPLICATION));
   }
@@ -824,6 +816,130 @@ public class CaabApiClient {
         .bodyToMono(Void.class)
         .onErrorResume(e -> caabApiClientErrorHandler.handleApiDeleteError(e,
             RESOURCE_TYPE_CASE_OUTCOME, queryParams));
+  }
+
+  /**
+   * Asynchronously creates an evidence document.
+   *
+   * @param data          The evidence document information.
+   * @param loginId       The login ID of the user performing the operation.
+   * @return A Mono wrapping the id of the newly created evidence document.
+   */
+  public Mono<String> createEvidenceDocument(
+      final EvidenceDocumentDetail data,
+      final String loginId) {
+    return caabApiWebClient
+        .post()
+        .uri("/evidence")
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(data)
+        .exchangeToMono(CaabApiClient::getIdResponse)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiCreateError(e,
+            RESOURCE_TYPE_EVIDENCE));
+  }
+
+  /**
+   * Fetches the uploaded evidence documents base on the supplied search criteria.
+   * This method communicates with the CAAB API client to fetch the evidence documents.
+   *
+   * @param applicationOrOutcomeId The id of the related application or outcome.
+   * @param caseReferenceNumber the reference of the related case.
+   * @param providerId The id of the related provider.
+   * @param documentType The type of evidence document.
+   * @param ccmsModule The ccms module for the evidence.
+   * @param transferPending whether transfer has been attempted for the evidence document.
+   * @return A {@code Mono<EvidenceDocumentDetails} containing the evidence documents.
+   */
+  public Mono<EvidenceDocumentDetails> getEvidenceDocuments(
+      final String applicationOrOutcomeId,
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String documentType,
+      final String ccmsModule,
+      final Boolean transferPending) {
+
+    final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
+    Optional.ofNullable(applicationOrOutcomeId)
+        .ifPresent(param -> queryParams.add("application-or-outcome-id", param));
+    Optional.ofNullable(caseReferenceNumber)
+        .ifPresent(param -> queryParams.add("case-reference-number", param));
+    Optional.ofNullable(providerId)
+        .ifPresent(param -> queryParams.add("provider-id", String.valueOf(param)));
+    Optional.ofNullable(documentType)
+        .ifPresent(param -> queryParams.add("document-type", param));
+    Optional.ofNullable(ccmsModule)
+        .ifPresent(param -> queryParams.add("ccms-module", param));
+    Optional.ofNullable(transferPending)
+        .ifPresent(param -> queryParams.add("transfer-pending", param.toString()));
+
+    return caabApiWebClient
+        .get()
+        .uri(builder -> builder.path("/evidence")
+            .queryParams(queryParams)
+            .build())
+        .retrieve()
+        .bodyToMono(EvidenceDocumentDetails.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiRetrieveError(e,
+            RESOURCE_TYPE_EVIDENCE, queryParams));
+  }
+
+  /**
+   * Fetches a single evidence document by id.
+   * This method communicates with the CAAB API client to fetch the evidence document.
+   *
+   * @param evidenceDocumentId The id of the evidence document to be retrieved.
+   * @return A {@code Mono<EvidenceDocumentDetail>} containing the evidence document data.
+   */
+  public Mono<EvidenceDocumentDetail> getEvidenceDocument(final Integer evidenceDocumentId) {
+    return caabApiWebClient
+        .get()
+        .uri("/evidence/{evidence-document-id}", evidenceDocumentId)
+        .retrieve()
+        .bodyToMono(EvidenceDocumentDetail.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiRetrieveError(e,
+            RESOURCE_TYPE_EVIDENCE, "evidence document id",
+            String.valueOf(evidenceDocumentId)));
+  }
+
+  /**
+   * Deletes a specific evidence document.
+   *
+   * @param evidenceDocumentId the ID of the evidence document to delete.
+   * @param loginId the login ID of the user performing the deletion.
+   * @return a Mono signaling completion or error handling.
+   */
+  public Mono<Void> deleteEvidenceDocument(
+      final Integer evidenceDocumentId,
+      final String loginId) {
+    return caabApiWebClient
+        .delete()
+        .uri("/evidence/{evidence-document-id}",
+            evidenceDocumentId)
+        .header("Caab-User-Login-Id", loginId)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(e,
+            RESOURCE_TYPE_EVIDENCE, "id", String.valueOf(e)));
+  }
+
+  private MultiValueMap<String, String> createDefaultQueryParams() {
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    queryParams.add("size", "1000");
+    return queryParams;
+  }
+
+  private static Mono<String> getIdResponse(ClientResponse clientResponse) {
+    final HttpHeaders headers = clientResponse.headers().asHttpHeaders();
+    final URI locationUri = headers.getLocation();
+    if (locationUri != null) {
+      final String path = locationUri.getPath();
+      final String id = path.substring(path.lastIndexOf('/') + 1);
+      return Mono.just(id);
+    } else {
+      // Handle the case where the Location header is missing or the URI is invalid
+      return Mono.error(new RuntimeException("Location header missing or URI invalid"));
+    }
   }
 
 }

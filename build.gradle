@@ -35,14 +35,13 @@ repositories {
 }
 
 dependencies {
-	implementation 'uk.gov.laa.ccms.data:data-api:0.0.6'
+	implementation 'uk.gov.laa.ccms.data:data-api:0.0.10'
 
 	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.23'
 
-	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.26'
+	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.27'
 
-	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.11'
-
+	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.12'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -63,6 +62,8 @@ dependencies {
 
 	implementation 'org.json:json:20240303'
 
+	implementation 'io.swagger.core.v3:swagger-annotations:2.2.22'
+
 	//SAML security
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 	implementation 'org.springframework.security:spring-security-saml2-service-provider'
@@ -82,6 +83,9 @@ dependencies {
 
 test {
 	useJUnitPlatform()
+
+	// Hide warning for dynamic loading of agents https://github.com/mockito/mockito/issues/3037
+	jvmArgs '-XX:+EnableDynamicAgentLoading'
 }
 
 jacocoTestReport {
