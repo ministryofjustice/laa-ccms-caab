@@ -39,7 +39,7 @@ public class AssessmentApiClient {
       final String caseReferenceNumber) {
 
     final MultiValueMap<String, String> queryParams =
-        retrieveAssessmentsQueryParams(assessmentNames, providerId, caseReferenceNumber, null);
+        retrieveAssessmentsQueryParams(assessmentNames, providerId, caseReferenceNumber);
 
     return assessmentApiWebClient
         .get()
@@ -147,8 +147,29 @@ public class AssessmentApiClient {
    * @return the query parameters
    */
   private MultiValueMap<String, String> retrieveAssessmentsQueryParams(
-      final List<String> assessmentNames, final String providerId, final String caseReferenceNumber,
+      final List<String> assessmentNames,
+      final String providerId,
+      final String caseReferenceNumber,
       final String status) {
+    final MultiValueMap<String, String> queryParams = retrieveAssessmentsQueryParams(
+        assessmentNames, providerId, caseReferenceNumber);
+    Optional.ofNullable(status)
+        .ifPresent(param -> queryParams.add("status", param));
+    return queryParams;
+  }
+
+  /**
+   * Retrieve the query parameters for the assessments API assessments endpoints.
+   *
+   * @param assessmentNames the list of assessment names to filter
+   * @param providerId the provider id
+   * @param caseReferenceNumber the case reference number
+   * @return the query parameters
+   */
+  private MultiValueMap<String, String> retrieveAssessmentsQueryParams(
+      final List<String> assessmentNames,
+      final String providerId,
+      final String caseReferenceNumber) {
     final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
     Optional.ofNullable(assessmentNames)
         .ifPresent(names -> queryParams.add("name", String.join(",", names)));
@@ -156,8 +177,6 @@ public class AssessmentApiClient {
         .ifPresent(param -> queryParams.add("provider-id", param));
     Optional.ofNullable(caseReferenceNumber)
         .ifPresent(param -> queryParams.add("case-reference-number", param));
-    Optional.ofNullable(status)
-        .ifPresent(param -> queryParams.add("status", param));
     return queryParams;
   }
 
