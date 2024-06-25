@@ -100,6 +100,23 @@ public class AssessmentService {
   }
 
   /**
+   * Retrieves assessments matching the given criteria from the assessment API client.
+   *
+   * @param assessmentNames the list of assessment names to retrieve
+   * @param providerId the ID of the provider associated with the assessment
+   * @param caseReferenceNumber the case reference number associated with the assessment
+   * @return a Mono that emits the requested assessments
+   */
+  public Mono<AssessmentDetails> getAssessments(
+      final List<String> assessmentNames,
+      final String providerId,
+      final String caseReferenceNumber,
+      final String status) {
+    return assessmentApiClient.getAssessments(
+        assessmentNames, providerId, caseReferenceNumber, status);
+  }
+
+  /**
    * Deletes assessments matching the given criteria from the assessment API client.
    *
    * @param user the user performing the delete operation

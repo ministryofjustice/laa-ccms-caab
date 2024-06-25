@@ -54,6 +54,36 @@ public class AssessmentApiClient {
   }
 
   /**
+   * Get assessments from the assessment API.
+   *
+   * @param assessmentNames the list of assessment names to filter
+   * @param providerId the provider id
+   * @param caseReferenceNumber the case reference number
+   * @param status the status of the assessment
+   * @return the assessment details
+   */
+  public Mono<AssessmentDetails> getAssessments(
+      final List<String> assessmentNames,
+      final String providerId,
+      final String caseReferenceNumber,
+      final String status) {
+
+    final MultiValueMap<String, String> queryParams =
+        retrieveAssessmentsQueryParams(assessmentNames, providerId, caseReferenceNumber, status);
+
+    return assessmentApiWebClient
+        .get()
+        .uri(uriBuilder -> uriBuilder
+            .path("/assessments")
+            .queryParams(queryParams)
+            .build())
+        .retrieve()
+        .bodyToMono(AssessmentDetails.class)
+        .onErrorResume(e -> assessmentApiClientErrorHandler
+            .handleApiRetrieveError(e, RESOURCE_TYPE_ASSESSMENT, queryParams));
+  }
+
+  /**
    * Delete assessments from the assessment API.
    *
    * @param assessmentNames the list of assessment names to filter
