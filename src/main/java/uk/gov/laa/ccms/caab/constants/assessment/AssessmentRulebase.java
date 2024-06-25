@@ -55,6 +55,15 @@ public enum AssessmentRulebase {
   }
 
   /**
+   * Capitalises the first letter of the assessment name.
+   *
+   * @return the Assessment deployment name
+   */
+  public String getDeploymentName() {
+    return this.name.substring(0, 1).toUpperCase() + this.name.substring(1);
+  }
+
+  /**
    * Appends "_PREPOP" to the current assessment name.
    *
    * @return the pre-populated assessment name

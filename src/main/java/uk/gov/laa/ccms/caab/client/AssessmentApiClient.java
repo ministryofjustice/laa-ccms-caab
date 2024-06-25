@@ -31,6 +31,34 @@ public class AssessmentApiClient {
    * @param assessmentNames the list of assessment names to filter
    * @param providerId the provider id
    * @param caseReferenceNumber the case reference number
+   * @return the assessment details
+   */
+  public Mono<AssessmentDetails> getAssessments(
+      final List<String> assessmentNames,
+      final String providerId,
+      final String caseReferenceNumber) {
+
+    final MultiValueMap<String, String> queryParams =
+        retrieveAssessmentsQueryParams(assessmentNames, providerId, caseReferenceNumber);
+
+    return assessmentApiWebClient
+        .get()
+        .uri(uriBuilder -> uriBuilder
+            .path("/assessments")
+            .queryParams(queryParams)
+            .build())
+        .retrieve()
+        .bodyToMono(AssessmentDetails.class)
+        .onErrorResume(e -> assessmentApiClientErrorHandler
+          .handleApiRetrieveError(e, RESOURCE_TYPE_ASSESSMENT, queryParams));
+  }
+
+  /**
+   * Get assessments from the assessment API.
+   *
+   * @param assessmentNames the list of assessment names to filter
+   * @param providerId the provider id
+   * @param caseReferenceNumber the case reference number
    * @param status the status of the assessment
    * @return the assessment details
    */
@@ -52,7 +80,7 @@ public class AssessmentApiClient {
         .retrieve()
         .bodyToMono(AssessmentDetails.class)
         .onErrorResume(e -> assessmentApiClientErrorHandler
-          .handleApiRetrieveError(e, RESOURCE_TYPE_ASSESSMENT, queryParams));
+            .handleApiRetrieveError(e, RESOURCE_TYPE_ASSESSMENT, queryParams));
   }
 
   /**
@@ -149,8 +177,29 @@ public class AssessmentApiClient {
    * @return the query parameters
    */
   private MultiValueMap<String, String> retrieveAssessmentsQueryParams(
-      final List<String> assessmentNames, final String providerId, final String caseReferenceNumber,
+      final List<String> assessmentNames,
+      final String providerId,
+      final String caseReferenceNumber,
       final String status) {
+    final MultiValueMap<String, String> queryParams = retrieveAssessmentsQueryParams(
+        assessmentNames, providerId, caseReferenceNumber);
+    Optional.ofNullable(status)
+        .ifPresent(param -> queryParams.add("status", param));
+    return queryParams;
+  }
+
+  /**
+   * Retrieve the query parameters for the assessments API assessments endpoints.
+   *
+   * @param assessmentNames the list of assessment names to filter
+   * @param providerId the provider id
+   * @param caseReferenceNumber the case reference number
+   * @return the query parameters
+   */
+  private MultiValueMap<String, String> retrieveAssessmentsQueryParams(
+      final List<String> assessmentNames,
+      final String providerId,
+      final String caseReferenceNumber) {
     final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
     Optional.ofNullable(assessmentNames)
         .ifPresent(names -> queryParams.add("name", String.join(",", names)));
@@ -158,8 +207,6 @@ public class AssessmentApiClient {
         .ifPresent(param -> queryParams.add("provider-id", param));
     Optional.ofNullable(caseReferenceNumber)
         .ifPresent(param -> queryParams.add("case-reference-number", param));
-    Optional.ofNullable(status)
-        .ifPresent(param -> queryParams.add("status", param));
     return queryParams;
   }
 

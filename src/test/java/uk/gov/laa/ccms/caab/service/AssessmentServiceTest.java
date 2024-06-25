@@ -117,13 +117,12 @@ public class AssessmentServiceTest {
     final String assessmentName = "meansAssessment";
     final String providerId = "1";
     final String caseReferenceNumber = "12345";
-    final String status = "COMPLETE";
 
-    when(assessmentApiClient.getAssessments(any(), anyString(), anyString(), anyString()))
+    when(assessmentApiClient.getAssessments(any(), anyString(), anyString()))
         .thenReturn(just(new AssessmentDetails()));
 
     final Mono<AssessmentDetails>
-        result = assessmentService.getAssessments(List.of(assessmentName), providerId, caseReferenceNumber, status);
+        result = assessmentService.getAssessments(List.of(assessmentName), providerId, caseReferenceNumber);
 
     StepVerifier.create(result)
         .expectNextMatches(Objects::nonNull)
@@ -770,8 +769,7 @@ public class AssessmentServiceTest {
     when(assessmentService.getAssessments(
         eq(List.of(assessmentName)),
         eq(providerId),
-        eq(referenceId),
-        eq(null))).thenReturn(Mono.just(assessmentDetails));
+        eq(referenceId))).thenReturn(Mono.just(assessmentDetails));
 
     final AssessmentDetail result = assessmentService.findOrCreate(providerId, referenceId, assessmentName);
 
@@ -788,8 +786,7 @@ public class AssessmentServiceTest {
     when(assessmentService.getAssessments(
         eq(List.of(assessmentName)),
         eq(providerId),
-        eq(referenceId),
-        eq(null))).thenReturn(Mono.just(new AssessmentDetails()));
+        eq(referenceId))).thenReturn(Mono.just(new AssessmentDetails()));
 
     final AssessmentDetail result = assessmentService.findOrCreate(providerId, referenceId, assessmentName);
 

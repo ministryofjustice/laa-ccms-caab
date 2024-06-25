@@ -4,12 +4,13 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,6 +44,19 @@ public class AssessmentController {
   private final ApplicationService applicationService;
   private final ClientService clientService;
   private final SecurityUtils contextSecurityUtil;
+
+  @Value("${laa.ccms.oracle-web-determination-server.url}")
+  private final String owdUrl;
+  @Value("${laa.ccms.oracle-web-determination-server.resources.interview-styling}")
+  private final String interviewStyling;
+  @Value("${laa.ccms.oracle-web-determination-server.resources.font-styling}")
+  private final String fontStyling;
+  @Value("${laa.ccms.oracle-web-determination-server.resources.interview-javascript}")
+  private final String interviewJavascript;
+
+  private static final String RETURN_URL = "/civil/assessments/confirm?val=";
+  private static final String CANCEL_LINK_TEXT = "Return to create application";
+  private static final String CANCEL_LINK_URL = "/civil/application/summary";
 
   /**
    * Displays the page to confirm the removal of an assessment.
@@ -101,7 +115,6 @@ public class AssessmentController {
    * @param invokedFrom the page from which the assessment is being invoked.
    * @param user the user making the request.
    * @param session the session in which the request is being made.
-   * @param request the http servlet request being made.
    * @return the view that displays the OPA assessment.
    */
   @GetMapping("/assessments")
@@ -110,7 +123,7 @@ public class AssessmentController {
       @RequestParam("invoked-from") final String invokedFrom,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final HttpSession session,
-      final HttpServletRequest request) {
+      final Model model) {
 
     final ApplicationDetail application;
 
@@ -140,8 +153,7 @@ public class AssessmentController {
       final AssessmentDetails assessmentDetails = assessmentService.getAssessments(
           List.of(assessmentRulebase.getPrePopAssessmentName()),
           String.valueOf(user.getProvider().getId()),
-          application.getCaseReferenceNumber(),
-          null).block();
+          application.getCaseReferenceNumber()).block();
 
       if (assessmentDetails != null && assessmentDetails.getContent() != null) {
         assessmentDetails.getContent().stream().findFirst().ifPresent(prepopAssessment -> {
@@ -171,13 +183,14 @@ public class AssessmentController {
     //if means or merits assessment
     if (!assessmentRulebase.isFinancialAssessment()) {
 
-      final String assessmentType = assessment.toUpperCase();
+      //Required for the connector
+      final String ezgovId = UUID.randomUUID().toString();
 
-      //Create temporary context token
+      //Create context token
       final String contextToken = contextSecurityUtil.createHubContext(
           application.getCaseReferenceNumber(), assessmentRulebase.getId(), user.getUsername(),
-          user.getProvider().getId().longValue(), request.getSession().getId(), invokedFrom,
-          "1234567890");
+          user.getProvider().getId().longValue(), session.getId(), invokedFrom,
+          ezgovId);
 
       //start opa assessment
       assessmentService.startAssessment(
@@ -186,19 +199,82 @@ public class AssessmentController {
           client,
           user);
 
+      final AssessmentDetails assessmentDetails = assessmentService.getAssessments(
+          List.of(assessmentRulebase.getPrePopAssessmentName()),
+          String.valueOf(user.getProvider().getId()),
+          application.getCaseReferenceNumber()).block();
+
+      final AssessmentDetail prepopAssessment = assessmentDetails
+          .getContent()
+          .stream()
+          .findFirst()
+          .get();
+
+      populateOpaModel(contextToken, prepopAssessment, user, assessmentRulebase, model);
+
     } else if (assessment.equalsIgnoreCase("billing")) {
-      final String assessmentType = assessment.toUpperCase();
       //todo - later implementation
 
     } else if (assessment.equalsIgnoreCase("poa")) {
-      final String assessmentType = assessment.toUpperCase();
       //todo - later implementation
     }
 
-    //temporary redirect - to be removed in later story
-    return "redirect:/application/summary";
+    return "application/assessments/assessment-get";
+  }
+
+  /**
+   * Populates the OPA model with assessment and user details.
+   *
+   * @param contextToken a unique token representing the session context
+   * @param prepopAssessment the assessment details for prepopulation
+   * @param user the user details
+   * @param assessmentRulebase the rulebase for the assessment
+   * @param model the model to populate
+   */
+  private void populateOpaModel(
+      final String contextToken,
+      final AssessmentDetail prepopAssessment,
+      final UserDetail user,
+      final AssessmentRulebase assessmentRulebase,
+      final Model model) {
+
+    final String submitReturnUrl = RETURN_URL.concat(contextToken);
+
+    if (prepopAssessment.getCheckpoint() != null) {
+      model.addAttribute("checkpoint", "RESUME");
+    } else {
+      model.addAttribute("checkpoint", "START");
+    }
+
+    model.addAttribute("cancelUrl", CANCEL_LINK_URL);
+    model.addAttribute("owdUrl", owdUrl);
+    model.addAttribute("frameTitle", "");
+    model.addAttribute("returnLinkText", CANCEL_LINK_TEXT);
+    model.addAttribute("deploymentName", assessmentRulebase.getDeploymentName());
+    model.addAttribute("interviewsCSS", interviewStyling);
+    model.addAttribute("fontsCSS", fontStyling);
+    model.addAttribute("interviewsJS", interviewJavascript);
+    model.addAttribute("params", contextToken);
+    model.addAttribute("submitReturnUrl", submitReturnUrl);
+    model.addAttribute("username", user.getUsername());
+    model.addAttribute("resumeId", prepopAssessment.getId().toString());
+    model.addAttribute("assessmentType", assessmentRulebase.getType());
+
   }
 
 
+  /**
+   * Confirms the assessment.
+   *
+   * @return the view that displays the confirmation of the assessment,
+   *         listing the answers to the questions the user has provided.
+   */
+  @GetMapping("/assessments/confirm")
+  public String assessmentConfirm() {
+
+    //todo - CCLS-2241 assessment confirmation screens
+    return "application/assessments/assessment-confirm";
+
+  }
 
 }

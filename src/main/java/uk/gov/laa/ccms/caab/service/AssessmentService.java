@@ -89,7 +89,22 @@ public class AssessmentService {
    * @param assessmentNames the list of assessment names to retrieve
    * @param providerId the ID of the provider associated with the assessment
    * @param caseReferenceNumber the case reference number associated with the assessment
-   * @param status the status of the assessment to filter by
+   * @return a Mono that emits the requested assessments
+   */
+  public Mono<AssessmentDetails> getAssessments(
+      final List<String> assessmentNames,
+      final String providerId,
+      final String caseReferenceNumber) {
+    return assessmentApiClient.getAssessments(
+        assessmentNames, providerId, caseReferenceNumber);
+  }
+
+  /**
+   * Retrieves assessments matching the given criteria from the assessment API client.
+   *
+   * @param assessmentNames the list of assessment names to retrieve
+   * @param providerId the ID of the provider associated with the assessment
+   * @param caseReferenceNumber the case reference number associated with the assessment
    * @return a Mono that emits the requested assessments
    */
   public Mono<AssessmentDetails> getAssessments(
@@ -771,8 +786,6 @@ public class AssessmentService {
 
     final List<AssessmentEntityType> opaEntitiesRetrievedFromEbs = null;
 
-    
-
     //find or Create
     final AssessmentDetail assessment = findOrCreate(
         providerId, referenceId, assessmentRulebase.getName());
@@ -874,8 +887,7 @@ public class AssessmentService {
     final AssessmentDetails assessments = getAssessments(
         List.of(assessmentName),
         providerId,
-        referenceId,
-        null).block();
+        referenceId).block();
 
     if (assessments != null && !assessments.getContent().isEmpty()) {
       return getMostRecentAssessmentDetail(assessments.getContent());

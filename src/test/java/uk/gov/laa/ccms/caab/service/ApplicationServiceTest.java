@@ -800,10 +800,10 @@ class ApplicationServiceTest {
     when(lookupService.getPersonToCaseRelationships()).thenReturn(
         Mono.just(personRelationshipsDetail));
     when(assessmentService.getAssessments(List.of("meansAssessment"),
-        user.getProvider().getId().toString(), mockApplicationDetail.getCaseReferenceNumber(), null))
+        user.getProvider().getId().toString(), mockApplicationDetail.getCaseReferenceNumber()))
         .thenReturn(Mono.just(meansAssessmentDetails));
     when(assessmentService.getAssessments(List.of("meritsAssessment"),
-        user.getProvider().getId().toString(), mockApplicationDetail.getCaseReferenceNumber(), null))
+        user.getProvider().getId().toString(), mockApplicationDetail.getCaseReferenceNumber()))
         .thenReturn(Mono.just(meritsAssessmentDetails));
 
     final ApplicationSummaryDisplay summary = applicationService.getApplicationSummary(mockApplicationDetail, user);

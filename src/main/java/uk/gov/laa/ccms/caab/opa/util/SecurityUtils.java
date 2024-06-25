@@ -31,7 +31,7 @@ public class SecurityUtils {
   private String password;
 
   public SecurityUtils(
-      @Value("${laa.ccms.oracle-web-determination-server.redirect-url}") final String returnUrl,
+      @Value("${laa.ccms.oracle-web-determination-server.redirect.url}") final String returnUrl,
       @Value("${laa.ccms.caab.opa.security.password}") final String password) {
     this.returnUrl = returnUrl;
     this.password = password;
