@@ -35,6 +35,16 @@ spring:
       static-locations: classpath:/static/
       cache:
         period: 0
+  servlet:
+    multipart:
+      max-file-size: 8MB
+      max-request-size: 10MB
+      resolve-lazily: true
+
+server:
+  tomcat:
+    max-swallow-size: -1
+    max-http-form-post-size: -1
 
 # required to be on civil in order for OPA integration with OWD,
 # otherwise issues occur with the JSESSIONID cookie
@@ -71,6 +81,12 @@ laa:
         hostname: ${OWD_REDIRECT_URL}
         url: ${laa.ccms.oracle-web-determination-server.redirect.hostname}
     caab:
+      upload:
+        valid-extensions: >
+          PDF,
+          DOCX,
+          RTF,
+          TIFF
       opa:
         security:
           password:  ${OPA_SECURITY_PASSWORD}

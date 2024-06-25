@@ -55,7 +55,7 @@ os:
 av:
   enabled: true
   api:
-    hostname: dev.clamav.legalservices.gov.uk
+    hostname: localhost
     port: 3310
     timeout: 20000
 
