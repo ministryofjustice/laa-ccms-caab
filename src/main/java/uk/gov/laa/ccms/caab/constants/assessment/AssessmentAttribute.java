@@ -48,6 +48,8 @@ public enum AssessmentAttribute {
   LAR_SCOPE_FLAG("boolean", true, true),
   LEAD_PROCEEDING_CHANGED("boolean", true, true),
   MARITIAL_STATUS("text", true, true),
+  MEANS_EVIDENCE_REQD("boolean", true, true),
+  MERITS_EVIDENCE_REQD("boolean", true, true),
   NEW_APPL_OR_AMENDMENT("text", true, true),
   NI_NO("text", true, true),
   POA_OR_BILL_FLAG("text", true, true),

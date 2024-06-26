@@ -1,15 +1,26 @@
 package uk.gov.laa.ccms.caab.builders;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus.COMPLETE;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus.NOT_STARTED;
+import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildAssessmentDetail;
+import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildMeansGlobalEntityTypeDetailWithEvidenceReqd;
+import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildMeritsGlobalEntityTypeDetailWithEvidenceReqd;
+import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 
-import java.sql.Date;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AuditDetail;
@@ -121,7 +132,7 @@ class ApplicationSummaryBuilderTest {
   @Test
   void testOpponentsAndOtherParties() {
     AuditDetail auditDetail = new AuditDetail();
-    auditDetail.setLastSaved(Date.from(Instant.now()));
+    auditDetail.setLastSaved(new Date());
     auditDetail.setLastSavedBy("TestUser");
 
     // Create some sample data for opponents
@@ -143,6 +154,110 @@ class ApplicationSummaryBuilderTest {
     ApplicationSummaryDisplay result = builder.build();
 
     assertEquals("Complete", result.getOpponentsAndOtherParties().getStatus());
+  }
+
+  @Test
+  void testDocumentUpload_disabled() {
+    ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+    // Clear the prior auths
+    application.getPriorAuthorities().clear();
+
+    AssessmentDetail meansAssessment = buildAssessmentDetail(new Date());
+    AssessmentDetail meritsAssessment = buildAssessmentDetail(new Date());
+
+    builder.documentUpload(application, meansAssessment, meritsAssessment);
+    ApplicationSummaryDisplay result = builder.build();
+
+    assertFalse(result.getDocumentUpload().isEnabled());
+  }
+
+  @Test
+  void testDocumentUpload_hasPriorAuths_isEnabled() {
+    ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+
+    AssessmentDetail meansAssessment = buildAssessmentDetail(new Date());
+    AssessmentDetail meritsAssessment = buildAssessmentDetail(new Date());
+
+    builder.documentUpload(application, meansAssessment, meritsAssessment);
+    ApplicationSummaryDisplay result = builder.build();
+
+    assertTrue(result.getDocumentUpload().isEnabled());
+  }
+
+  @Test
+  void testDocumentUpload_emergencyApp_isEnabled() {
+    ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+    // Clear the prior auths
+    application.getPriorAuthorities().clear();
+    application.getApplicationType().setId(APP_TYPE_EMERGENCY);
+
+    AssessmentDetail meansAssessment = buildAssessmentDetail(new Date());
+    AssessmentDetail meritsAssessment = buildAssessmentDetail(new Date());
+
+    builder.documentUpload(application, meansAssessment, meritsAssessment);
+    ApplicationSummaryDisplay result = builder.build();
+
+    assertTrue(result.getDocumentUpload().isEnabled());
+  }
+
+  @Test
+  void testDocumentUpload_bothAssessmentsCompleteWithEvidenceReqd_isEnabled() {
+    ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+    // Clear the prior auths
+    application.getPriorAuthorities().clear();
+
+    AssessmentDetail meansAssessment = buildAssessmentDetail(new Date());
+    meansAssessment.setStatus(COMPLETE.getStatus());
+    meansAssessment.getEntityTypes().add(buildMeansGlobalEntityTypeDetailWithEvidenceReqd(true));
+
+    AssessmentDetail meritsAssessment = buildAssessmentDetail(new Date());
+    meritsAssessment.setStatus(COMPLETE.getStatus());
+    meritsAssessment.getEntityTypes().add(buildMeritsGlobalEntityTypeDetailWithEvidenceReqd(true));
+
+    builder.documentUpload(application, meansAssessment, meritsAssessment);
+    ApplicationSummaryDisplay result = builder.build();
+
+    assertTrue(result.getDocumentUpload().isEnabled());
+  }
+
+  @Test
+  void testDocumentUpload_oneAssessmentsCompleteWithEvidenceReqd_isDisabled() {
+    ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+    // Clear the prior auths
+    application.getPriorAuthorities().clear();
+
+    AssessmentDetail meansAssessment = buildAssessmentDetail(new Date());
+    meansAssessment.setStatus(COMPLETE.getStatus());
+    meansAssessment.getEntityTypes().add(buildMeansGlobalEntityTypeDetailWithEvidenceReqd(true));
+
+    AssessmentDetail meritsAssessment = buildAssessmentDetail(new Date());
+    meritsAssessment.setStatus(NOT_STARTED.getStatus());
+    meritsAssessment.getEntityTypes().add(buildMeritsGlobalEntityTypeDetailWithEvidenceReqd(true));
+
+    builder.documentUpload(application, meansAssessment, meritsAssessment);
+    ApplicationSummaryDisplay result = builder.build();
+
+    assertFalse(result.getDocumentUpload().isEnabled());
+  }
+
+  @Test
+  void testDocumentUpload_bothAssessmentsCompleteWithEvidenceReqdFalse_isDisabled() {
+    ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+    // Clear the prior auths
+    application.getPriorAuthorities().clear();
+
+    AssessmentDetail meansAssessment = buildAssessmentDetail(new Date());
+    meansAssessment.setStatus(COMPLETE.getStatus());
+    meansAssessment.getEntityTypes().add(buildMeansGlobalEntityTypeDetailWithEvidenceReqd(false));
+
+    AssessmentDetail meritsAssessment = buildAssessmentDetail(new Date());
+    meritsAssessment.setStatus(COMPLETE.getStatus());
+    meritsAssessment.getEntityTypes().add(buildMeritsGlobalEntityTypeDetailWithEvidenceReqd(false));
+
+    builder.documentUpload(application, meansAssessment, meritsAssessment);
+    ApplicationSummaryDisplay result = builder.build();
+
+    assertFalse(result.getDocumentUpload().isEnabled());
   }
 
 }

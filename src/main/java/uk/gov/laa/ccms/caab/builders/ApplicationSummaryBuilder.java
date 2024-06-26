@@ -1,10 +1,21 @@
 package uk.gov.laa.ccms.caab.builders;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.MEANS_EVIDENCE_REQD;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.MERITS_EVIDENCE_REQD;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.GLOBAL;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus.COMPLETE;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentAttribute;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentEntityType;
 
 import java.util.List;
+import java.util.Optional;
 import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
@@ -26,10 +37,10 @@ public class ApplicationSummaryBuilder {
 
   private final ApplicationSummaryDisplay applicationSummary;
 
-  private static final String COMPLETE = "Complete";
-  private static final String NOT_STARTED = "Not started";
-  private static final String STARTED = "Started";
-  public static final String NOT_AVAILABLE = "Not available";
+  private static final String STATUS_COMPLETE = "Complete";
+  private static final String STATUS_NOT_STARTED = "Not started";
+  private static final String STATUS_STARTED = "Started";
+  public static final String STATUS_NOT_AVAILABLE = "Not available";
   public static final String TYPE_ORGANISATION = "Organisation";
 
   /**
@@ -49,7 +60,7 @@ public class ApplicationSummaryBuilder {
         .providerDetails(new ApplicationSummaryStatusDisplay(commonStatusDisplay))
         .generalDetails(new ApplicationSummaryStatusDisplay(commonStatusDisplay))
         .clientDetails(ApplicationSummaryStatusDisplay.builder()
-            .status(COMPLETE).build())
+            .status(STATUS_COMPLETE).build())
         .proceedingsAndCosts(new ApplicationSummaryStatusDisplay(commonStatusDisplay))
         .build();
   }
@@ -126,9 +137,9 @@ public class ApplicationSummaryBuilder {
    */
   public ApplicationSummaryBuilder providerDetails(final StringDisplayValue providerContact) {
     if (providerContact != null && StringUtils.hasText(providerContact.getDisplayValue())) {
-      applicationSummary.getProviderDetails().setStatus(COMPLETE);
+      applicationSummary.getProviderDetails().setStatus(STATUS_COMPLETE);
     } else {
-      applicationSummary.getProviderDetails().setStatus(STARTED);
+      applicationSummary.getProviderDetails().setStatus(STATUS_STARTED);
     }
     return this;
   }
@@ -141,9 +152,9 @@ public class ApplicationSummaryBuilder {
    */
   public ApplicationSummaryBuilder generalDetails(final AddressDetail address) {
     if (address != null && StringUtils.hasText(address.getPreferredAddress())) {
-      applicationSummary.getGeneralDetails().setStatus(COMPLETE);
+      applicationSummary.getGeneralDetails().setStatus(STATUS_COMPLETE);
     } else {
-      applicationSummary.getGeneralDetails().setStatus(STARTED);
+      applicationSummary.getGeneralDetails().setStatus(STATUS_STARTED);
     }
     return this;
   }
@@ -160,18 +171,18 @@ public class ApplicationSummaryBuilder {
       final List<ProceedingDetail> proceedings,
       final List<PriorAuthorityDetail> priorAuthorities,
       final CostStructureDetail costs) {
-    String status = NOT_STARTED;
+    String status = STATUS_NOT_STARTED;
     if (!proceedings.isEmpty()) {
       if (!priorAuthorities.isEmpty()) {
-        status = STARTED;
+        status = STATUS_STARTED;
       }
       final boolean isComplete = proceedings.stream()
             .anyMatch(proc -> proc.getStage() != null);
       if (isComplete) {
-        status = COMPLETE;
+        status = STATUS_COMPLETE;
       }
     } else if (!priorAuthorities.isEmpty()) {
-      status = STARTED;
+      status = STATUS_STARTED;
     }
     applicationSummary.getProceedingsAndCosts().setStatus(status);
 
@@ -208,7 +219,7 @@ public class ApplicationSummaryBuilder {
       final List<RelationshipToCaseLookupValueDetail> personRelationships) {
 
     if (opponents.isEmpty()) {
-      applicationSummary.getOpponentsAndOtherParties().setStatus(NOT_STARTED);
+      applicationSummary.getOpponentsAndOtherParties().setStatus(STATUS_NOT_STARTED);
     } else {
       final boolean opponentCreated = opponents.stream()
           .anyMatch(opponent -> isOpponentCreated(
@@ -216,7 +227,7 @@ public class ApplicationSummaryBuilder {
               organisationRelationships,
               personRelationships));
       applicationSummary.getOpponentsAndOtherParties().setStatus(
-          opponentCreated ? COMPLETE : STARTED);
+          opponentCreated ? STATUS_COMPLETE : STATUS_STARTED);
     }
 
     for (final OpponentDetail opponent : opponents) {
@@ -231,17 +242,17 @@ public class ApplicationSummaryBuilder {
   /**
    * Builder method for both means and merits assessments.
    *
-   * @param application the application details.
-   * @param meritsAssessment the merits assessment details.
-   * @param meansAssessment the means assessment details.
+   * @param application               the application details.
+   * @param meansAssessment           the means assessment details.
+   * @param meritsAssessment          the merits assessment details.
    * @param organisationRelationships the list of organisation relationships.
-   * @param personRelationships the list of person relationships.
+   * @param personRelationships       the list of person relationships.
    * @return the builder with amended assessment details.
    */
   public ApplicationSummaryBuilder assessments(
       final ApplicationDetail application,
-      final AssessmentDetail meritsAssessment,
       final AssessmentDetail meansAssessment,
+      final AssessmentDetail meritsAssessment,
       final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
       final List<RelationshipToCaseLookupValueDetail> personRelationships
   ) {
@@ -253,14 +264,6 @@ public class ApplicationSummaryBuilder {
             organisationRelationships,
             personRelationships));
 
-    //merits
-    updateAssessmentStatus(
-        application,
-        meritsAssessment,
-        application.getMeritsAssessmentStatus(),
-        applicationSummary.getMeritsAssessment(),
-        opponentCreated);
-
     //means
     updateAssessmentStatus(
         application,
@@ -269,9 +272,73 @@ public class ApplicationSummaryBuilder {
         applicationSummary.getMeansAssessment(),
         opponentCreated);
 
+    //merits
+    updateAssessmentStatus(
+        application,
+        meritsAssessment,
+        application.getMeritsAssessmentStatus(),
+        applicationSummary.getMeritsAssessment(),
+        opponentCreated);
+
     return this;
   }
 
+  /**
+   * Builder method for document upload.
+   *
+   * @param application               the application details.
+   * @param meansAssessment           the means assessment details.
+   * @param meritsAssessment          the merits assessment details.
+   * @return the builder with amended document upload details.
+   */
+  public ApplicationSummaryBuilder documentUpload(
+      final ApplicationDetail application,
+      final AssessmentDetail meansAssessment,
+      final AssessmentDetail meritsAssessment) {
+
+    final boolean meansComplete = Optional.ofNullable(meansAssessment)
+        .map(assessmentDetail -> COMPLETE.getStatus().equals(meansAssessment.getStatus()))
+        .orElse(false);
+
+    final boolean meritsComplete = Optional.ofNullable(meritsAssessment)
+        .map(assessmentDetail -> COMPLETE.getStatus().equals(meritsAssessment.getStatus()))
+        .orElse(false);
+
+    final boolean assessmentEvidenceRequired = meansComplete && meritsComplete
+        && (isAssessmentEvidenceRequired(meansAssessment, MEANS_EVIDENCE_REQD)
+        || isAssessmentEvidenceRequired(meritsAssessment, MERITS_EVIDENCE_REQD));
+
+    final boolean isEmergencyApplication =
+        APP_TYPE_EMERGENCY.equals(application.getApplicationType().getId());
+
+    final boolean hasPriorAuthorities = Optional.ofNullable(application.getPriorAuthorities())
+        .map(priorAuthorityDetails -> !priorAuthorityDetails.isEmpty())
+        .orElse(false);
+
+    final boolean enableDocUpload = assessmentEvidenceRequired
+        || isEmergencyApplication
+        || hasPriorAuthorities;
+
+    this.applicationSummary.getDocumentUpload().setEnabled(enableDocUpload);
+
+    return this;
+  }
+
+  private static boolean isAssessmentEvidenceRequired(
+      final AssessmentDetail assessmentDetail,
+      final AssessmentAttribute assessmentAttribute) {
+
+    AssessmentEntityTypeDetail globalEntityType =
+        Optional.ofNullable(getAssessmentEntityType(assessmentDetail, GLOBAL))
+            .orElseThrow(() -> new CaabApplicationException(
+                "Failed to find GLOBAL entity type in assessment"));
+
+    return globalEntityType.getEntities().stream()
+        .anyMatch(assessmentEntity -> Optional.ofNullable(
+                getAssessmentAttribute(assessmentEntity, assessmentAttribute))
+            .map(meansEvidenceAtt -> Boolean.valueOf(meansEvidenceAtt.getValue()))
+            .orElse(Boolean.FALSE));
+  }
 
   /**
    * Finalizes and returns the constructed ApplicationSummaryDisplay instance.
@@ -318,7 +385,7 @@ public class ApplicationSummaryBuilder {
     boolean assessmentsEnabled = true;
 
     if (application.getProceedings().isEmpty() || !opponentCreated) {
-      assessmentStatusDisplay.setStatus(NOT_AVAILABLE);
+      assessmentStatusDisplay.setStatus(STATUS_NOT_AVAILABLE);
       assessmentsEnabled = false;
 
     } else {
@@ -329,7 +396,7 @@ public class ApplicationSummaryBuilder {
         assessmentStatusDisplay.setLastSaved(assessment.getAuditDetail().getLastSaved());
         assessmentStatusDisplay.setLastSavedBy(assessment.getAuditDetail().getLastSavedBy());
       } else {
-        assessmentStatusDisplay.setStatus(NOT_STARTED);
+        assessmentStatusDisplay.setStatus(STATUS_NOT_STARTED);
       }
     }
 

@@ -594,11 +594,16 @@ public class ApplicationService {
             application.getOpponents(),
             organisationRelationships,
             personsRelationships)
-        .assessments(application,
-            meritsAssessment,
+        .assessments(
+            application,
             meansAssessment,
+            meritsAssessment,
             organisationRelationships,
             personsRelationships)
+        .documentUpload(
+            application,
+            meansAssessment,
+            meritsAssessment)
         .build();
   }
 
@@ -812,7 +817,7 @@ public class ApplicationService {
    * @return A list of common stages across all scope limitations.
    */
   private List<Integer> getCommonStages(final List<List<Integer>> allStages) {
-    return allStages.get(0).stream()
+    return allStages.getFirst().stream()
         .filter(stage -> allStages.stream().allMatch(scopeLimStages ->
             scopeLimStages.contains(stage)))
         .collect(Collectors.toList());
@@ -1438,7 +1443,7 @@ public class ApplicationService {
      */
     final CommonLookupValueDetail courtLookup =
         combinedOutcomeResults.getT1().getContent().size() == 1
-        ? combinedOutcomeResults.getT1().getContent().get(0) :
+        ? combinedOutcomeResults.getT1().getContent().getFirst() :
         new CommonLookupValueDetail()
             .code(soaProceeding.getOutcome().getCourtCode())
             .description(soaProceeding.getOutcome().getCourtCode());
@@ -1446,12 +1451,12 @@ public class ApplicationService {
     // Use the outcome result display data, if we have it.
     final OutcomeResultLookupValueDetail outcomeResultLookup =
         !combinedOutcomeResults.getT2().getContent().isEmpty()
-        ? combinedOutcomeResults.getT2().getContent().get(0) : null;
+        ? combinedOutcomeResults.getT2().getContent().getFirst() : null;
 
     // Lookup the stage end display value.
     final StageEndLookupValueDetail stageEndLookup =
         !combinedOutcomeResults.getT3().getContent().isEmpty()
-        ? combinedOutcomeResults.getT3().getContent().get(0) : null;
+        ? combinedOutcomeResults.getT3().getContent().getFirst() : null;
 
     // Update the builder with outcome-related lookup data
     contextBuilder.courtLookup(courtLookup)
