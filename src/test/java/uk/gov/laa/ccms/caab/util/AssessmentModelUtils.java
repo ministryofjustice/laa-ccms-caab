@@ -2,8 +2,11 @@ package uk.gov.laa.ccms.caab.util;
 
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.CLIENT_INVOLVEMENT_TYPE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.MATTER_TYPE;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.MEANS_EVIDENCE_REQD;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.MERITS_EVIDENCE_REQD;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.PROCEEDING_NAME;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.REQUESTED_SCOPE;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.GLOBAL;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.OPPONENT;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.PROCEEDING;
 
@@ -42,6 +45,20 @@ public class AssessmentModelUtils {
             .created(date)
             .lastSavedBy("test")
             .lastSaved(date));
+  }
+
+  public static AssessmentEntityTypeDetail buildMeansGlobalEntityTypeDetailWithEvidenceReqd(
+      final boolean isEvidenceRequired) {
+    return new AssessmentEntityTypeDetail()
+        .name(GLOBAL.getType())
+        .addEntitiesItem(buildGlobalEntityDetailWithMeansEvidenceReqd(isEvidenceRequired));
+  }
+
+  public static AssessmentEntityTypeDetail buildMeritsGlobalEntityTypeDetailWithEvidenceReqd(
+      final boolean isEvidenceRequired) {
+    return new AssessmentEntityTypeDetail()
+        .name(GLOBAL.getType())
+        .addEntitiesItem(buildGlobalEntityDetailWithMeritsEvidenceReqd(isEvidenceRequired));
   }
 
   public static AssessmentEntityTypeDetail buildProceedingsEntityTypeDetail() {
@@ -85,6 +102,20 @@ public class AssessmentModelUtils {
         .addAttributesItem(buildRequestedScopeAttribute("TEST"));
   }
 
+  public static AssessmentEntityDetail buildGlobalEntityDetailWithMeansEvidenceReqd(
+      final boolean isEvidenceRequired) {
+    return new AssessmentEntityDetail()
+        .name(GLOBAL.getType())
+        .addAttributesItem(buildMeansEvidenceReqdAttribute(String.valueOf(isEvidenceRequired)));
+  }
+
+  public static AssessmentEntityDetail buildGlobalEntityDetailWithMeritsEvidenceReqd(
+      final boolean isEvidenceRequired) {
+    return new AssessmentEntityDetail()
+        .name(GLOBAL.getType())
+        .addAttributesItem(buildMeritsEvidenceReqdAttribute(String.valueOf(isEvidenceRequired)));
+  }
+
   public static AssessmentEntityDetail buildOpponentEntityDetail() {
     return new AssessmentEntityDetail()
         .name(String.format("%s234", InstanceMappingPrefix.OPPONENT.getPrefix()));
@@ -124,5 +155,18 @@ public class AssessmentModelUtils {
         .value(value);
   }
 
+  public static AssessmentAttributeDetail buildMeansEvidenceReqdAttribute(
+      final String value) {
+    return new AssessmentAttributeDetail()
+        .name(MEANS_EVIDENCE_REQD.name())
+        .value(value);
+  }
+
+  public static AssessmentAttributeDetail buildMeritsEvidenceReqdAttribute(
+      final String value) {
+    return new AssessmentAttributeDetail()
+        .name(MERITS_EVIDENCE_REQD.name())
+        .value(value);
+  }
 
 }
