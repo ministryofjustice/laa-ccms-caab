@@ -57,11 +57,11 @@ public class NotificationService {
   }
 
   /**
-   * Retrieve the content for all documents attached to a notification. First attempt retrieval from
+   * Retrieve the content for a notification attachment. First attempt retrieval from
    * S3, and if the document is not found attempt retrieval from EBS, then upload to S3 for future
    * retrieval.
    *
-   * @param notificationAttachmentId  The notification to get attachments for.
+   * @param notificationAttachmentId  The identifier of the notification attachment.
    * @param loginId                   The login identifier for the user.
    * @param userType                  Type of the user (e.g., admin, user).
    * @return An Optional String containing the document content.
