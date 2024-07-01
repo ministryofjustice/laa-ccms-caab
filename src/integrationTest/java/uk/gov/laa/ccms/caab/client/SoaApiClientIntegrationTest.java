@@ -26,6 +26,7 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
+import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
@@ -37,6 +38,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   public static final String USER_TYPE = "userType";
   public static final String SOA_GATEWAY_USER_LOGIN_ID = "SoaGateway-User-Login-Id";
   public static final String SOA_GATEWAY_USER_ROLE = "SoaGateway-User-Role";
+
   @RegisterExtension
   protected static WireMockExtension wiremock = WireMockExtension.newInstance()
       .options(wireMockConfig().dynamicPort())
@@ -202,6 +204,29 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
         soaApiClient.getNotifications(criteria, page, size);
     Notifications response = notificationsMono.block();
     assertEquals(notifications, response);
+  }
+
+  @Test
+  public void testGetNotificationAttachments_returnsData() throws JsonProcessingException {
+    String documentId = "documentId";
+    String documentContent = "documentContent";
+    String loginId = "loginId";
+    String userType = "userType";
+
+    Document notificationAttachment = new Document()
+        .documentId(documentId)
+        .fileData(documentContent);
+
+    String notificationAttachmentJson = objectMapper.writeValueAsString(notificationAttachment);
+
+    wiremock.stubFor(get(String.format("/documents/%s", documentId))
+        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
+        .willReturn(okJson(notificationAttachmentJson)));
+
+    Document response = soaApiClient.downloadDocument(documentId, loginId, userType).block();
+
+    assertEquals(notificationAttachment, response);
   }
 
   private NotificationSummary buildNotificationSummary() {

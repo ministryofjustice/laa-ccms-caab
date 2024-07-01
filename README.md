@@ -99,6 +99,24 @@ the following command:
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-clam-av
 ```
 
+## LocalStack (AWS)
+
+LocalStack provides lightweight instances of AWS components, such as S3. When running locally, it is
+recommended to install [LocalStack Desktop](https://docs.localstack.cloud/user-guide/tools/localstack-desktop/)
+to monitor and manage components. [LocalStack AWS CLI (`awslocal`)](https://docs.localstack.cloud/user-guide/integrations/aws-cli/#localstack-aws-cli-awslocal)
+can also be useful if more in-depth interactions are required.
+
+**Note: persistence is a pro feature, so files in S3 will not endure on container shutdown.**
+
+A configured LocalStack container can be started via docker compose:
+
+```
+docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-localstack
+```
+
+An S3 bucket `laa-ccms-bucket` will be created on startup if it does not already exist, via
+[`/localstack/init-s3.sh`](localstack/init-s3.sh).
+
 ## secrets.gradle (required for gradle build)
 
 create a secrets.gradle file in the root directory:
@@ -108,7 +126,8 @@ project.ext.gitPackageUser = "{your name}"
 project.ext.gitPackageKey = "{your personal api token}"
 ```
 
-Replace the username with your own name, and replace the key with a personal access token to read Github packages.
+Replace the username with your own name, and replace the key with a personal access token to 
+read GitHub packages.
 
 Find more information [here](https://docs.github.com/en/enterprise-server@3.6/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) for setting up presonal access tokens.
 
