@@ -18,12 +18,32 @@ import org.springframework.security.saml2.provider.service.authentication.OpenSa
 import org.springframework.security.saml2.provider.service.authentication.Saml2AuthenticatedPrincipal;
 import org.springframework.security.saml2.provider.service.authentication.Saml2Authentication;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * Configuration class for customizing Spring Security settings.
  */
 @Configuration
 public class SecurityConfiguration {
+
+  /**
+   * Configures CORS settings for the application.
+   *
+   * @return A WebMvcConfigurer instance with configured CORS settings.
+   */
+  @Bean
+  public WebMvcConfigurer corsConfigurer() {
+    return new WebMvcConfigurer() {
+      @Override
+      public void addCorsMappings(final CorsRegistry registry) {
+        registry.addMapping("/**")
+            .allowedOriginPatterns("*")
+            .allowedMethods("GET", "POST", "PUT", "DELETE", "HEAD")
+            .allowCredentials(true);
+      }
+    };
+  }
 
   /**
    * Configures Spring Security filters and settings.
@@ -39,13 +59,13 @@ public class SecurityConfiguration {
     authenticationProvider.setResponseAuthenticationConverter(groupsConverter());
 
     return http
-            .authorizeHttpRequests(authorize -> authorize
-                    .anyRequest().authenticated())
-            .csrf(AbstractHttpConfigurer::disable)
-            .saml2Login(saml2 -> saml2
-                    .authenticationManager(new ProviderManager(authenticationProvider)))
-            .saml2Logout(withDefaults())
-            .build();
+        .authorizeHttpRequests(authorize -> authorize
+            .anyRequest().authenticated())
+        .csrf(AbstractHttpConfigurer::disable)
+        .saml2Login(saml2 -> saml2
+            .authenticationManager(new ProviderManager(authenticationProvider)))
+        .saml2Logout(withDefaults())
+        .build();
   }
 
 
@@ -56,11 +76,11 @@ public class SecurityConfiguration {
    */
   private Converter<ResponseToken, Saml2Authentication> groupsConverter() {
     Converter<ResponseToken, Saml2Authentication> delegate =
-            OpenSaml4AuthenticationProvider.createDefaultResponseAuthenticationConverter();
+        OpenSaml4AuthenticationProvider.createDefaultResponseAuthenticationConverter();
     return (responseToken) -> {
       Saml2Authentication authentication = delegate.convert(responseToken);
       Saml2AuthenticatedPrincipal principal =
-              (Saml2AuthenticatedPrincipal) authentication.getPrincipal();
+          (Saml2AuthenticatedPrincipal) authentication.getPrincipal();
       List<String> groups = principal.getAttribute("groups");
       Set<GrantedAuthority> authorities = new HashSet<>();
       if (groups != null) {
