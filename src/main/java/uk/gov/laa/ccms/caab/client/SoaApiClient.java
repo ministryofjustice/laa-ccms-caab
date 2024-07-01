@@ -26,6 +26,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
+import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
@@ -508,6 +509,29 @@ public class SoaApiClient {
         .bodyToMono(ClientTransactionResponse.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiCreateError(
             e, "Document"));
+  }
+
+  /**
+   * Downloads notification attachment content from EBS.
+   *
+   * @param documentId            The document identifier for the notification attachment.
+   * @param loginId               The login identifier for the user.
+   * @param userType              Type of the user (e.g., admin, user).
+   * @return A Mono wrapping the retrieved {@link Document} with file content.
+   */
+  public Mono<Document> downloadDocument(
+      final String documentId,
+      final String loginId,
+      final String userType) {
+    return soaApiWebClient
+        .get()
+        .uri(builder -> builder.path("/documents/{document-id}").build(documentId))
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .retrieve()
+        .bodyToMono(Document.class)
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
+            e, "Document", "id", documentId));
   }
 
 }
