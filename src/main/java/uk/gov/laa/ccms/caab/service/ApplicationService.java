@@ -15,6 +15,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMI
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_LEVEL_OF_SERVICE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MATTER_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
@@ -75,6 +76,7 @@ import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
+import uk.gov.laa.ccms.caab.model.ApplicationFullSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
@@ -89,6 +91,7 @@ import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
+import uk.gov.laa.ccms.caab.util.DisplayUtil;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
@@ -607,7 +610,128 @@ public class ApplicationService {
         .build();
   }
 
+  /**
+   * Retrieves the full application Summary display values.
+   *
+   * @param application the application to retrieve a summary for.
+   * @return A Mono of ApplicationFullSummaryDisplay representing the case summary display values.
+   */
+  public ApplicationFullSummaryDisplay getApplicationFullSummary(
+      final ApplicationDetail application,
+      final UserDetail user) {
 
+    final Mono<Optional<CommonLookupValueDetail>> correspondenceMethodLookupMono =
+        lookupService.getCommonValue(COMMON_VALUE_CORRESPONDENCE_METHOD,
+            application.getCorrespondenceAddress().getPreferredAddress());
+
+    final Mono<RelationshipToCaseLookupDetail> organisationRelationshipsMono =
+        lookupService.getOrganisationToCaseRelationships();
+
+    final Mono<RelationshipToCaseLookupDetail> personRelationshipsMono =
+        lookupService.getPersonToCaseRelationships();
+
+    final Mono<AssessmentDetails> meansAssessmentsMono =
+        assessmentService.getAssessments(
+            List.of("meansAssessment"),
+            user.getProvider().getId().toString(),
+            application.getCaseReferenceNumber());
+
+    final Mono<AssessmentDetails> meritsAssessmentsMono =
+        assessmentService.getAssessments(
+            List.of("meritsAssessment"),
+            user.getProvider().getId().toString(),
+            application.getCaseReferenceNumber());
+
+    final Tuple5<Optional<CommonLookupValueDetail>,
+        RelationshipToCaseLookupDetail,
+        RelationshipToCaseLookupDetail,
+        AssessmentDetails,
+        AssessmentDetails> applicationSummaryMonos = Mono.zip(
+            correspondenceMethodLookupMono,
+            organisationRelationshipsMono,
+            personRelationshipsMono,
+            meansAssessmentsMono,
+            meritsAssessmentsMono)
+        .blockOptional().orElseThrow(() ->
+            new CaabApplicationException("Failed to retrieve application summary"));
+
+
+    final String correspondenceMethod = applicationSummaryMonos.getT1()
+        .map(CommonLookupValueDetail::getDescription)
+        .orElse(application.getCorrespondenceAddress().getPreferredAddress());
+
+    final List<RelationshipToCaseLookupValueDetail> organisationRelationships
+        = applicationSummaryMonos.getT2().getContent();
+    final List<RelationshipToCaseLookupValueDetail> personsRelationships
+        = applicationSummaryMonos.getT3().getContent();
+
+    final AssessmentDetail meansAssessment =
+        getMostRecentAssessmentDetail(applicationSummaryMonos.getT4().getContent());
+
+    final AssessmentDetail meritsAssessment =
+        getMostRecentAssessmentDetail(applicationSummaryMonos.getT5().getContent());
+
+    //this not only gets the status but also updates them.
+    assessmentService.calculateAssessmentStatuses(
+        application,
+        meansAssessment,
+        meritsAssessment,
+        user);
+
+    /** TODO: I only see document upload status being initialised in PrepareAmendment, which
+     * does a lookup up based on CcmsModule.AMENDMENT. Check whether the doc upload status is
+     * shown for new applications in the PUI.
+     */
+
+    ApplicationFullSummaryDisplay.builder()
+        .applicationStatus(application.getApplicationType().getDisplayValue())
+        .applicationType(application.getApplicationType().getDisplayValue())
+        .categoryOfLaw(application.getCategoryOfLaw().getDisplayValue())
+        .clientFullName(
+            DisplayUtil.getFullName(
+                application.getClient().getFirstName(),
+                application.getClient().getSurname()))
+        .correspondenceMethod(correspondenceMethod)
+        .devolvedPowersUsed(application.getApplicationType().getDevolvedPowers().getUsed())
+        .devolvedPowersDate(application.getApplicationType().getDevolvedPowers().getDateUsed())
+        .documentUploadStatus()
+
+//    return new ApplicationSummaryBuilder(application.getAuditTrail())
+//        .clientFullName(
+//            application.getClient().getFirstName(),
+//            application.getClient().getSurname())
+//        .clientReferenceNumber(
+//            application.getClient().getReference())
+//        .caseReferenceNumber(
+//            application.getCaseReferenceNumber())
+//        .providerCaseReferenceNumber(
+//            application.getProviderDetails().getProviderCaseReference())
+//        .applicationType(
+//            application.getApplicationType())
+//        .providerDetails(
+//            application.getProviderDetails().getProviderContact())
+//        .generalDetails(
+//            application.getCorrespondenceAddress())
+//        .proceedingsAndCosts(
+//            application.getProceedings(),
+//            application.getPriorAuthorities(),
+//            application.getCosts())
+//        .opponentsAndOtherParties(
+//            application.getOpponents(),
+//            organisationRelationships,
+//            personsRelationships)
+//        .assessments(
+//            application,
+//            meansAssessment,
+//            meritsAssessment,
+//            organisationRelationships,
+//            personsRelationships)
+//        .documentUpload(
+//            application,
+//            meansAssessment,
+//            meritsAssessment)
+//        .build();
+  }
 
 
   public ApplicationFormData getApplicationTypeFormData(final String id) {

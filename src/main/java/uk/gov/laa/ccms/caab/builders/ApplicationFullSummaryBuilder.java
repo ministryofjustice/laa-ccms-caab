@@ -18,6 +18,7 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationFullSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryStatusDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
@@ -31,12 +32,12 @@ import uk.gov.laa.ccms.caab.util.DisplayUtil;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 
 /**
- * Helper class for constructing an {@link uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay}
+ * Helper class for constructing an {@link ApplicationFullSummaryDisplay}
  * instance using a builder pattern.
  */
-public class ApplicationSummaryBuilder {
+public class ApplicationFullSummaryBuilder {
 
-  private final ApplicationSummaryDisplay applicationSummary;
+  private final ApplicationFullSummaryDisplay summary;
 
   private static final String STATUS_COMPLETE = "Complete";
   private static final String STATUS_NOT_STARTED = "Not started";
@@ -45,24 +46,15 @@ public class ApplicationSummaryBuilder {
   public static final String TYPE_ORGANISATION = "Organisation";
 
   /**
-   * Default builder method for application builder summary.
+   * Default builder method for application builder full summary.
    *
-   * @param auditDetail used to populate multiple summary status displays
    */
-  public ApplicationSummaryBuilder(final AuditDetail auditDetail) {
-    final ApplicationSummaryStatusDisplay commonStatusDisplay =
-        ApplicationSummaryStatusDisplay.builder()
-        .lastSavedBy(auditDetail.getLastSavedBy())
-        .lastSaved(auditDetail.getLastSaved())
-        .build();
+  public ApplicationFullSummaryBuilder(ApplicationDetail application) {
 
-    this.applicationSummary = ApplicationSummaryDisplay.builder()
-        .applicationType(new ApplicationSummaryStatusDisplay(commonStatusDisplay))
-        .providerDetails(new ApplicationSummaryStatusDisplay(commonStatusDisplay))
-        .generalDetails(new ApplicationSummaryStatusDisplay(commonStatusDisplay))
-        .clientDetails(ApplicationSummaryStatusDisplay.builder()
-            .status(STATUS_COMPLETE).build())
-        .proceedingsAndCosts(new ApplicationSummaryStatusDisplay(commonStatusDisplay))
+    this.summary = ApplicationFullSummaryDisplay.builder()
+        .applicationStatus(application.getApplicationType().getDisplayValue())
+        .applicationType(application.getApplicationType().getDisplayValue())
+        .categoryOfLaw(application.getCategoryOfLaw().getDisplayValue())
         .build();
   }
 
@@ -73,8 +65,9 @@ public class ApplicationSummaryBuilder {
    * @param lastName the application's client's last name
    * @return the builder with amended clientFullName details.
    */
-  public ApplicationSummaryBuilder clientFullName(final String firstName, final String lastName) {
-    applicationSummary.setClientFullName(DisplayUtil.getFullName(firstName, lastName));
+  public ApplicationFullSummaryBuilder clientFullName(
+      final String firstName, final String lastName) {
+    summary.setClientFullName(DisplayUtil.getFullName(firstName, lastName));
     return this;
   }
 
@@ -84,8 +77,8 @@ public class ApplicationSummaryBuilder {
    * @param referenceNumber the application's clients reference number
    * @return the builder with amended clientFullName details.
    */
-  public ApplicationSummaryBuilder clientReferenceNumber(final String referenceNumber) {
-    applicationSummary.setClientReferenceNumber(referenceNumber);
+  public ApplicationFullSummaryBuilder clientReferenceNumber(final String referenceNumber) {
+    summary.setClientReferenceNumber(referenceNumber);
     return this;
   }
 
@@ -95,8 +88,8 @@ public class ApplicationSummaryBuilder {
    * @param caseReferenceNumber the applications case reference number.
    * @return the builder with amended case reference number details.
    */
-  public ApplicationSummaryBuilder caseReferenceNumber(final String caseReferenceNumber) {
-    applicationSummary.setCaseReferenceNumber(caseReferenceNumber);
+  public ApplicationFullSummaryBuilder caseReferenceNumber(final String caseReferenceNumber) {
+    summary.setCaseReferenceNumber(caseReferenceNumber);
     return this;
   }
 
@@ -106,9 +99,9 @@ public class ApplicationSummaryBuilder {
    * @param providerCaseReferenceNumber the provider's case reference number.
    * @return the builder with amended provider case reference number details.
    */
-  public ApplicationSummaryBuilder providerCaseReferenceNumber(
+  public ApplicationFullSummaryBuilder providerCaseReferenceNumber(
       final String providerCaseReferenceNumber) {
-    applicationSummary.setProviderCaseReferenceNumber(providerCaseReferenceNumber);
+    summary.setProviderCaseReferenceNumber(providerCaseReferenceNumber);
     return this;
   }
 
@@ -118,11 +111,11 @@ public class ApplicationSummaryBuilder {
    * @param applicationType the application's type.
    * @return the builder with amended application type details.
    */
-  public ApplicationSummaryBuilder applicationType(final ApplicationType applicationType) {
-    applicationSummary.getApplicationType().setStatus(applicationType.getDisplayValue());
+  public ApplicationFullSummaryBuilder applicationType(final ApplicationType applicationType) {
+    summary.getApplicationType().setStatus(applicationType.getDisplayValue());
     //Not equal to ECF set enabled true
     if (!applicationType.getId().equalsIgnoreCase(APP_TYPE_EXCEPTIONAL_CASE_FUNDING)) {
-      applicationSummary.getApplicationType().setEnabled(true);
+      summary.getApplicationType().setEnabled(true);
     }
     return this;
   }
@@ -133,11 +126,11 @@ public class ApplicationSummaryBuilder {
    * @param providerContact the provider's contact information.
    * @return the builder with amended provider details.
    */
-  public ApplicationSummaryBuilder providerDetails(final StringDisplayValue providerContact) {
+  public ApplicationFullSummaryBuilder providerDetails(final StringDisplayValue providerContact) {
     if (providerContact != null && StringUtils.hasText(providerContact.getDisplayValue())) {
-      applicationSummary.getProviderDetails().setStatus(STATUS_COMPLETE);
+      summary.getProviderDetails().setStatus(STATUS_COMPLETE);
     } else {
-      applicationSummary.getProviderDetails().setStatus(STATUS_STARTED);
+      summary.getProviderDetails().setStatus(STATUS_STARTED);
     }
     return this;
   }
@@ -148,11 +141,11 @@ public class ApplicationSummaryBuilder {
    * @param address the address information.
    * @return the builder with amended general details.
    */
-  public ApplicationSummaryBuilder generalDetails(final AddressDetail address) {
+  public ApplicationFullSummaryBuilder generalDetails(final AddressDetail address) {
     if (address != null && StringUtils.hasText(address.getPreferredAddress())) {
-      applicationSummary.getGeneralDetails().setStatus(STATUS_COMPLETE);
+      summary.getGeneralDetails().setStatus(STATUS_COMPLETE);
     } else {
-      applicationSummary.getGeneralDetails().setStatus(STATUS_STARTED);
+      summary.getGeneralDetails().setStatus(STATUS_STARTED);
     }
     return this;
   }
@@ -165,7 +158,7 @@ public class ApplicationSummaryBuilder {
    * @param costs the cost structure information.
    * @return the builder with amended proceedings, prior authorities, and costs details.
    */
-  public ApplicationSummaryBuilder proceedingsAndCosts(
+  public ApplicationFullSummaryBuilder proceedingsAndCosts(
       final List<ProceedingDetail> proceedings,
       final List<PriorAuthorityDetail> priorAuthorities,
       final CostStructureDetail costs) {
@@ -182,21 +175,21 @@ public class ApplicationSummaryBuilder {
     } else if (!priorAuthorities.isEmpty()) {
       status = STATUS_STARTED;
     }
-    applicationSummary.getProceedingsAndCosts().setStatus(status);
+    summary.getProceedingsAndCosts().setStatus(status);
 
     for (final ProceedingDetail proceeding : proceedings) {
       checkAndSetLastSaved(
-          applicationSummary.getProceedingsAndCosts(),
+          summary.getProceedingsAndCosts(),
           proceeding.getAuditTrail());
     }
 
     checkAndSetLastSaved(
-        applicationSummary.getProceedingsAndCosts(),
+        summary.getProceedingsAndCosts(),
         costs.getAuditTrail());
 
     for (final PriorAuthorityDetail priorAuthority : priorAuthorities) {
       checkAndSetLastSaved(
-          applicationSummary.getProceedingsAndCosts(),
+          summary.getProceedingsAndCosts(),
           priorAuthority.getAuditTrail());
     }
 
@@ -211,26 +204,26 @@ public class ApplicationSummaryBuilder {
    * @param personRelationships the list of person relationships.
    * @return the builder with amended opponents and other parties details.
    */
-  public ApplicationSummaryBuilder opponentsAndOtherParties(
+  public ApplicationFullSummaryBuilder opponentsAndOtherParties(
       final List<OpponentDetail> opponents,
       final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
       final List<RelationshipToCaseLookupValueDetail> personRelationships) {
 
     if (opponents.isEmpty()) {
-      applicationSummary.getOpponentsAndOtherParties().setStatus(STATUS_NOT_STARTED);
+      summary.getOpponentsAndOtherParties().setStatus(STATUS_NOT_STARTED);
     } else {
       final boolean opponentCreated = opponents.stream()
           .anyMatch(opponent -> isOpponentCreated(
               opponent,
               organisationRelationships,
               personRelationships));
-      applicationSummary.getOpponentsAndOtherParties().setStatus(
+      summary.getOpponentsAndOtherParties().setStatus(
           opponentCreated ? STATUS_COMPLETE : STATUS_STARTED);
     }
 
     for (final OpponentDetail opponent : opponents) {
       checkAndSetLastSaved(
-          applicationSummary.getOpponentsAndOtherParties(),
+          summary.getOpponentsAndOtherParties(),
           opponent.getAuditTrail());
     }
 
@@ -247,7 +240,7 @@ public class ApplicationSummaryBuilder {
    * @param personRelationships       the list of person relationships.
    * @return the builder with amended assessment details.
    */
-  public ApplicationSummaryBuilder assessments(
+  public ApplicationFullSummaryBuilder assessments(
       final ApplicationDetail application,
       final AssessmentDetail meansAssessment,
       final AssessmentDetail meritsAssessment,
@@ -267,7 +260,7 @@ public class ApplicationSummaryBuilder {
         application,
         meansAssessment,
         application.getMeansAssessmentStatus(),
-        applicationSummary.getMeansAssessment(),
+        summary.getMeansAssessment(),
         opponentCreated);
 
     //merits
@@ -275,7 +268,7 @@ public class ApplicationSummaryBuilder {
         application,
         meritsAssessment,
         application.getMeritsAssessmentStatus(),
-        applicationSummary.getMeritsAssessment(),
+        summary.getMeritsAssessment(),
         opponentCreated);
 
     return this;
@@ -289,7 +282,7 @@ public class ApplicationSummaryBuilder {
    * @param meritsAssessment          the merits assessment details.
    * @return the builder with amended document upload details.
    */
-  public ApplicationSummaryBuilder documentUpload(
+  public ApplicationFullSummaryBuilder documentUpload(
       final ApplicationDetail application,
       final AssessmentDetail meansAssessment,
       final AssessmentDetail meritsAssessment) {
@@ -317,7 +310,7 @@ public class ApplicationSummaryBuilder {
         || isEmergencyApplication
         || hasPriorAuthorities;
 
-    this.applicationSummary.getDocumentUpload().setEnabled(enableDocUpload);
+    this.summary.getDocumentUpload().setEnabled(enableDocUpload);
 
     return this;
   }
@@ -344,7 +337,7 @@ public class ApplicationSummaryBuilder {
    * @return The constructed ApplicationSummaryDisplay.
    */
   public ApplicationSummaryDisplay build() {
-    return applicationSummary;
+    return summary;
   }
 
   private void checkAndSetLastSaved(

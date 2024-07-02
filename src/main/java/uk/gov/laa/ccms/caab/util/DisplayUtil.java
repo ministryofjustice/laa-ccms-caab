@@ -1,7 +1,9 @@
 package uk.gov.laa.ccms.caab.util;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.util.StringUtils;
 
 /**
  * Utility class for handling display related operations.
@@ -46,5 +48,17 @@ public class DisplayUtil {
         }));
   }
 
+  /**
+   * Format a name for display.
+   *
+   * @param firstName - the first name.
+   * @param lastName - the last name.
+   * @return formatted name.
+   */
+  public static String getFullName(final String firstName, final String lastName) {
+    return String.format("%s%s",
+            StringUtils.hasText(firstName) ? firstName + " " : "",
+            StringUtils.hasText(lastName) ? lastName : "").trim();
+  }
 
 }

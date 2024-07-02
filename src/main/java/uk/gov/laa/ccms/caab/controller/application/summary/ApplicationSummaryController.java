@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationFullSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -51,7 +52,6 @@ public class ApplicationSummaryController {
             .orElseThrow(() -> new CaabApplicationException(
                 "Failed to retrieve application detail"));
 
-    //todo doc upload
     final ApplicationSummaryDisplay summary =
         Optional.ofNullable(applicationService.getApplicationSummary(application, user))
             .orElseThrow(() -> new CaabApplicationException(
@@ -73,6 +73,36 @@ public class ApplicationSummaryController {
     session.removeAttribute(CLIENT_FLOW_FORM_DATA);
 
     return "application/summary/summary-task-page";
+  }
+
+  /**
+   * Handles the GET request for application full summary page.
+   *
+   * @param applicationId The id of the application
+   * @param session The http session for the view.
+   * @param model The model for the view.
+   * @return The view name for the application summary page.
+   */
+  @GetMapping("/application/summary/full")
+  public String applicationFullSummary(
+      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final HttpSession session,
+      final Model model) {
+
+    final ApplicationDetail application =
+        Optional.ofNullable(applicationService.getApplication(applicationId).block())
+            .orElseThrow(() -> new CaabApplicationException(
+                "Failed to retrieve application detail"));
+
+    final ApplicationFullSummaryDisplay summary =
+        Optional.ofNullable(applicationService.getApplicationFullSummary(application, user))
+            .orElseThrow(() -> new CaabApplicationException(
+                "Failed to retrieve full application summary"));
+
+    model.addAttribute("summary", summary);
+
+    return "application/summary/full-summary";
   }
 
 }
