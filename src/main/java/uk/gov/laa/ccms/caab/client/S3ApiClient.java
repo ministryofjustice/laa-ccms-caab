@@ -44,10 +44,10 @@ public class S3ApiClient {
   }
 
   /**
-   * Upload a notification attachment to S3.
+   * Upload a document to S3.
    *
-   * @param documentId The document identifier for the notification attachment.
-   * @param content    The content of the notification attachment.
+   * @param documentId The document identifier for the document.
+   * @param content    The content of the document.
    */
   public void uploadDocument(String documentId, String content) {
     InputStream contentInputStream = new ByteArrayInputStream(
