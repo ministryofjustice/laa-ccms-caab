@@ -52,7 +52,8 @@
             <tbody class="govuk-table__body">
             <tr class="govuk-table__row" th:each="notification : ${notificationsSearchResults.content}">
                 <td class="govuk-table__cell" th:text="${#dates.format(notification.assignDate,'dd-MM-yyyy')}"></td>
-                <td class="govuk-table__cell"><a th:href="@{/notification/{notification_id}(notification_id=${notification.notificationId})}" th:text="${notification.subject}"></a></td>
+                <td class="govuk-table__cell"><a
+                    th:href="@{/notifications/{notification_id}(notification_id=${notification.notificationId})}" th:text="${notification.subject}"></a></td>
                 <td class="govuk-table__cell" th:text="${#dates.format(notification.dueDate,'dd-MM-yyy')}"></td>
                 <td class="govuk-table__cell" th:text="${notification.user.userLoginId}"></td>
                 <td class="govuk-table__cell" th:text="${notification.status}"></td>

@@ -99,7 +99,9 @@
           <tr class="govuk-table__row" th:each="attachment : ${notification.attachedDocuments}">
             <td class="govuk-table__cell" th:text="${attachment.text}"></td>
             <td class="govuk-table__cell">
-              <a href="/civil/#" class="govuk-link">View</a>
+              <a
+                  th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/download(notification_id=${notification.getNotificationId},attachment_id=${attachment.getDocumentId})}" class="govuk-link">
+                View</a>
             </td>
           </tr>
           </tbody>

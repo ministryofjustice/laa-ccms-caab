@@ -97,3 +97,7 @@ secrets.gradle
 
 # Generated HTML test reports
 htmlReport/
+
+# LocalStack
+localstack/
+!localstack/init-s3.sh

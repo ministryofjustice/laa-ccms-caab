@@ -18,10 +18,21 @@ public class FileUtil {
    * @throws CaabApplicationException if the filename is null.
    */
   public static String getFileExtension(MultipartFile file) {
-    return Optional.ofNullable(file.getOriginalFilename())
+    return getFileExtension(file.getOriginalFilename());
+  }
+
+  /**
+   * Extract the file extension from a filename.
+   * If the filename doesn't have a '.' in it, then the whole filename will be returned.
+   *
+   * @param filename - the filename.
+   * @return the file extension or the whole filename.
+   * @throws CaabApplicationException if the filename is null.
+   */
+  public static String getFileExtension(String filename) {
+    return Optional.ofNullable(filename)
         .map(s -> s.substring(s.lastIndexOf(".") + 1))
         .orElseThrow(() -> new CaabApplicationException("Failed to retrieve file extension"));
   }
-
 
 }

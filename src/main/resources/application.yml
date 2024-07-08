@@ -11,6 +11,10 @@ search:
 submission:
   max-poll-count: 6
 
+notification:
+  attachment:
+    max-poll-count: 6
+
 spring:
   security:
     saml2:

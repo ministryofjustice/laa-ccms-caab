@@ -114,6 +114,11 @@ public class SessionConstants {
   public static final String SUBMISSION_POLL_COUNT = "submissionPollCount";
 
   /**
+   * Session attribute used to keep track of the notification attachment poll counts.
+   */
+  public static final String NOTIFICATION_ATTACHMENT_POLL_COUNT = "notificationAttachmentPollCount";
+
+  /**
    * Session attribute used to keep track of the client names associated with the application.
    */
   public static final String APPLICATION_CLIENT_NAMES = "applicationClientNames";
