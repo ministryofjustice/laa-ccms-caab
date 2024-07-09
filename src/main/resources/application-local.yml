@@ -35,7 +35,7 @@ spring:
   cloud:
     aws:
       s3:
-        endpoint: http://s3.localhost.localstack.cloud:4566
+        endpoint: https://s3.localhost.localstack.cloud:4566
         region: eu-west-2
       credentials:
         access-key: test-access-key
@@ -75,7 +75,9 @@ laa:
   ccms:
     s3:
       buckets:
-        document-bucket: laa-ccms-bucket
+        document-bucket:
+          name: laa-ccms-documents
+          url-duration: 20
     ebs-api:
       hostname: localhost
       port: 8009

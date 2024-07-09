@@ -62,6 +62,7 @@ services:
     environment:
       # LocalStack configuration: https://docs.localstack.cloud/references/configuration/
       - DEBUG=1                                 # Logging
+      - USE_SSL=1                               # Return URLs using HTTPS
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "./localstack/init-s3.sh:/etc/localstack/init/ready.d/init-s3.sh"

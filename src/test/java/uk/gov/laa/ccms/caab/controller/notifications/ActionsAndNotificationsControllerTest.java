@@ -53,6 +53,7 @@ import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
+import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 
@@ -90,7 +91,8 @@ class ActionsAndNotificationsControllerTest {
                     .userLoginId("user1")
                     .userType("user1"))
                 .notificationId("234")
-                .notificationType("N"));
+                .notificationType("N")
+                .addAttachedDocumentsItem(new Document()));
 
   }
 
@@ -295,7 +297,7 @@ class ActionsAndNotificationsControllerTest {
     flashMap.put("user", userDetails);
     flashMap.put("notificationSearchCriteria", criteria);
     flashMap.put("notificationsSearchResults", notificationsMock);
-    mockMvc.perform(get("/notification/234")
+    mockMvc.perform(get("/notifications/234")
         .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().isOk())
@@ -312,7 +314,7 @@ class ActionsAndNotificationsControllerTest {
     flashMap.put("notificationsSearchResults", notificationsMock);
 
     Exception exception = assertThrows(Exception.class, () ->
-            mockMvc.perform(get("/notification/123")
+            mockMvc.perform(get("/notifications/123")
                 .flashAttrs(flashMap)));
     assertTrue(exception.getCause() instanceof CaabApplicationException);
     assertEquals("Notification with id 123 not found", exception.getCause().getMessage());

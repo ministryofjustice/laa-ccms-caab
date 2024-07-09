@@ -1,16 +1,21 @@
 package uk.gov.laa.ccms.caab.service;
 
+import io.awspring.cloud.s3.S3Resource;
+import io.awspring.cloud.s3.S3Template;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.net.URL;
+import java.time.Duration;
+import java.util.Base64;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
-import uk.gov.laa.ccms.caab.client.S3ApiClient;
-import uk.gov.laa.ccms.caab.client.S3ApiClientException;
-import uk.gov.laa.ccms.caab.client.S3ApiFileNotFoundException;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
@@ -24,7 +29,13 @@ import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 public class NotificationService {
 
   private final SoaApiClient soaApiClient;
-  private final S3ApiClient s3ApiClient;
+  private final S3Template s3Template;
+
+  @Value("${laa.ccms.s3.buckets.document-bucket.url-duration}")
+  private final Long urlDuration;
+
+  @Value("${laa.ccms.s3.buckets.document-bucket.name}")
+  String bucketName;
 
   /**
    * Retrieve the summary of notifications for a given user.
@@ -51,66 +62,62 @@ public class NotificationService {
   }
 
   /**
-   * Retrieve the content for a notification attachment. First attempt retrieval from
-   * S3, and if the document is not found attempt retrieval from EBS, then upload to S3 for future
-   * retrieval.
+   * Retrieve the signed S3 URL of a document.
    *
-   * @param notificationAttachmentId  The identifier of the notification attachment.
-   * @param loginId                   The login identifier for the user.
-   * @param userType                  Type of the user (e.g., admin, user).
-   * @return An Optional String containing the document content.
+   * @param documentId The document identifier.
+   * @return an Optional String containing the signed S3 URL of the notification attachment.
    */
-  public Optional<String> getNotificationAttachment(String notificationAttachmentId,
-      String loginId, String userType) {
-
-    Optional<String> content = Optional.empty();
-    try {
-      content = s3ApiClient.downloadDocument(notificationAttachmentId);
-      content.ifPresent(doc -> {
-        if (!StringUtils.hasText(doc)) {
-          log.warn("Notification attachment with ID '{}' retrieved from S3 has no content.",
-              notificationAttachmentId);
-        }
-      });
-    } catch (S3ApiFileNotFoundException ex) {
-      log.warn("Notification attachment with ID '{}' missing in S3. Attempting to retrieve "
-              + "from EBS instead.",
-          notificationAttachmentId);
-      content = getNotificationAttachementFromSoa(notificationAttachmentId, loginId, userType);
-      content.ifPresent(doc -> {
-        if (!StringUtils.hasText(doc)) {
-          log.warn("Notification attachment with ID '{}' retrieved from EBS has no content.",
-              notificationAttachmentId);
-        }
-        s3ApiClient.uploadDocument(notificationAttachmentId, doc);
-      });
-
-    } catch (S3ApiClientException ex) {
-      log.warn("Unable to process content for notification attachment with ID '{}'.",
-          notificationAttachmentId);
-    }
-
-    return content;
+  public Optional<String> getDocumentUrl(String documentId) {
+    return s3Template.listObjects(bucketName, documentId + ".").stream()
+        .findFirst()
+        .map(S3Resource::getFilename)
+        .map(filename -> s3Template
+            .createSignedGetURL(bucketName, filename, Duration.ofMinutes(urlDuration)))
+        .map(URL::toString);
   }
 
   /**
-   * Retrieve the content of a notification attachment from EBS.
+   * If the document with the provided ID does not exist in S3, fetch it from EBS and upload it.
    *
-   * @param documentId The document identifier for the notification attachment.
-   * @param loginId    The login identifier for the user.
-   * @param userType   Type of the user (e.g., admin, user).
-   * @return an Optional String containing the content of the notification attachment if available.
+   * @param attachmentId  The ID of the notification attachment to retrieve.
+   * @param loginId       The login identifier for the user.
+   * @param userType      Type of the user (e.g., admin, user).
    */
-  private Optional<String> getNotificationAttachementFromSoa(String documentId, String loginId,
-      String userType) {
-    Document document = soaApiClient.downloadDocument(documentId, loginId, userType)
-        .block();
+  public void retrieveNotificationAttachment(String attachmentId,
+      String loginId, String userType) {
 
-    if (document != null) {
-      return Optional.ofNullable(document.getFileData());
+    if (getDocumentUrl(attachmentId).isPresent()) {
+      log.debug("Document with ID '{}' found in S3.",
+          attachmentId);
     } else {
-      return Optional.empty();
+      log.debug("Document with ID '{}' missing in S3. Attempting to retrieve "
+              + "from EBS instead.",
+          attachmentId);
+      Document attachment = soaApiClient.downloadDocument(attachmentId,
+              loginId, userType).block();
+      if (attachment != null) {
+        log.debug("Document with ID '{}' retrieved from EBS. Uploading to S3.",
+            attachmentId);
+        uploadDocumentToS3(attachment);
+        log.debug("Document with ID '{}' uploaded to S3.",
+            attachmentId);
+      } else {
+        throw new CaabApplicationException(String.format("Unable to retrieve document with ID "
+                + "'%s' from EBS.", attachmentId));
+      }
     }
+  }
+
+  /**
+   * Upload a document to S3.
+   *
+   * @param document   The document to upload.
+   */
+  private void uploadDocumentToS3(Document document) {
+    InputStream contentInputStream = new ByteArrayInputStream(
+        Base64.getDecoder().decode(document.getFileData()));
+    String filename = document.getDocumentId() + '.' + document.getFileExtension();
+    s3Template.upload(bucketName, filename, contentInputStream);
   }
 
 }

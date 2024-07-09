@@ -44,7 +44,7 @@ laa:
   ccms:
     s3:
       buckets:
-        document-bucket: laa-ccms-bucket
+        document-bucket: laa-ccms-documents
     ebs-api:
       hostname: localhost
       port: 8123

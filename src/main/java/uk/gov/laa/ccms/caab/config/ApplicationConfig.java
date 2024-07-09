@@ -2,13 +2,11 @@ package uk.gov.laa.ccms.caab.config;
 
 import fi.solita.clamav.ClamAVClient;
 import java.util.Locale;
-import java.util.concurrent.Executor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -153,17 +151,6 @@ public class ApplicationConfig implements WebMvcConfigurer {
         .baseUrl(apiProperties.getUrl())
         .defaultHeader(HttpHeaders.AUTHORIZATION, apiProperties.getAccessToken())
         .build();
-  }
-
-  @Bean
-  public Executor taskExecutor() {
-    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-    executor.setCorePoolSize(2);
-    executor.setMaxPoolSize(2);
-    executor.setQueueCapacity(500);
-    executor.setThreadNamePrefix("S3Download-");
-    executor.initialize();
-    return executor;
   }
 
 }

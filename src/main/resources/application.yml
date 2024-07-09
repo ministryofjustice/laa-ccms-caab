@@ -67,7 +67,9 @@ laa:
   ccms:
     s3:
       buckets:
-        document-bucket: ${S3_DOCUMENT_BUCKET}
+        document-bucket:
+          name: ${S3_DOCUMENT_BUCKET}
+          url-duration: 20 # (minutes) - How long generated URLs remain accessible.
     ebs-api:
       hostname: ${CAAB_EBS_API_HOSTNAME}
       url: ${laa.ccms.ebs-api.hostname}
