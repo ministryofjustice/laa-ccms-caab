@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.notifications;
 
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -92,8 +93,12 @@ class ActionsAndNotificationsControllerTest {
                     .userType("user1"))
                 .notificationId("234")
                 .notificationType("N")
-                .addAttachedDocumentsItem(new Document()));
+                .attachedDocuments(buildDocuments()));
 
+  }
+
+  private static List<Document> buildDocuments() {
+    return List.of(new Document().documentId("567"));
   }
 
   private static NotificationSearchCriteria buildNotificationSearchCritieria() {
@@ -348,6 +353,44 @@ class ActionsAndNotificationsControllerTest {
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/notifications/search?notification_type=all"));
+  }
+
+  @Test
+  void TestRetrieveNotificationAttachment_redirectsToNotificationPage() throws Exception {
+    NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+    Notifications notificationsMock = getNotificationsMock();
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+    flashMap.put("notificationSearchCriteria", criteria);
+    flashMap.put("notificationsSearchResults", notificationsMock);
+    mockMvc.perform(get("/notifications/234/attachments/567/retrieve")
+            .sessionAttr("user", userDetails)
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/notifications/234"));
+  }
+
+  @Test
+  void testGetNotification_populatesDocumentUrls() throws Exception {
+    NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+    Notifications notificationsMock = getNotificationsMock();
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+    flashMap.put("notificationSearchCriteria", criteria);
+    flashMap.put("notificationsSearchResults", notificationsMock);
+
+    List<Document> documents = buildDocuments();
+
+    when(notificationService.getDocumentLinks(documents)).thenReturn(Map.of("567", "doc-url"));
+
+    mockMvc.perform(get("/notifications/234")
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(
+            model().attribute("documentLinks", hasEntry("567", "doc-url")))
+        .andExpect(model().attributeExists("notification"));
   }
 
   private List<ContactDetail> buildFeeEarners() {

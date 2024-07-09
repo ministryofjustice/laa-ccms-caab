@@ -5,7 +5,6 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEAR
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +23,6 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationSearchValidator;
-import uk.gov.laa.ccms.caab.constants.NotificationConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.NotificationService;
@@ -34,7 +32,6 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
-import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 
@@ -51,7 +48,6 @@ public class ActionsAndNotificationsController {
   private final ProviderService providerService;
   private final NotificationSearchValidator notificationSearchValidator;
   private final UserService userService;
-  private final NotificationConstants notificationConstants;
   private final NotificationService notificationService;
 
   /**
@@ -170,7 +166,8 @@ public class ActionsAndNotificationsController {
         .orElseThrow(() -> new CaabApplicationException(
             String.format("Notification with id %s not found", notificationId)));
 
-    Map<String, String> documentLinks = getDocumentLinks(found.getAttachedDocuments());
+    Map<String, String> documentLinks =
+        notificationService.getDocumentLinks(found.getAttachedDocuments());
 
     model.addAttribute("documentLinks", documentLinks);
     model.addAttribute("notification", found);
@@ -196,17 +193,6 @@ public class ActionsAndNotificationsController {
 
     return "redirect:/notifications/%s".formatted(notificationId);
 
-  }
-
-  private Map<String, String> getDocumentLinks(List<Document> documents) {
-    Map<String, String> documentLinks = new HashMap<>();
-    if (!documents.isEmpty()) {
-      for (Document document : documents) {
-        documentLinks.put(document.getDocumentId(),
-            notificationService.getDocumentUrl(document.getDocumentId()).orElse(null));
-      }
-    }
-    return documentLinks;
   }
 
   private void populateDropdowns(UserDetail user, Model model,

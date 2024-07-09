@@ -33,8 +33,8 @@ spring:
         endpoint: http://s3.localhost.localstack.cloud:4566
         region: eu-west-2
       credentials:
-        access-key: 75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a
-        secret-key: test-key
+        access-key: test-access-key
+        secret-key: test-secret-key
 
 server:
   servlet:
@@ -44,7 +44,9 @@ laa:
   ccms:
     s3:
       buckets:
-        document-bucket: laa-ccms-documents
+        document-bucket:
+          name: laa-ccms-documents
+          url-duration: 20
     ebs-api:
       hostname: localhost
       port: 8123

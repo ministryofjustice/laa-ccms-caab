@@ -1,12 +1,12 @@
 package uk.gov.laa.ccms.caab.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,7 +17,6 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.client.S3ApiClient;
-import uk.gov.laa.ccms.caab.client.S3ApiFileNotFoundException;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
@@ -89,27 +88,26 @@ class NotificationServiceTest {
   }
 
   @Test
-  void getNotificationAttachments_returnsDataFromS3() throws IOException {
+  void retrieveNotificationAttachment_checksS3() {
     String documentId = "documentId";
     String documentContent = "documentContent";
 
-    when(s3ApiClient.downloadDocument(eq(documentId))).thenReturn(Optional.of(documentContent));
+    when(s3ApiClient.getDocumentUrl(eq(documentId))).thenReturn(Optional.of("document-url"));
 
-    Optional<String> actual = notificationService.getNotificationAttachment(documentId,
-        "loginId",
-        "userType");
+    notificationService.retrieveNotificationAttachment(documentId,
+        "loginId", "userType");
 
-    verify(s3ApiClient).downloadDocument(documentId);
-    assertTrue(actual.isPresent());
-    assertEquals(documentContent, actual.get());
+    verify(s3ApiClient).getDocumentUrl(documentId);
+    verifyNoInteractions(soaApiClient);
+    verify(s3ApiClient, never()).uploadDocument(any(), any());
   }
 
   @Test
-  void getNotificationAttachments_returnsDataFromEbs() {
+  void retrieveNotificationAttachment_returnsDataFromEbs() {
     String documentId = "documentId";
     String documentContent = "documentContent";
 
-    when(s3ApiClient.downloadDocument(eq(documentId))).thenThrow(S3ApiFileNotFoundException.class);
+    when(s3ApiClient.getDocumentUrl(eq(documentId))).thenReturn(Optional.empty());
 
     Document document = new Document()
         .documentId(documentId)
@@ -118,20 +116,19 @@ class NotificationServiceTest {
     when(soaApiClient.downloadDocument(documentId, "loginId", "userType"))
         .thenReturn(Mono.just(document));
 
-    Optional<String> actual = notificationService.getNotificationAttachment(documentId,
+    notificationService.retrieveNotificationAttachment(documentId,
         "loginId",
         "userType");
 
-    assertTrue(actual.isPresent());
-    assertEquals(documentContent, actual.get());
+    verify(soaApiClient).downloadDocument(documentId, "loginId", "userType");
   }
 
   @Test
-  void getNotificationAttachments_uploadsDataToS3() {
+  void retrieveNotificationAttachment_uploadsDataToS3() {
     String documentId = "documentId";
     String documentContent = "documentContent";
 
-    when(s3ApiClient.downloadDocument(eq(documentId))).thenThrow(S3ApiFileNotFoundException.class);
+    when(s3ApiClient.getDocumentUrl(eq(documentId))).thenReturn(Optional.empty());
 
     Document document = new Document()
         .documentId(documentId)
@@ -140,7 +137,7 @@ class NotificationServiceTest {
     when(soaApiClient.downloadDocument(documentId, "loginId", "userType"))
         .thenReturn(Mono.just(document));
 
-    notificationService.getNotificationAttachment(documentId,
+    notificationService.retrieveNotificationAttachment(documentId,
         "loginId",
         "userType");
 

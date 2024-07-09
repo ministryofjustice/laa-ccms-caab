@@ -1,19 +1,14 @@
 package uk.gov.laa.ccms.caab.service;
 
-import io.awspring.cloud.s3.S3Resource;
-import io.awspring.cloud.s3.S3Template;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.net.URL;
-import java.time.Duration;
-import java.util.Base64;
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
+import uk.gov.laa.ccms.caab.client.S3ApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
@@ -29,13 +24,8 @@ import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 public class NotificationService {
 
   private final SoaApiClient soaApiClient;
-  private final S3Template s3Template;
 
-  @Value("${laa.ccms.s3.buckets.document-bucket.url-duration}")
-  private final Long urlDuration;
-
-  @Value("${laa.ccms.s3.buckets.document-bucket.name}")
-  String bucketName;
+  private final S3ApiClient s3ApiClient;
 
   /**
    * Retrieve the summary of notifications for a given user.
@@ -62,21 +52,6 @@ public class NotificationService {
   }
 
   /**
-   * Retrieve the signed S3 URL of a document.
-   *
-   * @param documentId The document identifier.
-   * @return an Optional String containing the signed S3 URL of the notification attachment.
-   */
-  public Optional<String> getDocumentUrl(String documentId) {
-    return s3Template.listObjects(bucketName, documentId + ".").stream()
-        .findFirst()
-        .map(S3Resource::getFilename)
-        .map(filename -> s3Template
-            .createSignedGetURL(bucketName, filename, Duration.ofMinutes(urlDuration)))
-        .map(URL::toString);
-  }
-
-  /**
    * If the document with the provided ID does not exist in S3, fetch it from EBS and upload it.
    *
    * @param attachmentId  The ID of the notification attachment to retrieve.
@@ -86,7 +61,7 @@ public class NotificationService {
   public void retrieveNotificationAttachment(String attachmentId,
       String loginId, String userType) {
 
-    if (getDocumentUrl(attachmentId).isPresent()) {
+    if (s3ApiClient.getDocumentUrl(attachmentId).isPresent()) {
       log.debug("Document with ID '{}' found in S3.",
           attachmentId);
     } else {
@@ -98,7 +73,7 @@ public class NotificationService {
       if (attachment != null) {
         log.debug("Document with ID '{}' retrieved from EBS. Uploading to S3.",
             attachmentId);
-        uploadDocumentToS3(attachment);
+        s3ApiClient.uploadDocument(attachmentId, attachment.getFileData());
         log.debug("Document with ID '{}' uploaded to S3.",
             attachmentId);
       } else {
@@ -109,15 +84,20 @@ public class NotificationService {
   }
 
   /**
-   * Upload a document to S3.
+   * For each {@link Document} provided, generate a signed URL to access the file in S3.
    *
-   * @param document   The document to upload.
+   * @param documents   The documents for which to generate access URLs.
+   * @return a map of document ID / URL pairs.
    */
-  private void uploadDocumentToS3(Document document) {
-    InputStream contentInputStream = new ByteArrayInputStream(
-        Base64.getDecoder().decode(document.getFileData()));
-    String filename = document.getDocumentId() + '.' + document.getFileExtension();
-    s3Template.upload(bucketName, filename, contentInputStream);
+  public Map<String, String> getDocumentLinks(List<Document> documents) {
+    Map<String, String> documentLinks = new HashMap<>();
+    if (!documents.isEmpty()) {
+      for (Document document : documents) {
+        documentLinks.put(document.getDocumentId(),
+            s3ApiClient.getDocumentUrl(document.getDocumentId()).orElse(null));
+      }
+    }
+    return documentLinks;
   }
 
 }
