@@ -99,7 +99,7 @@ class NotificationServiceTest {
 
     verify(s3ApiClient).getDocumentUrl(documentId);
     verifyNoInteractions(soaApiClient);
-    verify(s3ApiClient, never()).uploadDocument(any(), any());
+    verify(s3ApiClient, never()).uploadDocument(any());
   }
 
   @Test
@@ -141,6 +141,6 @@ class NotificationServiceTest {
         "loginId",
         "userType");
 
-    verify(s3ApiClient).uploadDocument(documentId, documentContent);
+    verify(s3ApiClient).uploadDocument(document);
   }
 }

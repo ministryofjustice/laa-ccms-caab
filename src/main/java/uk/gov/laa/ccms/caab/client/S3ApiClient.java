@@ -15,6 +15,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import uk.gov.laa.ccms.caab.config.S3DocumentBucketProperties;
+import uk.gov.laa.ccms.soa.gateway.model.Document;
 
 /**
  * Client to handle interactions with AWS S3 buckets.
@@ -55,7 +56,7 @@ public class S3ApiClient {
    * @return an Optional String containing the signed S3 URL of the document.
    */
   public Optional<String> getDocumentUrl(String documentId) {
-    return s3Template.listObjects(documentBucketProperties.getName(), documentId + ".").stream()
+    return s3Template.listObjects(documentBucketProperties.getName(), documentId).stream()
         .findFirst()
         .map(S3Resource::getFilename)
         .map(filename -> s3Template
@@ -67,13 +68,17 @@ public class S3ApiClient {
   /**
    * Upload a document to S3.
    *
-   * @param documentId The document identifier for the document.
-   * @param content    Base64 encoded String containing the content of the document.
+   * @param document The document to upload.
    */
-  public void uploadDocument(String documentId, String content) {
+  public void uploadDocument(Document document) {
     InputStream contentInputStream = new ByteArrayInputStream(
-        Base64.getDecoder().decode(content));
-    s3Template.upload(documentBucketProperties.getName(), documentId, contentInputStream);
+        Base64.getDecoder().decode(document.getFileData()));
+    String filename = getFilename(document.getDocumentId(), document.getFileExtension());
+    s3Template.upload(documentBucketProperties.getName(), filename, contentInputStream);
+  }
+
+  private String getFilename(String name, String extension) {
+    return name + (extension == null ? "" : "." + extension);
   }
 
 }

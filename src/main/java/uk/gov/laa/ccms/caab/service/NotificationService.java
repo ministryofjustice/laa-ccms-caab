@@ -73,7 +73,7 @@ public class NotificationService {
       if (attachment != null) {
         log.debug("Document with ID '{}' retrieved from EBS. Uploading to S3.",
             attachmentId);
-        s3ApiClient.uploadDocument(attachmentId, attachment.getFileData());
+        s3ApiClient.uploadDocument(attachment);
         log.debug("Document with ID '{}' uploaded to S3.",
             attachmentId);
       } else {
