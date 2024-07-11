@@ -13,9 +13,9 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_LEVEL_OF_SERVICE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MATTER_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
@@ -48,6 +48,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple3;
 import reactor.util.function.Tuple4;
 import reactor.util.function.Tuple5;
+import reactor.util.function.Tuple6;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
@@ -76,9 +77,7 @@ import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
-import uk.gov.laa.ccms.caab.model.ApplicationFullSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
-import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
@@ -91,7 +90,7 @@ import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
-import uk.gov.laa.ccms.caab.util.DisplayUtil;
+import uk.gov.laa.ccms.caab.model.summary.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
@@ -144,6 +143,8 @@ public class ApplicationService {
   private final AssessmentService assessmentService;
 
   private final ProviderService providerService;
+
+  private final EvidenceService evidenceService;
 
   private final ApplicationFormDataMapper applicationFormDataMapper;
 
@@ -526,11 +527,32 @@ public class ApplicationService {
       final ApplicationDetail application,
       final UserDetail user) {
 
-    final Mono<RelationshipToCaseLookupDetail> organisationRelationshipsMono =
+    String correspondenceMethod = "";
+    if (application.getCorrespondenceAddress() != null
+        && application.getCorrespondenceAddress().getPreferredAddress() != null) {
+      final String correspondenceCode =
+          application.getCorrespondenceAddress().getPreferredAddress();
+      correspondenceMethod = lookupService.getCommonValue(
+          COMMON_VALUE_CASE_ADDRESS_OPTION, correspondenceCode)
+          .blockOptional()
+          .orElseThrow(() -> new CaabApplicationException(
+              "Failed to retrieve correspondence lookup"))
+          .orElse(new CommonLookupValueDetail().description(correspondenceCode))
+          .getDescription();
+    }
+
+
+    final Mono<RelationshipToCaseLookupDetail> orgRelationshipsToCaseMono =
         lookupService.getOrganisationToCaseRelationships();
 
-    final Mono<RelationshipToCaseLookupDetail> personRelationshipsMono =
+    final Mono<RelationshipToCaseLookupDetail> personRelationshipsToCaseMono =
         lookupService.getPersonToCaseRelationships();
+
+    final Mono<CommonLookupDetail> relationshipsToClientMono =
+        lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT);
+
+    final Mono<CommonLookupDetail> contactTitlesMono =
+        lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE);
 
     final Mono<AssessmentDetails> meansAssessmentsMono =
         assessmentService.getAssessments(
@@ -544,12 +566,16 @@ public class ApplicationService {
             user.getProvider().getId().toString(),
             application.getCaseReferenceNumber());
 
-    final Tuple4<RelationshipToCaseLookupDetail,
-        RelationshipToCaseLookupDetail,
-        AssessmentDetails,
-        AssessmentDetails> applicationSummaryMonos = Mono.zip(
-            organisationRelationshipsMono,
-            personRelationshipsMono,
+    final Tuple6<RelationshipToCaseLookupDetail,
+            RelationshipToCaseLookupDetail,
+            CommonLookupDetail,
+            CommonLookupDetail,
+            AssessmentDetails,
+            AssessmentDetails> applicationSummaryMonos = Mono.zip(
+            orgRelationshipsToCaseMono,
+            personRelationshipsToCaseMono,
+            relationshipsToClientMono,
+            contactTitlesMono,
             meansAssessmentsMono,
             meritsAssessmentsMono)
         .blockOptional().orElseThrow(() ->
@@ -560,11 +586,17 @@ public class ApplicationService {
     final List<RelationshipToCaseLookupValueDetail> personsRelationships
         = applicationSummaryMonos.getT2().getContent();
 
+    final List<CommonLookupValueDetail> relationshipsToClient
+        = applicationSummaryMonos.getT3().getContent();
+
+    final List<CommonLookupValueDetail> contactTitles
+        = applicationSummaryMonos.getT4().getContent();
+
     final AssessmentDetail meansAssessment =
-        getMostRecentAssessmentDetail(applicationSummaryMonos.getT3().getContent());
+        getMostRecentAssessmentDetail(applicationSummaryMonos.getT5().getContent());
 
     final AssessmentDetail meritsAssessment =
-        getMostRecentAssessmentDetail(applicationSummaryMonos.getT4().getContent());
+        getMostRecentAssessmentDetail(applicationSummaryMonos.getT6().getContent());
 
     //this not only gets the status but also updates them.
     assessmentService.calculateAssessmentStatuses(
@@ -573,30 +605,38 @@ public class ApplicationService {
         meritsAssessment,
         user);
 
+    final boolean evidenceRequired = evidenceService.isEvidenceRequired(
+        meansAssessment,
+        meritsAssessment,
+        application.getApplicationType(),
+        application.getPriorAuthorities());
+
+    final boolean allEvidenceProvided = evidenceService.isAllEvidenceProvided(
+        String.valueOf(application.getId()),
+        application.getCaseReferenceNumber(),
+        application.getProviderDetails().getProvider().getId());
+
     return new ApplicationSummaryBuilder(application.getAuditTrail())
-        .clientFullName(
-            application.getClient().getFirstName(),
-            application.getClient().getSurname())
-        .clientReferenceNumber(
-            application.getClient().getReference())
         .caseReferenceNumber(
             application.getCaseReferenceNumber())
-        .providerCaseReferenceNumber(
-            application.getProviderDetails().getProviderCaseReference())
         .applicationType(
             application.getApplicationType())
-        .providerDetails(
-            application.getProviderDetails().getProviderContact())
+        .client(application.getClient())
+        .provider(application.getProviderDetails())
         .generalDetails(
-            application.getCorrespondenceAddress())
-        .proceedingsAndCosts(
+            application.getStatus(),
+            application.getCategoryOfLaw(),
+            correspondenceMethod)
+        .proceedingsPriorAuthsAndCosts(
             application.getProceedings(),
             application.getPriorAuthorities(),
             application.getCosts())
         .opponentsAndOtherParties(
             application.getOpponents(),
+            contactTitles,
             organisationRelationships,
-            personsRelationships)
+            personsRelationships,
+            relationshipsToClient)
         .assessments(
             application,
             meansAssessment,
@@ -604,135 +644,10 @@ public class ApplicationService {
             organisationRelationships,
             personsRelationships)
         .documentUpload(
-            application,
-            meansAssessment,
-            meritsAssessment)
+            evidenceRequired,
+            allEvidenceProvided)
         .build();
   }
-
-  /**
-   * Retrieves the full application Summary display values.
-   *
-   * @param application the application to retrieve a summary for.
-   * @return A Mono of ApplicationFullSummaryDisplay representing the case summary display values.
-   */
-  public ApplicationFullSummaryDisplay getApplicationFullSummary(
-      final ApplicationDetail application,
-      final UserDetail user) {
-
-    final Mono<Optional<CommonLookupValueDetail>> correspondenceMethodLookupMono =
-        lookupService.getCommonValue(COMMON_VALUE_CORRESPONDENCE_METHOD,
-            application.getCorrespondenceAddress().getPreferredAddress());
-
-    final Mono<RelationshipToCaseLookupDetail> organisationRelationshipsMono =
-        lookupService.getOrganisationToCaseRelationships();
-
-    final Mono<RelationshipToCaseLookupDetail> personRelationshipsMono =
-        lookupService.getPersonToCaseRelationships();
-
-    final Mono<AssessmentDetails> meansAssessmentsMono =
-        assessmentService.getAssessments(
-            List.of("meansAssessment"),
-            user.getProvider().getId().toString(),
-            application.getCaseReferenceNumber());
-
-    final Mono<AssessmentDetails> meritsAssessmentsMono =
-        assessmentService.getAssessments(
-            List.of("meritsAssessment"),
-            user.getProvider().getId().toString(),
-            application.getCaseReferenceNumber());
-
-    final Tuple5<Optional<CommonLookupValueDetail>,
-        RelationshipToCaseLookupDetail,
-        RelationshipToCaseLookupDetail,
-        AssessmentDetails,
-        AssessmentDetails> applicationSummaryMonos = Mono.zip(
-            correspondenceMethodLookupMono,
-            organisationRelationshipsMono,
-            personRelationshipsMono,
-            meansAssessmentsMono,
-            meritsAssessmentsMono)
-        .blockOptional().orElseThrow(() ->
-            new CaabApplicationException("Failed to retrieve application summary"));
-
-
-    final String correspondenceMethod = applicationSummaryMonos.getT1()
-        .map(CommonLookupValueDetail::getDescription)
-        .orElse(application.getCorrespondenceAddress().getPreferredAddress());
-
-    final List<RelationshipToCaseLookupValueDetail> organisationRelationships
-        = applicationSummaryMonos.getT2().getContent();
-    final List<RelationshipToCaseLookupValueDetail> personsRelationships
-        = applicationSummaryMonos.getT3().getContent();
-
-    final AssessmentDetail meansAssessment =
-        getMostRecentAssessmentDetail(applicationSummaryMonos.getT4().getContent());
-
-    final AssessmentDetail meritsAssessment =
-        getMostRecentAssessmentDetail(applicationSummaryMonos.getT5().getContent());
-
-    //this not only gets the status but also updates them.
-    assessmentService.calculateAssessmentStatuses(
-        application,
-        meansAssessment,
-        meritsAssessment,
-        user);
-
-    /** TODO: I only see document upload status being initialised in PrepareAmendment, which
-     * does a lookup up based on CcmsModule.AMENDMENT. Check whether the doc upload status is
-     * shown for new applications in the PUI.
-     */
-
-    ApplicationFullSummaryDisplay.builder()
-        .applicationStatus(application.getApplicationType().getDisplayValue())
-        .applicationType(application.getApplicationType().getDisplayValue())
-        .categoryOfLaw(application.getCategoryOfLaw().getDisplayValue())
-        .clientFullName(
-            DisplayUtil.getFullName(
-                application.getClient().getFirstName(),
-                application.getClient().getSurname()))
-        .correspondenceMethod(correspondenceMethod)
-        .devolvedPowersUsed(application.getApplicationType().getDevolvedPowers().getUsed())
-        .devolvedPowersDate(application.getApplicationType().getDevolvedPowers().getDateUsed())
-        .documentUploadStatus()
-
-//    return new ApplicationSummaryBuilder(application.getAuditTrail())
-//        .clientFullName(
-//            application.getClient().getFirstName(),
-//            application.getClient().getSurname())
-//        .clientReferenceNumber(
-//            application.getClient().getReference())
-//        .caseReferenceNumber(
-//            application.getCaseReferenceNumber())
-//        .providerCaseReferenceNumber(
-//            application.getProviderDetails().getProviderCaseReference())
-//        .applicationType(
-//            application.getApplicationType())
-//        .providerDetails(
-//            application.getProviderDetails().getProviderContact())
-//        .generalDetails(
-//            application.getCorrespondenceAddress())
-//        .proceedingsAndCosts(
-//            application.getProceedings(),
-//            application.getPriorAuthorities(),
-//            application.getCosts())
-//        .opponentsAndOtherParties(
-//            application.getOpponents(),
-//            organisationRelationships,
-//            personsRelationships)
-//        .assessments(
-//            application,
-//            meansAssessment,
-//            meritsAssessment,
-//            organisationRelationships,
-//            personsRelationships)
-//        .documentUpload(
-//            application,
-//            meansAssessment,
-//            meritsAssessment)
-//        .build();
-  }
-
 
   public ApplicationFormData getApplicationTypeFormData(final String id) {
     return caabApiClient.getApplicationType(id)

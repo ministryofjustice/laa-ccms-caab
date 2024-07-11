@@ -43,21 +43,21 @@
             <td class="govuk-table__cell" th:unless="${summary.applicationType.enabled}">
               Application type
             </td>
-            <td class="govuk-table__cell" th:text="${summary.applicationType.status}"></td>
+            <td class="govuk-table__cell" th:text="${summary.applicationType.description}"></td>
             <td class="govuk-table__cell" th:text="${#dates.format(summary.applicationType.lastSaved, 'dd/MM/yyyy')}"></td>
             <td class="govuk-table__cell" th:text="${summary.applicationType.lastSavedBy}"></td>
             <td class="govuk-table__cell"></td>
           </tr>
           <tr class="govuk-table__row">
             <td class="govuk-table__cell"><a href="/civil/application/summary/provider-details" class="govuk-link">Provider details</a></td>
-            <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.providerDetails.status})}"></td>
-            <td class="govuk-table__cell" th:text="${#dates.format(summary.providerDetails.lastSaved, 'dd/MM/yyyy')}"></td>
-            <td class="govuk-table__cell" th:text="${summary.providerDetails.lastSavedBy}"></td>
+            <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.provider.status})}"></td>
+            <td class="govuk-table__cell" th:text="${#dates.format(summary.provider.lastSaved, 'dd/MM/yyyy')}"></td>
+            <td class="govuk-table__cell" th:text="${summary.provider.lastSavedBy}"></td>
             <td class="govuk-table__cell"></td>
           </tr>
           <tr class="govuk-table__row">
             <td class="govuk-table__cell"><a href="/civil/application/summary/client/details/summary" class="govuk-link">Client details</a></td>
-            <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.clientDetails.status})}"></td>
+            <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.client.status})}"></td>
             <td class="govuk-table__cell"></td>
             <td class="govuk-table__cell"></td>
             <td class="govuk-table__cell"></td>
@@ -105,7 +105,7 @@
             <td class="govuk-table__cell"></td>
           </tr>
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell"><a href="#" class="govuk-link">View application summary</a></td>
+            <td class="govuk-table__cell"><a class="govuk-link" th:href="@{/application/summary/full}">View application summary</a></td>
             <td class="govuk-table__cell"></td>
             <td class="govuk-table__cell"></td>
             <td class="govuk-table__cell"></td>

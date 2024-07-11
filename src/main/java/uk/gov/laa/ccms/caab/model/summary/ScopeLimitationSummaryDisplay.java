@@ -1,19 +1,23 @@
-package uk.gov.laa.ccms.caab.model;
+package uk.gov.laa.ccms.caab.model.summary;
 
-import java.util.List;
 import lombok.Builder;
 import lombok.Data;
-import org.springframework.data.util.Pair;
 
 /**
  * Represents the Summary display values for a Scope Limitation.
  */
 @Data
 @Builder
-public class ScopeLimitationRowDisplay {
+public class ScopeLimitationSummaryDisplay {
 
+  /**
+   * The scope limitation name.
+   */
   private String scopeLimitation;
 
+  /**
+   * The wording for the scope limitation.
+   */
   private String wording;
 
 
