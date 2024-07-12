@@ -32,6 +32,14 @@ spring:
       static-locations: file:src/main/resources/static/
       cache:
         period: 0
+  cloud:
+    aws:
+      s3:
+        endpoint: http://s3.localhost.localstack.cloud:4566
+        region: eu-west-2
+      credentials:
+        access-key: test-access-key
+        secret-key: test-secret-key
 
 #logging:
 #  level:
@@ -44,6 +52,10 @@ spring:
 logging:
   level:
     uk.gov.laa.ccms.caab: DEBUG
+    software:
+      amazon:
+        awssdk:
+          request: DEBUG
 
 os:
   api:
@@ -61,6 +73,9 @@ av:
 
 laa:
   ccms:
+    s3:
+      buckets:
+        document-bucket: laa-ccms-bucket
     ebs-api:
       hostname: localhost
       port: 8009
