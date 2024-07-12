@@ -1,16 +1,16 @@
 package uk.gov.laa.ccms.caab.service;
 
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.client.S3ApiClient;
-import uk.gov.laa.ccms.caab.client.S3ApiClientException;
-import uk.gov.laa.ccms.caab.client.S3ApiFileNotFoundException;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
@@ -24,6 +24,7 @@ import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 public class NotificationService {
 
   private final SoaApiClient soaApiClient;
+
   private final S3ApiClient s3ApiClient;
 
   /**
@@ -51,66 +52,52 @@ public class NotificationService {
   }
 
   /**
-   * Retrieve the content for a notification attachment. First attempt retrieval from
-   * S3, and if the document is not found attempt retrieval from EBS, then upload to S3 for future
-   * retrieval.
+   * If the document with the provided ID does not exist in S3, fetch it from EBS and upload it.
    *
-   * @param notificationAttachmentId  The identifier of the notification attachment.
-   * @param loginId                   The login identifier for the user.
-   * @param userType                  Type of the user (e.g., admin, user).
-   * @return An Optional String containing the document content.
+   * @param attachmentId  The ID of the notification attachment to retrieve.
+   * @param loginId       The login identifier for the user.
+   * @param userType      Type of the user (e.g., admin, user).
    */
-  public Optional<String> getNotificationAttachment(String notificationAttachmentId,
+  public void retrieveNotificationAttachment(String attachmentId,
       String loginId, String userType) {
 
-    Optional<String> content = Optional.empty();
-    try {
-      content = s3ApiClient.downloadDocument(notificationAttachmentId);
-      content.ifPresent(doc -> {
-        if (!StringUtils.hasText(doc)) {
-          log.warn("Notification attachment with ID '{}' retrieved from S3 has no content.",
-              notificationAttachmentId);
-        }
-      });
-    } catch (S3ApiFileNotFoundException ex) {
-      log.warn("Notification attachment with ID '{}' missing in S3. Attempting to retrieve "
+    if (s3ApiClient.getDocumentUrl(attachmentId).isPresent()) {
+      log.debug("Document with ID '{}' found in S3.",
+          attachmentId);
+    } else {
+      log.debug("Document with ID '{}' missing in S3. Attempting to retrieve "
               + "from EBS instead.",
-          notificationAttachmentId);
-      content = getNotificationAttachementFromSoa(notificationAttachmentId, loginId, userType);
-      content.ifPresent(doc -> {
-        if (!StringUtils.hasText(doc)) {
-          log.warn("Notification attachment with ID '{}' retrieved from EBS has no content.",
-              notificationAttachmentId);
-        }
-        s3ApiClient.uploadDocument(notificationAttachmentId, doc);
-      });
-
-    } catch (S3ApiClientException ex) {
-      log.warn("Unable to process content for notification attachment with ID '{}'.",
-          notificationAttachmentId);
+          attachmentId);
+      Document attachment = soaApiClient.downloadDocument(attachmentId,
+              loginId, userType).block();
+      if (attachment != null) {
+        log.debug("Document with ID '{}' retrieved from EBS. Uploading to S3.",
+            attachmentId);
+        s3ApiClient.uploadDocument(attachment);
+        log.debug("Document with ID '{}' uploaded to S3.",
+            attachmentId);
+      } else {
+        throw new CaabApplicationException(String.format("Unable to retrieve document with ID "
+                + "'%s' from EBS.", attachmentId));
+      }
     }
-
-    return content;
   }
 
   /**
-   * Retrieve the content of a notification attachment from EBS.
+   * For each {@link Document} provided, generate a signed URL to access the file in S3.
    *
-   * @param documentId The document identifier for the notification attachment.
-   * @param loginId    The login identifier for the user.
-   * @param userType   Type of the user (e.g., admin, user).
-   * @return an Optional String containing the content of the notification attachment if available.
+   * @param documents   The documents for which to generate access URLs.
+   * @return a map of document ID / URL pairs.
    */
-  private Optional<String> getNotificationAttachementFromSoa(String documentId, String loginId,
-      String userType) {
-    Document document = soaApiClient.downloadDocument(documentId, loginId, userType)
-        .block();
-
-    if (document != null) {
-      return Optional.ofNullable(document.getFileData());
-    } else {
-      return Optional.empty();
+  public Map<String, String> getDocumentLinks(List<Document> documents) {
+    Map<String, String> documentLinks = new HashMap<>();
+    if (!documents.isEmpty()) {
+      for (Document document : documents) {
+        documentLinks.put(document.getDocumentId(),
+            s3ApiClient.getDocumentUrl(document.getDocumentId()).orElse(null));
+      }
     }
+    return documentLinks;
   }
 
 }

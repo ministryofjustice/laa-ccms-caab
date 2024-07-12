@@ -92,14 +92,26 @@
           <thead class="govuk-table__head">
           <tr class="govuk-table__row">
             <th scope="col" class="govuk-table__header">Description</th>
-            <th scope="col" class="govuk-table__header">Action</th>
+            <th scope="col" class="govuk-table__header govuk-!-width-one-quarter">Action</th>
           </tr>
           </thead>
           <tbody class="govuk-table__body">
           <tr class="govuk-table__row" th:each="attachment : ${notification.attachedDocuments}">
             <td class="govuk-table__cell" th:text="${attachment.text}"></td>
-            <td class="govuk-table__cell">
-              <a href="/civil/#" class="govuk-link">View</a>
+            <td th:if="${documentLinks.get(attachment.getDocumentId)} != null"
+                class="govuk-table__cell">
+              <a
+                  th:href="${documentLinks.get(attachment.getDocumentId)}" class="govuk-link">
+                Download</a>
+            </td>
+            <td th:if="${documentLinks.get(attachment.getDocumentId)} == null"
+                class="govuk-table__cell">
+              <a
+                  th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/retrieve(notification_id=${notification.getNotificationId},attachment_id=${attachment.getDocumentId})}" class="govuk-link ccms-download-link">
+                Retrieve</a>
+              <div
+                   style="visibility:hidden;display:inline-block"
+                   class="loader-small"></div>
             </td>
           </tr>
           </tbody>
@@ -127,3 +139,16 @@
 </div>
 </body>
 </html>
+<script>
+  var links = document.getElementsByClassName('ccms-download-link')
+  for(var i = 0; i < links.length; i++) {
+    var link = links[i];
+    link.onclick = function() {
+      ldr = this.parentElement.getElementsByClassName('loader-small')[0];
+      console.log("Link with ID: " + this.id + " activating spinner with ID: " + ldr.id);
+      if (ldr.style.visibility == "hidden") {
+        ldr.style.visibility = "visible"
+      }
+    };
+  }
+</script>

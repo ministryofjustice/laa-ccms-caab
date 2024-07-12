@@ -43,11 +43,7 @@ spring:
   cloud:
     aws:
       s3:
-        endpoint: ${S3_ENDPOINT}
         region: ${S3_REGION}
-      credentials:
-        access-key: ${S3_ACCESS_KEY}
-        secret-key: ${S3_SECRET_KEY}
 
 server:
   tomcat:
@@ -63,7 +59,9 @@ laa:
   ccms:
     s3:
       buckets:
-        document-bucket: ${S3_DOCUMENT_BUCKET}
+        document-bucket:
+          name: ${S3_DOCUMENT_BUCKET}
+          url-duration: 20 # (minutes) - How long generated URLs remain accessible.
     ebs-api:
       hostname: ${CAAB_EBS_API_HOSTNAME}
       url: ${laa.ccms.ebs-api.hostname}

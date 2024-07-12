@@ -8,6 +8,16 @@
     animation: spin 2s linear infinite;
 }
 
+.loader-small {
+    margin: auto;
+    border: 4px solid #dee0e2;
+    border-top: 4px solid #1d70b8;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 2s linear infinite;
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

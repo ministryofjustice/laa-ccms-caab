@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -12,7 +13,10 @@ import static org.mockito.Mockito.when;
 import io.awspring.cloud.s3.S3Resource;
 import io.awspring.cloud.s3.S3Template;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,12 +25,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import uk.gov.laa.ccms.caab.config.S3DocumentBucketProperties;
+import uk.gov.laa.ccms.soa.gateway.model.Document;
 
 @ExtendWith(MockitoExtension.class)
 public class S3ApiClientTest {
 
   @Mock
   private S3Template s3Template;
+
+  @Mock
+  private S3DocumentBucketProperties s3DocumentBucketProperties;
 
   @Mock(answer = Answers.CALLS_REAL_METHODS)
   private S3ApiClientErrorHandler s3ApiClientErrorHandler;
@@ -74,11 +83,41 @@ public class S3ApiClientTest {
   }
 
   @Test
+  void getDocumentUrl_successful_callsS3() throws MalformedURLException {
+
+    S3Resource resource = mock(S3Resource.class);
+    String filename = documentId + ".txt";
+
+    when(resource.getFilename()).thenReturn(filename);
+
+    URL url = mock(URL.class);
+
+    when(url.toString()).thenReturn("test-url");
+
+    when(s3Template.listObjects(any(), eq(documentId))).thenReturn(List.of(resource));
+    when(s3Template.createSignedGetURL(any(), eq(filename), any()))
+        .thenReturn(url);
+
+    String actual = s3ApiClient.getDocumentUrl(documentId).get();
+
+    assertNotNull(actual);
+    assertEquals("test-url", actual);
+    verify(s3Template).listObjects(any(), eq(documentId));
+    verify(s3Template).createSignedGetURL(any(), eq(filename), any());
+
+  }
+
+  @Test
   void uploadDocument_successful_callsS3() {
 
-    s3ApiClient.uploadDocument(documentId, documentContent);
+    Document document = new Document()
+        .documentId(documentId)
+        .fileData(documentContent)
+        .fileExtension("xls");
 
-    verify(s3Template).upload(any(), eq(documentId), any());
+    s3ApiClient.uploadDocument(document);
+
+    verify(s3Template).upload(any(), eq(documentId + ".xls"), any());
 
   }
 

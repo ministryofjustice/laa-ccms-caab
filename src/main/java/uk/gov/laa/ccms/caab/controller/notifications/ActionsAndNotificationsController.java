@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARC
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -24,6 +25,7 @@ import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationSearchValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -46,6 +48,7 @@ public class ActionsAndNotificationsController {
   private final ProviderService providerService;
   private final NotificationSearchValidator notificationSearchValidator;
   private final UserService userService;
+  private final NotificationService notificationService;
 
   /**
    * Provides an instance of {@link NotificationSearchCriteria} for use in the model.
@@ -148,7 +151,7 @@ public class ActionsAndNotificationsController {
    * @param model          the model.
    * @return the notification display page or an error if not found.
    */
-  @GetMapping("/notification/{notification_id}")
+  @GetMapping("/notifications/{notification_id}")
   public String getNotification(
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
@@ -162,11 +165,35 @@ public class ActionsAndNotificationsController {
         .findFirst()
         .orElseThrow(() -> new CaabApplicationException(
             String.format("Notification with id %s not found", notificationId)));
-    model.addAttribute("notification", found);
 
+    Map<String, String> documentLinks =
+        notificationService.getDocumentLinks(found.getAttachedDocuments());
+
+    model.addAttribute("documentLinks", documentLinks);
+    model.addAttribute("notification", found);
     return "notifications/notification";
   }
 
+  /**
+   * If the notification attachment does not exist in S3, retrieve it from EBS then upload to S3.
+   *
+   * @param user            current user details.
+   * @param notificationId  the ID of the notification of which the attachment belongs to.
+   * @param attachmentId    the ID of the notification attachment to retrieve.
+   * @return the notification page.
+   */
+  @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/retrieve")
+  public String retrieveNotificationAttachment(
+      @ModelAttribute(USER_DETAILS) UserDetail user,
+      @PathVariable(value = "notification_id") String notificationId,
+      @PathVariable(value = "attachment_id") String attachmentId) {
+
+    notificationService.retrieveNotificationAttachment(attachmentId, user.getLoginId(),
+            user.getUserType());
+
+    return "redirect:/notifications/%s".formatted(notificationId);
+
+  }
 
   private void populateDropdowns(UserDetail user, Model model,
       NotificationSearchCriteria criteria) {

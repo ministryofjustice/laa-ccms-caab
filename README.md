@@ -114,7 +114,7 @@ A configured LocalStack container can be started via docker compose:
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-localstack
 ```
 
-An S3 bucket `laa-ccms-bucket` will be created on startup if it does not already exist, via
+An S3 bucket `laa-ccms-documents` will be created on startup if it does not already exist, via
 [`/localstack/init-s3.sh`](localstack/init-s3.sh).
 
 ## secrets.gradle (required for gradle build)
