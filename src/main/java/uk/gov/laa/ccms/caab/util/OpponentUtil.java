@@ -1,10 +1,12 @@
 package uk.gov.laa.ccms.caab.util;
 
+import java.util.List;
 import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.constants.assessment.InstanceMappingPrefix;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 
 /**
  * Utility class for handling proceeding-related operations.
@@ -61,6 +63,28 @@ public class OpponentUtil {
 
     return isOrganisation(opponent)
         ? opponent.getOrganisationName() : getFullName(opponent, titleLookup);
+  }
+
+  /**
+   * Retrieves the display name of the given opponent based on its type.
+   *
+   * @param opponent the opponent detail
+   * @param titleLookups lookup of title values
+   * @return the display name of the opponent
+   */
+  public static String getPartyName(
+      final OpponentDetail opponent,
+      final List<CommonLookupValueDetail> titleLookups) {
+
+    // Find the correct title lookup for this opponent.
+    CommonLookupValueDetail titleLookup = titleLookups.stream()
+        .filter(title -> title.getCode().equals(opponent.getTitle()))
+        .findFirst()
+        .orElse(new CommonLookupValueDetail()
+            .code(opponent.getTitle())
+            .description(opponent.getTitle()));
+
+    return getPartyName(opponent, titleLookup);
   }
 
   /**
@@ -137,5 +161,47 @@ public class OpponentUtil {
       }
     }
     return null;
+  }
+
+  /**
+   * Find the relevant relationship to case for the supplied opponent, depending
+   * on whether it is an organisation of individual.
+   *
+   * @param opponent - the opponent.
+   * @param organisationRelationships - the list of organisation relationship lookups.
+   * @param personRelationships - the list of individual relationship lookups
+   * @return the relationship lookup.
+   */
+  public static RelationshipToCaseLookupValueDetail getRelationshipToCase(
+      final OpponentDetail opponent,
+      final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
+      final List<RelationshipToCaseLookupValueDetail> personRelationships) {
+    List<RelationshipToCaseLookupValueDetail> relationships =
+        isOrganisation(opponent) ? organisationRelationships : personRelationships;
+
+    return relationships.stream()
+        .filter(rel -> rel.getCode().equals(opponent.getRelationshipToCase()))
+        .findFirst()
+        .orElse(new RelationshipToCaseLookupValueDetail()
+            .code(opponent.getRelationshipToCase())
+            .description(opponent.getRelationshipToCase()));
+  }
+
+  /**
+   * Find the relevant relationship to client lookup for the supplied opponent.
+   *
+   * @param opponent - the opponent.
+   * @param relationships - the list of relationship lookups.
+   * @return the relationship lookup.
+   */
+  public static CommonLookupValueDetail getRelationshipToClient(
+      final OpponentDetail opponent,
+      final List<CommonLookupValueDetail> relationships) {
+    return relationships.stream()
+        .filter(rel -> rel.getCode().equals(opponent.getRelationshipToClient()))
+        .findFirst()
+        .orElse(new CommonLookupValueDetail()
+            .code(opponent.getRelationshipToClient())
+            .description(opponent.getRelationshipToClient()));
   }
 }

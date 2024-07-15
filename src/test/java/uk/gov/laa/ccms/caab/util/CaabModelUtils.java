@@ -34,13 +34,7 @@ public class CaabModelUtils {
         .caseReferenceNumber(id + "")
         .categoryOfLaw(new StringDisplayValue().id(id + "cat1").displayValue(id + "catoflaw1"))
         .client(new ClientDetail().firstName(id + "firstname"))
-        .providerDetails(new ApplicationProviderDetails()
-            .provider(new IntDisplayValue().id(id).displayValue("ClientDetail " + id))
-            .feeEarner(new StringDisplayValue().id("fee" + id).displayValue("Fee " + id))
-            .supervisor(new StringDisplayValue().id("sup" + id).displayValue("super " + id))
-            .office(new IntDisplayValue().id(id).displayValue("Office " + id))
-            .providerCaseReference("provcaseref" + id)
-            .providerContact(new StringDisplayValue().id("prov" + id).displayValue("provcontact " + id)))
+        .providerDetails(buildApplicationProviderDetails(id))
         .status(new StringDisplayValue().id("st" + id).displayValue("status " + id));
   }
 
@@ -50,13 +44,7 @@ public class CaabModelUtils {
         .categoryOfLaw(new StringDisplayValue().id(id + "cat1").displayValue(id + "catoflaw1"))
         .certificate(new StringDisplayValue().id(id + "cert").displayValue(id + " certificate"))
         .client(new ClientDetail().firstName(id + "firstname"))
-        .providerDetails(new ApplicationProviderDetails()
-            .provider(new IntDisplayValue().id(id).displayValue("ClientDetail " + id))
-            .feeEarner(new StringDisplayValue().id("fee" + id).displayValue("Fee " + id))
-            .supervisor(new StringDisplayValue().id("sup" + id).displayValue("super " + id))
-            .office(new IntDisplayValue().id(id).displayValue("Office " + id))
-            .providerCaseReference("provcaseref" + id)
-            .providerContact(new StringDisplayValue().id("prov" + id).displayValue("provcontact " + id)))
+        .providerDetails(buildApplicationProviderDetails(id))
         .allSectionsComplete(flag)
         .amendment(flag)
         .addAmendmentProceedingsInEbsItem(buildProceeding(date, BigDecimal.ONE))
@@ -113,6 +101,17 @@ public class CaabModelUtils {
         .relationToLinkedCase("rel" + id)
         .status(new StringDisplayValue().id("st" + id).displayValue("status " + id))
         .submitted(flag);
+  }
+
+  public static ApplicationProviderDetails buildApplicationProviderDetails(Integer id) {
+    return new ApplicationProviderDetails()
+        .provider(new IntDisplayValue().id(id).displayValue("ClientDetail " + id))
+        .feeEarner(new StringDisplayValue().id("fee" + id).displayValue("Fee " + id))
+        .supervisor(new StringDisplayValue().id("sup" + id).displayValue("super " + id))
+        .office(new IntDisplayValue().id(id).displayValue("Office " + id))
+        .providerCaseReference("provcaseref" + id)
+        .providerContact(
+            new StringDisplayValue().id("prov" + id).displayValue("provcontact " + id));
   }
 
   public static ProceedingDetail buildProceeding(java.util.Date date, BigDecimal costLimitation) {

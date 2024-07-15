@@ -2,33 +2,41 @@ package uk.gov.laa.ccms.caab.builders;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
-import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus.COMPLETE;
-import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus.NOT_STARTED;
-import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildAssessmentDetail;
-import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildMeansGlobalEntityTypeDetailWithEvidenceReqd;
-import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildMeritsGlobalEntityTypeDetailWithEvidenceReqd;
-import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
+import static uk.gov.laa.ccms.caab.builders.ApplicationSummaryBuilder.STATUS_COMPLETE;
+import static uk.gov.laa.ccms.caab.builders.ApplicationSummaryBuilder.STATUS_NOT_AVAILABLE;
+import static uk.gov.laa.ccms.caab.builders.ApplicationSummaryBuilder.STATUS_STARTED;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING_DISPLAY;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_ORGANISATION;
+import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationProviderDetails;
+import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
 
+import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
-import uk.gov.laa.ccms.caab.model.AddressDetail;
-import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AuditDetail;
+import uk.gov.laa.ccms.caab.model.ClientDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
+import uk.gov.laa.ccms.caab.model.summary.ApplicationSummaryDisplay;
+import uk.gov.laa.ccms.caab.model.summary.OpponentSummaryDisplay;
+import uk.gov.laa.ccms.caab.model.summary.ProceedingSummaryDisplay;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 
 class ApplicationSummaryBuilderTest {
@@ -47,13 +55,6 @@ class ApplicationSummaryBuilderTest {
   }
 
   @Test
-  void testClientFullName() {
-    builder.clientFullName("John", "Doe");
-    ApplicationSummaryDisplay result = builder.build();
-    assertEquals("John Doe", result.getClientFullName());
-  }
-
-  @Test
   void testCaseReferenceNumber() {
     builder.caseReferenceNumber("REF123");
     ApplicationSummaryDisplay result = builder.build();
@@ -61,72 +62,212 @@ class ApplicationSummaryBuilderTest {
   }
 
   @Test
-  void testProviderCaseReferenceNumber() {
-    builder.providerCaseReferenceNumber("PROV123");
-    ApplicationSummaryDisplay result = builder.build();
-    assertEquals("PROV123", result.getProviderCaseReferenceNumber());
-  }
-
-  @Test
   void testApplicationType() {
     ApplicationType applicationType = new ApplicationType();
     applicationType.setId("TEST");
     applicationType.setDisplayValue("TEST DISPLAY");
+    applicationType.setDevolvedPowers(new DevolvedPowersDetail()
+        .dateUsed(new Date())
+        .used(true));
+
     builder.applicationType(applicationType);
 
     ApplicationSummaryDisplay result = builder.build();
-    assertEquals("TEST DISPLAY", result.getApplicationType().getStatus());
+
+    assertNotNull(result.getApplicationType());
+    assertEquals(applicationType.getDisplayValue(), result.getApplicationType().getDescription());
+    assertEquals(applicationType.getDevolvedPowers().getDateUsed(), result.getApplicationType().getDevolvedPowersDate());
+    assertEquals(applicationType.getDevolvedPowers().getUsed(), result.getApplicationType().getDevolvedPowersUsed());
+    assertTrue(result.getApplicationType().isEnabled());
   }
 
   @Test
-  void testProviderDetails() {
-    // Create a non-empty StringDisplayValue
-    StringDisplayValue providerContact = new StringDisplayValue();
-    providerContact.setDisplayValue("Provider Contact");
+  void testApplicationType_ECF_statusDisabled() {
+    ApplicationType applicationType = new ApplicationType()
+        .id(APP_TYPE_EXCEPTIONAL_CASE_FUNDING)
+        .displayValue(APP_TYPE_EXCEPTIONAL_CASE_FUNDING_DISPLAY)
+        .devolvedPowers(new DevolvedPowersDetail().used(true).dateUsed(new Date()));
 
-    builder.providerDetails(providerContact);
+    builder.applicationType(applicationType);
+
     ApplicationSummaryDisplay result = builder.build();
-    assertEquals("Complete", result.getProviderDetails().getStatus());
+
+    assertNotNull(result.getApplicationType());
+    assertEquals(applicationType.getDisplayValue(), result.getApplicationType().getDescription());
+    assertEquals(applicationType.getDevolvedPowers().getDateUsed(), result.getApplicationType().getDevolvedPowersDate());
+    assertEquals(applicationType.getDevolvedPowers().getUsed(), result.getApplicationType().getDevolvedPowersUsed());
+
+    assertFalse(result.getApplicationType().isEnabled());
   }
 
   @Test
-  void testGeneralDetails() {
+  void testGeneralDetails_hasPreferredAddress_statusComplete() {
+    StringDisplayValue applicationStatus = new StringDisplayValue().id("1").displayValue("appStat");
+    StringDisplayValue categoryOfLaw = new StringDisplayValue().id("1=2").displayValue("cat");
+
     // Create a non-empty AddressDetail
-    AddressDetail address = new AddressDetail();
-    address.setPreferredAddress("123 Main St");
+    String correspondenceMethod = "Send to provider";
 
-    builder.generalDetails(address);
+    builder.generalDetails(applicationStatus, categoryOfLaw, correspondenceMethod);
     ApplicationSummaryDisplay result = builder.build();
-    assertEquals("Complete", result.getGeneralDetails().getStatus());
+
+    assertEquals(applicationStatus.getDisplayValue(), result.getGeneralDetails().getApplicationStatus());
+    assertEquals(categoryOfLaw.getDisplayValue(), result.getGeneralDetails().getCategoryOfLaw());
+    assertEquals(correspondenceMethod, result.getGeneralDetails().getCorrespondenceMethod());
+
+    assertEquals(STATUS_COMPLETE, result.getGeneralDetails().getStatus());
   }
 
   @Test
-  void testProceedingsAndCosts() {
+  void testGeneralDetails_noPreferredAddress_statusStarted() {
+    StringDisplayValue applicationStatus = new StringDisplayValue().id("1").displayValue("appStat");
+    StringDisplayValue categoryOfLaw = new StringDisplayValue().id("1=2").displayValue("cat");
+
+    builder.generalDetails(applicationStatus, categoryOfLaw, null);
+    ApplicationSummaryDisplay result = builder.build();
+
+    assertEquals(STATUS_STARTED, result.getGeneralDetails().getStatus());
+  }
+
+  @Test
+  void testClient() {
+    ClientDetail client = new ClientDetail()
+        .firstName("first")
+        .surname("second")
+        .reference("ref");
+
+    builder.client(client);
+    ApplicationSummaryDisplay result = builder.build();
+
+    assertEquals("first second", result.getClient().getClientFullName());
+    assertEquals(client.getReference(), result.getClient().getClientReferenceNumber());
+  }
+
+  @Test
+  void testProvider_statusComplete() {
+    ApplicationProviderDetails applicationProviderDetails = buildApplicationProviderDetails(1);
+
+    builder.provider(applicationProviderDetails);
+    ApplicationSummaryDisplay result = builder.build();
+
+    assertEquals(applicationProviderDetails.getProvider().getDisplayValue(), result.getProvider().getProviderName());
+    assertEquals(applicationProviderDetails.getFeeEarner().getDisplayValue(), result.getProvider().getFeeEarner());
+    assertEquals(applicationProviderDetails.getOffice().getDisplayValue(), result.getProvider().getOfficeName());
+    assertEquals(applicationProviderDetails.getProviderCaseReference(), result.getProvider().getProviderCaseReferenceNumber());
+    assertEquals(applicationProviderDetails.getProviderContact().getDisplayValue(), result.getProvider().getProviderContactName());
+    assertEquals(applicationProviderDetails.getSupervisor().getDisplayValue(), result.getProvider().getSupervisorName());
+
+    assertEquals(STATUS_COMPLETE, result.getProvider().getStatus());
+  }
+
+  @Test
+  void testProvider_noProviderContact_statusStarted() {
+    ApplicationProviderDetails applicationProviderDetails = new ApplicationProviderDetails();
+
+    builder.provider(applicationProviderDetails);
+    ApplicationSummaryDisplay result = builder.build();
+
+    assertEquals(STATUS_STARTED, result.getProvider().getStatus());
+  }
+
+  @Test
+  void testProceedingsAndCosts_statusComplete() {
     AuditDetail auditDetail = new AuditDetail();
     auditDetail.setLastSaved(Date.from(Instant.now()));
     auditDetail.setLastSavedBy("TestUser");
 
-    ProceedingDetail proceeding1 = new ProceedingDetail();
-    proceeding1.setAuditTrail(auditDetail);
-    proceeding1.setStage("Stage 1");
+    ProceedingDetail proceeding1 = new ProceedingDetail()
+        .auditTrail(auditDetail)
+        .matterType(new StringDisplayValue().id("mat1").displayValue("matter type 1"))
+        .levelOfService(new StringDisplayValue().id("lev1").displayValue("Level 1"))
+        .clientInvolvement(new StringDisplayValue().id("inv1").displayValue("Involvement 1"))
+        .proceedingType(new StringDisplayValue().id("proc1").displayValue("proceeding type 1"))
+        .stage("Stage 1")
+        .addScopeLimitationsItem(new ScopeLimitationDetail()
+            .scopeLimitation(new StringDisplayValue().id("scope1").displayValue("Scope 1")));
 
-    ProceedingDetail proceeding2 = new ProceedingDetail();
-    proceeding2.setAuditTrail(auditDetail);
+    ProceedingDetail proceeding2 = new ProceedingDetail()
+        .auditTrail(auditDetail)
+        .matterType(new StringDisplayValue().id("mat2").displayValue("matter type 2"))
+        .proceedingType(new StringDisplayValue().id("proc2").displayValue("proceeding type 2"))
+        .levelOfService(new StringDisplayValue().id("lev2").displayValue("Level 2"))
+        .clientInvolvement(new StringDisplayValue().id("inv2").displayValue("Involvement 2"));
 
-    ProceedingDetail proceeding3 = new ProceedingDetail();
-    proceeding3.setAuditTrail(auditDetail);
+    ProceedingDetail proceeding3 = new ProceedingDetail()
+        .auditTrail(auditDetail)
+        .matterType(new StringDisplayValue().id("mat3").displayValue("matter type 3"))
+        .proceedingType(new StringDisplayValue().id("proc3").displayValue("proceeding type 3"))
+        .levelOfService(new StringDisplayValue().id("lev3").displayValue("Level 3"))
+        .clientInvolvement(new StringDisplayValue().id("inv3").displayValue("Involvement 3"));
 
-    List<ProceedingDetail> proceedings = Arrays.asList(proceeding1, proceeding2, proceeding3);
+    PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail()
+        .amountRequested(BigDecimal.ONE)
+        .auditTrail(new AuditDetail())
+        .status("the stat")
+        .summary("a summary")
+        .type(new StringDisplayValue().id("type1").displayValue("prior auth type 1"));
 
-    PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
-    priorAuthority.setAuditTrail(new AuditDetail());
+    CostStructureDetail costStructure = new CostStructureDetail()
+        .grantedCostLimitation(BigDecimal.TWO)
+        .requestedCostLimitation(BigDecimal.TEN)
+        .auditTrail(new AuditDetail());
 
-    CostStructureDetail costStructure = new CostStructureDetail();
-    costStructure.setAuditTrail(new AuditDetail());
+    builder.proceedingsPriorAuthsAndCosts(
+        List.of(proceeding1, proceeding2, proceeding3),
+        List.of(priorAuthority),
+        costStructure);
 
-    builder.proceedingsAndCosts(proceedings, Collections.singletonList(priorAuthority), costStructure);
     ApplicationSummaryDisplay result = builder.build();
-    assertEquals("Complete", result.getProceedingsAndCosts().getStatus());
+
+    assertEquals(costStructure.getGrantedCostLimitation(), result.getProceedingsAndCosts().getGrantedCostLimitation());
+    assertEquals(costStructure.getRequestedCostLimitation(), result.getProceedingsAndCosts().getRequestedCostLimitation());
+    assertNotNull(result.getProceedingsAndCosts().getProceedings());
+    assertEquals(3, result.getProceedingsAndCosts().getProceedings().size());
+
+    ProceedingSummaryDisplay procSummary = result.getProceedingsAndCosts().getProceedings().getFirst();
+    assertEquals(proceeding1.getClientInvolvement().getDisplayValue(), procSummary.getClientInvolvement());
+    assertEquals(proceeding1.getLevelOfService().getDisplayValue(), procSummary.getLevelOfService());
+    assertEquals(proceeding1.getMatterType().getDisplayValue(), procSummary.getMatterType());
+    assertEquals(proceeding1.getProceedingType().getDisplayValue(), procSummary.getProceedingType());
+    assertNotNull(procSummary.getScopeLimitations());
+    assertEquals(1, procSummary.getScopeLimitations().size());
+    assertEquals(proceeding1.getScopeLimitations().getFirst().getScopeLimitation().getDisplayValue(),
+        procSummary.getScopeLimitations().getFirst().getScopeLimitation());
+    assertEquals(proceeding1.getScopeLimitations().getFirst().getScopeLimitationWording(),
+        procSummary.getScopeLimitations().getFirst().getWording());
+
+    assertEquals(STATUS_COMPLETE, result.getProceedingsAndCosts().getStatus());
+  }
+
+  @Test
+  void testProceedingsAndCosts_noStage_statusStarted() {
+    AuditDetail auditDetail = new AuditDetail();
+    auditDetail.setLastSaved(Date.from(Instant.now()));
+    auditDetail.setLastSavedBy("TestUser");
+
+    ProceedingDetail proceeding1 = new ProceedingDetail()
+        .auditTrail(auditDetail);
+
+    PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail()
+        .amountRequested(BigDecimal.ONE)
+        .auditTrail(new AuditDetail())
+        .status("the stat")
+        .summary("a summary")
+        .type(new StringDisplayValue().id("type1").displayValue("prior auth type 1"));
+
+    CostStructureDetail costStructure = new CostStructureDetail()
+        .grantedCostLimitation(BigDecimal.TWO)
+        .requestedCostLimitation(BigDecimal.TEN)
+        .auditTrail(new AuditDetail());
+
+    builder.proceedingsPriorAuthsAndCosts(
+        List.of(proceeding1),
+        List.of(priorAuthority),
+        costStructure);
+
+    ApplicationSummaryDisplay result = builder.build();
+
+    assertEquals(STATUS_STARTED, result.getProceedingsAndCosts().getStatus());
   }
 
   @Test
@@ -136,128 +277,58 @@ class ApplicationSummaryBuilderTest {
     auditDetail.setLastSavedBy("TestUser");
 
     // Create some sample data for opponents
-    OpponentDetail opponent1 = new OpponentDetail();
-    opponent1.setType("Organisation");
-    opponent1.setRelationshipToCase("REL1");
+    OpponentDetail opponent1 = buildOpponent(new Date());
+    opponent1.setType(OPPONENT_TYPE_ORGANISATION);
     opponent1.setAuditTrail(auditDetail);
 
-    List<OpponentDetail> opponents = Collections.singletonList(opponent1);
+    OpponentDetail opponent2 = buildOpponent(new Date());
+    opponent2.setType(OPPONENT_TYPE_INDIVIDUAL);
+    opponent2.setAuditTrail(auditDetail);
 
     // Create some sample data for organization relationships
-    RelationshipToCaseLookupValueDetail relationship1 = new RelationshipToCaseLookupValueDetail();
-    relationship1.setCode("REL1");
-    relationship1.setOpponentInd(true);
+    RelationshipToCaseLookupValueDetail orgRelationshipToCase = new RelationshipToCaseLookupValueDetail();
+    orgRelationshipToCase.setCode(opponent1.getRelationshipToCase());
+    orgRelationshipToCase.setDescription("an org relationship");
+    orgRelationshipToCase.setOpponentInd(true);
 
-    List<RelationshipToCaseLookupValueDetail> organizationRelationships = Collections.singletonList(relationship1);
-
-    builder.opponentsAndOtherParties(opponents, organizationRelationships, Collections.emptyList());
+    builder.opponentsAndOtherParties(
+        List.of(opponent1, opponent2),
+        Collections.emptyList(),
+        List.of(orgRelationshipToCase),
+        Collections.emptyList(),
+        Collections.emptyList());
     ApplicationSummaryDisplay result = builder.build();
 
-    assertEquals("Complete", result.getOpponentsAndOtherParties().getStatus());
+    assertNotNull(result.getOpponentsAndOtherParties());
+    assertNotNull(result.getOpponentsAndOtherParties().getOpponents());
+    assertEquals(2, result.getOpponentsAndOtherParties().getOpponents().size());
+
+    OpponentSummaryDisplay opponentSummaryDisplay =
+        result.getOpponentsAndOtherParties().getOpponents().getFirst();
+    assertEquals(opponent1.getOrganisationName(), opponentSummaryDisplay.getPartyName());
+    assertEquals(opponent1.getType(), opponentSummaryDisplay.getPartyType());
+    assertEquals(orgRelationshipToCase.getDescription(), opponentSummaryDisplay.getRelationshipToCase());
+    assertEquals(opponent1.getRelationshipToClient(), opponentSummaryDisplay.getRelationshipToClient());
+
+    assertEquals(STATUS_COMPLETE, result.getOpponentsAndOtherParties().getStatus());
   }
 
-  @Test
-  void testDocumentUpload_disabled() {
-    ApplicationDetail application = buildApplicationDetail(1, true, new Date());
-    // Clear the prior auths
-    application.getPriorAuthorities().clear();
+  @ParameterizedTest
+  @CsvSource({"true,true," + STATUS_COMPLETE + ",true",
+      "true,false," + STATUS_STARTED + ",true",
+      "false,false," + STATUS_NOT_AVAILABLE + ",false",
+      "false,true," + STATUS_NOT_AVAILABLE + ",false"})
+  void testDocumentUpload_disabled(
+      final boolean evidenceRequired,
+      final boolean allEvidenceProvided,
+      final String expectedStatus,
+      final boolean expectedEnabled) {
 
-    AssessmentDetail meansAssessment = buildAssessmentDetail(new Date());
-    AssessmentDetail meritsAssessment = buildAssessmentDetail(new Date());
-
-    builder.documentUpload(application, meansAssessment, meritsAssessment);
+    builder.documentUpload(evidenceRequired, allEvidenceProvided);
     ApplicationSummaryDisplay result = builder.build();
 
-    assertFalse(result.getDocumentUpload().isEnabled());
+    assertNotNull(result.getDocumentUpload());
+    assertEquals(expectedStatus, result.getDocumentUpload().getStatus());
+    assertEquals(expectedEnabled, result.getDocumentUpload().isEnabled());
   }
-
-  @Test
-  void testDocumentUpload_hasPriorAuths_isEnabled() {
-    ApplicationDetail application = buildApplicationDetail(1, true, new Date());
-
-    AssessmentDetail meansAssessment = buildAssessmentDetail(new Date());
-    AssessmentDetail meritsAssessment = buildAssessmentDetail(new Date());
-
-    builder.documentUpload(application, meansAssessment, meritsAssessment);
-    ApplicationSummaryDisplay result = builder.build();
-
-    assertTrue(result.getDocumentUpload().isEnabled());
-  }
-
-  @Test
-  void testDocumentUpload_emergencyApp_isEnabled() {
-    ApplicationDetail application = buildApplicationDetail(1, true, new Date());
-    // Clear the prior auths
-    application.getPriorAuthorities().clear();
-    application.getApplicationType().setId(APP_TYPE_EMERGENCY);
-
-    AssessmentDetail meansAssessment = buildAssessmentDetail(new Date());
-    AssessmentDetail meritsAssessment = buildAssessmentDetail(new Date());
-
-    builder.documentUpload(application, meansAssessment, meritsAssessment);
-    ApplicationSummaryDisplay result = builder.build();
-
-    assertTrue(result.getDocumentUpload().isEnabled());
-  }
-
-  @Test
-  void testDocumentUpload_bothAssessmentsCompleteWithEvidenceReqd_isEnabled() {
-    ApplicationDetail application = buildApplicationDetail(1, true, new Date());
-    // Clear the prior auths
-    application.getPriorAuthorities().clear();
-
-    AssessmentDetail meansAssessment = buildAssessmentDetail(new Date());
-    meansAssessment.setStatus(COMPLETE.getStatus());
-    meansAssessment.getEntityTypes().add(buildMeansGlobalEntityTypeDetailWithEvidenceReqd(true));
-
-    AssessmentDetail meritsAssessment = buildAssessmentDetail(new Date());
-    meritsAssessment.setStatus(COMPLETE.getStatus());
-    meritsAssessment.getEntityTypes().add(buildMeritsGlobalEntityTypeDetailWithEvidenceReqd(true));
-
-    builder.documentUpload(application, meansAssessment, meritsAssessment);
-    ApplicationSummaryDisplay result = builder.build();
-
-    assertTrue(result.getDocumentUpload().isEnabled());
-  }
-
-  @Test
-  void testDocumentUpload_oneAssessmentsCompleteWithEvidenceReqd_isDisabled() {
-    ApplicationDetail application = buildApplicationDetail(1, true, new Date());
-    // Clear the prior auths
-    application.getPriorAuthorities().clear();
-
-    AssessmentDetail meansAssessment = buildAssessmentDetail(new Date());
-    meansAssessment.setStatus(COMPLETE.getStatus());
-    meansAssessment.getEntityTypes().add(buildMeansGlobalEntityTypeDetailWithEvidenceReqd(true));
-
-    AssessmentDetail meritsAssessment = buildAssessmentDetail(new Date());
-    meritsAssessment.setStatus(NOT_STARTED.getStatus());
-    meritsAssessment.getEntityTypes().add(buildMeritsGlobalEntityTypeDetailWithEvidenceReqd(true));
-
-    builder.documentUpload(application, meansAssessment, meritsAssessment);
-    ApplicationSummaryDisplay result = builder.build();
-
-    assertFalse(result.getDocumentUpload().isEnabled());
-  }
-
-  @Test
-  void testDocumentUpload_bothAssessmentsCompleteWithEvidenceReqdFalse_isDisabled() {
-    ApplicationDetail application = buildApplicationDetail(1, true, new Date());
-    // Clear the prior auths
-    application.getPriorAuthorities().clear();
-
-    AssessmentDetail meansAssessment = buildAssessmentDetail(new Date());
-    meansAssessment.setStatus(COMPLETE.getStatus());
-    meansAssessment.getEntityTypes().add(buildMeansGlobalEntityTypeDetailWithEvidenceReqd(false));
-
-    AssessmentDetail meritsAssessment = buildAssessmentDetail(new Date());
-    meritsAssessment.setStatus(COMPLETE.getStatus());
-    meritsAssessment.getEntityTypes().add(buildMeritsGlobalEntityTypeDetailWithEvidenceReqd(false));
-
-    builder.documentUpload(application, meansAssessment, meritsAssessment);
-    ApplicationSummaryDisplay result = builder.build();
-
-    assertFalse(result.getDocumentUpload().isEnabled());
-  }
-
 }

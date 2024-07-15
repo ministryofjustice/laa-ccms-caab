@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.model;
+package uk.gov.laa.ccms.caab.model.summary;
 
 import lombok.Builder;
 import lombok.Data;
@@ -8,10 +8,7 @@ import lombok.Data;
  */
 @Data
 @Builder
-public class OpponentRowDisplay {
-  /** Unique identifier for the opponent. */
-  private Integer id;
-
+public class OpponentSummaryDisplay {
   /** This opponent's name (individual or organisation name). */
   private String partyName;
 
@@ -24,9 +21,4 @@ public class OpponentRowDisplay {
   /** The opponents relationship to the client. */
   private String relationshipToClient;
 
-  /** Whether this opponent can be edited. */
-  private boolean editable;
-
-  /** Whether this opponent can be removed. */
-  private boolean deletable;
 }

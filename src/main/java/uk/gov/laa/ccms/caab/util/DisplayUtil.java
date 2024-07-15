@@ -1,7 +1,11 @@
 package uk.gov.laa.ccms.caab.util;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.util.StringUtils;
+import uk.gov.laa.ccms.caab.model.IntDisplayValue;
+import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 
 /**
  * Utility class for handling display related operations.
@@ -46,5 +50,67 @@ public class DisplayUtil {
         }));
   }
 
+  /**
+   * Format a name for display.
+   *
+   * @param firstName - the first name.
+   * @param lastName - the last name.
+   * @return formatted name.
+   */
+  public static String getFullName(final String firstName, final String lastName) {
+    return String.format("%s%s",
+            StringUtils.hasText(firstName) ? firstName + " " : "",
+            StringUtils.hasText(lastName) ? lastName : "").trim();
+  }
+
+  /**
+   * Get the display value from a StringDisplayValue with null checks, returning a blank
+   * string if the supplied StringDisplayValue is null.
+   *
+   * @param stringDisplayValue - the string display value
+   * @return the display value, or an empty string.
+   */
+  public static String getDisplayValue(final StringDisplayValue stringDisplayValue) {
+    return getDisplayValue(stringDisplayValue, "");
+  }
+
+  /**
+   * Get the display value from a StringDisplayValue with null checks.
+   *
+   * @param stringDisplayValue - the string display value.
+   * @param defaultDisplayValue - the value to return if the supplied StringDisplayValue is null.
+   * @return the display value, or the supplied default if stringDisplayValue is null.
+   */
+  public static String getDisplayValue(final StringDisplayValue stringDisplayValue,
+      final String defaultDisplayValue) {
+    return Optional.ofNullable(stringDisplayValue)
+        .map(StringDisplayValue::getDisplayValue)
+        .orElse(defaultDisplayValue);
+  }
+
+  /**
+   * Get the display value from an IntDisplayValue with null checks, returning a blank
+   * string if the supplied IntDisplayValue is null.
+   *
+   * @param intDisplayValue - the int display value
+   * @return the display value, or an empty string.
+   */
+  public static String getDisplayValue(final IntDisplayValue intDisplayValue) {
+    return getDisplayValue(intDisplayValue, "");
+  }
+
+  /**
+   * Get the display value from a IntDisplayValue with null checks.
+   *
+   * @param intDisplayValue - the int display value.
+   * @param defaultDisplayValue - the value to return if the supplied IntDisplayValue is null.
+   * @return the display value, or the supplied default if intDisplayValue is null.
+   */
+  public static String getDisplayValue(final IntDisplayValue intDisplayValue,
+      final String defaultDisplayValue) {
+    return Optional.ofNullable(intDisplayValue)
+        .map(IntDisplayValue::getDisplayValue)
+        .orElse(defaultDisplayValue);
+  }
 
 }

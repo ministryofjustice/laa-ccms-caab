@@ -6,6 +6,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static uk.gov.laa.ccms.caab.service.AvScanService.SCAN_ERROR_FORMAT;
+import static uk.gov.laa.ccms.caab.service.AvScanService.VIRUS_FOUND_ERROR_FORMAT;
 
 import java.io.InputStream;
 import org.junit.jupiter.api.Test;
@@ -14,8 +15,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.laa.ccms.caab.client.AvApiClient;
 import uk.gov.laa.ccms.caab.client.AvApiClientException;
+import uk.gov.laa.ccms.caab.client.AvApiVirusFoundException;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.exception.AvScanException;
+import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 
 @ExtendWith(MockitoExtension.class)
 public class AvScanServiceTest {
@@ -47,7 +50,7 @@ public class AvScanServiceTest {
   }
 
   @Test
-  void scanInputStream_handlesClientExceptionThrown() {
+  void scanInputStream_handlesAvApiClientExceptionThrown() {
     avScanService = new AvScanService(avApiClient, Boolean.TRUE);
     InputStream inputStream = InputStream.nullInputStream();
     AvApiClientException avApiClientException = new AvApiClientException("error");
@@ -61,6 +64,24 @@ public class AvScanServiceTest {
 
     assertEquals(
         String.format(SCAN_ERROR_FORMAT, filename, avApiClientException.getMessage()),
+        e.getMessage());
+  }
+
+  @Test
+  void scanInputStream_handlesAvVirusFoundExceptionThrown() {
+    avScanService = new AvScanService(avApiClient, Boolean.TRUE);
+    InputStream inputStream = InputStream.nullInputStream();
+    AvApiVirusFoundException avApiVirusFoundException = new AvApiVirusFoundException("error");
+
+    doThrow(avApiVirusFoundException).when(avApiClient)
+        .scan(inputStream);
+
+    Exception e =
+        assertThrows(AvVirusFoundException.class, () -> avScanService.performAvScan(
+            caseReferenceNumber, providerId, userId, source, filename, inputStream));
+
+    assertEquals(
+        String.format(VIRUS_FOUND_ERROR_FORMAT, filename, avApiVirusFoundException.getMessage()),
         e.getMessage());
   }
 
