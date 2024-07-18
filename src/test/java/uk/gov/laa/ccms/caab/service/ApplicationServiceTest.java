@@ -10,6 +10,7 @@ import static org.mockito.AdditionalAnswers.returnsSecondArg;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -28,6 +29,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_LEVEL_OF_SERVICE;
@@ -37,6 +39,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_P
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
+import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationProviderDetails;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCategoryOfLawLookupValueDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildPriorAuthorityTypeDetails;
@@ -70,6 +73,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
@@ -81,6 +85,7 @@ import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
@@ -97,7 +102,6 @@ import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
-import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AuditDetail;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
@@ -110,6 +114,7 @@ import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
+import uk.gov.laa.ccms.caab.model.summary.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -153,6 +158,7 @@ class ApplicationServiceTest {
   private LookupService lookupService;
   @Mock
   private AssessmentService assessmentService;
+  @Mock EvidenceService evidenceService;
   @Mock
   private ProviderService providerService;
 
@@ -767,6 +773,12 @@ class ApplicationServiceTest {
     final RelationshipToCaseLookupDetail personRelationshipsDetail = new RelationshipToCaseLookupDetail();
     personRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail());
 
+    final CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
+        .addContentItem(new CommonLookupValueDetail());
+
+    final CommonLookupDetail contactTitleLookupDetail = new CommonLookupDetail()
+        .addContentItem(new CommonLookupValueDetail());
+
     final AuditDetail auditDetail = new AuditDetail();
     auditDetail.setLastSaved(Date.from(Instant.now()));
     auditDetail.setLastSavedBy("TestUser");
@@ -782,38 +794,70 @@ class ApplicationServiceTest {
     applicationType.id("test 123");
     applicationType.setDisplayValue("testing123");
 
-    final ApplicationDetail mockApplicationDetail = new ApplicationDetail();
-    mockApplicationDetail.setProviderDetails(new ApplicationProviderDetails());
-    mockApplicationDetail.setAuditTrail(auditDetail);
-    mockApplicationDetail.setClient(client);
-    mockApplicationDetail.setApplicationType(applicationType);
-    mockApplicationDetail.setProceedings(new ArrayList<>());
-    mockApplicationDetail.setPriorAuthorities(new ArrayList<>());
-    mockApplicationDetail.setOpponents(new ArrayList<>());
-    mockApplicationDetail.setCosts(costStructure);
+    ApplicationProviderDetails providerDetails = buildApplicationProviderDetails(1);
+    providerDetails.setProviderContact(null); // used to determine the provider status in the builder.
 
-    final AssessmentDetails meansAssessmentDetails = new AssessmentDetails();
-    final AssessmentDetails meritsAssessmentDetails = new AssessmentDetails();
+    AddressDetail address = new AddressDetail()
+        .preferredAddress("prefAdd");
 
+    final ApplicationDetail applicationDetail = new ApplicationDetail();
+    applicationDetail.setProviderDetails(providerDetails);
+    applicationDetail.setAuditTrail(auditDetail);
+    applicationDetail.setClient(client);
+    applicationDetail.setApplicationType(applicationType);
+    applicationDetail.setProceedings(new ArrayList<>());
+    applicationDetail.setPriorAuthorities(new ArrayList<>());
+    applicationDetail.setOpponents(new ArrayList<>());
+    applicationDetail.setCosts(costStructure);
+    applicationDetail.setCorrespondenceAddress(address);
+
+    final AssessmentDetails meansAssessmentDetails = new AssessmentDetails()
+        .addContentItem(new AssessmentDetail()
+            .status(AssessmentStatus.INCOMPLETE.getStatus()));
+
+    final AssessmentDetails meritsAssessmentDetails = new AssessmentDetails()
+        .addContentItem(new AssessmentDetail()
+            .status(AssessmentStatus.COMPLETE.getStatus()));
+
+    CommonLookupValueDetail correspondenceMethodLookup =
+        new CommonLookupValueDetail()
+            .description("correspondence method1");
+
+    when(lookupService.getCommonValue(COMMON_VALUE_CASE_ADDRESS_OPTION,
+        applicationDetail.getCorrespondenceAddress().getPreferredAddress()))
+        .thenReturn(Mono.just(Optional.of(correspondenceMethodLookup)));
     when(lookupService.getOrganisationToCaseRelationships()).thenReturn(
         Mono.just(orgRelationshipsDetail));
     when(lookupService.getPersonToCaseRelationships()).thenReturn(
         Mono.just(personRelationshipsDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(
+          Mono.just(relationshipToClientLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(
+        Mono.just(contactTitleLookupDetail));
+
     when(assessmentService.getAssessments(List.of("meansAssessment"),
-        user.getProvider().getId().toString(), mockApplicationDetail.getCaseReferenceNumber()))
+        user.getProvider().getId().toString(), applicationDetail.getCaseReferenceNumber()))
         .thenReturn(Mono.just(meansAssessmentDetails));
     when(assessmentService.getAssessments(List.of("meritsAssessment"),
-        user.getProvider().getId().toString(), mockApplicationDetail.getCaseReferenceNumber()))
+        user.getProvider().getId().toString(), applicationDetail.getCaseReferenceNumber()))
         .thenReturn(Mono.just(meritsAssessmentDetails));
+    when(evidenceService.isEvidenceRequired(
+        any(AssessmentDetail.class),
+        any(AssessmentDetail.class),
+        eq(applicationType),
+        anyList())).thenReturn(false);
 
-    final ApplicationSummaryDisplay summary = applicationService.getApplicationSummary(mockApplicationDetail, user);
+    final ApplicationSummaryDisplay summary =
+        applicationService.getApplicationSummary(applicationDetail, user);
 
     assertNotNull(summary);
-    assertEquals("bob ross", summary.getClientFullName());
-    assertEquals("testing123", summary.getApplicationType().getStatus());
-    assertEquals("Started", summary.getProviderDetails().getStatus());
-    assertEquals("Complete", summary.getClientDetails().getStatus());
-    assertEquals("Started", summary.getGeneralDetails().getStatus());
+    assertEquals("Complete", summary.getGeneralDetails().getStatus());
+    assertEquals(correspondenceMethodLookup.getDescription(),
+        summary.getGeneralDetails().getCorrespondenceMethod());
+    assertEquals("bob ross", summary.getClient().getClientFullName());
+    assertEquals(applicationType.getDisplayValue(), summary.getApplicationType().getDescription());
+    assertEquals("Started", summary.getProvider().getStatus());
+    assertEquals("Complete", summary.getClient().getStatus());
     assertEquals("Not started", summary.getProceedingsAndCosts().getStatus());
     assertEquals("Not started", summary.getOpponentsAndOtherParties().getStatus());
   }

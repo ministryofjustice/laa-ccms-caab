@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
+import uk.gov.laa.ccms.caab.model.summary.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -34,7 +34,8 @@ public class ApplicationSummaryController {
   /**
    * Handles the GET request for application summary page.
    *
-   * @param applicationId The id of the application
+   * @param applicationId The id of the application.
+   * @param user The user requesting the summary.
    * @param session The http session for the view.
    * @param model The model for the view.
    * @return The view name for the application summary page.
@@ -51,7 +52,6 @@ public class ApplicationSummaryController {
             .orElseThrow(() -> new CaabApplicationException(
                 "Failed to retrieve application detail"));
 
-    //todo doc upload
     final ApplicationSummaryDisplay summary =
         Optional.ofNullable(applicationService.getApplicationSummary(application, user))
             .orElseThrow(() -> new CaabApplicationException(
@@ -63,9 +63,9 @@ public class ApplicationSummaryController {
         .applicationId(application.getId())
         .caseReferenceNumber(summary.getCaseReferenceNumber())
         .providerId(application.getProviderDetails().getProvider().getId())
-        .client(summary.getClientFullName())
-        .clientReferenceNumber(summary.getClientReferenceNumber())
-        .providerCaseReferenceNumber(summary.getProviderCaseReferenceNumber())
+        .client(summary.getClient().getClientFullName())
+        .clientReferenceNumber(summary.getClient().getClientReferenceNumber())
+        .providerCaseReferenceNumber(summary.getProvider().getProviderCaseReferenceNumber())
         .build();
 
     model.addAttribute(ACTIVE_CASE, activeCase);
@@ -73,6 +73,36 @@ public class ApplicationSummaryController {
     session.removeAttribute(CLIENT_FLOW_FORM_DATA);
 
     return "application/summary/summary-task-page";
+  }
+
+  /**
+   * Handles the GET request for the full application summary page.
+   *
+   * @param activeCase The active casd details
+   * @param user The user requesting the summary.
+   * @param model The model for the view.
+   * @return The view name for the full application summary page.
+   */
+  @GetMapping("/application/summary/full")
+  public String viewFullApplicationSummary(
+      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final Model model) {
+
+    final ApplicationDetail application =
+        Optional.ofNullable(applicationService.getApplication(
+            activeCase.getApplicationId().toString()).block())
+            .orElseThrow(() -> new CaabApplicationException(
+                "Failed to retrieve application detail"));
+
+    final ApplicationSummaryDisplay summary =
+        Optional.ofNullable(applicationService.getApplicationSummary(application, user))
+            .orElseThrow(() -> new CaabApplicationException(
+                "Failed to retrieve application summary"));
+
+    model.addAttribute("summary", summary);
+
+    return "application/summary/application-summary";
   }
 
 }

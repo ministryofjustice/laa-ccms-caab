@@ -1,11 +1,13 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static uk.gov.laa.ccms.caab.constants.CcmsModule.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OPA_EVIDENCE_ITEMS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_DOCUMENT_CODE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MERITS;
+import static uk.gov.laa.ccms.caab.util.EvidenceUtil.isEvidenceProvided;
 
 import com.google.common.collect.Streams;
 import java.util.List;
@@ -14,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
@@ -22,8 +25,12 @@ import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
+import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
+import uk.gov.laa.ccms.caab.util.EvidenceUtil;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.BaseDocument;
@@ -264,6 +271,64 @@ public class EvidenceService {
             COMMON_VALUE_OUTCOME_DOCUMENT_CODE))
         .orElse(Mono.just(new EvidenceDocumentTypeLookupDetail()))
         .map(EvidenceDocumentTypeLookupDetail::getContent);
+  }
+
+  /**
+   * Determine whether evidence documents are required for the supplied means, merits,
+   * application type and prior authorities.
+   *
+   * @param meansAssessment - the means assessment.
+   * @param meritsAssessment - the merits assessment.
+   * @param applicationType - the application type.
+   * @param priorAuthorities - the application prior authorities.
+   * @return true, if evidence is required. False otherwise.
+   */
+  public boolean isEvidenceRequired(
+      final AssessmentDetail meansAssessment,
+      final AssessmentDetail meritsAssessment,
+      final ApplicationType applicationType,
+      final List<PriorAuthorityDetail> priorAuthorities) {
+
+    return EvidenceUtil.isEvidenceRequired(
+        meansAssessment,
+        meritsAssessment,
+        applicationType,
+        priorAuthorities);
+  }
+
+  /**
+   * Determine whether all required evidence has been provided for the related application.
+   *
+   * @param applicationId - the application id.
+   * @param caseReferenceNumber - the case reference number.
+   * @param providerId - the provider id.
+   * @return true if all evidence has been provided, false otherwise.
+   */
+  public boolean isAllEvidenceProvided(
+      final String applicationId,
+      final String caseReferenceNumber,
+      final Integer providerId) {
+
+    // Get the list of required evidence docs for this application.
+    final Mono<List<EvidenceDocumentTypeLookupValueDetail>> evidenceRequiredMono =
+        getDocumentsRequired(applicationId, caseReferenceNumber, providerId);
+
+    // Retrieve the list of previously uploaded documents.
+    final Mono<EvidenceDocumentDetails> evidenceUploadedMono =
+        getEvidenceDocumentsForCase(caseReferenceNumber, APPLICATION);
+
+    Tuple2<List<EvidenceDocumentTypeLookupValueDetail>,
+        EvidenceDocumentDetails> combinedResult = Mono.zip(
+            evidenceRequiredMono,
+            evidenceUploadedMono)
+        .blockOptional()
+        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve evidence data"));
+
+    List<EvidenceDocumentTypeLookupValueDetail> evidenceRequired = combinedResult.getT1();
+    List<BaseEvidenceDocumentDetail> evidenceProvided = combinedResult.getT2().getContent();
+
+    return evidenceRequired.stream()
+        .allMatch(required -> isEvidenceProvided(required.getDescription(), evidenceProvided));
   }
 
   private boolean isRequiredOpaEvidenceItem(

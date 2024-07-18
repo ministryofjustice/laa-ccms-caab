@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.mapper;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
@@ -12,6 +11,7 @@ import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.util.EvidenceUtil;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupValueDetail;
 
 /**
@@ -42,9 +42,7 @@ public interface EvidenceMapper {
   default Boolean isEvidenceProvided(
       final String evidenceDescription,
       @Context final List<BaseEvidenceDocumentDetail> evidenceUploaded) {
-    return evidenceUploaded.stream()
-        .anyMatch(evidence -> Arrays.asList(evidence.getEvidenceDescriptions().split("\\^"))
-            .contains(evidenceDescription));
+    return EvidenceUtil.isEvidenceProvided(evidenceDescription, evidenceUploaded);
   }
 
   @Mapping(target = "id", ignore = true)

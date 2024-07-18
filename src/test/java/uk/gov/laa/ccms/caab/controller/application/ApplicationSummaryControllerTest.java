@@ -28,7 +28,7 @@ import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.controller.application.summary.ApplicationSummaryController;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.model.ApplicationSummaryDisplay;
+import uk.gov.laa.ccms.caab.model.summary.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
