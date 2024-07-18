@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -25,6 +26,8 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.AssessmentSummaryEntityDisplay;
+import uk.gov.laa.ccms.caab.opa.context.ContextToken;
 import uk.gov.laa.ccms.caab.opa.util.SecurityUtils;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
@@ -46,17 +49,23 @@ public class AssessmentController {
   private final SecurityUtils contextSecurityUtil;
 
   @Value("${laa.ccms.oracle-web-determination-server.url}")
-  private final String owdUrl;
-  @Value("${laa.ccms.oracle-web-determination-server.resources.interview-styling}")
-  private final String interviewStyling;
-  @Value("${laa.ccms.oracle-web-determination-server.resources.font-styling}")
-  private final String fontStyling;
-  @Value("${laa.ccms.oracle-web-determination-server.resources.interview-javascript}")
-  private final String interviewJavascript;
+  protected String owdUrl;
 
-  private static final String RETURN_URL = "/civil/assessments/confirm?val=";
+  @Value("${laa.ccms.oracle-web-determination-server.resources.interview-styling}")
+  protected String interviewStyling;
+
+  @Value("${laa.ccms.oracle-web-determination-server.resources.font-styling}")
+  protected String fontStyling;
+
+  @Value("${laa.ccms.oracle-web-determination-server.resources.interview-javascript}")
+  protected String interviewJavascript;
+
+  private static final String RETURN_URL = "/civil/assessments/confirm?val=%s";
   private static final String CANCEL_LINK_TEXT = "Return to create application";
   private static final String CANCEL_LINK_URL = "/civil/application/summary";
+
+  private static final String CHECKPOINT_START = "START";
+  private static final String CHECKPOINT_RESUME = "RESUME";
 
   /**
    * Displays the page to confirm the removal of an assessment.
@@ -144,6 +153,10 @@ public class AssessmentController {
     //get rulebase from the assessment passed as the parameter
     final AssessmentRulebase assessmentRulebase = AssessmentRulebase.findByType(assessment);
 
+    if (assessmentRulebase == null) {
+      throw new CaabApplicationException("Invalid assessment type");
+    }
+
     //amendment stuff
     //todo - later implementation
 
@@ -172,13 +185,14 @@ public class AssessmentController {
     }
 
     //get full client details from soa
-    // If user has not modified client details,
-    // it is necessary to do an EBS call to get a fully populated client
-    //lets leave this for now.
     final ClientDetail client = clientService.getClient(
         application.getClient().getReference(),
         user.getLoginId(),
         user.getUserType()).block();
+
+    if (client == null) {
+      throw new CaabApplicationException("Failed to retrieve client details");
+    }
 
     //if means or merits assessment
     if (!assessmentRulebase.isFinancialAssessment()) {
@@ -199,16 +213,14 @@ public class AssessmentController {
           client,
           user);
 
-      final AssessmentDetails assessmentDetails = assessmentService.getAssessments(
-          List.of(assessmentRulebase.getPrePopAssessmentName()),
-          String.valueOf(user.getProvider().getId()),
-          application.getCaseReferenceNumber()).block();
-
-      final AssessmentDetail prepopAssessment = assessmentDetails
-          .getContent()
-          .stream()
-          .findFirst()
-          .get();
+      final AssessmentDetail prepopAssessment = Optional.ofNullable(
+          assessmentService.getAssessments(
+              List.of(assessmentRulebase.getPrePopAssessmentName()),
+              String.valueOf(user.getProvider().getId()),
+              application.getCaseReferenceNumber()).block())
+          .map(AssessmentDetails::getContent)
+          .filter(content -> !content.isEmpty()).flatMap(content -> content.stream().findFirst())
+          .orElseThrow(() -> new CaabApplicationException("Failed to retrieve assessment details"));
 
       populateOpaModel(contextToken, prepopAssessment, user, assessmentRulebase, model);
 
@@ -238,13 +250,13 @@ public class AssessmentController {
       final AssessmentRulebase assessmentRulebase,
       final Model model) {
 
-    final String submitReturnUrl = RETURN_URL.concat(contextToken);
 
-    if (prepopAssessment.getCheckpoint() != null) {
-      model.addAttribute("checkpoint", "RESUME");
-    } else {
-      model.addAttribute("checkpoint", "START");
-    }
+    final String submitReturnUrl =
+        String.format(RETURN_URL, contextToken);
+
+    model.addAttribute("checkpoint",
+        prepopAssessment.getCheckpoint() != null ? CHECKPOINT_RESUME : CHECKPOINT_START);
+
 
     model.addAttribute("cancelUrl", CANCEL_LINK_URL);
     model.addAttribute("owdUrl", owdUrl);
@@ -270,11 +282,38 @@ public class AssessmentController {
    *         listing the answers to the questions the user has provided.
    */
   @GetMapping("/assessments/confirm")
-  public String assessmentConfirm() {
+  public String assessmentConfirm(
+      @RequestParam(value = "val") final String token,
+      final Model model
+  ) {
+    final ContextToken contextToken = contextSecurityUtil.createContextToken(token);
+    final Long rulebaseId = contextToken.getRulebaseId();
+    final String providerId = contextToken.getProviderId();
+    final String caseReferenceNumber = contextToken.getCaseId();
 
-    //todo - CCLS-2241 assessment confirmation screens
+    final AssessmentRulebase assessmentRulebase = AssessmentRulebase.findById(rulebaseId);
+
+    final AssessmentDetail assessmentDetail = Optional.ofNullable(assessmentService.getAssessments(
+            List.of(assessmentRulebase.getName()),
+            providerId,
+            caseReferenceNumber).block())
+        .map(AssessmentDetails::getContent)
+        .filter(content -> !content.isEmpty()).flatMap(content -> content.stream().findFirst())
+        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve assessment details"));
+
+    //need to make sure the assessment is saved before we can display the confirmation screen
+    final List<AssessmentSummaryEntityDisplay> assessmentSummaryToDisplay =
+        assessmentService.getAssessmentSummaryToDisplay(assessmentDetail);
+
+    model.addAttribute("summary", assessmentSummaryToDisplay);
+
     return "application/assessments/assessment-confirm";
 
+  }
+
+  @PostMapping("/assessments/confirm")
+  public String assessmentConfirmPost() {
+    return "redirect:/application/summary";
   }
 
 }

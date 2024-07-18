@@ -23,12 +23,14 @@ import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.BaseUser;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
@@ -798,5 +800,98 @@ public class EbsApiClientTest {
         .expectError(RuntimeException.class)
         .verify();
   }
+
+  @Test
+  void getEvidenceDocumentTypes_returnsData() {
+    final String type = "type1";
+    final String code = "code1";
+    final EvidenceDocumentTypeLookupDetail mockDetail = new EvidenceDocumentTypeLookupDetail();
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(EvidenceDocumentTypeLookupDetail.class)).thenReturn(Mono.just(mockDetail));
+
+    final Mono<EvidenceDocumentTypeLookupDetail> result = ebsApiClient.getEvidenceDocumentTypes(type, code);
+
+    StepVerifier.create(result)
+        .expectNextMatches(detail -> detail.equals(mockDetail))
+        .verifyComplete();
+
+    final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    assertEquals("/lookup/evidence-document-types?size=1000&type=type1&code=code1", actualUri.toString());
+  }
+
+  @Test
+  void getEvidenceDocumentTypes_notFound() {
+    final String type = "type1";
+    final String code = "code1";
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(EvidenceDocumentTypeLookupDetail.class)).thenReturn(Mono.error(
+        new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+
+    when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("Evidence document types"), any())).thenReturn(Mono.empty());
+
+    final Mono<EvidenceDocumentTypeLookupDetail> result = ebsApiClient.getEvidenceDocumentTypes(type, code);
+
+    StepVerifier.create(result)
+        .verifyComplete();
+
+    final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    assertEquals("/lookup/evidence-document-types?size=1000&type=type1&code=code1", actualUri.toString());
+  }
+
+  @Test
+  void getAssessmentSummaryAttributes_returnsData() {
+    final String summaryType = "summary1";
+    final AssessmentSummaryEntityLookupDetail mockDetail = new AssessmentSummaryEntityLookupDetail();
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(AssessmentSummaryEntityLookupDetail.class)).thenReturn(Mono.just(mockDetail));
+
+    final Mono<AssessmentSummaryEntityLookupDetail> result = ebsApiClient.getAssessmentSummaryAttributes(summaryType);
+
+    StepVerifier.create(result)
+        .expectNextMatches(detail -> detail.equals(mockDetail))
+        .verifyComplete();
+
+    final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    assertEquals("/lookup/assessment-summary-attributes?size=1000&summary-type=summary1", actualUri.toString());
+  }
+
+  @Test
+  void getAssessmentSummaryAttributes_notFound() {
+    final String summaryType = "summary1";
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(AssessmentSummaryEntityLookupDetail.class)).thenReturn(Mono.error(
+        new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+
+    when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("Assessment summary attributes"), any())).thenReturn(Mono.empty());
+
+    final Mono<AssessmentSummaryEntityLookupDetail> result = ebsApiClient.getAssessmentSummaryAttributes(summaryType);
+
+    StepVerifier.create(result)
+        .verifyComplete();
+
+    final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    assertEquals("/lookup/assessment-summary-attributes?size=1000&summary-type=summary1", actualUri.toString());
+  }
+
 
 }

@@ -20,8 +20,11 @@ import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentAttribute;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentEntitiesForEntityType;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentEntity;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentEntityType;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getDisplayNameForAttribute;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getEntityRelationship;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getFormattedAttributeValue;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDetail;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getRelatedEntities;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.isAssessmentReferenceConsistent;
 import static uk.gov.laa.ccms.caab.util.OpponentUtil.getOpponentByEbsId;
 import static uk.gov.laa.ccms.caab.util.OpponentUtil.getOpponentById;
@@ -30,6 +33,10 @@ import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getProceedingByEbsId;
 import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getProceedingById;
 import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getRequestedScopeForAssessmentInput;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -37,9 +44,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
@@ -60,10 +69,16 @@ import uk.gov.laa.ccms.caab.mapper.AssessmentMapper;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.AssessmentSummaryAttributeDisplay;
+import uk.gov.laa.ccms.caab.model.AssessmentSummaryEntityDisplay;
+import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.caab.util.ProceedingUtil;
+import uk.gov.laa.ccms.data.model.AssessmentSummaryAttributeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
+import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -374,16 +389,22 @@ public class AssessmentService {
           }
         }
 
-        if (application.getCostLimit() == null
-            || application.getCostLimit().getLimitAtTimeOfMerits() == null
-            || application.getCostLimit().getLimitAtTimeOfMerits()
-            .compareTo(application.getCosts().getRequestedCostLimitation()) < 0) {
+        //only check when it's a merits assessment
+        if (assessment.getName().equalsIgnoreCase(MERITS.getName())) {
+          final boolean meritReassessmentRequired = Optional.ofNullable(application.getCostLimit())
+              .map(CostLimitDetail::getLimitAtTimeOfMerits)
+              .map(limitAtTimeOfMerits -> limitAtTimeOfMerits.compareTo(
+                  application.getCosts().getRequestedCostLimitation()) < 0)
+              .orElse(true);
 
-          log.info("Merit Reassessment Required for {} as app.getCostLimitAtTimeOfMerits() == null "
-                  + "|| app.getCostLimitAtTimeOfMerits().compareTo(app.getCosts()"
-                  + ".getRequestedOrDefaultCostLimitation()) < 0 IS TRUE",
-              application.getCaseReferenceNumber());
-          return true;
+          if (meritReassessmentRequired) {
+            log.info(
+                "Merit Reassessment Required for {} as app.getCostLimitAtTimeOfMerits() == null "
+                    + "|| app.getCostLimitAtTimeOfMerits().compareTo(app.getCosts()"
+                    + ".getRequestedOrDefaultCostLimitation()) < 0 IS TRUE",
+                application.getCaseReferenceNumber());
+            return true;
+          }
         }
 
       }
@@ -1129,5 +1150,145 @@ public class AssessmentService {
       //todo - update cost limit in future story: CCLS-2222
     }
   }
+
+  /**
+   * Retrieves the assessment summary to display based on the given assessment details.
+   *
+   * @param assessment the assessment containing details to be summarized
+   * @return a list of assessment summary entity displays
+   */
+  public List<AssessmentSummaryEntityDisplay> getAssessmentSummaryToDisplay(
+      final AssessmentDetail assessment) {
+
+    final List<AssessmentSummaryEntityDisplay> summaryToDisplay = new ArrayList<>();
+
+    final Mono<List<AssessmentSummaryEntityLookupValueDetail>> parentMono =
+        lookupService.getAssessmentSummaryAttributes("PARENT")
+            .map(AssessmentSummaryEntityLookupDetail::getContent);
+
+    final Mono<List<AssessmentSummaryEntityLookupValueDetail>> childMono =
+        lookupService.getAssessmentSummaryAttributes("CHILD")
+            .map(AssessmentSummaryEntityLookupDetail::getContent);
+
+    Mono.zip(parentMono, childMono)
+        .doOnNext(tuple -> {
+          final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups =
+              tuple.getT1();
+          final List<AssessmentSummaryEntityLookupValueDetail> childSummaryLookups =
+              tuple.getT2();
+
+          //loop through all parent summary lookups
+          for (final AssessmentSummaryEntityLookupValueDetail parentSummaryLookup
+              : parentSummaryLookups) {
+            log.debug("Parent Summary: {}", parentSummaryLookup.getDisplayName());
+
+            // get all entities for the parent summary lookup
+            final List<AssessmentEntityDetail> entities =
+                getAssessmentEntitiesForEntityType(assessment, parentSummaryLookup.getName());
+
+            //loop through all entities in the assessment where the entity type matches
+            // the parent summary lookup
+            for (final AssessmentEntityDetail entity : entities) {
+              log.debug("Entity: {}", entity.getName());
+              createSummaryEntity(
+                  assessment,
+                  summaryToDisplay,
+                  childSummaryLookups,
+                  parentSummaryLookup,
+                  entity);
+            }
+          }
+        }).block();
+
+    return summaryToDisplay;
+  }
+
+  protected void createSummaryEntity(
+      final AssessmentDetail assessment,
+      final List<AssessmentSummaryEntityDisplay> summaryEntitiesToDisplay,
+      final List<AssessmentSummaryEntityLookupValueDetail> childSummaryLookups,
+      final AssessmentSummaryEntityLookupValueDetail summaryEntityLookup,
+      final AssessmentEntityDetail entity) {
+
+    //we have the entity from the assessment where it matched the parent summary lookup
+
+    //need to stream through each attribute in the summaryEntityLookup
+    //check it matches the assessment entity attributes, then add it to a list if matches
+    final List<AssessmentSummaryAttributeDisplay> attributesToDisplay =
+        summaryEntityLookup.getAttributes().stream()
+            .map(attributeLookup -> getAssessmentAttribute(entity, attributeLookup.getName()))
+            .filter(Objects::nonNull)
+            .map(attribute -> createSummaryAttributeDisplay(attribute, summaryEntityLookup))
+            .filter(Objects::nonNull)
+            .toList();
+
+    if (!attributesToDisplay.isEmpty()) {
+      //if we have data in the list then we can create a summary display entity
+      final AssessmentSummaryEntityDisplay summaryEntityToDisplay =
+          new AssessmentSummaryEntityDisplay(
+              summaryEntityLookup.getName(),
+              summaryEntityLookup.getDisplayName(),
+              summaryEntityLookup.getEntityLevel());
+
+      //then we add all the attributes to the summary entity
+      summaryEntityToDisplay.getAttributes().addAll(attributesToDisplay);
+      //then add the summary entity to the list
+      summaryEntitiesToDisplay.add(summaryEntityToDisplay);
+
+      //Child entities to add
+      if (!GLOBAL.getType().equalsIgnoreCase(summaryEntityToDisplay.getName())) {
+        for (final AssessmentRelationshipDetail relationship : entity.getRelations()) {
+          final String relationType = relationship.getName();
+          if (StringUtils.hasLength(relationType)) {
+
+            // ignore reverse relationships
+            if (!relationType.startsWith("rev") && !relationType.endsWith("_rev")) {
+              log.debug("Relation Type: " + relationType);
+              for (final AssessmentEntityDetail childEntity :
+                  getRelatedEntities(relationship, assessment)) {
+                for (final AssessmentSummaryEntityLookupValueDetail childSummaryEntityLookup :
+                    childSummaryLookups) {
+                  createSummaryEntity(
+                      assessment,
+                      summaryEntitiesToDisplay,
+                      childSummaryLookups,
+                      childSummaryEntityLookup,
+                      childEntity);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Creates a summary attribute display.
+   *
+   * @param attribute the assessment attribute detail
+   * @param summaryEntityLookup the summary entity lookup value detail
+   * @return the summary attribute display or null if the condition is not met
+   */
+  protected AssessmentSummaryAttributeDisplay createSummaryAttributeDisplay(
+      final AssessmentAttributeDetail attribute,
+      final AssessmentSummaryEntityLookupValueDetail summaryEntityLookup) {
+
+    // Format the attribute value
+    final String formattedAttributeValue = getFormattedAttributeValue(attribute);
+
+    // Use Optional to handle the conditionally creating the display object
+    return Optional.of(attribute)
+        // Check if the formatted attribute value has text or if the attribute was asked
+        .filter(attr -> StringUtils.hasText(formattedAttributeValue) || attr.getAsked())
+        // If the condition is met, create a new AssessmentSummaryAttributeDisplay
+        .map(attr -> new AssessmentSummaryAttributeDisplay(
+            attr.getName(),
+            getDisplayNameForAttribute(summaryEntityLookup, attr.getName()),
+            formattedAttributeValue))
+        // If the condition is not met, return null
+        .orElse(null);
+  }
+
 
 }

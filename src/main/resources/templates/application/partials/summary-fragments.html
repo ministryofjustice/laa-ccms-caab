@@ -85,3 +85,15 @@
     <td class="govuk-table__cell"></td>
   </th:block>
 </tr>
+
+<div th:fragment="assessmentSummaryFragment (summary)">
+  <div th:each="summaryItem : ${summary}">
+    <h2 class="govuk-heading-m" th:text="${summaryItem.displayName}"></h2>
+    <dl class="govuk-summary-list">
+      <div class="govuk-summary-list__row" th:each="attribute : ${summaryItem.attributes}">
+        <dt class="govuk-summary-list__key" th:text="${attribute.displayName}" style="width: 50%;"></dt>
+        <dd class="govuk-summary-list__value" th:text="${attribute.value}"></dd>
+      </div>
+    </dl>
+  </div>
+</div>
