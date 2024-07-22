@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a href="/civil/home" class="govuk-back-link">Return to home</a>
+    <a th:href="@{/home}" class="govuk-back-link">Return to home</a>
   </div>
   <div id="main-content">
     <span class="govuk-caption-l">Create application</span>
@@ -38,7 +38,7 @@
           <tbody class="govuk-table__body">
           <tr class="govuk-table__row">
             <td class="govuk-table__cell" th:if="${summary.applicationType.enabled}">
-              <a href="/civil/application/summary/application-type" class="govuk-link">Application type</a>
+              <a th:href="@{/application/summary/application-type}" class="govuk-link">Application type</a>
             </td>
             <td class="govuk-table__cell" th:unless="${summary.applicationType.enabled}">
               Application type
@@ -49,35 +49,35 @@
             <td class="govuk-table__cell"></td>
           </tr>
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell"><a href="/civil/application/summary/provider-details" class="govuk-link">Provider details</a></td>
+            <td class="govuk-table__cell"><a th:href="@{/application/summary/provider-details}" class="govuk-link">Provider details</a></td>
             <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.provider.status})}"></td>
             <td class="govuk-table__cell" th:text="${#dates.format(summary.provider.lastSaved, 'dd/MM/yyyy')}"></td>
             <td class="govuk-table__cell" th:text="${summary.provider.lastSavedBy}"></td>
             <td class="govuk-table__cell"></td>
           </tr>
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell"><a href="/civil/application/summary/client/details/summary" class="govuk-link">Client details</a></td>
+            <td class="govuk-table__cell"><a th:href="@{/application/summary/client/details/summary}" class="govuk-link">Client details</a></td>
             <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.client.status})}"></td>
             <td class="govuk-table__cell"></td>
             <td class="govuk-table__cell"></td>
             <td class="govuk-table__cell"></td>
           </tr>
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell"><a href="/civil/application/summary/correspondence-address" class="govuk-link">General details</a></td>
+            <td class="govuk-table__cell"><a th:href="@{/application/summary/correspondence-address}" class="govuk-link">General details</a></td>
             <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.generalDetails.status})}"></td>
             <td class="govuk-table__cell" th:text="${#dates.format(summary.generalDetails.lastSaved, 'dd/MM/yyyy')}"></td>
             <td class="govuk-table__cell" th:text="${summary.generalDetails.lastSavedBy}"></td>
             <td class="govuk-table__cell"></td>
           </tr>
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell"><a href="/civil/application/proceedings-and-costs" class="govuk-link">Proceedings and costs</a></td>
+            <td class="govuk-table__cell"><a th:href="@{/application/proceedings-and-costs}" class="govuk-link">Proceedings and costs</a></td>
             <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.proceedingsAndCosts.status})}"></td>
             <td class="govuk-table__cell" th:text="${#dates.format(summary.proceedingsAndCosts.lastSaved, 'dd/MM/yyyy')}"></td>
             <td class="govuk-table__cell" th:text="${summary.proceedingsAndCosts.lastSavedBy}"></td>
             <td class="govuk-table__cell"></td>
           </tr>
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell"><a href="/civil/application/summary/opponents" class="govuk-link">Opponents and other parties</a></td>
+            <td class="govuk-table__cell"><a th:href="@{/application/summary/opponents}" class="govuk-link">Opponents and other parties</a></td>
             <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.opponentsAndOtherParties.status})}"></td>
             <td class="govuk-table__cell" th:text="${#dates.format(summary.opponentsAndOtherParties.lastSaved, 'dd/MM/yyyy')}"></td>
             <td class="govuk-table__cell" th:text="${summary.opponentsAndOtherParties.lastSavedBy}"></td>
@@ -119,7 +119,7 @@
           </button>
           <a class="govuk-button govuk-button--secondary"
              data-module="govuk-button"
-             href="/civil/todo">
+             th:href="@{/todo}">
             Abandon application
           </a>
         </div>

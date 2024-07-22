@@ -6,7 +6,7 @@
     <body>
       <div class="govuk-width-container">
       <div id="breadcrumbs">
-          <a href="/civil/" class="govuk-back-link">Cancel and return to Home</a>
+          <a th:href="@{/home}" class="govuk-back-link">Cancel and return to Home</a>
       </div>
         <div id="main-content">
             <form action="#" th:action="@{/application/office}" th:object="${applicationFormData}" method="post">
@@ -17,7 +17,7 @@
               </h1>
               <div class="govuk-body-l">
                   Please select the office where the application will be held. Alternatively, click
-                  <a href="/civil/application/copy-case/search">Copy case </a>
+                  <a th:href="@{/application/copy-case/search}">Copy case </a>
                   to start a new application from an existing one.
               </div>
               <div class="govuk-grid-row">
