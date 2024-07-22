@@ -8,7 +8,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a href="/civil/application/proceedings-and-costs#case-costs" class="govuk-back-link">Cancel and return to proceedings and costs</a>
+    <a th:href="@{/application/proceedings-and-costs#case-costs}" class="govuk-back-link">Cancel and return to proceedings and costs</a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/application/case-costs}" th:object="${costDetails}" method="post">
