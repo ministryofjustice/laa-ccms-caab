@@ -119,7 +119,7 @@ An S3 bucket `laa-ccms-documents` will be created on startup if it does not alre
 
 ## OPA/OIA and connector
 
-The OPA/OIA and connector services are not required for the ui to get working, but if you want to test / develop features for the integration then this is required.
+The OPA/OIA and connector services are not required for the ui to start up locally, but if you want to test / develop features for the integration then this is required.
 
 This [connector guide](https://github.com/ministryofjustice/laa-ccms-connector/blob/main/documentation/gradle-docker-build.md) can be followed to get the connector/opa/oia up and running.
 
@@ -173,7 +173,7 @@ We need two VMs, one for x86_64 and one for aarch64:
 
 For aarch64:
 ```sh
-colima start --cpu 6 --memory 6 --disk 50 --arch aarch64 --vm-type=vz --vz-rosetta --profile aarch64
+colima start --cpu 6 --memory 6 --disk 50 --network-address --arch aarch64 --vm-type=vz --vz-rosetta --profile aarch64
 ```
 
 For x86_64:

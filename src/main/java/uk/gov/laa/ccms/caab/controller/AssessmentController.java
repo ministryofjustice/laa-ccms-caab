@@ -311,9 +311,4 @@ public class AssessmentController {
 
   }
 
-  @PostMapping("/assessments/confirm")
-  public String assessmentConfirmPost() {
-    return "redirect:/application/summary";
-  }
-
 }

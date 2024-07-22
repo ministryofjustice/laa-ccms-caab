@@ -9,7 +9,6 @@
         <a th:href="@{/application/summary}" class="govuk-back-link">Return to application summary</a>
       </div>
       <div id="main-content">
-        <form action="#" th:action="@{/assessments/confirm}" method="post">
         <h1 class="govuk-heading-l">
           Confirmation
         </h1>
@@ -17,12 +16,11 @@
           Assessment completed.
         </p>
         <div th:include="application/partials/summary-fragments :: assessmentSummaryFragment(summary=${summary})"></div>
-          <div class="govuk-button-group">
-            <button type="submit" class="govuk-button" data-module="govuk-button">
-              Confirm
-            </button>
-          </div>
-        </form>
+        <div class="govuk-button-group">
+          <a th:href="@{/application/summary}" role="button" draggable="false" class="govuk-button" data-module="govuk-button">
+            Add new file
+          </a>
+        </div>
       </div>
     </div>
   </body>

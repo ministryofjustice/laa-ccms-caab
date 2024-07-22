@@ -9,9 +9,24 @@ import lombok.Data;
  */
 @Data
 public class AssessmentSummaryEntityDisplay {
+  /**
+   * The name of the assessment summary entity.
+   */
   private String name;
+
+  /**
+   * The display name of the assessment summary entity.
+   */
   private String displayName;
+
+  /**
+   * The level of the assessment summary entity.
+   */
   private Integer entityLevel;
+
+  /**
+   * The list of attributes for the assessment summary entity.
+   */
   private List<AssessmentSummaryAttributeDisplay> attributes;
 
   /**
