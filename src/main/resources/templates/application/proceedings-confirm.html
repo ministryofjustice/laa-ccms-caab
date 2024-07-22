@@ -8,7 +8,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a href="/civil/application/proceedings-and-costs" class="govuk-back-link">Cancel and return to proceedings and costs</a>
+    <a th:href="@{/application/proceedings-and-costs}" class="govuk-back-link">Cancel and return to proceedings and costs</a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/application/proceedings/{action}/confirm(action=${proceedingFlow.action})}" method="post">
@@ -90,7 +90,7 @@
       </table>
       <a class="govuk-button govuk-button--secondary"
          data-module="govuk-button"
-         href="/civil/application/proceedings/scope-limitations/add/details">
+         th:href="@{/application/proceedings/scope-limitations/add/details}">
         Add scope limitation
       </a>
       <div class="govuk-button-group">
