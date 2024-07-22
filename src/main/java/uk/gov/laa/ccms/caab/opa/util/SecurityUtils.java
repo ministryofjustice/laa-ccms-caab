@@ -28,13 +28,13 @@ public class SecurityUtils {
   public static final String ERROR_WITH_CREATE_HUB_CONTEXT = "error with createHubContext";
 
   private String returnUrl;
-  private String password;
+  private Encryptor encryptor;
 
   public SecurityUtils(
       @Value("${laa.ccms.oracle-web-determination-server.redirect.url}") final String returnUrl,
       @Value("${laa.ccms.caab.opa.security.password}") final String password) {
     this.returnUrl = returnUrl;
-    this.password = password;
+    this.encryptor = new Encryptor(password);
   }
 
   /**
@@ -75,69 +75,20 @@ public class SecurityUtils {
     // create a String with the Json structure for connector context
     final String jsonStr = contextToken.createJsonContextToken();
     String uriLegalTokenValue = "";
-    final boolean isEncrypted = true;
-    final Encryptor encryptor = new Encryptor(password);
-    if (isEncrypted) {
-      try {
-        log.info("createHubContext() Json: ...........[{}]", jsonStr);
-
-        final String encryptedJsonStr = encryptor.encrypt(jsonStr);
-        log.info("createHubContext() encrypted Json...[{}]", uriLegalTokenValue);
-
-        uriLegalTokenValue = ContextUrlEncoder.encode(encryptedJsonStr, UTF_8);
-        log.info("createHubContext() UrlEncoded ......[{}]", uriLegalTokenValue);
-
-      } catch (UnsupportedEncodingException | SecurityException e) {
-        log.error(ERROR_WITH_CREATE_HUB_CONTEXT, e);
-      }
-
-
-    } else {
-      try {
-        uriLegalTokenValue = ContextUrlEncoder.encode(jsonStr, UTF_8);
-      } catch (UnsupportedEncodingException e) {
-        log.error(ERROR_WITH_CREATE_HUB_CONTEXT, e);
-      }
-      log.debug("createHubContext() created (clear) legal Token: [{}]", uriLegalTokenValue);
-
-    }
-    log.debug("========> ContextToken ===========> {}", uriLegalTokenValue);
-
-    return uriLegalTokenValue;
-  }
-
-
-  /**
-   * Creates a feedback hub context based on the supplied username and provider name.
-   *
-   * @param username the username to include in the context
-   * @param providerName the provider name to include in the context
-   * @return the URI-encoded legal token value for the feedback hub context
-   */
-  public String createFeedbackHubContext(final String username, final String providerName) {
-
-    log.debug("createFeedbackHubContext() based on supplied details username:[{}], "
-        + "providerName:[{}]", username, providerName);
-
-    final Encryptor encryptor = new Encryptor(password);
-
-    // create a String with the Json structure for connector context
-    final String jsonStr = createJsonToken(username, providerName);
-    String uriLegalTokenValue = "";
-
     try {
       log.info("createHubContext() Json: ...........[{}]", jsonStr);
 
       final String encryptedJsonStr = encryptor.encrypt(jsonStr);
+      log.info("createHubContext() encrypted Json...[{}]", uriLegalTokenValue);
 
       uriLegalTokenValue = ContextUrlEncoder.encode(encryptedJsonStr, UTF_8);
-
       log.info("createHubContext() UrlEncoded ......[{}]", uriLegalTokenValue);
 
-    } catch (final Exception e) {
-      log.error(ERROR_WITH_CREATE_FEEDBACK_HUB_CONTEXT, e);
+    } catch (UnsupportedEncodingException | SecurityException e) {
+      log.error(ERROR_WITH_CREATE_HUB_CONTEXT, e);
     }
 
+    log.debug("========> ContextToken ===========> {}", uriLegalTokenValue);
 
     return uriLegalTokenValue;
   }
@@ -148,7 +99,7 @@ public class SecurityUtils {
    *
    * @return String value of json context structure
    */
-  private String createJsonToken(final String username, final String providerName) {
+  protected String createJsonToken(final String username, final String providerName) {
     final JSONObject jsonObj = new JSONObject();
 
     // check manadatory items.
@@ -163,6 +114,27 @@ public class SecurityUtils {
     jsonObj.put("VENDOR_SITE_NAME", providerName);
 
     return jsonObj.toString();
+  }
+
+  /**
+   * Creates a ContextToken object from the given token.
+   *
+   * @param token the token to be converted into a ContextToken
+   * @return the created ContextToken
+   * @throws RuntimeException if an error occurs during token processing
+   */
+  public ContextToken createContextToken(final String token) throws RuntimeException {
+    final ContextToken contextToken = new ContextToken();
+    final String jsonStr;
+    try {
+      jsonStr = encryptor.decrypt(ContextUrlEncoder.decode(token, "UTF-8"));
+      contextToken.parseJsonContextToken(jsonStr);
+    } catch (final Exception e) {
+      log.error("failed to createContextToken", e);
+      throw new RuntimeException(e);
+    }
+
+    return contextToken;
   }
 
 }

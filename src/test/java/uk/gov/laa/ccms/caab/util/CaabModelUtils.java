@@ -33,7 +33,7 @@ public class CaabModelUtils {
     return new BaseApplicationDetail()
         .caseReferenceNumber(id + "")
         .categoryOfLaw(new StringDisplayValue().id(id + "cat1").displayValue(id + "catoflaw1"))
-        .client(new ClientDetail().firstName(id + "firstname"))
+        .client(new ClientDetail().firstName(id + "firstname").reference(id + "ref"))
         .providerDetails(buildApplicationProviderDetails(id))
         .status(new StringDisplayValue().id("st" + id).displayValue("status " + id));
   }
@@ -43,7 +43,7 @@ public class CaabModelUtils {
         .caseReferenceNumber(id + "")
         .categoryOfLaw(new StringDisplayValue().id(id + "cat1").displayValue(id + "catoflaw1"))
         .certificate(new StringDisplayValue().id(id + "cert").displayValue(id + " certificate"))
-        .client(new ClientDetail().firstName(id + "firstname"))
+        .client(new ClientDetail().firstName(id + "firstname").reference(id + "ref"))
         .providerDetails(buildApplicationProviderDetails(id))
         .allSectionsComplete(flag)
         .amendment(flag)

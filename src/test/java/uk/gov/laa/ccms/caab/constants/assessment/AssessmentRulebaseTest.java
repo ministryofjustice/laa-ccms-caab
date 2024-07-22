@@ -30,4 +30,21 @@ class AssessmentRulebaseTest {
     assertEquals("poaAssessment_PREPOP", AssessmentRulebase.getPrePopAssessmentName(4L));
   }
 
+  @Test
+  void testFindById() {
+    assertEquals(AssessmentRulebase.MEANS, AssessmentRulebase.findById(1L));
+    assertEquals(AssessmentRulebase.MERITS, AssessmentRulebase.findById(2L));
+    assertEquals(AssessmentRulebase.BILLING, AssessmentRulebase.findById(3L));
+    assertEquals(AssessmentRulebase.POA, AssessmentRulebase.findById(4L));
+    assertNull(AssessmentRulebase.findById(999L));
+  }
+
+  @Test
+  void testGetDeploymentName() {
+    assertEquals("MeansAssessment", AssessmentRulebase.MEANS.getDeploymentName());
+    assertEquals("MeritsAssessment", AssessmentRulebase.MERITS.getDeploymentName());
+    assertEquals("BillingAssessment", AssessmentRulebase.BILLING.getDeploymentName());
+    assertEquals("PoaAssessment", AssessmentRulebase.POA.getDeploymentName());
+  }
+
 }

@@ -68,6 +68,7 @@ public class EbsModelUtils {
 
   public static UserDetail buildUserDetail() {
     return new UserDetail()
+        .username("testUser")
         .userId(1)
         .userType("testUserType")
         .loginId("testLoginId")

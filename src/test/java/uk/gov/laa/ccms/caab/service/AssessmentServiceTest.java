@@ -28,6 +28,7 @@ import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentEntitiesForE
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -49,16 +50,22 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.AssessmentSummaryAttributeDisplay;
+import uk.gov.laa.ccms.caab.model.AssessmentSummaryEntityDisplay;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
+import uk.gov.laa.ccms.data.model.AssessmentSummaryAttributeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
+import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -633,13 +640,19 @@ public class AssessmentServiceTest {
     assertTrue(result);
   }
 
-  @Test
-  void testIsReassessmentRequired_costLimitDifference_assertsTrue() {
+  @ParameterizedTest
+  @CsvSource({
+      "meritsAssessment, true",
+      "meansAssessment, false"
+  })
+  void testIsReassessmentRequired_costLimitDifference(
+      final String assessmentName,
+      final boolean expectedResult) {
+
     final String matterType = "TEST";
     final String proceedingType = "TEST";
     final String clientInvolvement = "TEST";
     final String scopeLimitation = "TEST";
-
 
     final ApplicationDetail application = new ApplicationDetail()
         .amendment(false)
@@ -658,11 +671,11 @@ public class AssessmentServiceTest {
         .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
 
     final AssessmentDetail assessment = buildAssessmentDetail(auditDate);
+    assessment.setName(assessmentName);
 
     final boolean result = assessmentService.isReassessmentRequired(application, assessment);
 
-    //we expect true as the cost limit is different
-    assertTrue(result);
+    assertEquals(expectedResult, result);
   }
 
   @ParameterizedTest
@@ -1016,6 +1029,139 @@ public class AssessmentServiceTest {
         assessmentService.isApplicationOpponentsMatchingAssessments(application, assessment);
 
     assertEquals(result, expected);
+  }
+
+  @Test
+  void testGetAssessmentSummaryToDisplay() {
+    final AssessmentDetail assessment = buildAssessmentDetail(new Date());
+
+    // Setup mock data for parent summary lookups
+    final AssessmentSummaryEntityLookupValueDetail parentSummaryLookup = new AssessmentSummaryEntityLookupValueDetail();
+    parentSummaryLookup.setName("PROCEEDING");
+    parentSummaryLookup.setDisplayName("Proceeding");
+    parentSummaryLookup.setEntityLevel(1);
+    parentSummaryLookup.addAttributesItem(new AssessmentSummaryAttributeLookupValueDetail()
+        .name("PROCEEDING_NAME")
+        .displayName("Proceeding Name"));
+
+    final AssessmentSummaryEntityLookupDetail parentSummaryDetail = new AssessmentSummaryEntityLookupDetail();
+    parentSummaryDetail.setContent(List.of(parentSummaryLookup));
+
+    final AssessmentSummaryEntityLookupDetail childSummaryDetail = new AssessmentSummaryEntityLookupDetail();
+    childSummaryDetail.setContent(new ArrayList<>());
+
+    when(lookupService.getAssessmentSummaryAttributes("PARENT"))
+        .thenReturn(Mono.just(parentSummaryDetail));
+    when(lookupService.getAssessmentSummaryAttributes("CHILD"))
+        .thenReturn(Mono.just(childSummaryDetail));
+
+    final List<AssessmentSummaryEntityDisplay> result =
+        assessmentService.getAssessmentSummaryToDisplay(assessment);
+
+    assertNotNull(result);
+    assertFalse(result.isEmpty());
+    assertEquals(1, result.size());
+
+    final AssessmentSummaryEntityDisplay summaryDisplay = result.get(0);
+    assertEquals("PROCEEDING", summaryDisplay.getName());
+    assertEquals("Proceeding", summaryDisplay.getDisplayName());
+    assertEquals("PROCEEDING_NAME", summaryDisplay.getAttributes().get(0).getName());
+    assertEquals("Proceeding Name", summaryDisplay.getAttributes().get(0).getDisplayName());
+    assertEquals("TEST", summaryDisplay.getAttributes().get(0).getValue());
+    assertEquals(1, summaryDisplay.getEntityLevel());
+  }
+
+
+  @Test
+  void testCreateSummaryEntity() {
+    // Initialize assessment detail
+    final AssessmentDetail assessment = new AssessmentDetail();
+
+    // Initialize summary entities to display
+    final List<AssessmentSummaryEntityDisplay> summaryEntitiesToDisplay = new ArrayList<>();
+
+    // Initialize child summary lookups
+    final List<AssessmentSummaryEntityLookupValueDetail> childSummaryLookups = new ArrayList<>();
+
+    // Initialize summary entity lookup
+    final AssessmentSummaryEntityLookupValueDetail summaryEntityLookup = new AssessmentSummaryEntityLookupValueDetail();
+    summaryEntityLookup.setName("testEntity");
+    summaryEntityLookup.setDisplayName("Test Entity");
+    summaryEntityLookup.setEntityLevel(1);
+
+    // Initialize summary attribute lookup
+    final AssessmentSummaryAttributeLookupValueDetail summaryAttributeLookup = new AssessmentSummaryAttributeLookupValueDetail();
+    summaryAttributeLookup.setName("testAttribute");
+    summaryAttributeLookup.setDisplayName("Test Attribute");
+    summaryEntityLookup.addAttributesItem(summaryAttributeLookup);
+
+    // Initialize assessment entity detail
+    final AssessmentEntityDetail entity = new AssessmentEntityDetail();
+    entity.setName("testEntity");
+
+    // Initialize assessment attribute detail
+    final AssessmentAttributeDetail assessmentAttribute = new AssessmentAttributeDetail();
+    assessmentAttribute.setName("testAttribute");
+    assessmentAttribute.setValue("testValue");
+    assessmentAttribute.setType("TEXT");
+    entity.addAttributesItem(assessmentAttribute);
+
+    // Call the method under test
+    assessmentService.createSummaryEntity(assessment, summaryEntitiesToDisplay, childSummaryLookups, summaryEntityLookup, entity);
+
+    // Verify the result
+    assertFalse(summaryEntitiesToDisplay.isEmpty());
+    assertEquals(1, summaryEntitiesToDisplay.size());
+    assertEquals("testEntity", summaryEntitiesToDisplay.get(0).getName());
+    assertEquals("Test Entity", summaryEntitiesToDisplay.get(0).getDisplayName());
+    assertEquals(1, summaryEntitiesToDisplay.get(0).getEntityLevel());
+
+    final List<AssessmentSummaryAttributeDisplay> attributes = summaryEntitiesToDisplay.get(0).getAttributes();
+    assertFalse(attributes.isEmpty());
+    assertEquals(1, attributes.size());
+    assertEquals("testAttribute", attributes.get(0).getName());
+    assertEquals("Test Attribute", attributes.get(0).getDisplayName());
+    assertEquals("testValue", attributes.get(0).getValue());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+      "DATE,2023-07-15,15/07/2023",
+      "CURRENCY,1234.56,£1234.56",
+      "NUMBER,1234.5600,1234.56",
+      "BOOLEAN,true,Yes",
+      "BOOLEAN,false,No",
+      "TEXT,someText,someText"
+  })
+  void testCreateSummaryAttributeDisplay(
+      final String type,
+      final String value,
+      final String expectedFormattedValue) {
+
+    final AssessmentAttributeDetail attribute = new AssessmentAttributeDetail();
+    attribute.setName("testAttribute");
+    attribute.setType(type);
+    attribute.setValue(value);
+    attribute.setAsked(true);
+
+    final AssessmentSummaryAttributeLookupValueDetail summaryAttribute = new AssessmentSummaryAttributeLookupValueDetail();
+    summaryAttribute.setName("testAttribute");
+    summaryAttribute.setDisplayName("displayName");
+
+    final AssessmentSummaryEntityLookupValueDetail summaryEntityLookup = new AssessmentSummaryEntityLookupValueDetail();
+    summaryEntityLookup.setName("testEntity");
+    summaryEntityLookup.setDisplayName("entityDisplayName");
+    summaryEntityLookup.setEntityLevel(1);
+    summaryEntityLookup.addAttributesItem(summaryAttribute);
+
+    final AssessmentSummaryAttributeDisplay
+        result = assessmentService.createSummaryAttributeDisplay(attribute, summaryEntityLookup);
+
+    assertNotNull(result);
+    assertEquals("testAttribute", result.getName());
+    assertEquals("displayName", result.getDisplayName());
+
+    assertEquals(expectedFormattedValue, result.getValue());
   }
 
 
