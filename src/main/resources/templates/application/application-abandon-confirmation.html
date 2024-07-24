@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>LAA CCMS - Start new application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs" style="padding-top: 40px;">
+    </div>
+    <div id="main-content">
+        <span class="govuk-caption-l">About your application</span>
+        <h1 class="govuk-heading-l">
+            Abandon application
+        </h1>
+        <p class="govuk-body">Are you sure you want to abandon this application?</p>
+        <p class="govuk-body">Please click 'Confirm' to abandon this application. Otherwise, click 'Cancel' to go back.</p>
+        <!-- Add the form element -->
+        <form action="#" th:action="@{/application/abandon/confirmed}" method="post">
+            <div class="govuk-button-group">
+                <!-- Change the anchor tag to a button -->
+                <button type="submit" class="govuk-button" data-module="govuk-button">
+                    Confirm
+                </button>
+                <a class="govuk-button govuk-button--secondary" data-module="govuk-button" th:href="@{/application/summary}">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

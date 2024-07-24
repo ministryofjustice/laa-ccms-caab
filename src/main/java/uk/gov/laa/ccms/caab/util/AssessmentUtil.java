@@ -15,7 +15,9 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipDetail;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRelationship;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 
 /**
  * Utility class for handling assessment-related operations.
@@ -173,5 +175,16 @@ public class AssessmentUtil {
     return true;
   }
 
-
+  /**
+   * Get a list of assessments names for non-financial assessments, including the Prepopulated
+   * assessments.
+   *
+   * @return List of non-financial assessment names including prepop.
+   */
+  public static List<String> getNonFinancialAssessmentNamesIncludingPrepop() {
+    return AssessmentRulebase.getNonFinancialRulebases().stream()
+        .map(AssessmentRulebase::getType)
+        .flatMap(category -> AssessmentName.findAssessmentNamesByCategory(category).stream())
+        .toList();
+  }
 }

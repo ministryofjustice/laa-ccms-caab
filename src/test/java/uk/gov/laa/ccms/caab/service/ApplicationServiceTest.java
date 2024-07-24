@@ -38,6 +38,10 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_O
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS_PREPOP;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MERITS;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MERITS_PREPOP;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationProviderDetails;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
@@ -1865,6 +1869,32 @@ class ApplicationServiceTest {
     StepVerifier.create(applicationDetailMono)
         .expectNextMatches(applicationDetail -> applicationDetail == mockApplicationDetail)
         .verifyComplete();
+  }
+
+  @Test
+  void abandonApplication_success() {
+    final ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+    List<String> expectedAssessmentNames = List.of(
+        MEANS.getName(),
+        MEANS_PREPOP.getName(),
+        MERITS.getName(),
+        MERITS_PREPOP.getName());
+    final UserDetail user = new UserDetail().loginId("userLoginId");
+
+    when(evidenceService.removeDocuments(application.getCaseReferenceNumber(), user.getLoginId())).thenReturn(Mono.empty());
+
+    when(caabApiClient.deleteApplication(String.valueOf(application.getId()), user.getLoginId())).thenReturn(Mono.empty());
+
+    when(assessmentService.deleteAssessments(user, expectedAssessmentNames, application.getCaseReferenceNumber(), null)).thenReturn(Mono.empty());
+
+    applicationService.abandonApplication(application, user);
+
+    verify(evidenceService).removeDocuments(application.getCaseReferenceNumber(), user.getLoginId());
+
+    verify(caabApiClient).deleteApplication(String.valueOf(application.getId()), user.getLoginId());
+
+    verify(assessmentService).deleteAssessments(user, expectedAssessmentNames, application.getCaseReferenceNumber(), null);
+
   }
 
   @Test

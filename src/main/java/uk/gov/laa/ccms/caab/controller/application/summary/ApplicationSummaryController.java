@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -103,6 +104,40 @@ public class ApplicationSummaryController {
     model.addAttribute("summary", summary);
 
     return "application/summary/application-summary";
+  }
+
+  /**
+   * Handles the GET request for the abandon application confirmation page.
+   *
+   * @return The view name for the abandon application confirmation page.
+   */
+  @GetMapping("/application/abandon")
+  public String viewAbandonApplicationConfirmation() {
+
+    return "application/application-abandon-confirmation";
+  }
+
+  /**
+   * Handles the POST request to abandon an application.
+   *
+   * @param activeCase The active case details
+   * @param user The user requesting the summary.
+   * @return Redirect to the home page.
+   */
+  @PostMapping("/application/abandon/confirmed")
+  public String abandonApplication(
+      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user) {
+
+    final ApplicationDetail application =
+        Optional.ofNullable(applicationService.getApplication(
+                activeCase.getApplicationId().toString()).block())
+            .orElseThrow(() -> new CaabApplicationException(
+                "Failed to retrieve application detail"));
+
+    applicationService.abandonApplication(application, user);
+
+    return "redirect:/home";
   }
 
 }

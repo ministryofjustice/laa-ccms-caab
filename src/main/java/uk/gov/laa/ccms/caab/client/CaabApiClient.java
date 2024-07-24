@@ -192,6 +192,26 @@ public class CaabApiClient {
   }
 
   /**
+   * Deletes an application using the CAAB API.
+   *
+   * @param id the ID associated with the application
+   * @return a Mono Void indicating the completion of the delete operation
+   */
+  public Mono<Void> deleteApplication(
+      final String id, final String loginId) {
+
+    return caabApiWebClient
+        .delete()
+        .uri("/applications/{id}", id)
+        .header("Caab-User-Login-Id", loginId)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiDeleteError(e,
+            RESOURCE_TYPE_APPLICATION, "id", String.valueOf(e)));
+  }
+
+
+  /**
    * Retrieves an application's application type using the CAAB API.
    *
    * @param id the ID associated with the application
@@ -840,7 +860,7 @@ public class CaabApiClient {
   }
 
   /**
-   * Fetches the uploaded evidence documents base on the supplied search criteria.
+   * Fetches the uploaded evidence documents based on the supplied search criteria.
    * This method communicates with the CAAB API client to fetch the evidence documents.
    *
    * @param applicationOrOutcomeId The id of the related application or outcome.
@@ -919,8 +939,54 @@ public class CaabApiClient {
         .header("Caab-User-Login-Id", loginId)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(e,
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiDeleteError(e,
             RESOURCE_TYPE_EVIDENCE, "id", String.valueOf(e)));
+  }
+
+  /**
+   * Deletes all documents based on the supplied search criteria.
+   *
+   * @param applicationOrOutcomeId The id of the related application or outcome.
+   * @param caseReferenceNumber the reference of the related case.
+   * @param providerId The id of the related provider.
+   * @param documentType The type of evidence document.
+   * @param ccmsModule The ccms module for the evidence.
+   * @param transferPending whether transfer has been attempted for the evidence document.
+   * @return a Mono signaling completion or error handling.
+   */
+  public Mono<Void> deleteEvidenceDocuments(
+      final String applicationOrOutcomeId,
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String documentType,
+      final String ccmsModule,
+      final Boolean transferPending,
+      final String loginId) {
+
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    Optional.ofNullable(applicationOrOutcomeId)
+        .ifPresent(param -> queryParams.add("application-or-outcome-id", param));
+    Optional.ofNullable(caseReferenceNumber)
+        .ifPresent(param -> queryParams.add("case-reference-number", param));
+    Optional.ofNullable(providerId)
+        .ifPresent(param -> queryParams.add("provider-id", String.valueOf(param)));
+    Optional.ofNullable(documentType)
+        .ifPresent(param -> queryParams.add("document-type", param));
+    Optional.ofNullable(ccmsModule)
+        .ifPresent(param -> queryParams.add("ccms-module", param));
+    Optional.ofNullable(transferPending)
+        .ifPresent(param -> queryParams.add("transfer-pending", param.toString()));
+
+    return caabApiWebClient
+        .delete()
+        .uri(builder -> builder.path("/evidence")
+            .queryParams(queryParams)
+            .build())
+        .header("Caab-User-Login-Id", loginId)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiDeleteError(e,
+            RESOURCE_TYPE_EVIDENCE, queryParams));
   }
 
   private MultiValueMap<String, String> createDefaultQueryParams() {

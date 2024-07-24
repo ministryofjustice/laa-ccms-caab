@@ -35,7 +35,7 @@ public enum AssessmentName {
    */
   public static List<String> findAssessmentNamesByCategory(final String category) {
     return Arrays.stream(AssessmentName.values())
-        .filter(assessmentName -> assessmentName.getCategory().equals(category))
+        .filter(assessmentName -> assessmentName.getCategory().equalsIgnoreCase(category))
         .map(AssessmentName::getName)
         .toList();
   }
