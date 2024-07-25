@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a href="/civil/application/summary" class="govuk-back-link">Return to create application</a>
+    <a th:href="@{/application/summary}" class="govuk-back-link">Return to create application</a>
   </div>
   <div id="main-content">
     <span class="govuk-caption-l">Create application</span>
@@ -65,7 +65,7 @@
 
             <th:block th:if="${proceeding.leadProceedingInd}">
               <td class="govuk-table__cell">
-                <img class="govuk-!-padding-left-2 govuk-!-padding-right-2" src="/tick.gif" alt="tick">
+                <img class="govuk-!-padding-left-2 govuk-!-padding-right-2" src="/civil/tick.gif" alt="tick">
               </td>
               <td class="govuk-table__cell"></td>
             </th:block>
@@ -86,7 +86,7 @@
         </table>
         <a class="govuk-button govuk-button--secondary"
            data-module="govuk-button"
-           href="/civil/application/proceedings/add/matter-type">
+           th:href="@{/application/proceedings/add/matter-type}">
           Add proceeding
         </a>
       </div>
@@ -148,7 +148,7 @@
         </table>
         <a class="govuk-button govuk-button--secondary"
            data-module="govuk-button"
-           href="/civil/application/prior-authorities/add/type">
+           th:href="@{/application/prior-authorities/add/type}">
           Add prior authority
         </a>
       </div>

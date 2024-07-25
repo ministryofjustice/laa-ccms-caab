@@ -4,6 +4,9 @@ import lombok.Getter;
 
 /**
  * Defines the attributes associated with an assessment.
+ *
+ * <p>These attributes listed are the ones mapped from application data into the assessment,
+ * not the ones mapped from the assessment to the application.</p>
  */
 @Getter
 public enum AssessmentAttribute {

@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a href="/civil/application/summary/opponents" class="govuk-back-link">Cancel and return to opponents and other parties</a>
+        <a th:href="@{/application/summary/opponents}" class="govuk-back-link">Cancel and return to opponents and other parties</a>
     </div>
     <div id="main-content">
         <form action="#" th:action="@{/application/opponents/organisation/create}" th:object="${opponent}" method="post">

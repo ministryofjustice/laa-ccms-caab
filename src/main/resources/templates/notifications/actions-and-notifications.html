@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a href="/civil/" class="govuk-back-link">Return to home</a>
+        <a th:href="@{/home}" class="govuk-back-link">Return to home</a>
     </div>
     <div id="main-content">
         <h1 class="govuk-heading-l">
@@ -27,7 +27,7 @@
             <div class="moj-page-header-actions__actions">
                 <div class="moj-button-menu">
                     <div class="moj-button-menu__wrapper">
-                        <a class="govuk-button moj-button-menu__item govuk-button--secondary moj-page-header-actions__action" href="/civil/notifications/search" data-module="govuk-button">
+                        <a class="govuk-button moj-button-menu__item govuk-button--secondary moj-page-header-actions__action" th:href="@{/notifications/search}" data-module="govuk-button">
                             Refine search
                         </a>
                     </div>

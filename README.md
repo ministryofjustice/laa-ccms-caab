@@ -117,6 +117,19 @@ docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-cc
 An S3 bucket `laa-ccms-documents` will be created on startup if it does not already exist, via
 [`/localstack/init-s3.sh`](localstack/init-s3.sh).
 
+## OPA/OIA and connector
+
+The OPA/OIA and connector services are not required for the ui to start up locally, but if you want to test / develop features for the integration then this is required.
+
+This [connector guide](https://github.com/ministryofjustice/laa-ccms-connector/blob/main/documentation/gradle-docker-build.md) can be followed to get the connector/opa/oia up and running.
+
+If you are running on an M series mac and using colima. You will most likely need 2 docker contexts/vms. 
+One running x86_64 architecture and the other running arm64 architecture. 
+
+See guide below [M series Macbook/Colima development setup](#m-series-macbookcolima-development-setup) for more information.
+
+
+
 ## secrets.gradle (required for gradle build)
 
 create a secrets.gradle file in the root directory:
@@ -136,3 +149,72 @@ Find more information [here](https://docs.github.com/en/enterprise-server@3.6/au
 
 These have been committed to the repo, but if you need these updated you can update the [templates](./templates.sh) script and rerun it.
 Update the version when necessary.
+
+## M series Macbook/Colima development setup
+
+### Prerequisites
+1. **Docker**: Ensure Docker is installed and running on your machine.
+2. **Colima**: If you're using an M series Mac and Colima, you might need two Docker contexts/VMs: one for x86_64 architecture and another for arm64 architecture.
+
+### Setting Up Virtual Machines (VMs)
+
+#### Create VMs
+
+We need two VMs, one for x86_64 and one for aarch64:
+
+**VM Profile Overview Example:**
+
+| PROFILE  | STATUS  | ARCH    | CPUS | MEMORY | DISK  | RUNTIME | ADDRESS       |
+|----------|---------|---------|------|--------|-------|---------|---------------|
+| default  | Running | x86_64  | 4    | 6GiB   | 50GiB | docker  | 192.168.106.2 |
+| aarch64  | Running | aarch64 | 6    | 6GiB   | 50GiB | docker  | 192.168.106.3 |
+
+**Create VMs using Colima:**
+
+For aarch64:
+```sh
+colima start --cpu 6 --memory 6 --disk 50 --network-address --arch aarch64 --vm-type=vz --vz-rosetta --profile aarch64
+```
+
+For x86_64:
+```sh
+colima start --arch x86_64 --cpu 4 --memory 6 --disk 50 --network-address
+```
+
+#### Default Usage
+The x86_64 profile will be used by default for running the Oracle DB. All other services should be able to run on the aarch64 profile.
+
+#### Restarting Profiles
+
+If a profile fails to run, you can restart it using:
+
+For aarch64:
+```sh
+colima start --profile aarch64
+```
+
+For default (x86_64):
+```sh
+colima start --profile default
+```
+
+### Switching Docker Contexts
+
+To switch between Docker contexts, use the following commands:
+
+Switch to default (x86_64) context:
+```sh
+unset DOCKER_HOST
+docker context use colima
+```
+
+Switch to aarch64 context:
+```sh
+unset DOCKER_HOST
+docker context use colima-aarch64
+```
+
+To check the current Docker context, use:
+```sh
+docker context show
+```

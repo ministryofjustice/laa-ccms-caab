@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a href="/civil/" class="govuk-back-link">Return to Home</a>
+        <a th:href="@{/home}" class="govuk-back-link">Return to Home</a>
     </div>
     <div id="main-content">
         <th:block th:replace="~{application/partials/search-fragments :: searchCaseFormFragment(caption=${'Copy an existing case'},heading=${'Application search'},action=${'/application/copy-case/search'},copyCase=${true})}"></th:block>

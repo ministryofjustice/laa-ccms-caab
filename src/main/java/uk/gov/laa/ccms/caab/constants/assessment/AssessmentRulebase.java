@@ -55,6 +55,19 @@ public enum AssessmentRulebase {
   }
 
   /**
+   * Retrieves an AssessmentRulebase enum by its id.
+   *
+   * @param id the id to match against AssessmentRulebase enums.
+   * @return the matched AssessmentRulebase enum, or null if no match is found.
+   */
+  public static AssessmentRulebase findById(final Long id) {
+    return Arrays.stream(AssessmentRulebase.values())
+        .filter(assessmentRulebase -> assessmentRulebase.getId() == (id))
+        .findFirst()
+        .orElse(null);
+  }
+
+  /**
    * Capitalises the first letter of the assessment name.
    *
    * @return the Assessment deployment name
