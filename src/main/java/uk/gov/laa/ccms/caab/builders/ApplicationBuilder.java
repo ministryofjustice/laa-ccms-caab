@@ -153,8 +153,8 @@ public class ApplicationBuilder {
             .equals(contract.getCategoryofLaw()))
         .map(ContractDetail::getContractualDevolvedPowers)
         .findFirst()
-        .orElse(null)
-        : null;
+        .orElse("No")
+        : "No";
 
     if (application.getApplicationType() == null) {
       application.setApplicationType(new ApplicationType());
@@ -179,7 +179,7 @@ public class ApplicationBuilder {
 
     String defaultLarScopeFlag = Optional.ofNullable(amendmentTypes.getContent())
             .filter(content -> !content.isEmpty())
-            .map(content -> content.get(0))
+            .map(List::getFirst)
             .map(AmendmentTypeLookupValueDetail::getDefaultLarScopeFlag)
             .orElseThrow(() -> new RuntimeException(
                     "No amendment type available, unable to continue"));
