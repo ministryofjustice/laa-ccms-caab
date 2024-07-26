@@ -9,8 +9,16 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS_PREPOP;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MERITS;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MERITS_PREPOP;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.APPLICATION_CASE_REF;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.GLOBAL;
+
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 public class AssessmentUtilTest {
 
@@ -67,4 +75,19 @@ public class AssessmentUtilTest {
     final String result = AssessmentUtil.getFormattedAttributeValue(attribute);
     assertEquals(expected, result);
   }
+  
+  @Test
+  void testGetNonFinancialAssessmentNamesIncludingPrepop_returnsCorrectNames() {
+    final List<String> expectedAssessmentNames = List.of(
+        MEANS.getName(),
+        MEANS_PREPOP.getName(),
+        MERITS.getName(),
+        MERITS_PREPOP.getName());
+
+    final List<String> result = AssessmentUtil.getNonFinancialAssessmentNamesIncludingPrepop();
+
+    assertNotNull(result);
+    assertEquals(expectedAssessmentNames, result);
+  }
+
 }

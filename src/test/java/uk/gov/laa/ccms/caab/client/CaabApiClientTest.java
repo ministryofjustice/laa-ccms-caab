@@ -94,6 +94,23 @@ public class CaabApiClientTest {
     verify(requestHeadersMock, times(1)).exchangeToMono(any(Function.class));
   }
 
+  @Test
+  void deleteApplication_success() {
+    final String applicationId = "123";
+    final String loginId = "user123";
+    final String expectedUri = "/applications/{id}";
+
+    when(caabApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, applicationId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.deleteApplication(applicationId, loginId);
+
+    StepVerifier.create(result).verifyComplete();
+  }
+
 
   @Test
   void getApplication_success() {
@@ -806,6 +823,49 @@ public class CaabApiClientTest {
     final Mono<Void> result = caabApiClient.deleteEvidenceDocument(evidenceDocumentId, loginId);
 
     StepVerifier.create(result).verifyComplete();
+  }
+
+  @Test
+  void deleteEvidenceDocuments_success() {
+    final String applicationOrOutcomeId = "123";
+    final String caseReferenceNumber = "456";
+    final Integer providerId = 789;
+    final String documentType = "docType";
+    final String ccmsModule = "ccmsMod";
+    final Boolean transferPending = true;
+    final String loginId = "user123";
+    final String expectedUri = String.format(
+        "/evidence?application-or-outcome-id=%s&case-reference-number=%s&provider-id=%s&document-type=%s&ccms-module=%s&transfer-pending=%s",
+        applicationOrOutcomeId,
+        caseReferenceNumber,
+        providerId,
+        documentType,
+        ccmsModule,
+        transferPending);
+
+    final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(caabApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.deleteEvidenceDocuments(
+        applicationOrOutcomeId,
+        caseReferenceNumber,
+        providerId,
+        documentType,
+        ccmsModule,
+        transferPending,
+        loginId);
+
+    StepVerifier.create(result).verifyComplete();
+
+    final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    assertEquals(expectedUri, actualUri.toString());
   }
 
   @Test

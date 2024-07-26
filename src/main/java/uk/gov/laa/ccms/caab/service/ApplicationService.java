@@ -23,6 +23,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_P
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_SCOPE_LIMITATIONS;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDetail;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getNonFinancialAssessmentNamesIncludingPrepop;
 import static uk.gov.laa.ccms.caab.util.OpponentUtil.getPartyName;
 
 import java.math.BigDecimal;
@@ -516,6 +517,40 @@ public class ApplicationService {
     return caabApiClient.getApplication(id);
   }
 
+  /**
+   * Abandon an application by removing all related data from the TDS.
+   *
+   * @param application - the application to abandon.
+   * @param user - the user performing the application abandon.
+   */
+  public void abandonApplication(final ApplicationDetail application, final UserDetail user) {
+
+    /* Delete the documents in the XXCCMS_EVIDENCE_DOCUMENTS table for an abandoned case */
+    Mono<Void> removeDocsMono =
+        evidenceService.removeDocuments(application.getCaseReferenceNumber(), user.getLoginId());
+
+    /*
+     * Delete the application itself.
+     */
+    Mono<Void> deleteAppMono = caabApiClient.deleteApplication(
+        String.valueOf(application.getId()), user.getLoginId());
+
+    /*
+     * Delete any non-financial assessments associated with the application.
+     */
+    Mono<Void> deleteAssessmentsMono = assessmentService.deleteAssessments(
+        user,
+        getNonFinancialAssessmentNamesIncludingPrepop(),
+        application.getCaseReferenceNumber(),
+        null);
+
+    /*
+     * TODO: ProviderUI deletes rows from XXCCMS_OPA_ASSESSMENT_LOG here.
+     *  This should be handled in assessment-api via a cascade.
+     */
+
+    Mono.when(removeDocsMono, deleteAppMono, deleteAssessmentsMono).block();
+  }
 
   /**
    * Retrieves the application Summary display values.

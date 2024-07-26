@@ -99,4 +99,14 @@ public enum AssessmentRulebase {
         .orElse(null);
   }
 
+  /**
+   * Retrieves a list of non-financial assessment rulebases.
+   *
+   * @return List of AssessmentRulebase where isFinancialAssessment() is false.
+   */
+  public static List<AssessmentRulebase> getNonFinancialRulebases() {
+    return Arrays.stream(AssessmentRulebase.values())
+        .filter(assessmentRulebase -> !assessmentRulebase.isFinancialAssessment())
+        .toList();
+  }
 }

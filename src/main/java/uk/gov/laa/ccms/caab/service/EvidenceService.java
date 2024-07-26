@@ -199,6 +199,26 @@ public class EvidenceService {
   }
 
   /**
+   * Remove all untransferred evidence documents for the specified case.
+   *
+   * @param caseReferenceNumber - the case reference number of the documents to remove.
+   * @param userId - the user removing the documents.
+   */
+  public Mono<Void> removeDocuments(
+      final String caseReferenceNumber,
+      final String userId) {
+
+    return caabApiClient.deleteEvidenceDocuments(
+        null,
+        caseReferenceNumber,
+        null,
+        null,
+        null,
+        Boolean.TRUE, // Only delete documents that haven't been transferred.
+        userId);
+  }
+
+  /**
    * Get a list of OPA Evidence Document Types required for the supplied
    * application. This method will retrieve the completed means and merits assessments for the
    * application. The OPA Evidence Document Types will then be filtered to retain only
