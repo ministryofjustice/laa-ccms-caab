@@ -1,21 +1,27 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <title>LAA CCMS - Assessment</title>
-</head>
-<body>
-<div class="govuk-width-container">
-  <div id="breadcrumbs">
-    <a href="/civil/application/summary" class="govuk-back-link">Return to application summary</a>
-  </div>
-  <div id="main-content">
-      <h1 class="govuk-heading-l">
-        Confirmation
-      </h1>
-      <p class="govuk-body-l">
-        Assessment completed.
-      </p>
-  </div>
-</div>
-</body>
+  <head>
+    <title>LAA CCMS - Assessment</title>
+  </head>
+  <body>
+    <div class="govuk-width-container">
+      <div id="breadcrumbs">
+        <a th:href="@{/application/summary}" class="govuk-back-link">Return to application summary</a>
+      </div>
+      <div id="main-content">
+        <h1 class="govuk-heading-l">
+          Confirmation
+        </h1>
+        <p class="govuk-body-l">
+          Assessment completed.
+        </p>
+        <div th:include="application/partials/summary-fragments :: assessmentSummaryFragment(summary=${summary})"></div>
+        <div class="govuk-button-group">
+          <a th:href="@{/application/summary}" role="button" draggable="false" class="govuk-button" data-module="govuk-button">
+            Add new file
+          </a>
+        </div>
+      </div>
+    </div>
+  </body>
 </html>

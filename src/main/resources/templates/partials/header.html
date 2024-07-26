@@ -18,7 +18,7 @@
                 <button type="button" class="govuk-header__menu-button govuk-js-header-toggle" aria-controls="navigation" aria-label="Show or hide menu" hidden>Menu</button>
                 <ul id="navigation" class="govuk-header__navigation-list">
                     <li class="govuk-header__navigation-item" th:classappend="${pageCategory == 'home'} ? 'govuk-header__navigation-item--active'">
-                        <a class="govuk-header__link" href="/civil/">
+                        <a class="govuk-header__link" th:href="@{/home}">
                             Home
                         </a>
                     </li>
@@ -28,7 +28,7 @@
                         </a>
                     </li>
                     <li class="govuk-header__navigation-item" th:classappend="${pageCategory == 'actions'} ? 'govuk-header__navigation-item--active'">
-                        <a class="govuk-header__link" href="/civil/notifications/search?notification_type=all">
+                        <a class="govuk-header__link" th:href="@{/notifications/search?notification_type=all}">
                             Actions and notifications
                         </a>
                     </li>

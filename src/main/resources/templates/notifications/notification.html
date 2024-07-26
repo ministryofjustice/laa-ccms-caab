@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a href="/civil/notifications/search?notification_type=all"
+    <a th:href="@{/notifications/search?notification_type=all}"
      class="govuk-back-link">Return to notification search results</a>
   </div>
   <div id="main-content">
@@ -129,7 +129,7 @@
         </p>
         <p class="govuk-body govuk-!-font-size-15-!-text-align-left">
           <a class="govuk-back-link"
-             href="/civil/notifications/search?notification_type=all">
+             th:href="@{/notifications/search?notification_type=all}">
             Back
           </a>
         </p>

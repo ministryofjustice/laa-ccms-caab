@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a href="/civil/application/client/details/cancel" class="govuk-back-link">Cancel and return to client search</a>
+        <a th:href="@{/application/client/details/cancel}" class="govuk-back-link">Cancel and return to client search</a>
     </div>
     <div id="main-content">
         <form action="#" th:action="@{/application/client/details/basic}" th:object="${basicDetails}" method="post">
@@ -25,7 +25,7 @@
                 </button>
                 <a class="govuk-button govuk-button--secondary"
                    data-module="govuk-button"
-                   href="/civil/application/client/details/cancel">
+                   th:href="@{/application/client/details/cancel}">
                     Back
                 </a>
             </div>

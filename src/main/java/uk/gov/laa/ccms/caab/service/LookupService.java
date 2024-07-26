@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
+import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
@@ -364,6 +365,11 @@ public class LookupService {
    */
   public Mono<CaseStatusLookupDetail> getCaseStatusValues(final Boolean copyAllowed) {
     return ebsApiClient.getCaseStatusValues(copyAllowed);
+  }
+
+  public Mono<AssessmentSummaryEntityLookupDetail> getAssessmentSummaryAttributes(
+      final String summaryType) {
+    return ebsApiClient.getAssessmentSummaryAttributes(summaryType);
   }
 
   /**

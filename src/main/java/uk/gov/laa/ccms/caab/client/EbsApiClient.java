@@ -9,6 +9,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
@@ -659,6 +660,28 @@ public class EbsApiClient {
             e, "Evidence document types", queryParams));
   }
 
+  /**
+   * Retrieves assessment summary attributes based on the provided summary type.
+   *
+   * @param summaryType the type of the summary to retrieve attributes for
+   * @return a Mono emitting the assessment summary attributes
+   */
+  public Mono<AssessmentSummaryEntityLookupDetail> getAssessmentSummaryAttributes(
+      final String summaryType) {
 
+    final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
+    Optional.ofNullable(summaryType)
+        .ifPresent(param -> queryParams.add("summary-type", param));
+
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/lookup/assessment-summary-attributes")
+            .queryParams(queryParams)
+            .build())
+        .retrieve()
+        .bodyToMono(AssessmentSummaryEntityLookupDetail.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
+            e, "Assessment summary attributes", queryParams));
+  }
 }
 

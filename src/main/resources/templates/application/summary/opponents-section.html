@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a href="/civil/application/summary" class="govuk-back-link">Return to create application</a>
+    <a th:href="@{/application/summary}" class="govuk-back-link">Return to create application</a>
   </div>
   <div id="main-content">
     <span class="govuk-caption-l">Create application</span>
@@ -55,12 +55,12 @@
     </table>
     <a class="govuk-button govuk-button--secondary"
        data-module="govuk-button"
-       href="/civil/application/opponents/organisation/search">
+       th:href="@{/application/opponents/organisation/search}">
       Add organisation
     </a>
     <a class="govuk-button govuk-button--secondary"
        data-module="govuk-button"
-       href="/civil/application/opponents/individual/create">
+       th:href="@{/application/opponents/individual/create}">
       Add individual
     </a>
   </div>

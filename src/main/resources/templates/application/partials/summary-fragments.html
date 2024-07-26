@@ -48,7 +48,7 @@
 
 <tr th:fragment="meritsAssessmentFragment" class="govuk-table__row">
   <td class="govuk-table__cell" th:if="${summary.meritsAssessment.enabled}">
-    <a href="/civil/assessments?assessment=merits&invoked-from=CCMS_CA01" class="govuk-link">Merits assessment</a>
+    <a th:href="@{/assessments?assessment=merits&invoked-from=CCMS_CA01}" class="govuk-link">Merits assessment</a>
   </td>
   <td class="govuk-table__cell" th:unless="${summary.meritsAssessment.enabled}">
     Merits assessment
@@ -58,7 +58,7 @@
   <td class="govuk-table__cell" th:text="${summary.meritsAssessment.lastSavedBy}"></td>
   <th:block th:if="${summary.meritsAssessment.status} == 'In Progress'">
     <td class="govuk-table__cell">
-      <a href="/civil/assessments/merits/remove" class="govuk-link">Delete  </a>
+      <a th:href="@{/assessments/merits/remove}" class="govuk-link">Delete  </a>
     </td>
   </th:block>
   <th:block th:unless="${summary.meritsAssessment.status} == 'In Progress'">
@@ -68,7 +68,7 @@
 
 <tr th:fragment="meansAssessmentFragment" class="govuk-table__row">
   <td class="govuk-table__cell" th:if="${summary.meansAssessment.enabled}">
-    <a href="/civil/assessments?assessment=means&invoked-from=CCMS_CA01" class="govuk-link">Means assessment</a>
+    <a th:href="@{/assessments?assessment=means&invoked-from=CCMS_CA01}" class="govuk-link">Means assessment</a>
   </td>
   <td class="govuk-table__cell" th:unless="${summary.meansAssessment.enabled}">
     Means assessment
@@ -78,10 +78,22 @@
   <td class="govuk-table__cell" th:text="${summary.meansAssessment.lastSavedBy}"></td>
   <th:block th:if="${summary.meansAssessment.status} == 'In Progress'">
     <td class="govuk-table__cell">
-      <a href="/civil/assessments/means/remove" class="govuk-link">Delete  </a>
+      <a th:href="@{/assessments/means/remove}" class="govuk-link">Delete  </a>
     </td>
   </th:block>
   <th:block th:unless="${summary.meansAssessment.status} == 'In Progress'">
     <td class="govuk-table__cell"></td>
   </th:block>
 </tr>
+
+<div th:fragment="assessmentSummaryFragment (summary)">
+  <div th:each="summaryItem : ${summary}">
+    <h2 class="govuk-heading-m" th:text="${summaryItem.displayName}"></h2>
+    <dl class="govuk-summary-list">
+      <div class="govuk-summary-list__row" th:each="attribute : ${summaryItem.attributes}">
+        <dt class="govuk-summary-list__key" th:text="${attribute.displayName}" style="width: 50%;"></dt>
+        <dd class="govuk-summary-list__value" th:text="${attribute.value}"></dd>
+      </div>
+    </dl>
+  </div>
+</div>

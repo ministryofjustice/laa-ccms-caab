@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a href="/civil/application/client/search" class="govuk-back-link">Cancel and return to client search</a>
+        <a th:href="@{/application/client/search}" class="govuk-back-link">Cancel and return to client search</a>
     </div>
     <div id="main-content">
         <form action="#" th:action="@{/application/client/details/summary}" th:object="${clientFlowFormData}" method="post">
@@ -26,7 +26,7 @@
                 </button>
                 <a class="govuk-button govuk-button--secondary"
                    data-module="govuk-button"
-                   href="/civil/application/client/details/equal-opportunities-monitoring">
+                   th:href="@{/application/client/details/equal-opportunities-monitoring}">
                     Back
                 </a>
             </div>
