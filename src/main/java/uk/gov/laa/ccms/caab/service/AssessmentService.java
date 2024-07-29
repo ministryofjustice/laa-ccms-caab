@@ -58,6 +58,7 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipDetail;
 import uk.gov.laa.ccms.caab.assessment.model.PatchAssessmentDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
+import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRelationship;
@@ -95,8 +96,10 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 public class AssessmentService {
 
   private final AssessmentApiClient assessmentApiClient;
+  private final CaabApiClient caabApiClient;
   private final AssessmentMapper assessmentMapper;
   private final LookupService lookupService;
+
 
   /**
    * Retrieves assessments matching the given criteria from the assessment API client.
@@ -837,7 +840,7 @@ public class AssessmentService {
     //always map to the assessment as it should always be new here.
     assessmentMapper.toAssessmentDetail(assessment, assessmentContext);
 
-    updateCostLimitIfMeritsAssessment(assessmentRulebase, application);
+    updateCostLimitIfMeritsAssessment(assessmentRulebase, application, user);
 
     if (prepopulateFromEbs) {
       //todo - later implementation in future story
@@ -1145,9 +1148,23 @@ public class AssessmentService {
    */
   protected void updateCostLimitIfMeritsAssessment(
       final AssessmentRulebase assessmentRulebase,
-      final ApplicationDetail application) {
+      final ApplicationDetail application,
+      final UserDetail user) {
     if (assessmentRulebase != null && assessmentRulebase.equals(AssessmentRulebase.MERITS)) {
-      //todo - update cost limit in future story: CCLS-2222
+
+      application.getCostLimit().setLimitAtTimeOfMerits(
+          application.getCosts().getRequestedCostLimitation());
+
+      final CostLimitDetail costLimit = application.getCostLimit();
+      costLimit.setLimitAtTimeOfMerits(
+          application.getCosts().getRequestedCostLimitation());
+
+      final ApplicationDetail patch = new ApplicationDetail().costLimit(costLimit);
+      caabApiClient.patchApplication(
+          String.valueOf(application.getId()),
+          patch,
+          user.getLoginId()).block();
+
     }
   }
 
@@ -1158,47 +1175,33 @@ public class AssessmentService {
    * @return a list of assessment summary entity displays
    */
   public List<AssessmentSummaryEntityDisplay> getAssessmentSummaryToDisplay(
-      final AssessmentDetail assessment) {
+      final AssessmentDetail assessment,
+      final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups,
+      final List<AssessmentSummaryEntityLookupValueDetail> childSummaryLookups) {
 
     final List<AssessmentSummaryEntityDisplay> summaryToDisplay = new ArrayList<>();
 
-    final Mono<List<AssessmentSummaryEntityLookupValueDetail>> parentMono =
-        lookupService.getAssessmentSummaryAttributes("PARENT")
-            .map(AssessmentSummaryEntityLookupDetail::getContent);
+    //loop through all parent summary lookups
+    for (final AssessmentSummaryEntityLookupValueDetail parentSummaryLookup
+        : parentSummaryLookups) {
+      log.debug("Parent Summary: {}", parentSummaryLookup.getDisplayName());
 
-    final Mono<List<AssessmentSummaryEntityLookupValueDetail>> childMono =
-        lookupService.getAssessmentSummaryAttributes("CHILD")
-            .map(AssessmentSummaryEntityLookupDetail::getContent);
+      // get all entities for the parent summary lookup
+      final List<AssessmentEntityDetail> entities =
+          getAssessmentEntitiesForEntityType(assessment, parentSummaryLookup.getName());
 
-    Mono.zip(parentMono, childMono)
-        .doOnNext(tuple -> {
-          final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups =
-              tuple.getT1();
-          final List<AssessmentSummaryEntityLookupValueDetail> childSummaryLookups =
-              tuple.getT2();
-
-          //loop through all parent summary lookups
-          for (final AssessmentSummaryEntityLookupValueDetail parentSummaryLookup
-              : parentSummaryLookups) {
-            log.debug("Parent Summary: {}", parentSummaryLookup.getDisplayName());
-
-            // get all entities for the parent summary lookup
-            final List<AssessmentEntityDetail> entities =
-                getAssessmentEntitiesForEntityType(assessment, parentSummaryLookup.getName());
-
-            //loop through all entities in the assessment where the entity type matches
-            // the parent summary lookup
-            for (final AssessmentEntityDetail entity : entities) {
-              log.debug("Entity: {}", entity.getName());
-              createSummaryEntity(
-                  assessment,
-                  summaryToDisplay,
-                  childSummaryLookups,
-                  parentSummaryLookup,
-                  entity);
-            }
-          }
-        }).block();
+      //loop through all entities in the assessment where the entity type matches
+      // the parent summary lookup
+      for (final AssessmentEntityDetail entity : entities) {
+        log.debug("Entity: {}", entity.getName());
+        createSummaryEntity(
+            assessment,
+            summaryToDisplay,
+            childSummaryLookups,
+            parentSummaryLookup,
+            entity);
+      }
+    }
 
     return summaryToDisplay;
   }

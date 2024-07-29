@@ -35,6 +35,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -1032,6 +1033,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
+  @DisplayName("Test getAssessmentSummaryToDisplay with valid parent and child lookups")
   void testGetAssessmentSummaryToDisplay() {
     final AssessmentDetail assessment = buildAssessmentDetail(new Date());
 
@@ -1044,19 +1046,21 @@ public class AssessmentServiceTest {
         .name("PROCEEDING_NAME")
         .displayName("Proceeding Name"));
 
-    final AssessmentSummaryEntityLookupDetail parentSummaryDetail = new AssessmentSummaryEntityLookupDetail();
-    parentSummaryDetail.setContent(List.of(parentSummaryLookup));
+    final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups = List.of(parentSummaryLookup);
 
-    final AssessmentSummaryEntityLookupDetail childSummaryDetail = new AssessmentSummaryEntityLookupDetail();
-    childSummaryDetail.setContent(new ArrayList<>());
+    // Setup mock data for child summary lookups
+    final AssessmentSummaryEntityLookupValueDetail childSummaryLookup = new AssessmentSummaryEntityLookupValueDetail();
+    childSummaryLookup.setName("CHILD_ENTITY");
+    childSummaryLookup.setDisplayName("Child Entity");
+    childSummaryLookup.setEntityLevel(2);
+    childSummaryLookup.addAttributesItem(new AssessmentSummaryAttributeLookupValueDetail()
+        .name("CHILD_NAME")
+        .displayName("Child Name"));
 
-    when(lookupService.getAssessmentSummaryAttributes("PARENT"))
-        .thenReturn(Mono.just(parentSummaryDetail));
-    when(lookupService.getAssessmentSummaryAttributes("CHILD"))
-        .thenReturn(Mono.just(childSummaryDetail));
+    final List<AssessmentSummaryEntityLookupValueDetail> childSummaryLookups = List.of(childSummaryLookup);
 
     final List<AssessmentSummaryEntityDisplay> result =
-        assessmentService.getAssessmentSummaryToDisplay(assessment);
+        assessmentService.getAssessmentSummaryToDisplay(assessment, parentSummaryLookups, childSummaryLookups);
 
     assertNotNull(result);
     assertFalse(result.isEmpty());
@@ -1065,12 +1069,13 @@ public class AssessmentServiceTest {
     final AssessmentSummaryEntityDisplay summaryDisplay = result.get(0);
     assertEquals("PROCEEDING", summaryDisplay.getName());
     assertEquals("Proceeding", summaryDisplay.getDisplayName());
+    assertEquals(1, summaryDisplay.getEntityLevel());
+    assertNotNull(summaryDisplay.getAttributes());
+    assertEquals(1, summaryDisplay.getAttributes().size());
     assertEquals("PROCEEDING_NAME", summaryDisplay.getAttributes().get(0).getName());
     assertEquals("Proceeding Name", summaryDisplay.getAttributes().get(0).getDisplayName());
     assertEquals("TEST", summaryDisplay.getAttributes().get(0).getValue());
-    assertEquals(1, summaryDisplay.getEntityLevel());
   }
-
 
   @Test
   void testCreateSummaryEntity() {
