@@ -26,7 +26,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import uk.gov.laa.ccms.caab.config.S3DocumentBucketProperties;
-import uk.gov.laa.ccms.soa.gateway.model.Document;
 
 @ExtendWith(MockitoExtension.class)
 public class S3ApiClientTest {
@@ -110,12 +109,7 @@ public class S3ApiClientTest {
   @Test
   void uploadDocument_successful_callsS3() {
 
-    Document document = new Document()
-        .documentId(documentId)
-        .fileData(documentContent)
-        .fileExtension("xls");
-
-    s3ApiClient.uploadDocument(document);
+    s3ApiClient.uploadDocument(documentId, documentContent, "xls");
 
     verify(s3Template).upload(any(), eq(documentId + ".xls"), any());
 

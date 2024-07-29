@@ -512,6 +512,31 @@ public class SoaApiClient {
   }
 
   /**
+   * Update an existing document registered in EBS with complete details including file content.
+   *
+   * @param document              The document details to register.
+   * @param loginId               The login identifier for the user.
+   * @param userType              Type of the user (e.g., admin, user).
+   * @return A Mono wrapping the ClientTransactionResponse with transaction id and reference number.
+   */
+  public Mono<ClientTransactionResponse> uploadDocument(
+      final Document document,
+      final String loginId,
+      final String userType) {
+    return soaApiWebClient
+        .put()
+        .uri(builder -> builder.path("/documents/{document-id}").build(document.getDocumentId()))
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(document)
+        .retrieve()
+        .bodyToMono(ClientTransactionResponse.class)
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiUpdateError(
+            e, "Document", "id", document.getDocumentId()));
+  }
+
+  /**
    * Downloads notification attachment content from EBS.
    *
    * @param documentId            The document identifier for the notification attachment.
