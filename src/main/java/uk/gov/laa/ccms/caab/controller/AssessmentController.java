@@ -77,6 +77,9 @@ public class AssessmentController {
   private static final String CHECKPOINT_START = "START";
   private static final String CHECKPOINT_RESUME = "RESUME";
 
+  private static final String PARENT_LOOKUP = "PARENT";
+  private static final String CHILD_LOOKUP = "CHILD";
+
   /**
    * Displays the page to confirm the removal of an assessment.
    *
@@ -311,10 +314,10 @@ public class AssessmentController {
 
     //get the parent and child lookups
     final Mono<List<AssessmentSummaryEntityLookupValueDetail>> parentMono =
-        lookupService.getAssessmentSummaryAttributes("PARENT")
+        lookupService.getAssessmentSummaryAttributes(PARENT_LOOKUP)
             .map(AssessmentSummaryEntityLookupDetail::getContent);
     final Mono<List<AssessmentSummaryEntityLookupValueDetail>> childMono =
-        lookupService.getAssessmentSummaryAttributes("CHILD")
+        lookupService.getAssessmentSummaryAttributes(CHILD_LOOKUP)
             .map(AssessmentSummaryEntityLookupDetail::getContent);
 
     //zip all the data monos
