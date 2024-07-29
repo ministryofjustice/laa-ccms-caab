@@ -19,6 +19,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuple3;
+import reactor.util.function.Tuple6;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
@@ -32,6 +36,11 @@ import uk.gov.laa.ccms.caab.opa.util.SecurityUtils;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.ClientService;
+import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
+import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
@@ -45,6 +54,7 @@ public class AssessmentController {
 
   private final AssessmentService assessmentService;
   private final ApplicationService applicationService;
+  private final LookupService lookupService;
   private final ClientService clientService;
   private final SecurityUtils contextSecurityUtil;
 
@@ -66,6 +76,9 @@ public class AssessmentController {
 
   private static final String CHECKPOINT_START = "START";
   private static final String CHECKPOINT_RESUME = "RESUME";
+
+  private static final String PARENT_LOOKUP = "PARENT";
+  private static final String CHILD_LOOKUP = "CHILD";
 
   /**
    * Displays the page to confirm the removal of an assessment.
@@ -257,7 +270,6 @@ public class AssessmentController {
     model.addAttribute("checkpoint",
         prepopAssessment.getCheckpoint() != null ? CHECKPOINT_RESUME : CHECKPOINT_START);
 
-
     model.addAttribute("cancelUrl", CANCEL_LINK_URL);
     model.addAttribute("owdUrl", owdUrl);
     model.addAttribute("frameTitle", "");
@@ -291,19 +303,45 @@ public class AssessmentController {
     final String providerId = contextToken.getProviderId();
     final String caseReferenceNumber = contextToken.getCaseId();
 
+    //get the rulebase from the token
     final AssessmentRulebase assessmentRulebase = AssessmentRulebase.findById(rulebaseId);
 
-    final AssessmentDetail assessmentDetail = Optional.ofNullable(assessmentService.getAssessments(
+    //get the assessment details mono
+    final Mono<AssessmentDetails> assessmentDetailsMono = assessmentService.getAssessments(
             List.of(assessmentRulebase.getName()),
             providerId,
-            caseReferenceNumber).block())
-        .map(AssessmentDetails::getContent)
-        .filter(content -> !content.isEmpty()).flatMap(content -> content.stream().findFirst())
-        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve assessment details"));
+            caseReferenceNumber);
+
+    //get the parent and child lookups
+    final Mono<List<AssessmentSummaryEntityLookupValueDetail>> parentMono =
+        lookupService.getAssessmentSummaryAttributes(PARENT_LOOKUP)
+            .map(AssessmentSummaryEntityLookupDetail::getContent);
+    final Mono<List<AssessmentSummaryEntityLookupValueDetail>> childMono =
+        lookupService.getAssessmentSummaryAttributes(CHILD_LOOKUP)
+            .map(AssessmentSummaryEntityLookupDetail::getContent);
+
+    //zip all the data monos
+    final Tuple3<AssessmentDetails,
+        List<AssessmentSummaryEntityLookupValueDetail>,
+        List<AssessmentSummaryEntityLookupValueDetail>> assessmentDataMonos = Mono.zip(
+            assessmentDetailsMono,
+            parentMono,
+            childMono)
+        .blockOptional().orElseThrow(() ->
+            new CaabApplicationException("Failed to retrieve assessment data"));
+
+    final AssessmentDetail assessment = assessmentDataMonos.getT1().getContent().stream()
+        .findFirst().orElseThrow(() -> new CaabApplicationException(
+            "Failed to retrieve assessment details"));
+    final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups =
+        assessmentDataMonos.getT2();
+    final List<AssessmentSummaryEntityLookupValueDetail> childSummaryLookups =
+        assessmentDataMonos.getT3();
 
     //need to make sure the assessment is saved before we can display the confirmation screen
     final List<AssessmentSummaryEntityDisplay> assessmentSummaryToDisplay =
-        assessmentService.getAssessmentSummaryToDisplay(assessmentDetail);
+        assessmentService.getAssessmentSummaryToDisplay(assessment,
+            parentSummaryLookups, childSummaryLookups);
 
     model.addAttribute("summary", assessmentSummaryToDisplay);
 

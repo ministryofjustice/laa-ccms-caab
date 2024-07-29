@@ -25,6 +25,7 @@ import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,6 +49,10 @@ import uk.gov.laa.ccms.caab.opa.util.SecurityUtils;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.ClientService;
+import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.data.model.AssessmentSummaryAttributeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
+import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
@@ -60,6 +65,9 @@ public class AssessmentControllerTest {
 
   @Mock
   private ApplicationService applicationService;
+
+  @Mock
+  private LookupService lookupService;
 
   @Mock
   private ClientService clientService;
@@ -266,10 +274,44 @@ public class AssessmentControllerTest {
     contextToken.setProviderId("providerId");
     contextToken.setCaseId("caseReferenceNumber");
 
+    // Setup mock data for parent summary lookups
+    final AssessmentSummaryEntityLookupValueDetail parentSummaryLookup = new AssessmentSummaryEntityLookupValueDetail();
+    parentSummaryLookup.setName("PROCEEDING");
+    parentSummaryLookup.setDisplayName("Proceeding");
+    parentSummaryLookup.setEntityLevel(1);
+    parentSummaryLookup.addAttributesItem(new AssessmentSummaryAttributeLookupValueDetail()
+        .name("PROCEEDING_NAME")
+        .displayName("Proceeding Name"));
+
+    final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups = List.of(parentSummaryLookup);
+
+    // Setup mock data for child summary lookups
+    final AssessmentSummaryEntityLookupValueDetail childSummaryLookup = new AssessmentSummaryEntityLookupValueDetail();
+    childSummaryLookup.setName("CHILD_ENTITY");
+    childSummaryLookup.setDisplayName("Child Entity");
+    childSummaryLookup.setEntityLevel(2);
+    childSummaryLookup.addAttributesItem(new AssessmentSummaryAttributeLookupValueDetail()
+        .name("CHILD_NAME")
+        .displayName("Child Name"));
+
+    final List<AssessmentSummaryEntityLookupValueDetail> childSummaryLookups = List.of(childSummaryLookup);
+
+    final AssessmentSummaryEntityLookupDetail parentSummaryLookupDetail = new AssessmentSummaryEntityLookupDetail();
+    parentSummaryLookupDetail.setContent(parentSummaryLookups);
+
+    final AssessmentSummaryEntityLookupDetail childSummaryLookupDetail = new AssessmentSummaryEntityLookupDetail();
+    childSummaryLookupDetail.setContent(childSummaryLookups);
+
+    // Mock the necessary methods to return expected values
+    when(lookupService.getAssessmentSummaryAttributes("PARENT"))
+        .thenReturn(Mono.just(parentSummaryLookupDetail));
+    when(lookupService.getAssessmentSummaryAttributes("CHILD"))
+        .thenReturn(Mono.just(childSummaryLookupDetail));
+
     when(contextSecurityUtil.createContextToken(anyString())).thenReturn(contextToken);
     when(assessmentService.getAssessments(anyList(), anyString(), anyString()))
         .thenReturn(Mono.just(new AssessmentDetails().addContentItem(buildAssessmentDetail(new Date()))));
-    when(assessmentService.getAssessmentSummaryToDisplay(any())).thenReturn(new ArrayList<>());
+    when(assessmentService.getAssessmentSummaryToDisplay(any(), any(), any())).thenReturn(new ArrayList<>());
 
     final MockHttpServletRequestBuilder request = get("/assessments/confirm")
         .param("val", token)
@@ -292,6 +334,40 @@ public class AssessmentControllerTest {
     contextToken.setProviderId("providerId");
     contextToken.setCaseId("caseReferenceNumber");
 
+    // Setup mock data for parent summary lookups
+    final AssessmentSummaryEntityLookupValueDetail parentSummaryLookup = new AssessmentSummaryEntityLookupValueDetail();
+    parentSummaryLookup.setName("PROCEEDING");
+    parentSummaryLookup.setDisplayName("Proceeding");
+    parentSummaryLookup.setEntityLevel(1);
+    parentSummaryLookup.addAttributesItem(new AssessmentSummaryAttributeLookupValueDetail()
+        .name("PROCEEDING_NAME")
+        .displayName("Proceeding Name"));
+
+    final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups = List.of(parentSummaryLookup);
+
+    // Setup mock data for child summary lookups
+    final AssessmentSummaryEntityLookupValueDetail childSummaryLookup = new AssessmentSummaryEntityLookupValueDetail();
+    childSummaryLookup.setName("CHILD_ENTITY");
+    childSummaryLookup.setDisplayName("Child Entity");
+    childSummaryLookup.setEntityLevel(2);
+    childSummaryLookup.addAttributesItem(new AssessmentSummaryAttributeLookupValueDetail()
+        .name("CHILD_NAME")
+        .displayName("Child Name"));
+
+    final List<AssessmentSummaryEntityLookupValueDetail> childSummaryLookups = List.of(childSummaryLookup);
+
+    final AssessmentSummaryEntityLookupDetail parentSummaryLookupDetail = new AssessmentSummaryEntityLookupDetail();
+    parentSummaryLookupDetail.setContent(parentSummaryLookups);
+
+    final AssessmentSummaryEntityLookupDetail childSummaryLookupDetail = new AssessmentSummaryEntityLookupDetail();
+    childSummaryLookupDetail.setContent(childSummaryLookups);
+
+    // Mock the necessary methods to return expected values
+    when(lookupService.getAssessmentSummaryAttributes("PARENT"))
+        .thenReturn(Mono.just(parentSummaryLookupDetail));
+    when(lookupService.getAssessmentSummaryAttributes("CHILD"))
+        .thenReturn(Mono.just(childSummaryLookupDetail));
+
     when(contextSecurityUtil.createContextToken(anyString())).thenReturn(contextToken);
     when(assessmentService.getAssessments(anyList(), anyString(), anyString())).thenReturn(Mono.empty());
 
@@ -305,7 +381,7 @@ public class AssessmentControllerTest {
         this.mockMvc.perform(request));
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
-    assertEquals("Failed to retrieve assessment details", exception.getCause().getMessage());
+    assertEquals("Failed to retrieve assessment data", exception.getCause().getMessage());
   }
 
   @Test
@@ -315,6 +391,40 @@ public class AssessmentControllerTest {
     contextToken.setRulebaseId(1L);
     contextToken.setProviderId("providerId");
     contextToken.setCaseId("caseReferenceNumber");
+
+    // Setup mock data for parent summary lookups
+    final AssessmentSummaryEntityLookupValueDetail parentSummaryLookup = new AssessmentSummaryEntityLookupValueDetail();
+    parentSummaryLookup.setName("PROCEEDING");
+    parentSummaryLookup.setDisplayName("Proceeding");
+    parentSummaryLookup.setEntityLevel(1);
+    parentSummaryLookup.addAttributesItem(new AssessmentSummaryAttributeLookupValueDetail()
+        .name("PROCEEDING_NAME")
+        .displayName("Proceeding Name"));
+
+    final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups = List.of(parentSummaryLookup);
+
+    // Setup mock data for child summary lookups
+    final AssessmentSummaryEntityLookupValueDetail childSummaryLookup = new AssessmentSummaryEntityLookupValueDetail();
+    childSummaryLookup.setName("CHILD_ENTITY");
+    childSummaryLookup.setDisplayName("Child Entity");
+    childSummaryLookup.setEntityLevel(2);
+    childSummaryLookup.addAttributesItem(new AssessmentSummaryAttributeLookupValueDetail()
+        .name("CHILD_NAME")
+        .displayName("Child Name"));
+
+    final List<AssessmentSummaryEntityLookupValueDetail> childSummaryLookups = List.of(childSummaryLookup);
+
+    final AssessmentSummaryEntityLookupDetail parentSummaryLookupDetail = new AssessmentSummaryEntityLookupDetail();
+    parentSummaryLookupDetail.setContent(parentSummaryLookups);
+
+    final AssessmentSummaryEntityLookupDetail childSummaryLookupDetail = new AssessmentSummaryEntityLookupDetail();
+    childSummaryLookupDetail.setContent(childSummaryLookups);
+
+    // Mock the necessary methods to return expected values
+    when(lookupService.getAssessmentSummaryAttributes("PARENT"))
+        .thenReturn(Mono.just(parentSummaryLookupDetail));
+    when(lookupService.getAssessmentSummaryAttributes("CHILD"))
+        .thenReturn(Mono.just(childSummaryLookupDetail));
 
     when(contextSecurityUtil.createContextToken(anyString())).thenReturn(contextToken);
     when(assessmentService.getAssessments(anyList(), anyString(), anyString()))

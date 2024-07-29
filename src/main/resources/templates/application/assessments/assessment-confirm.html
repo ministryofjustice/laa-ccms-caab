@@ -15,10 +15,10 @@
         <p class="govuk-body-l">
           Assessment completed.
         </p>
-        <div th:include="application/partials/summary-fragments :: assessmentSummaryFragment(summary=${summary})"></div>
+        <div th:include="application/partials/summary-fragments :: assessmentSummaryFragment(summary=${summary}, isSinglePageSummary=${true})"></div>
         <div class="govuk-button-group">
           <a th:href="@{/application/summary}" role="button" draggable="false" class="govuk-button" data-module="govuk-button">
-            Add new file
+            Confirm
           </a>
         </div>
       </div>

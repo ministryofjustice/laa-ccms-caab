@@ -86,14 +86,19 @@
   </th:block>
 </tr>
 
-<div th:fragment="assessmentSummaryFragment (summary)">
+<div th:fragment="assessmentSummaryFragment (summary, isSinglePageSummary)">
   <div th:each="summaryItem : ${summary}">
-    <h2 class="govuk-heading-m" th:text="${summaryItem.displayName}"></h2>
+    <th:block th:if="${isSinglePageSummary}">
+      <h2 class="govuk-heading-m" th:text="${summaryItem.displayName}"></h2>
+    </th:block>
+    <th:block th:if="${!isSinglePageSummary}">
+      <h3 class="govuk-heading-s" th:text="${summaryItem.displayName}"></h3>
+    </th:block>
     <dl class="govuk-summary-list">
-      <div class="govuk-summary-list__row" th:each="attribute : ${summaryItem.attributes}">
-        <dt class="govuk-summary-list__key" th:text="${attribute.displayName}" style="width: 50%;"></dt>
-        <dd class="govuk-summary-list__value" th:text="${attribute.value}"></dd>
-      </div>
+      <th:block th:each="attribute : ${summaryItem.attributes}">
+        <div th:replace="~{this :: summaryListDisplay(${attribute.displayName}, ${attribute.value})}"></div>
+      </th:block>
     </dl>
   </div>
 </div>
+

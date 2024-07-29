@@ -9,14 +9,14 @@
     <a th:href="@{/application/summary}" class="govuk-back-link">Cancel and return to create application</a>
   </div>
   <div id="main-content">
-    <span class="govuk-caption-l">Create application</span>
-    <h1 class="govuk-heading-l">
-      Provider details
-    </h1>
     <form action="#" th:action="@{/application/summary/provider-details}" th:object="${applicationFormData}" method="post">
       <input type="hidden" th:field="*{officeId}" th:value="${applicationFormData.officeId}" />
       <input type="hidden" th:field="*{officeName}" th:value="${applicationFormData.officeName}" />
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <span class="govuk-caption-l">Create application</span>
+      <h1 class="govuk-heading-l">
+        Provider details
+      </h1>
       <div class="govuk-body-l">
         Please enter the details in the fields provided.
       </div>

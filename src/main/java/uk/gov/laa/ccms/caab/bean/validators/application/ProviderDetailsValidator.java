@@ -11,6 +11,9 @@ import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 @Component
 public class ProviderDetailsValidator extends AbstractValidator {
 
+  private static final String PROVIDER_CASE_REF_CHAR_SET =
+      "^[|A-Za-z0-9&'\\(\\)\\.\\*\\-\\/!#$%,;\\?\\@\\[\\]_`+\\=>£:\\`\\\\]*$";
+
   /**
    * Determine if this validator can validate instances of the given class.
    *
@@ -18,7 +21,7 @@ public class ProviderDetailsValidator extends AbstractValidator {
    * @return whether this validator can validate instances of the given class.
    */
   @Override
-  public boolean supports(Class<?> clazz) {
+  public boolean supports(final Class<?> clazz) {
     return ApplicationFormData.class.isAssignableFrom(clazz);
   }
 
@@ -29,8 +32,14 @@ public class ProviderDetailsValidator extends AbstractValidator {
    * @param errors contextual state about the validation process
    */
   @Override
-  public void validate(Object target, Errors errors) {
-    ApplicationFormData applicationFormData = (ApplicationFormData) target;
+  public void validate(final Object target, final Errors errors) {
+    final ApplicationFormData applicationFormData = (ApplicationFormData) target;
+
+    if (applicationFormData.getProviderCaseReference() != null) {
+      validateFieldFormat("providerCaseReference", applicationFormData.getProviderCaseReference(),
+          PROVIDER_CASE_REF_CHAR_SET, "Provider case reference", errors);
+    }
+
     validateRequiredField("contactNameId", applicationFormData.getContactNameId(),
         "Contact name", errors);
   }
