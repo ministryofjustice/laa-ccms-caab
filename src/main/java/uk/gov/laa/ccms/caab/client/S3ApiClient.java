@@ -175,6 +175,7 @@ public class S3ApiClient {
    * @param documentId The id of the document to upload.
    * @param fileData   The content of the document to upload.
    * @param extension  The extension of the document to upload.
+   * @param isDraft    Whether the document is a draft.
    */
   public void uploadDocument(String documentId, String fileData, String extension,
       boolean isDraft) {
