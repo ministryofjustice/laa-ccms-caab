@@ -219,7 +219,15 @@ public class S3ApiClientTest {
     when(s3Template.listObjects(any(), eq(draftPrefix + "1"))).thenReturn(List.of(s3Resource));
     when(s3Resource.getFilename()).thenReturn(draftPrefix + "1.pdf");
 
-    s3ApiClient.getDraftDocumentUrl("1");
+    URL url = mock(URL.class);
+    when(url.toString()).thenReturn("test-url");
+    when(s3Template.createSignedGetURL(any(), eq(draftPrefix + "1.pdf"), any()))
+        .thenReturn(url);
+
+    String actual = s3ApiClient.getDraftDocumentUrl("1").get();
+
+    assertNotNull(actual);
+    assertEquals("test-url", actual);
 
     verify(s3Template).listObjects(any(), eq(draftPrefix + "1"));
     verify(s3Template).createSignedGetURL(any(), eq(draftPrefix + "1.pdf"), any());
