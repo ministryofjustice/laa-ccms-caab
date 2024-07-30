@@ -20,13 +20,6 @@ public interface NotificationAttachmentMapper {
   @Mapping(target = "text", source = "description")
   BaseDocument toBaseDocument(NotificationAttachmentDetail notificationAttachmentDetail);
 
-  @AfterMapping
-  default void setFileExtension(@MappingTarget BaseDocument baseDocument,
-      NotificationAttachmentDetail notificationAttachmentDetail) {
-    baseDocument.setFileExtension(
-        FileUtil.getFileExtension(notificationAttachmentDetail.getFileName()));
-  }
-
   @Mapping(target = "documentId", ignore = true)
   @Mapping(target = "fileExtension", ignore = true)
   @Mapping(target = "statusDescription", ignore = true)
@@ -35,6 +28,13 @@ public interface NotificationAttachmentMapper {
   @Mapping(target = "documentType", source = "documentType.id")
   @Mapping(target = "text", source = "description")
   Document toDocument(NotificationAttachmentDetail notificationAttachmentDetail);
+
+  @AfterMapping
+  default void setFileExtension(@MappingTarget BaseDocument baseDocument,
+      NotificationAttachmentDetail notificationAttachmentDetail) {
+    baseDocument.setFileExtension(
+        FileUtil.getFileExtension(notificationAttachmentDetail.getFileName()));
+  }
 
   @AfterMapping
   default void setFileExtension(@MappingTarget Document document,

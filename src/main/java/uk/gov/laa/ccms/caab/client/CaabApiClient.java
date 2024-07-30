@@ -974,8 +974,8 @@ public class CaabApiClient {
   }
 
   /**
-   * Fetches the uploaded notification attachment based on the supplied search criteria. This
-   * method communicates with the CAAB API client to fetch the notification attachments.
+   * Fetches the uploaded notification attachment based on the supplied search criteria. This method
+   * communicates with the CAAB API client to fetch the notification attachments.
    *
    * @param notificationReference The id of the related notification.
    * @param providerId            The id of the related provider.
@@ -1016,7 +1016,7 @@ public class CaabApiClient {
    *
    * @param notificationAttachmentId The id of the notification attachment to be retrieved.
    * @return A {@code Mono<NotificationAttachmentDetail>} containing the notification attachment
-   * data.
+   *         data.
    */
   public Mono<NotificationAttachmentDetail> getNotificationAttachment(
       final Integer notificationAttachmentId) {
@@ -1034,7 +1034,7 @@ public class CaabApiClient {
    * Deletes a specific notification attachment.
    *
    * @param notificationAttachmentId the ID of the notification attachment to delete.
-   * @param loginId            the login ID of the user performing the deletion.
+   * @param loginId                  the login ID of the user performing the deletion.
    * @return a Mono signaling completion or error handling.
    */
   public Mono<Void> deleteNotificationAttachment(
@@ -1055,10 +1055,10 @@ public class CaabApiClient {
    * Deletes all notification attachments based on the supplied search criteria.
    *
    * @param notificationReference The id of the related notification.
-   * @param providerId The id of the related provider.
-   * @param documentType The type of notification attachment.
-   * @param sendBy Whether the document is electronic or postal.
-   * @param loginId the login ID of the user performing the deletion.
+   * @param providerId            The id of the related provider.
+   * @param documentType          The type of notification attachment.
+   * @param sendBy                Whether the document is electronic or postal.
+   * @param loginId               the login ID of the user performing the deletion.
    * @return a Mono signaling completion or error handling.
    */
   public Mono<Void> deleteNotificationAttachments(
