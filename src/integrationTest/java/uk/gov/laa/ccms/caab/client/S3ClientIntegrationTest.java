@@ -42,7 +42,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testDownloadDocument_returnData() {
+  public void testDownloadDocument_success() {
     String documentName = "integration-test-file-1";
     s3Template.upload(bucketName, documentName, new ByteArrayInputStream("content".getBytes()));
 
@@ -203,9 +203,5 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
     assertEquals(documentContent,
         Base64.getEncoder().encodeToString(afterFiles.getFirst().getContentAsByteArray()));
   }
-
-
-
-
 
 }
