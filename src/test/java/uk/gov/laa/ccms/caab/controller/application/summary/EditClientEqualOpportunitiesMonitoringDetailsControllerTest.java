@@ -75,7 +75,7 @@ class EditClientEqualOpportunitiesMonitoringDetailsControllerTest {
     when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY)).thenReturn(
         Mono.just(disabilityLookupDetail));
 
-    mockMvc.perform(get("/application/summary/client/details/equal-opportunities-monitoring")
+    mockMvc.perform(get("/application/sections/client/details/equal-opportunities-monitoring")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().isOk())
         .andExpect(view().name("application/summary/client-equal-opportunities-monitoring"))
@@ -97,7 +97,7 @@ class EditClientEqualOpportunitiesMonitoringDetailsControllerTest {
     when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY)).thenReturn(
         Mono.just(disabilityLookupDetail));
 
-    mockMvc.perform(post("/application/summary/client/details/equal-opportunities-monitoring")
+    mockMvc.perform(post("/application/sections/client/details/equal-opportunities-monitoring")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("monitoringDetails", monitoringDetails))
         .andExpect(status().isOk())
@@ -110,11 +110,11 @@ class EditClientEqualOpportunitiesMonitoringDetailsControllerTest {
     monitoringDetails.setDisability("TEST");
     monitoringDetails.setEthnicOrigin("TEST");
 
-    mockMvc.perform(post("/application/summary/client/details/equal-opportunities-monitoring")
+    mockMvc.perform(post("/application/sections/client/details/equal-opportunities-monitoring")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("monitoringDetails", monitoringDetails))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/summary/client/details/summary"));
+        .andExpect(redirectedUrl("/application/sections/client/details/summary"));
   }
 
 }

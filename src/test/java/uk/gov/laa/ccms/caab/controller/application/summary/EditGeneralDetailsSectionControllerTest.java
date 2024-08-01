@@ -138,7 +138,7 @@ class EditGeneralDetailsSectionControllerTest {
 
     when(applicationService.getCorrespondenceAddressFormData(applicationId)).thenReturn(addressFormData);
 
-    this.mockMvc.perform(get("/application/summary/correspondence-address")
+    this.mockMvc.perform(get("/application/sections/correspondence-address")
             .sessionAttr(APPLICATION_ID, applicationId))
         .andDo(print())
         .andExpect(status().isOk())
@@ -160,7 +160,7 @@ class EditGeneralDetailsSectionControllerTest {
     when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
         .thenReturn(Mono.just(mockCommonLookupDetail));
 
-    this.mockMvc.perform(get("/application/summary/correspondence-address")
+    this.mockMvc.perform(get("/application/sections/correspondence-address")
             .sessionAttr(APPLICATION_ID, applicationId)
             .sessionAttr("addressDetails", addressFormData))
         .andDo(print())
@@ -177,13 +177,13 @@ class EditGeneralDetailsSectionControllerTest {
     final UserDetail user = new UserDetail();
     final AddressFormData addressDetails = new AddressFormData();
 
-    this.mockMvc.perform(post("/application/summary/correspondence-address")
+    this.mockMvc.perform(post("/application/sections/correspondence-address")
             .param("action", "update")
             .sessionAttr(APPLICATION_ID, applicationId)
             .sessionAttr(USER_DETAILS, user)
             .flashAttr("addressDetails", addressDetails))
         .andDo(print())
-        .andExpect(redirectedUrl("/application/summary/linked-cases"));
+        .andExpect(redirectedUrl("/application/sections/linked-cases"));
 
     verify(applicationService, times(1)).updateCorrespondenceAddress(applicationId, addressDetails, user);
     verify(addressService, never()).getAddresses(any());
@@ -206,7 +206,7 @@ class EditGeneralDetailsSectionControllerTest {
       return null;
     }).when(correspondenceAddressValidator).validate(any(), any());
 
-    this.mockMvc.perform(post("/application/summary/correspondence-address")
+    this.mockMvc.perform(post("/application/sections/correspondence-address")
             .param("action", "update")
             .sessionAttr(APPLICATION_ID, applicationId)
             .sessionAttr(USER_DETAILS, user)
@@ -229,13 +229,13 @@ class EditGeneralDetailsSectionControllerTest {
 
     when(addressService.getAddresses(addressDetails.getPostcode())).thenReturn(addressSearchResults);
 
-    this.mockMvc.perform(post("/application/summary/correspondence-address")
+    this.mockMvc.perform(post("/application/sections/correspondence-address")
             .param("action", "find_address")
             .sessionAttr(APPLICATION_ID, applicationId)
             .sessionAttr(USER_DETAILS, user)
             .flashAttr("addressDetails", addressDetails))
         .andDo(print())
-        .andExpect(redirectedUrl("/application/summary/correspondence-address/search"));
+        .andExpect(redirectedUrl("/application/sections/correspondence-address/search"));
 
     verify(addressService, times(1)).getAddresses(any());
     verify(addressService, times(1)).filterByHouseNumber(any(), any());
@@ -256,7 +256,7 @@ class EditGeneralDetailsSectionControllerTest {
     when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
         .thenReturn(Mono.just(mockCommonLookupDetail));
 
-    this.mockMvc.perform(post("/application/summary/correspondence-address")
+    this.mockMvc.perform(post("/application/sections/correspondence-address")
             .param("action", "find_address")
             .sessionAttr(APPLICATION_ID, applicationId)
             .sessionAttr(USER_DETAILS, user)
@@ -273,12 +273,12 @@ class EditGeneralDetailsSectionControllerTest {
   public void testCorrespondenceAddressSearchGet() throws Exception {
     final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
 
-    this.mockMvc.perform(get("/application/summary/correspondence-address/search")
+    this.mockMvc.perform(get("/application/sections/correspondence-address/search")
             .sessionAttr(ADDRESS_SEARCH_RESULTS, results))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/summary/address-search-results"))
-        .andExpect(model().attribute("backLink", "/application/summary/correspondence-address"))
+        .andExpect(model().attribute("backLink", "/application/sections/correspondence-address"))
         .andExpect(model().attribute("formAction", "application/summary/correspondence-address/search"))
         .andExpect(model().attribute("addressSearchResults", results));
   }
@@ -287,12 +287,12 @@ class EditGeneralDetailsSectionControllerTest {
   public void testCorrespondenceAddressSearchPost_successful() throws Exception {
     final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
 
-    this.mockMvc.perform(post("/application/summary/correspondence-address/search")
+    this.mockMvc.perform(post("/application/sections/correspondence-address/search")
             .sessionAttr(ADDRESS_SEARCH_RESULTS, results)
             .sessionAttr("addressDetails", new AddressFormData()))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/summary/correspondence-address"));
+        .andExpect(redirectedUrl("/application/sections/correspondence-address"));
 
     verify(addressService, times(1)).filterAndUpdateAddressFormData(any(), any(), any());
 
@@ -308,13 +308,13 @@ class EditGeneralDetailsSectionControllerTest {
       return null;
     }).when(addressSearchValidator).validate(any(), any());
 
-    this.mockMvc.perform(post("/application/summary/correspondence-address/search")
+    this.mockMvc.perform(post("/application/sections/correspondence-address/search")
             .sessionAttr(ADDRESS_SEARCH_RESULTS, results)
             .sessionAttr("addressDetails", new AddressFormData()))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/summary/address-search-results"))
-        .andExpect(model().attribute("backLink", "/application/summary/correspondence-address"))
+        .andExpect(model().attribute("backLink", "/application/sections/correspondence-address"))
         .andExpect(model().attribute("formAction", "application/summary/correspondence-address/search"))
         .andExpect(model().attribute("addressSearchResults", results));
 
@@ -329,7 +329,7 @@ class EditGeneralDetailsSectionControllerTest {
 
     when(applicationService.getLinkedCases(applicationId)).thenReturn(linkedCases);
 
-    this.mockMvc.perform(get("/application/summary/linked-cases")
+    this.mockMvc.perform(get("/application/sections/linked-cases")
             .sessionAttr(APPLICATION_ID, applicationId))
         .andDo(print())
         .andExpect(status().isOk())
@@ -348,7 +348,7 @@ class EditGeneralDetailsSectionControllerTest {
     final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases = new ResultsDisplay<>();
     linkedCases.setContent(Collections.singletonList(linkedCase));
 
-    this.mockMvc.perform(get("/application/summary/linked-cases/{linked-case-id}/remove", linkedCaseId)
+    this.mockMvc.perform(get("/application/sections/linked-cases/{linked-case-id}/remove", linkedCaseId)
             .sessionAttr("linkedCases", linkedCases))
         .andDo(print())
         .andExpect(status().isOk())
@@ -362,12 +362,12 @@ class EditGeneralDetailsSectionControllerTest {
     final String linkedCaseId = "1";
     final UserDetail user = new UserDetail();
 
-    this.mockMvc.perform(post("/application/summary/linked-cases/{linked-case-id}/remove", linkedCaseId)
+    this.mockMvc.perform(post("/application/sections/linked-cases/{linked-case-id}/remove", linkedCaseId)
             .sessionAttr(APPLICATION_ID, applicationId)
             .sessionAttr(USER_DETAILS, user))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/summary/linked-cases"));
+        .andExpect(redirectedUrl("/application/sections/linked-cases"));
 
     verify(applicationService, times(1)).removeLinkedCase(linkedCaseId, user);
   }
@@ -383,7 +383,7 @@ class EditGeneralDetailsSectionControllerTest {
 
     when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(Mono.just(mockCommonLookupDetail));
 
-    this.mockMvc.perform(get("/application/summary/linked-cases/{linked-case-id}/confirm", linkedCaseId)
+    this.mockMvc.perform(get("/application/sections/linked-cases/{linked-case-id}/confirm", linkedCaseId)
             .sessionAttr("linkedCases", linkedCases))
         .andDo(print())
         .andExpect(status().isOk())
@@ -398,13 +398,13 @@ class EditGeneralDetailsSectionControllerTest {
     final UserDetail user = new UserDetail();
     final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
 
-    this.mockMvc.perform(post("/application/summary/linked-cases/{linked-case-id}/confirm", linkedCaseId)
+    this.mockMvc.perform(post("/application/sections/linked-cases/{linked-case-id}/confirm", linkedCaseId)
             .sessionAttr(APPLICATION_ID, applicationId)
             .sessionAttr(USER_DETAILS, user)
             .flashAttr("linkedCase", linkedCase))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/summary/linked-cases"));
+        .andExpect(redirectedUrl("/application/sections/linked-cases"));
 
     verify(applicationService, times(1)).updateLinkedCase(linkedCaseId, linkedCase, user);
   }
@@ -424,7 +424,7 @@ class EditGeneralDetailsSectionControllerTest {
       return null;
     }).when(linkedCaseValidator).validate(any(), any());
 
-    this.mockMvc.perform(post("/application/summary/linked-cases/{linked-case-id}/confirm", linkedCaseId)
+    this.mockMvc.perform(post("/application/sections/linked-cases/{linked-case-id}/confirm", linkedCaseId)
             .sessionAttr(APPLICATION_ID, applicationId)
             .sessionAttr(USER_DETAILS, user)
             .flashAttr("linkedCase", linkedCase))
@@ -444,7 +444,7 @@ class EditGeneralDetailsSectionControllerTest {
     when(providerService.getProvider(any())).thenReturn(Mono.just(mockProviderDetail));
     when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(mockCaseStatusValues));
 
-    this.mockMvc.perform(get("/application/summary/linked-cases/search")
+    this.mockMvc.perform(get("/application/sections/linked-cases/search")
             .sessionAttr(USER_DETAILS, buildUserDetail()))
         .andDo(print())
         .andExpect(status().isOk())
@@ -468,7 +468,7 @@ class EditGeneralDetailsSectionControllerTest {
       return null;
     }).when(searchCriteriaValidator).validate(any(), any());
 
-    this.mockMvc.perform(post("/application/summary/linked-cases/search")
+    this.mockMvc.perform(post("/application/sections/linked-cases/search")
             .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
             .sessionAttr(USER_DETAILS, buildUserDetail())
             .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
@@ -483,7 +483,7 @@ class EditGeneralDetailsSectionControllerTest {
     final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     when(applicationService.getCases(any(), any())).thenReturn(Collections.emptyList());
 
-    this.mockMvc.perform(post("/application/summary/linked-cases/search")
+    this.mockMvc.perform(post("/application/sections/linked-cases/search")
             .sessionAttr(ACTIVE_CASE,  ActiveCase.builder().build())
             .sessionAttr(USER_DETAILS, buildUserDetail())
             .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
@@ -503,7 +503,7 @@ class EditGeneralDetailsSectionControllerTest {
         .thenThrow(new TooManyResultsException("test"));
 
     // Act & Assert
-    this.mockMvc.perform(post("/application/summary/linked-cases/search")
+    this.mockMvc.perform(post("/application/sections/linked-cases/search")
             .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
             .sessionAttr(USER_DETAILS, buildUserDetail())
             .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
@@ -522,7 +522,7 @@ class EditGeneralDetailsSectionControllerTest {
 
     when(applicationMapper.toApplicationDetails(any())).thenReturn(linkedCaseSearchResults);
 
-    this.mockMvc.perform(get("/application/summary/linked-cases/search/results")
+    this.mockMvc.perform(get("/application/sections/linked-cases/search/results")
             .param("page", String.valueOf(page))
             .param("size", String.valueOf(size))
             .flashAttr(CASE_SEARCH_RESULTS, caseSearchResults))
@@ -548,7 +548,7 @@ class EditGeneralDetailsSectionControllerTest {
     when(resultDisplayMapper.toLinkedCaseResultRowDisplay(baseApplication)).thenReturn(linkedCaseResultRowDisplay);
     when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(Mono.just(mockCommonLookupDetail));
 
-    this.mockMvc.perform(get("/application/summary/linked-cases/{case-reference-id}/add", caseReferenceId)
+    this.mockMvc.perform(get("/application/sections/linked-cases/{case-reference-id}/add", caseReferenceId)
             .sessionAttr(CASE_RESULTS_PAGE, linkedCaseSearchResults))
         .andDo(print())
         .andExpect(status().isOk())
@@ -564,13 +564,13 @@ class EditGeneralDetailsSectionControllerTest {
     final UserDetail user = new UserDetail();
     final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
 
-    this.mockMvc.perform(post("/application/summary/linked-cases/add")
+    this.mockMvc.perform(post("/application/sections/linked-cases/add")
             .sessionAttr(APPLICATION_ID, applicationId)
             .sessionAttr(USER_DETAILS, user)
             .flashAttr("currentLinkedCase", linkedCase))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/summary/linked-cases"));
+        .andExpect(redirectedUrl("/application/sections/linked-cases"));
 
     verify(linkedCaseValidator, times(1)).validate(eq(linkedCase), any(BindingResult.class));
     verify(applicationService, times(1)).addLinkedCase(eq(applicationId), eq(linkedCase), eq(user));
@@ -592,7 +592,7 @@ class EditGeneralDetailsSectionControllerTest {
     when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(Mono.just(mockCommonLookupDetail));
 
     // When & Then
-    this.mockMvc.perform(post("/application/summary/linked-cases/add")
+    this.mockMvc.perform(post("/application/sections/linked-cases/add")
             .sessionAttr(APPLICATION_ID, applicationId)
             .sessionAttr(USER_DETAILS, user)
             .flashAttr("currentLinkedCase", linkedCase))

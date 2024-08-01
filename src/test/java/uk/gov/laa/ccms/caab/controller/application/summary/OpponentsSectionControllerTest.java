@@ -109,7 +109,7 @@ class OpponentsSectionControllerTest {
     void opponents() throws Exception {
         when(applicationService.getOpponents(any())).thenReturn(new ArrayList<>());
 
-        mockMvc.perform(get("/application/summary/opponents")
+        mockMvc.perform(get("/application/sections/opponents")
                 .sessionAttr("applicationId", "123"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("application/summary/opponents-section"));
@@ -299,7 +299,7 @@ class OpponentsSectionControllerTest {
                 .sessionAttr(USER_DETAILS, user))
             .andDo(print())
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/summary/opponents"));
+            .andExpect(redirectedUrl("/application/sections/opponents"));
 
         verify(applicationService).addOpponent(applicationId, opponentFormData, user);
     }
@@ -373,7 +373,7 @@ class OpponentsSectionControllerTest {
                 .sessionAttr(APPLICATION_ID, applicationId)
                 .sessionAttr(USER_DETAILS, user))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/summary/opponents"));
+            .andExpect(redirectedUrl("/application/sections/opponents"));
 
         verify(applicationService).addOpponent(applicationId, opponentFormData, user);
     }
@@ -498,7 +498,7 @@ class OpponentsSectionControllerTest {
                 .sessionAttr(USER_DETAILS, user))
             .andDo(print())
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/summary/opponents"));
+            .andExpect(redirectedUrl("/application/sections/opponents"));
 
         verify(applicationService).addOpponent(applicationId, opponentFormData, user);
 
@@ -657,7 +657,7 @@ class OpponentsSectionControllerTest {
                 .sessionAttr(USER_DETAILS, user))
             .andDo(print())
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/summary/opponents"));
+            .andExpect(redirectedUrl("/application/sections/opponents"));
 
         verify(opponentService).updateOpponent(Integer.valueOf(selectedOpponentId),
             opponentFormData, user);
@@ -865,7 +865,7 @@ class OpponentsSectionControllerTest {
                 .sessionAttr(USER_DETAILS, user))
             .andDo(print())
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/summary/opponents"));
+            .andExpect(redirectedUrl("/application/sections/opponents"));
 
         verify(opponentService).deleteOpponent(selectedOpponentId, user);
     }

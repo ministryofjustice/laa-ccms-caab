@@ -9,6 +9,7 @@
     <a th:href="@{/home}" class="govuk-back-link">Return to home</a>
   </div>
   <div id="main-content">
+    <form action="#" th:action="@{/application/validate}" method="post">
     <span class="govuk-caption-l">Create application</span>
     <h1 class="govuk-heading-l">
       Application summary
@@ -38,7 +39,7 @@
           <tbody class="govuk-table__body">
           <tr class="govuk-table__row">
             <td class="govuk-table__cell" th:if="${summary.applicationType.enabled}">
-              <a th:href="@{/application/summary/application-type}" class="govuk-link">Application type</a>
+              <a th:href="@{/application/sections/application-type}" class="govuk-link">Application type</a>
             </td>
             <td class="govuk-table__cell" th:unless="${summary.applicationType.enabled}">
               Application type
@@ -49,21 +50,21 @@
             <td class="govuk-table__cell"></td>
           </tr>
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell"><a th:href="@{/application/summary/provider-details}" class="govuk-link">Provider details</a></td>
+            <td class="govuk-table__cell"><a th:href="@{/application/sections/provider-details}" class="govuk-link">Provider details</a></td>
             <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.provider.status})}"></td>
             <td class="govuk-table__cell" th:text="${#dates.format(summary.provider.lastSaved, 'dd/MM/yyyy')}"></td>
             <td class="govuk-table__cell" th:text="${summary.provider.lastSavedBy}"></td>
             <td class="govuk-table__cell"></td>
           </tr>
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell"><a th:href="@{/application/summary/client/details/summary}" class="govuk-link">Client details</a></td>
+            <td class="govuk-table__cell"><a th:href="@{/application/sections/client/details/summary}" class="govuk-link">Client details</a></td>
             <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.client.status})}"></td>
             <td class="govuk-table__cell"></td>
             <td class="govuk-table__cell"></td>
             <td class="govuk-table__cell"></td>
           </tr>
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell"><a th:href="@{/application/summary/correspondence-address}" class="govuk-link">General details</a></td>
+            <td class="govuk-table__cell"><a th:href="@{/application/sections/correspondence-address}" class="govuk-link">General details</a></td>
             <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.generalDetails.status})}"></td>
             <td class="govuk-table__cell" th:text="${#dates.format(summary.generalDetails.lastSaved, 'dd/MM/yyyy')}"></td>
             <td class="govuk-table__cell" th:text="${summary.generalDetails.lastSavedBy}"></td>
@@ -77,7 +78,7 @@
             <td class="govuk-table__cell"></td>
           </tr>
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell"><a th:href="@{/application/summary/opponents}" class="govuk-link">Opponents and other parties</a></td>
+            <td class="govuk-table__cell"><a th:href="@{/application/sections/opponents}" class="govuk-link">Opponents and other parties</a></td>
             <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.opponentsAndOtherParties.status})}"></td>
             <td class="govuk-table__cell" th:text="${#dates.format(summary.opponentsAndOtherParties.lastSaved, 'dd/MM/yyyy')}"></td>
             <td class="govuk-table__cell" th:text="${summary.opponentsAndOtherParties.lastSavedBy}"></td>
@@ -93,7 +94,7 @@
           </th:block>
           <tr class="govuk-table__row">
             <th:block th:if="${summary.documentUpload.enabled}">
-              <td class="govuk-table__cell"><a class="govuk-link" th:href="@{/application/summary/evidence}">Document upload</a></td>
+              <td class="govuk-table__cell"><a class="govuk-link" th:href="@{/application/sections/evidence}">Document upload</a></td>
               <td class="govuk-table__cell"></td>
             </th:block>
             <th:block th:unless="${summary.documentUpload.enabled}">
@@ -105,7 +106,7 @@
             <td class="govuk-table__cell"></td>
           </tr>
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell"><a class="govuk-link" th:href="@{/application/summary/full}">View application summary</a></td>
+            <td class="govuk-table__cell"><a class="govuk-link" th:href="@{/application/sections/summary}">View application summary</a></td>
             <td class="govuk-table__cell"></td>
             <td class="govuk-table__cell"></td>
             <td class="govuk-table__cell"></td>
@@ -123,6 +124,7 @@
         </div>
       </div>
     </div>
+    </form>
   </div>
 </div>
 </body>

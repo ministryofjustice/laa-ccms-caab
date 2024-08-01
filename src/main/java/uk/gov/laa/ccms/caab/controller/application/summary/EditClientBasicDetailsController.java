@@ -48,7 +48,7 @@ public class EditClientBasicDetailsController {
    * @param model The model for the view.
    * @return The view name for the client basic details page
    */
-  @GetMapping("/application/summary/client/details/basic")
+  @GetMapping("/application/sections/client/details/basic")
   public String getClientDetailsBasic(
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
       final Model model) {
@@ -58,7 +58,7 @@ public class EditClientBasicDetailsController {
     basicDetails.setClientFlowFormAction(clientFlowFormData.getAction());
 
     model.addAttribute("basicDetails", basicDetails);
-    return "application/summary/client-basic-details";
+    return "application/sections/client-basic-details";
   }
 
   /**
@@ -70,7 +70,7 @@ public class EditClientBasicDetailsController {
    * @param model The model for the view.
    * @return A redirect string to the agreement page.
    */
-  @PostMapping("/application/summary/client/details/basic")
+  @PostMapping("/application/sections/client/details/basic")
   public String postClientDetailsBasic(
       @SessionAttribute(CLIENT_FLOW_FORM_DATA)final  ClientFlowFormData clientFlowFormData,
       @ModelAttribute("basicDetails") final ClientFormDataBasicDetails basicDetails,
@@ -81,13 +81,13 @@ public class EditClientBasicDetailsController {
 
     if (bindingResult.hasErrors()) {
       populateDropdowns(model);
-      return "application/summary/client-basic-details";
+      return "application/sections/client-basic-details";
     }
 
     clientFlowFormData.setBasicDetails(basicDetails);
     model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
-    return "redirect:/application/summary/client/details/summary";
+    return "redirect:/application/sections/client/details/summary";
   }
 
   /**

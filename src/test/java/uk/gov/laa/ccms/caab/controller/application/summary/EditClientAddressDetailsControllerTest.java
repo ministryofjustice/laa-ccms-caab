@@ -87,7 +87,7 @@ class EditClientAddressDetailsControllerTest {
     when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
-    this.mockMvc.perform(get("/application/summary/client/details/address")
+    this.mockMvc.perform(get("/application/sections/client/details/address")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andDo(print())
         .andExpect(status().isOk())
@@ -103,7 +103,7 @@ class EditClientAddressDetailsControllerTest {
     when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
-    this.mockMvc.perform(post("/application/summary/client/details/address")
+    this.mockMvc.perform(post("/application/sections/client/details/address")
             .param("action", "find_address")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("addressDetails", addressDetails))
@@ -124,26 +124,26 @@ class EditClientAddressDetailsControllerTest {
     when(addressService.filterByHouseNumber(any(), any())).thenReturn(
         addressResults);
 
-    this.mockMvc.perform(post("/application/summary/client/details/address")
+    this.mockMvc.perform(post("/application/sections/client/details/address")
             .param("action", "find_address")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("addressDetails", addressDetails))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/summary/client/details/address/search"));
+        .andExpect(redirectedUrl("/application/sections/client/details/address/search"));
   }
 
   @Test
   void testEditClientDetailsAddressPostNext() throws Exception {
     ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
 
-    this.mockMvc.perform(post("/application/summary/client/details/address")
+    this.mockMvc.perform(post("/application/sections/client/details/address")
             .param("action", "next")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("addressDetails", addressDetails))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/summary/client/details/summary"));
+        .andExpect(redirectedUrl("/application/sections/client/details/summary"));
   }
 
   @Test
@@ -159,7 +159,7 @@ class EditClientAddressDetailsControllerTest {
     when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
-    this.mockMvc.perform(post("/application/summary/client/details/address")
+    this.mockMvc.perform(post("/application/sections/client/details/address")
             .param("action", "next")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("addressDetails", addressDetails))
@@ -182,7 +182,7 @@ class EditClientAddressDetailsControllerTest {
     when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
-    this.mockMvc.perform(post("/application/summary/client/details/address")
+    this.mockMvc.perform(post("/application/sections/client/details/address")
             .param("action", "find_address")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("addressDetails", addressDetails))

@@ -83,7 +83,7 @@ class EditClientBasicDetailsControllerTest {
     when(lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS)).thenReturn(
         Mono.just(maritalStatusLookupDetail));
 
-    this.mockMvc.perform(get("/application/summary/client/details/basic")
+    this.mockMvc.perform(get("/application/sections/client/details/basic")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("genders", Collections.emptyList())
             .flashAttr("maritalStatusList", Collections.emptyList()))
@@ -98,14 +98,14 @@ class EditClientBasicDetailsControllerTest {
   void testClientDetailsBasicPost() throws Exception {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
 
-    mockMvc.perform(post("/application/summary/client/details/basic")
+    mockMvc.perform(post("/application/sections/client/details/basic")
             .sessionAttr(CLIENT_SEARCH_CRITERIA, clientSearchCriteria)
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("basicDetails", basicDetails)
             .flashAttr("genders", Collections.emptyList())
             .flashAttr("maritalStatusList", Collections.emptyList()))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/summary/client/details/summary"));
+        .andExpect(redirectedUrl("/application/sections/client/details/summary"));
   }
 
   @Test
@@ -127,7 +127,7 @@ class EditClientBasicDetailsControllerTest {
     when(lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS)).thenReturn(
         Mono.just(maritalStatusLookupDetail));
 
-    mockMvc.perform(post("/application/summary/client/details/basic")
+    mockMvc.perform(post("/application/sections/client/details/basic")
             .sessionAttr(CLIENT_SEARCH_CRITERIA, clientSearchCriteria)
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("basicDetails", basicDetails)

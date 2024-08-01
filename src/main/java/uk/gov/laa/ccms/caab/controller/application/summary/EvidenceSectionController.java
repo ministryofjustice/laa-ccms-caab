@@ -71,7 +71,7 @@ public class EvidenceSectionController {
    * @param model              The model for the view.
    * @return The view name for the evidence upload view.
    */
-  @GetMapping("/application/summary/evidence")
+  @GetMapping("/application/sections/evidence")
   public String viewEvidenceRequired(
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       final Model model) {
@@ -105,7 +105,7 @@ public class EvidenceSectionController {
     model.addAttribute(EVIDENCE_REQUIRED, evidenceRequired);
     model.addAttribute("evidenceUploaded", evidenceUploaded);
 
-    return "application/summary/evidence-section";
+    return "application/sections/evidence-section";
   }
 
   /**
@@ -205,7 +205,7 @@ public class EvidenceSectionController {
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException("Failed to save document"));
 
-    return "redirect:/application/summary/evidence";
+    return "redirect:/application/sections/evidence";
   }
 
   /**
@@ -261,7 +261,7 @@ public class EvidenceSectionController {
         APPLICATION,
         userDetail.getLoginId());
 
-    return "redirect:/application/summary/evidence";
+    return "redirect:/application/sections/evidence";
   }
 
   private void populateAddEvidenceModel(

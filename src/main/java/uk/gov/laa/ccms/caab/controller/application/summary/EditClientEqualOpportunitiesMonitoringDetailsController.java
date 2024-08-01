@@ -46,7 +46,7 @@ public class EditClientEqualOpportunitiesMonitoringDetailsController {
    * @param model The model for the view.
    * @return The view name for the client equal opportunities monitoring details page
    */
-  @GetMapping("/application/summary/client/details/equal-opportunities-monitoring")
+  @GetMapping("/application/sections/client/details/equal-opportunities-monitoring")
   public String clientDetailsEqualOpportunitiesMonitoring(
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       Model model) {
@@ -60,7 +60,7 @@ public class EditClientEqualOpportunitiesMonitoringDetailsController {
           clientFlowFormData.getMonitoringDetails());
     }
 
-    return "application/summary/client-equal-opportunities-monitoring";
+    return "application/sections/client-equal-opportunities-monitoring";
   }
 
   /**
@@ -72,7 +72,7 @@ public class EditClientEqualOpportunitiesMonitoringDetailsController {
    * @param model The model for the view.
    * @return A redirect string to the client summary page.
    */
-  @PostMapping("/application/summary/client/details/equal-opportunities-monitoring")
+  @PostMapping("/application/sections/client/details/equal-opportunities-monitoring")
   public String clientDetailsEqualOpportunitiesMonitoring(
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @ModelAttribute("monitoringDetails") ClientFormDataMonitoringDetails monitoringDetails,
@@ -83,13 +83,13 @@ public class EditClientEqualOpportunitiesMonitoringDetailsController {
 
     if (bindingResult.hasErrors()) {
       populateDropdowns(model);
-      return "application/summary/client-equal-opportunities-monitoring";
+      return "application/sections/client-equal-opportunities-monitoring";
     }
 
     clientFlowFormData.setMonitoringDetails(monitoringDetails);
     model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
-    return "redirect:/application/summary/client/details/summary";
+    return "redirect:/application/sections/client/details/summary";
   }
 
   private void populateDropdowns(Model model) {

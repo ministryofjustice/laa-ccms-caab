@@ -6,13 +6,13 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/summary/linked-cases}" class="govuk-back-link">Cancel and return to Linked case summary</a>
+    <a th:href="@{/application/sections/linked-cases}" class="govuk-back-link">Cancel and return to Linked case summary</a>
   </div>
   <div id="main-content">
     <th:block th:replace="~{application/partials/search-fragments :: searchCaseFormFragment(
       caption=${'Search for a case or application'},
       heading=${'Linked cases'},
-      action=${'/application/summary/linked-cases/search'},
+      action=${'/application/sections/linked-cases/search'},
       copyCase=${false})}">
     </th:block>
   </div>

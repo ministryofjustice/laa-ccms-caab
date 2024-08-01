@@ -8,10 +8,10 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/summary/client/details/summary}" class="govuk-back-link">Cancel and return to amend client</a>
+    <a th:href="@{/application/sections/client/details/summary}" class="govuk-back-link">Cancel and return to amend client</a>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/summary/client/details/basic}" th:object="${basicDetails}" method="post">
+    <form action="#" th:action="@{/application/sections/client/details/basic}" th:object="${basicDetails}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <span class="govuk-caption-l">Edit your client</span>
       <h1 class="govuk-heading-l">

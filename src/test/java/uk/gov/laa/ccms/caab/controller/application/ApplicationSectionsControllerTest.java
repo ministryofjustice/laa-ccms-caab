@@ -26,7 +26,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.controller.application.summary.ApplicationSummaryController;
+import uk.gov.laa.ccms.caab.controller.application.summary.ApplicationSectionsController;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.summary.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
@@ -35,13 +35,13 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-class ApplicationSummaryControllerTest {
+class ApplicationSectionsControllerTest {
 
   @Mock
   private ApplicationService applicationService;
 
   @InjectMocks
-  private ApplicationSummaryController applicationSummaryController;
+  private ApplicationSectionsController applicationSectionsController;
 
   private MockMvc mockMvc;
 
@@ -50,7 +50,7 @@ class ApplicationSummaryControllerTest {
 
   @BeforeEach
   public void setup() {
-    mockMvc = standaloneSetup(applicationSummaryController).build();
+    mockMvc = standaloneSetup(applicationSectionsController).build();
   }
 
   @Test
@@ -71,7 +71,7 @@ class ApplicationSummaryControllerTest {
     when(applicationService.getApplicationSummary(any(ApplicationDetail.class), any(UserDetail.class)))
         .thenReturn(applicationSummaryDisplay);
 
-    this.mockMvc.perform(get("/application/summary")
+    this.mockMvc.perform(get("/application/sections")
             .sessionAttr("applicationId", id)
             .sessionAttr("user", user))
         .andDo(print())

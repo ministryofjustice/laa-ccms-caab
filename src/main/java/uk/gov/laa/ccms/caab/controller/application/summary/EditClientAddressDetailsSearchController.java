@@ -48,7 +48,7 @@ public class EditClientAddressDetailsSearchController {
    * @param model The model for the view.
    * @return The view name for the client basic details page
    */
-  @GetMapping("/application/summary/client/details/address/search")
+  @GetMapping("/application/sections/client/details/address/search")
   public String clientDetailsAddressSearch(
       @SessionAttribute(ADDRESS_SEARCH_RESULTS)
       final ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults,
@@ -57,7 +57,7 @@ public class EditClientAddressDetailsSearchController {
 
     model.addAttribute(ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
 
-    return "application/summary/client-address-search-results";
+    return "application/sections/client-address-search-results";
   }
 
   /**
@@ -71,7 +71,7 @@ public class EditClientAddressDetailsSearchController {
    * @param session The session data for the endpoint.
    * @return A redirect string to the agreement page.
    */
-  @PostMapping("/application/summary/client/details/address/search")
+  @PostMapping("/application/sections/client/details/address/search")
   public String clientDetailsAddressSearch(
       @SessionAttribute(ADDRESS_SEARCH_RESULTS) final ResultsDisplay<AddressResultRowDisplay>
           clientAddressSearchResults,
@@ -85,7 +85,7 @@ public class EditClientAddressDetailsSearchController {
     addressSearchValidator.validate(addressSearch, bindingResult);
     if (bindingResult.hasErrors()) {
       model.addAttribute(ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
-      return "application/summary/client-address-search-results";
+      return "application/sections/client-address-search-results";
     }
 
     //Add the address to the client session flow data
@@ -97,7 +97,7 @@ public class EditClientAddressDetailsSearchController {
     //Cleanup
     session.removeAttribute(ADDRESS_SEARCH_RESULTS);
 
-    return "redirect:/application/summary/client/details/address";
+    return "redirect:/application/sections/client/details/address";
   }
 
 }

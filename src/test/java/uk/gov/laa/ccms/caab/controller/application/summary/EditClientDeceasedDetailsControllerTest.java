@@ -47,7 +47,7 @@ class EditClientDeceasedDetailsControllerTest {
 
   @Test
   void testEditClientDetailsDeceased() throws Exception {
-    this.mockMvc.perform(get("/application/summary/client/details/deceased")
+    this.mockMvc.perform(get("/application/sections/client/details/deceased")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andDo(print())
         .andExpect(status().isOk())
@@ -57,11 +57,11 @@ class EditClientDeceasedDetailsControllerTest {
   @Test
   void testEditClientDetailsDeceasedPost() throws Exception {
 
-    mockMvc.perform(post("/application/summary/client/details/deceased")
+    mockMvc.perform(post("/application/sections/client/details/deceased")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("deceasedDetails", deceasedDetails))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/summary/client/details/summary"));
+        .andExpect(redirectedUrl("/application/sections/client/details/summary"));
   }
 
   @Test
@@ -73,7 +73,7 @@ class EditClientDeceasedDetailsControllerTest {
       return null;
     }).when(clientDeceasedDetailsValidator).validate(any(), any());
 
-    mockMvc.perform(post("/application/summary/client/details/deceased")
+    mockMvc.perform(post("/application/sections/client/details/deceased")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("deceasedDetails", deceasedDetails))
         .andExpect(status().isOk())

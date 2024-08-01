@@ -63,7 +63,7 @@ class EditClientAddressDetailsSearchControllerTest {
 
   @Test
   void testClientDetailsAddressSearch() throws Exception {
-    mockMvc.perform(get("/application/summary/client/details/address/search")
+    mockMvc.perform(get("/application/sections/client/details/address/search")
             .sessionAttr(ADDRESS_SEARCH_RESULTS, searchResults)
             .flashAttr("addressSearch", addressSearch))
         .andDo(print())
@@ -75,13 +75,13 @@ class EditClientAddressDetailsSearchControllerTest {
   @Test
   void testClientDetailsAddressSearchPost() throws Exception {
 
-    mockMvc.perform(post("/application/summary/client/details/address/search")
+    mockMvc.perform(post("/application/sections/client/details/address/search")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .sessionAttr(ADDRESS_SEARCH_RESULTS, searchResults)
             .flashAttr("addressSearch", addressSearch))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/summary/client/details/address"));
+        .andExpect(redirectedUrl("/application/sections/client/details/address"));
   }
 
   @Test
@@ -93,7 +93,7 @@ class EditClientAddressDetailsSearchControllerTest {
       return null;
     }).when(addressSearchValidator).validate(any(), any());
 
-    mockMvc.perform(post("/application/summary/client/details/address/search")
+    mockMvc.perform(post("/application/sections/client/details/address/search")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .sessionAttr(ADDRESS_SEARCH_RESULTS, searchResults)
             .flashAttr("addressSearch", addressSearch))

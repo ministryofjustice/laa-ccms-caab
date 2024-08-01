@@ -74,7 +74,7 @@ public class ApplicationTypeSectionControllerTest {
     when(applicationService.getApplicationTypeFormData("123")).thenReturn(
         applicationFormData);
 
-    this.mockMvc.perform(get("/application/summary/application-type")
+    this.mockMvc.perform(get("/application/sections/application-type")
             .sessionAttr(APPLICATION_ID, "123")
             .sessionAttr(ACTIVE_CASE, activeCase)
             .sessionAttr(USER_DETAILS, user)
@@ -90,13 +90,13 @@ public class ApplicationTypeSectionControllerTest {
     final ApplicationFormData applicationFormData = new ApplicationFormData();
     applicationFormData.setDelegatedFunctions(true);
 
-    this.mockMvc.perform(post("/application/summary/application-type")
+    this.mockMvc.perform(post("/application/sections/application-type")
             .sessionAttr(APPLICATION_ID, "123")
             .sessionAttr(ACTIVE_CASE, activeCase)
             .sessionAttr(USER_DETAILS, user)
             .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
-        .andExpect(redirectedUrl("/application/summary"));
+        .andExpect(redirectedUrl("/application/sections"));
 
     verify(applicationService).updateApplicationType(eq("123"), any(ApplicationFormData.class), any(UserDetail.class));
     verify(applicationService).updateApplicationType(eq("123"), any(ApplicationFormData.class), any(UserDetail.class));
@@ -113,7 +113,7 @@ public class ApplicationTypeSectionControllerTest {
       return null;
     }).when(delegatedFunctionsValidator).validate(any(), any());
 
-    this.mockMvc.perform(post("/application/summary/application-type")
+    this.mockMvc.perform(post("/application/sections/application-type")
             .sessionAttr(APPLICATION_ID, "123")
             .sessionAttr(ACTIVE_CASE, activeCase)
             .sessionAttr(USER_DETAILS, user)

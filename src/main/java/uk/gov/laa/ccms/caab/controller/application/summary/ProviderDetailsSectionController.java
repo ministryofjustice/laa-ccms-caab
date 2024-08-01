@@ -48,7 +48,7 @@ public class ProviderDetailsSectionController {
    * @param model The model for the view.
    * @return The view name for the application summary page.
    */
-  @GetMapping("/application/summary/provider-details")
+  @GetMapping("/application/sections/provider-details")
   public String applicationSummaryProviderDetails(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
@@ -61,7 +61,7 @@ public class ProviderDetailsSectionController {
     populateDropdowns(applicationFormData, user, model);
     model.addAttribute(ACTIVE_CASE, activeCase);
 
-    return "application/summary/provider-details-section";
+    return "application/sections/provider-details-section";
   }
 
   /**
@@ -76,7 +76,7 @@ public class ProviderDetailsSectionController {
    * @return The path to the next step in the application summary edit or the current page based on
    *         validation.
    */
-  @PostMapping("/application/summary/provider-details")
+  @PostMapping("/application/sections/provider-details")
   public String applicationSummaryProviderDetails(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
@@ -91,12 +91,12 @@ public class ProviderDetailsSectionController {
       populateDropdowns(applicationFormData, user, model);
       model.addAttribute(ACTIVE_CASE, activeCase);
 
-      return "application/summary/provider-details-section";
+      return "application/sections/provider-details-section";
     }
 
     applicationService.updateProviderDetails(applicationId, applicationFormData, user);
 
-    return "redirect:/application/summary";
+    return "redirect:/application/sections";
   }
 
   /**

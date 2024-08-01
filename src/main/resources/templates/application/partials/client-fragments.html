@@ -1,6 +1,6 @@
 <!--Client summary fragment-->
 <div th:fragment="clientSummaryFragment"
-     th:with="baseLinkUrl=*{action == 'edit'} ? @{/application/summary/client} :  @{/application/client}"
+     th:with="baseLinkUrl=*{action == 'edit'} ? @{/application/sections/client} :  @{/application/client}"
      class="govuk-grid-row">
   <div class="govuk-grid-column-full">
     <div class="govuk-summary-card">

@@ -7,7 +7,7 @@
 <div class="govuk-width-container">
     <div id="breadcrumbs"></div>
     <div id="main-content" style="padding-top: 40px;">
-        <form action="#" th:action="'/application/summary/linked-cases/'+ ${linkedCase.id} +'/remove'" method="post">
+        <form action="#" th:action="'/application/sections/linked-cases/'+ ${linkedCase.id} +'/remove'" method="post">
         <span class="govuk-caption-l">Create application</span>
         <h1 class="govuk-heading-l">
             Remove LAA application/case reference: <span th:text="${linkedCase.lscCaseReference}"></span>
@@ -23,7 +23,7 @@
             </button>
             <a class="govuk-button govuk-button--secondary"
                data-module="govuk-button"
-               th:href="@{/application/summary/linked-cases}">
+               th:href="@{/application/sections/linked-cases}">
                 Cancel
             </a>
         </div>

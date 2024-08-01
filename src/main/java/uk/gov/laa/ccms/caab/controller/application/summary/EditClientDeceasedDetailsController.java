@@ -40,7 +40,7 @@ public class EditClientDeceasedDetailsController {
    * @param model The model for the view.
    * @return The view name for the client basic details page
    */
-  @GetMapping("/application/summary/client/details/deceased")
+  @GetMapping("/application/sections/client/details/deceased")
   public String clientDetailsDeceased(
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @ModelAttribute("deceasedDetails") ClientFormDataDeceasedDetails deceasedDetails,
@@ -50,7 +50,7 @@ public class EditClientDeceasedDetailsController {
       model.addAttribute("deceasedDetails", clientFlowFormData.getDeceasedDetails());
     }
 
-    return "application/summary/client-deceased-details";
+    return "application/sections/client-deceased-details";
   }
 
   /**
@@ -62,7 +62,7 @@ public class EditClientDeceasedDetailsController {
    * @param model The model for the view.
    * @return A redirect string to the agreement page.
    */
-  @PostMapping("/application/summary/client/details/deceased")
+  @PostMapping("/application/sections/client/details/deceased")
   public String postClientDetailsDeceased(
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @ModelAttribute("deceasedDetails") ClientFormDataDeceasedDetails deceasedDetails,
@@ -72,13 +72,13 @@ public class EditClientDeceasedDetailsController {
     clientDeceasedDetailsValidator.validate(deceasedDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {
-      return "application/summary/client-deceased-details";
+      return "application/sections/client-deceased-details";
     }
 
     clientFlowFormData.setDeceasedDetails(deceasedDetails);
     model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
-    return "redirect:/application/summary/client/details/summary";
+    return "redirect:/application/sections/client/details/summary";
   }
 
 }

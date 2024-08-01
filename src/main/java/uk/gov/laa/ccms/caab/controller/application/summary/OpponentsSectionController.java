@@ -88,7 +88,7 @@ public class OpponentsSectionController {
    * @param model The Model object to add attributes to for the view.
    * @return The name of the view to be rendered.
    */
-  @GetMapping("/application/summary/opponents")
+  @GetMapping("/application/sections/opponents")
   public String opponents(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       final Model model) {
@@ -98,7 +98,7 @@ public class OpponentsSectionController {
 
     model.addAttribute(APPLICATION_OPPONENTS, opponents);
 
-    return "application/summary/opponents-section";
+    return "application/sections/opponents-section";
   }
 
   /**
@@ -259,7 +259,7 @@ public class OpponentsSectionController {
         opponentFormData,
         user);
 
-    return "redirect:/application/summary/opponents";
+    return "redirect:/application/sections/opponents";
   }
 
   /**
@@ -306,7 +306,7 @@ public class OpponentsSectionController {
 
     applicationService.addOpponent(applicationId, opponentFormData, user);
 
-    return "redirect:/application/summary/opponents";
+    return "redirect:/application/sections/opponents";
   }
 
   /**
@@ -371,7 +371,7 @@ public class OpponentsSectionController {
 
     applicationService.addOpponent(applicationId, opponentFormData, user);
 
-    return "redirect:/application/summary/opponents";
+    return "redirect:/application/sections/opponents";
   }
 
 
@@ -462,7 +462,7 @@ public class OpponentsSectionController {
 
     opponentService.updateOpponent(opponentId, currentOpponent, user);
 
-    return "redirect:/application/summary/opponents";
+    return "redirect:/application/sections/opponents";
   }
 
   /**
@@ -525,7 +525,7 @@ public class OpponentsSectionController {
 
     opponentService.deleteOpponent(opponentId, user);
 
-    return "redirect:/application/summary/opponents";
+    return "redirect:/application/sections/opponents";
   }
 
 

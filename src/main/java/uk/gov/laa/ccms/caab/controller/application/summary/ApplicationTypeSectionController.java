@@ -51,7 +51,7 @@ public class ApplicationTypeSectionController {
    * @param model The model for the view.
    * @return The view name for the application summary page.
    */
-  @GetMapping("/application/summary/application-type")
+  @GetMapping("/application/sections/application-type")
   public String applicationSummaryApplicationType(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
@@ -60,7 +60,7 @@ public class ApplicationTypeSectionController {
     applicationFormData = applicationService.getApplicationTypeFormData(applicationId);
     model.addAttribute(APPLICATION_FORM_DATA, applicationFormData);
 
-    return "application/summary/application-type-section";
+    return "application/sections/application-type-section";
   }
 
   /**
@@ -73,7 +73,7 @@ public class ApplicationTypeSectionController {
    * @return The path to the next step in the application summary edit or the current page based on
    *         validation.
    */
-  @PostMapping("/application/summary/application-type")
+  @PostMapping("/application/sections/application-type")
   public String delegatedFunction(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       final @SessionAttribute(USER_DETAILS) UserDetail user,
@@ -88,12 +88,12 @@ public class ApplicationTypeSectionController {
     }
 
     if (bindingResult.hasErrors()) {
-      return "application/summary/application-type-section";
+      return "application/sections/application-type-section";
     }
 
     applicationService.updateApplicationType(applicationId, applicationFormData, user);
 
-    return "redirect:/application/summary";
+    return "redirect:/application/sections";
   }
 
 

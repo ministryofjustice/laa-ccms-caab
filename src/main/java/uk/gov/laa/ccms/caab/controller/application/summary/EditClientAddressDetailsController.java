@@ -56,7 +56,7 @@ public class EditClientAddressDetailsController {
    * @param model The model for the view.
    * @return The view name for the client address details page
    */
-  @GetMapping("/application/summary/client/details/address")
+  @GetMapping("/application/sections/client/details/address")
   public String getEditClientDetailsAddress(
           @SessionAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
           final Model model) {
@@ -68,7 +68,7 @@ public class EditClientAddressDetailsController {
 
     model.addAttribute("addressDetails", addressDetails);
 
-    return "application/summary/client-address-details";
+    return "application/sections/client-address-details";
   }
 
   /**
@@ -82,7 +82,7 @@ public class EditClientAddressDetailsController {
    * @param session The session data for the endpoint.
    * @return A redirect string to the client equal opportunities monitoring page.
    */
-  @PostMapping("/application/summary/client/details/address")
+  @PostMapping("/application/sections/client/details/address")
   public String postEditClientDetailsAddress(
       @RequestParam final String action,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
@@ -99,7 +99,7 @@ public class EditClientAddressDetailsController {
 
     if (bindingResult.hasErrors()) {
       populateDropdowns(model);
-      return "application/summary/client-address-details";
+      return "application/sections/client-address-details";
     }
 
     clientFlowFormData.setAddressDetails(addressDetails);
@@ -123,13 +123,13 @@ public class EditClientAddressDetailsController {
 
       if (bindingResult.hasErrors()) {
         populateDropdowns(model);
-        return "application/summary/client-address-details";
+        return "application/sections/client-address-details";
       }
     }
 
     return ACTION_FIND_ADDRESS.equals(action)
-        ? "redirect:/application/summary/client/details/address/search"
-        : "redirect:/application/summary/client/details/summary";
+        ? "redirect:/application/sections/client/details/address/search"
+        : "redirect:/application/sections/client/details/summary";
   }
 
   private void populateDropdowns(final Model model) {

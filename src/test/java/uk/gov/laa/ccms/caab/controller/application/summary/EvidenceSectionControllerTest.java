@@ -117,7 +117,7 @@ class EvidenceSectionControllerTest {
             any(List.class),
             any(List.class))).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(get("/application/summary/evidence")
+        mockMvc.perform(get("/application/sections/evidence")
                 .sessionAttr(ACTIVE_CASE, activeCase))
                 .andExpect(status().isOk())
                 .andExpect(view().name("application/summary/evidence-section"));
@@ -275,7 +275,7 @@ class EvidenceSectionControllerTest {
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, user))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/summary/evidence"));
+            .andExpect(redirectedUrl("/application/sections/evidence"));
 
         // Update the formData now, for comparison purposes
         formData.setRegisteredDocumentId(registeredDocumentId);
@@ -293,7 +293,7 @@ class EvidenceSectionControllerTest {
                 .sessionAttr(ACTIVE_CASE, activeCase)
                 .sessionAttr(USER_DETAILS, user))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/summary/evidence"));
+            .andExpect(redirectedUrl("/application/sections/evidence"));
 
         verify(evidenceService).removeDocument(
             activeCase.getApplicationId().toString(),

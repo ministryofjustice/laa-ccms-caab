@@ -83,7 +83,7 @@ public class EditClientContactDetailsControllerTest {
     when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE)).thenReturn(
         Mono.just(correspondenceLanguageLookupDetail));
 
-    this.mockMvc.perform(get("/application/summary/client/details/contact")
+    this.mockMvc.perform(get("/application/sections/client/details/contact")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("contactDetails", contactDetails))
         .andDo(print())
@@ -95,11 +95,11 @@ public class EditClientContactDetailsControllerTest {
   @Test
   void testClientDetailsContactPost() throws Exception {
 
-    mockMvc.perform(post("/application/summary/client/details/contact")
+    mockMvc.perform(post("/application/sections/client/details/contact")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("contactDetails", contactDetails))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/summary/client/details/summary"));
+        .andExpect(redirectedUrl("/application/sections/client/details/summary"));
   }
 
 
@@ -120,7 +120,7 @@ public class EditClientContactDetailsControllerTest {
     when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE)).thenReturn(
         Mono.just(correspondenceLanguageLookupDetail));
 
-    this.mockMvc.perform(post("/application/summary/client/details/contact")
+    this.mockMvc.perform(post("/application/sections/client/details/contact")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("contactDetails", contactDetails))
         .andDo(print())

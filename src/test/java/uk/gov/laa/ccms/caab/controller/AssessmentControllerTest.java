@@ -122,7 +122,7 @@ public class AssessmentControllerTest {
             .sessionAttr(ACTIVE_CASE, activeCase))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/summary"));
+        .andExpect(redirectedUrl("/application/sections"));
   }
 
   @Test

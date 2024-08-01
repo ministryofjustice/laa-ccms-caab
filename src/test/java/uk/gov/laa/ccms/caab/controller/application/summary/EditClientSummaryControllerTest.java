@@ -139,7 +139,7 @@ class EditClientSummaryControllerTest {
         Mono.just(Optional.of(correspondenceMethodLookupValueDetail)));
 
 
-    mockMvc.perform(get("/application/summary/client/details/summary")
+    mockMvc.perform(get("/application/sections/client/details/summary")
             .sessionAttr(USER_DETAILS, userDetails)
             .sessionAttr(ACTIVE_CASE, activeCase)
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
@@ -185,7 +185,7 @@ class EditClientSummaryControllerTest {
     when(clientDetailsMapper.toClientFlowFormData(any())).thenReturn(
         clientFlowFormData);
 
-    mockMvc.perform(get("/application/summary/client/details/summary")
+    mockMvc.perform(get("/application/sections/client/details/summary")
             .sessionAttr(USER_DETAILS, userDetails)
             .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk())
@@ -212,7 +212,7 @@ class EditClientSummaryControllerTest {
     when(clientService.updateClient(any(), any(), any())).thenReturn(
         Mono.just(new ClientTransactionResponse()));
 
-    mockMvc.perform(post("/application/summary/client/details/summary")
+    mockMvc.perform(post("/application/sections/client/details/summary")
             .sessionAttr(USER_DETAILS, userDetails)
             .sessionAttr(ACTIVE_CASE, activeCase)
             .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))

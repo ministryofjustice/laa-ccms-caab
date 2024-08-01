@@ -78,7 +78,7 @@ public class ProviderDetailsSectionControllerTest {
 
     when(applicationService.getProviderDetailsFormData(applicationId)).thenReturn(applicationFormData);
 
-    this.mockMvc.perform(get("/application/summary/provider-details")
+    this.mockMvc.perform(get("/application/sections/provider-details")
             .sessionAttr(APPLICATION_ID, applicationId)
             .sessionAttr(ACTIVE_CASE, activeCase)
             .sessionAttr(USER_DETAILS, user))
@@ -111,7 +111,7 @@ public class ProviderDetailsSectionControllerTest {
     when(providerService.getFeeEarnersByOffice(any(), any()))
         .thenReturn(Collections.emptyList());
 
-    this.mockMvc.perform(post("/application/summary/provider-details")
+    this.mockMvc.perform(post("/application/sections/provider-details")
             .sessionAttr(APPLICATION_ID, applicationId)
             .sessionAttr(ACTIVE_CASE, activeCase)
             .sessionAttr(USER_DETAILS, user)
@@ -136,13 +136,13 @@ public class ProviderDetailsSectionControllerTest {
 
     when(applicationService.getProviderDetailsFormData(applicationId)).thenReturn(applicationFormData);
 
-    this.mockMvc.perform(post("/application/summary/provider-details")
+    this.mockMvc.perform(post("/application/sections/provider-details")
             .sessionAttr(APPLICATION_ID, applicationId)
             .sessionAttr(ACTIVE_CASE, activeCase)
             .sessionAttr(USER_DETAILS, user)
             .sessionAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
-        .andExpect(redirectedUrl("/application/summary"));
+        .andExpect(redirectedUrl("/application/sections"));
 
     verify(providerDetailsValidator, times(1)).validate(any(), any());
     verify(applicationService, times(1)).updateProviderDetails(any(), any(), any());

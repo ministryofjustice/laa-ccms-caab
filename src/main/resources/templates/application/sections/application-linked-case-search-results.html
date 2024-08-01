@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/summary/linked-cases/search}" class="govuk-back-link">Return to linked case search</a>
+        <a th:href="@{/application/sections/linked-cases/search}" class="govuk-back-link">Return to linked case search</a>
     </div>
     <div id="main-content">
         <span class="govuk-caption-l">Search for an application or case</span>
@@ -41,7 +41,7 @@
                     <td class="govuk-table__cell" th:text="${case.providerDetails.feeEarner.displayValue}"></td>
                     <td class="govuk-table__cell" th:text="${case.status.displayValue}"></td>
                     <td class="govuk-table__cell">
-                        <a th:href="@{/application/summary/linked-cases/{id}/add(id=${case.caseReferenceNumber})}" class="govuk-link">Link case</a>
+                        <a th:href="@{/application/sections/linked-cases/{id}/add(id=${case.caseReferenceNumber})}" class="govuk-link">Link case</a>
                     </td>
                 </tr>
             </tbody>

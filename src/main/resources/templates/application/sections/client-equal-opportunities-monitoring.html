@@ -6,10 +6,10 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-      <a th:href="@{/application/summary/client/details/summary}" class="govuk-back-link">Cancel and return to client search</a>
+      <a th:href="@{/application/sections/client/details/summary}" class="govuk-back-link">Cancel and return to client search</a>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/summary/client/details/equal-opportunities-monitoring}" th:object="${monitoringDetails}" method="post">
+    <form action="#" th:action="@{/application/sections/client/details/equal-opportunities-monitoring}" th:object="${monitoringDetails}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <span class="govuk-caption-l">Edit your client</span>
       <h1 class="govuk-heading-l">

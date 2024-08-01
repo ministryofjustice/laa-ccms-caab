@@ -7,7 +7,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import uk.gov.laa.ccms.caab.controller.AssessmentController;
-import uk.gov.laa.ccms.caab.controller.application.summary.ApplicationSummaryController;
+import uk.gov.laa.ccms.caab.controller.application.summary.ApplicationSectionsController;
 import uk.gov.laa.ccms.caab.controller.application.summary.ApplicationTypeSectionController;
 import uk.gov.laa.ccms.caab.controller.application.summary.EditClientAddressDetailsController;
 import uk.gov.laa.ccms.caab.controller.application.summary.EditClientAddressDetailsSearchController;
@@ -28,7 +28,7 @@ import uk.gov.laa.ccms.caab.controller.application.summary.ProviderDetailsSectio
  * Adding it to the model will amend the header bar with case details.
  */
 @ControllerAdvice(assignableTypes = {
-    ApplicationSummaryController.class,
+    ApplicationSectionsController.class,
     ApplicationTypeSectionController.class,
     ProviderDetailsSectionController.class,
     EditClientAddressDetailsController.class,
