@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application.summary;
+package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EMERGENCY_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;

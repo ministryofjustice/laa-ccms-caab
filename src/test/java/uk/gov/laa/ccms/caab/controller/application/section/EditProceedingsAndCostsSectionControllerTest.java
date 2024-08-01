@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application.summary;
+package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;

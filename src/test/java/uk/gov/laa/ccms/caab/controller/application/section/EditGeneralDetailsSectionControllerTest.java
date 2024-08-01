@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application.summary;
+package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -25,7 +25,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
-import static uk.gov.laa.ccms.caab.controller.application.summary.EditGeneralDetailsSectionController.CASE_RESULTS_PAGE;
+import static uk.gov.laa.ccms.caab.controller.application.section.EditGeneralDetailsSectionController.CASE_RESULTS_PAGE;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
 import java.util.ArrayList;

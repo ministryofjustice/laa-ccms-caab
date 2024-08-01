@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application.summary;
+package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;

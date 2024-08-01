@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application.summary;
+package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_EDIT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
@@ -67,7 +67,7 @@ public class EditClientSummaryController extends AbstractClientSummaryController
    *
    * @return The view name for the client summary details
    */
-  @GetMapping("/application/summary/client/details/summary")
+  @GetMapping("/application/sections/client/details/summary")
   public String getClientDetailsSummary(
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
@@ -93,10 +93,10 @@ public class EditClientSummaryController extends AbstractClientSummaryController
       session.setAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
     }
 
-    populateSummaryListLookups(clientFlowFormData, model);
+    populateSummaryListLookups(clientFlowFormData, model).block();
     model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
-    return "application/summary/client-summary-details";
+    return "application/sections/client-summary-details";
   }
 
   /**
@@ -104,7 +104,7 @@ public class EditClientSummaryController extends AbstractClientSummaryController
    *
    * @return The view name for the edit client summary details
    */
-  @PostMapping("/application/summary/client/details/summary")
+  @PostMapping("/application/sections/client/details/summary")
   public String postClientDetailsSummary(
       final @ModelAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       final @SessionAttribute(USER_DETAILS) UserDetail user,

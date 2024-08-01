@@ -26,7 +26,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.controller.application.summary.ApplicationSectionsController;
+import uk.gov.laa.ccms.caab.controller.application.section.ApplicationSectionsController;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.summary.ApplicationSummaryDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;

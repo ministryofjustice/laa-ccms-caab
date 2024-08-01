@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application.summary;
+package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
