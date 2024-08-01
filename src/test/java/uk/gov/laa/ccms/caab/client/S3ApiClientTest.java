@@ -54,29 +54,29 @@ public class S3ApiClientTest {
   @InjectMocks
   S3ApiClient s3ApiClient;
 
-  private final String documentId = "documentId";
-  private final String documentContent = "documentContent";
-  private final String draftPrefix = "draft/";
+  private static final String DOCUMENT_ID = "documentId";
+  private static final String DOCUMENT_CONTENT = "documentContent";
+  private static final String DRAFT_PREFIX = "draft/";
 
   @Test
   void downloadDocument_successful_returnsDocumentContent() throws IOException {
     S3Resource s3Resource = mock(S3Resource.class);
-    when(s3Resource.getContentAsString(StandardCharsets.UTF_8)).thenReturn(documentContent);
+    when(s3Resource.getContentAsString(StandardCharsets.UTF_8)).thenReturn(DOCUMENT_CONTENT);
 
-    when(s3Template.download(any(), eq(documentId))).thenReturn(s3Resource);
+    when(s3Template.download(any(), eq(DOCUMENT_ID))).thenReturn(s3Resource);
 
-    Optional<String> actual = s3ApiClient.downloadDocument(documentId);
+    Optional<String> actual = s3ApiClient.downloadDocument(DOCUMENT_ID);
 
     assertTrue(actual.isPresent());
-    assertEquals(documentContent, actual.get());
+    assertEquals(DOCUMENT_CONTENT, actual.get());
   }
 
   @Test
   void downloadDocument_keyNotFound_wrapsSpecificException() {
 
-    when(s3Template.download(any(), eq(documentId))).thenThrow(NoSuchKeyException.class);
+    when(s3Template.download(any(), eq(DOCUMENT_ID))).thenThrow(NoSuchKeyException.class);
 
-    assertThrows(S3ApiFileNotFoundException.class, () -> s3ApiClient.downloadDocument(documentId),
+    assertThrows(S3ApiFileNotFoundException.class, () -> s3ApiClient.downloadDocument(DOCUMENT_ID),
         "Expected S3ApiFileNotFoundException to be thrown, but wasn't.");
 
   }
@@ -87,9 +87,9 @@ public class S3ApiClientTest {
     S3Resource s3Resource = mock(S3Resource.class);
     when(s3Resource.getContentAsString(any())).thenThrow(IOException.class);
 
-    when(s3Template.download(any(), eq(documentId))).thenReturn(s3Resource);
+    when(s3Template.download(any(), eq(DOCUMENT_ID))).thenReturn(s3Resource);
 
-    assertThrows(S3ApiClientException.class, () -> s3ApiClient.downloadDocument(documentId),
+    assertThrows(S3ApiClientException.class, () -> s3ApiClient.downloadDocument(DOCUMENT_ID),
         "Expected S3ApiClientException to be thrown, but wasn't.");
 
   }
@@ -98,7 +98,7 @@ public class S3ApiClientTest {
   void getDocumentUrl_successful_callsS3() throws MalformedURLException {
 
     S3Resource resource = mock(S3Resource.class);
-    String filename = documentId + ".txt";
+    String filename = DOCUMENT_ID + ".txt";
 
     when(resource.getFilename()).thenReturn(filename);
 
@@ -106,15 +106,15 @@ public class S3ApiClientTest {
 
     when(url.toString()).thenReturn("test-url");
 
-    when(s3Template.listObjects(any(), eq(documentId))).thenReturn(List.of(resource));
+    when(s3Template.listObjects(any(), eq(DOCUMENT_ID))).thenReturn(List.of(resource));
     when(s3Template.createSignedGetURL(any(), eq(filename), any()))
         .thenReturn(url);
 
-    String actual = s3ApiClient.getDocumentUrl(documentId).get();
+    String actual = s3ApiClient.getDocumentUrl(DOCUMENT_ID).get();
 
     assertNotNull(actual);
     assertEquals("test-url", actual);
-    verify(s3Template).listObjects(any(), eq(documentId));
+    verify(s3Template).listObjects(any(), eq(DOCUMENT_ID));
     verify(s3Template).createSignedGetURL(any(), eq(filename), any());
 
   }
@@ -122,9 +122,9 @@ public class S3ApiClientTest {
   @Test
   void uploadDocument_successful_callsS3() {
 
-    s3ApiClient.uploadDocument(documentId, documentContent, "xls");
+    s3ApiClient.uploadDocument(DOCUMENT_ID, DOCUMENT_CONTENT, "xls");
 
-    verify(s3Template).upload(any(), eq(documentId + ".xls"), any());
+    verify(s3Template).upload(any(), eq(DOCUMENT_ID + ".xls"), any());
 
   }
 
@@ -149,7 +149,7 @@ public class S3ApiClientTest {
             .collect(Collectors.toSet());
 
     assertEquals(2, deleteRequest.delete().objects().size());
-    assertEquals(Set.of(draftPrefix + "1", draftPrefix + "2"), deletedKeys);
+    assertEquals(Set.of(DRAFT_PREFIX + "1", DRAFT_PREFIX + "2"), deletedKeys);
   }
 
   @Test
@@ -189,7 +189,7 @@ public class S3ApiClientTest {
   void removeDraftDocument() {
     s3ApiClient.removeDraftDocument("1");
 
-    verify(s3Template).deleteObject(any(), eq(draftPrefix + "1"));
+    verify(s3Template).deleteObject(any(), eq(DRAFT_PREFIX + "1"));
   }
 
   @Test
@@ -216,12 +216,12 @@ public class S3ApiClientTest {
   @Test
   void getDraftDocumentUrl() {
     S3Resource s3Resource = mock(S3Resource.class);
-    when(s3Template.listObjects(any(), eq(draftPrefix + "1"))).thenReturn(List.of(s3Resource));
-    when(s3Resource.getFilename()).thenReturn(draftPrefix + "1.pdf");
+    when(s3Template.listObjects(any(), eq(DRAFT_PREFIX + "1"))).thenReturn(List.of(s3Resource));
+    when(s3Resource.getFilename()).thenReturn(DRAFT_PREFIX + "1.pdf");
 
     URL url = mock(URL.class);
     when(url.toString()).thenReturn("test-url");
-    when(s3Template.createSignedGetURL(any(), eq(draftPrefix + "1.pdf"), any()))
+    when(s3Template.createSignedGetURL(any(), eq(DRAFT_PREFIX + "1.pdf"), any()))
         .thenReturn(url);
 
     String actual = s3ApiClient.getDraftDocumentUrl("1").get();
@@ -229,15 +229,15 @@ public class S3ApiClientTest {
     assertNotNull(actual);
     assertEquals("test-url", actual);
 
-    verify(s3Template).listObjects(any(), eq(draftPrefix + "1"));
-    verify(s3Template).createSignedGetURL(any(), eq(draftPrefix + "1.pdf"), any());
+    verify(s3Template).listObjects(any(), eq(DRAFT_PREFIX + "1"));
+    verify(s3Template).createSignedGetURL(any(), eq(DRAFT_PREFIX + "1.pdf"), any());
   }
 
   @Test
   void uploadDraftDocument() {
     s3ApiClient.uploadDraftDocument("1", "fileData", "pdf");
 
-    verify(s3Template).upload(any(), eq(draftPrefix + "1.pdf"), any());
+    verify(s3Template).upload(any(), eq(DRAFT_PREFIX + "1.pdf"), any());
   }
 
 }

@@ -41,7 +41,7 @@ public class S3ApiClient {
   private final S3ApiClientErrorHandler errorHandler;
   private final S3DocumentBucketProperties documentBucketProperties;
 
-  private final String draftPrefix = "draft/";
+  private static final String DRAFT_PREFIX = "draft/";
 
   /**
    * Retrieve the content of a document from S3.
@@ -177,7 +177,7 @@ public class S3ApiClient {
    * @param extension  The extension of the document to upload.
    * @param isDraft    Whether the document is a draft.
    */
-  public void uploadDocument(String documentId, String fileData, String extension,
+  private void uploadDocument(String documentId, String fileData, String extension,
       boolean isDraft) {
     InputStream contentInputStream = new ByteArrayInputStream(
         Base64.getDecoder().decode(fileData));
@@ -206,7 +206,7 @@ public class S3ApiClient {
    * @return the qualified object ID.
    */
   private String getDraftId(String id) {
-    return draftPrefix + id;
+    return DRAFT_PREFIX + id;
   }
 
 }
