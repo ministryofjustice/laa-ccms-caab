@@ -7,7 +7,8 @@
 <div class="govuk-width-container">
   <div id="breadcrumbs"></div>
   <div id="main-content" style="padding-top: 40px;">
-    <form action="#" th:action="'/submissions/' + ${submissionType} + '/confirmed'" method="post">
+    <form action="#"
+          th:action="@{/submissions/{submissionType}/confirmed(submissionType=${submissionType})}" method="post">
       <h1 class="govuk-heading-l">
         Submission confirmation
       </h1>
