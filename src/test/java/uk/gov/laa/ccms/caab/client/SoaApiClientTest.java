@@ -26,6 +26,7 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
+import uk.gov.laa.ccms.soa.gateway.model.BaseDocument;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
@@ -34,6 +35,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
+import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
@@ -879,4 +881,75 @@ class SoaApiClientTest {
     StepVerifier.create(organisationDetailMono)
         .verifyComplete();
   }
+
+  @Test
+  void registerDocument_Successful() {
+    BaseDocument baseDocument = new BaseDocument();
+    String loginId = "user1";
+    String userType = "userType";
+    String expectedUri = "/documents";
+
+    ClientTransactionResponse mockDocumentRegistered = new ClientTransactionResponse();
+    mockDocumentRegistered.setTransactionId("123");
+
+    when(soaApiWebClientMock.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
+        requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Role", userType)).thenReturn(
+        requestBodyMock);
+    when(requestBodyMock.contentType(any(MediaType.class))).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(BaseDocument.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(ClientTransactionResponse.class)).thenReturn(Mono.just(mockDocumentRegistered));
+
+    Mono<ClientTransactionResponse> documentRegisteredMono =
+        soaApiClient.registerDocument(baseDocument,
+        loginId,
+        userType);
+
+    StepVerifier.create(documentRegisteredMono)
+        .expectNext(mockDocumentRegistered)
+        .verifyComplete();
+  }
+
+  @Test
+  void uploadDocument_Successful() {
+    Document document = new Document();
+    document.setDocumentId("123");
+    String loginId = "user1";
+    String userType = "userType";
+    String expectedUri = String.format("/documents/%s", "123");
+
+    ClientTransactionResponse mockDocumentUploaded = new ClientTransactionResponse();
+    mockDocumentUploaded.setTransactionId("123");
+
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(soaApiWebClientMock.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(uriCaptor.capture())).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
+        requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Role", userType)).thenReturn(
+        requestBodyMock);
+    when(requestBodyMock.contentType(any(MediaType.class))).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(Document.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(ClientTransactionResponse.class)).thenReturn(Mono.just(mockDocumentUploaded));
+
+    Mono<ClientTransactionResponse> documentUploadedMono =
+        soaApiClient.uploadDocument(document,
+            loginId,
+            userType);
+
+    StepVerifier.create(documentUploadedMono)
+        .expectNext(mockDocumentUploaded)
+        .verifyComplete();
+
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    assertEquals(expectedUri, actualUri.toString());
+  }
+
 }
