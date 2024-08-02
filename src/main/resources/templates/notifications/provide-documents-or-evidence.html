@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Provide Documents or Evidence</title>
+</head>
+<body>
+
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/notifications/{notification_id}(notification_id=${notificationId})}"
+       class="govuk-back-link">Return to notification</a>
+  </div>
+  <div id="main-content">
+    <h1 class="govuk-heading-l">Provide Documents or Evidence</h1>
+    <p class="govuk-body-l">
+      Please view a summary of the documents or evidence uploaded below. If you are happy to
+      submit the files to LAA please click the 'Submit' button, otherwise you can upload further
+      files. You can submit files individually or in a group.
+    </p>
+
+    <h1 class="govuk-heading-m">
+      Notification Details
+    </h1>
+    <table class="govuk-table">
+      <thead class="govuk-table__head">
+      <tr class="govuk-table__row">
+        <th scope="col" class="govuk-table__header">Date Assigned</th>
+        <th scope="col" class="govuk-table__header">Due Date</th>
+        <th scope="col" class="govuk-table__header">Status</th>
+        <th scope="col" class="govuk-table__header">Assigned To</th>
+      </tr>
+      </thead>
+      <tbody class="govuk-table__body">
+      <tr class="govuk-table__row">
+        <td class="govuk-table__cell" th:text="${notification.assignDate}"></td>
+        <td class="govuk-table__cell" th:text="${notification.dueDate}"></td>
+        <td class="govuk-table__cell" th:text="${notification.status}"></td>
+        <td class="govuk-table__cell" th:text="${notification.clientName}"></td>
+      </tr>
+      </tbody>
+    </table>
+
+    <h1 class="govuk-heading-m">
+      Documents or Evidence Details
+    </h1>
+    <table class="govuk-table">
+      <thead class="govuk-table__head">
+      <tr class="govuk-table__row">
+        <th scope="col" class="govuk-table__header">Number</th>
+        <th scope="col" class="govuk-table__header">Send By</th>
+        <th scope="col" class="govuk-table__header">Document Type</th>
+        <th scope="col" class="govuk-table__header">Description</th>
+        <th scope="col" class="govuk-table__header">Status</th>
+        <th scope="col" class="govuk-table__header">Action</th>
+      </tr>
+      </thead>
+      <tbody class="govuk-table__body">
+      <tr class="govuk-table__row" th:each="attachment : ${notificationAttachments}">
+        <td class="govuk-table__cell" th:text="${attachment.number}"></td>
+        <td class="govuk-table__cell" th:text="${attachment.sendBy}"></td>
+        <td class="govuk-table__cell" th:text="${attachment.documentType}"></td>
+        <td class="govuk-table__cell" th:text="${attachment.description}"></td>
+        <td class="govuk-table__cell" th:text="${attachment.status}"></td>
+        <td th:if="${documentLinks.get(attachment.getDocumentId)} != null"
+            class="govuk-table__cell">
+          <a
+              th:href="${documentLinks.get(attachment.getDocumentId)}" class="govuk-link">
+            Download</a>
+        </td>
+        <td th:if="${documentLinks.get(attachment.getDocumentId)} == null"
+            class="govuk-table__cell">
+          <a
+              th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/retrieve(notification_id=${notification.getNotificationId},attachment_id=${attachment.getDocumentId})}" class="govuk-link ccms-download-link">
+            Retrieve</a>
+          <div
+              style="visibility:hidden;display:inline-block"
+              class="loader-small"></div>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+
+  </div>
+</div>
+
+</body>
+</html>
+<script>
+  var links = document.getElementsByClassName('ccms-download-link')
+  for(var i = 0; i < links.length; i++) {
+    var link = links[i];
+    link.onclick = function() {
+      ldr = this.parentElement.getElementsByClassName('loader-small')[0];
+      console.log("Link with ID: " + this.id + " activating spinner with ID: " + ldr.id);
+      if (ldr.style.visibility == "hidden") {
+        ldr.style.visibility = "visible"
+      }
+    };
+  }
+</script>
