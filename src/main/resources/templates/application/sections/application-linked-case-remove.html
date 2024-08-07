@@ -7,7 +7,8 @@
 <div class="govuk-width-container">
     <div id="breadcrumbs"></div>
     <div id="main-content" style="padding-top: 40px;">
-        <form action="#" th:action="'/application/sections/linked-cases/'+ ${linkedCase.id} +'/remove'" method="post">
+        <form action="#"
+              th:action="@{/application/sections/linked-cases/{id}/remove(id=${linkedCase.id})}" method="post">
         <span class="govuk-caption-l">Create application</span>
         <h1 class="govuk-heading-l">
             Remove LAA application/case reference: <span th:text="${linkedCase.lscCaseReference}"></span>

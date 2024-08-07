@@ -38,6 +38,8 @@ import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
+import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
+import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -935,6 +937,147 @@ public class CaabApiClientTest {
 
     StepVerifier.create(result)
         .expectNext(evidenceDocumentDetail)
+        .verifyComplete();
+  }
+
+  @Test
+  void createNotificationAttachment_success() {
+    final NotificationAttachmentDetail notificationAttachment =
+        new NotificationAttachmentDetail(); // Populate this as needed
+    final String loginId = "user1";
+    final String expectedUri = "/notification-attachments";
+    final String locationId = "123";
+
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(NotificationAttachmentDetail.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.exchangeToMono(any(Function.class))).thenReturn(Mono.just(locationId));
+
+    final Mono<String> result = caabApiClient.createNotificationAttachment(notificationAttachment, loginId);
+
+    StepVerifier.create(result)
+        .expectNext(locationId)
+        .verifyComplete();
+
+    verify(requestHeadersMock, times(1)).exchangeToMono(any(Function.class));
+  }
+
+  @Test
+  void deleteNotificationAttachment_success() {
+    final Integer notificationAttachmentId = 123;
+    final String loginId = "user123";
+    final String expectedUri = "/notification-attachments/{notification-attachment-id}";
+
+    when(caabApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, notificationAttachmentId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.deleteNotificationAttachment(notificationAttachmentId, loginId);
+
+    StepVerifier.create(result).verifyComplete();
+  }
+
+  @Test
+  void deleteNotificationAttachments_success() {
+    final String notificationReference = "123";
+    final Integer providerId = 456;
+    final String documentType = "docType";
+    final String sendBy = "sendBy";
+    final String loginId = "user123";
+
+    final String expectedUri = String.format(
+        "/notification-attachments?notification-reference=%s"
+            + "&provider-id=%s&document-type=%s&send-by=%s",
+        notificationReference,
+        providerId,
+        documentType,
+        sendBy);
+
+    final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(caabApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.deleteNotificationAttachments(notificationReference,
+        providerId, documentType, sendBy, loginId);
+
+    StepVerifier.create(result).verifyComplete();
+
+    final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    assertEquals(expectedUri, actualUri.toString());
+  }
+
+  @Test
+  void getNotificationAttachments_success() {
+    final String notificationReference = "123";
+    final Integer providerId = 456;
+    final String documentType = "docType";
+    final String sendBy = "sendBy";
+    final String size = "1000";
+
+    final String expectedUri = String.format(
+        "/notification-attachments?size=%s&notification-reference=%s"
+            + "&provider-id=%s&document-type=%s&send-by=%s",
+        size,
+        notificationReference,
+        providerId,
+        documentType,
+        sendBy);
+
+    final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(NotificationAttachmentDetails.class))
+        .thenReturn(Mono.just(new NotificationAttachmentDetails()));
+
+    final Mono<NotificationAttachmentDetails> resultMono = caabApiClient.getNotificationAttachments(
+        notificationReference,
+        providerId,
+        documentType,
+        sendBy);
+
+    StepVerifier.create(resultMono)
+        .expectNext(Objects.requireNonNull(resultMono.block()))
+        .verifyComplete();
+
+    final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    // Assert the URI
+    assertEquals(expectedUri, actualUri.toString());
+
+  }
+
+  @Test
+  void getNotificationAttachment_success() {
+
+    final Integer id = 123;
+    final String expectedUri = "/notification-attachments/{notification-attachment-id}";
+
+    final NotificationAttachmentDetail notificationAttachmentDetail = new NotificationAttachmentDetail();
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, id)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(NotificationAttachmentDetail.class)).thenReturn(
+        Mono.just(notificationAttachmentDetail));
+
+    final Mono<NotificationAttachmentDetail> result
+        = caabApiClient.getNotificationAttachment(id);
+
+    StepVerifier.create(result)
+        .expectNext(notificationAttachmentDetail)
         .verifyComplete();
   }
 
