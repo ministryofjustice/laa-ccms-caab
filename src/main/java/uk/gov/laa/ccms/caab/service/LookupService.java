@@ -1,18 +1,30 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_COURTS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DISABILITY;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ETHNIC_ORIGIN;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_ORDER_TYPE;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
+import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -396,6 +408,80 @@ public class LookupService {
    */
   public Mono<CommonLookupDetail> getCommonValues(final String type) {
     return ebsApiClient.getCommonValues(type);
+  }
+
+  public List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> getClientLookups(
+      final ClientFlowFormData clientFlowFormData) {
+
+    return List.of(
+        Pair.of("contactTitle",
+            getCommonValue(
+                COMMON_VALUE_CONTACT_TITLE,
+                clientFlowFormData.getBasicDetails().getTitle())),
+        Pair.of("countryOfOrigin",
+            getCountry(
+                clientFlowFormData.getBasicDetails().getCountryOfOrigin())),
+        Pair.of("maritalStatus",
+            getCommonValue(
+                COMMON_VALUE_MARITAL_STATUS,
+                clientFlowFormData.getBasicDetails().getMaritalStatus())),
+        Pair.of("gender",
+            getCommonValue(
+                COMMON_VALUE_GENDER,
+                clientFlowFormData.getBasicDetails().getGender())),
+        Pair.of("correspondenceMethod",
+            getCommonValue(
+                COMMON_VALUE_CORRESPONDENCE_METHOD,
+                clientFlowFormData.getContactDetails().getCorrespondenceMethod())),
+        Pair.of("ethnicity",
+            getCommonValue(
+                COMMON_VALUE_ETHNIC_ORIGIN,
+                clientFlowFormData.getMonitoringDetails().getEthnicOrigin())),
+        Pair.of("disability",
+            getCommonValue(
+                COMMON_VALUE_DISABILITY,
+                clientFlowFormData.getMonitoringDetails().getDisability())),
+
+        //Processed differently due to optionality
+        Pair.of("country",
+            StringUtils.hasText(clientFlowFormData.getAddressDetails().getCountry())
+                ? getCountry(
+                clientFlowFormData.getAddressDetails().getCountry())
+                : Mono.just(Optional.of(new CommonLookupValueDetail()))),
+        Pair.of("correspondenceLanguage",
+            StringUtils.hasText(clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
+                ? getCommonValue(COMMON_VALUE_CORRESPONDENCE_LANGUAGE,
+                clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
+                : Mono.just(Optional.of(new CommonLookupValueDetail()))));
+  }
+
+  public Mono<List<CommonLookupValueDetail>> addCommonLookupsToModel(
+      final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups,
+      final Model model) {
+    return Flux.fromIterable(lookups)
+        .flatMap(pair -> pair.getRight()
+            .map(optionalValue -> optionalValue.orElseGet(CommonLookupValueDetail::new))
+            .map(value -> Pair.of(pair.getLeft(), value)))
+        .collectList()
+        .doOnNext(list -> list.forEach(pair -> model.addAttribute(pair.getLeft(), pair.getRight())))
+        .map(list -> list.stream()
+            .map(Pair::getRight)
+            .collect(Collectors.toList()));
+  }
+
+  public Mono<HashMap<String, CommonLookupValueDetail>> getCommonLookupsMap(
+      final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups) {
+
+    return Flux.fromIterable(lookups)
+        .flatMap(pair -> pair.getRight()
+            .map(optionalValue -> optionalValue.orElseGet(CommonLookupValueDetail::new))
+            .map(value -> Pair.of(pair.getLeft(), value)))
+        .collectList()
+        .map(list -> {
+          final HashMap<String, CommonLookupValueDetail> clientLookupsMap = new HashMap<>();
+          list.forEach(pair -> clientLookupsMap.put(pair.getLeft(), pair.getRight()));
+          return clientLookupsMap;
+        });
   }
 
 }

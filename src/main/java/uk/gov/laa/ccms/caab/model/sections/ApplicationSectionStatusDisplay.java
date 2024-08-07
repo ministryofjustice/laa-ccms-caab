@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.model.summary;
+package uk.gov.laa.ccms.caab.model.sections;
 
 import java.util.Date;
 import lombok.AllArgsConstructor;
@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ApplicationSummaryStatusDisplay {
+public class ApplicationSectionStatusDisplay {
 
   /**
    * The status of this secion.

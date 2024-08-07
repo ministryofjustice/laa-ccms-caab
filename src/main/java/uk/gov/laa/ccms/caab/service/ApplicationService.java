@@ -56,13 +56,14 @@ import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
-import uk.gov.laa.ccms.caab.builders.ApplicationBuilder;
-import uk.gov.laa.ccms.caab.builders.ApplicationSummaryBuilder;
+import uk.gov.laa.ccms.caab.builders.InitialApplicationBuilder;
+import uk.gov.laa.ccms.caab.builders.ApplicationSectionsBuilder;
 import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
@@ -91,7 +92,7 @@ import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
-import uk.gov.laa.ccms.caab.model.summary.ApplicationSummaryDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
@@ -126,6 +127,7 @@ import uk.gov.laa.ccms.soa.gateway.model.CostLimitation;
 import uk.gov.laa.ccms.soa.gateway.model.PriorAuthority;
 import uk.gov.laa.ccms.soa.gateway.model.PriorAuthorityAttribute;
 import uk.gov.laa.ccms.soa.gateway.model.ScopeLimitation;
+import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
 
 /**
  * Service class to handle Applications.
@@ -388,7 +390,7 @@ public class ApplicationService {
       ContractDetails contractDetails = tuple.getT3();
       AmendmentTypeLookupDetail amendmentTypes = tuple.getT4();
 
-      return new ApplicationBuilder()
+      return new InitialApplicationBuilder()
           .applicationType(applicationType)
           .caseReference(caseReferenceSummary)
           .provider(user)
@@ -467,7 +469,7 @@ public class ApplicationService {
               ? applicationToCopy.getCosts().getRequestedCostLimitation() : BigDecimal.ZERO;
 
       // Use the builder to intialise the application.
-      ApplicationDetail newApplication = new ApplicationBuilder()
+      ApplicationDetail newApplication = new InitialApplicationBuilder()
           .caseReference(caseReferenceSummary)
           .provider(user)
           .client(clientDetail)
@@ -526,19 +528,19 @@ public class ApplicationService {
   public void abandonApplication(final ApplicationDetail application, final UserDetail user) {
 
     /* Delete the documents in the XXCCMS_EVIDENCE_DOCUMENTS table for an abandoned case */
-    Mono<Void> removeDocsMono =
+    final Mono<Void> removeDocsMono =
         evidenceService.removeDocuments(application.getCaseReferenceNumber(), user.getLoginId());
 
     /*
      * Delete the application itself.
      */
-    Mono<Void> deleteAppMono = caabApiClient.deleteApplication(
+    final Mono<Void> deleteAppMono = caabApiClient.deleteApplication(
         String.valueOf(application.getId()), user.getLoginId());
 
     /*
      * Delete any non-financial assessments associated with the application.
      */
-    Mono<Void> deleteAssessmentsMono = assessmentService.deleteAssessments(
+    final Mono<Void> deleteAssessmentsMono = assessmentService.deleteAssessments(
         user,
         getNonFinancialAssessmentNamesIncludingPrepop(),
         application.getCaseReferenceNumber(),
@@ -553,12 +555,13 @@ public class ApplicationService {
   }
 
   /**
-   * Retrieves the application Summary display values.
+   * Retrieves the application section display values.
    *
    * @param application the application to retrieve a summary for.
-   * @return A Mono of ApplicationSummaryDisplay representing the case summary display values.
+   * @return A Mono of ApplicationSectionDisplay representing the application section
+   *         display values.
    */
-  public ApplicationSummaryDisplay getApplicationSummary(
+  public ApplicationSectionDisplay getApplicationSections(
       final ApplicationDetail application,
       final UserDetail user) {
 
@@ -591,13 +594,13 @@ public class ApplicationService {
 
     final Mono<AssessmentDetails> meansAssessmentsMono =
         assessmentService.getAssessments(
-            List.of("meansAssessment"),
+            List.of(AssessmentRulebase.MEANS.getName()),
             user.getProvider().getId().toString(),
             application.getCaseReferenceNumber());
 
     final Mono<AssessmentDetails> meritsAssessmentsMono =
         assessmentService.getAssessments(
-            List.of("meritsAssessment"),
+            List.of(AssessmentRulebase.MERITS.getName()),
             user.getProvider().getId().toString(),
             application.getCaseReferenceNumber());
 
@@ -651,7 +654,7 @@ public class ApplicationService {
         application.getCaseReferenceNumber(),
         application.getProviderDetails().getProvider().getId());
 
-    return new ApplicationSummaryBuilder(application.getAuditTrail())
+    return new ApplicationSectionsBuilder(application.getAuditTrail())
         .caseReferenceNumber(
             application.getCaseReferenceNumber())
         .applicationType(
@@ -1253,7 +1256,7 @@ public class ApplicationService {
    * @return a Mono containing an ApplicationMappingContext for the CaseDetail.
    */
   protected ApplicationMappingContext buildApplicationMappingContext(final CaseDetail soaCase) {
-    uk.gov.laa.ccms.soa.gateway.model.ApplicationDetails soaApplicationDetails =
+    final SubmittedApplicationDetails soaApplicationDetails =
         soaCase.getApplicationDetails();
 
     final uk.gov.laa.ccms.soa.gateway.model.ProviderDetail soaProvider =

@@ -20,13 +20,13 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 
-class ApplicationBuilderTest {
+class InitialApplicationBuilderTest {
 
-  private ApplicationBuilder builder;
+  private InitialApplicationBuilder builder;
 
   @BeforeEach
   void setUp() {
-    builder = new ApplicationBuilder();
+    builder = new InitialApplicationBuilder();
   }
 
   @Test

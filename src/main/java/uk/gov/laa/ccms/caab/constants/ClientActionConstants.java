@@ -11,4 +11,5 @@ public class ClientActionConstants {
 
   public static final String ACTION_CREATE = "create";
   public static final String ACTION_EDIT = "edit";
+  public static final String ACTION_VIEW = "view";
 }

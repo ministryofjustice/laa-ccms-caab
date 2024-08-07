@@ -1,15 +1,15 @@
-package uk.gov.laa.ccms.caab.model.summary;
+package uk.gov.laa.ccms.caab.model.sections;
 
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
 /**
- * Represents the Summary display values for a proceeding.
+ * Represents the Section display values for a proceeding.
  */
 @Data
 @Builder
-public class ProceedingSummaryDisplay {
+public class ProceedingSectionDisplay {
 
   /**
    * The type of proceeding.
@@ -39,7 +39,6 @@ public class ProceedingSummaryDisplay {
   /**
    * The list of scope limitations.
    */
-  private List<ScopeLimitationSummaryDisplay> scopeLimitations;
-  
+  private List<ScopeLimitationSectionDisplay> scopeLimitations;
 
 }

@@ -4,9 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static uk.gov.laa.ccms.caab.builders.ApplicationSummaryBuilder.STATUS_COMPLETE;
-import static uk.gov.laa.ccms.caab.builders.ApplicationSummaryBuilder.STATUS_NOT_AVAILABLE;
-import static uk.gov.laa.ccms.caab.builders.ApplicationSummaryBuilder.STATUS_STARTED;
+import static uk.gov.laa.ccms.caab.builders.ApplicationSectionsBuilder.STATUS_COMPLETE;
+import static uk.gov.laa.ccms.caab.builders.ApplicationSectionsBuilder.STATUS_NOT_AVAILABLE;
+import static uk.gov.laa.ccms.caab.builders.ApplicationSectionsBuilder.STATUS_STARTED;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING_DISPLAY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
@@ -34,14 +34,14 @@ import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
-import uk.gov.laa.ccms.caab.model.summary.ApplicationSummaryDisplay;
-import uk.gov.laa.ccms.caab.model.summary.OpponentSummaryDisplay;
-import uk.gov.laa.ccms.caab.model.summary.ProceedingSummaryDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.OpponentSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ProceedingSectionDisplay;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 
-class ApplicationSummaryBuilderTest {
+class ApplicationSectionsBuilderTest {
 
-  private ApplicationSummaryBuilder builder;
+  private ApplicationSectionsBuilder builder;
 
   @BeforeEach
   void setUp() {
@@ -51,13 +51,13 @@ class ApplicationSummaryBuilderTest {
     auditDetail.setLastSavedBy("TestUser");
 
     // Create a new builder for each test
-    builder = new ApplicationSummaryBuilder(auditDetail);
+    builder = new ApplicationSectionsBuilder(auditDetail);
   }
 
   @Test
   void testCaseReferenceNumber() {
     builder.caseReferenceNumber("REF123");
-    ApplicationSummaryDisplay result = builder.build();
+    ApplicationSectionDisplay result = builder.build();
     assertEquals("REF123", result.getCaseReferenceNumber());
   }
 
@@ -72,7 +72,7 @@ class ApplicationSummaryBuilderTest {
 
     builder.applicationType(applicationType);
 
-    ApplicationSummaryDisplay result = builder.build();
+    ApplicationSectionDisplay result = builder.build();
 
     assertNotNull(result.getApplicationType());
     assertEquals(applicationType.getDisplayValue(), result.getApplicationType().getDescription());
@@ -90,7 +90,7 @@ class ApplicationSummaryBuilderTest {
 
     builder.applicationType(applicationType);
 
-    ApplicationSummaryDisplay result = builder.build();
+    ApplicationSectionDisplay result = builder.build();
 
     assertNotNull(result.getApplicationType());
     assertEquals(applicationType.getDisplayValue(), result.getApplicationType().getDescription());
@@ -109,7 +109,7 @@ class ApplicationSummaryBuilderTest {
     String correspondenceMethod = "Send to provider";
 
     builder.generalDetails(applicationStatus, categoryOfLaw, correspondenceMethod);
-    ApplicationSummaryDisplay result = builder.build();
+    ApplicationSectionDisplay result = builder.build();
 
     assertEquals(applicationStatus.getDisplayValue(), result.getGeneralDetails().getApplicationStatus());
     assertEquals(categoryOfLaw.getDisplayValue(), result.getGeneralDetails().getCategoryOfLaw());
@@ -124,7 +124,7 @@ class ApplicationSummaryBuilderTest {
     StringDisplayValue categoryOfLaw = new StringDisplayValue().id("1=2").displayValue("cat");
 
     builder.generalDetails(applicationStatus, categoryOfLaw, null);
-    ApplicationSummaryDisplay result = builder.build();
+    ApplicationSectionDisplay result = builder.build();
 
     assertEquals(STATUS_STARTED, result.getGeneralDetails().getStatus());
   }
@@ -137,7 +137,7 @@ class ApplicationSummaryBuilderTest {
         .reference("ref");
 
     builder.client(client);
-    ApplicationSummaryDisplay result = builder.build();
+    ApplicationSectionDisplay result = builder.build();
 
     assertEquals("first second", result.getClient().getClientFullName());
     assertEquals(client.getReference(), result.getClient().getClientReferenceNumber());
@@ -148,7 +148,7 @@ class ApplicationSummaryBuilderTest {
     ApplicationProviderDetails applicationProviderDetails = buildApplicationProviderDetails(1);
 
     builder.provider(applicationProviderDetails);
-    ApplicationSummaryDisplay result = builder.build();
+    ApplicationSectionDisplay result = builder.build();
 
     assertEquals(applicationProviderDetails.getProvider().getDisplayValue(), result.getProvider().getProviderName());
     assertEquals(applicationProviderDetails.getFeeEarner().getDisplayValue(), result.getProvider().getFeeEarner());
@@ -165,7 +165,7 @@ class ApplicationSummaryBuilderTest {
     ApplicationProviderDetails applicationProviderDetails = new ApplicationProviderDetails();
 
     builder.provider(applicationProviderDetails);
-    ApplicationSummaryDisplay result = builder.build();
+    ApplicationSectionDisplay result = builder.build();
 
     assertEquals(STATUS_STARTED, result.getProvider().getStatus());
   }
@@ -217,14 +217,14 @@ class ApplicationSummaryBuilderTest {
         List.of(priorAuthority),
         costStructure);
 
-    ApplicationSummaryDisplay result = builder.build();
+    ApplicationSectionDisplay result = builder.build();
 
     assertEquals(costStructure.getGrantedCostLimitation(), result.getProceedingsAndCosts().getGrantedCostLimitation());
     assertEquals(costStructure.getRequestedCostLimitation(), result.getProceedingsAndCosts().getRequestedCostLimitation());
     assertNotNull(result.getProceedingsAndCosts().getProceedings());
     assertEquals(3, result.getProceedingsAndCosts().getProceedings().size());
 
-    ProceedingSummaryDisplay procSummary = result.getProceedingsAndCosts().getProceedings().getFirst();
+    ProceedingSectionDisplay procSummary = result.getProceedingsAndCosts().getProceedings().getFirst();
     assertEquals(proceeding1.getClientInvolvement().getDisplayValue(), procSummary.getClientInvolvement());
     assertEquals(proceeding1.getLevelOfService().getDisplayValue(), procSummary.getLevelOfService());
     assertEquals(proceeding1.getMatterType().getDisplayValue(), procSummary.getMatterType());
@@ -265,7 +265,7 @@ class ApplicationSummaryBuilderTest {
         List.of(priorAuthority),
         costStructure);
 
-    ApplicationSummaryDisplay result = builder.build();
+    ApplicationSectionDisplay result = builder.build();
 
     assertEquals(STATUS_STARTED, result.getProceedingsAndCosts().getStatus());
   }
@@ -297,18 +297,18 @@ class ApplicationSummaryBuilderTest {
         List.of(orgRelationshipToCase),
         Collections.emptyList(),
         Collections.emptyList());
-    ApplicationSummaryDisplay result = builder.build();
+    ApplicationSectionDisplay result = builder.build();
 
     assertNotNull(result.getOpponentsAndOtherParties());
     assertNotNull(result.getOpponentsAndOtherParties().getOpponents());
     assertEquals(2, result.getOpponentsAndOtherParties().getOpponents().size());
 
-    OpponentSummaryDisplay opponentSummaryDisplay =
+    OpponentSectionDisplay opponentSectionDisplay =
         result.getOpponentsAndOtherParties().getOpponents().getFirst();
-    assertEquals(opponent1.getOrganisationName(), opponentSummaryDisplay.getPartyName());
-    assertEquals(opponent1.getType(), opponentSummaryDisplay.getPartyType());
-    assertEquals(orgRelationshipToCase.getDescription(), opponentSummaryDisplay.getRelationshipToCase());
-    assertEquals(opponent1.getRelationshipToClient(), opponentSummaryDisplay.getRelationshipToClient());
+    assertEquals(opponent1.getOrganisationName(), opponentSectionDisplay.getPartyName());
+    assertEquals(opponent1.getType(), opponentSectionDisplay.getPartyType());
+    assertEquals(orgRelationshipToCase.getDescription(), opponentSectionDisplay.getRelationshipToCase());
+    assertEquals(opponent1.getRelationshipToClient(), opponentSectionDisplay.getRelationshipToClient());
 
     assertEquals(STATUS_COMPLETE, result.getOpponentsAndOtherParties().getStatus());
   }
@@ -325,7 +325,7 @@ class ApplicationSummaryBuilderTest {
       final boolean expectedEnabled) {
 
     builder.documentUpload(evidenceRequired, allEvidenceProvided);
-    ApplicationSummaryDisplay result = builder.build();
+    ApplicationSectionDisplay result = builder.build();
 
     assertNotNull(result.getDocumentUpload());
     assertEquals(expectedStatus, result.getDocumentUpload().getStatus());

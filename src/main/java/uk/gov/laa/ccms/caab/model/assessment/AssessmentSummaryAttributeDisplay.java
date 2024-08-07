@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.model;
+package uk.gov.laa.ccms.caab.model.assessment;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

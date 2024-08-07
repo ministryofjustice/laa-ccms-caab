@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application;
+package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -26,9 +26,8 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.controller.application.section.ApplicationSectionsController;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.model.summary.ApplicationSummaryDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -57,8 +56,8 @@ class ApplicationSectionsControllerTest {
   public void testGetApplicationTypeAddsApplicationTypesToModel() throws Exception {
     final String id = "123";
 
-    final ApplicationSummaryDisplay applicationSummaryDisplay =
-        ApplicationSummaryDisplay.builder()
+    final ApplicationSectionDisplay applicationSectionDisplay =
+        ApplicationSectionDisplay.builder()
             .build();
 
     final UserDetail user = new UserDetail();
@@ -68,8 +67,8 @@ class ApplicationSectionsControllerTest {
     final ApplicationDetail application = buildApplicationDetail(1, true, new Date());
 
     when(applicationService.getApplication(anyString())).thenReturn(Mono.just(application));
-    when(applicationService.getApplicationSummary(any(ApplicationDetail.class), any(UserDetail.class)))
-        .thenReturn(applicationSummaryDisplay);
+    when(applicationService.getApplicationSections(any(ApplicationDetail.class), any(UserDetail.class)))
+        .thenReturn(applicationSectionDisplay);
 
     this.mockMvc.perform(get("/application/sections")
             .sessionAttr("applicationId", id)
@@ -78,9 +77,9 @@ class ApplicationSectionsControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/summary/summary-task-page"))
         .andExpect(model().attributeExists("activeCase"))
-        .andExpect(model().attribute("summary", applicationSummaryDisplay));
+        .andExpect(model().attribute("summary", applicationSectionDisplay));
 
-    verify(applicationService, times(1)).getApplicationSummary(
+    verify(applicationService, times(1)).getApplicationSections(
         any(ApplicationDetail.class), any(UserDetail.class));
   }
 

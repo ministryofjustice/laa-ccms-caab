@@ -75,7 +75,6 @@ import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ApplicationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.Award;
 import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
@@ -87,6 +86,7 @@ import uk.gov.laa.ccms.soa.gateway.model.OutcomeDetail;
 import uk.gov.laa.ccms.soa.gateway.model.PriorAuthority;
 import uk.gov.laa.ccms.soa.gateway.model.Recovery;
 import uk.gov.laa.ccms.soa.gateway.model.ScopeLimitation;
+import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.TimeRelatedAward;
 
 public class ApplicationMapperTest {
@@ -216,7 +216,7 @@ public class ApplicationMapperTest {
             buildCaseDetail(APP_TYPE_EMERGENCY),
             false,
             null);
-    ApplicationDetails soaApplicationDetails =
+    SubmittedApplicationDetails soaApplicationDetails =
         applicationMappingContext.getSoaCaseDetail().getApplicationDetails();
 
     AddressDetail result = applicationMapper.toCorrespondenceAddress(applicationMappingContext);

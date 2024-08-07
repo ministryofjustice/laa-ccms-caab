@@ -118,7 +118,7 @@ import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
-import uk.gov.laa.ccms.caab.model.summary.ApplicationSummaryDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -851,8 +851,8 @@ class ApplicationServiceTest {
         eq(applicationType),
         anyList())).thenReturn(false);
 
-    final ApplicationSummaryDisplay summary =
-        applicationService.getApplicationSummary(applicationDetail, user);
+    final ApplicationSectionDisplay summary =
+        applicationService.getApplicationSections(applicationDetail, user);
 
     assertNotNull(summary);
     assertEquals("Complete", summary.getGeneralDetails().getStatus());

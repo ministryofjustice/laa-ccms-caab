@@ -4,7 +4,13 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
+import org.mapstruct.Context;
 import org.mapstruct.Mapper;
+import org.mapstruct.Named;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 
 
 /**
@@ -35,6 +41,49 @@ public interface CommonMapper {
 
   default List<String> toListFromDelimitedString(final String items, final String delimiter) {
     return Arrays.stream(items.split(delimiter)).toList();
+  }
+
+  /**
+   * Convert a code to its display value.
+   *
+   * @param code - the code
+   * @param lookups - the lookups containing the display values
+   * @return display value for code, or the original code if no match found.
+   */
+  @Named("toDisplayValue")
+  default String toDisplayValue(
+      final String code,
+      @Context final List<CommonLookupValueDetail> lookups) {
+    return lookups.stream()
+        .filter(lookup -> lookup.getCode().equals(code))
+        .findFirst()
+        .map(CommonLookupValueDetail::getDescription)
+        .orElse(code);
+  }
+
+
+  default String toDisplayValue(
+      final String code,
+      final CommonLookupDetail lookup) {
+    return lookup != null && lookup.getContent() != null ?
+        toDisplayValue(code, lookup.getContent()) : null;
+  }
+
+  default String toRelationshipDisplayValue(
+      final String code,
+      @Context final List<RelationshipToCaseLookupValueDetail> lookups) {
+    return lookups.stream()
+        .filter(lookup -> lookup.getCode().equals(code))
+        .findFirst()
+        .map(RelationshipToCaseLookupValueDetail::getDescription)
+        .orElse(code);
+  }
+
+  default String toRelationshipDisplayValue(
+      final String code,
+      final RelationshipToCaseLookupDetail lookup) {
+    return lookup != null && lookup.getContent() != null ?
+        toRelationshipDisplayValue(code, lookup.getContent()) : null;
   }
 
 }

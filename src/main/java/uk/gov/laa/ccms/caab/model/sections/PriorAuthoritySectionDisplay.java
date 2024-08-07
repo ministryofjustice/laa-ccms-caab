@@ -1,15 +1,15 @@
-package uk.gov.laa.ccms.caab.model.summary;
+package uk.gov.laa.ccms.caab.model.sections;
 
 import java.math.BigDecimal;
 import lombok.Builder;
 import lombok.Data;
 
 /**
- * Represents the display values for a Prior Authority.
+ * Represents the Section display values for a Prior Authority.
  */
 @Data
 @Builder
-public class PriorAuthoritySummaryDisplay {
+public class PriorAuthoritySectionDisplay {
 
   /**
    * The description of the prior authority.

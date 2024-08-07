@@ -20,30 +20,30 @@ import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
-import uk.gov.laa.ccms.caab.model.summary.ApplicationSummaryDisplay;
-import uk.gov.laa.ccms.caab.model.summary.ApplicationSummaryStatusDisplay;
-import uk.gov.laa.ccms.caab.model.summary.ApplicationTypeSummaryDisplay;
-import uk.gov.laa.ccms.caab.model.summary.ClientSummaryDisplay;
-import uk.gov.laa.ccms.caab.model.summary.GeneralDetailsSummaryDisplay;
-import uk.gov.laa.ccms.caab.model.summary.OpponentSummaryDisplay;
-import uk.gov.laa.ccms.caab.model.summary.OpponentsSummaryDisplay;
-import uk.gov.laa.ccms.caab.model.summary.PriorAuthoritySummaryDisplay;
-import uk.gov.laa.ccms.caab.model.summary.ProceedingSummaryDisplay;
-import uk.gov.laa.ccms.caab.model.summary.ProceedingsAndCostsSummaryDisplay;
-import uk.gov.laa.ccms.caab.model.summary.ProviderSummaryDisplay;
-import uk.gov.laa.ccms.caab.model.summary.ScopeLimitationSummaryDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionStatusDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ApplicationTypeSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ClientSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.GeneralDetailsSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.OpponentSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.OpponentsSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.PriorAuthoritySectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ProceedingSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ProceedingsAndCostsSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ProviderSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ScopeLimitationSectionDisplay;
 import uk.gov.laa.ccms.caab.util.DisplayUtil;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 
 /**
- * Helper class for constructing an {@link ApplicationSummaryDisplay}
+ * Helper class for constructing an {@link uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay}
  * instance using a builder pattern.
  */
-public class ApplicationSummaryBuilder {
+public class ApplicationSectionsBuilder {
 
-  private final ApplicationSummaryDisplay applicationSummary;
+  private final ApplicationSectionDisplay applicationSections;
 
   protected static final String STATUS_COMPLETE = "Complete";
   protected static final String STATUS_NOT_STARTED = "Not started";
@@ -56,24 +56,24 @@ public class ApplicationSummaryBuilder {
    *
    * @param auditDetail used to populate multiple summary status displays
    */
-  public ApplicationSummaryBuilder(final AuditDetail auditDetail) {
-    this.applicationSummary = ApplicationSummaryDisplay.builder()
-        .applicationType(ApplicationTypeSummaryDisplay.builder()
+  public ApplicationSectionsBuilder(final AuditDetail auditDetail) {
+    this.applicationSections = ApplicationSectionDisplay.builder()
+        .applicationType(ApplicationTypeSectionDisplay.builder()
             .lastSavedBy(auditDetail.getLastSavedBy())
             .lastSaved(auditDetail.getLastSaved())
             .build())
-        .provider(ProviderSummaryDisplay.builder()
+        .provider(ProviderSectionDisplay.builder()
             .lastSavedBy(auditDetail.getLastSavedBy())
             .lastSaved(auditDetail.getLastSaved())
             .build())
-        .generalDetails(GeneralDetailsSummaryDisplay.builder()
+        .generalDetails(GeneralDetailsSectionDisplay.builder()
             .lastSavedBy(auditDetail.getLastSavedBy())
             .lastSaved(auditDetail.getLastSaved())
             .build())
-        .client(ClientSummaryDisplay.builder()
+        .client(ClientSectionDisplay.builder()
             .status(STATUS_COMPLETE)
             .build())
-        .proceedingsAndCosts(ProceedingsAndCostsSummaryDisplay.builder()
+        .proceedingsAndCosts(ProceedingsAndCostsSectionDisplay.builder()
             .lastSavedBy(auditDetail.getLastSavedBy())
             .lastSaved(auditDetail.getLastSaved())
             .build())
@@ -86,8 +86,8 @@ public class ApplicationSummaryBuilder {
    * @param caseReferenceNumber the applications case reference number.
    * @return the builder with amended case reference number details.
    */
-  public ApplicationSummaryBuilder caseReferenceNumber(final String caseReferenceNumber) {
-    applicationSummary.setCaseReferenceNumber(caseReferenceNumber);
+  public ApplicationSectionsBuilder caseReferenceNumber(final String caseReferenceNumber) {
+    applicationSections.setCaseReferenceNumber(caseReferenceNumber);
     return this;
   }
 
@@ -97,12 +97,12 @@ public class ApplicationSummaryBuilder {
    * @param correspondenceMethod the chosen correspondence method.
    * @return the builder with amended general details.
    */
-  public ApplicationSummaryBuilder generalDetails(
+  public ApplicationSectionsBuilder generalDetails(
       final StringDisplayValue applicationStatus,
       final StringDisplayValue categoryOfLaw,
       final String correspondenceMethod) {
 
-    GeneralDetailsSummaryDisplay generalDetails = applicationSummary.getGeneralDetails();
+    final GeneralDetailsSectionDisplay generalDetails = applicationSections.getGeneralDetails();
     generalDetails.setApplicationStatus(DisplayUtil.getDisplayValue(applicationStatus));
     generalDetails.setCategoryOfLaw(DisplayUtil.getDisplayValue(categoryOfLaw));
     generalDetails.setCorrespondenceMethod(correspondenceMethod);
@@ -122,11 +122,11 @@ public class ApplicationSummaryBuilder {
    * @param client the application's client
    * @return the builder with amended client summary.
    */
-  public ApplicationSummaryBuilder client(
+  public ApplicationSectionsBuilder client(
       final ClientDetail client) {
-    applicationSummary.getClient().setClientFullName(
+    applicationSections.getClient().setClientFullName(
         DisplayUtil.getFullName(client.getFirstName(), client.getSurname()));
-    applicationSummary.getClient().setClientReferenceNumber(client.getReference());
+    applicationSections.getClient().setClientReferenceNumber(client.getReference());
     return this;
   }
 
@@ -136,21 +136,21 @@ public class ApplicationSummaryBuilder {
    * @param applicationType the application's type.
    * @return the builder with amended application type details.
    */
-  public ApplicationSummaryBuilder applicationType(final ApplicationType applicationType) {
-    ApplicationTypeSummaryDisplay applicationTypeSummary = applicationSummary.getApplicationType();
+  public ApplicationSectionsBuilder applicationType(final ApplicationType applicationType) {
+    final ApplicationTypeSectionDisplay applicationTypeSection = applicationSections.getApplicationType();
 
     if (applicationType != null) {
-      applicationTypeSummary.setDescription(applicationType.getDisplayValue());
+      applicationTypeSection.setDescription(applicationType.getDisplayValue());
 
-      DevolvedPowersDetail devolvedPowers = Optional.ofNullable(applicationType.getDevolvedPowers())
+      final DevolvedPowersDetail devolvedPowers = Optional.ofNullable(applicationType.getDevolvedPowers())
           .orElse(new DevolvedPowersDetail());
 
-      applicationTypeSummary.setDevolvedPowersDate(devolvedPowers.getDateUsed());
-      applicationTypeSummary.setDevolvedPowersUsed(devolvedPowers.getUsed());
+      applicationTypeSection.setDevolvedPowersDate(devolvedPowers.getDateUsed());
+      applicationTypeSection.setDevolvedPowersUsed(devolvedPowers.getUsed());
 
       //Not equal to ECF set enabled true
       if (!APP_TYPE_EXCEPTIONAL_CASE_FUNDING.equals(applicationType.getId())) {
-        applicationTypeSummary.setEnabled(true);
+        applicationTypeSection.setEnabled(true);
       }
     }
 
@@ -163,31 +163,31 @@ public class ApplicationSummaryBuilder {
    * @param provider the provider's details.
    * @return the builder with amended provider summary.
    */
-  public ApplicationSummaryBuilder provider(
+  public ApplicationSectionsBuilder provider(
       final ApplicationProviderDetails provider) {
-    ProviderSummaryDisplay providerSummary = applicationSummary.getProvider();
+    final ProviderSectionDisplay providerSection = applicationSections.getProvider();
 
     if (provider != null) {
-      providerSummary.setProviderName(DisplayUtil.getDisplayValue(provider.getProvider()));
+      providerSection.setProviderName(DisplayUtil.getDisplayValue(provider.getProvider()));
 
-      providerSummary.setProviderCaseReferenceNumber(provider.getProviderCaseReference());
-      providerSummary.setProviderContactName(
+      providerSection.setProviderCaseReferenceNumber(provider.getProviderCaseReference());
+      providerSection.setProviderContactName(
           DisplayUtil.getDisplayValue(provider.getProviderContact()));
-      providerSummary.setOfficeName(
+      providerSection.setOfficeName(
           DisplayUtil.getDisplayValue(provider.getOffice()));
-      providerSummary.setFeeEarner(
+      providerSection.setFeeEarner(
           DisplayUtil.getDisplayValue(provider.getFeeEarner()));
-      providerSummary.setSupervisorName(
+      providerSection.setSupervisorName(
           DisplayUtil.getDisplayValue(provider.getSupervisor()));
 
       if (provider.getProviderContact() != null
           && StringUtils.hasText(DisplayUtil.getDisplayValue(provider.getProviderContact()))) {
-        providerSummary.setStatus(STATUS_COMPLETE);
+        providerSection.setStatus(STATUS_COMPLETE);
       } else {
-        providerSummary.setStatus(STATUS_STARTED);
+        providerSection.setStatus(STATUS_STARTED);
       }
     } else {
-      providerSummary.setStatus(STATUS_NOT_STARTED);
+      providerSection.setStatus(STATUS_NOT_STARTED);
     }
 
     return this;
@@ -201,22 +201,22 @@ public class ApplicationSummaryBuilder {
    * @param costs the cost structure information.
    * @return the builder with amended proceedings, prior authorities, and costs details.
    */
-  public ApplicationSummaryBuilder proceedingsPriorAuthsAndCosts(
+  public ApplicationSectionsBuilder proceedingsPriorAuthsAndCosts(
       final List<ProceedingDetail> proceedings,
       final List<PriorAuthorityDetail> priorAuthorities,
       final CostStructureDetail costs) {
-    ProceedingsAndCostsSummaryDisplay proceedingsSummary =
-        applicationSummary.getProceedingsAndCosts();
-    proceedingsSummary.setProceedings(new ArrayList<>());
+    final ProceedingsAndCostsSectionDisplay proceedingsSection =
+        applicationSections.getProceedingsAndCosts();
+    proceedingsSection.setProceedings(new ArrayList<>());
 
     String status = STATUS_NOT_STARTED;
     if (proceedings != null && !proceedings.isEmpty()) {
       for (final ProceedingDetail proceeding : proceedings) {
-        proceedingsSummary.getProceedings().add(
+        proceedingsSection.getProceedings().add(
             buildProceedingSummary(proceeding));
 
         checkAndSetLastSaved(
-            proceedingsSummary,
+            proceedingsSection,
             proceeding.getAuditTrail());
       }
 
@@ -231,24 +231,24 @@ public class ApplicationSummaryBuilder {
     } else if (priorAuthorities != null && !priorAuthorities.isEmpty()) {
       status = STATUS_STARTED;
     }
-    proceedingsSummary.setStatus(status);
+    proceedingsSection.setStatus(status);
 
     if (costs != null) {
-      proceedingsSummary.setGrantedCostLimitation(costs.getGrantedCostLimitation());
-      proceedingsSummary.setRequestedCostLimitation(costs.getRequestedCostLimitation());
+      proceedingsSection.setGrantedCostLimitation(costs.getGrantedCostLimitation());
+      proceedingsSection.setRequestedCostLimitation(costs.getRequestedCostLimitation());
 
       checkAndSetLastSaved(
-          proceedingsSummary,
+          proceedingsSection,
           costs.getAuditTrail());
     }
 
     for (final PriorAuthorityDetail priorAuthority : Optional.ofNullable(priorAuthorities)
         .orElse(Collections.emptyList())) {
-      applicationSummary.getPriorAuthorities().add(
+      applicationSections.getPriorAuthorities().add(
           buildPriorAuthoritySummary(priorAuthority));
 
       checkAndSetLastSaved(
-          proceedingsSummary,
+          proceedingsSection,
           priorAuthority.getAuditTrail());
     }
 
@@ -265,30 +265,30 @@ public class ApplicationSummaryBuilder {
    * @param personRelationships the list of person relationships.
    * @return the builder with amended opponents and other parties details.
    */
-  public ApplicationSummaryBuilder opponentsAndOtherParties(
+  public ApplicationSectionsBuilder opponentsAndOtherParties(
       final List<OpponentDetail> opponents,
       final List<CommonLookupValueDetail> contactTitles,
       final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
       final List<RelationshipToCaseLookupValueDetail> personRelationships,
       final List<CommonLookupValueDetail> relationshipsToClient) {
 
-    OpponentsSummaryDisplay opponentsSummary = applicationSummary.getOpponentsAndOtherParties();
+    OpponentsSectionDisplay opponentsSection = applicationSections.getOpponentsAndOtherParties();
 
     if (opponents.isEmpty()) {
-      opponentsSummary.setStatus(STATUS_NOT_STARTED);
+      opponentsSection.setStatus(STATUS_NOT_STARTED);
     } else {
       final boolean opponentCreated = opponents.stream()
           .anyMatch(opponent -> isOpponentCreated(
               opponent,
               organisationRelationships,
               personRelationships));
-      opponentsSummary.setStatus(
+      opponentsSection.setStatus(
           opponentCreated ? STATUS_COMPLETE : STATUS_STARTED);
     }
 
-    opponentsSummary.setOpponents(new ArrayList<>());
+    opponentsSection.setOpponents(new ArrayList<>());
     for (final OpponentDetail opponent : opponents) {
-      opponentsSummary.getOpponents().add(buildOpponentSummary(
+      opponentsSection.getOpponents().add(buildOpponentSummary(
           opponent,
           contactTitles,
           organisationRelationships,
@@ -296,7 +296,7 @@ public class ApplicationSummaryBuilder {
           relationshipsToClient));
 
       checkAndSetLastSaved(
-          opponentsSummary,
+          opponentsSection,
           opponent.getAuditTrail());
     }
 
@@ -313,7 +313,7 @@ public class ApplicationSummaryBuilder {
    * @param personRelationships       the list of person relationships.
    * @return the builder with amended assessment details.
    */
-  public ApplicationSummaryBuilder assessments(
+  public ApplicationSectionsBuilder assessments(
       final ApplicationDetail application,
       final AssessmentDetail meansAssessment,
       final AssessmentDetail meritsAssessment,
@@ -333,7 +333,7 @@ public class ApplicationSummaryBuilder {
         application,
         meansAssessment,
         application.getMeansAssessmentStatus(),
-        applicationSummary.getMeansAssessment(),
+        applicationSections.getMeansAssessment(),
         opponentCreated);
 
     //merits
@@ -341,7 +341,7 @@ public class ApplicationSummaryBuilder {
         application,
         meritsAssessment,
         application.getMeritsAssessmentStatus(),
-        applicationSummary.getMeritsAssessment(),
+        applicationSections.getMeritsAssessment(),
         opponentCreated);
 
     return this;
@@ -354,14 +354,14 @@ public class ApplicationSummaryBuilder {
    * @param allEvidenceProvided       flag to indicate that all evidence has been provided.
    * @return the builder with amended document upload details.
    */
-  public ApplicationSummaryBuilder documentUpload(
+  public ApplicationSectionsBuilder documentUpload(
       final boolean evidenceRequired,
       final boolean allEvidenceProvided) {
 
-    applicationSummary.getDocumentUpload().setStatus(evidenceRequired
+    applicationSections.getDocumentUpload().setStatus(evidenceRequired
         ? (allEvidenceProvided ? STATUS_COMPLETE : STATUS_STARTED) : STATUS_NOT_AVAILABLE);
 
-    applicationSummary.getDocumentUpload().setEnabled(evidenceRequired);
+    applicationSections.getDocumentUpload().setEnabled(evidenceRequired);
 
     return this;
   }
@@ -371,12 +371,12 @@ public class ApplicationSummaryBuilder {
    *
    * @return The constructed ApplicationSummaryDisplay.
    */
-  public ApplicationSummaryDisplay build() {
-    return applicationSummary;
+  public ApplicationSectionDisplay build() {
+    return applicationSections;
   }
 
   private void checkAndSetLastSaved(
-      final ApplicationSummaryStatusDisplay statusDisplay,
+      final ApplicationSectionStatusDisplay statusDisplay,
       final AuditDetail newInfo) {
     if ((newInfo.getLastSaved() != null
         && statusDisplay.getLastSaved() != null
@@ -406,7 +406,7 @@ public class ApplicationSummaryBuilder {
       final ApplicationDetail application,
       final AssessmentDetail assessment,
       final String assessmentStatus,
-      final ApplicationSummaryStatusDisplay assessmentStatusDisplay,
+      final ApplicationSectionStatusDisplay assessmentStatusDisplay,
       final boolean opponentCreated) {
     boolean assessmentsEnabled = true;
 
@@ -430,9 +430,9 @@ public class ApplicationSummaryBuilder {
     assessmentStatusDisplay.setEnabled(assessmentsEnabled);
   }
 
-  private ProceedingSummaryDisplay buildProceedingSummary(
+  private ProceedingSectionDisplay buildProceedingSummary(
       final ProceedingDetail proceeding) {
-    return ProceedingSummaryDisplay.builder()
+    return ProceedingSectionDisplay.builder()
         .clientInvolvement(DisplayUtil.getDisplayValue(proceeding.getClientInvolvement()))
         .levelOfService(DisplayUtil.getDisplayValue(proceeding.getLevelOfService()))
         .matterType(DisplayUtil.getDisplayValue(proceeding.getMatterType()))
@@ -445,21 +445,21 @@ public class ApplicationSummaryBuilder {
         .build();
   }
 
-  private ScopeLimitationSummaryDisplay buildScopeLimitationSummary(
+  private ScopeLimitationSectionDisplay buildScopeLimitationSummary(
       final ScopeLimitationDetail scopeLimitationDetail) {
-    return ScopeLimitationSummaryDisplay.builder()
+    return ScopeLimitationSectionDisplay.builder()
         .scopeLimitation(DisplayUtil.getDisplayValue(scopeLimitationDetail.getScopeLimitation()))
         .wording(scopeLimitationDetail.getScopeLimitationWording())
         .build();
   }
 
-  private OpponentSummaryDisplay buildOpponentSummary(final OpponentDetail opponentDetail,
-      final List<CommonLookupValueDetail> contactTitles,
-      final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
-      final List<RelationshipToCaseLookupValueDetail> personRelationships,
-      final List<CommonLookupValueDetail> relationshipsToClient) {
+  private OpponentSectionDisplay buildOpponentSummary(final OpponentDetail opponentDetail,
+                                                      final List<CommonLookupValueDetail> contactTitles,
+                                                      final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
+                                                      final List<RelationshipToCaseLookupValueDetail> personRelationships,
+                                                      final List<CommonLookupValueDetail> relationshipsToClient) {
 
-    return OpponentSummaryDisplay.builder()
+    return OpponentSectionDisplay.builder()
         .partyName(OpponentUtil.getPartyName(opponentDetail, contactTitles))
         .partyType(opponentDetail.getType())
         .relationshipToCase(
@@ -474,10 +474,10 @@ public class ApplicationSummaryBuilder {
         .build();
   }
 
-  private PriorAuthoritySummaryDisplay buildPriorAuthoritySummary(
+  private PriorAuthoritySectionDisplay buildPriorAuthoritySummary(
       final PriorAuthorityDetail priorAuthorityDetail) {
 
-    return PriorAuthoritySummaryDisplay.builder()
+    return PriorAuthoritySectionDisplay.builder()
         .description(priorAuthorityDetail.getSummary())
         .type(DisplayUtil.getDisplayValue(priorAuthorityDetail.getType()))
         .amountRequested(priorAuthorityDetail.getAmountRequested())

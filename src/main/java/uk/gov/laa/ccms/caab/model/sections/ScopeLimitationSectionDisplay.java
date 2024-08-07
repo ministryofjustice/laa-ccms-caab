@@ -1,14 +1,14 @@
-package uk.gov.laa.ccms.caab.model.summary;
+package uk.gov.laa.ccms.caab.model.sections;
 
 import lombok.Builder;
 import lombok.Data;
 
 /**
- * Represents the Summary display values for a Scope Limitation.
+ * Represents the Section display values for a Scope Limitation.
  */
 @Data
 @Builder
-public class ScopeLimitationSummaryDisplay {
+public class ScopeLimitationSectionDisplay {
 
   /**
    * The scope limitation name.

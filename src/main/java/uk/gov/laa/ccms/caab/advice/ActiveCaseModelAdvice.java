@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import uk.gov.laa.ccms.caab.controller.AssessmentController;
 import uk.gov.laa.ccms.caab.controller.application.section.ApplicationSectionsController;
+import uk.gov.laa.ccms.caab.controller.application.section.ApplicationSubmissionController;
 import uk.gov.laa.ccms.caab.controller.application.section.ApplicationTypeSectionController;
 import uk.gov.laa.ccms.caab.controller.application.section.EditClientAddressDetailsController;
 import uk.gov.laa.ccms.caab.controller.application.section.EditClientAddressDetailsSearchController;
@@ -29,6 +30,7 @@ import uk.gov.laa.ccms.caab.controller.application.section.ProviderDetailsSectio
  */
 @ControllerAdvice(assignableTypes = {
     ApplicationSectionsController.class,
+    ApplicationSubmissionController.class,
     ApplicationTypeSectionController.class,
     ProviderDetailsSectionController.class,
     EditClientAddressDetailsController.class,

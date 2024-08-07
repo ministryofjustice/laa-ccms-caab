@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.model;
+package uk.gov.laa.ccms.caab.model.assessment;
 
 import java.util.ArrayList;
 import java.util.List;

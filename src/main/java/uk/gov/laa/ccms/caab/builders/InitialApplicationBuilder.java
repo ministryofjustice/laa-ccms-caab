@@ -26,15 +26,15 @@ import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 /**
  * Helper class for constructing an {@link ApplicationDetail} instance using a builder pattern.
  */
-public class ApplicationBuilder {
+public class InitialApplicationBuilder {
 
   private final ApplicationDetail application;
 
-  public ApplicationBuilder() {
+  public InitialApplicationBuilder() {
     this.application = new ApplicationDetail().providerDetails(new ApplicationProviderDetails());
   }
 
-  public ApplicationBuilder(ApplicationDetail application) {
+  public InitialApplicationBuilder(final ApplicationDetail application) {
     this.application = application;
   }
 
@@ -44,7 +44,7 @@ public class ApplicationBuilder {
    * @param applicationType The application type of the application.
    * @return The builder instance.
    */
-  public ApplicationBuilder applicationType(
+  public InitialApplicationBuilder applicationType(
           final ApplicationType applicationType) {
     application.setApplicationType(applicationType);
     return this;
@@ -56,8 +56,8 @@ public class ApplicationBuilder {
    * @param caseReferenceSummary The case reference summary.
    * @return The builder instance.
    */
-  public ApplicationBuilder caseReference(final CaseReferenceSummary caseReferenceSummary) {
-    String caseReference = Optional.ofNullable(caseReferenceSummary.getCaseReferenceNumber())
+  public InitialApplicationBuilder caseReference(final CaseReferenceSummary caseReferenceSummary) {
+    final String caseReference = Optional.ofNullable(caseReferenceSummary.getCaseReferenceNumber())
             .orElseThrow(() -> new RuntimeException(
                     "No case reference number was created, unable to continue"));
     application.setCaseReferenceNumber(caseReference);
@@ -71,8 +71,8 @@ public class ApplicationBuilder {
    * @param user The user detail.
    * @return The builder instance.
    */
-  public ApplicationBuilder provider(final UserDetail user) {
-    IntDisplayValue provider = new IntDisplayValue()
+  public InitialApplicationBuilder provider(final UserDetail user) {
+    final IntDisplayValue provider = new IntDisplayValue()
         .id(user.getProvider().getId())
         .displayValue(user.getProvider().getName());
     application.getProviderDetails().setProvider(provider);
@@ -85,9 +85,9 @@ public class ApplicationBuilder {
    * @param clientInformation The client information.
    * @return The builder instance.
    */
-  public ApplicationBuilder client(
+  public InitialApplicationBuilder client(
       final uk.gov.laa.ccms.soa.gateway.model.ClientDetail clientInformation) {
-    ClientDetail client = new ClientDetail()
+    final ClientDetail client = new ClientDetail()
             .firstName(clientInformation.getDetails().getName().getFirstName())
             .surname(clientInformation.getDetails().getName().getSurname())
             .reference(clientInformation.getClientReferenceNumber());
@@ -102,14 +102,14 @@ public class ApplicationBuilder {
    * @param categoryOfLawLookup The category of law lookup value.
    * @return The builder instance.
    */
-  public ApplicationBuilder categoryOfLaw(
+  public InitialApplicationBuilder categoryOfLaw(
           final String categoryOfLawId,
           final CategoryOfLawLookupValueDetail categoryOfLawLookup) {
-    String categoryOfLawDisplayValue = Optional.ofNullable(categoryOfLawLookup)
+    final String categoryOfLawDisplayValue = Optional.ofNullable(categoryOfLawLookup)
         .map(CategoryOfLawLookupValueDetail::getMatterTypeDescription)
         .orElse(categoryOfLawId);
 
-    StringDisplayValue categoryOfLaw = new StringDisplayValue()
+    final StringDisplayValue categoryOfLaw = new StringDisplayValue()
             .id(categoryOfLawId)
             .displayValue(categoryOfLawDisplayValue);
     application.setCategoryOfLaw(categoryOfLaw);
@@ -123,14 +123,14 @@ public class ApplicationBuilder {
    * @param offices  The list of office details.
    * @return The builder instance.
    */
-  public ApplicationBuilder office(final Integer officeId, final List<BaseOffice> offices) {
-    String officeDisplayValue = offices.stream()
+  public InitialApplicationBuilder office(final Integer officeId, final List<BaseOffice> offices) {
+    final String officeDisplayValue = offices.stream()
             .filter(office -> officeId.equals(office.getId()))
             .map(BaseOffice::getName)
             .findFirst()
             .orElse(null);
 
-    IntDisplayValue office = new IntDisplayValue()
+    final IntDisplayValue office = new IntDisplayValue()
             .id(officeId)
             .displayValue(officeDisplayValue);
     application.getProviderDetails().setOffice(office);
@@ -144,11 +144,11 @@ public class ApplicationBuilder {
    * @param categoryOfLawId the id of the category of law type.
    * @return The builder instance.
    */
-  public ApplicationBuilder contractualDevolvedPower(
+  public InitialApplicationBuilder contractualDevolvedPower(
       final List<ContractDetail> contractDetails,
       final String categoryOfLawId) {
 
-    String contractualDevolvedPower = contractDetails != null ? contractDetails.stream()
+    final String contractualDevolvedPower = contractDetails != null ? contractDetails.stream()
         .filter(contract -> categoryOfLawId
             .equals(contract.getCategoryofLaw()))
         .map(ContractDetail::getContractualDevolvedPowers)
@@ -175,9 +175,9 @@ public class ApplicationBuilder {
    * @param amendmentTypes The amendment type details.
    * @return The builder instance.
    */
-  public ApplicationBuilder larScopeFlag(final AmendmentTypeLookupDetail amendmentTypes) {
+  public InitialApplicationBuilder larScopeFlag(final AmendmentTypeLookupDetail amendmentTypes) {
 
-    String defaultLarScopeFlag = Optional.ofNullable(amendmentTypes.getContent())
+    final String defaultLarScopeFlag = Optional.ofNullable(amendmentTypes.getContent())
             .filter(content -> !content.isEmpty())
             .map(List::getFirst)
             .map(AmendmentTypeLookupValueDetail::getDefaultLarScopeFlag)
@@ -193,8 +193,8 @@ public class ApplicationBuilder {
    *
    * @return The builder instance.
    */
-  public ApplicationBuilder status() {
-    StringDisplayValue status = new StringDisplayValue()
+  public InitialApplicationBuilder status() {
+    final StringDisplayValue status = new StringDisplayValue()
             .id(STATUS_UNSUBMITTED_ACTUAL_VALUE)
             .displayValue(STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY);
     application.setStatus(status);
@@ -206,7 +206,7 @@ public class ApplicationBuilder {
    *
    * @return The builder instance.
    */
-  public ApplicationBuilder costStructure() {
+  public InitialApplicationBuilder costStructure() {
     application.costs(
         new CostStructureDetail()
             .grantedCostLimitation(BigDecimal.valueOf(0))
@@ -222,7 +222,7 @@ public class ApplicationBuilder {
    * @param costStructure - the cost structure.
    * @return The builder instance.
    */
-  public ApplicationBuilder costStructure(final CostStructureDetail costStructure) {
+  public InitialApplicationBuilder costStructure(final CostStructureDetail costStructure) {
     application.costs(costStructure);
     return this;
   }
@@ -232,7 +232,7 @@ public class ApplicationBuilder {
    *
    * @return The builder instance.
    */
-  public ApplicationBuilder correspondenceAddress() {
+  public InitialApplicationBuilder correspondenceAddress() {
     application.correspondenceAddress(
         new AddressDetail()
             .noFixedAbode(false));

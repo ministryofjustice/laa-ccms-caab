@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.model.summary;
+package uk.gov.laa.ccms.caab.model.sections;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,14 +7,14 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
- * Represents the Summary display values for the application summary screen.
+ * Represents the Section display values for the application summary screen.
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class GeneralDetailsSummaryDisplay extends ApplicationSummaryStatusDisplay {
+public class GeneralDetailsSectionDisplay extends ApplicationSectionStatusDisplay {
 
   /**
    * The status of the application.

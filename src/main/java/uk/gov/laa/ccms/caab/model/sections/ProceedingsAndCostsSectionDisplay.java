@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.model.summary;
+package uk.gov.laa.ccms.caab.model.sections;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -9,14 +9,14 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
- * Represents the Summary display values for proceedings and costs.
+ * Represents the Section display values for proceedings and costs.
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProceedingsAndCostsSummaryDisplay extends ApplicationSummaryStatusDisplay {
+public class ProceedingsAndCostsSectionDisplay extends ApplicationSectionStatusDisplay {
 
   /**
    * The requested cost limitation value.
@@ -31,6 +31,6 @@ public class ProceedingsAndCostsSummaryDisplay extends ApplicationSummaryStatusD
   /**
    * The list of proceedings for the application.
    */
-  private List<ProceedingSummaryDisplay> proceedings;
+  private List<ProceedingSectionDisplay> proceedings;
 
 }

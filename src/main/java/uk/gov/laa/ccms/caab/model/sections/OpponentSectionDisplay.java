@@ -1,14 +1,14 @@
-package uk.gov.laa.ccms.caab.model.summary;
+package uk.gov.laa.ccms.caab.model.sections;
 
 import lombok.Builder;
 import lombok.Data;
 
 /**
- * Represents the display data for an opponent.
+ * Represents the Section display data for an opponent.
  */
 @Data
 @Builder
-public class OpponentSummaryDisplay {
+public class OpponentSectionDisplay {
   /** This opponent's name (individual or organisation name). */
   private String partyName;
 
