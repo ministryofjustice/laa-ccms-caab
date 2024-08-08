@@ -211,7 +211,7 @@ public class EditGeneralDetailsSectionController {
 
     model.addAttribute(ADDRESS_SEARCH_RESULTS, addressResultsDisplay);
     model.addAttribute("formAction",
-        "application/summary/correspondence-address/search");
+        "application/sections/correspondence-address/search");
     model.addAttribute("backLink",
         "/application/sections/correspondence-address");
 
@@ -243,7 +243,7 @@ public class EditGeneralDetailsSectionController {
     if (bindingResult.hasErrors()) {
       model.addAttribute(ADDRESS_SEARCH_RESULTS, addressResultsDisplay);
       model.addAttribute("formAction",
-          "application/summary/correspondence-address/search");
+          "application/sections/correspondence-address/search");
       model.addAttribute("backLink",
           "/application/sections/correspondence-address");
       return "application/sections/address-search-results";

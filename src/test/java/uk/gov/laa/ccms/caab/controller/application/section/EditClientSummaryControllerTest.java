@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
@@ -22,8 +23,11 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import java.util.List;
 import java.util.Optional;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,6 +35,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.ui.Model;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
@@ -120,88 +125,86 @@ class EditClientSummaryControllerTest {
   }
 
   @Test
+  @DisplayName("Test get client details summary with form data in session")
   void testGetClientDetailsSummary_withFormDataInSession() throws Exception {
 
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_CONTACT_TITLE),  any())).thenReturn(
-        Mono.just(Optional.of(titleLookupValueDetail)));
-    when(lookupService.getCountry(any())).thenReturn(
-        Mono.just(Optional.of(countryLookupValueDetail)));
-    when(lookupService.getCommonValue(
-        eq(COMMON_VALUE_GENDER), any())).thenReturn(
-        Mono.just(Optional.of(genderLookupValueDetail)));
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_MARITAL_STATUS), any())).thenReturn(
-        Mono.just(Optional.of(maritalStatusLookupValueDetail)));
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_ETHNIC_ORIGIN),any())).thenReturn(
-        Mono.just(Optional.of(ethnicityLookupValueDetail)));
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_DISABILITY),any())).thenReturn(
-        Mono.just(Optional.of(disabilityLookupValueDetail)));
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_METHOD), any())).thenReturn(
-        Mono.just(Optional.of(correspondenceMethodLookupValueDetail)));
+    when(lookupService.getClientLookups(any())).thenReturn(
+        List.of(
+            Pair.of(COMMON_VALUE_CONTACT_TITLE, Mono.just(Optional.of(titleLookupValueDetail))),
+            Pair.of(COMMON_VALUE_GENDER, Mono.just(Optional.of(genderLookupValueDetail))),
+            Pair.of(COMMON_VALUE_MARITAL_STATUS, Mono.just(Optional.of(maritalStatusLookupValueDetail))),
+            Pair.of(COMMON_VALUE_ETHNIC_ORIGIN, Mono.just(Optional.of(ethnicityLookupValueDetail))),
+            Pair.of(COMMON_VALUE_DISABILITY, Mono.just(Optional.of(disabilityLookupValueDetail))),
+            Pair.of(COMMON_VALUE_CORRESPONDENCE_METHOD, Mono.just(Optional.of(correspondenceMethodLookupValueDetail)))
+        )
+    );
 
+    when(lookupService.addCommonLookupsToModel(anyList(), any(Model.class)))
+        .thenReturn(Mono.just(List.of(
+            titleLookupValueDetail,
+            genderLookupValueDetail,
+            maritalStatusLookupValueDetail,
+            ethnicityLookupValueDetail,
+            disabilityLookupValueDetail,
+            correspondenceMethodLookupValueDetail
+        )));
 
     mockMvc.perform(get("/application/sections/client/details/summary")
             .sessionAttr(USER_DETAILS, userDetails)
             .sessionAttr(ACTIVE_CASE, activeCase)
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/client-summary-details"));
+        .andExpect(view().name("application/sections/client-summary-details"));
 
-    verify(lookupService, atLeastOnce()).getCommonValue(eq(COMMON_VALUE_CONTACT_TITLE),  any());
-    verify(lookupService, atLeastOnce()).getCountry(any());
-    verify(lookupService, atLeastOnce()).getCommonValue(
-        eq(COMMON_VALUE_GENDER), any());
-    verify(lookupService, atLeastOnce()).getCommonValue(eq(COMMON_VALUE_MARITAL_STATUS), any());
-    verify(lookupService, atLeastOnce()).getCommonValue(eq(COMMON_VALUE_ETHNIC_ORIGIN),any());
-    verify(lookupService, atLeastOnce()).getCommonValue(eq(COMMON_VALUE_DISABILITY),any());
-    verify(lookupService, atLeastOnce()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_METHOD), any());
-    verify(lookupService, never()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_LANGUAGE) ,any());
+    verify(lookupService, atLeastOnce()).getClientLookups(any());
+    verify(lookupService, atLeastOnce()).addCommonLookupsToModel(anyList(), any(Model.class));
+    verify(lookupService, never()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_LANGUAGE), any());
 
-    verify(clientService, never()).getClient(any(),any(),any());
+    verify(clientService, never()).getClient(any(), any(), any());
     verify(clientDetailsMapper, never()).toClientFlowFormData(any());
   }
 
+
   @Test
+  @DisplayName("Test get client details summary without form data in session")
   void testGetClientDetailsSummary_withoutFormDataInSession() throws Exception {
 
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_CONTACT_TITLE),  any())).thenReturn(
-        Mono.just(Optional.of(titleLookupValueDetail)));
-    when(lookupService.getCountry(any())).thenReturn(
-        Mono.just(Optional.of(countryLookupValueDetail)));
-    when(lookupService.getCommonValue(
-        eq(COMMON_VALUE_GENDER), any())).thenReturn(
-        Mono.just(Optional.of(genderLookupValueDetail)));
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_MARITAL_STATUS), any())).thenReturn(
-        Mono.just(Optional.of(maritalStatusLookupValueDetail)));
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_ETHNIC_ORIGIN),any())).thenReturn(
-        Mono.just(Optional.of(ethnicityLookupValueDetail)));
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_DISABILITY),any())).thenReturn(
-        Mono.just(Optional.of(disabilityLookupValueDetail)));
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_METHOD), any())).thenReturn(
-        Mono.just(Optional.of(correspondenceMethodLookupValueDetail)));
+    when(lookupService.getClientLookups(any())).thenReturn(
+        List.of(
+            Pair.of(COMMON_VALUE_CONTACT_TITLE, Mono.just(Optional.of(titleLookupValueDetail))),
+            Pair.of(COMMON_VALUE_GENDER, Mono.just(Optional.of(genderLookupValueDetail))),
+            Pair.of(COMMON_VALUE_MARITAL_STATUS, Mono.just(Optional.of(maritalStatusLookupValueDetail))),
+            Pair.of(COMMON_VALUE_ETHNIC_ORIGIN, Mono.just(Optional.of(ethnicityLookupValueDetail))),
+            Pair.of(COMMON_VALUE_DISABILITY, Mono.just(Optional.of(disabilityLookupValueDetail))),
+            Pair.of(COMMON_VALUE_CORRESPONDENCE_METHOD, Mono.just(Optional.of(correspondenceMethodLookupValueDetail)))
+        )
+    );
 
-    when(clientService.getClient(any(),any(),any())).thenReturn(
-        Mono.just(new ClientDetail()));
+    when(lookupService.addCommonLookupsToModel(anyList(), any(Model.class)))
+        .thenReturn(Mono.just(List.of(
+            titleLookupValueDetail,
+            genderLookupValueDetail,
+            maritalStatusLookupValueDetail,
+            ethnicityLookupValueDetail,
+            disabilityLookupValueDetail,
+            correspondenceMethodLookupValueDetail
+        )));
 
-    when(clientDetailsMapper.toClientFlowFormData(any())).thenReturn(
-        clientFlowFormData);
+    when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(new ClientDetail()));
+
+    when(clientDetailsMapper.toClientFlowFormData(any())).thenReturn(clientFlowFormData);
 
     mockMvc.perform(get("/application/sections/client/details/summary")
             .sessionAttr(USER_DETAILS, userDetails)
             .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/client-summary-details"));
+        .andExpect(view().name("application/sections/client-summary-details"));
 
-    verify(lookupService, atLeastOnce()).getCommonValue(eq(COMMON_VALUE_CONTACT_TITLE),  any());
-    verify(lookupService, atLeastOnce()).getCountry(any());
-    verify(lookupService, atLeastOnce()).getCommonValue(
-        eq(COMMON_VALUE_GENDER), any());
-    verify(lookupService, atLeastOnce()).getCommonValue(eq(COMMON_VALUE_MARITAL_STATUS), any());
-    verify(lookupService, atLeastOnce()).getCommonValue(eq(COMMON_VALUE_ETHNIC_ORIGIN),any());
-    verify(lookupService, atLeastOnce()).getCommonValue(eq(COMMON_VALUE_DISABILITY),any());
-    verify(lookupService, atLeastOnce()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_METHOD), any());
-    verify(lookupService, never()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_LANGUAGE),any());
+    verify(lookupService, atLeastOnce()).getClientLookups(any());
+    verify(lookupService, atLeastOnce()).addCommonLookupsToModel(anyList(), any(Model.class));
+    verify(lookupService, never()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_LANGUAGE), any());
 
-    verify(clientService, atLeastOnce()).getClient(any(),any(),any());
+    verify(clientService, atLeastOnce()).getClient(any(), any(), any());
     verify(clientDetailsMapper, atLeastOnce()).toClientFlowFormData(any());
   }
 

@@ -35,6 +35,7 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.mapper.SubmissionSummaryDisplayMapper;
+import uk.gov.laa.ccms.caab.mapper.context.submission.GeneralDetailsSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.OpponentSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.ProceedingSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -109,13 +110,27 @@ public class ApplicationSubmissionController {
 
   }
 
+  /**
+   * Validates the application summary details and redirects to the summary page.
+   *
+   * @return the redirection URL to the application summary page
+   */
   @PostMapping("/application/validate")
-  public String applicationValidate(){
+  public String applicationValidate() {
     //todo validate the application summary details
 
     return "redirect:/application/summary";
   }
 
+  /**
+   * Handles the GET request for the application summary page.
+   *
+   * @param user The user requesting the summary.
+   * @param activeCase The active case details
+   * @param session The session
+   * @param model The model
+   * @return The view name for the application summary page.
+   */
   @GetMapping("/application/summary")
   public String applicationSummary(
       @SessionAttribute(USER_DETAILS) final UserDetail user,
@@ -123,9 +138,11 @@ public class ApplicationSubmissionController {
       final HttpSession session,
       final Model model) {
 
+    //Pre-processing data - application data
     final Mono<ApplicationDetail> applicationMono =
         applicationService.getApplication(activeCase.getApplicationId().toString());
 
+    //Pre-processing data - means and merits assessment data
     final Mono<AssessmentDetails> assessmentDetailsMono =
         assessmentService.getAssessments(
             List.of(
@@ -134,41 +151,56 @@ public class ApplicationSubmissionController {
             activeCase.getProviderId().toString(),
             activeCase.getCaseReferenceNumber());
 
+    //Pre-processing data - assessment parent summary lookups
     final Mono<List<AssessmentSummaryEntityLookupValueDetail>> parentMono =
         lookupService.getAssessmentSummaryAttributes(PARENT_LOOKUP)
             .map(AssessmentSummaryEntityLookupDetail::getContent);
 
+    //Pre-processing data - assessment child summary lookups
     final Mono<List<AssessmentSummaryEntityLookupValueDetail>> childMono =
         lookupService.getAssessmentSummaryAttributes(CHILD_LOOKUP)
             .map(AssessmentSummaryEntityLookupDetail::getContent);
 
+    //Pre-processing data - client data
     final Mono<ClientDetailDetails> clientMono =
         clientService.getClient(
-            activeCase.getClientReferenceNumber(),
-            user.getLoginId(),
-            user.getUserType())
+                activeCase.getClientReferenceNumber(),
+                user.getLoginId(),
+                user.getUserType())
             .map(ClientDetail::getDetails);
 
-    //todo convert to mono
-    final ProceedingSubmissionSummaryMappingContext proceedingContext =
-        getProceedingSubmissionMappingContext();
+    //Pre-processing data - proceeding context data
+    final Mono<ProceedingSubmissionSummaryMappingContext> proceedingContextMono =
+        lookupService.getProceedingSubmissionMappingContext();
 
-    //todo covert to mono
-    final OpponentSubmissionSummaryMappingContext opponentContext =
-        getOpponentSubmissionMappingContext();
+    //Pre-processing data - opponent context data
+    final Mono<OpponentSubmissionSummaryMappingContext> opponentContextMono =
+        lookupService.getOpponentSubmissionMappingContext();
 
-    final Tuple5<AssessmentDetails,
-                List<AssessmentSummaryEntityLookupValueDetail>,
-                List<AssessmentSummaryEntityLookupValueDetail>,
-                ClientDetailDetails,
-                ApplicationDetail> preprocessingData = Mono.zip(
+    //Pre-processing data - general details context data
+    final Mono<GeneralDetailsSubmissionSummaryMappingContext> generalDetailsContextMono =
+        lookupService.getGeneralDetailsSubmissionMappingContext();
+
+    final Tuple8<
+        AssessmentDetails,
+        List<AssessmentSummaryEntityLookupValueDetail>,
+        List<AssessmentSummaryEntityLookupValueDetail>,
+        ClientDetailDetails,
+        ApplicationDetail,
+        ProceedingSubmissionSummaryMappingContext,
+        OpponentSubmissionSummaryMappingContext,
+        GeneralDetailsSubmissionSummaryMappingContext> preprocessingData =
+        Mono.zip(
             assessmentDetailsMono,
             parentMono,
             childMono,
             clientMono,
-            applicationMono)
-        .blockOptional().orElseThrow(() ->
-            new CaabApplicationException("Failed to retrieve assessment data"));
+            applicationMono,
+            proceedingContextMono,
+            opponentContextMono,
+            generalDetailsContextMono).blockOptional().orElseThrow(() ->
+            new CaabApplicationException("Failed to pre-process summary data"));
+    ;
 
     final AssessmentDetail meansAssessmentDetail = getAssessment(
         preprocessingData.getT1(), AssessmentRulebase.MEANS);
@@ -186,148 +218,87 @@ public class ApplicationSubmissionController {
 
     final ApplicationDetail application = preprocessingData.getT5();
 
+    // Post-processing data - means assessment summary data
     final Mono<List<AssessmentSummaryEntityDisplay>> meansAssessmentSummaryMono =
         Mono.fromCallable(() ->
                 assessmentService.getAssessmentSummaryToDisplay(
                     meansAssessmentDetail, parentSummaryLookups, childSummaryLookups))
             .subscribeOn(Schedulers.boundedElastic());
 
+    // Post-processing data - merits assessment summary data
     final Mono<List<AssessmentSummaryEntityDisplay>> meritsAssessmentSummaryMono =
         Mono.fromCallable(() ->
                 assessmentService.getAssessmentSummaryToDisplay(
                     meritsAssessmentDetail, parentSummaryLookups, childSummaryLookups))
             .subscribeOn(Schedulers.boundedElastic());
 
+    // Post-processing data - provider summary data
     final Mono<ProviderSubmissionSummaryDisplay> providerSummaryMono =
         Mono.fromCallable(() ->
                 submissionSummaryDisplayMapper.toProviderSummaryDisplay(application))
             .subscribeOn(Schedulers.boundedElastic());
 
+    // Post-processing data - client summary data
+    final Mono<HashMap<String, CommonLookupValueDetail>> clientSummaryLookupsMono =
+        lookupService.getClientSummaryListLookups(clientFlowFormData);
+
+    // Post-processing data - general details summary data
     final Mono<GeneralDetailsSubmissionSummaryDisplay> generalDetailsSummaryMono =
         Mono.fromCallable(() ->
-                submissionSummaryDisplayMapper.toGeneralDetailsSummaryDisplay(application))
+                submissionSummaryDisplayMapper.toGeneralDetailsSummaryDisplay(application,
+                    preprocessingData.getT8()))
             .subscribeOn(Schedulers.boundedElastic());
 
-    final Mono<HashMap<String, CommonLookupValueDetail>> clientSummaryLookupsMono =
-        getClientSummaryListLookups(clientFlowFormData);
-
-    final Mono<HashMap<String, CommonLookupValueDetail>> generalDetailsSummaryLookupsMono =
-        getGeneralDetailsLookups(application);
-
+    // Post-processing data - proceedings and costs summary data
     final Mono<ProceedingAndCostSubmissionSummaryDisplay> proceedingAndCostSummaryMono =
         Mono.fromCallable(() ->
                 submissionSummaryDisplayMapper.toProceedingAndCostSummaryDisplay(
-                    application, proceedingContext))
+                    application, preprocessingData.getT6()))
             .subscribeOn(Schedulers.boundedElastic());
 
+    // Post-processing data - opponents and other parties summary data
     final Mono<OpponentsAndOtherPartiesSubmissionSummaryDisplay>
         opponentsAndOtherPartiesSummaryMono =
         Mono.fromCallable(() ->
                 submissionSummaryDisplayMapper.toOpponentsAndOtherPartiesSummaryDisplay(
-                    application, opponentContext))
+                    application, preprocessingData.getT7()))
             .subscribeOn(Schedulers.boundedElastic());
 
-    final Tuple8<List<AssessmentSummaryEntityDisplay>,
-                        List<AssessmentSummaryEntityDisplay>,
-                        HashMap<String, CommonLookupValueDetail>,
-                        GeneralDetailsSubmissionSummaryDisplay,
-                        HashMap<String, CommonLookupValueDetail>,
-                        ProviderSubmissionSummaryDisplay,
-                        ProceedingAndCostSubmissionSummaryDisplay,
-                        OpponentsAndOtherPartiesSubmissionSummaryDisplay> postProcessingData =
+    final Tuple7<List<AssessmentSummaryEntityDisplay>,
+        List<AssessmentSummaryEntityDisplay>,
+        HashMap<String, CommonLookupValueDetail>,
+        GeneralDetailsSubmissionSummaryDisplay,
+        ProviderSubmissionSummaryDisplay,
+        ProceedingAndCostSubmissionSummaryDisplay,
+        OpponentsAndOtherPartiesSubmissionSummaryDisplay> postProcessingData =
         Mono.zip(
                 meansAssessmentSummaryMono,
                 meritsAssessmentSummaryMono,
                 clientSummaryLookupsMono,
                 generalDetailsSummaryMono,
-                generalDetailsSummaryLookupsMono,
                 providerSummaryMono,
                 proceedingAndCostSummaryMono,
                 opponentsAndOtherPartiesSummaryMono)
             .blockOptional()
-            .orElseThrow(() -> new CaabApplicationException("Failed to process summary data"));
+            .orElseThrow(() -> new CaabApplicationException("Failed to post-process summary data"));
 
-    final GeneralDetailsSubmissionSummaryDisplay generalDetails = postProcessingData.getT4();
-    generalDetails.setLookups(postProcessingData.getT5());
 
+    //create final summary object
     final SubmissionSummaryDisplay submissionSummary = SubmissionSummaryDisplay.builder()
-            .client(clientFlowFormData)
-            .meansAssessment(postProcessingData.getT1())
-            .meritsAssessment(postProcessingData.getT2())
-            .clientLookups(postProcessingData.getT3())
-            .generalDetails(generalDetails)
-            .providerDetails(postProcessingData.getT6())
-            .proceedingsAndCosts(postProcessingData.getT7())
-            .opponentsAndOtherParties(postProcessingData.getT8())
-            .build();
+        .client(clientFlowFormData)
+        .meansAssessment(postProcessingData.getT1())
+        .meritsAssessment(postProcessingData.getT2())
+        .clientLookups(postProcessingData.getT3())
+        .generalDetails(postProcessingData.getT4())
+        .providerDetails(postProcessingData.getT5())
+        .proceedingsAndCosts(postProcessingData.getT6())
+        .opponentsAndOtherParties(postProcessingData.getT7())
+        .build();
 
+    session.setAttribute("submissionSummary", submissionSummary);
     model.addAttribute("submissionSummary", submissionSummary);
 
     return "application/sections/application-summary-complete";
-  }
-
-  //todo move to lookup service
-  protected Mono<HashMap<String, CommonLookupValueDetail>> getClientSummaryListLookups(
-      final ClientFlowFormData clientFlowFormData) {
-
-    // Create a list of Mono calls and their respective attribute keys
-    final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups =
-        lookupService.getClientLookups(clientFlowFormData);
-
-    // Fetch all Monos asynchronously
-    return lookupService.getCommonLookupsMap(lookups);
-  }
-
-  //todo move to lookup service
-  //todo refactor this to get overall lookups and then use the mapper
-  protected Mono<HashMap<String, CommonLookupValueDetail>> getGeneralDetailsLookups(
-      final ApplicationDetail application) {
-
-    // Create a list of Mono calls and their respective attribute keys
-    final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups =
-        new ArrayList<>();
-
-    if (application.getCorrespondenceAddress() != null
-        && application.getCorrespondenceAddress().getPreferredAddress() != null) {
-      lookups.add(Pair.of("preferredAddress",
-            lookupService.getCommonValue(
-                COMMON_VALUE_CASE_ADDRESS_OPTION,
-                application.getCorrespondenceAddress().getPreferredAddress())));
-    }
-
-    return lookupService.getCommonLookupsMap(lookups);
-  }
-
-  protected ProceedingSubmissionSummaryMappingContext getProceedingSubmissionMappingContext() {
-
-    final CommonLookupDetail typeOfOrder =
-        lookupService.getCommonValues(COMMON_VALUE_PROCEEDING_ORDER_TYPE).block();
-
-    return ProceedingSubmissionSummaryMappingContext.builder()
-        .typeOfOrder(typeOfOrder)
-        .build();
-  }
-
-  protected OpponentSubmissionSummaryMappingContext getOpponentSubmissionMappingContext() {
-
-    final CommonLookupDetail contactTitle =
-        lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE).block();
-
-    final RelationshipToCaseLookupDetail organisationRelationshipsToCase =
-        lookupService.getOrganisationToCaseRelationships().block();
-
-    final RelationshipToCaseLookupDetail individualRelationshipsToCase =
-        lookupService.getPersonToCaseRelationships().block();
-
-    final CommonLookupDetail relationshipToClient =
-        lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT).block();
-
-    return OpponentSubmissionSummaryMappingContext.builder()
-        .contactTitle(contactTitle)
-        .relationshipToClient(relationshipToClient)
-        .organisationRelationshipsToCase(organisationRelationshipsToCase)
-        .individualRelationshipsToCase(individualRelationshipsToCase)
-        .build();
   }
 
 

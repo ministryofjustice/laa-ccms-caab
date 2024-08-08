@@ -89,7 +89,7 @@ class EditClientBasicDetailsControllerTest {
             .flashAttr("maritalStatusList", Collections.emptyList()))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/client-basic-details"))
+        .andExpect(view().name("application/sections/client-basic-details"))
         .andExpect(model().attributeExists("titles", "countries", "genders", "maritalStatusList"));
 
   }
@@ -134,7 +134,7 @@ class EditClientBasicDetailsControllerTest {
             .flashAttr("genders", Collections.emptyList())
             .flashAttr("maritalStatusList", Collections.emptyList()))
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/client-basic-details"))
+        .andExpect(view().name("application/sections/client-basic-details"))
         .andExpect(model().attributeExists("titles", "countries", "genders", "maritalStatusList",
             "basicDetails"));
   }

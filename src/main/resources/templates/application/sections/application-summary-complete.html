@@ -89,15 +89,15 @@
         </dl>
         <h3 class="govuk-heading-s">Correspondence address</h3>
         <dl class="govuk-summary-list">
-          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Preferred Address', ${submissionSummary.generalDetails.lookups.preferredAddress.description})}"></div>
-          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Country', '')}"></div>
-          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('House Name / Number', '')}"></div>
-          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Post Code', '')}"></div>
-          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('C/O', '')}"></div>
-          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Address Line 1', '')}"></div>
-          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Address Line 2', '')}"></div>
-          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('City / Town', '')}"></div>
-          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('County', '')}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Preferred Address', ${submissionSummary.generalDetails.preferredAddress})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Country', ${submissionSummary.generalDetails.country})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('House Name / Number', ${submissionSummary.generalDetails.houseNameOrNumber})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Post Code', ${submissionSummary.generalDetails.postcode})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('C/O', ${submissionSummary.generalDetails.careOf})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Address Line 1', ${submissionSummary.generalDetails.addressLine1})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Address Line 2', ${submissionSummary.generalDetails.addressLine2})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('City / Town', ${submissionSummary.generalDetails.city})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('County', ${submissionSummary.generalDetails.county})}"></div>
         </dl>
       </div>
     </div>
@@ -142,10 +142,9 @@
       <div class="govuk-grid-column-full">
         <h2 class="govuk-heading-m">Opponents and other parties</h2>
         <div th:each="opponent : ${submissionSummary.opponentsAndOtherParties.opponents}">
-
           <h3 class="govuk-heading-s" th:text="${opponent.type}"></h3>
-          <dl class="govuk-summary-list">
-            <div th:if="${opponent.type == 'Individual'}">
+          <div th:if="${opponent.type == 'Individual'}">
+            <dl class="govuk-summary-list">
               <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Title', ${opponent.title})}"></div>
               <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Surname', ${opponent.surname})}"></div>
               <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('First Name', ${opponent.firstName})}"></div>
@@ -168,9 +167,10 @@
               <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Email Address', ${opponent.emailAddress})}"></div>
               <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Party is Legal Aided?', ${opponent.legalAided})}"></div>
               <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Certificate Number', ${opponent.certificateNumber})}"></div>
-            </div>
-
-            <div th:if="${opponent.type == 'Organisation'}">
+            </dl>
+          </div>
+          <div th:if="${opponent.type == 'Organisation'}">
+            <dl class="govuk-summary-list">
               <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Organisation Name', ${opponent.organisationName})}"></div>
               <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Organisation Type', ${opponent.organisationType})}"></div>
               <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Currently Trading', ${opponent.currentlyTrading})}"></div>
@@ -188,8 +188,8 @@
               <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Fax', ${opponent.faxNumber})}"></div>
               <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Email Address', ${opponent.emailAddress})}"></div>
               <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Any other information about the Liable Organisation', ${opponent.otherInformation})}"></div>
-            </div>
-          </dl>
+            </dl>
+          </div>
         </div>
       </div>
     </div>
@@ -204,6 +204,14 @@
         <h2 class="govuk-heading-m">Merits assessment</h2>
         <div th:insert="application/partials/summary-fragments :: assessmentSummaryFragment(summary=${submissionSummary.meritsAssessment}, isSinglePageSummary=${false})"></div>
       </div>
+    </div>
+    <div class="govuk-button-group">
+      <button type="submit" class="govuk-button" data-module="govuk-button">
+        Confirm
+      </button>
+      <a class="govuk-button govuk-button--secondary" data-module="govuk-button" th:href="@{/todo}">
+        Print this page
+      </a>
     </div>
   </div>
 </div>

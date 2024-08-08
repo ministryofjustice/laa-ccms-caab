@@ -51,7 +51,7 @@ class EditClientDeceasedDetailsControllerTest {
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/client-deceased-details"));
+        .andExpect(view().name("application/sections/client-deceased-details"));
   }
 
   @Test
@@ -77,7 +77,7 @@ class EditClientDeceasedDetailsControllerTest {
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("deceasedDetails", deceasedDetails))
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/client-deceased-details"));
+        .andExpect(view().name("application/sections/client-deceased-details"));
   }
 
 }

@@ -38,7 +38,8 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 
 /**
- * Helper class for constructing an {@link uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay}
+ * Helper class for constructing an
+ * {@link uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay}
  * instance using a builder pattern.
  */
 public class ApplicationSectionsBuilder {
@@ -52,9 +53,9 @@ public class ApplicationSectionsBuilder {
   protected static final String TYPE_ORGANISATION = "Organisation";
 
   /**
-   * Default builder method for application builder summary.
+   * Default builder method for application builder section.
    *
-   * @param auditDetail used to populate multiple summary status displays
+   * @param auditDetail used to populate multiple section status displays
    */
   public ApplicationSectionsBuilder(final AuditDetail auditDetail) {
     this.applicationSections = ApplicationSectionDisplay.builder()
@@ -120,7 +121,7 @@ public class ApplicationSectionsBuilder {
    * Builder method for client summary.
    *
    * @param client the application's client
-   * @return the builder with amended client summary.
+   * @return the builder with amended client section.
    */
   public ApplicationSectionsBuilder client(
       final ClientDetail client) {
@@ -137,13 +138,15 @@ public class ApplicationSectionsBuilder {
    * @return the builder with amended application type details.
    */
   public ApplicationSectionsBuilder applicationType(final ApplicationType applicationType) {
-    final ApplicationTypeSectionDisplay applicationTypeSection = applicationSections.getApplicationType();
+    final ApplicationTypeSectionDisplay applicationTypeSection =
+        applicationSections.getApplicationType();
 
     if (applicationType != null) {
       applicationTypeSection.setDescription(applicationType.getDisplayValue());
 
-      final DevolvedPowersDetail devolvedPowers = Optional.ofNullable(applicationType.getDevolvedPowers())
-          .orElse(new DevolvedPowersDetail());
+      final DevolvedPowersDetail devolvedPowers =
+          Optional.ofNullable(applicationType.getDevolvedPowers())
+              .orElse(new DevolvedPowersDetail());
 
       applicationTypeSection.setDevolvedPowersDate(devolvedPowers.getDateUsed());
       applicationTypeSection.setDevolvedPowersUsed(devolvedPowers.getUsed());
@@ -161,7 +164,7 @@ public class ApplicationSectionsBuilder {
    * Builder method for provider summary.
    *
    * @param provider the provider's details.
-   * @return the builder with amended provider summary.
+   * @return the builder with amended provider section.
    */
   public ApplicationSectionsBuilder provider(
       final ApplicationProviderDetails provider) {
@@ -245,7 +248,7 @@ public class ApplicationSectionsBuilder {
     for (final PriorAuthorityDetail priorAuthority : Optional.ofNullable(priorAuthorities)
         .orElse(Collections.emptyList())) {
       applicationSections.getPriorAuthorities().add(
-          buildPriorAuthoritySummary(priorAuthority));
+          buildPriorAuthoritySection(priorAuthority));
 
       checkAndSetLastSaved(
           proceedingsSection,
@@ -288,7 +291,7 @@ public class ApplicationSectionsBuilder {
 
     opponentsSection.setOpponents(new ArrayList<>());
     for (final OpponentDetail opponent : opponents) {
-      opponentsSection.getOpponents().add(buildOpponentSummary(
+      opponentsSection.getOpponents().add(buildOpponentSection(
           opponent,
           contactTitles,
           organisationRelationships,
@@ -367,14 +370,20 @@ public class ApplicationSectionsBuilder {
   }
 
   /**
-   * Finalizes and returns the constructed ApplicationSummaryDisplay instance.
+   * Finalizes and returns the constructed ApplicationSectionDisplay instance.
    *
-   * @return The constructed ApplicationSummaryDisplay.
+   * @return The constructed ApplicationSectionDisplay.
    */
   public ApplicationSectionDisplay build() {
     return applicationSections;
   }
 
+  /**
+   * Checks and sets the last saved details in the status display.
+   *
+   * @param statusDisplay the status display to update
+   * @param newInfo the new audit details to compare and set
+   */
   private void checkAndSetLastSaved(
       final ApplicationSectionStatusDisplay statusDisplay,
       final AuditDetail newInfo) {
@@ -387,6 +396,14 @@ public class ApplicationSectionsBuilder {
     }
   }
 
+  /**
+   * Checks if the opponent is created based on the relationship details.
+   *
+   * @param opponent the opponent detail
+   * @param organisationRelationships the list of organisation relationships
+   * @param personRelationships the list of person relationships
+   * @return true if the opponent is created, false otherwise
+   */
   private boolean isOpponentCreated(
       final OpponentDetail opponent,
       final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
@@ -402,6 +419,15 @@ public class ApplicationSectionsBuilder {
             opponent.getRelationshipToCase()) && item.getOpponentInd());
   }
 
+  /**
+   * Updates the assessment status in the status display.
+   *
+   * @param application the application detail
+   * @param assessment the assessment detail
+   * @param assessmentStatus the assessment status
+   * @param assessmentStatusDisplay the assessment status display
+   * @param opponentCreated flag indicating if the opponent is created
+   */
   private void updateAssessmentStatus(
       final ApplicationDetail application,
       final AssessmentDetail assessment,
@@ -430,6 +456,12 @@ public class ApplicationSectionsBuilder {
     assessmentStatusDisplay.setEnabled(assessmentsEnabled);
   }
 
+  /**
+   * Builds a proceeding summary display from the proceeding detail.
+   *
+   * @param proceeding the proceeding detail
+   * @return the proceeding summary display
+   */
   private ProceedingSectionDisplay buildProceedingSummary(
       final ProceedingDetail proceeding) {
     return ProceedingSectionDisplay.builder()
@@ -439,13 +471,20 @@ public class ApplicationSectionsBuilder {
         .proceedingType(DisplayUtil.getDisplayValue(proceeding.getProceedingType()))
         .scopeLimitations(Optional.ofNullable(proceeding.getScopeLimitations())
             .map(scopeLimitationDetails -> scopeLimitationDetails.stream()
-                .map(this::buildScopeLimitationSummary).toList())
+                .map(this::buildScopeLimitationSection).toList())
             .orElse(null))
         .status(DisplayUtil.getDisplayValue(proceeding.getStatus()))
         .build();
   }
 
-  private ScopeLimitationSectionDisplay buildScopeLimitationSummary(
+
+  /**
+   * Builds a scope limitation section display from the scope limitation detail.
+   *
+   * @param scopeLimitationDetail the scope limitation detail
+   * @return the scope limitation section display
+   */
+  private ScopeLimitationSectionDisplay buildScopeLimitationSection(
       final ScopeLimitationDetail scopeLimitationDetail) {
     return ScopeLimitationSectionDisplay.builder()
         .scopeLimitation(DisplayUtil.getDisplayValue(scopeLimitationDetail.getScopeLimitation()))
@@ -453,11 +492,22 @@ public class ApplicationSectionsBuilder {
         .build();
   }
 
-  private OpponentSectionDisplay buildOpponentSummary(final OpponentDetail opponentDetail,
-                                                      final List<CommonLookupValueDetail> contactTitles,
-                                                      final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
-                                                      final List<RelationshipToCaseLookupValueDetail> personRelationships,
-                                                      final List<CommonLookupValueDetail> relationshipsToClient) {
+  /**
+   * Builds an opponent section display from the opponent detail.
+   *
+   * @param opponentDetail the opponent detail
+   * @param contactTitles the list of contact titles
+   * @param organisationRelationships the list of organisation relationships
+   * @param personRelationships the list of person relationships
+   * @param relationshipsToClient the list of relationships to client
+   * @return the opponent section display
+   */
+  private OpponentSectionDisplay buildOpponentSection(
+      final OpponentDetail opponentDetail,
+      final List<CommonLookupValueDetail> contactTitles,
+      final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
+      final List<RelationshipToCaseLookupValueDetail> personRelationships,
+      final List<CommonLookupValueDetail> relationshipsToClient) {
 
     return OpponentSectionDisplay.builder()
         .partyName(OpponentUtil.getPartyName(opponentDetail, contactTitles))
@@ -474,7 +524,13 @@ public class ApplicationSectionsBuilder {
         .build();
   }
 
-  private PriorAuthoritySectionDisplay buildPriorAuthoritySummary(
+  /**
+   * Builds a prior authority section display from the prior authority detail.
+   *
+   * @param priorAuthorityDetail the prior authority detail
+   * @return the prior authority section display
+   */
+  private PriorAuthoritySectionDisplay buildPriorAuthoritySection(
       final PriorAuthorityDetail priorAuthorityDetail) {
 
     return PriorAuthoritySectionDisplay.builder()

@@ -142,7 +142,7 @@ class EditGeneralDetailsSectionControllerTest {
             .sessionAttr(APPLICATION_ID, applicationId))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/correspondence-address-details"))
+        .andExpect(view().name("application/sections/correspondence-address-details"))
         .andExpect(model().attribute("addressDetails", addressFormData));
 
     verify(applicationService, times(1)).getCorrespondenceAddressFormData(applicationId);
@@ -165,7 +165,7 @@ class EditGeneralDetailsSectionControllerTest {
             .sessionAttr("addressDetails", addressFormData))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/correspondence-address-details"))
+        .andExpect(view().name("application/sections/correspondence-address-details"))
         .andExpect(model().attribute("addressDetails", addressFormData));
 
     verify(applicationService, never()).getCorrespondenceAddressFormData(applicationId);
@@ -212,7 +212,7 @@ class EditGeneralDetailsSectionControllerTest {
             .sessionAttr(USER_DETAILS, user)
             .flashAttr("addressDetails", addressDetails))
         .andDo(print())
-        .andExpect(view().name("application/summary/correspondence-address-details"));
+        .andExpect(view().name("application/sections/correspondence-address-details"));
 
     verify(applicationService, never()).updateCorrespondenceAddress(applicationId, addressDetails, user);
     verify(addressService, never()).getAddresses(any());
@@ -262,7 +262,7 @@ class EditGeneralDetailsSectionControllerTest {
             .sessionAttr(USER_DETAILS, user)
             .flashAttr("addressDetails", addressDetails))
         .andDo(print())
-        .andExpect(view().name("application/summary/correspondence-address-details"));
+        .andExpect(view().name("application/sections/correspondence-address-details"));
 
     verify(addressService, times(1)).getAddresses(any());
     verify(addressService, never()).filterByHouseNumber(any(), any());
@@ -277,9 +277,9 @@ class EditGeneralDetailsSectionControllerTest {
             .sessionAttr(ADDRESS_SEARCH_RESULTS, results))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/address-search-results"))
+        .andExpect(view().name("application/sections/address-search-results"))
         .andExpect(model().attribute("backLink", "/application/sections/correspondence-address"))
-        .andExpect(model().attribute("formAction", "application/summary/correspondence-address/search"))
+        .andExpect(model().attribute("formAction", "application/sections/correspondence-address/search"))
         .andExpect(model().attribute("addressSearchResults", results));
   }
 
@@ -313,9 +313,9 @@ class EditGeneralDetailsSectionControllerTest {
             .sessionAttr("addressDetails", new AddressFormData()))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/address-search-results"))
+        .andExpect(view().name("application/sections/address-search-results"))
         .andExpect(model().attribute("backLink", "/application/sections/correspondence-address"))
-        .andExpect(model().attribute("formAction", "application/summary/correspondence-address/search"))
+        .andExpect(model().attribute("formAction", "application/sections/correspondence-address/search"))
         .andExpect(model().attribute("addressSearchResults", results));
 
     verify(addressService, never()).filterAndUpdateAddressFormData(any(), any(), any());
@@ -333,7 +333,7 @@ class EditGeneralDetailsSectionControllerTest {
             .sessionAttr(APPLICATION_ID, applicationId))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/application-linked-case-summary"))
+        .andExpect(view().name("application/sections/application-linked-case-summary"))
         .andExpect(model().attribute("linkedCases", linkedCases));
 
     verify(applicationService, times(1)).getLinkedCases(applicationId);
@@ -352,7 +352,7 @@ class EditGeneralDetailsSectionControllerTest {
             .sessionAttr("linkedCases", linkedCases))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/application-linked-case-remove"))
+        .andExpect(view().name("application/sections/application-linked-case-remove"))
         .andExpect(model().attribute("linkedCase", linkedCase));
   }
 
@@ -387,7 +387,7 @@ class EditGeneralDetailsSectionControllerTest {
             .sessionAttr("linkedCases", linkedCases))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/application-linked-case-confirm"))
+        .andExpect(view().name("application/sections/application-linked-case-confirm"))
         .andExpect(model().attribute("currentLinkedCase", linkedCase));
   }
 
@@ -430,7 +430,7 @@ class EditGeneralDetailsSectionControllerTest {
             .flashAttr("linkedCase", linkedCase))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/application-linked-case-confirm"));
+        .andExpect(view().name("application/sections/application-linked-case-confirm"));
 
     verify(applicationService, never()).updateLinkedCase(linkedCaseId, linkedCase, user);
   }
@@ -448,7 +448,7 @@ class EditGeneralDetailsSectionControllerTest {
             .sessionAttr(USER_DETAILS, buildUserDetail()))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/application-linked-case-search"));
+        .andExpect(view().name("application/sections/application-linked-case-search"));
   }
 
   @Test
@@ -475,7 +475,7 @@ class EditGeneralDetailsSectionControllerTest {
             .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/application-linked-case-search"));
+        .andExpect(view().name("application/sections/application-linked-case-search"));
   }
 
   @Test
@@ -490,7 +490,7 @@ class EditGeneralDetailsSectionControllerTest {
             .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/application-linked-case-search-no-results"));
+        .andExpect(view().name("application/sections/application-linked-case-search-no-results"));
   }
 
   @Test
@@ -510,7 +510,7 @@ class EditGeneralDetailsSectionControllerTest {
             .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/application-linked-case-search-too-many-results"));
+        .andExpect(view().name("application/sections/application-linked-case-search-too-many-results"));
   }
 
   @Test
@@ -528,7 +528,7 @@ class EditGeneralDetailsSectionControllerTest {
             .flashAttr(CASE_SEARCH_RESULTS, caseSearchResults))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/application-linked-case-search-results"))
+        .andExpect(view().name("application/sections/application-linked-case-search-results"))
         .andExpect(model().attribute(CASE_RESULTS_PAGE, linkedCaseSearchResults));
 
     verify(applicationMapper, times(1)).toApplicationDetails(any());
@@ -552,7 +552,7 @@ class EditGeneralDetailsSectionControllerTest {
             .sessionAttr(CASE_RESULTS_PAGE, linkedCaseSearchResults))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/application-linked-case-add"))
+        .andExpect(view().name("application/sections/application-linked-case-add"))
         .andExpect(model().attribute("currentLinkedCase", linkedCaseResultRowDisplay));
 
     verify(resultDisplayMapper, times(1)).toLinkedCaseResultRowDisplay(baseApplication);
@@ -598,7 +598,7 @@ class EditGeneralDetailsSectionControllerTest {
             .flashAttr("currentLinkedCase", linkedCase))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/application-linked-case-add"))
+        .andExpect(view().name("application/sections/application-linked-case-add"))
         .andExpect(model().attributeHasFieldErrors("currentLinkedCase", "relationToCase"));
 
     verify(applicationService, never()).addLinkedCase(anyString(), any(LinkedCaseResultRowDisplay.class), any(UserDetail.class));

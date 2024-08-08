@@ -6,6 +6,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
+import uk.gov.laa.ccms.caab.mapper.context.submission.GeneralDetailsSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.OpponentSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.ProceedingSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -20,9 +21,13 @@ import uk.gov.laa.ccms.caab.model.summary.ProceedingSubmissionSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.summary.ProviderSubmissionSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.summary.ScopeLimitationSubmissionSummaryDisplay;
 
+/**
+ * Mapper interface for converting submission summary details to display values.
+ */
 @Mapper(componentModel = "spring")
 public interface SubmissionSummaryDisplayMapper {
   CommonMapper COMMON_MAPPER = Mappers.getMapper(CommonMapper.class);
+
   @Mapping(target = "office", source =
       "application.providerDetails.office.displayValue")
   @Mapping(target = "feeEarner", source =
@@ -36,12 +41,43 @@ public interface SubmissionSummaryDisplayMapper {
   ProviderSubmissionSummaryDisplay toProviderSummaryDisplay(
       ApplicationDetail application);
 
-  @Mapping(target = "categoryOfLaw", source = "application.categoryOfLaw.displayValue")
-  @Mapping(target = "applicationType", source = "application.applicationType.displayValue")
-  @Mapping(target = "delegatedFunctionsDate", source = "application.applicationType.devolvedPowers.dateUsed")
-  @Mapping(target = "lookups", ignore = true)
+  @Mapping(target = "categoryOfLaw",
+      source = "application.categoryOfLaw.displayValue")
+  @Mapping(target = "applicationType",
+      source = "application.applicationType.displayValue")
+  @Mapping(target = "delegatedFunctionsDate",
+      source = "application.applicationType.devolvedPowers.dateUsed")
+  @Mapping(target = "preferredAddress",
+      source = "application.correspondenceAddress.preferredAddress",
+      qualifiedByName = "toPreferredAddress")
+  @Mapping(target = "country",
+      source = "application.correspondenceAddress.country",
+      qualifiedByName = "toCountryGeneral")
+  @Mapping(target = "houseNameOrNumber",
+      source = "application.correspondenceAddress.houseNameOrNumber")
+  @Mapping(target = "addressLine1", source = "application.correspondenceAddress.addressLine1")
+  @Mapping(target = "addressLine2", source = "application.correspondenceAddress.addressLine2")
+  @Mapping(target = "city", source = "application.correspondenceAddress.city")
+  @Mapping(target = "county", source = "application.correspondenceAddress.county")
+  @Mapping(target = "postcode", source = "application.correspondenceAddress.postcode")
+  @Mapping(target = "careOf", source = "application.correspondenceAddress.careOf")
   GeneralDetailsSubmissionSummaryDisplay toGeneralDetailsSummaryDisplay(
-      ApplicationDetail application);
+      ApplicationDetail application,
+      @Context GeneralDetailsSubmissionSummaryMappingContext context);
+
+  @Named("toPreferredAddress")
+  default String toPreferredAddress(
+      final String code,
+      @Context final GeneralDetailsSubmissionSummaryMappingContext context) {
+    return COMMON_MAPPER.toDisplayValue(code, context.getPreferredAddress());
+  }
+
+  @Named("toCountryGeneral")
+  default String toCountry(
+      final String code,
+      @Context final GeneralDetailsSubmissionSummaryMappingContext context) {
+    return COMMON_MAPPER.toDisplayValue(code, context.getCountry());
+  }
 
   @Mapping(target = "proceedings",
       source = "application.proceedings",
@@ -97,20 +133,31 @@ public interface SubmissionSummaryDisplayMapper {
       List<OpponentDetail> opponents,
       @Context OpponentSubmissionSummaryMappingContext context);
 
-  @Mapping(target = "title", source = "title", qualifiedByName = "toTitle")
-  @Mapping(target = "relationshipToCase", source = "opponent", qualifiedByName = "toRelationshipToCase")
-  @Mapping(target = "relationshipToClient", source = "relationshipToClient", qualifiedByName = "toRelationshipToClient")
+  @Mapping(target = "title", source = "title",
+      qualifiedByName = "toTitle")
+  @Mapping(target = "relationshipToCase", source = "opponent",
+      qualifiedByName = "toRelationshipToCase")
+  @Mapping(target = "relationshipToClient", source = "relationshipToClient",
+      qualifiedByName = "toRelationshipToClient")
   @Mapping(target = "houseNameOrNumber", source = "address.houseNameOrNumber")
   @Mapping(target = "addressLine1", source = "address.addressLine1")
   @Mapping(target = "addressLine2", source = "address.addressLine2")
   @Mapping(target = "city", source = "address.city")
   @Mapping(target = "county", source = "address.county")
-  @Mapping(target = "country", source = "address.country")
+  @Mapping(target = "country", source = "address.country",
+      qualifiedByName = "toCountryOpponent")
   @Mapping(target = "postcode", source = "address.postcode")
   OpponentSubmissionSummaryDisplay toOpponentSummaryDisplay(
       final OpponentDetail opponent,
       @Context final OpponentSubmissionSummaryMappingContext context);
 
+  /**
+   * Converts a code to a title using the provided context.
+   *
+   * @param code the code to convert
+   * @param context the context containing the contact title mapping
+   * @return the title corresponding to the code
+   */
   @Named("toTitle")
   default String toTitle(
       final String code,
@@ -118,6 +165,13 @@ public interface SubmissionSummaryDisplayMapper {
     return COMMON_MAPPER.toDisplayValue(code, context.getContactTitle());
   }
 
+  /**
+   * Converts an opponent's relationship to the case using the provided context.
+   *
+   * @param opponent the opponent detail
+   * @param context the context containing the relationship mappings
+   * @return the relationship to the case corresponding to the opponent
+   */
   @Named("toRelationshipToCase")
   default String toRelationshipToCase(
       final OpponentDetail opponent,
@@ -132,11 +186,32 @@ public interface SubmissionSummaryDisplayMapper {
     }
   }
 
+  /**
+   * Converts a code to a relationship to the client using the provided context.
+   *
+   * @param code the code to convert
+   * @param context the context containing the relationship to client mapping
+   * @return the relationship to the client corresponding to the code
+   */
   @Named("toRelationshipToClient")
   default String toRelationshipToClient(
       final String code,
       @Context final OpponentSubmissionSummaryMappingContext context) {
     return COMMON_MAPPER.toDisplayValue(code, context.getRelationshipToClient());
+  }
+
+  /**
+   * Converts a code to a country opponent using the provided context.
+   *
+   * @param code the code to convert
+   * @param context the context containing the country mapping
+   * @return the country opponent corresponding to the code
+   */
+  @Named("toCountryOpponent")
+  default String toCountryOpponent(
+      final String code,
+      @Context final OpponentSubmissionSummaryMappingContext context) {
+    return COMMON_MAPPER.toDisplayValue(code, context.getCountry());
   }
 
 

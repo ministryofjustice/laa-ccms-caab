@@ -2,6 +2,9 @@ package uk.gov.laa.ccms.caab.model.summary;
 
 import lombok.Data;
 
+/**
+ * Represents the provider submission summary display.
+ */
 @Data
 public class ProviderSubmissionSummaryDisplay {
 
@@ -11,7 +14,7 @@ public class ProviderSubmissionSummaryDisplay {
   private String office;
 
   /**
-   * The Name of solicitor or Fellow of the Institute of Legal Executives instructed
+   * The Name of solicitor or Fellow of the Institute of Legal Executives instructed.
    */
   private String feeEarner;
 

@@ -75,7 +75,7 @@ class ApplicationSectionsControllerTest {
             .sessionAttr("user", user))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/summary-task-page"))
+        .andExpect(view().name("application/sections/task-page"))
         .andExpect(model().attributeExists("activeCase"))
         .andExpect(model().attribute("summary", applicationSectionDisplay));
 

@@ -91,7 +91,7 @@ class EditClientAddressDetailsControllerTest {
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/client-address-details"))
+        .andExpect(view().name("application/sections/client-address-details"))
         .andExpect(model().attributeExists("countries"));
   }
 
@@ -109,7 +109,7 @@ class EditClientAddressDetailsControllerTest {
             .flashAttr("addressDetails", addressDetails))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/client-address-details"));
+        .andExpect(view().name("application/sections/client-address-details"));
   }
 
   @Test
@@ -165,7 +165,7 @@ class EditClientAddressDetailsControllerTest {
             .flashAttr("addressDetails", addressDetails))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/client-address-details"))
+        .andExpect(view().name("application/sections/client-address-details"))
         .andExpect(model().attributeExists("countries"));
   }
 
@@ -188,7 +188,7 @@ class EditClientAddressDetailsControllerTest {
             .flashAttr("addressDetails", addressDetails))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/client-address-details"))
+        .andExpect(view().name("application/sections/client-address-details"))
         .andExpect(model().attributeExists("countries"));
   }
 

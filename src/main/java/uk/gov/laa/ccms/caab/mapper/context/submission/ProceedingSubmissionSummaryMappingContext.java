@@ -4,10 +4,15 @@ import lombok.Builder;
 import lombok.Data;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 
+/**
+ * Context for mapping proceeding submission summary details.
+ */
 @Data
 @Builder
 public class ProceedingSubmissionSummaryMappingContext {
 
-  CommonLookupDetail typeOfOrder;
-
+  /**
+   * The type of order lookup detail.
+   */
+  private CommonLookupDetail typeOfOrder;
 }

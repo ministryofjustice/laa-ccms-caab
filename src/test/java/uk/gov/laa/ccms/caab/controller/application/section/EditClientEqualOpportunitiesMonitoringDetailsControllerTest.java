@@ -78,7 +78,7 @@ class EditClientEqualOpportunitiesMonitoringDetailsControllerTest {
     mockMvc.perform(get("/application/sections/client/details/equal-opportunities-monitoring")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/client-equal-opportunities-monitoring"))
+        .andExpect(view().name("application/sections/client-equal-opportunities-monitoring"))
         .andExpect(model().attributeExists("ethnicOrigins", "disabilities"));
   }
 
@@ -101,7 +101,7 @@ class EditClientEqualOpportunitiesMonitoringDetailsControllerTest {
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("monitoringDetails", monitoringDetails))
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/client-equal-opportunities-monitoring"))
+        .andExpect(view().name("application/sections/client-equal-opportunities-monitoring"))
         .andExpect(model().attributeExists("ethnicOrigins", "disabilities"));
   }
 

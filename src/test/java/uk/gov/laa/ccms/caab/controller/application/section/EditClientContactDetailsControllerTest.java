@@ -88,7 +88,7 @@ public class EditClientContactDetailsControllerTest {
             .flashAttr("contactDetails", contactDetails))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/client-contact-details"))
+        .andExpect(view().name("application/sections/client-contact-details"))
         .andExpect(model().attributeExists("correspondenceMethods", "correspondenceLanguages"));
 
   }
@@ -125,7 +125,7 @@ public class EditClientContactDetailsControllerTest {
             .flashAttr("contactDetails", contactDetails))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/client-contact-details"))
+        .andExpect(view().name("application/sections/client-contact-details"))
         .andExpect(model().attributeExists("correspondenceMethods", "correspondenceLanguages"));
   }
 }

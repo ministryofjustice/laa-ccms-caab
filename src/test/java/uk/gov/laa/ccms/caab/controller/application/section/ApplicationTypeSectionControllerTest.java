@@ -81,7 +81,7 @@ public class ApplicationTypeSectionControllerTest {
             .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/application-type-section"))
+        .andExpect(view().name("application/sections/application-type-section"))
         .andExpect(model().attribute("applicationFormData", applicationFormData));
   }
 
@@ -120,7 +120,7 @@ public class ApplicationTypeSectionControllerTest {
             .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/application-type-section"))
+        .andExpect(view().name("application/sections/application-type-section"))
         .andExpect(model().hasErrors());
 
     verify(applicationService, never()).updateApplicationType(eq("123"), any(ApplicationFormData.class), any(UserDetail.class));

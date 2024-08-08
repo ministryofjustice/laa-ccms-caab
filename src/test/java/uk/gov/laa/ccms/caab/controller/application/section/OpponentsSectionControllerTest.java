@@ -112,7 +112,7 @@ class OpponentsSectionControllerTest {
         mockMvc.perform(get("/application/sections/opponents")
                 .sessionAttr("applicationId", "123"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("application/summary/opponents-section"));
+                .andExpect(view().name("application/sections/opponents-section"));
     }
 
     @Test

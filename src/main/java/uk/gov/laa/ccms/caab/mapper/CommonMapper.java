@@ -61,14 +61,28 @@ public interface CommonMapper {
         .orElse(code);
   }
 
-
+  /**
+   * Converts the given code to its display value using the provided lookup details.
+   *
+   * @param code the code to be converted
+   * @param lookup the lookup details to be used for conversion
+   * @return the display value corresponding to the code, or {@code null} if the lookup is
+   *         {@code null}
+   */
   default String toDisplayValue(
       final String code,
       final CommonLookupDetail lookup) {
-    return lookup != null && lookup.getContent() != null ?
-        toDisplayValue(code, lookup.getContent()) : null;
+    return lookup != null && lookup.getContent() != null
+        ? toDisplayValue(code, lookup.getContent()) : null;
   }
 
+  /**
+   * Converts the given code to its display value using a list of relationship lookup details.
+   *
+   * @param code the code to be converted
+   * @param lookups the list of relationship lookup details to be used for conversion
+   * @return the display value corresponding to the code, or the code itself if not found
+   */
   default String toRelationshipDisplayValue(
       final String code,
       @Context final List<RelationshipToCaseLookupValueDetail> lookups) {
@@ -79,11 +93,19 @@ public interface CommonMapper {
         .orElse(code);
   }
 
+  /**
+   * Converts the given code to its display value using the provided relationship lookup details.
+   *
+   * @param code the code to be converted
+   * @param lookup the relationship lookup details to be used for conversion
+   * @return the display value corresponding to the code, or {@code null} if the lookup is
+   *         {@code null}
+   */
   default String toRelationshipDisplayValue(
       final String code,
       final RelationshipToCaseLookupDetail lookup) {
-    return lookup != null && lookup.getContent() != null ?
-        toRelationshipDisplayValue(code, lookup.getContent()) : null;
+    return lookup != null && lookup.getContent() != null
+        ? toRelationshipDisplayValue(code, lookup.getContent()) : null;
   }
 
 }

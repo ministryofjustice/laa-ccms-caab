@@ -120,7 +120,7 @@ class EvidenceSectionControllerTest {
         mockMvc.perform(get("/application/sections/evidence")
                 .sessionAttr(ACTIVE_CASE, activeCase))
                 .andExpect(status().isOk())
-                .andExpect(view().name("application/summary/evidence-section"));
+                .andExpect(view().name("application/sections/evidence-section"));
 
         verify(evidenceService).getDocumentsRequired(
             String.valueOf(activeCase.getApplicationId()),

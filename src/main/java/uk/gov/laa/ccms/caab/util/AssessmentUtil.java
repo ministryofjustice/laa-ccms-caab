@@ -385,7 +385,8 @@ public class AssessmentUtil {
 
     return assessmentDetails.getContent()
         .stream()
-        .filter(assessmentDetail -> assessmentDetail.getName().equalsIgnoreCase(assessmentRulebase.getName()))
+        .filter(assessmentDetail -> assessmentDetail.getName()
+            .equalsIgnoreCase(assessmentRulebase.getName()))
         .findFirst()
         .orElseThrow(() -> new CaabApplicationException("Failed to retrieve assessment"));
   }

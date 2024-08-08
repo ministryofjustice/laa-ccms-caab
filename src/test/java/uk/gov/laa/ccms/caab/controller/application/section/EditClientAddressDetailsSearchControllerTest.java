@@ -68,7 +68,7 @@ class EditClientAddressDetailsSearchControllerTest {
             .flashAttr("addressSearch", addressSearch))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/client-address-search-results"))
+        .andExpect(view().name("application/sections/client-address-search-results"))
         .andExpect(model().attributeExists("addressSearch"));
   }
 
@@ -99,7 +99,7 @@ class EditClientAddressDetailsSearchControllerTest {
             .flashAttr("addressSearch", addressSearch))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/client-address-search-results"))
+        .andExpect(view().name("application/sections/client-address-search-results"))
         .andExpect(model().attributeExists("addressSearch", ADDRESS_SEARCH_RESULTS));
   }
 

@@ -84,7 +84,7 @@ public class ProviderDetailsSectionControllerTest {
             .sessionAttr(USER_DETAILS, user))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/provider-details-section"))
+        .andExpect(view().name("application/sections/provider-details-section"))
         .andExpect(model().attribute(APPLICATION_FORM_DATA, applicationFormData))
         .andExpect(model().attribute(ACTIVE_CASE, activeCase));
 
@@ -118,7 +118,7 @@ public class ProviderDetailsSectionControllerTest {
             .sessionAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/summary/provider-details-section"));
+        .andExpect(view().name("application/sections/provider-details-section"));
 
     verify(providerDetailsValidator, times(1)).validate(any(), any());
     verify(providerService, times(1)).getProvider(providerDetail.getId());
