@@ -49,7 +49,7 @@
             </td>
             <td class="govuk-table__cell" colspan="4">
               <th:block th:each="note :  ${notification.notes}">
-                <p th:utext="${note.message}"></p>
+                <p class="ccms-pre-formatted" th:utext="${note.message}"></p>
               </th:block>
             </td>
           </tr>
@@ -101,7 +101,8 @@
             <td th:if="${documentLinks.get(attachment.getDocumentId)} != null"
                 class="govuk-table__cell">
               <a
-                  th:href="${documentLinks.get(attachment.getDocumentId)}" class="govuk-link">
+                  th:href="${documentLinks.get(attachment.getDocumentId)}"
+                  th:target="_blank" class="govuk-link">
                 Download</a>
             </td>
             <td th:if="${documentLinks.get(attachment.getDocumentId)} == null"
@@ -120,10 +121,10 @@
     </div>
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-one-third">
-        <p th:if="${notification.evidenceAllowed}" class="govuk-body govuk-!-text-align-left">
+        <p class="govuk-body govuk-!-text-align-left">
           <a class="govuk-button govuk-button--secondary"
              data-module="govuk-button"
-             href="#TODO">
+             th:href="@{/notifications/{notification_id}/provide-documents-or-evidence(notification_id=${notification.getNotificationId})}">
             Provide documents or evidence
           </a>
         </p>

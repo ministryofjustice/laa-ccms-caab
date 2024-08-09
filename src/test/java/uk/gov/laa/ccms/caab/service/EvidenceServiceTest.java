@@ -44,8 +44,8 @@ import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.util.AssessmentModelUtils;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupValueDetail;
-import uk.gov.laa.ccms.soa.gateway.model.BaseDocument;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
+import uk.gov.laa.ccms.soa.gateway.model.Document;
 
 @ExtendWith(MockitoExtension.class)
 public class EvidenceServiceTest {
@@ -137,13 +137,14 @@ public class EvidenceServiceTest {
   void registerDocument_callsApiClient() {
     final String docId = "123";
 
-    ArgumentCaptor<BaseDocument> baseDocumentArgumentCaptor = ArgumentCaptor.forClass(BaseDocument.class);
+    ArgumentCaptor<Document> documentArgumentCaptor =
+        ArgumentCaptor.forClass(Document.class);
 
     final ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse();
     clientTransactionResponse.setReferenceNumber(docId);
 
     when(soaApiClient.registerDocument(
-        any(BaseDocument.class),
+        any(Document.class),
         eq(userId),
         eq(userType))).thenReturn(Mono.just(clientTransactionResponse));
 
@@ -155,13 +156,13 @@ public class EvidenceServiceTest {
         .verifyComplete();
 
     verify(soaApiClient).registerDocument(
-        baseDocumentArgumentCaptor.capture(),
+        documentArgumentCaptor.capture(),
         eq(userId),
         eq(userType));
 
-    assertEquals(documentType, baseDocumentArgumentCaptor.getValue().getDocumentType());
-    assertEquals(fileExtension, baseDocumentArgumentCaptor.getValue().getFileExtension());
-    assertEquals(documentDescription, baseDocumentArgumentCaptor.getValue().getText());
+    assertEquals(documentType, documentArgumentCaptor.getValue().getDocumentType());
+    assertEquals(fileExtension, documentArgumentCaptor.getValue().getFileExtension());
+    assertEquals(documentDescription, documentArgumentCaptor.getValue().getText());
   }
 
   @Test

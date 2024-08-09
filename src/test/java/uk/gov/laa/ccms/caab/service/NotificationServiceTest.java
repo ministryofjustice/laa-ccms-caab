@@ -29,8 +29,8 @@ import uk.gov.laa.ccms.caab.mapper.NotificationAttachmentMapper;
 import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
-import uk.gov.laa.ccms.soa.gateway.model.BaseDocument;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
+import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
@@ -109,7 +109,6 @@ class NotificationServiceTest {
   @Test
   void retrieveNotificationAttachment_checksS3() {
     String documentId = "documentId";
-    String documentContent = "documentContent";
 
     when(s3ApiClient.getDocumentUrl(eq(documentId))).thenReturn(Optional.of("document-url"));
 
@@ -165,6 +164,62 @@ class NotificationServiceTest {
   }
 
   @Test
+  void retrieveCoverSheet_checksS3() {
+    String documentId = "documentId";
+
+    when(s3ApiClient.getDocumentUrl(eq(documentId))).thenReturn(Optional.of("document-url"));
+
+    notificationService.retrieveCoverSheet(documentId,
+        "loginId", "userType");
+
+    verify(s3ApiClient).getDocumentUrl(documentId);
+    verifyNoInteractions(soaApiClient);
+    verify(s3ApiClient, never()).uploadDocument(any(), any(), any());
+  }
+
+  @Test
+  void retrieveCoverSheet_returnsDataFromEbs() {
+    String documentId = "documentId";
+    String documentContent = "documentContent";
+
+    when(s3ApiClient.getDocumentUrl(eq(documentId))).thenReturn(Optional.empty());
+
+    CoverSheet coverSheet = new CoverSheet()
+        .documentId(documentId)
+        .fileData(documentContent);
+
+    when(soaApiClient.downloadCoverSheet(documentId, "loginId", "userType"))
+        .thenReturn(Mono.just(coverSheet));
+
+    notificationService.retrieveCoverSheet(documentId,
+        "loginId",
+        "userType");
+
+    verify(soaApiClient).downloadCoverSheet(documentId, "loginId", "userType");
+  }
+
+  @Test
+  void retrieveCoverSheet_uploadsDataToS3() {
+    String documentId = "documentId";
+    String documentContent = "documentContent";
+
+    when(s3ApiClient.getDocumentUrl(eq(documentId))).thenReturn(Optional.empty());
+
+    CoverSheet coverSheet = new CoverSheet()
+        .documentId(documentId)
+        .fileData(documentContent);
+
+    when(soaApiClient.downloadCoverSheet(documentId, "loginId", "userType"))
+        .thenReturn(Mono.just(coverSheet));
+
+    notificationService.retrieveCoverSheet(documentId,
+        "loginId",
+        "userType");
+
+    verify(s3ApiClient).uploadDocument(documentId, documentContent, "pdf");
+  }
+
+  @Test
   void addDraftNotification_success() {
     String attachmentId = "123";
     String fileData = "fileData";
@@ -188,6 +243,7 @@ class NotificationServiceTest {
     String loginId = "loginId";
     String userType = "userType";
     Integer notificationAttachmentId = 456;
+    Integer providerId = 789;
 
     NotificationAttachmentDetail attachmentDetail = new NotificationAttachmentDetail();
     attachmentDetail.notificationReference(notificationId);
@@ -200,38 +256,34 @@ class NotificationServiceTest {
         new NotificationAttachmentDetails();
     expectedNotificationAttachmentDetails.setContent(List.of(attachmentBase));
 
-    when(caabApiClient.getNotificationAttachments(notificationId, null, null, null))
+    when(caabApiClient.getNotificationAttachments(notificationId, providerId, null, null))
         .thenReturn(Mono.just(expectedNotificationAttachmentDetails));
 
     when(caabApiClient.getNotificationAttachment(notificationAttachmentId)).thenReturn(Mono.just(attachmentDetail));
 
-    BaseDocument baseDocument = new BaseDocument();
     Document document = new Document();
 
-    when(notificationAttachmentMapper.toBaseDocument(attachmentDetail)).thenReturn(baseDocument);
     when(notificationAttachmentMapper.toDocument(attachmentDetail)).thenReturn(document);
 
     ClientTransactionResponse idResponse = new ClientTransactionResponse();
     idResponse.setReferenceNumber("001");
 
-    when(soaApiClient.registerDocument(baseDocument, loginId, userType)).thenReturn(Mono.just(idResponse));
-    when(soaApiClient.uploadDocument(document, loginId, userType)).thenReturn(Mono.just(idResponse));
+    when(soaApiClient.uploadDocument(document, notificationId, loginId, userType)).thenReturn(Mono.just(idResponse));
 
-    when(caabApiClient.deleteNotificationAttachments(notificationId, null, null, null, loginId))
+    when(caabApiClient.deleteNotificationAttachments(notificationId, providerId, null, null, loginId))
         .thenReturn(Mono.empty());
 
-    notificationService.submitNotificationAttachments(notificationId, loginId, userType);
+    notificationService.submitNotificationAttachments(notificationId, loginId, userType, providerId);
 
     // Get notification attachments from TDS
-    verify(caabApiClient).getNotificationAttachments(notificationId, null, null, null);
+    verify(caabApiClient).getNotificationAttachments(notificationId, providerId, null, null);
     verify(caabApiClient).getNotificationAttachment(notificationAttachmentId);
 
-    // Register and upload to EBS
-    verify(soaApiClient).registerDocument(baseDocument, loginId, userType);
-    verify(soaApiClient).uploadDocument(document, loginId, userType);
+    // Upload to EBS
+    verify(soaApiClient).uploadDocument(document, notificationId, loginId, userType);
 
     // Delete from TDS and S3
-    verify(caabApiClient).deleteNotificationAttachments(notificationId, null, null, null, loginId);
+    verify(caabApiClient).deleteNotificationAttachments(notificationId, providerId, null, null, loginId);
     verify(s3ApiClient).removeDraftDocuments(Set.of("456"));
   }
 
@@ -254,6 +306,7 @@ class NotificationServiceTest {
   @Test
   void getDraftNotificationAttachments_success() {
     String notificationId = "123";
+    Integer providerId = 456;
 
     BaseNotificationAttachmentDetail attachment1 = new BaseNotificationAttachmentDetail();
     BaseNotificationAttachmentDetail attachment2 = new BaseNotificationAttachmentDetail();
@@ -262,15 +315,15 @@ class NotificationServiceTest {
         new NotificationAttachmentDetails();
     expectedNotificationAttachmentDetails.setContent(List.of(attachment1, attachment2));
 
-    when(caabApiClient.getNotificationAttachments(notificationId, null, null, null))
+    when(caabApiClient.getNotificationAttachments(notificationId, providerId, null, null))
         .thenReturn(Mono.just(expectedNotificationAttachmentDetails));
 
     NotificationAttachmentDetails actualNotificationAttachmentDetails =
-        notificationService.getDraftNotificationAttachments(notificationId).block();
+        notificationService.getDraftNotificationAttachments(notificationId, providerId).block();
 
     assertEquals(expectedNotificationAttachmentDetails, actualNotificationAttachmentDetails);
 
-    verify(caabApiClient).getNotificationAttachments(notificationId, null, null, null);
+    verify(caabApiClient).getNotificationAttachments(notificationId, providerId, null, null);
   }
 
   @Test
@@ -278,29 +331,33 @@ class NotificationServiceTest {
     String notificationId = "123";
     Integer notificationAttachmentId = 456;
     String loginId = "loginId";
+    Integer providerId = 789;
 
-    BaseNotificationAttachmentDetail attachment1 = new BaseNotificationAttachmentDetail();
-    attachment1.notificationReference(notificationId);
-    attachment1.id(notificationAttachmentId);
-    BaseNotificationAttachmentDetail attachment2 = new BaseNotificationAttachmentDetail();
-    attachment2.notificationReference(notificationId);
-    attachment2.id(789);
+    BaseNotificationAttachmentDetail attachment1 = new BaseNotificationAttachmentDetail()
+        .notificationReference(notificationId)
+        .id(notificationAttachmentId)
+        .fileName("file.txt")
+        .sendBy("E");
+    BaseNotificationAttachmentDetail attachment2 = new BaseNotificationAttachmentDetail()
+        .notificationReference(notificationId)
+        .id(789)
+        .sendBy("E");
 
     NotificationAttachmentDetails notificationAttachmentDetails =
         new NotificationAttachmentDetails();
     notificationAttachmentDetails.setContent(List.of(attachment1, attachment2));
 
-    when(caabApiClient.getNotificationAttachments(notificationId, null, null, null))
+    when(caabApiClient.getNotificationAttachments(notificationId, providerId, null, null))
         .thenReturn(Mono.just(notificationAttachmentDetails));
 
     when(caabApiClient.deleteNotificationAttachment(notificationAttachmentId, loginId)).thenReturn(Mono.empty());
 
     notificationService.removeDraftNotificationAttachment(notificationId,
-        notificationAttachmentId, loginId);
+        notificationAttachmentId, loginId, providerId);
 
-    verify(caabApiClient).getNotificationAttachments(notificationId, null, null, null);
+    verify(caabApiClient).getNotificationAttachments(notificationId, providerId, null, null);
     verify(caabApiClient).deleteNotificationAttachment(notificationAttachmentId, loginId);
-    verify(s3ApiClient).removeDraftDocument("456");
+    verify(s3ApiClient).removeDraftDocument("456.txt");
   }
 
   @Test
@@ -308,23 +365,25 @@ class NotificationServiceTest {
     String notificationId = "123";
     Integer notificationAttachmentId = 456;
     String loginId = "loginId";
+    Integer providerId = 789;
 
     NotificationAttachmentDetails notificationAttachmentDetails =
         new NotificationAttachmentDetails();
     notificationAttachmentDetails.setContent(Collections.emptyList());
 
-    when(caabApiClient.getNotificationAttachments(notificationId, null, null, null))
+    when(caabApiClient.getNotificationAttachments(notificationId, providerId, null, null))
         .thenReturn(Mono.just(notificationAttachmentDetails));
 
     assertThrows(CaabApplicationException.class, () ->
         notificationService.removeDraftNotificationAttachment(notificationId,
-        notificationAttachmentId, loginId), "Expected CaabApplicationException to be thrown, but "
+        notificationAttachmentId, loginId, providerId), "Expected CaabApplicationException to be thrown, but "
         + "wasn't.");
   }
 
   @Test
   void removeDraftNotificationAttachments_success() {
     String notificationId = "123";
+    Integer providerId = 100;
 
     BaseNotificationAttachmentDetail attachment1 = new BaseNotificationAttachmentDetail();
     attachment1.notificationReference(notificationId);
@@ -337,16 +396,16 @@ class NotificationServiceTest {
         new NotificationAttachmentDetails();
     expectedNotificationAttachmentDetails.setContent(List.of(attachment1, attachment2));
 
-    when(caabApiClient.getNotificationAttachments(notificationId, null, null, null))
+    when(caabApiClient.getNotificationAttachments(notificationId, providerId, null, null))
         .thenReturn(Mono.just(expectedNotificationAttachmentDetails));
 
-    when(caabApiClient.deleteNotificationAttachments(notificationId, null, null, null, "loginId"))
+    when(caabApiClient.deleteNotificationAttachments(notificationId, providerId, null, null, "loginId"))
         .thenReturn(Mono.empty());
 
-    notificationService.removeDraftNotificationAttachments(notificationId, "loginId");
+    notificationService.removeDraftNotificationAttachments(notificationId, "loginId", providerId);
 
-    verify(caabApiClient).getNotificationAttachments(notificationId, null, null, null);
-    verify(caabApiClient).deleteNotificationAttachments(notificationId, null, null, null,
+    verify(caabApiClient).getNotificationAttachments(notificationId, providerId, null, null);
+    verify(caabApiClient).deleteNotificationAttachments(notificationId, providerId, null, null,
         "loginId");
     verify(s3ApiClient).removeDraftDocuments(Set.of("456", "789"));
   }

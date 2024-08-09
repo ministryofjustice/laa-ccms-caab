@@ -17,7 +17,6 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
-import uk.gov.laa.ccms.soa.gateway.model.BaseDocument;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
@@ -26,6 +25,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
+import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
@@ -489,22 +489,46 @@ public class SoaApiClient {
   /**
    * Post basic document details to register the document in EBS.
    *
-   * @param baseDocument          The document details to register.
+   * @param document              The document details to register.
    * @param loginId               The login identifier for the user.
    * @param userType              Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientTransactionResponse with transaction id and reference number.
    */
   public Mono<ClientTransactionResponse> registerDocument(
-      final BaseDocument baseDocument,
+      final Document document,
       final String loginId,
       final String userType) {
+
+    return uploadDocument(document, null, loginId, userType);
+  }
+
+  /**
+   * Post a complete document to EBS.
+   *
+   * @param document              The document details to register.
+   * @param loginId               The login identifier for the user.
+   * @param userType              Type of the user (e.g., admin, user).
+   * @return A Mono wrapping the ClientTransactionResponse with transaction id and reference number.
+   */
+  public Mono<ClientTransactionResponse> uploadDocument(
+      final Document document,
+      final String notificationId,
+      final String loginId,
+      final String userType) {
+
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    Optional.ofNullable(notificationId)
+        .ifPresent(param -> queryParams.add("notification-reference", notificationId));
+
     return soaApiWebClient
         .post()
-        .uri("/documents")
+        .uri(builder -> builder.path("/documents")
+            .queryParams(queryParams)
+            .build())
         .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(baseDocument)
+        .bodyValue(document)
         .retrieve()
         .bodyToMono(ClientTransactionResponse.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiCreateError(
@@ -519,13 +543,21 @@ public class SoaApiClient {
    * @param userType              Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientTransactionResponse with transaction id and reference number.
    */
-  public Mono<ClientTransactionResponse> uploadDocument(
+  public Mono<ClientTransactionResponse> updateDocument(
       final Document document,
+      final String notificationId,
       final String loginId,
       final String userType) {
+
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    Optional.ofNullable(notificationId)
+        .ifPresent(param -> queryParams.add("notification-reference", notificationId));
+
     return soaApiWebClient
         .put()
-        .uri(builder -> builder.path("/documents/{document-id}").build(document.getDocumentId()))
+        .uri(builder -> builder.path("/documents/{document-id}")
+            .queryParams(queryParams)
+            .build(document.getDocumentId()))
         .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .contentType(MediaType.APPLICATION_JSON)
@@ -555,6 +587,29 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
         .bodyToMono(Document.class)
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
+            e, "Document", "id", documentId));
+  }
+
+  /**
+   * Downloads the cover sheet for a notification attachment from EBS.
+   *
+   * @param documentId            The document identifier for the notification attachment.
+   * @param loginId               The login identifier for the user.
+   * @param userType              Type of the user (e.g., admin, user).
+   * @return A Mono wrapping the retrieved {@link CoverSheet} with cover sheet content.
+   */
+  public Mono<CoverSheet> downloadCoverSheet(
+      final String documentId,
+      final String loginId,
+      final String userType) {
+    return soaApiWebClient
+        .get()
+        .uri(builder -> builder.path("/documents/{document-id}/cover-sheet").build(documentId))
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .retrieve()
+        .bodyToMono(CoverSheet.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
             e, "Document", "id", documentId));
   }

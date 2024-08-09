@@ -1,14 +1,21 @@
 package uk.gov.laa.ccms.caab.controller.notifications;
 
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_NOTIFICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -24,11 +31,15 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationSearchValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.NotificationAttachmentMapper;
+import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
+import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
@@ -47,6 +58,7 @@ public class ActionsAndNotificationsController {
   private final LookupService lookupService;
   private final ProviderService providerService;
   private final NotificationSearchValidator notificationSearchValidator;
+  private final NotificationAttachmentMapper notificationAttachmentMapper;
   private final UserService userService;
   private final NotificationService notificationService;
 
@@ -157,7 +169,8 @@ public class ActionsAndNotificationsController {
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
       @ModelAttribute(NOTIFICATIONS_SEARCH_RESULTS) Notifications notifications,
       @PathVariable(value = "notification_id") String notificationId,
-      Model model
+      Model model,
+      HttpSession session
   ) {
     Notification found = notifications.getContent()
         .stream()
@@ -171,28 +184,172 @@ public class ActionsAndNotificationsController {
 
     model.addAttribute("documentLinks", documentLinks);
     model.addAttribute("notification", found);
+    session.setAttribute("notification", found);
     return "notifications/notification";
   }
 
   /**
    * If the notification attachment does not exist in S3, retrieve it from EBS then upload to S3.
    *
-   * @param user            current user details.
-   * @param notificationId  the ID of the notification of which the attachment belongs to.
-   * @param attachmentId    the ID of the notification attachment to retrieve.
+   * @param user           current user details.
+   * @param notificationId the ID of the notification of which the attachment belongs to.
+   * @param attachmentId   the ID of the notification attachment to retrieve.
    * @return the notification page.
    */
   @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/retrieve")
   public String retrieveNotificationAttachment(
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @PathVariable(value = "notification_id") String notificationId,
-      @PathVariable(value = "attachment_id") String attachmentId) {
+      @PathVariable(value = "attachment_id") String attachmentId,
+      HttpServletRequest request) {
+
+    String redirectUrl = "redirect:/notifications/%s".formatted(notificationId);
+    String origin = request.getHeader(HttpHeaders.REFERER);
+
+    if (origin != null && origin.contains("provide-documents-or-evidence")) {
+      redirectUrl = redirectUrl + "/provide-documents-or-evidence";
+    }
 
     notificationService.retrieveNotificationAttachment(attachmentId, user.getLoginId(),
-            user.getUserType());
+        user.getUserType());
 
-    return "redirect:/notifications/%s".formatted(notificationId);
+    return redirectUrl;
+  }
 
+  /**
+   * If the notification attachment does not exist in S3, retrieve it from TDS then upload to S3.
+   *
+   * @param user           current user details.
+   * @param notificationId the ID of the notification of which the attachment belongs to.
+   * @param attachmentId   the ID of the notification attachment to retrieve.
+   * @return the notification page.
+   */
+  @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/retrieveDraft")
+  public String retrieveDraftNotificationAttachment(
+      @ModelAttribute(USER_DETAILS) UserDetail user,
+      @PathVariable(value = "notification_id") String notificationId,
+      @PathVariable(value = "attachment_id") Integer attachmentId) {
+
+    notificationService.retrieveDraftNotificationAttachment(String.valueOf(attachmentId),
+        user.getLoginId(),
+        user.getUserType());
+
+    return "redirect:/notifications/%s/provide-documents-or-evidence".formatted(notificationId);
+
+  }
+
+  /**
+   * If the cover sheet does not exist in S3, retrieve it from EBS then upload to S3.
+   *
+   * @param user           current user details.
+   * @param notificationId the ID of the notification of which the attachment belongs to.
+   * @param attachmentId   the ID of the notification attachment to retrieve.
+   * @return the notification page.
+   */
+  @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/retrieveCoverSheet")
+  public String retrieveCoverSheet(
+      @ModelAttribute(USER_DETAILS) UserDetail user,
+      @PathVariable(value = "notification_id") String notificationId,
+      @PathVariable(value = "attachment_id") Integer attachmentId) {
+
+    notificationService.retrieveCoverSheet(String.valueOf(attachmentId),
+        user.getLoginId(),
+        user.getUserType());
+
+    return "redirect:/notifications/%s/provide-documents-or-evidence".formatted(notificationId);
+  }
+
+  /**
+   * Remove a draft notification attachment from TDS and S3.
+   *
+   * @param user           the currently logged-in user.
+   * @param notificationId the ID of the notification.
+   * @param attachmentId   the ID of the notification attachment to remove.
+   * @return the provide documents or evidence page.
+   */
+  @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/remove")
+  public String removeDraftNotificationAttachment(
+      @ModelAttribute(USER_DETAILS) UserDetail user,
+      @PathVariable(value = "notification_id") String notificationId,
+      @PathVariable(value = "attachment_id") Integer attachmentId) {
+
+    notificationService.removeDraftNotificationAttachment(notificationId, attachmentId,
+        user.getLoginId(), user.getUserId());
+    return "redirect:/notifications/%s/provide-documents-or-evidence".formatted(notificationId);
+  }
+
+  /**
+   * Display the edit notification attachment screen.
+   *
+   * @param user           the currently logged-in user.
+   * @param notificationId the ID of the notification.
+   * @param attachmentId   the ID of the notification attachment.
+   * @return the edit notification attachment screen.
+   */
+  @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/edit")
+  public String editDraftNotificationAttachment(
+      @ModelAttribute(USER_DETAILS) UserDetail user,
+      @PathVariable(value = "notification_id") String notificationId,
+      @PathVariable(value = "attachment_id") Integer attachmentId) {
+
+    // TODO: CCLS-1935 & CCLS-1937
+    return "redirect:/notifications/%s/provide-documents-or-evidence".formatted(notificationId);
+
+  }
+
+  /**
+   * Display the provide documents or evidence screen, with all uploaded and draft notification
+   * attachments.
+   *
+   * @param user           the currently logged-in user.
+   * @param notificationId the ID of the notification.
+   * @param notification   the notification object.
+   * @param model          the view model.
+   * @return the provide documents or evidence page.
+   */
+  @GetMapping("/notifications/{notification_id}/provide-documents-or-evidence")
+  public String provideDocumentsOrEvidence(
+      @ModelAttribute(USER_DETAILS) UserDetail user,
+      @PathVariable(value = "notification_id") String notificationId,
+      @SessionAttribute("notification") Notification notification,
+      Model model) {
+
+    populateModelWithNotificationAttachmentDetails(user, notificationId, notification, model);
+
+    return "notifications/provide-documents-or-evidence";
+  }
+
+  /**
+   * Submit all draft notification attachments to EBS.
+   *
+   * @param user           the currently logged-in user.
+   * @param notificationId the ID of the notification.
+   * @return the provide documents or evidence page.
+   */
+  @PostMapping("/notifications/{notification_id}/provide-documents-or-evidence")
+  public String submitDraftNotificationAttachments(
+      @ModelAttribute(USER_DETAILS) UserDetail user,
+      @PathVariable(value = "notification_id") String notificationId,
+      @SessionAttribute("notification") Notification notification,
+      Model model) {
+
+    NotificationAttachmentDetails notificationAttachmentDetails =
+        notificationService.getDraftNotificationAttachments(notificationId, user.getUserId())
+            .block();
+
+    if (notificationAttachmentDetails.getContent().isEmpty()) {
+      populateModelWithNotificationAttachmentDetails(user, notificationId, notification, model);
+      String errorMessage = "You have not provided any documents for this notification that are "
+          + "ready to be submitted. Please click the relevant link to add a document then try "
+          + "again.";
+      model.addAttribute("errorMessage", errorMessage);
+      return "notifications/provide-documents-or-evidence";
+    }
+
+    notificationService.submitNotificationAttachments(notificationId, user.getLoginId(),
+        user.getUserType(), user.getUserId());
+
+    return "redirect:/notifications/%s/provide-documents-or-evidence".formatted(notificationId);
   }
 
   private void populateDropdowns(UserDetail user, Model model,
@@ -215,6 +372,95 @@ public class ActionsAndNotificationsController {
         .block();
     model.addAttribute("notificationSearchCriteria", criteria);
 
+  }
+
+  /**
+   * Populate the view model with notification attachment details and S3 links.
+   *
+   * @param user the logged-in user.
+   * @param notificationId the ID of the notification.
+   * @param notification the notification object.
+   * @param model the model to populate.
+   */
+  private void populateModelWithNotificationAttachmentDetails(UserDetail user,
+      String notificationId,
+      Notification notification,
+      Model model) {
+    // Get document type display values
+    Map<String, String> documentTypes = getDocumentTypes();
+
+    List<BaseNotificationAttachmentDetail> uploadedNotificationAttachments =
+        getSubmittedAttachments(notification, documentTypes);
+
+    setSequences(uploadedNotificationAttachments);
+
+    List<BaseNotificationAttachmentDetail> draftNotificationAttachments =
+        notificationService.getDraftNotificationAttachments(notificationId, user.getUserId())
+            .block().getContent();
+
+    // Combine uploaded and draft documents to display
+    List<BaseNotificationAttachmentDetail> allDocuments = new ArrayList<>();
+    allDocuments.addAll(uploadedNotificationAttachments);
+    allDocuments.addAll(draftNotificationAttachments);
+
+    // <Document ID, S3 Link>
+    Map<String, String> documentLinks = new HashMap<>();
+    documentLinks.putAll(notificationService.getDraftDocumentLinks(draftNotificationAttachments));
+    documentLinks.putAll(notificationService.getDocumentLinks(notification.getUploadedDocuments()));
+
+    model.addAttribute("notification", notification);
+    model.addAttribute("notificationId", notificationId);
+    model.addAttribute("notificationAttachments", allDocuments);
+    model.addAttribute("documentLinks", documentLinks);
+  }
+
+  /**
+   * Get all notification attachments that have been submitted.
+   *
+   * @param notification the notification to get attachments for.
+   * @param documentTypes a lookup of document types.
+   * @return a list of all the notification attachments that have been submitted, mapped to
+   *         {@link BaseNotificationAttachmentDetail}.
+   */
+  private List<BaseNotificationAttachmentDetail> getSubmittedAttachments(Notification notification,
+      Map<String, String> documentTypes) {
+    return notification
+        .getUploadedDocuments().stream()
+        .map(document -> notificationAttachmentMapper.toBaseNotificationAttachmentDetail(document,
+            documentTypes.get(document.getDocumentType())))
+        .map(notificationAttachment -> notificationAttachment.status("Submitted"))
+        .toList();
+  }
+
+  /**
+   * Fetch document types mapped to code / display value pairs.
+   *
+   * @return document types mapped to code / display value pairs.
+   */
+  private Map<String, String> getDocumentTypes() {
+    return lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES)
+        .map(CommonLookupDetail::getContent)
+        .blockOptional()
+        .map(lookupDetails -> lookupDetails.stream()
+            .collect(Collectors.toMap(
+                CommonLookupValueDetail::getCode,
+                CommonLookupValueDetail::getDescription)))
+        .orElseThrow(
+            () -> new CaabApplicationException("Failed to retrieve notification type lookup"));
+  }
+
+  /**
+   * Set sequences on the given list of notification attachments, starting from 1 and incrementing.
+   *
+   * @param notificationAttachments the list of notification attachments.
+   */
+  private void setSequences(
+      List<BaseNotificationAttachmentDetail> notificationAttachments) {
+    long number = 0L;
+    for (BaseNotificationAttachmentDetail baseNotificationAttachmentDetail :
+        notificationAttachments) {
+      baseNotificationAttachmentDetail.number(++number);
+    }
   }
 
 }

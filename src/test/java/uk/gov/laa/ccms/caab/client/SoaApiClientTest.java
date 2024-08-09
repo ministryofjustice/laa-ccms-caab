@@ -26,7 +26,6 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
-import uk.gov.laa.ccms.soa.gateway.model.BaseDocument;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
@@ -35,6 +34,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
+import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
@@ -883,8 +883,50 @@ class SoaApiClientTest {
   }
 
   @Test
+  void downloadCoverSheet_successful() {
+    String loginId = "user1";
+    String userType = "userType";
+    String attachmentId = "12345";
+
+    String expectedUri = "/documents/12345/cover-sheet";
+
+    CoverSheet mockCoverSheet = new CoverSheet();
+
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(soaApiWebClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
+        requestHeadersMock);
+    when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(
+        requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CoverSheet.class)).thenReturn(
+        Mono.just(mockCoverSheet));
+
+    Mono<CoverSheet> coverSheetMono =
+        soaApiClient.downloadCoverSheet(attachmentId, loginId, userType);
+
+    StepVerifier.create(coverSheetMono)
+        .expectNextMatches(coverSheet -> coverSheet == mockCoverSheet)
+        .verifyComplete();
+
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    verify(soaApiWebClientMock).get();
+    verify(requestHeadersUriMock).uri(uriCaptor.capture());
+    verify(requestHeadersMock).header("SoaGateway-User-Login-Id", loginId);
+    verify(requestHeadersMock).header("SoaGateway-User-Role", userType);
+    verify(requestHeadersMock).retrieve();
+    verify(responseMock).bodyToMono(CoverSheet.class);
+
+    assertEquals(expectedUri, actualUri.toString());
+  }
+
+  @Test
   void registerDocument_Successful() {
-    BaseDocument baseDocument = new BaseDocument();
+    Document document = new Document();
     String loginId = "user1";
     String userType = "userType";
     String expectedUri = "/documents";
@@ -892,34 +934,80 @@ class SoaApiClientTest {
     ClientTransactionResponse mockDocumentRegistered = new ClientTransactionResponse();
     mockDocumentRegistered.setTransactionId("123");
 
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
     when(soaApiWebClientMock.post()).thenReturn(requestBodyUriMock);
-    when(requestBodyUriMock.uri(expectedUri)).thenReturn(requestBodyMock);
+    when(requestBodyUriMock.uri(uriCaptor.capture())).thenReturn(requestBodyMock);
     when(requestBodyMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
         requestBodyMock);
     when(requestBodyMock.header("SoaGateway-User-Role", userType)).thenReturn(
         requestBodyMock);
     when(requestBodyMock.contentType(any(MediaType.class))).thenReturn(requestBodyMock);
-    when(requestBodyMock.bodyValue(any(BaseDocument.class))).thenReturn(requestHeadersMock);
+    when(requestBodyMock.bodyValue(any(Document.class))).thenReturn(requestHeadersMock);
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(ClientTransactionResponse.class)).thenReturn(Mono.just(mockDocumentRegistered));
 
     Mono<ClientTransactionResponse> documentRegisteredMono =
-        soaApiClient.registerDocument(baseDocument,
+        soaApiClient.registerDocument(document,
         loginId,
         userType);
 
     StepVerifier.create(documentRegisteredMono)
         .expectNext(mockDocumentRegistered)
         .verifyComplete();
+
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    assertEquals(expectedUri, actualUri.toString());
   }
 
   @Test
   void uploadDocument_Successful() {
     Document document = new Document();
+    String loginId = "user1";
+    String userType = "userType";
+    String expectedUri = "/documents?notification-reference=12345";
+
+    ClientTransactionResponse mockDocumentRegistered = new ClientTransactionResponse();
+    mockDocumentRegistered.setTransactionId("123");
+
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(soaApiWebClientMock.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(uriCaptor.capture())).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
+        requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Role", userType)).thenReturn(
+        requestBodyMock);
+    when(requestBodyMock.contentType(any(MediaType.class))).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(Document.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(ClientTransactionResponse.class)).thenReturn(Mono.just(mockDocumentRegistered));
+
+    Mono<ClientTransactionResponse> documentRegisteredMono =
+        soaApiClient.uploadDocument(document,
+            "12345",
+            loginId,
+            userType);
+
+    StepVerifier.create(documentRegisteredMono)
+        .expectNext(mockDocumentRegistered)
+        .verifyComplete();
+
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    assertEquals(expectedUri, actualUri.toString());
+  }
+
+  @Test
+  void updateDocument_Successful() {
+    Document document = new Document();
     document.setDocumentId("123");
     String loginId = "user1";
     String userType = "userType";
-    String expectedUri = String.format("/documents/%s", "123");
+    String expectedUri = "/documents/123?notification-reference=12345";
 
     ClientTransactionResponse mockDocumentUploaded = new ClientTransactionResponse();
     mockDocumentUploaded.setTransactionId("123");
@@ -938,7 +1026,8 @@ class SoaApiClientTest {
     when(responseMock.bodyToMono(ClientTransactionResponse.class)).thenReturn(Mono.just(mockDocumentUploaded));
 
     Mono<ClientTransactionResponse> documentUploadedMono =
-        soaApiClient.uploadDocument(document,
+        soaApiClient.updateDocument(document,
+            "12345",
             loginId,
             userType);
 

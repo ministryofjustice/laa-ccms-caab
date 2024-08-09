@@ -33,8 +33,8 @@ import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.util.EvidenceUtil;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupValueDetail;
-import uk.gov.laa.ccms.soa.gateway.model.BaseDocument;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
+import uk.gov.laa.ccms.soa.gateway.model.Document;
 
 /**
  * Service class to handle Evidence.
@@ -140,13 +140,13 @@ public class EvidenceService {
       final String userId,
       final String userType) {
 
-    final BaseDocument baseDocument = new BaseDocument()
+    final Document document = new Document()
         .documentType(documentType)
         .fileExtension(fileExtension)
         .text(documentDescription);
 
     return soaApiClient.registerDocument(
-            baseDocument,
+            document,
             userId,
             userType)
         .mapNotNull(ClientTransactionResponse::getReferenceNumber);

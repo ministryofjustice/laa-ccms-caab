@@ -11,8 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.S3ApiClient;
@@ -23,7 +21,7 @@ import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
 import uk.gov.laa.ccms.caab.util.FileUtil;
-import uk.gov.laa.ccms.soa.gateway.model.BaseDocument;
+import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
@@ -41,6 +39,8 @@ public class NotificationService {
   private final S3ApiClient s3ApiClient;
 
   private final NotificationAttachmentMapper notificationAttachmentMapper;
+
+  private static final String COVER_SHEET_FILE_EXTENSION = "pdf";
 
   /**
    * Retrieve the summary of notifications for a given user.
@@ -76,27 +76,103 @@ public class NotificationService {
   public void retrieveNotificationAttachment(String attachmentId,
       String loginId, String userType) {
 
-    if (s3ApiClient.getDocumentUrl(attachmentId).isPresent()) {
+    retrieveDocument(attachmentId, loginId, userType, false, false);
+  }
+
+  /**
+   * If the document with the provided ID does not exist in S3, fetch it from TDS and upload it.
+   *
+   * @param attachmentId The ID of the notification attachment to retrieve.
+   * @param loginId      The login identifier for the user.
+   * @param userType     Type of the user (e.g., admin, user).
+   */
+  public void retrieveDraftNotificationAttachment(String attachmentId,
+      String loginId, String userType) {
+
+    retrieveDocument(attachmentId, loginId, userType, true, false);
+  }
+
+  /**
+   * If the cover sheet with the provided ID does not exist in S3, fetch it from EBS and upload it.
+   *
+   * @param attachmentId The ID of the notification attachment to retrieve a cover sheet for.
+   * @param loginId      The login identifier for the user.
+   * @param userType     Type of the user (e.g., admin, user).
+   */
+  public void retrieveCoverSheet(String attachmentId,
+      String loginId, String userType) {
+
+    retrieveDocument(attachmentId, loginId, userType, false, true);
+  }
+
+  /**
+   * If the cover sheet with the provided ID does not exist in S3, fetch it from the appropriate
+   * data store and upload it.
+   *
+   * @param attachmentId      The ID of the notification attachment to retrieve a cover sheet for.
+   * @param loginId           The login identifier for the user.
+   * @param userType          Type of the user (e.g., admin, user).
+   * @param isDraftDocument   Whether the document is a draft document.
+   * @param isCoverSheet      Whether the document is a cover sheet.
+   */
+  private void retrieveDocument(String attachmentId,
+      String loginId, String userType, boolean isDraftDocument, boolean isCoverSheet) {
+
+    final boolean existsInS3;
+
+    if (isDraftDocument) {
+      existsInS3 = s3ApiClient.getDraftDocumentUrl(attachmentId).isPresent();
+    } else {
+      existsInS3 = s3ApiClient.getDocumentUrl(attachmentId).isPresent();
+    }
+
+    if (existsInS3) {
       log.debug("Document with ID '{}' found in S3.",
           attachmentId);
     } else {
       log.debug("Document with ID '{}' missing in S3. Attempting to retrieve "
-              + "from EBS instead.",
+              + "from database instead.",
           attachmentId);
-      Document attachment = soaApiClient.downloadDocument(attachmentId,
-          loginId, userType).block();
-      if (attachment != null) {
-        log.debug("Document with ID '{}' retrieved from EBS. Uploading to S3.",
-            attachmentId);
-        s3ApiClient.uploadDocument(attachmentId, attachment.getFileData(),
-            attachment.getFileExtension());
-        log.debug("Document with ID '{}' uploaded to S3.",
-            attachmentId);
+
+      if (isDraftDocument) {
+        NotificationAttachmentDetail draftAttachment =
+            caabApiClient.getNotificationAttachment(Integer.parseInt(attachmentId)).block();
+        if (draftAttachment != null) {
+          uploadToS3(draftAttachment, attachmentId);
+        }
+      } else if (isCoverSheet) {
+        CoverSheet coverSheet = soaApiClient.downloadCoverSheet(attachmentId,
+            loginId, userType).block();
+        if (coverSheet != null) {
+          uploadToS3(coverSheet, attachmentId);
+        }
       } else {
-        throw new CaabApplicationException(String.format("Unable to retrieve document with ID "
-            + "'%s' from EBS.", attachmentId));
+        Document attachment = soaApiClient.downloadDocument(attachmentId,
+            loginId, userType).block();
+        if (attachment != null) {
+          uploadToS3(attachment, attachmentId);
+        }
       }
+
+      log.debug("Document with ID '{}' uploaded to S3.",
+          attachmentId);
     }
+  }
+
+  private void uploadToS3(NotificationAttachmentDetail draftAttachment, String attachmentId) {
+    s3ApiClient.uploadDraftDocument(attachmentId, draftAttachment.getFileData(),
+        FileUtil.getFileExtension(draftAttachment.getFileName()));
+
+  }
+
+  private void uploadToS3(Document attachment, String attachmentId) {
+    s3ApiClient.uploadDocument(attachmentId, attachment.getFileData(),
+        attachment.getFileExtension());
+  }
+
+  private void uploadToS3(CoverSheet coverSheet, String attachmentId) {
+    s3ApiClient.uploadDocument(attachmentId, coverSheet.getFileData(),
+        COVER_SHEET_FILE_EXTENSION);
   }
 
   /**
@@ -123,11 +199,12 @@ public class NotificationService {
    * @param userType       Type of the user (e.g., admin, user).
    */
   public void submitNotificationAttachments(String notificationId, String loginId,
-      String userType) {
+      String userType, Integer providerId) {
 
     // Get all notification attachments from TDS
 
-    Set<String> notificationAttachmentIds = getNotificationAttachmentIds(notificationId);
+    Set<String> notificationAttachmentIds = getNotificationAttachmentIds(notificationId,
+        providerId);
 
     List<NotificationAttachmentDetail> notificationAttachmentDetails =
         Flux.fromStream(notificationAttachmentIds.stream()
@@ -135,30 +212,21 @@ public class NotificationService {
                 .map(caabApiClient::getNotificationAttachment)).flatMap(mono -> mono).collectList()
             .block();
 
-    // Register documents in EBS
+    if (notificationAttachmentDetails != null && !notificationAttachmentDetails.isEmpty()) {
 
-    Set<Tuple2<NotificationAttachmentDetail, String>> registeredAttachments =
-        notificationAttachmentDetails.stream()
-            .map(notificationAttachment -> {
-              BaseDocument baseDocument =
-                  notificationAttachmentMapper.toBaseDocument(notificationAttachment);
-              return Tuples.of(notificationAttachment,
-                  soaApiClient.registerDocument(baseDocument, loginId, userType).block()
-                      .getReferenceNumber());
-            }).collect(Collectors.toSet());
+      // Upload documents to EBS
 
-    // Upload document contents to EBS
+      Flux.fromStream(notificationAttachmentDetails.stream()
+              .map(notificationAttachmentMapper::toDocument)
+              .map(document -> soaApiClient.uploadDocument(document, notificationId, loginId,
+                  userType))).flatMap(mono -> mono).collectList()
+          .block();
 
-    Flux.fromStream(registeredAttachments.stream()
-        .map(registeredAttachment -> {
-          Document document = notificationAttachmentMapper.toDocument(registeredAttachment.getT1());
-          document.setDocumentId(registeredAttachment.getT2());
-          return soaApiClient.uploadDocument(document, loginId, userType);
-        })).flatMap(mono -> mono).collectList().block();
+      // Delete draft documents from TDS and S3
 
-    // Delete draft documents from TDS and S3
-
-    removeDraftNotificationAttachments(notificationId, notificationAttachmentIds, loginId);
+      removeDraftNotificationAttachments(notificationId, providerId, notificationAttachmentIds,
+          loginId);
+    }
   }
 
   /**
@@ -179,10 +247,10 @@ public class NotificationService {
    * @return NotificationAttachmentDetails containing the list of NotificationAttachmentDetail.
    */
   public Mono<NotificationAttachmentDetails> getDraftNotificationAttachments(
-      final String notificationId) {
+      final String notificationId, final Integer providerId) {
     return caabApiClient.getNotificationAttachments(
         notificationId,
-        null,
+        providerId,
         null,
         null);
   }
@@ -196,26 +264,32 @@ public class NotificationService {
   public void removeDraftNotificationAttachment(
       final String notificationId,
       final Integer notificationAttachmentId,
-      final String loginId) {
+      final String loginId,
+      final Integer providerId) {
 
     // First ensure that the notification attachment exists and is related to the notification.
     // (We don't want to retrieve the notification attachment by its id, as that will include the
     // (possibly) 8MB of file data.)
-    getDraftNotificationAttachments(
-        notificationId)
-        .map(NotificationAttachmentDetails::getContent)
-        .mapNotNull(baseNotificationAttachmentDetails ->
-            baseNotificationAttachmentDetails.stream()
-                .filter(baseNotificationAttachmentDetail -> baseNotificationAttachmentDetail
-                    .getId().equals(notificationAttachmentId))
-                .findFirst()
-                .orElse(null))
-        .blockOptional()
-        .orElseThrow(() -> new CaabApplicationException(
-            String.format("Invalid notification attachment id: %s", notificationAttachmentId)));
+    BaseNotificationAttachmentDetail notificationAttachment =
+        getDraftNotificationAttachments(
+            notificationId, providerId)
+            .map(NotificationAttachmentDetails::getContent)
+            .mapNotNull(baseNotificationAttachmentDetails ->
+                baseNotificationAttachmentDetails.stream()
+                    .filter(baseNotificationAttachmentDetail -> baseNotificationAttachmentDetail
+                        .getId().equals(notificationAttachmentId))
+                    .findFirst()
+                    .orElse(null))
+            .blockOptional()
+            .orElseThrow(() -> new CaabApplicationException(
+                String.format("Invalid notification attachment id: %s", notificationAttachmentId)));
 
     caabApiClient.deleteNotificationAttachment(notificationAttachmentId, loginId).block();
-    s3ApiClient.removeDraftDocument(String.valueOf(notificationAttachmentId));
+    if (notificationAttachment.getSendBy().equals("E")) {
+      String fileExtension = FileUtil.getFileExtension(notificationAttachment.getFileName());
+      s3ApiClient.removeDraftDocument(FileUtil.getFilename(String.valueOf(notificationAttachmentId),
+          fileExtension));
+    }
   }
 
   /**
@@ -224,11 +298,14 @@ public class NotificationService {
    * @param notificationId the ID of the notification.
    * @param loginId        the user login ID.
    */
-  public void removeDraftNotificationAttachments(String notificationId, String loginId) {
+  public void removeDraftNotificationAttachments(String notificationId, String loginId,
+      Integer providerId) {
     // Get all notification attachment IDs linked to the given notification
-    Set<String> notificationAttachmentIds = getNotificationAttachmentIds(notificationId);
+    Set<String> notificationAttachmentIds = getNotificationAttachmentIds(notificationId,
+        providerId);
 
-    removeDraftNotificationAttachments(notificationId, notificationAttachmentIds, loginId);
+    removeDraftNotificationAttachments(notificationId, providerId, notificationAttachmentIds,
+        loginId);
   }
 
   /**
@@ -240,13 +317,65 @@ public class NotificationService {
    * @param loginId                   the user login ID.
    */
   private void removeDraftNotificationAttachments(String notificationId,
-      Set<String> notificationAttachmentIds, String loginId) {
+      Integer providerId, Set<String> notificationAttachmentIds, String loginId) {
 
     if (!CollectionUtils.isEmpty(notificationAttachmentIds)) {
-      caabApiClient.deleteNotificationAttachments(notificationId, null, null, null, loginId)
+      caabApiClient.deleteNotificationAttachments(notificationId, providerId, null,
+              null, loginId)
           .block();
       s3ApiClient.removeDraftDocuments(notificationAttachmentIds);
     }
+  }
+
+  /**
+   * For each {@link BaseNotificationAttachmentDetail} provided, generate a signed URL to access the
+   * file in S3.
+   *
+   * @param attachments The list of draft documents for which to generate access URLs.
+   * @return a map of document ID / URL pairs.
+   */
+  public Map<String, String> getDraftDocumentLinks(
+      List<BaseNotificationAttachmentDetail> attachments) {
+    List<String> documentIds = attachments.stream()
+        .map(BaseNotificationAttachmentDetail::getId)
+        .map(String::valueOf)
+        .toList();
+    return getDocumentLinks(documentIds, true);
+  }
+
+  /**
+   * For each {@link Document} provided, generate a signed URL to access the file in S3.
+   *
+   * @param documents The list of uploaded documents for which to generate access URLs.
+   * @return a map of document ID / URL pairs.
+   */
+  public Map<String, String> getDocumentLinks(List<Document> documents) {
+    List<String> documentIds = documents.stream()
+        .map(Document::getDocumentId)
+        .toList();
+    return getDocumentLinks(documentIds, false);
+  }
+
+  /**
+   * For each {@link Document} provided, generate a signed URL to access the file in S3.
+   *
+   * @param documentIds The IDs of the documents for which to generate access URLs.
+   * @return a map of document ID / URL pairs.
+   */
+  private Map<String, String> getDocumentLinks(List<String> documentIds, boolean isDraft) {
+    Map<String, String> documentLinks = new HashMap<>();
+    if (!documentIds.isEmpty()) {
+      for (String documentId : documentIds) {
+        String documentUrl;
+        if (isDraft) {
+          documentUrl = s3ApiClient.getDraftDocumentUrl(documentId).orElse(null);
+        } else {
+          documentUrl = s3ApiClient.getDocumentUrl(documentId).orElse(null);
+        }
+        documentLinks.put(documentId, documentUrl);
+      }
+    }
+    return documentLinks;
   }
 
   /**
@@ -255,8 +384,8 @@ public class NotificationService {
    * @param notificationId the ID of the notification.
    * @return Set of notification attachment IDs linked to the notification.
    */
-  private Set<String> getNotificationAttachmentIds(String notificationId) {
-    return getDraftNotificationAttachments(notificationId)
+  private Set<String> getNotificationAttachmentIds(String notificationId, Integer providerId) {
+    return getDraftNotificationAttachments(notificationId, providerId)
         .map(NotificationAttachmentDetails::getContent)
         .mapNotNull(baseNotificationAttachmentDetails ->
             baseNotificationAttachmentDetails.stream()
@@ -266,21 +395,5 @@ public class NotificationService {
         .block();
   }
 
-  /**
-   * For each {@link Document} provided, generate a signed URL to access the file in S3.
-   *
-   * @param documents The documents for which to generate access URLs.
-   * @return a map of document ID / URL pairs.
-   */
-  public Map<String, String> getDocumentLinks(List<Document> documents) {
-    Map<String, String> documentLinks = new HashMap<>();
-    if (!documents.isEmpty()) {
-      for (Document document : documents) {
-        documentLinks.put(document.getDocumentId(),
-            s3ApiClient.getDocumentUrl(document.getDocumentId()).orElse(null));
-      }
-    }
-    return documentLinks;
-  }
 
 }
