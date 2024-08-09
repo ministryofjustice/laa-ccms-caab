@@ -7,17 +7,20 @@ import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.util.List;
 import java.util.function.Function;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.assessment.model.PatchAssessmentDetail;
 
@@ -75,7 +78,53 @@ class AssessmentApiClientTest {
   }
 
   @Test
+  @DisplayName("createAssessment succeeds when called with valid assessment and loginId")
+  void createAssessment_success() {
+    final AssessmentDetail assessmentDetail = new AssessmentDetail(); // Populate this as needed
+    final String userLoginId = "user123";
+
+    when(assessmentApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri("/assessments")).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", userLoginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(assessmentDetail)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = assessmentApiClient.createAssessment(assessmentDetail, userLoginId);
+
+    StepVerifier.create(result)
+        .verifyComplete();
+
+    verify(responseMock).bodyToMono(Void.class);
+  }
+
+
+  @Test
+  @DisplayName("updateAssessment succeeds when called with valid assessmentId, assessment, and loginId")
   void updateAssessment_success() {
+    final Long assessmentId = 123L;
+    final AssessmentDetail assessmentDetail = new AssessmentDetail(); // Populate this as needed
+    final String userLoginId = "user123";
+
+    when(assessmentApiWebClient.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri("/assessments/{assessment-id}", assessmentId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", userLoginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(assessmentDetail)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = assessmentApiClient.updateAssessment(assessmentId, assessmentDetail, userLoginId);
+
+    StepVerifier.create(result)
+        .verifyComplete();
+
+    verify(responseMock).bodyToMono(Void.class);
+  }
+
+  @Test
+  void patchAssessment_success() {
     final Long assessmentId = 123L;
     final String userLoginId = "user456";
     final PatchAssessmentDetail patchDetails = new PatchAssessmentDetail(); // Populate this as needed for the test
@@ -122,6 +171,8 @@ class AssessmentApiClientTest {
 
     assertEquals("/assessments?name=meansAssessment,meritsAssessment&provider-id=987&case-reference-number=case456&status=PENDING", actualUri.toString());
   }
+
+
 
   
 }

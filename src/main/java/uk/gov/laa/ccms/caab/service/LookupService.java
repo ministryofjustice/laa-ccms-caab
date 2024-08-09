@@ -522,7 +522,7 @@ public class LookupService {
     final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups =
         getClientLookups(clientFlowFormData);
 
-    // Fetch all Monos asynchronously
+    // Fetch all Mono's asynchronously
     return getCommonLookupsMap(lookups);
   }
 

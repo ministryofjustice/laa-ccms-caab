@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -43,6 +44,7 @@ import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -1079,6 +1081,77 @@ public class CaabApiClientTest {
     StepVerifier.create(result)
         .expectNext(notificationAttachmentDetail)
         .verifyComplete();
+  }
+
+  @Test
+  @DisplayName("deleteProceeding succeeds when called with valid proceedingId and loginId")
+  void deleteProceeding_success() {
+    final Integer proceedingId = 123;
+    final String loginId = "user456";
+
+    when(caabApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri("/proceedings/{proceeding-id}", proceedingId))
+        .thenReturn(requestHeadersMock);
+    when(requestHeadersMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.deleteProceeding(proceedingId, loginId);
+
+    StepVerifier.create(result).verifyComplete();
+
+    verify(requestHeadersUriMock).uri("/proceedings/{proceeding-id}", proceedingId);
+    verify(requestHeadersMock).header("Caab-User-Login-Id", loginId);
+    verify(requestHeadersMock).retrieve();
+  }
+
+  @Test
+  @DisplayName("getScopeLimitations succeeds when called with valid proceedingId")
+  void getScopeLimitations_success() {
+    final Integer proceedingId = 123;
+    final List<ScopeLimitationDetail> mockScopeLimitations = List.of(new ScopeLimitationDetail());
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri("/proceedings/{id}/scope-limitations", proceedingId))
+        .thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(new ParameterizedTypeReference<List<ScopeLimitationDetail>>() {}))
+        .thenReturn(Mono.just(mockScopeLimitations));
+
+    final Mono<List<ScopeLimitationDetail>> result = caabApiClient.getScopeLimitations(proceedingId);
+
+    StepVerifier.create(result)
+        .expectNext(mockScopeLimitations)
+        .verifyComplete();
+
+    verify(requestHeadersUriMock).uri("/proceedings/{id}/scope-limitations", proceedingId);
+    verify(requestHeadersMock).retrieve();
+  }
+
+  @Test
+  @DisplayName("patchApplication succeeds when called with valid id, ApplicationDetail, and loginId")
+  void patchApplication_success() {
+    final String id = "app123";
+    final String loginId = "user789";
+    final ApplicationDetail patch = new ApplicationDetail(); // Populate this with test data as needed
+
+    when(caabApiWebClient.patch()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri("/applications/{id}", id)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(patch)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.patchApplication(id, patch, loginId);
+
+    StepVerifier.create(result).verifyComplete();
+
+    verify(requestBodyUriMock).uri("/applications/{id}", id);
+    verify(requestBodyMock).header("Caab-User-Login-Id", loginId);
+    verify(requestBodyMock).contentType(MediaType.APPLICATION_JSON);
+    verify(requestBodyMock).bodyValue(patch);
+    verify(requestHeadersMock).retrieve();
   }
 
 }
