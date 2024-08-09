@@ -264,7 +264,7 @@ public class ApplicationSearchControllerTest {
         .andDo(print())
         .andExpect(request().sessionAttribute(APPLICATION_ID, caseSearchResults.get(0).getId()))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/summary"));
+        .andExpect(redirectedUrl("/application/sections"));
   }
 
   @Test

@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.constants.assessment;
 
-import java.util.Arrays;
 import lombok.Getter;
 
 /**

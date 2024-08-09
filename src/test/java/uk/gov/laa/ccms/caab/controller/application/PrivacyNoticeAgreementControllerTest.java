@@ -83,7 +83,7 @@ public class PrivacyNoticeAgreementControllerTest {
         this.mockMvc.perform(post("/application/agreement")
                         .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/application/summary"));
+                .andExpect(redirectedUrl("/application/sections"));
 
         verify(privacyNoticeAgreementValidator, times(1)).validate(any(), any());
     }

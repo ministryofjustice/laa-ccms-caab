@@ -23,7 +23,7 @@ import uk.gov.laa.ccms.soa.gateway.model.OrganisationSummary;
 /**
  * Maps between multiple objects into results display objects.
  */
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = CommonMapper.class)
 public interface ResultDisplayMapper {
 
   @Mapping(target = "firstName", source = "details.name.firstName")
@@ -67,20 +67,5 @@ public interface ResultDisplayMapper {
       OrganisationDetails organisationDetails,
       @Context List<CommonLookupValueDetail> organisationTypes);
 
-  /**
-   * Convert a code to its display value.
-   *
-   * @param code - the code
-   * @param lookups - the lookups containing the display values
-   * @return display value for code, or the original code if no match found.
-   */
-  @Named("toDisplayValue")
-  default String toDisplayValue(String code, @Context List<CommonLookupValueDetail> lookups) {
-    return lookups.stream()
-        .filter(lookup -> lookup.getCode().equals(code))
-        .findFirst()
-        .map(CommonLookupValueDetail::getDescription)
-        .orElse(code);
-  }
 
 }

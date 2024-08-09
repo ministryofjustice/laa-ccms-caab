@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.function.Function;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -32,6 +33,7 @@ import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
+import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
@@ -891,6 +893,129 @@ public class EbsApiClientTest {
     final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
     assertEquals("/lookup/assessment-summary-attributes?size=1000&summary-type=summary1", actualUri.toString());
+  }
+
+  @Test
+  @DisplayName("getCommonValues(type, code, description) - success")
+  void getCommonValues_withTypeCodeDescription_success() {
+    final String type = "type1";
+    final String code = "code1";
+    final String description = "desc1";
+    final CommonLookupDetail mockDetail = new CommonLookupDetail(); // Assume this is populated
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(mockDetail));
+
+    final Mono<CommonLookupDetail> result = ebsApiClient.getCommonValues(type, code, description);
+
+    StepVerifier.create(result)
+        .expectNext(mockDetail)
+        .verifyComplete();
+
+    verify(responseMock).bodyToMono(CommonLookupDetail.class);
+  }
+
+  @Test
+  @DisplayName("getCommonValues(type, code, description) - error handling")
+  void getCommonValues_withTypeCodeDescription_errorHandling() {
+    final String type = "type1";
+    final String code = "code1";
+    final String description = "desc1";
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.error(new RuntimeException("Error")));
+
+    final Mono<CommonLookupDetail> result = ebsApiClient.getCommonValues(type, code, description);
+
+    StepVerifier.create(result)
+        .expectError(RuntimeException.class)
+        .verify();
+
+    verify(responseMock).bodyToMono(CommonLookupDetail.class);
+  }
+
+  @Test
+  @DisplayName("getCommonValues(type, code) - success")
+  void getCommonValues_withTypeCode_success() {
+    final String type = "type1";
+    final String code = "code1";
+    final CommonLookupDetail mockDetail = new CommonLookupDetail(); // Assume this is populated
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(mockDetail));
+
+    final Mono<CommonLookupDetail> result = ebsApiClient.getCommonValues(type, code);
+
+    StepVerifier.create(result)
+        .expectNext(mockDetail)
+        .verifyComplete();
+
+    verify(responseMock).bodyToMono(CommonLookupDetail.class);
+  }
+
+  @Test
+  @DisplayName("getCommonValues(type) - success")
+  void getCommonValues_withType_success() {
+    final String type = "type1";
+    final CommonLookupDetail mockDetail = new CommonLookupDetail(); // Assume this is populated
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(mockDetail));
+
+    final Mono<CommonLookupDetail> result = ebsApiClient.getCommonValues(type);
+
+    StepVerifier.create(result)
+        .expectNext(mockDetail)
+        .verifyComplete();
+
+    verify(responseMock).bodyToMono(CommonLookupDetail.class);
+  }
+
+  @Test
+  @DisplayName("getMatterTypes(categoryOfLaw) - success")
+  void getMatterTypes_withCategoryOfLaw_success() {
+    final String categoryOfLaw = "LAW1";
+    final MatterTypeLookupDetail mockDetail = new MatterTypeLookupDetail(); // Assume this is populated
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(MatterTypeLookupDetail.class)).thenReturn(Mono.just(mockDetail));
+
+    final Mono<MatterTypeLookupDetail> result = ebsApiClient.getMatterTypes(categoryOfLaw);
+
+    StepVerifier.create(result)
+        .expectNext(mockDetail)
+        .verifyComplete();
+
+    verify(responseMock).bodyToMono(MatterTypeLookupDetail.class);
+  }
+
+  @Test
+  @DisplayName("getMatterTypes(categoryOfLaw) - error handling")
+  void getMatterTypes_withCategoryOfLaw_errorHandling() {
+    final String categoryOfLaw = "LAW1";
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(MatterTypeLookupDetail.class)).thenReturn(Mono.error(new RuntimeException("Error")));
+
+    final Mono<MatterTypeLookupDetail> result = ebsApiClient.getMatterTypes(categoryOfLaw);
+
+    StepVerifier.create(result)
+        .expectError(RuntimeException.class)
+        .verify();
+
+    verify(responseMock).bodyToMono(MatterTypeLookupDetail.class);
   }
 
 

@@ -8,6 +8,9 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import uk.gov.laa.ccms.caab.model.ClientDetail;
 import uk.gov.laa.ccms.caab.model.ClientResultRowDisplay;
@@ -28,8 +31,11 @@ import uk.gov.laa.ccms.soa.gateway.model.OrganisationSummary;
 @ExtendWith(SpringExtension.class)
 class ResultDisplayMapperTest {
 
-  private final ResultDisplayMapper mapper = new ResultDisplayMapperImpl();
+  @Mock(answer = Answers.CALLS_REAL_METHODS)
+  CommonMapper commonMapper;
 
+  @InjectMocks
+  ResultDisplayMapper mapper = new ResultDisplayMapperImpl();
 
   private uk.gov.laa.ccms.soa.gateway.model.ClientDetail clientDetail;
   private ClientSummary clientSummary;

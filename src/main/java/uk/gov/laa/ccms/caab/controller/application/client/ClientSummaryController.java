@@ -64,7 +64,7 @@ public class ClientSummaryController extends AbstractClientSummaryController {
       @ModelAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
       final Model model) {
 
-    populateSummaryListLookups(clientFlowFormData, model);
+    populateSummaryListLookups(clientFlowFormData, model).block();
 
     return "application/client/client-summary-details";
   }
@@ -83,7 +83,7 @@ public class ClientSummaryController extends AbstractClientSummaryController {
 
     validateClientFlowFormData(clientFlowFormData, bindingResult);
 
-    ClientTransactionResponse response =
+    final ClientTransactionResponse response =
         clientService.createClient(
             clientFlowFormData,
             user).block();

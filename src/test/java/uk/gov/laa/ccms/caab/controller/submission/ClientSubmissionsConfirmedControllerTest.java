@@ -85,7 +85,7 @@ public class ClientSubmissionsConfirmedControllerTest {
         )
         .andDo(print())
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/summary"));
+        .andExpect(redirectedUrl("/application/sections"));
   }
 
   @Test
@@ -93,7 +93,7 @@ public class ClientSubmissionsConfirmedControllerTest {
     mockMvc.perform(post("/submissions/client-update/confirmed"))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/summary"));
+        .andExpect(redirectedUrl("/application/sections"));
   }
 
   private UserDetail buildUser() {

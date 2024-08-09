@@ -6,7 +6,7 @@
   <body>
     <div class="govuk-width-container">
       <div id="breadcrumbs">
-        <a th:href="@{/application/summary}" class="govuk-back-link">Return to application summary</a>
+        <a th:href="@{/application/sections}" class="govuk-back-link">Return to application summary</a>
       </div>
       <div id="main-content">
         <h1 class="govuk-heading-l">
@@ -15,9 +15,9 @@
         <p class="govuk-body-l">
           Assessment completed.
         </p>
-        <div th:include="application/partials/summary-fragments :: assessmentSummaryFragment(summary=${summary}, isSinglePageSummary=${true})"></div>
+        <div th:insert="application/partials/summary-fragments :: assessmentSummaryFragment(summary=${summary}, isSinglePageSummary=${true})"></div>
         <div class="govuk-button-group">
-          <a th:href="@{/application/summary}" role="button" draggable="false" class="govuk-button" data-module="govuk-button">
+          <a th:href="@{/application/sections}" role="button" draggable="false" class="govuk-button" data-module="govuk-button">
             Confirm
           </a>
         </div>

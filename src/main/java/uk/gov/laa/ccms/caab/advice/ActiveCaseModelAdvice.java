@@ -7,20 +7,21 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import uk.gov.laa.ccms.caab.controller.AssessmentController;
-import uk.gov.laa.ccms.caab.controller.application.summary.ApplicationSummaryController;
-import uk.gov.laa.ccms.caab.controller.application.summary.ApplicationTypeSectionController;
-import uk.gov.laa.ccms.caab.controller.application.summary.EditClientAddressDetailsController;
-import uk.gov.laa.ccms.caab.controller.application.summary.EditClientAddressDetailsSearchController;
-import uk.gov.laa.ccms.caab.controller.application.summary.EditClientBasicDetailsController;
-import uk.gov.laa.ccms.caab.controller.application.summary.EditClientContactDetailsController;
-import uk.gov.laa.ccms.caab.controller.application.summary.EditClientDeceasedDetailsController;
-import uk.gov.laa.ccms.caab.controller.application.summary.EditClientEqualOpportunitiesMonitoringDetailsController;
-import uk.gov.laa.ccms.caab.controller.application.summary.EditClientSummaryController;
-import uk.gov.laa.ccms.caab.controller.application.summary.EditGeneralDetailsSectionController;
-import uk.gov.laa.ccms.caab.controller.application.summary.EditProceedingsAndCostsSectionController;
-import uk.gov.laa.ccms.caab.controller.application.summary.EvidenceSectionController;
-import uk.gov.laa.ccms.caab.controller.application.summary.OpponentsSectionController;
-import uk.gov.laa.ccms.caab.controller.application.summary.ProviderDetailsSectionController;
+import uk.gov.laa.ccms.caab.controller.application.section.ApplicationSectionsController;
+import uk.gov.laa.ccms.caab.controller.application.section.ApplicationSubmissionController;
+import uk.gov.laa.ccms.caab.controller.application.section.ApplicationTypeSectionController;
+import uk.gov.laa.ccms.caab.controller.application.section.EditClientAddressDetailsController;
+import uk.gov.laa.ccms.caab.controller.application.section.EditClientAddressDetailsSearchController;
+import uk.gov.laa.ccms.caab.controller.application.section.EditClientBasicDetailsController;
+import uk.gov.laa.ccms.caab.controller.application.section.EditClientContactDetailsController;
+import uk.gov.laa.ccms.caab.controller.application.section.EditClientDeceasedDetailsController;
+import uk.gov.laa.ccms.caab.controller.application.section.EditClientEqualOpportunitiesMonitoringDetailsController;
+import uk.gov.laa.ccms.caab.controller.application.section.EditClientSummaryController;
+import uk.gov.laa.ccms.caab.controller.application.section.EditGeneralDetailsSectionController;
+import uk.gov.laa.ccms.caab.controller.application.section.EditProceedingsAndCostsSectionController;
+import uk.gov.laa.ccms.caab.controller.application.section.EvidenceSectionController;
+import uk.gov.laa.ccms.caab.controller.application.section.OpponentsSectionController;
+import uk.gov.laa.ccms.caab.controller.application.section.ProviderDetailsSectionController;
 
 
 /**
@@ -28,7 +29,8 @@ import uk.gov.laa.ccms.caab.controller.application.summary.ProviderDetailsSectio
  * Adding it to the model will amend the header bar with case details.
  */
 @ControllerAdvice(assignableTypes = {
-    ApplicationSummaryController.class,
+    ApplicationSectionsController.class,
+    ApplicationSubmissionController.class,
     ApplicationTypeSectionController.class,
     ProviderDetailsSectionController.class,
     EditClientAddressDetailsController.class,

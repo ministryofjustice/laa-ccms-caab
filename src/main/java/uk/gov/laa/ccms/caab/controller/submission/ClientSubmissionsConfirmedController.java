@@ -60,11 +60,11 @@ public class ClientSubmissionsConfirmedController {
           session.removeAttribute(CLIENT_REFERENCE);
           session.setAttribute(APPLICATION_ID, applicationId);
         })
-        .thenReturn("redirect:/application/summary").block();
+        .thenReturn("redirect:/application/sections").block();
   }
 
   @PostMapping("/submissions/client-update/confirmed")
   public String clientUpdateSubmitted() {
-    return "redirect:/application/summary";
+    return "redirect:/application/sections";
   }
 }

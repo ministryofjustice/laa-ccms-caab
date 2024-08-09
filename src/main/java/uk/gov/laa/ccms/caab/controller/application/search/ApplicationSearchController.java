@@ -193,7 +193,7 @@ public class ApplicationSearchController {
 
     if (STATUS_UNSUBMITTED_ACTUAL_VALUE.equals(selectedApplication.getStatus().getId())) {
       session.setAttribute(APPLICATION_ID, selectedApplication.getId());
-      return "redirect:/application/summary";
+      return "redirect:/application/sections";
     } else {
       session.setAttribute(CASE_REFERENCE_NUMBER, selectedApplication.getCaseReferenceNumber());
       return "redirect:/case/summary/todo";

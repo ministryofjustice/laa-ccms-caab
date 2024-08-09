@@ -15,6 +15,7 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipDetail;
@@ -23,6 +24,7 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRelationship;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryAttributeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 
@@ -369,4 +371,24 @@ public class AssessmentUtil {
         .map(AssessmentSummaryAttributeLookupValueDetail::getDisplayName)
         .orElse(attributeName);
   }
+
+  /**
+   * Retrieves the assessment detail from the given assessment details based on the rulebase name.
+   *
+   * @param assessmentDetails the assessment details containing the assessment to retrieve
+   * @param assessmentRulebase the rulebase containing the name of the assessment to retrieve
+   * @return the matching assessment detail, or throws an exception if not found
+   */
+  public static AssessmentDetail getAssessment(
+      final AssessmentDetails assessmentDetails,
+      final AssessmentRulebase assessmentRulebase) {
+
+    return assessmentDetails.getContent()
+        .stream()
+        .filter(assessmentDetail -> assessmentDetail.getName()
+            .equalsIgnoreCase(assessmentRulebase.getName()))
+        .findFirst()
+        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve assessment"));
+  }
+
 }
