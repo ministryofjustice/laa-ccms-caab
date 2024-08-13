@@ -121,7 +121,7 @@
     </div>
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-one-third">
-        <p class="govuk-body govuk-!-text-align-left">
+        <p th:if="${notification.evidenceAllowed}" class="govuk-body govuk-!-text-align-left">
           <a class="govuk-button govuk-button--secondary"
              data-module="govuk-button"
              th:href="@{/notifications/{notification_id}/provide-documents-or-evidence(notification_id=${notification.getNotificationId})}">

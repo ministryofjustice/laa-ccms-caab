@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Provide Documents or Evidence</title>
+</head>
+<body>
+
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/notifications/{notification_id}/provide-documents-or-evidence(notification_id=${notificationId})}"
+       class="govuk-back-link">Return to Provide Documents or Evidence</a>
+  </div>
+  <div id="main-content">
+    <h1 class="govuk-heading-l">Provide Postal Documents or Evidence</h1>
+    <p class="govuk-body-l">
+      Please provide details of the document you will be posting.
+    </p>
+    <p class="govuk-body-l">
+      * indicates required field
+    </p>
+    <p class="govuk-body-l">
+      <b>Send by</b> Post
+    </p>
+    <form>
+      <div th:replace="~{partials/forms :: dropdown('documentTypes', '* Document Type', ${documentTypes}, 'code', 'description', false)}"></div>
+      <button type="submit" class="govuk-button" data-module="govuk-button">
+        Upload
+      </button>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>
