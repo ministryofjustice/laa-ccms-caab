@@ -668,13 +668,9 @@ public class LookupServiceTest {
         Pair.of("lookup2", Mono.just(Optional.of(detail2)))
     );
 
-    final Mono<List<CommonLookupValueDetail>> result = lookupService.addCommonLookupsToModel(lookups, model);
+    final Mono<Void> result = lookupService.addCommonLookupsToModel(lookups, model);
 
     StepVerifier.create(result)
-        .expectNextMatches(details ->
-            details.size() == 2 &&
-                details.contains(detail1) &&
-                details.contains(detail2))
         .verifyComplete();
 
     verify(model).addAttribute("lookup1", detail1);

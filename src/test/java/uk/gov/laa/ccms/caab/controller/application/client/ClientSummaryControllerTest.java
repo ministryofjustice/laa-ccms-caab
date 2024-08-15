@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -133,22 +134,16 @@ public class ClientSummaryControllerTest {
     );
 
     when(lookupService.addCommonLookupsToModel(anyList(), any(Model.class)))
-        .thenReturn(Mono.just(List.of(
-            titleLookupValueDetail,
-            genderLookupValueDetail,
-            maritalStatusLookupValueDetail,
-            ethnicityLookupValueDetail,
-            disabilityLookupValueDetail,
-            correspondenceMethodLookupValueDetail
-        )));
+        .thenReturn(Mono.empty());
+
 
     mockMvc.perform(get("/application/client/details/summary")
             .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/client-summary-details"));
 
-    verify(lookupService, atLeastOnce()).getClientLookups(any());
-    verify(lookupService, atLeastOnce()).addCommonLookupsToModel(anyList(), any(Model.class));
+    verify(lookupService, times(1)).getClientLookups(any());
+    verify(lookupService, times(1)).addCommonLookupsToModel(anyList(), any(Model.class));
     verify(lookupService, never()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_LANGUAGE), any());
   }
 
@@ -172,23 +167,16 @@ public class ClientSummaryControllerTest {
     );
 
     when(lookupService.addCommonLookupsToModel(anyList(), any(Model.class)))
-        .thenReturn(Mono.just(List.of(
-            titleLookupValueDetail,
-            genderLookupValueDetail,
-            maritalStatusLookupValueDetail,
-            ethnicityLookupValueDetail,
-            disabilityLookupValueDetail,
-            correspondenceMethodLookupValueDetail,
-            correspondenceLanguageLookupValueDetail
-        )));
+        .thenReturn(Mono.empty());
+
 
     mockMvc.perform(get("/application/client/details/summary")
             .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/client-summary-details"));
 
-    verify(lookupService, atLeastOnce()).getClientLookups(any());
-    verify(lookupService, atLeastOnce()).addCommonLookupsToModel(anyList(), any(Model.class));
+    verify(lookupService, times(1)).getClientLookups(any());
+    verify(lookupService, times(1)).addCommonLookupsToModel(anyList(), any(Model.class));
   }
 
 

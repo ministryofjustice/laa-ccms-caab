@@ -53,7 +53,7 @@ public abstract class AbstractClientSummaryController {
     }
   }
 
-  protected Mono<List<CommonLookupValueDetail>> populateSummaryListLookups(
+  protected Mono<Void> populateSummaryListLookups(
       final ClientFlowFormData clientFlowFormData, final Model model) {
 
     // Create a list of Mono calls and their respective attribute keys

@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -140,14 +141,8 @@ class EditClientSummaryControllerTest {
     );
 
     when(lookupService.addCommonLookupsToModel(anyList(), any(Model.class)))
-        .thenReturn(Mono.just(List.of(
-            titleLookupValueDetail,
-            genderLookupValueDetail,
-            maritalStatusLookupValueDetail,
-            ethnicityLookupValueDetail,
-            disabilityLookupValueDetail,
-            correspondenceMethodLookupValueDetail
-        )));
+        .thenReturn(Mono.empty());
+
 
     mockMvc.perform(get("/application/sections/client/details/summary")
             .sessionAttr(USER_DETAILS, userDetails)
@@ -156,8 +151,8 @@ class EditClientSummaryControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/client-summary-details"));
 
-    verify(lookupService, atLeastOnce()).getClientLookups(any());
-    verify(lookupService, atLeastOnce()).addCommonLookupsToModel(anyList(), any(Model.class));
+    verify(lookupService, times(1)).getClientLookups(any());
+    verify(lookupService, times(1)).addCommonLookupsToModel(anyList(), any(Model.class));
     verify(lookupService, never()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_LANGUAGE), any());
 
     verify(clientService, never()).getClient(any(), any(), any());
@@ -181,14 +176,8 @@ class EditClientSummaryControllerTest {
     );
 
     when(lookupService.addCommonLookupsToModel(anyList(), any(Model.class)))
-        .thenReturn(Mono.just(List.of(
-            titleLookupValueDetail,
-            genderLookupValueDetail,
-            maritalStatusLookupValueDetail,
-            ethnicityLookupValueDetail,
-            disabilityLookupValueDetail,
-            correspondenceMethodLookupValueDetail
-        )));
+        .thenReturn(Mono.empty());
+
 
     when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(new ClientDetail()));
 
@@ -200,8 +189,8 @@ class EditClientSummaryControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/client-summary-details"));
 
-    verify(lookupService, atLeastOnce()).getClientLookups(any());
-    verify(lookupService, atLeastOnce()).addCommonLookupsToModel(anyList(), any(Model.class));
+    verify(lookupService, times(1)).getClientLookups(any());
+    verify(lookupService, times(1)).addCommonLookupsToModel(anyList(), any(Model.class));
     verify(lookupService, never()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_LANGUAGE), any());
 
     verify(clientService, atLeastOnce()).getClient(any(), any(), any());

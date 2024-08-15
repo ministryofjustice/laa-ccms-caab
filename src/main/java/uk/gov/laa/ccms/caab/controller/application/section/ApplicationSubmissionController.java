@@ -73,8 +73,8 @@ public class ApplicationSubmissionController {
   private final ClientService clientService;
   private final ClientDetailMapper clientDetailsMapper;
   private final SubmissionSummaryDisplayMapper submissionSummaryDisplayMapper;
-  private static final String PARENT_LOOKUP = "PARENT";
-  private static final String CHILD_LOOKUP = "CHILD";
+  protected static final String PARENT_LOOKUP = "PARENT";
+  protected static final String CHILD_LOOKUP = "CHILD";
 
   /**
    * Handles the GET request for the abandon application confirmation page.

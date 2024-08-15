@@ -473,7 +473,7 @@ public class LookupService {
    * @param model The model to which lookups will be added.
    * @return A Mono containing a list of lookup details.
    */
-  public Mono<List<CommonLookupValueDetail>> addCommonLookupsToModel(
+  public Mono<Void> addCommonLookupsToModel(
       final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups,
       final Model model) {
     return Flux.fromIterable(lookups)
@@ -482,10 +482,9 @@ public class LookupService {
             .map(value -> Pair.of(pair.getLeft(), value)))
         .collectList()
         .doOnNext(list -> list.forEach(pair -> model.addAttribute(pair.getLeft(), pair.getRight())))
-        .map(list -> list.stream()
-            .map(Pair::getRight)
-            .collect(Collectors.toList()));
+        .then();
   }
+
 
 
   /**

@@ -11,6 +11,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_VIEW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.controller.application.section.ApplicationSubmissionController.CHILD_LOOKUP;
+import static uk.gov.laa.ccms.caab.controller.application.section.ApplicationSubmissionController.PARENT_LOOKUP;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildClientDetail;
@@ -51,8 +53,6 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 
 @ExtendWith(SpringExtension.class)
 class ApplicationSubmissionControllerTest {
@@ -168,7 +168,8 @@ class ApplicationSubmissionControllerTest {
     Mockito.verify(applicationService, Mockito.times(1)).getApplication(any());
     Mockito.verify(assessmentService, Mockito.times(1)).getAssessments(any(), any(), any());
     Mockito.verify(clientService, Mockito.times(1)).getClient(any(), any(), any());
-    Mockito.verify(lookupService, Mockito.times(2)).getAssessmentSummaryAttributes(any());
+    Mockito.verify(lookupService, Mockito.times(1)).getAssessmentSummaryAttributes(PARENT_LOOKUP);
+    Mockito.verify(lookupService, Mockito.times(1)).getAssessmentSummaryAttributes(CHILD_LOOKUP);
     Mockito.verify(lookupService, Mockito.times(1)).getProceedingSubmissionMappingContext();
     Mockito.verify(lookupService, Mockito.times(1)).getOpponentSubmissionMappingContext();
     Mockito.verify(lookupService, Mockito.times(1)).getGeneralDetailsSubmissionMappingContext();
