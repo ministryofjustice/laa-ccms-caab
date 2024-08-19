@@ -151,12 +151,12 @@
           <div class="govuk-button-group">
             <a class="govuk-button govuk-button--secondary"
                data-module="govuk-button"
-               th:href="@{/notifications/{notification_id}/attachments/upload?sendBy=postal(notification_id=${notification.getNotificationId})}">
+               th:href="@{/notifications/{notification_id}/attachments/upload?sendBy=POSTAL(notification_id=${notification.getNotificationId})}">
               Add Postal Document
             </a>
             <a class="govuk-button govuk-button--secondary"
                data-module="govuk-button"
-               th:href="@{/notifications/{notification_id}/attachments/upload?sendBy=electronic(notification_id=${notification.getNotificationId})}">
+               th:href="@{/notifications/{notification_id}/attachments/upload?sendBy=ELECTRONIC(notification_id=${notification.getNotificationId})}">
               Add Electronic Document
             </a>
           </div>

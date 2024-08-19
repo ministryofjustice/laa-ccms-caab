@@ -925,6 +925,48 @@ class SoaApiClientTest {
   }
 
   @Test
+  void downloadDocument_successful() {
+    String loginId = "user1";
+    String userType = "userType";
+    String attachmentId = "12345";
+
+    String expectedUri = "/documents/12345";
+
+    Document mockDocument = new Document();
+
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(soaApiWebClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
+        requestHeadersMock);
+    when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(
+        requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Document.class)).thenReturn(
+        Mono.just(mockDocument));
+
+    Mono<Document> documentMono =
+        soaApiClient.downloadDocument(attachmentId, loginId, userType);
+
+    StepVerifier.create(documentMono)
+        .expectNextMatches(document -> document == mockDocument)
+        .verifyComplete();
+
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    verify(soaApiWebClientMock).get();
+    verify(requestHeadersUriMock).uri(uriCaptor.capture());
+    verify(requestHeadersMock).header("SoaGateway-User-Login-Id", loginId);
+    verify(requestHeadersMock).header("SoaGateway-User-Role", userType);
+    verify(requestHeadersMock).retrieve();
+    verify(responseMock).bodyToMono(Document.class);
+
+    assertEquals(expectedUri, actualUri.toString());
+  }
+
+  @Test
   void registerDocument_Successful() {
     Document document = new Document();
     String loginId = "user1";

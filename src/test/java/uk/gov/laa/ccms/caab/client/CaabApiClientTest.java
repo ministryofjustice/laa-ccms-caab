@@ -967,6 +967,29 @@ public class CaabApiClientTest {
   }
 
   @Test
+  void updateNotificationAttachment_success() {
+    final NotificationAttachmentDetail notificationAttachment =
+        new NotificationAttachmentDetail(); // Populate this as needed
+    notificationAttachment.setId(123);
+
+    final Integer notificationAttachmentId = 123;
+    final String loginId = "user1";
+    final String expectedUri = "/notification-attachments/{notification-attachment-id}";
+
+    when(caabApiWebClient.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri, notificationAttachmentId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(NotificationAttachmentDetail.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.updateNotificationAttachment(notificationAttachment, loginId);
+
+    StepVerifier.create(result).verifyComplete();
+  }
+
+  @Test
   void deleteNotificationAttachment_success() {
     final Integer notificationAttachmentId = 123;
     final String loginId = "user123";

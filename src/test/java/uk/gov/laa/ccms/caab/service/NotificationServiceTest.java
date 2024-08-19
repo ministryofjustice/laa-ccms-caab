@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -11,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -226,6 +229,7 @@ class NotificationServiceTest {
 
     NotificationAttachmentDetail notificationAttachment = new NotificationAttachmentDetail();
     notificationAttachment.setFileName("abc.pdf");
+    notificationAttachment.setSendBy("E");
     notificationAttachment.fileData(fileData);
 
     when(caabApiClient.createNotificationAttachment(notificationAttachment, "loginId")).thenReturn(Mono.just(attachmentId));
@@ -233,6 +237,26 @@ class NotificationServiceTest {
     notificationService.addDraftNotificationAttachment(notificationAttachment, "loginId");
 
     verify(caabApiClient).createNotificationAttachment(notificationAttachment, "loginId");
+
+    verify(s3ApiClient).uploadDraftDocument(attachmentId, fileData, "pdf");
+  }
+
+  @Test
+  void updateDraftNotification_success() {
+    String attachmentId = "123";
+    String fileData = "fileData";
+
+    NotificationAttachmentDetail notificationAttachment = new NotificationAttachmentDetail();
+    notificationAttachment.setId(Integer.parseInt(attachmentId));
+    notificationAttachment.setFileName("abc.pdf");
+    notificationAttachment.setSendBy("E");
+    notificationAttachment.fileData(fileData);
+
+    when(caabApiClient.updateNotificationAttachment(notificationAttachment, "loginId")).thenReturn(Mono.empty());
+
+    notificationService.updateDraftNotificationAttachment(notificationAttachment, "loginId");
+
+    verify(caabApiClient).updateNotificationAttachment(notificationAttachment, "loginId");
 
     verify(s3ApiClient).uploadDraftDocument(attachmentId, fileData, "pdf");
   }
@@ -285,6 +309,46 @@ class NotificationServiceTest {
     // Delete from TDS and S3
     verify(caabApiClient).deleteNotificationAttachments(notificationId, providerId, null, null, loginId);
     verify(s3ApiClient).removeDraftDocuments(Set.of("456"));
+  }
+
+  @Test
+  void getDocumentLinks_success() {
+    List<Document> documents = List.of(
+        new Document().documentId("1"),
+        new Document().documentId("2")
+    );
+
+    when(s3ApiClient.getDocumentUrl("1")).thenReturn(Optional.of("link 1"));
+    when(s3ApiClient.getDocumentUrl("2")).thenReturn(Optional.of("link 2"));
+
+    Map<String, String> documentLinks =
+        notificationService.getDocumentLinks(documents);
+
+    verify(s3ApiClient).getDocumentUrl("1");
+    verify(s3ApiClient).getDocumentUrl("2");
+
+    assertThat(documentLinks, hasEntry("1", "link 1"));
+    assertThat(documentLinks, hasEntry("2", "link 2"));
+  }
+
+  @Test
+  void getDraftDocumentLinks_success() {
+    List<BaseNotificationAttachmentDetail> documents = List.of(
+        new BaseNotificationAttachmentDetail().id(1),
+        new BaseNotificationAttachmentDetail().id(2)
+    );
+
+    when(s3ApiClient.getDraftDocumentUrl("1")).thenReturn(Optional.of("draft link 1"));
+    when(s3ApiClient.getDraftDocumentUrl("2")).thenReturn(Optional.of("draft link 2"));
+
+    Map<String, String> documentLinks =
+        notificationService.getDraftDocumentLinks(documents);
+
+    verify(s3ApiClient).getDraftDocumentUrl("1");
+    verify(s3ApiClient).getDraftDocumentUrl("2");
+
+    assertThat(documentLinks, hasEntry("1", "draft link 1"));
+    assertThat(documentLinks, hasEntry("2", "draft link 2"));
   }
 
   @Test

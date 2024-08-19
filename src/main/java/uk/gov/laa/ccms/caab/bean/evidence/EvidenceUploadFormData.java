@@ -3,8 +3,9 @@ package uk.gov.laa.ccms.caab.bean.evidence;
 import java.io.Serializable;
 import java.util.List;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.multipart.MultipartFile;
+import uk.gov.laa.ccms.caab.bean.file.FileUploadFormData;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 
 /**
@@ -12,32 +13,8 @@ import uk.gov.laa.ccms.caab.constants.CcmsModule;
  */
 @Data
 @Slf4j
-public class EvidenceUploadFormData implements Serializable {
-
-  /**
-   * The multipart file data to upload.
-   */
-  private MultipartFile file;
-
-  /**
-   * The file extension.
-   */
-  private String fileExtension;
-
-  /**
-   * The type of evidence document.
-   */
-  private String documentType;
-
-  /**
-   * The display value for the type of evidence document.
-   */
-  private String documentTypeDisplayValue;
-
-  /**
-   * A description of the document.
-   */
-  private String documentDescription;
+@EqualsAndHashCode(callSuper = true)
+public class EvidenceUploadFormData extends FileUploadFormData implements Serializable {
 
   /**
    * The evidence types covered by the uploaded file.

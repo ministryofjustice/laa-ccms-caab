@@ -5,9 +5,11 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_N
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,13 +29,22 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.notification.NotificationAttachmentUploadFormData;
+import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationAttachmentUploadValidator;
 import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationSearchValidator;
+import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
+import uk.gov.laa.ccms.caab.constants.SendBy;
+import uk.gov.laa.ccms.caab.exception.AvScanException;
+import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.NotificationAttachmentMapper;
 import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
+import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
+import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
@@ -61,6 +72,10 @@ public class ActionsAndNotificationsController {
   private final NotificationAttachmentMapper notificationAttachmentMapper;
   private final UserService userService;
   private final NotificationService notificationService;
+  private final NotificationAttachmentUploadValidator attachmentUploadValidator;
+  private final AvScanService avScanService;
+
+  public static final String STATUS_READY_TO_SUBMIT = "Ready to Submit";
 
   /**
    * Provides an instance of {@link NotificationSearchCriteria} for use in the model.
@@ -290,11 +305,19 @@ public class ActionsAndNotificationsController {
   public String editDraftNotificationAttachment(
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @PathVariable(value = "notification_id") String notificationId,
-      @PathVariable(value = "attachment_id") Integer attachmentId) {
+      @PathVariable(value = "attachment_id") Integer attachmentId,
+      RedirectAttributes redirectAttributes) {
 
-    // TODO: CCLS-1935 & CCLS-1937
-    return "redirect:/notifications/%s/provide-documents-or-evidence".formatted(notificationId);
+    NotificationAttachmentDetail notificationAttachment =
+        notificationService.getDraftNotificationAttachment(attachmentId).block();
 
+    NotificationAttachmentUploadFormData formData =
+        notificationAttachmentMapper.toNotificationAttachmentUploadFormData(notificationAttachment);
+
+    redirectAttributes.addFlashAttribute(formData);
+
+    return "redirect:/notifications/%s/attachments/upload?sendBy=%s".formatted(notificationId,
+        formData.getSendBy());
   }
 
   /**
@@ -352,6 +375,123 @@ public class ActionsAndNotificationsController {
     return "redirect:/notifications/%s/provide-documents-or-evidence".formatted(notificationId);
   }
 
+  /**
+   * Display the notification attachment upload screen.
+   *
+   * @param user           the currently logged-in user.
+   * @param notificationId the ID of the notification.
+   * @param sendBy         how the notification will be sent, e.g. by post or
+   *                       electronically.
+   * @param model          the view model.
+   * @return the upload notification attachment page.
+   */
+  @GetMapping("/notifications/{notification_id}/attachments/upload")
+  public String uploadNotificationAttachment(
+      @ModelAttribute(USER_DETAILS) UserDetail user,
+      @SessionAttribute("notification") Notification notification,
+      @PathVariable(value = "notification_id") String notificationId,
+      @RequestParam(value = "sendBy") SendBy sendBy,
+      NotificationAttachmentUploadFormData attachmentUploadFormData,
+      Model model) {
+
+    populateNotificationAttachmentModel(model);
+
+    model.addAttribute("attachmentUploadFormData", attachmentUploadFormData);
+    model.addAttribute("notificationId", notificationId);
+    return "notifications/upload-notification-attachment";
+  }
+
+  /**
+   * Upload a notification attachment to TDS.
+   *
+   * @param user                       the currently logged-in user.
+   * @param notificationId             the ID of the notification.
+   * @param attachmentUploadFormData   the attachment upload form data object.
+   * @param bindingResult              validation result of the attachment upload form.
+   * @param model                      the view model.
+   * @return the provide documents or evidence page.
+   */
+  @PostMapping("/notifications/{notification_id}/attachments/upload")
+  public String uploadNotificationAttachment(
+      @ModelAttribute(USER_DETAILS) UserDetail user,
+      @SessionAttribute("notification") Notification notification,
+      @PathVariable(value = "notification_id") String notificationId,
+      @ModelAttribute(value = "attachmentUploadFormData")
+      NotificationAttachmentUploadFormData attachmentUploadFormData,
+      BindingResult bindingResult,
+      Model model) {
+
+    attachmentUploadValidator.validate(attachmentUploadFormData, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      populateNotificationAttachmentModel(model);
+
+      model.addAttribute("attachmentUploadFormData", attachmentUploadFormData);
+      model.addAttribute("notificationId", notificationId);
+      return "notifications/upload-notification-attachment";
+    }
+
+    // Carry out AV scan for electronic documents
+    if (attachmentUploadFormData.getSendBy().equals(SendBy.ELECTRONIC)) {
+      try {
+        avScanService.performAvScan(
+            null,
+            null,
+            null,
+            null,
+            attachmentUploadFormData.getFile().getOriginalFilename(),
+            attachmentUploadFormData.getFile().getInputStream());
+      } catch (AvVirusFoundException | AvScanException | IOException e) {
+        bindingResult.rejectValue("file", "scan.failure", e.getMessage());
+
+        populateNotificationAttachmentModel(model);
+
+        attachmentUploadFormData.setFile(null);
+
+        model.addAttribute("attachmentUploadFormData", attachmentUploadFormData);
+        model.addAttribute("notificationId", notificationId);
+        return "notifications/upload-notification-attachment";
+      }
+    }
+
+    NotificationAttachmentDetail notificationAttachmentDetail =
+        notificationAttachmentMapper.toNotificationAttachmentDetail(attachmentUploadFormData);
+
+    if (notificationAttachmentDetail.getId() != null) {
+      notificationService.updateDraftNotificationAttachment(notificationAttachmentDetail,
+          user.getLoginId());
+    } else {
+      Long attachmentNumber = getNextAttachmentNumber(notification, user.getUserId());
+      notificationAttachmentDetail.setStatus(STATUS_READY_TO_SUBMIT);
+      notificationAttachmentDetail.setNotificationReference(notificationId);
+      notificationAttachmentDetail.setNumber(attachmentNumber);
+      notificationAttachmentDetail.setProviderId(String.valueOf(user.getUserId()));
+      notificationService.addDraftNotificationAttachment(
+          notificationAttachmentDetail, user.getLoginId());
+    }
+
+    return "redirect:/notifications/%s/provide-documents-or-evidence".formatted(notificationId);
+  }
+
+  /**
+   * Get the next attachment number by incrementing the number of the attachment last added.
+   *
+   * @param notification     the notification.
+   * @param userId           the ID of the currently logged-in user.
+   * @return the next attachment number.
+   */
+  private Long getNextAttachmentNumber(Notification notification, Integer userId) {
+    int numberOfUploadedDocs = notification.getUploadedDocuments().size();
+    int numberOfDraftDocs = notificationService.getDraftNotificationAttachments(
+        notification.getNotificationId(), userId)
+        .map(notificationAttachmentDetails -> notificationAttachmentDetails.getContent()
+          .size()
+        ).blockOptional()
+        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve attachment numbers"));
+
+    return numberOfUploadedDocs + numberOfDraftDocs + 1L;
+  }
+
   private void populateDropdowns(UserDetail user, Model model,
       NotificationSearchCriteria criteria) {
     Mono<List<ContactDetail>> feeEarners = providerService.getProvider(user.getProvider().getId())
@@ -372,6 +512,17 @@ public class ActionsAndNotificationsController {
         .block();
     model.addAttribute("notificationSearchCriteria", criteria);
 
+  }
+
+  private void populateNotificationAttachmentModel(Model model) {
+    new DropdownBuilder(model)
+        .addDropdown("documentTypes",
+            lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .build();
+    model.addAttribute("validExtensions",
+        getCommaDelimitedString(attachmentUploadValidator.getValidExtensions()));
+    model.addAttribute("maxFileSize",
+        attachmentUploadValidator.getMaxFileSize());
   }
 
   /**
