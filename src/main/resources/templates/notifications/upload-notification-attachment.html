@@ -17,7 +17,7 @@
         action="#" method="post"
         th:action="@{/notifications/{notification_id}/attachments/upload(notification_id=${notificationId})}" th:object="${attachmentUploadFormData}" enctype="multipart/form-data">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <div th:if="${attachmentUploadFormData.sendBy.code} == 'E'" class="govuk-warning-text">
+      <div th:if="$*{sendBy.code} == 'E'" class="govuk-warning-text">
         <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
         <strong class="govuk-warning-text__text">
           <span class="govuk-visually-hidden">Warning</span>
@@ -26,13 +26,13 @@
       </div>
       <p class="govuk-body-l">
         Please provide details of the document you will be <span
-          th:text="${attachmentUploadFormData.sendBy.code} == 'P' ? 'posting' : 'uploading'"></span>.
+          th:text="$*{sendBy.code} == 'P' ? 'posting' : 'uploading'"></span>.
       </p>
       <p class="govuk-body-m">
         <b>Send by</b> <span
-          th:text="${attachmentUploadFormData.sendBy.code} == 'P' ? 'Post' : 'Electronic Upload'"></span>
+          th:text="$*{sendBy.code} == 'P' ? 'Post' : 'Electronic Upload'"></span>
       </p>
-      <div th:if="${attachmentUploadFormData.sendBy.code} == 'E'" class="govuk-form-group"
+      <div th:if="$*{sendBy.code} == 'E'" class="govuk-form-group"
            th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
         <label class="govuk-label" for="file">
           Choose file
