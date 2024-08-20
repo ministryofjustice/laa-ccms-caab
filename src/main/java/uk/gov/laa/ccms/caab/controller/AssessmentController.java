@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -20,9 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
-import reactor.util.function.Tuple6;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
@@ -30,7 +27,7 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.model.AssessmentSummaryEntityDisplay;
+import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryEntityDisplay;
 import uk.gov.laa.ccms.caab.opa.context.ContextToken;
 import uk.gov.laa.ccms.caab.opa.util.SecurityUtils;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
@@ -39,8 +36,6 @@ import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
-import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
@@ -72,7 +67,7 @@ public class AssessmentController {
 
   private static final String RETURN_URL = "/civil/assessments/confirm?val=%s";
   private static final String CANCEL_LINK_TEXT = "Return to create application";
-  private static final String CANCEL_LINK_URL = "/civil/application/summary";
+  private static final String CANCEL_LINK_URL = "/civil/application/sections";
 
   private static final String CHECKPOINT_START = "START";
   private static final String CHECKPOINT_RESUME = "RESUME";
@@ -126,7 +121,7 @@ public class AssessmentController {
 
     }
 
-    return "redirect:/application/summary";
+    return "redirect:/application/sections";
   }
 
 

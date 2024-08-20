@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>LAA CCMS - Application summary</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/application/sections}" class="govuk-back-link">Return to create application</a>
+  </div>
+  <div id="main-content">
+    <span class="govuk-caption-l">Create application</span>
+    <h1 class="govuk-heading-l">
+      Application summary
+    </h1>
+    <p class="govuk-body-l">
+      The information you have entered in your Application is listed below. In order to print the overview please click on the 'Print this page' button.
+    </p>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <div class="moj-page-header-actions">
+          <div class="moj-page-header-actions__title">
+            <h2 class="govuk-heading-m">Client details</h2>
+          </div>
+          <div class="moj-page-header-actions__actions">
+            <div class="moj-button-menu">
+              <div class="moj-button-menu__wrapper">
+                <a class="govuk-button moj-button-menu__item govuk-button--secondary moj-page-header-actions__action" th:href="@{/todo}" data-module="govuk-button">
+                  Print this page
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <h3 class="govuk-heading-s">Basic client details</h3>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Title', ${submissionSummary.clientLookups.contactTitle.description})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Surname', ${submissionSummary.client.basicDetails.surname})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Middle name(s)', ${submissionSummary.client.basicDetails.middleNames})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('First name', ${submissionSummary.client.basicDetails.firstName})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Surname at birth', ${submissionSummary.client.basicDetails.surnameAtBirth})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Date of Birth', ${submissionSummary.client.basicDetails.dobDay + '/' + submissionSummary.client.basicDetails.dobMonth + '/' + submissionSummary.client.basicDetails.dobYear})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Country of Origin', ${submissionSummary.clientLookups.countryOfOrigin.description})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('NI Number', ${submissionSummary.client.basicDetails.nationalInsuranceNumber})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Home Office Number', ${submissionSummary.client.basicDetails.homeOfficeNumber})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Gender', ${submissionSummary.clientLookups.gender.description})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Marital status', ${submissionSummary.clientLookups.maritalStatus.description})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayYesNo('High profile client', ${submissionSummary.client.basicDetails.highProfileClient})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayYesNo('Vulnerable client', ${submissionSummary.client.basicDetails.vulnerableClient})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayYesNo('Mental incapacity', ${submissionSummary.client.basicDetails.mentalIncapacity})}"></div>
+        </dl>
+        <h3 class="govuk-heading-s">Client contact details</h3>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Telephone - Home', ${submissionSummary.client.contactDetails.telephoneHome})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Telephone Work', ${submissionSummary.client.contactDetails.telephoneWork})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Mobile', ${submissionSummary.client.contactDetails.telephoneMobile})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('E-mail Address', ${submissionSummary.client.contactDetails.emailAddress})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Correspondence Method', ${submissionSummary.clientLookups.correspondenceMethod.description})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Correspondence Language', ${submissionSummary.clientLookups.correspondenceLanguage.description})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Password Reminder', ${submissionSummary.client.contactDetails.passwordReminder})}"></div>
+        </dl>
+        <h3 class="govuk-heading-s">Client address details</h3>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Country', ${submissionSummary.clientLookups.country.description})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('House Name / Number', ${submissionSummary.client.addressDetails.houseNameNumber})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Post Code', ${submissionSummary.client.addressDetails.postcode})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Address Line 1', ${submissionSummary.client.addressDetails.addressLine1})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Address Line 2', ${submissionSummary.client.addressDetails.addressLine2})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('City / Town', ${submissionSummary.client.addressDetails.cityTown})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('County', ${submissionSummary.client.addressDetails.county})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('No Fixed Abode', ${submissionSummary.client.addressDetails.noFixedAbode})}"></div>
+        </dl>
+        <h3 class="govuk-heading-s">Equal opportunities monitoring</h3>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Ethnic Origin', ${submissionSummary.clientLookups.ethnicity.description})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Disability', ${submissionSummary.clientLookups.disability.description})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Special Considerations', ${submissionSummary.client.monitoringDetails.specialConsiderations})}"></div>
+        </dl>
+      </div>
+    </div>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m">General details</h2>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Category of Law', ${submissionSummary.generalDetails.categoryOfLaw})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Application Type', ${submissionSummary.generalDetails.applicationType})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Delegated Functions Date', ${#dates.format(submissionSummary.generalDetails.delegatedFunctionsDate, 'dd/MM/yyyy')})}"></div>
+
+        </dl>
+        <h3 class="govuk-heading-s">Correspondence address</h3>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Preferred Address', ${submissionSummary.generalDetails.preferredAddress})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Country', ${submissionSummary.generalDetails.country})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('House Name / Number', ${submissionSummary.generalDetails.houseNameOrNumber})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Post Code', ${submissionSummary.generalDetails.postcode})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('C/O', ${submissionSummary.generalDetails.careOf})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Address Line 1', ${submissionSummary.generalDetails.addressLine1})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Address Line 2', ${submissionSummary.generalDetails.addressLine2})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('City / Town', ${submissionSummary.generalDetails.city})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('County', ${submissionSummary.generalDetails.county})}"></div>
+        </dl>
+      </div>
+    </div>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m">Provider details</h2>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Office', ${submissionSummary.providerDetails.office})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Name of solicitor or Fellow of the Institute of Legal Executives instructed', ${submissionSummary.providerDetails.feeEarner})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Supervisor', ${submissionSummary.providerDetails.supervisor})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Provider Case Reference', ${submissionSummary.providerDetails.providerCaseReference})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Contact Name', ${submissionSummary.providerDetails.contactName})}"></div>
+        </dl>
+      </div>
+    </div>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m">Proceedings and costs</h2>
+        <div th:each="proceeding, proceedingStat : ${submissionSummary.proceedingsAndCosts.proceedings}">
+          <h3 class="govuk-heading-s">Proceeding [[${proceedingStat.index + 1}]]</h3>
+          <dl class="govuk-summary-list">
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Matter Type', ${proceeding.matterType})}"></div>
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Proceeding', ${proceeding.proceeding})}"></div>
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Client Involvement Type', ${proceeding.clientInvolvementType})}"></div>
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Form of Civil Legal Service', ${proceeding.formOfCivilLegalService})}"></div>
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Type of Order', ${proceeding.typeOfOrder})}"></div>
+          </dl>
+          <div th:each="scopeLimitation, scopeLimitationStat : ${proceeding.scopeLimitations}">
+            <h4 class="govuk-heading-s">Scope Limitation [[${scopeLimitationStat.index + 1}]]</h4>
+            <dl class="govuk-summary-list">
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Scope Limitation', ${scopeLimitation.scopeLimitation})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Scope Limitation Wording', ${scopeLimitation.scopeLimitationWording})}"></div>
+            </dl>
+          </div>
+          <dl class="govuk-summary-list">
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Case Cost Limitation', ${#numbers.formatCurrency(submissionSummary.proceedingsAndCosts.caseCostLimitation)})}"></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m">Opponents and other parties</h2>
+        <div th:each="opponent : ${submissionSummary.opponentsAndOtherParties.opponents}">
+          <h3 class="govuk-heading-s" th:text="${opponent.type}"></h3>
+          <div th:if="${opponent.type == 'Individual'}">
+            <dl class="govuk-summary-list">
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Title', ${opponent.title})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Surname', ${opponent.surname})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('First Name', ${opponent.firstName})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Middle Name(s)', ${opponent.middleNames})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Date of Birth', ${opponent.dateOfBirth})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Relationship to Case', ${opponent.relationshipToCase})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Relationship to Client', ${opponent.relationshipToClient})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('National Insurance Number', ${opponent.nationalInsuranceNumber})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('House Name / Number', ${opponent.houseNameOrNumber})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Address Line 1', ${opponent.addressLine1})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Address Line 2', ${opponent.addressLine2})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('City / Town', ${opponent.city})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('County', ${opponent.county})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Country', ${opponent.country})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Post Code', ${opponent.postcode})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Telephone - Home', ${opponent.telephoneHome})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Telephone - Work', ${opponent.telephoneWork})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Telephone - Mobile', ${opponent.telephoneMobile})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Fax No.', ${opponent.faxNumber})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Email Address', ${opponent.emailAddress})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Party is Legal Aided?', ${opponent.legalAided})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Certificate Number', ${opponent.certificateNumber})}"></div>
+            </dl>
+          </div>
+          <div th:if="${opponent.type == 'Organisation'}">
+            <dl class="govuk-summary-list">
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Organisation Name', ${opponent.organisationName})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Organisation Type', ${opponent.organisationType})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Currently Trading', ${opponent.currentlyTrading})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Relationship to Case', ${opponent.relationshipToCase})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Relationship to Client', ${opponent.relationshipToClient})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Contact Name and Role', ${opponent.contactNameRole})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Building Name / Number', ${opponent.houseNameOrNumber})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Address Line 1', ${opponent.addressLine1})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Address Line 2', ${opponent.addressLine2})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('City / Town', ${opponent.city})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('County', ${opponent.county})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Country', ${opponent.country})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Post Code', ${opponent.postcode})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Telephone', ${opponent.telephoneHome})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Fax', ${opponent.faxNumber})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Email Address', ${opponent.emailAddress})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Any other information about the Liable Organisation', ${opponent.otherInformation})}"></div>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m">Means assessment</h2>
+        <div th:insert="application/partials/summary-fragments :: assessmentSummaryFragment(summary=${submissionSummary.meansAssessment}, isSinglePageSummary=${false})"></div>
+      </div>
+    </div>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m">Merits assessment</h2>
+        <div th:insert="application/partials/summary-fragments :: assessmentSummaryFragment(summary=${submissionSummary.meritsAssessment}, isSinglePageSummary=${false})"></div>
+      </div>
+    </div>
+    <div class="govuk-button-group">
+      <button type="submit" class="govuk-button" data-module="govuk-button">
+        Confirm
+      </button>
+      <a class="govuk-button govuk-button--secondary" data-module="govuk-button" th:href="@{/todo}">
+        Print this page
+      </a>
+    </div>
+  </div>
+</div>
+</body>
+</html>
+
+

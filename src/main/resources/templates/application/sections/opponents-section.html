@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>LAA CCMS - Create application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/application/sections}" class="govuk-back-link">Return to create application</a>
+  </div>
+  <div id="main-content">
+    <span class="govuk-caption-l">Create application</span>
+    <h1 class="govuk-heading-l">
+      Opponents and other parties
+    </h1>
+    <p class="govuk-body-l">
+      Please enter the details for any opponents and other parties involved in this application/amendment.
+    </p>
+    <p class="govuk-body-l">
+      Please note that an opponent or other party cannot be removed from a Live Certificate.
+      Please use the 'Any Other Information' field to tell LAA if you wish for an opponent or
+      other party to be removed from a Live Certificate.
+    </p>
+    <table class="govuk-table">
+      <thead class="govuk-table__head">
+        <tr class="govuk-table__row">
+          <th scope="col" class="govuk-table__header">Party name</th>
+          <th scope="col" class="govuk-table__header">Party type</th>
+          <th scope="col" class="govuk-table__header">Relationship to case</th>
+          <th scope="col" class="govuk-table__header">Relationship to client</th>
+          <th scope="col" class="govuk-table__header">Action</th>
+        </tr>
+      </thead>
+      <tbody class="govuk-table__body">
+        <tr class="govuk-table__row" th:each="opponent : ${opponents}" th:unless="${opponents.isEmpty()}">
+          <td class="govuk-table__cell" th:if="${opponent.editable}">
+            <a th:href="@{/application/opponents/{id}/edit(id=${opponent.id})}"
+               class="govuk-link"
+               th:text="${opponent.partyName}"></a>
+          </td>
+          <td class="govuk-table__cell" th:unless="${opponent.editable}" th:text="${opponent.partyName}"></td>
+          <td class="govuk-table__cell" th:text="${opponent.type}"></td>
+          <td class="govuk-table__cell" th:text="${opponent.relationshipToCaseDisplayValue}"></td>
+          <td class="govuk-table__cell" th:text="${opponent.relationshipToClientDisplayValue}"></td>
+          <td class="govuk-table__cell" th:if="${opponent.deletable}">
+            <a th:href="@{/application/opponents/{id}/remove(id=${opponent.id})}"
+               class="govuk-link"
+               th:text="Remove"></a>
+          </td>
+        <tr>
+        <tr class="govuk-table__row" th:if="${opponents.isEmpty()}">
+          <td class="govuk-table__cell" colspan="5">None</td>
+        </tr>
+      </tbody>
+    </table>
+    <a class="govuk-button govuk-button--secondary"
+       data-module="govuk-button"
+       th:href="@{/application/opponents/organisation/search}">
+      Add organisation
+    </a>
+    <a class="govuk-button govuk-button--secondary"
+       data-module="govuk-button"
+       th:href="@{/application/opponents/individual/create}">
+      Add individual
+    </a>
+  </div>
+</div>
+</body>
+</html>

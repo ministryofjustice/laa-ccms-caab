@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>LAA CCMS - Create application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/application/sections/client/details/summary}" class="govuk-back-link">Cancel and return to amend client</a>
+  </div>
+  <div id="main-content">
+    <form action="#" th:action="@{/application/sections/client/details/address}" th:object="${addressDetails}" method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <span class="govuk-caption-l">Edit your client</span>
+      <h1 class="govuk-heading-l">
+        Address client details
+      </h1>
+      <p class="govuk-body-l">
+        Please enter the main address details for your client below. The “Find address”
+        button is only valid for UK addresses. For non-UK Addresses please manually enter
+        the details. When entering an address manually the details entered into the 'House
+        name / number' field will not appear on the address details for the purposes of
+        correspondence. Please ensure that the House number is also entered in the 'Address
+        line 1' field.
+      </p>
+      <div th:replace="~{application/partials/client-fragments :: clientAddressFragment}"></div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+          <div class="govuk-button-group">
+            <button type="submit" name="action" value="next" class="govuk-button" data-module="govuk-button">
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

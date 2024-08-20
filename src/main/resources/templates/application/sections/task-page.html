@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>LAA CCMS - Application summary</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/home}" class="govuk-back-link">Return to home</a>
+  </div>
+  <div id="main-content">
+    <form action="#" th:action="@{/application/validate}" method="post">
+    <span class="govuk-caption-l">Create application</span>
+    <h1 class="govuk-heading-l">
+      Application summary
+    </h1>
+    <p class="govuk-body-l">
+      To create an application, please complete the relevant application sections in the summary
+      below.  Please use the links provided to access the various sections.  Although the section
+      can be completed in any order, it is recommended that you work from top to bottom as some
+      areas later in the process may be established as irrelevant in earlier sections.
+      <br><br>
+      When you have finished all application  sections, click 'Complete application' to send your
+      application details to LAA.
+    </p>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <table class="govuk-table">
+          <caption class="govuk-table__caption govuk-table__caption--m">Application summary</caption>
+          <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header">Application sections</th>
+            <th scope="col" class="govuk-table__header">Status</th>
+            <th scope="col" class="govuk-table__header">Last saved</th>
+            <th scope="col" class="govuk-table__header">Last saved by</th>
+            <th scope="col" class="govuk-table__header govuk-table__header--numeric">Action</th>
+          </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell" th:if="${summary.applicationType.enabled}">
+              <a th:href="@{/application/sections/application-type}" class="govuk-link">Application type</a>
+            </td>
+            <td class="govuk-table__cell" th:unless="${summary.applicationType.enabled}">
+              Application type
+            </td>
+            <td class="govuk-table__cell" th:text="${summary.applicationType.description}"></td>
+            <td class="govuk-table__cell" th:text="${#dates.format(summary.applicationType.lastSaved, 'dd/MM/yyyy')}"></td>
+            <td class="govuk-table__cell" th:text="${summary.applicationType.lastSavedBy}"></td>
+            <td class="govuk-table__cell"></td>
+          </tr>
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell"><a th:href="@{/application/sections/provider-details}" class="govuk-link">Provider details</a></td>
+            <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.provider.status})}"></td>
+            <td class="govuk-table__cell" th:text="${#dates.format(summary.provider.lastSaved, 'dd/MM/yyyy')}"></td>
+            <td class="govuk-table__cell" th:text="${summary.provider.lastSavedBy}"></td>
+            <td class="govuk-table__cell"></td>
+          </tr>
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell"><a th:href="@{/application/sections/client/details/summary}" class="govuk-link">Client details</a></td>
+            <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.client.status})}"></td>
+            <td class="govuk-table__cell"></td>
+            <td class="govuk-table__cell"></td>
+            <td class="govuk-table__cell"></td>
+          </tr>
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell"><a th:href="@{/application/sections/correspondence-address}" class="govuk-link">General details</a></td>
+            <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.generalDetails.status})}"></td>
+            <td class="govuk-table__cell" th:text="${#dates.format(summary.generalDetails.lastSaved, 'dd/MM/yyyy')}"></td>
+            <td class="govuk-table__cell" th:text="${summary.generalDetails.lastSavedBy}"></td>
+            <td class="govuk-table__cell"></td>
+          </tr>
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell"><a th:href="@{/application/proceedings-and-costs}" class="govuk-link">Proceedings and costs</a></td>
+            <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.proceedingsAndCosts.status})}"></td>
+            <td class="govuk-table__cell" th:text="${#dates.format(summary.proceedingsAndCosts.lastSaved, 'dd/MM/yyyy')}"></td>
+            <td class="govuk-table__cell" th:text="${summary.proceedingsAndCosts.lastSavedBy}"></td>
+            <td class="govuk-table__cell"></td>
+          </tr>
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell"><a th:href="@{/application/sections/opponents}" class="govuk-link">Opponents and other parties</a></td>
+            <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.opponentsAndOtherParties.status})}"></td>
+            <td class="govuk-table__cell" th:text="${#dates.format(summary.opponentsAndOtherParties.lastSaved, 'dd/MM/yyyy')}"></td>
+            <td class="govuk-table__cell" th:text="${summary.opponentsAndOtherParties.lastSavedBy}"></td>
+            <td class="govuk-table__cell"></td>
+          </tr>
+          <th:block th:if="${summary.applicationType.status} == 'Exceptional Case Funding'">
+            <th:block th:insert="~{application/partials/summary-fragments :: meritsAssessmentFragment}"></th:block>
+            <th:block th:insert="~{application/partials/summary-fragments :: meansAssessmentFragment}"></th:block>
+          </th:block>
+          <th:block th:unless="${summary.applicationType.status} == 'Exceptional Case Funding'">
+            <th:block th:insert="~{application/partials/summary-fragments :: meansAssessmentFragment}"></th:block>
+            <th:block th:insert="~{application/partials/summary-fragments :: meritsAssessmentFragment}"></th:block>
+          </th:block>
+          <tr class="govuk-table__row">
+            <th:block th:if="${summary.documentUpload.enabled}">
+              <td class="govuk-table__cell"><a class="govuk-link" th:href="@{/application/sections/evidence}">Document upload</a></td>
+              <td class="govuk-table__cell"></td>
+            </th:block>
+            <th:block th:unless="${summary.documentUpload.enabled}">
+              <td class="govuk-table__cell">Document upload</td>
+              <td class="govuk-table__cell"><strong class="govuk-tag govuk-tag--grey">Not available</strong></td>
+            </th:block>
+            <td class="govuk-table__cell"></td>
+            <td class="govuk-table__cell"></td>
+            <td class="govuk-table__cell"></td>
+          </tr>
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell"><a class="govuk-link" th:href="@{/application/sections/summary}">View application summary</a></td>
+            <td class="govuk-table__cell"></td>
+            <td class="govuk-table__cell"></td>
+            <td class="govuk-table__cell"></td>
+            <td class="govuk-table__cell"></td>
+          </tr>
+          </tbody>
+        </table>
+        <div class="govuk-button-group">
+          <button type="submit" class="govuk-button" data-module="govuk-button">
+            Complete application
+          </button>
+          <a class="govuk-button govuk-button--secondary" data-module="govuk-button" th:href="@{/application/abandon}">
+            Abandon application
+          </a>
+        </div>
+      </div>
+    </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>
+
+

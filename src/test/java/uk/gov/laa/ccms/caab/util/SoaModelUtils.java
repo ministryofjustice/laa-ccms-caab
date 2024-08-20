@@ -13,7 +13,7 @@ import java.util.UUID;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ApplicationDetails;
+import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.AssessmentScreen;
 import uk.gov.laa.ccms.soa.gateway.model.Award;
 import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
@@ -79,7 +79,7 @@ public class SoaModelUtils {
   public static CaseDetail buildCaseDetail(String appType) {
     return new CaseDetail()
         .applicationDetails(
-            new ApplicationDetails()
+            new SubmittedApplicationDetails()
                 .applicationAmendmentType(appType)
                 .categoryOfLaw(
                     new CategoryOfLaw()

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>LAA CCMS - Start new application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a th:href="@{/application/sections/correspondence-address}" class="govuk-back-link">Return to edit correspondence address</a>
+    </div>
+    <div id="main-content">
+        <span class="govuk-caption-l">Create application</span>
+        <h1 class="govuk-heading-l">
+            Linked cases summary
+        </h1>
+        <p class="govuk-body-l">
+            If you have any application / case that you wish to link to this application please
+            click 'Link an Application / Case'.  If you do not have any cases to link then please
+            click on the 'Confirm' button. Please ensure the applications/cases for all parties
+            being represented are linked. CCMS quickguides are available regarding linking cases.
+        </p>
+        <table class="govuk-table">
+            <caption class="govuk-table__caption govuk-table__caption--m">Linked cases</caption>
+            <thead class="govuk-table__head">
+                <tr class="govuk-table__row">
+                    <th scope="col" class="govuk-table__header">LAA Application / Case Ref.</th>
+                    <th scope="col" class="govuk-table__header">Client name</th>
+                    <th scope="col" class="govuk-table__header">Provider Case Ref</th>
+                    <th scope="col" class="govuk-table__header">Category of Law</th>
+                    <th scope="col" class="govuk-table__header">Fee Earner</th>
+                    <th scope="col" class="govuk-table__header">Status</th>
+                    <th scope="col" class="govuk-table__header">Action</th>
+                </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+                <tr class="govuk-table__row" th:each="linkedCase : ${linkedCases.content}" th:unless="${linkedCases.content.isEmpty()}">
+                    <td class="govuk-table__cell">
+                        <a th:href="@{/application/sections/linked-cases/{id}/confirm(id=${linkedCase.id})}"
+                           class="govuk-link" th:text="${linkedCase.lscCaseReference}"></a>
+                    </td>
+                    <td class="govuk-table__cell" th:text="${linkedCase.clientFirstName + ' ' + linkedCase.clientSurname}"></td>
+                    <td class="govuk-table__cell" th:text="${linkedCase.providerCaseReference}"></td>
+                    <td class="govuk-table__cell" th:text="${linkedCase.categoryOfLaw}"></td>
+                    <td class="govuk-table__cell" th:text="${linkedCase.feeEarner}"></td>
+                    <td class="govuk-table__cell" th:text="${linkedCase.status}"></td>
+                    <td class="govuk-table__cell">
+                        <a th:href="@{/application/sections/linked-cases/{id}/remove(id=${linkedCase.id})}"
+                           class="govuk-link" th:text="${'Remove'}"></a>
+                    </td>
+                </tr>
+                <tr class="govuk-table__row" th:if="${linkedCases.content.isEmpty()}">
+                    <td class="govuk-table__cell" colspan="7">None</td>
+                </tr>
+            </tbody>
+        </table>
+        <a class="govuk-button govuk-button--secondary"
+           data-module="govuk-button"
+           th:href="@{/application/sections/linked-cases/search}">
+          Link an Application / Case
+        </a>
+        <div class="govuk-button-group">
+            <a class="govuk-button"
+               th:href="@{/application/sections}">
+                Confirm
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,19 +1,36 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_COURTS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DISABILITY;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ETHNIC_ORIGIN;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_ORDER_TYPE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
+import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
+import uk.gov.laa.ccms.caab.mapper.context.submission.GeneralDetailsSubmissionSummaryMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.submission.OpponentSubmissionSummaryMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.submission.ProceedingSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
@@ -396,6 +413,206 @@ public class LookupService {
    */
   public Mono<CommonLookupDetail> getCommonValues(final String type) {
     return ebsApiClient.getCommonValues(type);
+  }
+
+  /**
+   * Retrieves client lookups based on client flow form data.
+   *
+   * @param clientFlowFormData The client flow form data.
+   * @return A list of pairs containing lookup keys and Mono optional values.
+   */
+  public List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> getClientLookups(
+      final ClientFlowFormData clientFlowFormData) {
+
+    return List.of(
+        Pair.of("contactTitle",
+            getCommonValue(
+                COMMON_VALUE_CONTACT_TITLE,
+                clientFlowFormData.getBasicDetails().getTitle())),
+        Pair.of("countryOfOrigin",
+            getCountry(
+                clientFlowFormData.getBasicDetails().getCountryOfOrigin())),
+        Pair.of("maritalStatus",
+            getCommonValue(
+                COMMON_VALUE_MARITAL_STATUS,
+                clientFlowFormData.getBasicDetails().getMaritalStatus())),
+        Pair.of("gender",
+            getCommonValue(
+                COMMON_VALUE_GENDER,
+                clientFlowFormData.getBasicDetails().getGender())),
+        Pair.of("correspondenceMethod",
+            getCommonValue(
+                COMMON_VALUE_CORRESPONDENCE_METHOD,
+                clientFlowFormData.getContactDetails().getCorrespondenceMethod())),
+        Pair.of("ethnicity",
+            getCommonValue(
+                COMMON_VALUE_ETHNIC_ORIGIN,
+                clientFlowFormData.getMonitoringDetails().getEthnicOrigin())),
+        Pair.of("disability",
+            getCommonValue(
+                COMMON_VALUE_DISABILITY,
+                clientFlowFormData.getMonitoringDetails().getDisability())),
+
+        //Processed differently due to optionality
+        Pair.of("country",
+            StringUtils.hasText(clientFlowFormData.getAddressDetails().getCountry())
+                ? getCountry(
+                clientFlowFormData.getAddressDetails().getCountry())
+                : Mono.just(Optional.of(new CommonLookupValueDetail()))),
+        Pair.of("correspondenceLanguage",
+            StringUtils.hasText(clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
+                ? getCommonValue(COMMON_VALUE_CORRESPONDENCE_LANGUAGE,
+                clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
+                : Mono.just(Optional.of(new CommonLookupValueDetail()))));
+  }
+
+  /**
+   * Adds common lookups to the model and retrieves a list of lookup details.
+   *
+   * @param lookups The list of pairs containing lookup keys and Mono optional values.
+   * @param model The model to which lookups will be added.
+   * @return A Mono containing a list of lookup details.
+   */
+  public Mono<Void> addCommonLookupsToModel(
+      final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups,
+      final Model model) {
+    return Flux.fromIterable(lookups)
+        .flatMap(pair -> pair.getRight()
+            .map(optionalValue -> optionalValue.orElseGet(CommonLookupValueDetail::new))
+            .map(value -> Pair.of(pair.getLeft(), value)))
+        .collectList()
+        .doOnNext(list -> list.forEach(pair -> model.addAttribute(pair.getLeft(), pair.getRight())))
+        .then();
+  }
+
+
+
+  /**
+   * Retrieves a map of common lookups.
+   *
+   * @param lookups The list of pairs containing lookup keys and Mono optional values.
+   * @return A Mono containing a map of lookup details.
+   */
+  public Mono<HashMap<String, CommonLookupValueDetail>> getCommonLookupsMap(
+      final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups) {
+
+    return Flux.fromIterable(lookups)
+        .flatMap(pair -> pair.getRight()
+            .map(optionalValue -> optionalValue.orElseGet(CommonLookupValueDetail::new))
+            .map(value -> Pair.of(pair.getLeft(), value)))
+        .collectList()
+        .map(list -> {
+          final HashMap<String, CommonLookupValueDetail> clientLookupsMap = new HashMap<>();
+          list.forEach(pair -> clientLookupsMap.put(pair.getLeft(), pair.getRight()));
+          return clientLookupsMap;
+        });
+  }
+
+  /**
+   * Retrieves client summary list lookups.
+   *
+   * @param clientFlowFormData The client flow form data.
+   * @return A Mono containing a map of lookup details.
+   */
+  public Mono<HashMap<String, CommonLookupValueDetail>> getClientSummaryListLookups(
+      final ClientFlowFormData clientFlowFormData) {
+
+    // Create a list of Mono calls and their respective attribute keys
+    final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups =
+        getClientLookups(clientFlowFormData);
+
+    // Fetch all Mono's asynchronously
+    return getCommonLookupsMap(lookups);
+  }
+
+  /**
+   * Retrieves the general details submission mapping context.
+   * <p>
+   * This method combines multiple asynchronous calls to fetch various lookup details required
+   * for mapping general details submission summaries. The following components are included:
+   * </p>
+   * <ul>
+   *   <li>preferredAddress - Common lookup detail for the preferred address option</li>
+   *   <li>country - Common lookup detail for countries</li>
+   * </ul>
+   *
+   * @return a Mono emitting the GeneralDetailsSubmissionSummaryMappingContext
+   */
+  public Mono<GeneralDetailsSubmissionSummaryMappingContext>
+      getGeneralDetailsSubmissionMappingContext() {
+    final Mono<CommonLookupDetail> preferredAddressMono =
+        getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION);
+    final Mono<CommonLookupDetail> countriesMono =
+        getCountries();
+
+    return Mono.zip(
+            preferredAddressMono,
+            countriesMono)
+        .map(tuple -> GeneralDetailsSubmissionSummaryMappingContext.builder()
+            .preferredAddress(tuple.getT1())
+            .country(tuple.getT2())
+            .build());
+  }
+
+  /**
+   * Retrieves the proceeding submission mapping context.
+   * <p>
+   * This method fetches the lookup detail for the type of order required for
+   * mapping proceeding submission summaries. The following component is included:
+   * </p>
+   * <ul>
+   *   <li>typeOfOrder - Common lookup detail for the type of order</li>
+   * </ul>
+   *
+   * @return a Mono emitting the ProceedingSubmissionSummaryMappingContext
+   */
+  public Mono<ProceedingSubmissionSummaryMappingContext> getProceedingSubmissionMappingContext() {
+    final Mono<CommonLookupDetail> typeOfOrderMono =
+        getCommonValues(COMMON_VALUE_PROCEEDING_ORDER_TYPE);
+
+    return typeOfOrderMono.map(typeOfOrder ->
+        ProceedingSubmissionSummaryMappingContext.builder()
+            .typeOfOrder(typeOfOrder)
+            .build()
+    );
+  }
+
+  /**
+   * Retrieves the opponent submission mapping context.
+   * <p>
+   * This method combines multiple asynchronous calls to fetch various lookup details required
+   * for mapping opponent submission summaries. The following components are included:
+   * </p>
+   * <ul>
+   *   <li>contactTitle - Common lookup detail for contact titles</li>
+   *   <li>organisationRelationshipsToCase - Relationship details for organisations to cases</li>
+   *   <li>individualRelationshipsToCase - Relationship details for individuals to cases</li>
+   *   <li>relationshipToClient - Common lookup detail for relationships to clients</li>
+   * </ul>
+   *
+   * @return a Mono emitting the OpponentSubmissionSummaryMappingContext
+   */
+  public Mono<OpponentSubmissionSummaryMappingContext> getOpponentSubmissionMappingContext() {
+    final Mono<CommonLookupDetail> contactTitleMono =
+        getCommonValues(COMMON_VALUE_CONTACT_TITLE);
+    final Mono<RelationshipToCaseLookupDetail> organisationRelationshipsToCaseMono =
+        getOrganisationToCaseRelationships();
+    final Mono<RelationshipToCaseLookupDetail> individualRelationshipsToCaseMono =
+        getPersonToCaseRelationships();
+    final Mono<CommonLookupDetail> relationshipToClientMono =
+        getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT);
+
+    return Mono.zip(
+            contactTitleMono,
+            organisationRelationshipsToCaseMono,
+            individualRelationshipsToCaseMono,
+            relationshipToClientMono)
+        .map(tuple -> OpponentSubmissionSummaryMappingContext.builder()
+            .contactTitle(tuple.getT1())
+            .organisationRelationshipsToCase(tuple.getT2())
+            .individualRelationshipsToCase(tuple.getT3())
+            .relationshipToClient(tuple.getT4())
+            .build());
   }
 
 }
