@@ -119,9 +119,9 @@
                      class="govuk-link">
                     Remove</a>
                   <a th:if="${documentLinks.get(attachment.getId?.toString())} != null"
-                      th:href="${documentLinks.get(attachment.getId.toString())}"
-                      th:target="_blank" class="govuk-link"
-                      th:text="${attachment.sendBy} == 'P' ? 'Download Cover Sheet' : 'Download'">
+                     th:href="${documentLinks.get(attachment.getId.toString())}"
+                     th:target="_blank" class="govuk-link"
+                     th:text="${attachment.sendBy} == 'P' ? 'Download Cover Sheet' : 'Download'">
                   </a>
                   <a
                       th:if="${attachment.status} != 'Submitted' and ${attachment.sendBy} == 'E' and ${documentLinks.get(attachment.getId?.toString())} == null"
@@ -166,7 +166,7 @@
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-one-third">
           <button type="submit" class="govuk-button" data-module="govuk-button">
-              Submit
+            Submit
           </button>
           <p class="govuk-body govuk-!-font-size-15-!-text-align-left">
             <a class="govuk-back-link"
