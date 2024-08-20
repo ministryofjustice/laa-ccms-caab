@@ -35,4 +35,15 @@ public class FileUtil {
         .orElseThrow(() -> new CaabApplicationException("Failed to retrieve file extension"));
   }
 
+  /**
+   * Get a full filename consisting of the name and the extension if present.
+   *
+   * @param name      of the file.
+   * @param extension of the file.
+   * @return the full filename.
+   */
+  public static String getFilename(String name, String extension) {
+    return name + ((extension == null || extension.equals(name)) ? "" : "." + extension);
+  }
+
 }

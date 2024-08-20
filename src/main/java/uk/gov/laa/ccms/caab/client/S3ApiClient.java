@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.client;
 
+import static uk.gov.laa.ccms.caab.util.FileUtil.getFilename;
+
 import io.awspring.cloud.s3.S3Resource;
 import io.awspring.cloud.s3.S3Template;
 import java.io.ByteArrayInputStream;
@@ -186,17 +188,6 @@ public class S3ApiClient {
       filename = getDraftId(filename);
     }
     s3Template.upload(documentBucketProperties.getName(), filename, contentInputStream);
-  }
-
-  /**
-   * Get the full filename for an S3 object, consisting of the name and the extension if present.
-   *
-   * @param name      of the file.
-   * @param extension of the file.
-   * @return the full filename.
-   */
-  private String getFilename(String name, String extension) {
-    return name + ((extension == null || extension.equals(name)) ? "" : "." + extension);
   }
 
   /**

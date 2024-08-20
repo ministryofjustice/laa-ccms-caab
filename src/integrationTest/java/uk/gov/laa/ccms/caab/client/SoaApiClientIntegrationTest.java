@@ -3,6 +3,8 @@ package uk.gov.laa.ccms.caab.client;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -24,8 +26,10 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
+import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
@@ -227,6 +231,130 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     Document response = soaApiClient.downloadDocument(documentId, loginId, userType).block();
 
     assertEquals(notificationAttachment, response);
+  }
+
+  @Test
+  public void testRegisterDocument_returnsData() throws Exception {
+    String loginId = USER_1;
+    String userType = USER_TYPE;
+    ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse()
+        .transactionId("01234")
+        .referenceNumber("56789");
+
+    String clientTransactionResponseString = objectMapper
+        .writeValueAsString(clientTransactionResponse);
+
+    wiremock.stubFor(post("/documents")
+        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
+        .willReturn(okJson(clientTransactionResponseString)));
+
+    Mono<ClientTransactionResponse> clientTransactionResponseMono =
+        soaApiClient.registerDocument(new Document(), loginId, userType);
+
+    ClientTransactionResponse response = clientTransactionResponseMono.block();
+
+    assertEquals(clientTransactionResponse, response);
+  }
+
+  @Test
+  public void testUploadDocument_returnsData() throws Exception {
+    String loginId = USER_1;
+    String userType = USER_TYPE;
+    ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse()
+        .transactionId("01234")
+        .referenceNumber("56789");
+
+    String clientTransactionResponseString = objectMapper
+        .writeValueAsString(clientTransactionResponse);
+
+    wiremock.stubFor(post("/documents?notification-reference=12345")
+        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
+        .willReturn(okJson(clientTransactionResponseString)));
+
+    Mono<ClientTransactionResponse> clientTransactionResponseMono =
+        soaApiClient.uploadDocument(new Document(), "12345", loginId, userType);
+
+    ClientTransactionResponse response = clientTransactionResponseMono.block();
+
+    assertEquals(clientTransactionResponse, response);
+  }
+
+  @Test
+  public void testUpdateDocument_returnsData() throws Exception {
+    String loginId = USER_1;
+    String userType = USER_TYPE;
+    ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse()
+        .transactionId("01234")
+        .referenceNumber("56789");
+
+    String clientTransactionResponseString = objectMapper
+        .writeValueAsString(clientTransactionResponse);
+
+    wiremock.stubFor(put("/documents/56789?notification-reference=12345")
+        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
+        .willReturn(okJson(clientTransactionResponseString)));
+
+    Mono<ClientTransactionResponse> clientTransactionResponseMono =
+        soaApiClient.updateDocument(new Document().documentId("56789"), "12345", loginId, userType);
+
+    ClientTransactionResponse response = clientTransactionResponseMono.block();
+
+    assertEquals(clientTransactionResponse, response);
+  }
+
+  @Test
+  public void testDownloadCoverSheet_returnsData() throws Exception {
+    String loginId = USER_1;
+    String userType = USER_TYPE;
+    CoverSheet coverSheet = new CoverSheet()
+        .fileData("Y29udGVudA==") //content
+        .documentId("12345");
+
+    String coverSheetResponse = objectMapper.writeValueAsString(coverSheet);
+
+    wiremock.stubFor(get("/documents/12345/cover-sheet")
+        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
+        .willReturn(okJson(coverSheetResponse)));
+
+    Mono<CoverSheet> coverSheetMono =
+        soaApiClient.downloadCoverSheet("12345", loginId, userType);
+
+    CoverSheet response = coverSheetMono.block();
+
+    assertEquals(coverSheet, response);
+  }
+
+  @Test
+  public void testDownloadDocument_returnsData() throws Exception {
+    String loginId = USER_1;
+    String userType = USER_TYPE;
+    Document document = new Document()
+        .fileData("Y29udGVudA==") //content
+        .documentId("12345")
+        .channel("E")
+        .documentType("DOC_TYPE")
+        .fileExtension("ext")
+        .status("status")
+        .statusDescription("status description")
+        .text("text");
+
+    String documentResponse = objectMapper.writeValueAsString(document);
+
+    wiremock.stubFor(get("/documents/12345")
+        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
+        .willReturn(okJson(documentResponse)));
+
+    Mono<Document> documentMono =
+        soaApiClient.downloadDocument("12345", loginId, userType);
+
+    Document response = documentMono.block();
+
+    assertEquals(document, response);
   }
 
   private NotificationSummary buildNotificationSummary() {

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Provide Documents or Evidence</title>
+</head>
+<body>
+
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/notifications/{notification_id}(notification_id=${notificationId})}"
+       class="govuk-back-link">Return to notification</a>
+  </div>
+  <div id="main-content">
+    <form action="#"
+          th:action="@{/notifications/{notification_id}/provide-documents-or-evidence(notification_id=${notification.getNotificationId})}" th:object="${notification}" method="post">
+      <div class="govuk-error-summary" data-module="govuk-error-summary" th:if="${errorMessage}">
+        <div role="alert">
+          <h2 class="govuk-error-summary__title">
+            This page contains one or more errors or warnings
+          </h2>
+          <div class="govuk-error-summary__body">
+            <ul class="govuk-list govuk-error-summary__list">
+              <li>
+                <p th:text="${errorMessage}" />
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <h1 class="govuk-heading-l">Provide Documents or Evidence</h1>
+      <p class="govuk-body-l">
+        Please view a summary of the documents or evidence uploaded below. If you are happy to
+        submit the files to LAA please click the 'Submit' button, otherwise you can upload further
+        files. You can submit files individually or in a group.
+      </p>
+
+      <h1 class="govuk-heading-m">
+        Notification Details
+      </h1>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+          <table class="govuk-table">
+            <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+              <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
+                  style="margin-top: 0; white-space: nowrap">Date assigned</th>
+              <td class="govuk-table__cell govuk-!-font-size-15"
+                  th:text="${#dates.format(notification.assignDate,'dd-MM-yyyy')}"></td>
+              <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
+                  style="margin-top: 0; white-space: nowrap">Due date</th>
+              <td class="govuk-table__cell govuk-!-font-size-15"
+                  th:text="${#dates.format(notification.dueDate,'dd-MM-yyyy')}"></td>
+              <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
+                  style="margin-top: 0; white-space: nowrap">Status</th>
+              <td class="govuk-table__cell govuk-!-font-size-15"
+                  th:text="${notification.status}"></td>
+              <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
+                  style="margin-top: 0; white-space: nowrap">Assigned to</th>
+              <td class="govuk-table__cell govuk-!-font-size-15"
+                  th:text="${notification.user.userLoginId}"></td>
+            </tr>
+            </thead>
+          </table>
+        </div>
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+          <table class="govuk-table">
+            <tr class="govuk-table__row">
+              <td class=govuk-table__cell colspan="8"
+                  th:if="${#lists.isEmpty(notification.notes)}">
+                <br/>
+              </td>
+              <td class="govuk-table__cell" colspan="4">
+                <th:block th:each="note :  ${notification.notes}">
+                  <p class="ccms-pre-formatted" th:utext="${note.message}"></p>
+                </th:block>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+          <h1 class="govuk-heading-m">
+            Documents or Evidence Details
+          </h1>
+          <table class="govuk-table">
+            <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+              <th scope="col" class="govuk-table__header">Number</th>
+              <th scope="col" class="govuk-table__header">Send By</th>
+              <th scope="col" class="govuk-table__header">Document Type</th>
+              <th scope="col" class="govuk-table__header">Description</th>
+              <th scope="col" class="govuk-table__header">Status</th>
+              <th scope="col" class="govuk-table__header">Action</th>
+            </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+            <tr class="govuk-table__row" th:each="attachment : ${notificationAttachments}">
+              <td class=govuk-table__cell colspan="8"
+                  th:if="${#lists.isEmpty(notificationAttachments)}">
+                None<br/>
+              </td>
+              <td class="govuk-table__cell" th:text="${attachment.number}"></td>
+              <td class="govuk-table__cell"
+                  th:text="${attachment.sendBy == 'P' ? 'Post' : 'Electronic Upload'}"></td>
+              <td class="govuk-table__cell" th:text="${attachment.documentType.displayValue}"></td>
+              <td class="govuk-table__cell" th:text="${attachment.description}"></td>
+              <td class="govuk-table__cell" th:text="${attachment.status}"></td>
+              <td class="govuk-table__cell">
+                <div class="govuk-button-group">
+                  <a th:if="${attachment.status == 'Ready to Submit'}"
+                     th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/edit(notification_id=${notification.getNotificationId},attachment_id=${attachment.getId})}"
+                     class="govuk-link">
+                    Edit</a>
+                  <a th:if="${attachment.status == 'Ready to Submit'}"
+                     th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/remove(notification_id=${notification.getNotificationId},attachment_id=${attachment.getId})}"
+                     class="govuk-link">
+                    Remove</a>
+                  <a th:if="${documentLinks.get(attachment.getId?.toString())} != null"
+                      th:href="${documentLinks.get(attachment.getId.toString())}"
+                      th:target="_blank" class="govuk-link"
+                      th:text="${attachment.sendBy} == 'P' ? 'Download Cover Sheet' : 'Download'">
+                  </a>
+                  <a
+                      th:if="${attachment.status} != 'Submitted' and ${attachment.sendBy} == 'E' and ${documentLinks.get(attachment.getId?.toString())} == null"
+                      th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/retrieveDraft(notification_id=${notification.getNotificationId},attachment_id=${attachment.getId})}" class="govuk-link ccms-download-link">
+                    Retrieve</a>
+                  <a
+                      th:if="${attachment.status} == 'Submitted' and ${attachment.sendBy} == 'E' and ${documentLinks.get(attachment.getId?.toString())} == null"
+                      th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/retrieve(notification_id=${notification.getNotificationId},attachment_id=${attachment.getId})}" class="govuk-link ccms-download-link">
+                    Retrieve</a>
+                  <a
+                      th:if="${attachment.status} == 'Submitted' and ${attachment.sendBy} == 'P' and ${documentLinks.get(attachment.getId?.toString())} == null"
+                      th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/retrieveCoverSheet(notification_id=${notification.getNotificationId},attachment_id=${attachment.getId})}" class="govuk-link ccms-download-link">
+                    Retrieve Cover Sheet</a>
+                  <div
+                      style="visibility:hidden;display:inline-block"
+                      class="loader-small"></div>
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+          <div class="govuk-button-group">
+            <a class="govuk-button govuk-button--secondary"
+               data-module="govuk-button"
+               th:href="@{/notifications/{notification_id}/attachments/upload?sendBy=postal(notification_id=${notification.getNotificationId})}">
+              Add Postal Document
+            </a>
+            <a class="govuk-button govuk-button--secondary"
+               data-module="govuk-button"
+               th:href="@{/notifications/{notification_id}/attachments/upload?sendBy=electronic(notification_id=${notification.getNotificationId})}">
+              Add Electronic Document
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-one-third">
+          <button type="submit" class="govuk-button" data-module="govuk-button">
+              Submit
+          </button>
+          <p class="govuk-body govuk-!-font-size-15-!-text-align-left">
+            <a class="govuk-back-link"
+               th:href="@{/notifications/{notification_id}(notification_id=${notificationId})}">
+              Back
+            </a>
+          </p>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>
+<script>
+  var links = document.getElementsByClassName('ccms-download-link')
+  for(var i = 0; i < links.length; i++) {
+    var link = links[i];
+    link.onclick = function() {
+      ldr = this.parentElement.getElementsByClassName('loader-small')[0];
+      console.log("Link with ID: " + this.id + " activating spinner with ID: " + ldr.id);
+      if (ldr.style.visibility == "hidden") {
+        ldr.style.visibility = "visible"
+      }
+    };
+  }
+</script>

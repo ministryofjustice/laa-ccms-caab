@@ -31,6 +31,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -365,6 +366,7 @@ class ActionsAndNotificationsControllerTest {
     flashMap.put("notificationsSearchResults", notificationsMock);
     mockMvc.perform(get("/notifications/234/attachments/567/retrieve")
             .sessionAttr("user", userDetails)
+            .header(HttpHeaders.REFERER, "/notifications/234")
             .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
