@@ -974,6 +974,29 @@ public class CaabApiClient {
   }
 
   /**
+   * Asynchronously updates a notification attachment.
+   *
+   * @param data    The notification attachment information.
+   * @param loginId The login ID of the user performing the operation.
+   * @return A Mono wrapping the id of the newly created notification attachment.
+   */
+  public Mono<Void> updateNotificationAttachment(
+      final NotificationAttachmentDetail data,
+      final String loginId) {
+    return caabApiWebClient
+        .put()
+        .uri("/notification-attachments/{notification-attachment-id}", data.getId())
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(data)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(e,
+            RESOURCE_TYPE_NOTIFICATION_ATTACHMENTS, "id", String.valueOf(data.getId())));
+  }
+
+
+  /**
    * Fetches the uploaded notification attachment based on the supplied search criteria. This method
    * communicates with the CAAB API client to fetch the notification attachments.
    *

@@ -200,8 +200,4 @@ public class SessionConstants {
    */
   public static final String EVIDENCE_UPLOAD_FORM_DATA = "evidenceUploadForm";
 
-
-
-
-
 }

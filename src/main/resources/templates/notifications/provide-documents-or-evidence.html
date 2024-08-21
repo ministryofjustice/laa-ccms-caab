@@ -119,9 +119,9 @@
                      class="govuk-link">
                     Remove</a>
                   <a th:if="${documentLinks.get(attachment.getId?.toString())} != null"
-                      th:href="${documentLinks.get(attachment.getId.toString())}"
-                      th:target="_blank" class="govuk-link"
-                      th:text="${attachment.sendBy} == 'P' ? 'Download Cover Sheet' : 'Download'">
+                     th:href="${documentLinks.get(attachment.getId.toString())}"
+                     th:target="_blank" class="govuk-link"
+                     th:text="${attachment.sendBy} == 'P' ? 'Download Cover Sheet' : 'Download'">
                   </a>
                   <a
                       th:if="${attachment.status} != 'Submitted' and ${attachment.sendBy} == 'E' and ${documentLinks.get(attachment.getId?.toString())} == null"
@@ -151,12 +151,12 @@
           <div class="govuk-button-group">
             <a class="govuk-button govuk-button--secondary"
                data-module="govuk-button"
-               th:href="@{/notifications/{notification_id}/attachments/upload?sendBy=postal(notification_id=${notification.getNotificationId})}">
+               th:href="@{/notifications/{notification_id}/attachments/upload?sendBy=POSTAL(notification_id=${notification.getNotificationId})}">
               Add Postal Document
             </a>
             <a class="govuk-button govuk-button--secondary"
                data-module="govuk-button"
-               th:href="@{/notifications/{notification_id}/attachments/upload?sendBy=electronic(notification_id=${notification.getNotificationId})}">
+               th:href="@{/notifications/{notification_id}/attachments/upload?sendBy=ELECTRONIC(notification_id=${notification.getNotificationId})}">
               Add Electronic Document
             </a>
           </div>
@@ -166,7 +166,7 @@
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-one-third">
           <button type="submit" class="govuk-button" data-module="govuk-button">
-              Submit
+            Submit
           </button>
           <p class="govuk-body govuk-!-font-size-15-!-text-align-left">
             <a class="govuk-back-link"

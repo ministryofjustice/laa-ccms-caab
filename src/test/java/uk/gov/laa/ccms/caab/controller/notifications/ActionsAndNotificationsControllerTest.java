@@ -2,25 +2,32 @@ package uk.gov.laa.ccms.caab.controller.notifications;
 
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.forwardedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_NOTIFICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +39,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -40,8 +48,16 @@ import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.notification.NotificationAttachmentUploadFormData;
+import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationAttachmentUploadValidator;
 import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationSearchValidator;
+import uk.gov.laa.ccms.caab.constants.SendBy;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.NotificationAttachmentMapper;
+import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
+import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
+import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
+import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
@@ -81,25 +97,38 @@ class ActionsAndNotificationsControllerTest {
   private UserService userService;
   @Mock
   private NotificationSearchValidator notificationSearchValidator;
+  @Mock
+  private NotificationAttachmentMapper notificationAttachmentMapper;
+  @Mock
+  private NotificationAttachmentUploadValidator notificationAttachmentUploadValidator;
+  @Mock
+  private AvScanService avScanService;
   @Autowired
   private WebApplicationContext webApplicationContext;
   private MockMvc mockMvc;
 
   private static Notifications getNotificationsMock() {
     return new Notifications()
-        .addContentItem(
-            new Notification()
-                .user(new uk.gov.laa.ccms.soa.gateway.model.UserDetail()
-                    .userLoginId("user1")
-                    .userType("user1"))
-                .notificationId("234")
-                .notificationType("N")
-                .attachedDocuments(buildDocuments()));
-
+        .addContentItem(buildNotification());
   }
 
-  private static List<Document> buildDocuments() {
-    return List.of(new Document().documentId("567"));
+  private static Notification buildNotification() {
+    return new Notification()
+        .user(new uk.gov.laa.ccms.soa.gateway.model.UserDetail()
+            .userLoginId("user1")
+            .userType("user1"))
+        .notificationId("234")
+        .notificationType("N")
+        .attachedDocuments(buildAttachedDocuments())
+        .uploadedDocuments(buildUploadedDocuments());
+  }
+
+  private static List<Document> buildUploadedDocuments() {
+    return List.of(new Document().documentId("890").channel("P").documentType("TST_DOC"));
+  }
+
+  private static List<Document> buildAttachedDocuments() {
+    return List.of(new Document().documentId("567").channel("E").documentType("TST_DOC"));
   }
 
   private static NotificationSearchCriteria buildNotificationSearchCritieria() {
@@ -328,7 +357,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void TestReturnToNotifications_Data_RedirectsToResultsPage() throws Exception {
+  void testReturnToNotifications_Data_RedirectsToResultsPage() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Notifications notificationsMock = getNotificationsMock();
     Map<String, Object> flashMap = new HashMap<>();
@@ -344,7 +373,7 @@ class ActionsAndNotificationsControllerTest {
 
 
   @Test
-  void TestReturnToNotifications_noData_redirectsToResultsPage() throws Exception {
+  void testReturnToNotifications_noData_redirectsToResultsPage() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("notificationSearchCriteria", criteria);
@@ -357,7 +386,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void TestRetrieveNotificationAttachment_redirectsToNotificationPage() throws Exception {
+  void testRetrieveNotificationAttachment_redirectsToNotificationPage() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Notifications notificationsMock = getNotificationsMock();
     Map<String, Object> flashMap = new HashMap<>();
@@ -374,6 +403,378 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
+  void testRetrieveNotificationAttachment_redirectsToProvideDocumentsPage() throws Exception {
+    NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+    Notifications notificationsMock = getNotificationsMock();
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+    flashMap.put("notificationSearchCriteria", criteria);
+    flashMap.put("notificationsSearchResults", notificationsMock);
+    mockMvc.perform(get("/notifications/234/attachments/567/retrieve")
+            .sessionAttr("user", userDetails)
+            .header(HttpHeaders.REFERER, "/notifications/234/provide-documents-or-evidence")
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/notifications/234/provide-documents-or-evidence"));
+  }
+
+  @Test
+  void testRemmoveNotificationAttachment_removesAttachment_andRedirectsToProvideDocumentsPage() throws Exception {
+
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+
+    mockMvc.perform(get("/notifications/234/attachments/567/remove")
+            .sessionAttr("user", userDetails)
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/notifications/234/provide-documents-or-evidence"));
+
+    verify(notificationService).removeDraftNotificationAttachment("234", 567,
+        userDetails.getLoginId(), userDetails.getUserId());
+  }
+
+  @Test
+  void testRetrieveDraftNotificationAttachment_redirectsToProvideDocumentsPage() throws Exception {
+    NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+    Notifications notificationsMock = getNotificationsMock();
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+    flashMap.put("notificationSearchCriteria", criteria);
+    flashMap.put("notificationsSearchResults", notificationsMock);
+    mockMvc.perform(get("/notifications/234/attachments/567/retrieveDraft")
+            .sessionAttr("user", userDetails)
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/notifications/234/provide-documents-or-evidence"));
+  }
+
+  @Test
+  void testEditDraftNotificationAttachment_redirectsToUploadPage() throws Exception {
+
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+
+    NotificationAttachmentDetail notificationAttachmentDetail =
+        new NotificationAttachmentDetail();
+    notificationAttachmentDetail.setSendBy("E");
+
+    NotificationAttachmentUploadFormData notificationAttachmentUploadFormData =
+        new NotificationAttachmentUploadFormData();
+    notificationAttachmentUploadFormData.setSendBy(SendBy.ELECTRONIC);
+
+    when(notificationService.getDraftNotificationAttachment(567)).thenReturn(Mono.just(notificationAttachmentDetail));
+    when(notificationAttachmentMapper.toNotificationAttachmentUploadFormData(notificationAttachmentDetail))
+        .thenReturn(notificationAttachmentUploadFormData);
+
+    mockMvc.perform(get("/notifications/234/attachments/567/edit")
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(flash().attribute("notificationAttachmentUploadFormData",
+            notificationAttachmentUploadFormData))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/notifications/234/attachments/upload?sendBy=ELECTRONIC"));
+  }
+
+  @Test
+  void testGetUploadNotificationAttachment_createsDropsDownAndDisplaysUploadForm()
+      throws Exception {
+
+    CommonLookupValueDetail documentType = new CommonLookupValueDetail()
+        .type(COMMON_VALUE_DOCUMENT_TYPES).code("TST_DOC").description(
+        "Test Document");
+
+    CommonLookupDetail documentTypes = new CommonLookupDetail();
+    documentTypes
+        .addContentItem(documentType);
+
+    List<String> validExtensions = List.of("ext");
+    String maxFileSize = "8MB";
+
+    when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .thenReturn(Mono.just(documentTypes));
+    when(notificationAttachmentUploadValidator.getValidExtensions())
+        .thenReturn(validExtensions);
+    when(notificationAttachmentUploadValidator.getMaxFileSize())
+        .thenReturn(maxFileSize);
+
+    Notification notification = buildNotification();
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+
+    mockMvc.perform(get("/notifications/234/attachments/upload")
+            .sessionAttr("notification", notification)
+            .queryParam("sendBy", "ELECTRONIC")
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(model().attribute("documentTypes", documentTypes.getContent()))
+        .andExpect(model().attribute("validExtensions", validExtensions.getFirst()))
+        .andExpect(model().attribute("maxFileSize", maxFileSize))
+        .andExpect(view().name("notifications/upload-notification-attachment"));
+  }
+
+  @Test
+  void testPostUploadNotificationAttachment_newPostalAttachment_uploadsAndReturnsToProvideDocumentsPage()
+      throws Exception {
+
+    NotificationAttachmentUploadFormData attachmentUploadFormData =
+        new NotificationAttachmentUploadFormData();
+    attachmentUploadFormData.setSendBy(SendBy.POSTAL);
+
+    NotificationAttachmentDetail notificationAttachment = new NotificationAttachmentDetail();
+    notificationAttachment.setSendBy("P");
+
+    BaseNotificationAttachmentDetail baseNotificationAttachment =
+        new BaseNotificationAttachmentDetail();
+    baseNotificationAttachment.setSendBy("P");
+
+    NotificationAttachmentDetails notificationAttachmentDetails =
+        new NotificationAttachmentDetails();
+    notificationAttachmentDetails.setContent(List.of(baseNotificationAttachment));
+
+    when(notificationAttachmentMapper.toNotificationAttachmentDetail(attachmentUploadFormData))
+        .thenReturn(notificationAttachment);
+    when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
+        .thenReturn(Mono.just(notificationAttachmentDetails));
+
+    Notification notification = buildNotification();
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+    flashMap.put("attachmentUploadFormData", attachmentUploadFormData);
+
+    mockMvc.perform(post("/notifications/234/attachments/upload")
+            .sessionAttr("notification", notification)
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/notifications/234/provide-documents-or-evidence"));
+
+    verify(notificationService).addDraftNotificationAttachment(notificationAttachment,
+        userDetails.getLoginId());
+  }
+
+  @Test
+  void testPostUploadNotificationAttachment_editPostalAttachment_updatesAndReturnsToProvideDocumentsPage()
+      throws Exception {
+
+    NotificationAttachmentUploadFormData attachmentUploadFormData =
+        new NotificationAttachmentUploadFormData();
+    attachmentUploadFormData.setSendBy(SendBy.POSTAL);
+    attachmentUploadFormData.setDocumentId(123);
+
+    NotificationAttachmentDetail notificationAttachment = new NotificationAttachmentDetail();
+    notificationAttachment.setId(123);
+    notificationAttachment.setSendBy("P");
+
+    BaseNotificationAttachmentDetail baseNotificationAttachment =
+        new BaseNotificationAttachmentDetail();
+    baseNotificationAttachment.setSendBy("P");
+
+    NotificationAttachmentDetails notificationAttachmentDetails =
+        new NotificationAttachmentDetails();
+    notificationAttachmentDetails.setContent(List.of(baseNotificationAttachment));
+
+    when(notificationAttachmentMapper.toNotificationAttachmentDetail(attachmentUploadFormData))
+        .thenReturn(notificationAttachment);
+    when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
+        .thenReturn(Mono.just(notificationAttachmentDetails));
+
+    Notification notification = buildNotification();
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+    flashMap.put("attachmentUploadFormData", attachmentUploadFormData);
+
+    mockMvc.perform(post("/notifications/234/attachments/upload")
+            .sessionAttr("notification", notification)
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/notifications/234/provide-documents-or-evidence"));
+
+    verify(notificationService).updateDraftNotificationAttachment(notificationAttachment,
+        userDetails.getLoginId());
+  }
+
+  @Test
+  void testPostUploadNotificationAttachment_newElectronicAttachment_runsVirusScan_uploadsAndReturnsToProvideDocumentsPage()
+      throws Exception {
+
+    String filename = "filename";
+    byte[] content = "content".getBytes();
+
+    MockMultipartFile file = new MockMultipartFile("name", filename, null, content);
+
+    NotificationAttachmentUploadFormData attachmentUploadFormData =
+        new NotificationAttachmentUploadFormData();
+    attachmentUploadFormData.setSendBy(SendBy.ELECTRONIC);
+    attachmentUploadFormData.setFile(file);
+
+    NotificationAttachmentDetail notificationAttachment = new NotificationAttachmentDetail();
+    notificationAttachment.setSendBy("E");
+
+    BaseNotificationAttachmentDetail baseNotificationAttachment =
+        new BaseNotificationAttachmentDetail();
+    baseNotificationAttachment.setSendBy("E");
+
+    NotificationAttachmentDetails notificationAttachmentDetails =
+        new NotificationAttachmentDetails();
+    notificationAttachmentDetails.setContent(List.of(baseNotificationAttachment));
+
+    when(notificationAttachmentMapper.toNotificationAttachmentDetail(attachmentUploadFormData))
+        .thenReturn(notificationAttachment);
+    when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
+        .thenReturn(Mono.just(notificationAttachmentDetails));
+
+    Notification notification = buildNotification();
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+    flashMap.put("attachmentUploadFormData", attachmentUploadFormData);
+
+    mockMvc.perform(post("/notifications/234/attachments/upload")
+            .sessionAttr("notification", notification)
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/notifications/234/provide-documents-or-evidence"));
+
+    verify(avScanService).performAvScan(any(), any(), any(), any(), eq(file.getOriginalFilename()),
+        any());
+    verify(notificationService).addDraftNotificationAttachment(notificationAttachment,
+        userDetails.getLoginId());
+  }
+
+  @Test
+  void testGetProvideDocumentsOrEvidence_populatesDraftAttachments_andDisplaysPage()
+      throws Exception {
+
+    Notification notification = buildNotification();
+
+    BaseNotificationAttachmentDetail baseNotificationAttachment =
+        new BaseNotificationAttachmentDetail();
+    baseNotificationAttachment.setSendBy("E");
+
+    NotificationAttachmentDetails notificationAttachmentDetails =
+        new NotificationAttachmentDetails();
+    notificationAttachmentDetails.setContent(List.of(baseNotificationAttachment));
+
+    Map<String, String> draftDocumentLinks = Map.of("draft doc 1", "link 1");
+    Map<String, String> documentLinks = Map.of("uploaded doc 1", "link 1");
+
+    CommonLookupValueDetail documentType = new CommonLookupValueDetail()
+        .type(COMMON_VALUE_DOCUMENT_TYPES).code("TST_DOC").description(
+            "Test Document");
+
+    CommonLookupDetail documentTypes = new CommonLookupDetail();
+    documentTypes
+        .addContentItem(documentType);
+
+    when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .thenReturn(Mono.just(documentTypes));
+
+    when(notificationService.getDraftNotificationAttachments(notification.getNotificationId(),
+        userDetails.getUserId())).thenReturn(Mono.just(notificationAttachmentDetails));
+    when(notificationService.getDraftDocumentLinks(List.of(baseNotificationAttachment))).thenReturn(draftDocumentLinks);
+    when(notificationService.getDocumentLinks(notification.getUploadedDocuments())).thenReturn(documentLinks);
+    when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification.getUploadedDocuments().getFirst(), "Test Document"))
+        .thenReturn(new BaseNotificationAttachmentDetail());
+
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+
+    mockMvc.perform(get("/notifications/234/provide-documents-or-evidence")
+            .sessionAttr("notification", notification)
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(model().attribute("notificationAttachments", hasSize(2)))
+        .andExpect(model().attribute("documentLinks", hasEntry("draft doc 1", "link 1")))
+        .andExpect(model().attribute("documentLinks", hasEntry("uploaded doc 1", "link 1")))
+        .andExpect(view().name("notifications/provide-documents-or-evidence"));
+
+    verify(notificationService).getDraftNotificationAttachments(notification.getNotificationId(),
+        userDetails.getUserId());
+    verify(notificationService).getDraftDocumentLinks(List.of(baseNotificationAttachment));
+    verify(notificationService).getDocumentLinks(notification.getUploadedDocuments());
+  }
+
+  @Test
+  void testPostProvideDocumentsOrEvidence_submitsDraftAttachments_andDisplaysPage()
+      throws Exception {
+
+    Notification notification = buildNotification();
+
+    BaseNotificationAttachmentDetail baseNotificationAttachment =
+        new BaseNotificationAttachmentDetail();
+    baseNotificationAttachment.setSendBy("E");
+
+    NotificationAttachmentDetails notificationAttachmentDetails =
+        new NotificationAttachmentDetails();
+    notificationAttachmentDetails.setContent(List.of(baseNotificationAttachment));
+
+    when(notificationService.getDraftNotificationAttachments(notification.getNotificationId(),
+        userDetails.getUserId())).thenReturn(Mono.just(notificationAttachmentDetails));
+
+    when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification.getUploadedDocuments().getFirst(), "Test Document"))
+        .thenReturn(new BaseNotificationAttachmentDetail());
+
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+
+    mockMvc.perform(post("/notifications/234/provide-documents-or-evidence")
+            .sessionAttr("notification", notification)
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/notifications/234/provide-documents-or-evidence"));
+
+    verify(notificationService).submitNotificationAttachments(notification.getNotificationId(),
+        userDetails.getLoginId(), userDetails.getUserType(), userDetails.getUserId());
+  }
+
+  @Test
+  void testPostProvideDocumentsOrEvidence_noDocumentsToSubmit()
+      throws Exception {
+
+    Notification notification = buildNotification();
+
+    NotificationAttachmentDetails notificationAttachmentDetails =
+        new NotificationAttachmentDetails();
+    notificationAttachmentDetails.setContent(Collections.emptyList());
+
+    CommonLookupValueDetail documentType = new CommonLookupValueDetail()
+        .type(COMMON_VALUE_DOCUMENT_TYPES).code("TST_DOC").description(
+            "Test Document");
+
+    CommonLookupDetail documentTypes = new CommonLookupDetail();
+    documentTypes
+        .addContentItem(documentType);
+
+    when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .thenReturn(Mono.just(documentTypes));
+
+    when(notificationService.getDraftNotificationAttachments(notification.getNotificationId(),
+        userDetails.getUserId())).thenReturn(Mono.just(notificationAttachmentDetails));
+    when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification.getUploadedDocuments().getFirst(), "Test Document"))
+        .thenReturn(new BaseNotificationAttachmentDetail());
+
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+
+    mockMvc.perform(post("/notifications/234/provide-documents-or-evidence")
+            .sessionAttr("notification", notification)
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(model().attributeExists("errorMessage"))
+        .andExpect(view().name("notifications/provide-documents-or-evidence"));
+
+    verify(notificationService,
+        times(2)).getDraftNotificationAttachments(notification.getNotificationId(),
+        userDetails.getUserId());
+  }
+
+  @Test
   void testGetNotification_populatesDocumentUrls() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Notifications notificationsMock = getNotificationsMock();
@@ -382,7 +783,7 @@ class ActionsAndNotificationsControllerTest {
     flashMap.put("notificationSearchCriteria", criteria);
     flashMap.put("notificationsSearchResults", notificationsMock);
 
-    List<Document> documents = buildDocuments();
+    List<Document> documents = buildAttachedDocuments();
 
     when(notificationService.getDocumentLinks(documents)).thenReturn(Map.of("567", "doc-url"));
 

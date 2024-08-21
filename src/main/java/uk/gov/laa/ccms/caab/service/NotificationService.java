@@ -186,9 +186,30 @@ public class NotificationService {
       String loginId) {
     String attachmentId = caabApiClient.createNotificationAttachment(notificationAttachment,
         loginId).block();
-    String extension = FileUtil.getFileExtension(notificationAttachment.getFileName());
-    s3ApiClient.uploadDraftDocument(attachmentId, notificationAttachment.getFileData(),
-        extension);
+    if (notificationAttachment.getSendBy().equals("E")) {
+      String extension = FileUtil.getFileExtension(notificationAttachment.getFileName());
+      s3ApiClient.uploadDraftDocument(attachmentId, notificationAttachment.getFileData(),
+          extension);
+    }
+  }
+
+  /**
+   * Store a notification attachment in the TDS and S3, prior to submission to EBS.
+   *
+   * @param notificationAttachment - the notification attachment detail.
+   * @param loginId                - The login identifier for the user.
+   */
+  public void updateDraftNotificationAttachment(
+      NotificationAttachmentDetail notificationAttachment,
+      String loginId) {
+    caabApiClient.updateNotificationAttachment(notificationAttachment,
+        loginId).block();
+    if (notificationAttachment.getSendBy().equals("E")) {
+      String extension = FileUtil.getFileExtension(notificationAttachment.getFileName());
+      s3ApiClient.uploadDraftDocument(String.valueOf(notificationAttachment.getId()),
+          notificationAttachment.getFileData(),
+          extension);
+    }
   }
 
   /**

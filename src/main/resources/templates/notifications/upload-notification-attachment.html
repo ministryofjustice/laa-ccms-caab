@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Provide Documents or Evidence</title>
+</head>
+<body>
+
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a
+        th:href="@{/notifications/{notification_id}/provide-documents-or-evidence(notification_id=${notificationId})}"
+       class="govuk-back-link">Return to Provide Documents or Evidence</a>
+  </div>
+  <div id="main-content">
+    <h1 class="govuk-heading-l">Upload Postal Documents or Evidence</h1>
+    <form
+        action="#" method="post"
+        th:action="@{/notifications/{notification_id}/attachments/upload(notification_id=${notificationId})}" th:object="${attachmentUploadFormData}" enctype="multipart/form-data">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <div th:if="$*{sendBy.code} == 'E'" class="govuk-warning-text">
+        <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+        <strong class="govuk-warning-text__text">
+          <span class="govuk-visually-hidden">Warning</span>
+          We can only accept <span th:text="${validExtensions}"/> files that are less than <span th:text="${maxFileSize}"/>.
+        </strong>
+      </div>
+      <p class="govuk-body-l">
+        Please provide details of the document you will be <span
+          th:text="$*{sendBy.code} == 'P' ? 'posting' : 'uploading'"></span>.
+      </p>
+      <p class="govuk-body-m">
+        <b>Send by</b> <span
+          th:text="$*{sendBy.code} == 'P' ? 'Post' : 'Electronic Upload'"></span>
+      </p>
+      <div th:if="$*{sendBy.code} == 'E'" class="govuk-form-group"
+           th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
+        <label class="govuk-label" for="file">
+          Choose file
+        </label>
+        <input class="govuk-file-upload" id="file" name="file" type="file">
+      </div>
+      <div
+          th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', 'Document Type', ${documentTypes}, 'code', 'description')}"></div>
+      <div th:replace="~{partials/forms :: largeTextInput('documentDescription', 'Document description (Maximum 255 characters allowed)')}"></div>
+
+      <input type="hidden" th:id="sendBy" th:name="sendBy"
+             th:value="*{sendBy}">
+      <input type="hidden" th:id="providerId" th:name="providerId"
+             th:value="*{providerId}">
+      <input type="hidden" th:id="documentId" th:name="documentId"
+             th:value="*{documentId}">
+      <input type="hidden" th:id="status" th:name="status"
+             th:value="*{status}">
+      <input type="hidden" th:id="notificationReference" th:name="notificationReference"
+             th:value="*{notificationReference}">
+      <input type="hidden" th:id="number" th:name="number"
+             th:value="*{number}">
+
+      <button type="submit" class="govuk-button" data-module="govuk-button">
+        Upload
+      </button>
+    </form>
+
+  </div>
+</div>
+
+</body>
