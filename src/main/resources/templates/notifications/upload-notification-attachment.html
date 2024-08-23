@@ -16,7 +16,7 @@
         action="#" method="post"
         th:action="@{/notifications/{notification_id}/attachments/upload(notification_id=${notificationId})}" th:object="${attachmentUploadFormData}" enctype="multipart/form-data">
       <h1 class="govuk-heading-l">Upload <span
-          th:text="*{sendBy.code} == 'P' ? 'Postal' : 'Electronic Upload'"></span> Documents or
+          th:text="*{sendBy.code} == 'P' ? 'Postal' : 'Electronic'"></span> Documents or
         Evidence</h1>
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <div th:if="*{sendBy.code} == 'E'" class="govuk-warning-text">
