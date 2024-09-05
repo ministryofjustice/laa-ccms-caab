@@ -1,37 +1,48 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html th:fragment="layout" lang="en" class="govuk-template">
+
 <head>
-  <title>LAA CCMS - Application summary</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="blue">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <link rel="shortcut icon" sizes="16x16 32x32 48x48" th:href="@{/assets/images/favicon.ico}" type="image/x-icon">
+  <link rel="mask-icon" th:href="@{/assets/images/govuk-mask-icon.svg}" color="blue">
+  <link rel="apple-touch-icon" sizes="180x180" th:href="@{/assets/images/govuk-apple-touch-icon-180x180.png}">
+  <link rel="apple-touch-icon" sizes="167x167" th:href="@{/assets/images/govuk-apple-touch-icon-167x167.png}">
+  <link rel="apple-touch-icon" sizes="152x152" th:href="@{/assets/images/govuk-apple-touch-icon-152x152.png}">
+  <link rel="apple-touch-icon" th:href="@{/assets/images/govuk-apple-touch-icon.png}">
+  <link th:href="@{/govuk-frontend/all.css}" rel="stylesheet">
+  <meta property="og:image" content="&lt;YOUR-DOMAIN&gt;/images/govuk-opengraph-image.png">
+  <title>LAA CCMS - View and print application</title>
 </head>
-<body>
+
+<body class="govuk-template__body">
+<script>
+    document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');
+</script>
 <div class="govuk-width-container">
-  <div id="breadcrumbs">
-    <a th:href="@{/application/sections}" class="govuk-back-link">Return to create application</a>
-  </div>
-  <div id="main-content">
-    <span class="govuk-caption-l">Create application</span>
-    <h1 class="govuk-heading-l">
-      Application summary
-    </h1>
-    <p class="govuk-body-l">
-      The information you have entered in your Application is listed below. In order to print the overview please click on the 'Print this page' button.
-    </p>
+  <main class="govuk-main-wrapper" id="main-content" role="main">
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
-        <div class="moj-page-header-actions">
-          <div class="moj-page-header-actions__title">
-            <h2 class="govuk-heading-m">Client details</h2>
-          </div>
-          <div class="moj-page-header-actions__actions">
-            <div class="moj-button-menu">
-              <div class="moj-button-menu__wrapper">
-                <a class="govuk-button moj-button-menu__item govuk-button--secondary moj-page-header-actions__action" th:href="@{/application/summary/print}" data-module="govuk-button" target="_blank">
-                  Print this page
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
+        <span class="govuk-caption-l">About your application</span>
+        <h1 class="govuk-heading-l">
+          View and print application
+        </h1>
+        <p class="govuk-body-l">
+          The information you have entered in your Application is listed below. Please check carefully to make sure it is correct.
+        </p>
+        <p class="govuk-body-l">
+          You can store a copy of your Application answers to your computer via the internet browsers 'save' option.
+        </p>
+        <p class="govuk-body govuk-!-font-weight-bold">
+          Print date: <span th:text="${#dates.format(#dates.createNow(), 'dd MMM yyyy')}"></span>
+        </p>
+      </div>
+    </div>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m">Client details</h2>
         <h3 class="govuk-heading-s">Basic client details</h3>
         <dl class="govuk-summary-list">
           <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Title', ${submissionSummary.clientLookups.contactTitle.description})}"></div>
@@ -204,17 +215,21 @@
         <div th:insert="application/partials/summary-fragments :: assessmentSummaryFragment(summary=${submissionSummary.meritsAssessment}, isSinglePageSummary=${false})"></div>
       </div>
     </div>
-    <div class="govuk-button-group">
-      <button type="submit" class="govuk-button" data-module="govuk-button">
-        Confirm
-      </button>
-      <a class="govuk-button govuk-button--secondary" data-module="govuk-button" th:href="@{/application/summary/print}" target="_blank">
-        Print this page
-      </a>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m">Signature</h2>
+        <p class="govuk-body">
+          Text signature to be provided
+        </p>
+      </div>
     </div>
-  </div>
+  </main>
 </div>
+<script src="/civil/govuk-frontend/all.js"></script>
+<script>
+    window.onload = function() {
+        window.print();
+    };
+</script>
 </body>
 </html>
-
-

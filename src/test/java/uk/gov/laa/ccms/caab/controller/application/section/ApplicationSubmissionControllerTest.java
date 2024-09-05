@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_VIEW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.application.section.ApplicationSubmissionController.CHILD_LOOKUP;
 import static uk.gov.laa.ccms.caab.controller.application.section.ApplicationSubmissionController.PARENT_LOOKUP;
@@ -46,6 +47,7 @@ import uk.gov.laa.ccms.caab.model.summary.GeneralDetailsSubmissionSummaryDisplay
 import uk.gov.laa.ccms.caab.model.summary.OpponentsAndOtherPartiesSubmissionSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.summary.ProceedingAndCostSubmissionSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.summary.ProviderSubmissionSummaryDisplay;
+import uk.gov.laa.ccms.caab.model.summary.SubmissionSummaryDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.ClientService;
@@ -174,6 +176,21 @@ class ApplicationSubmissionControllerTest {
     Mockito.verify(lookupService, Mockito.times(1)).getOpponentSubmissionMappingContext();
     Mockito.verify(lookupService, Mockito.times(1)).getGeneralDetailsSubmissionMappingContext();
   }
+
+  @Test
+  @DisplayName("Test applicationSummary print - success")
+  void testApplicationSummaryPrint() throws Exception {
+    final SubmissionSummaryDisplay submissionSummary = SubmissionSummaryDisplay.builder().build();
+
+    mockMvc.perform(get("/application/summary/print")
+            .sessionAttr(SUBMISSION_SUMMARY, submissionSummary))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/sections/application-summary-complete-printable"))
+        .andExpect(model().attributeExists("submissionSummary"));
+
+    Mockito.verifyNoInteractions(applicationService, assessmentService, clientService, lookupService, submissionSummaryDisplayMapper);
+  }
+
 
 
 
