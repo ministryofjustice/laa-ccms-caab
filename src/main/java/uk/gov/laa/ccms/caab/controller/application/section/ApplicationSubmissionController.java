@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_C
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_ORDER_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessment;
 
@@ -295,12 +296,26 @@ public class ApplicationSubmissionController {
         .opponentsAndOtherParties(postProcessingData.getT7())
         .build();
 
-    session.setAttribute("submissionSummary", submissionSummary);
+    session.setAttribute(SUBMISSION_SUMMARY, submissionSummary);
     model.addAttribute("submissionSummary", submissionSummary);
 
     return "application/sections/application-summary-complete";
   }
 
+  /**
+   * Handles the GET request for the printable application summary page.
+   *
+   * @param submissionSummary the summary information for the application.
+   * @param model The model
+   * @return The view name for the application summary page.
+   */
+  @GetMapping("/application/summary/print")
+  public String applicationSummaryPrint(
+      @SessionAttribute(SUBMISSION_SUMMARY) final SubmissionSummaryDisplay submissionSummary,
+      final Model model) {
 
+    model.addAttribute("submissionSummary", submissionSummary);
+    return "application/sections/application-summary-complete-printable";
+  }
 
 }
