@@ -15,6 +15,7 @@ import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
@@ -683,5 +684,36 @@ public class EbsApiClient {
         .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
             e, "Assessment summary attributes", queryParams));
   }
+
+
+  /**
+   * Retrieves declaration details based on the provided type and bill type.
+   * Constructs a query with the given parameters and sends a GET request to the API.
+   *
+   * @param type the type of declaration to retrieve
+   * @param billType the bill type to filter the declarations, may be null
+   * @return a Mono emitting the {@link DeclarationLookupDetail} or handling errors
+   */
+  public Mono<DeclarationLookupDetail> getDeclarations(
+      final String type,
+      final String billType) {
+    final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
+    Optional.ofNullable(type)
+        .ifPresent(param -> queryParams.add("type", param));
+    Optional.ofNullable(billType)
+        .ifPresent(param -> queryParams.add("billType", param));
+
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/lookup/declarations")
+            .queryParams(queryParams)
+            .build())
+        .retrieve()
+        .bodyToMono(DeclarationLookupDetail.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
+            e, "Declarations", queryParams));
+  }
+
+
 }
 

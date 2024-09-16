@@ -31,11 +31,15 @@ import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.validation.BindingResult;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.bean.SummarySubmissionFormData;
+import uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox;
+import uk.gov.laa.ccms.caab.bean.validators.declaration.DeclarationSubmissionValidator;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.mapper.SubmissionSummaryDisplayMapper;
@@ -54,6 +58,7 @@ import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
+import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(SpringExtension.class)
@@ -78,6 +83,9 @@ class ApplicationSubmissionControllerTest {
 
   @Mock
   private SubmissionSummaryDisplayMapper submissionSummaryDisplayMapper;
+
+  @Mock
+  private DeclarationSubmissionValidator declarationSubmissionValidator;
 
   @InjectMocks
   private ApplicationSubmissionController applicationSubmissionController;
@@ -189,6 +197,53 @@ class ApplicationSubmissionControllerTest {
         .andExpect(model().attributeExists("submissionSummary"));
 
     Mockito.verifyNoInteractions(applicationService, assessmentService, clientService, lookupService, submissionSummaryDisplayMapper);
+  }
+
+  @Test
+  @DisplayName("Test applicationSummaryPost - success")
+  void testApplicationSummaryPost_success() throws Exception {
+    final SummarySubmissionFormData formData = new SummarySubmissionFormData();
+    final SubmissionSummaryDisplay submissionSummary = SubmissionSummaryDisplay.builder().build();
+
+    mockMvc.perform(post("/application/summary")
+            .flashAttr("summarySubmissionFormData", formData)
+            .sessionAttr(SUBMISSION_SUMMARY, submissionSummary))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/declaration"));
+
+    Mockito.verifyNoInteractions(applicationService, assessmentService, clientService, lookupService, submissionSummaryDisplayMapper);
+  }
+
+  @Test
+  @DisplayName("Test applicationDeclaration GET - success")
+  void testApplicationDeclarationGet_success() throws Exception {
+    final DeclarationLookupDetail declarationLookupDetail = new DeclarationLookupDetail();
+    final List<DynamicCheckbox> checkboxes = List.of(new DynamicCheckbox());
+
+    when(lookupService.getDeclarations(any())).thenReturn(Mono.just(declarationLookupDetail));
+    when(submissionSummaryDisplayMapper.toDeclarationFormDataDynamicOptionList(any())).thenReturn(checkboxes);
+
+    mockMvc.perform(get("/application/declaration"))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/sections/application-submit-declaration"))
+        .andExpect(model().attributeExists("summarySubmissionFormData"));
+
+    Mockito.verify(lookupService, Mockito.times(1)).getDeclarations(any());
+    Mockito.verify(submissionSummaryDisplayMapper, Mockito.times(1)).toDeclarationFormDataDynamicOptionList(declarationLookupDetail);
+  }
+
+  @Test
+  @DisplayName("Test applicationDeclarationPost - success")
+  void testApplicationDeclarationPost_success() throws Exception {
+    final SummarySubmissionFormData formData = new SummarySubmissionFormData();
+
+    mockMvc.perform(post("/application/declaration")
+            .flashAttr("summarySubmissionFormData", formData))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("todo"));
+
+    Mockito.verify(declarationSubmissionValidator, Mockito.times(1)).validate(any(), any());
+    Mockito.verifyNoInteractions(applicationService);
   }
 
 

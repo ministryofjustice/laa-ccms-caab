@@ -39,6 +39,7 @@ import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
@@ -508,6 +509,8 @@ public class LookupService {
         });
   }
 
+
+
   /**
    * Retrieves client summary list lookups.
    *
@@ -614,5 +617,17 @@ public class LookupService {
             .relationshipToClient(tuple.getT4())
             .build());
   }
+
+  /**
+   * Retrieves declaration details based only on the submission type.
+   *
+   * @param submissionType the type of submission for the declaration
+   * @return a Mono emitting the declaration lookup details
+   */
+  public Mono<DeclarationLookupDetail> getDeclarations(
+      final String submissionType) {
+    return ebsApiClient.getDeclarations(submissionType, null);
+  }
+
 
 }

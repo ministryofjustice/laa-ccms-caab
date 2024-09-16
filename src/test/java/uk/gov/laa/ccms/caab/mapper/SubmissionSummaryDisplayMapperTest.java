@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.mapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox;
 import uk.gov.laa.ccms.caab.mapper.context.submission.GeneralDetailsSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.OpponentSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.ProceedingSubmissionSummaryMappingContext;
@@ -36,6 +38,8 @@ import uk.gov.laa.ccms.caab.model.summary.ProviderSubmissionSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.summary.ScopeLimitationSubmissionSummaryDisplay;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
+import uk.gov.laa.ccms.data.model.DeclarationLookupValueDetail;
 
 @ExtendWith(SpringExtension.class)
 class SubmissionSummaryDisplayMapperTest {
@@ -447,5 +451,43 @@ class SubmissionSummaryDisplayMapperTest {
         .country(countryLookup)
         .build();
   }
+
+  @Test
+  @DisplayName("toDeclarationFormDataDynamicOptionList should return null when DeclarationLookupDetail is null")
+  void toDeclarationFormDataDynamicOptionList_nullDeclarationLookupDetail_returnsNull() {
+    final List<DynamicCheckbox> result = mapper.toDeclarationFormDataDynamicOptionList(null);
+    assertNull(result, "Expected result to be null when DeclarationLookupDetail is null.");
+  }
+
+  @Test
+  @DisplayName("toDeclarationFormDataDynamicOptionList should correctly map content when DeclarationLookupDetail is valid")
+  void toDeclarationFormDataDynamicOptionList_validDeclarationLookupDetail_returnsMappedDynamicOptionList() {
+    final DeclarationLookupValueDetail declarationValueDetail = new DeclarationLookupValueDetail();
+    declarationValueDetail.setText("Checkbox Option 1");
+
+    final DeclarationLookupDetail declarationLookupDetail = new DeclarationLookupDetail();
+    declarationLookupDetail.setContent(List.of(declarationValueDetail));
+
+    final List<DynamicCheckbox> result = mapper.toDeclarationFormDataDynamicOptionList(declarationLookupDetail);
+
+    assertNotNull(result, "Result should not be null.");
+    assertEquals(1, result.size(), "Result list should have correct size.");
+    assertEquals("Checkbox Option 1", result.get(0).getFieldValueDisplayValue(), "Field value display should be mapped correctly.");
+    assertFalse(result.get(0).isChecked(), "Checked should be false by default.");
+  }
+
+  @Test
+  @DisplayName("toDeclarationFormDataDynamicOption should correctly map fields when DeclarationLookupValueDetail is valid")
+  void toDeclarationFormDataDynamicOption_validDeclarationLookupValueDetail_returnsMappedDynamicCheckbox() {
+    final DeclarationLookupValueDetail declarationValueDetail = new DeclarationLookupValueDetail();
+    declarationValueDetail.setText("Checkbox Option 1");
+
+    final DynamicCheckbox result = mapper.toDeclarationFormDataDynamicOption(declarationValueDetail);
+
+    assertNotNull(result, "Result should not be null.");
+    assertEquals("Checkbox Option 1", result.getFieldValueDisplayValue(), "Field value display should be mapped correctly.");
+    assertFalse(result.isChecked(), "Checked should be false by default.");
+  }
+
 
 }
