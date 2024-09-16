@@ -49,6 +49,7 @@ import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
@@ -735,6 +736,24 @@ public class LookupServiceTest {
         )
         .verifyComplete();
   }
+
+  @Test
+  @DisplayName("getDeclarations with submissionType returns data successfully")
+  void getDeclarations_success() {
+    final String submissionType = "SUB_TYPE";
+    final DeclarationLookupDetail mockDeclarationDetail = new DeclarationLookupDetail();
+
+    when(ebsApiClient.getDeclarations(submissionType, null)).thenReturn(Mono.just(mockDeclarationDetail));
+
+    final Mono<DeclarationLookupDetail> result = lookupService.getDeclarations(submissionType);
+
+    StepVerifier.create(result)
+        .expectNext(mockDeclarationDetail)
+        .verifyComplete();
+
+    verify(ebsApiClient).getDeclarations(submissionType, null);
+  }
+
 
 
 

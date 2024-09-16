@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>LAA CCMS - Start New Application</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/application/summary}" class="govuk-back-link">Cancel and return application summary</a>
+  </div>
+  <div id="main-content">
+    <form action="#" th:action="@{/application/declaration}" th:object="${summarySubmissionFormData}" method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <span class="govuk-caption-l">Application summary</span>
+      <h1 class="govuk-heading-l">
+        Sign Declaration
+      </h1>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+          <p class="govuk-body-l">
+            Please complete the declaration below by selecting the statements to confirm your agreement.
+          </p>
+        </div>
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+          <div class="govuk-form-group">
+            <fieldset class="govuk-fieldset">
+              <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+          <span class="govuk-fieldset__heading">
+            Declarations
+          </span>
+              </legend>
+              <div class="govuk-checkboxes">
+                <div th:each="declarationOption, stat : *{declarationOptions}">
+                  <div class="govuk-checkboxes__item">
+                    <input class="govuk-checkboxes__input"
+                           th:id="'declaration_' + ${stat.index}"
+                           th:name="'declarationOptions[' + ${stat.index} + '].checked'"
+                           type="checkbox"
+                           th:checked="${declarationOption.checked}" />
+                    <label class="govuk-label govuk-checkboxes__label"
+                           th:for="'declaration_' + ${stat.index}">
+                      <span th:text="${declarationOption.fieldValueDisplayValue}"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </div>
+      <button class="govuk-button" data-module="govuk-button">
+        Continue
+      </button>
+    </form>
+  </div>
+</div>
+</body>
+</html>

@@ -6,6 +6,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
+import uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox;
 import uk.gov.laa.ccms.caab.mapper.context.submission.GeneralDetailsSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.OpponentSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.ProceedingSubmissionSummaryMappingContext;
@@ -20,6 +21,8 @@ import uk.gov.laa.ccms.caab.model.summary.ProceedingAndCostSubmissionSummaryDisp
 import uk.gov.laa.ccms.caab.model.summary.ProceedingSubmissionSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.summary.ProviderSubmissionSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.summary.ScopeLimitationSubmissionSummaryDisplay;
+import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
+import uk.gov.laa.ccms.data.model.DeclarationLookupValueDetail;
 
 /**
  * Mapper interface for converting submission summary details to display values.
@@ -213,6 +216,38 @@ public interface SubmissionSummaryDisplayMapper {
       @Context final OpponentSubmissionSummaryMappingContext context) {
     return COMMON_MAPPER.toDisplayValue(code, context.getCountry());
   }
+
+  /**
+   * Converts a {@link DeclarationLookupDetail} to a list of
+   * {@link uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox}.
+   *
+   * @param declarationLookupDetail the detail object containing declaration data
+   * @return a list of {@link uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox},
+   *         or null if the input is null
+   */
+  @Named("toDeclarationFormDataDynamicOptionList")
+  default List<DynamicCheckbox> toDeclarationFormDataDynamicOptionList(
+      DeclarationLookupDetail declarationLookupDetail) {
+    if (declarationLookupDetail == null) {
+      return null;
+    }
+
+    return declarationLookupDetail.getContent().stream()
+        .map(this::toDeclarationFormDataDynamicOption)
+        .toList();
+  }
+
+  /**
+   * Maps a {@link DeclarationLookupValueDetail} to a
+   * {@link uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox}.
+   *
+   * @param declarationLookupValueDetail the value detail to map
+   * @return the mapped {@link uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox}
+   */
+  @Mapping(target = "fieldValueDisplayValue", source = "text")
+  @Mapping(target = "checked", ignore = true)
+  DynamicCheckbox toDeclarationFormDataDynamicOption(
+      DeclarationLookupValueDetail declarationLookupValueDetail);
 
 
 }

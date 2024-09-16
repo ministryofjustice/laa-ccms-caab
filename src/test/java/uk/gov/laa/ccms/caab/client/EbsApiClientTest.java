@@ -12,6 +12,8 @@ import java.util.function.Function;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -31,6 +33,7 @@ import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
@@ -1016,6 +1019,65 @@ public class EbsApiClientTest {
         .verify();
 
     verify(responseMock).bodyToMono(MatterTypeLookupDetail.class);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+      "DECLARATION_TYPE, BILL_TYPE, /lookup/declarations?size=1000&type=DECLARATION_TYPE&billType=BILL_TYPE",
+      "DECLARATION_TYPE, , /lookup/declarations?size=1000&type=DECLARATION_TYPE",
+      ", BILL_TYPE, /lookup/declarations?size=1000&billType=BILL_TYPE",
+      ", , /lookup/declarations?size=1000"
+  })
+  @DisplayName("getDeclarations parameterized test")
+  void testGetDeclarations(final String type, final String billType, final String expectedUri) {
+    final DeclarationLookupDetail mockDeclarationDetail = new DeclarationLookupDetail();
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(DeclarationLookupDetail.class)).thenReturn(Mono.just(mockDeclarationDetail));
+
+    final Mono<DeclarationLookupDetail> result = ebsApiClient.getDeclarations(type, billType);
+
+    StepVerifier.create(result)
+        .expectNext(mockDeclarationDetail)
+        .verifyComplete();
+
+    final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+    verify(requestHeadersUriMock).uri(uriCaptor.capture());
+
+    final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    assertEquals(expectedUri, actualUri.toString());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+      "DECLARATION_TYPE, BILL_TYPE, /lookup/declarations?size=1000&type=DECLARATION_TYPE&billType=BILL_TYPE",
+      "DECLARATION_TYPE, , /lookup/declarations?size=1000&type=DECLARATION_TYPE"
+  })
+  @DisplayName("getDeclarations handles errors in a parameterized test")
+  void testGetDeclarations_handlesError(final String type, final String billType, final String expectedUri) {
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(DeclarationLookupDetail.class)).thenReturn(Mono.error(new RuntimeException("Error")));
+
+    when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("Declarations"), any())).thenReturn(Mono.empty());
+
+    final Mono<DeclarationLookupDetail> result = ebsApiClient.getDeclarations(type, billType);
+
+    StepVerifier.create(result)
+        .verifyComplete();
+
+    final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+    verify(requestHeadersUriMock).uri(uriCaptor.capture());
+
+    final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    assertEquals(expectedUri, actualUri.toString());
   }
 
 

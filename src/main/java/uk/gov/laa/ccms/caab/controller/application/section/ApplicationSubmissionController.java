@@ -1,37 +1,36 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
 
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_ORDER_TYPE;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.DECLARATION_APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessment;
 
 import jakarta.servlet.http.HttpSession;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-import reactor.util.function.Tuple5;
 import reactor.util.function.Tuple7;
 import reactor.util.function.Tuple8;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.bean.SummarySubmissionFormData;
+import uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox;
+import uk.gov.laa.ccms.caab.bean.validators.declaration.DeclarationSubmissionValidator;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
@@ -52,10 +51,8 @@ import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
-import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
-import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
+import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
@@ -74,6 +71,7 @@ public class ApplicationSubmissionController {
   private final ClientService clientService;
   private final ClientDetailMapper clientDetailsMapper;
   private final SubmissionSummaryDisplayMapper submissionSummaryDisplayMapper;
+  private final DeclarationSubmissionValidator declarationSubmissionValidator;
   protected static final String PARENT_LOOKUP = "PARENT";
   protected static final String CHILD_LOOKUP = "CHILD";
 
@@ -298,6 +296,7 @@ public class ApplicationSubmissionController {
 
     session.setAttribute(SUBMISSION_SUMMARY, submissionSummary);
     model.addAttribute("submissionSummary", submissionSummary);
+    model.addAttribute("summarySubmissionFormData", new SummarySubmissionFormData());
 
     return "application/sections/application-summary-complete";
   }
@@ -317,5 +316,99 @@ public class ApplicationSubmissionController {
     model.addAttribute("submissionSummary", submissionSummary);
     return "application/sections/application-summary-complete-printable";
   }
+
+
+  /**
+   * Handles POST requests to submit the application summary form.
+   *
+   * @param submissionSummary the summary of the submission stored in the session
+   * @param summarySubmissionFormData the form data for the summary submission
+   * @param bindingResult validation results for the form data
+   * @param model the model to hold attributes for rendering views
+   * @return the view to render or a redirect to the declaration page
+   */
+  @PostMapping("/application/summary")
+  public String applicationSummaryPost(
+      @SessionAttribute(SUBMISSION_SUMMARY)
+      final SubmissionSummaryDisplay submissionSummary,
+      @ModelAttribute("summarySubmissionFormData")
+      final SummarySubmissionFormData summarySubmissionFormData,
+      final BindingResult bindingResult,
+      final Model model) {
+
+    if (bindingResult.hasErrors()) {
+      model.addAttribute("submissionSummary", submissionSummary);
+      return "application/sections/application-summary-complete";
+    }
+
+    return "redirect:/application/declaration";
+  }
+
+  /**
+   * Handles GET requests to display the application declaration page.
+   *
+   * @param summarySubmissionFormData the form data for the summary submission
+   * @param model the model to hold attributes for rendering views
+   * @return the view to render for the declaration page
+   */
+  @GetMapping("/application/declaration")
+  public String applicationDeclaration(
+      @ModelAttribute("summarySubmissionFormData")
+      final SummarySubmissionFormData summarySubmissionFormData,
+      final Model model) {
+
+    return applicationDeclarationDetails(model, summarySubmissionFormData);
+  }
+
+  /**
+   * Handles POST requests to submit the application declaration form.
+   *
+   * @param summarySubmissionFormData the form data for the summary submission
+   * @param bindingResult validation results for the form data
+   * @param model the model to hold attributes for rendering views
+   * @return the view to render or a redirect after successful submission
+   */
+  @PostMapping("/application/declaration")
+  public String applicationDeclarationPost(
+      @ModelAttribute("summarySubmissionFormData")
+      final SummarySubmissionFormData summarySubmissionFormData,
+      final BindingResult bindingResult,
+      final Model model) {
+
+    declarationSubmissionValidator.validate(summarySubmissionFormData, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      return applicationDeclarationDetails(model, summarySubmissionFormData);
+    }
+
+    //perform submission logic here CCLS-2179
+    return "redirect:todo";
+  }
+
+  /**
+   * Prepares the model for displaying the application declaration details.
+   *
+   * @param model the model to hold attributes for rendering views
+   * @param summarySubmissionFormData the form data for the summary submission
+   * @return the view to render for the declaration details page
+   */
+  private String applicationDeclarationDetails(
+      final Model model,
+      final SummarySubmissionFormData summarySubmissionFormData) {
+    final DeclarationLookupDetail declarations =
+        lookupService.getDeclarations(DECLARATION_APPLICATION).block();
+    final List<DynamicCheckbox> declarationOptions =
+        submissionSummaryDisplayMapper.toDeclarationFormDataDynamicOptionList(declarations);
+    summarySubmissionFormData.setDeclarationOptions(declarationOptions);
+    model.addAttribute("summarySubmissionFormData", summarySubmissionFormData);
+    return "application/sections/application-submit-declaration";
+  }
+
+
+
+
+
+
+
 
 }

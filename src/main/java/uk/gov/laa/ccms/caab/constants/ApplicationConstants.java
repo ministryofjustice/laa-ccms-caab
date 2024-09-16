@@ -178,4 +178,14 @@ public class ApplicationConstants {
    */
   public static final String LINKED_CASES = "linkedCases";
 
+  /**
+   * Constant representing the declaration type for an application.
+   */
+  public static final String DECLARATION_APPLICATION = "APPLICATION";
+
+  /**
+   * Constant representing the declaration type for a bill.
+   */
+  public static final String DECLARATION_BILL = "BILL";
+
 }
