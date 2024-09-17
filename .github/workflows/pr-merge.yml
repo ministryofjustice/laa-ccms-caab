@@ -36,7 +36,6 @@ jobs:
   build-test:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-    environment: development
 
     steps:
       - uses: actions/checkout@v3
@@ -81,7 +80,6 @@ jobs:
           AWS_REGION: eu-west-2
 
   ecr:
-    environment: development
     needs: [ build-test, define-image-tag ]
     runs-on: ubuntu-latest
     permissions:
@@ -99,8 +97,8 @@ jobs:
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ secrets.DEV_ECR_ROLE_TO_ASSUME }}
-          aws-region: ${{ vars.DEV_ECR_REGION }}
+          role-to-assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.ECR_REGION }}
 
       - name: Login ecr
         uses: aws-actions/amazon-ecr-login@v1
@@ -113,7 +111,7 @@ jobs:
           docker push $REGISTRY/$REPOSITORY:${{ env.IMAGE_TAG }}
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REPOSITORY: ${{ vars.DEV_ECR_REPOSITORY }}
+          REPOSITORY: ${{ vars.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ needs.define-image-tag.outputs.tag_name }}
           
       - name: delete artifact
@@ -124,7 +122,6 @@ jobs:
   update-helm-chart:
     needs: [ ecr, define-image-tag ]
     runs-on: ubuntu-latest
-    environment: development
     steps:
       - name: Checkout charts repo
         uses: actions/checkout@v3
