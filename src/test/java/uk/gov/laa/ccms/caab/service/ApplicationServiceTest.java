@@ -67,6 +67,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -900,6 +901,27 @@ class ApplicationServiceTest {
   }
 
   @Test
+  @DisplayName("getMonoProviderDetailsFormData returns Mono of ApplicationFormData when successful")
+  void testGetMonoProviderDetailsFormData_Successful() {
+    final String id = "12345";
+    final ApplicationProviderDetails mockProviderDetails = new ApplicationProviderDetails();
+    final ApplicationFormData expectedApplicationFormData = new ApplicationFormData();
+
+    when(caabApiClient.getProviderDetails(id)).thenReturn(Mono.just(mockProviderDetails));
+    when(applicationFormDataMapper.toApplicationProviderDetailsFormData(mockProviderDetails))
+        .thenReturn(expectedApplicationFormData);
+
+    final Mono<ApplicationFormData> result = applicationService.getMonoProviderDetailsFormData(id);
+
+    StepVerifier.create(result)
+        .expectNextMatches(applicationFormData -> applicationFormData == expectedApplicationFormData)
+        .verifyComplete();
+
+    verify(caabApiClient).getProviderDetails(id);
+    verify(applicationFormDataMapper).toApplicationProviderDetailsFormData(mockProviderDetails);
+  }
+
+  @Test
   void testGetCorrespondenceAddressFormData() {
     final String id = "12345";
     final AddressDetail mockAddress = new AddressDetail();
@@ -913,6 +935,26 @@ class ApplicationServiceTest {
 
     assertNotNull(result);
     assertEquals(expectedAddressFormData, result);
+
+    verify(caabApiClient).getCorrespondenceAddress(id);
+    verify(addressFormDataMapper).toAddressFormData(mockAddress);
+  }
+
+  @Test
+  @DisplayName("getMonoCorrespondenceAddressFormData returns Mono of AddressFormData when successful")
+  void testGetMonoCorrespondenceAddressFormData_Successful() {
+    final String id = "12345";
+    final AddressDetail mockAddress = new AddressDetail();
+    final AddressFormData expectedAddressFormData = new AddressFormData();
+
+    when(caabApiClient.getCorrespondenceAddress(id)).thenReturn(Mono.just(mockAddress));
+    when(addressFormDataMapper.toAddressFormData(mockAddress)).thenReturn(expectedAddressFormData);
+
+    final Mono<AddressFormData> result = applicationService.getMonoCorrespondenceAddressFormData(id);
+
+    StepVerifier.create(result)
+        .expectNextMatches(addressFormData -> addressFormData == expectedAddressFormData)
+        .verifyComplete();
 
     verify(caabApiClient).getCorrespondenceAddress(id);
     verify(addressFormDataMapper).toAddressFormData(mockAddress);

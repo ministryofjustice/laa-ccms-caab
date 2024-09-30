@@ -197,11 +197,11 @@ public class OpponentsSectionController {
    */
   @GetMapping("/application/opponents/organisation/{id}/select")
   public String selectSharedOrganisation(
-      @PathVariable("id") String organisationId,
+      @PathVariable("id") final String organisationId,
       @SessionAttribute(ORGANISATION_SEARCH_RESULTS)
-      ResultsDisplay<OrganisationResultRowDisplay> searchResults,
-      @SessionAttribute(USER_DETAILS) UserDetail user,
-      Model model) {
+      final ResultsDisplay<OrganisationResultRowDisplay> searchResults,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final Model model) {
 
     // Validate that the supplied organisation id is one from the search results in the session
     boolean validOrgId =
@@ -243,7 +243,7 @@ public class OpponentsSectionController {
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final BindingResult bindingResult,
-      Model model) {
+      final Model model) {
 
     // Validate the complete opponent form data
     organisationOpponentValidator.validate(opponentFormData, bindingResult);

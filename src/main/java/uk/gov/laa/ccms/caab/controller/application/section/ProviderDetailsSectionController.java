@@ -106,7 +106,7 @@ public class ProviderDetailsSectionController {
    * @param user The details of the active user
    * @param model The model for the view.
    */
-  private void populateDropdowns(
+  protected void populateDropdowns(
       ApplicationFormData applicationFormData,
       UserDetail user,
       Model model) {

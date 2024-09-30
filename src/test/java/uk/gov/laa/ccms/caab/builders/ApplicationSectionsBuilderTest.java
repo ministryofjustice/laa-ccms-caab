@@ -4,13 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static uk.gov.laa.ccms.caab.builders.ApplicationSectionsBuilder.STATUS_COMPLETE;
-import static uk.gov.laa.ccms.caab.builders.ApplicationSectionsBuilder.STATUS_NOT_AVAILABLE;
-import static uk.gov.laa.ccms.caab.builders.ApplicationSectionsBuilder.STATUS_STARTED;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING_DISPLAY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_ORGANISATION;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_COMPLETE;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_NOT_AVAILABLE;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_STARTED;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationProviderDetails;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
 
@@ -115,7 +115,7 @@ class ApplicationSectionsBuilderTest {
     assertEquals(categoryOfLaw.getDisplayValue(), result.getGeneralDetails().getCategoryOfLaw());
     assertEquals(correspondenceMethod, result.getGeneralDetails().getCorrespondenceMethod());
 
-    assertEquals(STATUS_COMPLETE, result.getGeneralDetails().getStatus());
+    assertEquals(SECTION_STATUS_COMPLETE, result.getGeneralDetails().getStatus());
   }
 
   @Test
@@ -126,7 +126,7 @@ class ApplicationSectionsBuilderTest {
     builder.generalDetails(applicationStatus, categoryOfLaw, null);
     ApplicationSectionDisplay result = builder.build();
 
-    assertEquals(STATUS_STARTED, result.getGeneralDetails().getStatus());
+    assertEquals(SECTION_STATUS_STARTED, result.getGeneralDetails().getStatus());
   }
 
   @Test
@@ -157,7 +157,7 @@ class ApplicationSectionsBuilderTest {
     assertEquals(applicationProviderDetails.getProviderContact().getDisplayValue(), result.getProvider().getProviderContactName());
     assertEquals(applicationProviderDetails.getSupervisor().getDisplayValue(), result.getProvider().getSupervisorName());
 
-    assertEquals(STATUS_COMPLETE, result.getProvider().getStatus());
+    assertEquals(SECTION_STATUS_COMPLETE, result.getProvider().getStatus());
   }
 
   @Test
@@ -167,7 +167,7 @@ class ApplicationSectionsBuilderTest {
     builder.provider(applicationProviderDetails);
     ApplicationSectionDisplay result = builder.build();
 
-    assertEquals(STATUS_STARTED, result.getProvider().getStatus());
+    assertEquals(SECTION_STATUS_STARTED, result.getProvider().getStatus());
   }
 
   @Test
@@ -236,7 +236,7 @@ class ApplicationSectionsBuilderTest {
     assertEquals(proceeding1.getScopeLimitations().getFirst().getScopeLimitationWording(),
         procSummary.getScopeLimitations().getFirst().getWording());
 
-    assertEquals(STATUS_COMPLETE, result.getProceedingsAndCosts().getStatus());
+    assertEquals(SECTION_STATUS_COMPLETE, result.getProceedingsAndCosts().getStatus());
   }
 
   @Test
@@ -267,7 +267,7 @@ class ApplicationSectionsBuilderTest {
 
     ApplicationSectionDisplay result = builder.build();
 
-    assertEquals(STATUS_STARTED, result.getProceedingsAndCosts().getStatus());
+    assertEquals(SECTION_STATUS_STARTED, result.getProceedingsAndCosts().getStatus());
   }
 
   @Test
@@ -310,14 +310,14 @@ class ApplicationSectionsBuilderTest {
     assertEquals(orgRelationshipToCase.getDescription(), opponentSectionDisplay.getRelationshipToCase());
     assertEquals(opponent1.getRelationshipToClient(), opponentSectionDisplay.getRelationshipToClient());
 
-    assertEquals(STATUS_COMPLETE, result.getOpponentsAndOtherParties().getStatus());
+    assertEquals(SECTION_STATUS_COMPLETE, result.getOpponentsAndOtherParties().getStatus());
   }
 
   @ParameterizedTest
-  @CsvSource({"true,true," + STATUS_COMPLETE + ",true",
-      "true,false," + STATUS_STARTED + ",true",
-      "false,false," + STATUS_NOT_AVAILABLE + ",false",
-      "false,true," + STATUS_NOT_AVAILABLE + ",false"})
+  @CsvSource({"true,true," + SECTION_STATUS_COMPLETE + ",true",
+      "true,false," + SECTION_STATUS_STARTED + ",true",
+      "false,false," + SECTION_STATUS_NOT_AVAILABLE + ",false",
+      "false,true," + SECTION_STATUS_NOT_AVAILABLE + ",false"})
   void testDocumentUpload_disabled(
       final boolean evidenceRequired,
       final boolean allEvidenceProvided,
