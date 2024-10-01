@@ -1,6 +1,10 @@
 package uk.gov.laa.ccms.caab.builders;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_COMPLETE;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_NOT_AVAILABLE;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_NOT_STARTED;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_STARTED;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,11 +49,6 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 public class ApplicationSectionsBuilder {
 
   private final ApplicationSectionDisplay applicationSections;
-
-  protected static final String STATUS_COMPLETE = "Complete";
-  protected static final String STATUS_NOT_STARTED = "Not started";
-  protected static final String STATUS_STARTED = "Started";
-  protected static final String STATUS_NOT_AVAILABLE = "Not available";
   protected static final String TYPE_ORGANISATION = "Organisation";
 
   /**
@@ -72,7 +71,7 @@ public class ApplicationSectionsBuilder {
             .lastSaved(auditDetail.getLastSaved())
             .build())
         .client(ClientSectionDisplay.builder()
-            .status(STATUS_COMPLETE)
+            .status(SECTION_STATUS_COMPLETE)
             .build())
         .proceedingsAndCosts(ProceedingsAndCostsSectionDisplay.builder()
             .lastSavedBy(auditDetail.getLastSavedBy())
@@ -109,9 +108,9 @@ public class ApplicationSectionsBuilder {
     generalDetails.setCorrespondenceMethod(correspondenceMethod);
 
     if (StringUtils.hasText(correspondenceMethod)) {
-      generalDetails.setStatus(STATUS_COMPLETE);
+      generalDetails.setStatus(SECTION_STATUS_COMPLETE);
     } else {
-      generalDetails.setStatus(STATUS_STARTED);
+      generalDetails.setStatus(SECTION_STATUS_STARTED);
     }
     return this;
   }
@@ -185,12 +184,12 @@ public class ApplicationSectionsBuilder {
 
       if (provider.getProviderContact() != null
           && StringUtils.hasText(DisplayUtil.getDisplayValue(provider.getProviderContact()))) {
-        providerSection.setStatus(STATUS_COMPLETE);
+        providerSection.setStatus(SECTION_STATUS_COMPLETE);
       } else {
-        providerSection.setStatus(STATUS_STARTED);
+        providerSection.setStatus(SECTION_STATUS_STARTED);
       }
     } else {
-      providerSection.setStatus(STATUS_NOT_STARTED);
+      providerSection.setStatus(SECTION_STATUS_NOT_STARTED);
     }
 
     return this;
@@ -212,7 +211,7 @@ public class ApplicationSectionsBuilder {
         applicationSections.getProceedingsAndCosts();
     proceedingsSection.setProceedings(new ArrayList<>());
 
-    String status = STATUS_NOT_STARTED;
+    String status = SECTION_STATUS_NOT_STARTED;
     if (proceedings != null && !proceedings.isEmpty()) {
       for (final ProceedingDetail proceeding : proceedings) {
         proceedingsSection.getProceedings().add(
@@ -224,15 +223,15 @@ public class ApplicationSectionsBuilder {
       }
 
       if (priorAuthorities != null && !priorAuthorities.isEmpty()) {
-        status = STATUS_STARTED;
+        status = SECTION_STATUS_STARTED;
       }
       final boolean isComplete = proceedings.stream()
             .anyMatch(proc -> proc.getStage() != null);
       if (isComplete) {
-        status = STATUS_COMPLETE;
+        status = SECTION_STATUS_COMPLETE;
       }
     } else if (priorAuthorities != null && !priorAuthorities.isEmpty()) {
-      status = STATUS_STARTED;
+      status = SECTION_STATUS_STARTED;
     }
     proceedingsSection.setStatus(status);
 
@@ -278,7 +277,7 @@ public class ApplicationSectionsBuilder {
     OpponentsSectionDisplay opponentsSection = applicationSections.getOpponentsAndOtherParties();
 
     if (opponents.isEmpty()) {
-      opponentsSection.setStatus(STATUS_NOT_STARTED);
+      opponentsSection.setStatus(SECTION_STATUS_NOT_STARTED);
     } else {
       final boolean opponentCreated = opponents.stream()
           .anyMatch(opponent -> isOpponentCreated(
@@ -286,7 +285,7 @@ public class ApplicationSectionsBuilder {
               organisationRelationships,
               personRelationships));
       opponentsSection.setStatus(
-          opponentCreated ? STATUS_COMPLETE : STATUS_STARTED);
+          opponentCreated ? SECTION_STATUS_COMPLETE : SECTION_STATUS_STARTED);
     }
 
     opponentsSection.setOpponents(new ArrayList<>());
@@ -362,7 +361,8 @@ public class ApplicationSectionsBuilder {
       final boolean allEvidenceProvided) {
 
     applicationSections.getDocumentUpload().setStatus(evidenceRequired
-        ? (allEvidenceProvided ? STATUS_COMPLETE : STATUS_STARTED) : STATUS_NOT_AVAILABLE);
+        ? (allEvidenceProvided ? SECTION_STATUS_COMPLETE : SECTION_STATUS_STARTED) :
+        SECTION_STATUS_NOT_AVAILABLE);
 
     applicationSections.getDocumentUpload().setEnabled(evidenceRequired);
 
@@ -437,7 +437,7 @@ public class ApplicationSectionsBuilder {
     boolean assessmentsEnabled = true;
 
     if (application.getProceedings().isEmpty() || !opponentCreated) {
-      assessmentStatusDisplay.setStatus(STATUS_NOT_AVAILABLE);
+      assessmentStatusDisplay.setStatus(SECTION_STATUS_NOT_AVAILABLE);
       assessmentsEnabled = false;
 
     } else {
@@ -448,7 +448,7 @@ public class ApplicationSectionsBuilder {
         assessmentStatusDisplay.setLastSaved(assessment.getAuditDetail().getLastSaved());
         assessmentStatusDisplay.setLastSavedBy(assessment.getAuditDetail().getLastSavedBy());
       } else {
-        assessmentStatusDisplay.setStatus(STATUS_NOT_STARTED);
+        assessmentStatusDisplay.setStatus(SECTION_STATUS_NOT_STARTED);
       }
     }
 

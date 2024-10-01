@@ -697,9 +697,19 @@ public class ApplicationService {
         .map(applicationFormDataMapper::toApplicationProviderDetailsFormData).block();
   }
 
+  public Mono<ApplicationFormData> getMonoProviderDetailsFormData(final String id) {
+    return caabApiClient.getProviderDetails(id)
+        .map(applicationFormDataMapper::toApplicationProviderDetailsFormData);
+  }
+
   public AddressFormData getCorrespondenceAddressFormData(final String id) {
     return caabApiClient.getCorrespondenceAddress(id)
         .map(addressFormDataMapper::toAddressFormData).block();
+  }
+
+  public Mono<AddressFormData> getMonoCorrespondenceAddressFormData(final String id) {
+    return caabApiClient.getCorrespondenceAddress(id)
+        .map(addressFormDataMapper::toAddressFormData);
   }
 
   /**
@@ -1129,7 +1139,7 @@ public class ApplicationService {
    * This method communicates with the CAAB API client to fetch the proceedings and
    * transforms them into a {@code AbstractOpponentFormData} format.
    *
-   * @param applicationId The id of the application for which proceedings should be retrieved.
+   * @param applicationId The id of the application for which opponents should be retrieved.
    * @return List of AbstractOpponentFormData.
    */
   public List<AbstractOpponentFormData> getOpponents(final String applicationId) {

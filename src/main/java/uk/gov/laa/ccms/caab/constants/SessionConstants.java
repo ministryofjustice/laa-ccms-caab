@@ -188,6 +188,9 @@ public class SessionConstants {
    */
   public static final String APPLICATION_PRIOR_AUTHORITIES = "priorAuthorities";
 
+  /**
+   * Session attribute used to keep track of the prior authorities flow data.
+   */
   public static final String PRIOR_AUTHORITY_FLOW_FORM_DATA = "priorAuthorityFlow";
 
   /**
@@ -200,6 +203,15 @@ public class SessionConstants {
    */
   public static final String EVIDENCE_UPLOAD_FORM_DATA = "evidenceUploadForm";
 
+  /**
+   * Session attribute used to hold the form data for uploading an evidence document.
+   */
   public static final String SUBMISSION_SUMMARY = "submissionSummary";
+
+  /**
+   * Session attribute used to hold sections data for validation, when clicking complete
+   * application button.
+   */
+  public static final String SECTIONS_DATA = "sectionsData";
 
 }

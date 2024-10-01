@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>LAA CCMS - Application summary</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs"></div>
+  <div id="main-content" style="padding-top: 40px;">
+      <span class="govuk-caption-l">About your application</span>
+      <h1 class="govuk-heading-l">
+        Validation - error correction
+      </h1>
+      <p class="govuk-body-l">
+        There are errors within the information you have entered. You cannot submit the information
+        until you have corrected it.
+        <br><br>
+        To correct your error(s) now, follow the link in the section column.
+      </p>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+          <table class="govuk-table">
+            <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+              <th scope="col" class="govuk-table__header">Section</th>
+              <th scope="col" class="govuk-table__header">Error description</th>
+            </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+            <tr class="govuk-table__row" th:if="${providerDetailsErrors != null and !providerDetailsErrors.isEmpty()}">
+              <form action="#" th:action="@{/application/sections/provider-details}" th:object="${providerDetailsFormData}" method="post">
+                <input type="hidden" th:field="*{officeId}"/>
+                <input type="hidden" th:field="*{officeName}"/>
+                <input type="hidden" th:field="*{feeEarnerId}"/>
+                <input type="hidden" th:field="*{supervisorId}"/>
+                <input type="hidden" th:field="*{providerCaseReference}"/>
+                <input type="hidden" th:field="*{contactNameId}"/>
+                <td class="govuk-table__cell">
+                  <button type="submit" class="govuk-body" style="border: none; background: none; padding: 0; color: #1d70b8; text-decoration: underline; cursor: pointer;">
+                    Provider details
+                  </button>
+                </td>
+                <td class="govuk-table__cell" th:utext="${#strings.listJoin(providerDetailsErrors, '<br/>')}"></td>
+              </form>
+            </tr>
+            <tr class="govuk-table__row" th:if="${generalDetailsErrors != null and !generalDetailsErrors.isEmpty()}">
+              <form action="#" th:action="@{/application/sections/correspondence-address}" th:object="${generalDetailsFormData}" method="post">
+                <input type="hidden" th:field="*{preferredAddress}"/>
+                <input type="hidden" th:field="*{country}"/>
+                <input type="hidden" th:field="*{houseNameNumber}"/>
+                <input type="hidden" th:field="*{postcode}"/>
+                <input type="hidden" th:field="*{addressLine1}"/>
+                <input type="hidden" th:field="*{addressLine2}"/>
+                <input type="hidden" th:field="*{cityTown}"/>
+                <input type="hidden" th:field="*{county}"/>
+                <input type="hidden" name="action" value="save_correspondence_address"/>
+                <td class="govuk-table__cell">
+                  <button type="submit" class="govuk-body" style="border: none; background: none; padding: 0; color: #1d70b8; text-decoration: underline; cursor: pointer;">
+                    General details
+                  </button>
+                </td>
+                <td class="govuk-table__cell" th:utext="${#strings.listJoin(generalDetailsErrors, '<br/>')}"></td>
+              </form>
+            </tr>
+            <tr class="govuk-table__row" th:if="${proceedingsErrors != null and !proceedingsErrors.isEmpty()}">
+              <td class="govuk-table__cell">
+                <a th:href="@{/application/proceedings-and-costs}" class="govuk-link">Proceeding details</a>
+              </td>
+              <td class="govuk-table__cell" th:utext="${#strings.listJoin(proceedingsErrors, '<br/>')}"></td>
+            </tr>
+            <tr class="govuk-table__row" th:if="${priorAuthorityErrors != null and !priorAuthorityErrors.isEmpty()}">
+              <td class="govuk-table__cell">
+                <a th:href="@{/application/proceedings-and-costs#prior-authority}" class="govuk-link">Prior authority details</a>
+              </td>
+              <td class="govuk-table__cell" th:utext="${#strings.listJoin(priorAuthorityErrors, '<br/>')}"></td>
+            </tr>
+            <tr class="govuk-table__row" th:if="${opponentErrors != null and !opponentErrors.isEmpty()}">
+              <td class="govuk-table__cell">
+                <a th:href="@{/application/sections/opponents}" class="govuk-link">Opponent details</a>
+              </td>
+              <td class="govuk-table__cell" th:utext="${#strings.listJoin(opponentErrors, '<br/>')}"></td>
+            </tr>
+            </tbody>
+          </table>
+          <form action="#" th:action="@{/application/validate}" method="post">
+          <div class="govuk-button-group">
+            <button type="submit" class="govuk-button" data-module="govuk-button">
+              Continue
+            </button>
+          </div>
+          </form>
+        </div>
+      </div>
+  </div>
+</div>
+</body>
+</html>
+
+

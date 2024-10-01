@@ -188,4 +188,24 @@ public class ApplicationConstants {
    */
   public static final String DECLARATION_BILL = "BILL";
 
+  /**
+   * Status indicating the application section task is complete.
+   */
+  public static final String SECTION_STATUS_COMPLETE = "Complete";
+
+  /**
+   * Status indicating the application section task has not started.
+   */
+  public static final String SECTION_STATUS_NOT_STARTED = "Not started";
+
+  /**
+   * Status indicating the application section task is in progress.
+   */
+  public static final String SECTION_STATUS_STARTED = "Started";
+
+  /**
+   * Status indicating the application section task is not available.
+   */
+  public static final String SECTION_STATUS_NOT_AVAILABLE = "Not available";
+
 }

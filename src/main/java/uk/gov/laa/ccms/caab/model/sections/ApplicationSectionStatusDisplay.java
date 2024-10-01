@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
 public class ApplicationSectionStatusDisplay {
 
   /**
-   * The status of this secion.
+   * The status of this section.
    */
   private String status;
 

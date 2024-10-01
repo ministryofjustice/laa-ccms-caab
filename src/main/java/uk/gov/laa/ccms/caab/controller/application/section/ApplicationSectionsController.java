@@ -4,6 +4,7 @@ package uk.gov.laa.ccms.caab.controller.application.section;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SECTIONS_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
@@ -12,9 +13,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationSectionValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
@@ -30,6 +35,8 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class ApplicationSectionsController {
 
   private final ApplicationService applicationService;
+
+  private final ApplicationSectionValidator applicationSectionValidator;
 
   /**
    * Handles the GET request for application summary page.
@@ -71,6 +78,10 @@ public class ApplicationSectionsController {
     model.addAttribute(ACTIVE_CASE, activeCase);
     session.setAttribute(ACTIVE_CASE, activeCase);
     session.removeAttribute(CLIENT_FLOW_FORM_DATA);
+    session.setAttribute(SECTIONS_DATA, sections);
+
+    //create a new base object to store the form data
+    model.addAttribute("formData", new Object());
 
     return "application/sections/task-page";
   }
@@ -103,6 +114,36 @@ public class ApplicationSectionsController {
     model.addAttribute("summary", inProgressSummary);
 
     return "application/sections/application-summary";
+  }
+
+
+
+  /**
+   * Handles the completion of an application section and performs validation.
+   *
+   * @param sectionData the data of the application section being completed
+   * @param formData the form data submitted by the user
+   * @param bindingResult the result of binding form data to the model
+   * @param model the model used to pass data to the view
+   * @return the view name for the task page if there are validation errors, or a redirect to the
+   *         validation page if the section is valid
+   */
+  @PostMapping("/application/sections")
+  public String completeApplication(
+      @SessionAttribute(SECTIONS_DATA) final ApplicationSectionDisplay sectionData,
+      @ModelAttribute("formData") final Object formData,
+      final BindingResult bindingResult,
+      final Model model) {
+
+    //simple validation to ensure all sections are complete
+    applicationSectionValidator.validate(sectionData, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      model.addAttribute("summary", sectionData);
+      return "application/sections/task-page";
+    }
+
+    return "redirect:/application/validate";
   }
 
 }

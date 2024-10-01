@@ -212,8 +212,6 @@ public class NotificationSearchValidator extends AbstractValidator {
     }
   }
 
-
-
   private void validateProviderCaseRef(String providerCaseReference, Errors errors) {
     if (StringUtils.hasText(providerCaseReference)) {
       if (!providerCaseReference.matches(CHARACTER_SET_F)) {

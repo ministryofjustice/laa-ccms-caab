@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
@@ -369,10 +370,15 @@ public class EditProceedingsAndCostsSectionController {
     } else {
       final ProceedingFlowFormData oldProceedingFlow =
           (ProceedingFlowFormData) session.getAttribute(PROCEEDING_FLOW_FORM_DATA_OLD);
-      if (!oldProceedingFlow.getMatterTypeDetails().getMatterType().equals(
-          matterTypeDetails.getMatterType())) {
-        proceedingFlow.setAmended(Boolean.TRUE);
-      }
+
+      // Compare and set amended flag for MatterTypeDetails
+      Optional.ofNullable(oldProceedingFlow)
+          .map(ProceedingFlowFormData::getMatterTypeDetails)
+          .ifPresent(oldMatterTypeDetails -> {
+            compareAndSetAmended(oldMatterTypeDetails::getMatterType,
+                matterTypeDetails::getMatterType,
+                proceedingFlow);
+          });
     }
 
     proceedingFlow.setMatterTypeDetails(matterTypeDetails);
@@ -472,10 +478,16 @@ public class EditProceedingsAndCostsSectionController {
     } else {
       final ProceedingFlowFormData oldProceedingFlow =
           (ProceedingFlowFormData) session.getAttribute(PROCEEDING_FLOW_FORM_DATA_OLD);
-      if (!oldProceedingFlow.getProceedingDetails().getProceedingType().equals(
-          proceedingTypeDetails.getProceedingType())) {
-        proceedingFlow.setAmended(Boolean.TRUE);
-      }
+
+      // Compare and set amended flag for ProceedingDetails
+      Optional.ofNullable(oldProceedingFlow)
+          .map(ProceedingFlowFormData::getProceedingDetails)
+          .ifPresent(oldProceedingDetails -> {
+            compareAndSetAmended(oldProceedingDetails::getProceedingType,
+                proceedingTypeDetails::getProceedingType,
+                proceedingFlow);
+          });
+
     }
 
     proceedingFlow.setProceedingDetails(proceedingTypeDetails);
@@ -584,20 +596,17 @@ public class EditProceedingsAndCostsSectionController {
       final ProceedingFlowFormData oldProceedingFlow =
           (ProceedingFlowFormData) session.getAttribute(PROCEEDING_FLOW_FORM_DATA_OLD);
 
-      // Check if clientInvolvementType, levelOfService, or typeOfOrder have changed
-      if (oldProceedingFlow.getFurtherDetails().getClientInvolvementType() != null
-          && !oldProceedingFlow.getFurtherDetails().getClientInvolvementType().equals(
-              furtherDetails.getClientInvolvementType())) {
-        proceedingFlow.setAmended(Boolean.TRUE);
-      } else if (oldProceedingFlow.getFurtherDetails().getLevelOfService() != null
-          && !oldProceedingFlow.getFurtherDetails().getLevelOfService().equals(
-              furtherDetails.getLevelOfService())) {
-        proceedingFlow.setAmended(Boolean.TRUE);
-      } else if (oldProceedingFlow.getFurtherDetails().getTypeOfOrder() != null
-          && !oldProceedingFlow.getFurtherDetails().getTypeOfOrder().equals(
-              furtherDetails.getTypeOfOrder())) {
-        proceedingFlow.setAmended(Boolean.TRUE);
-      }
+      // Compare and set amended flag for FurtherDetails
+      Optional.ofNullable(oldProceedingFlow)
+          .map(ProceedingFlowFormData::getFurtherDetails)
+          .ifPresent(oldFurtherDetails -> {
+            compareAndSetAmended(oldFurtherDetails::getClientInvolvementType,
+                furtherDetails::getClientInvolvementType, proceedingFlow);
+            compareAndSetAmended(oldFurtherDetails::getLevelOfService,
+                furtherDetails::getLevelOfService, proceedingFlow);
+            compareAndSetAmended(oldFurtherDetails::getTypeOfOrder,
+                furtherDetails::getTypeOfOrder, proceedingFlow);
+          });
 
     }
 
@@ -605,6 +614,30 @@ public class EditProceedingsAndCostsSectionController {
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
     return String.format("redirect:/application/proceedings/%s/confirm", action);
+  }
+
+  /**
+   * Compares the values from the old and new field suppliers and sets the amended flag in the
+   * {@code proceedingFlow} if the fields differ. If both the old and new field values are non-null
+   * and the new field value does not equal the old field value, the {@code amended} flag in the
+   * {@code proceedingFlow} object is set to {@code true}.
+   *
+   * @param oldFieldSupplier Supplier providing the old field value to compare.
+   * @param newFieldSupplier Supplier providing the new field value to compare.
+   * @param proceedingFlow   The form data object in which the amended flag will be set if a change
+   *                         is detected.
+   */
+  protected void compareAndSetAmended(
+      final Supplier<Object> oldFieldSupplier,
+      final Supplier<Object> newFieldSupplier,
+      final ProceedingFlowFormData proceedingFlow) {
+
+    Optional.ofNullable(oldFieldSupplier.get())
+        .filter(oldField ->
+            Optional.ofNullable(newFieldSupplier.get())
+                .filter(newField -> !newField.equals(oldField))
+                .isPresent())
+        .ifPresent(oldField -> proceedingFlow.setAmended(Boolean.TRUE));
   }
 
   /**
