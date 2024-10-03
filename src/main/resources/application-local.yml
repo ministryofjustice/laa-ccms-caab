@@ -14,8 +14,12 @@ spring:
       relyingparty:
         registration:
           idp:
+            entity-id: http://mock-sp
             assertingparty:
               metadata-uri: http://localhost:8081/metadata
+              singlesignon:
+                url: http://localhost:8081/SingleSignOnService
+                binding: redirect
             signing:
               credentials:
                 private-key: MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDlVvOKwRqsJenZzVcz0lrGkedu+t9cTGov9kfR00lp5FOfSu8NidwTdCuPliJ+maaZ4cXUsXqQY1RxR80wtszTMla8GMkftp8cYbs5piUfH2koJ9lD+pKH4WrQtj3stBO0e4frV5/g1ymDWTNVK/0UCnsPzycUjq9+GURX6uOoJ/gi2ZzB0WQa9bKClkoTi2XuWGhOMQnZ/Kdte4OYbOk7kQ0s4H1Yz7GtWIkfmNBF9si3NcpUTY39afNcVu+ClsjrO0ogEJSSIPnY4eBEcC82QX5xYICG35Yh4IpJWLNtuaQOxtxNh68tN01pI6x0HIYjW7uHmXQ+NXzQugv4USerAgMBAAECggEBALpE5ifDcZNyc74n7nSznHD9XjigYDwKAJEV+f0tG8p63YRai1C2sN3IE/1aVof26f7ABjsbL04IrzQWukyfnDrI/vNlOi2c2RxnMHbBQBNIItOvkeKJqOveJTCBZEhVdk+3qYx3Le6jMx9wmqXJxZK6dHtBqB8lSNolUYIK0H7o9hbY7u4CwVSw4AMDY5q5djSf07CKDhOgLL3nkKONg0HYksUoaYtPahCVD75buZP+yfuLi8xhho4R8V4RMLivc+HaaQ7XGkUUEb+S7eLla+ohXze9iM1mltjQtasz4vRnsa182xO/3XPIaWROYHbhp/fCq3es1xOhmWku1TW5d1kCgYEA9eHhb2/3gilMkszjxKne0zCY+2z2Ou4ATeqZnKg5vaeWl5f86Bn5Tz2HNdkQysUNs1s3IT8eEiNeQRPMlNnP1kBQBaaqW9wmhWErWvZ+T+jNAd8cGK94EY5PnkZOpBg5S1z4XqB6s9BSM9CLwjyMwTMPwWS/S1EDYJw/c9PMcO8CgYEA7sbPc7hZyYPNmsrslQh/7EmDiXwB4FkMKAqS16m8jA2Ui4OH7T1e6sEycyGKOD6BVcF3R17PqBmpgp9AW4t4+tjUBicXHuNlkihnDrXJv5AHwPrW4NxikVue0ZvP8nKA92sonJj5/RJoTzZ0KHbGoEn5ibWyRZaeSvVTS3Q2PQUCgYAoCwY8sL5dOz6WNbnuQD/ioup3H9Kl3Da+ebNUmOz2XwGeZIkyf3BjoECR22zpqNfHWtaKmo3aJFpoPMI3h5VabhTaJr9dwGehlyaJZNVDTEV+xYf82S6zpTqAKzEJdkx2YoisWHRDLm0EtTTdiCDgIeGx/CdPK71iEXAf++EyjwKBgBVTIiHmm/Y4VDt31gs1WB9lLV8w+QXtTf2hfB3QpesoJ1USaShR69Exce0AWNTPGEPtZFa2a/tKV244BMpoOWTFyqHGCfWTP3X/L70LlToLhfXBMUGhzRfIQ/XaYYb4nPX71wOtUd49L52rclJO0UxtbuDSnlpCql5tbIP3nAR1AoGAWuAMU3rPsdsFlbm2Pemks00ZPHI4CRllKEhRIljNkCP5v3LTdtyOPum7XoXQF1ayxL77he8SHIRfz3ExXlARl8o+JUi16gv/uMoDT2SwwrphfdX0rCWx0d2anLuVefR8TFcFFkYEVvi5zVezM66sm9YdXozUcbgpo45juQ41L1w=
