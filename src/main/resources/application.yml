@@ -21,7 +21,7 @@ spring:
             assertingparty:
               metadata-uri: ${PORTAL_METADATA_URL}
               singlesignon:
-                url: ${PORTAL_SSO_URL}?providerid=${spring.security.saml2.relyingparty.registration.entity-id}
+                url: ${PORTAL_SSO_URL}
             signing:
               credentials:
                 private-key: ${SAML_PRIVATE_KEY}
