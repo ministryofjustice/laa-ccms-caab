@@ -19,9 +19,9 @@ spring:
           idp:
             entity-id: caab-provider-ui
             assertingparty:
-              metadata-uri: ${PORTAL_METADATA_URL}
+              metadata-uri: ${PORTAL_URL}/oamfed/idp/metadata
               singlesignon:
-                url: ${PORTAL_SSO_URL}
+                url: ${PORTAL_URL}/oamfed/idp/initiatesso?providerid=${spring.security.saml2.relyingparty.registration.idp.entity-id}
             signing:
               credentials:
                 private-key: ${SAML_PRIVATE_KEY}
