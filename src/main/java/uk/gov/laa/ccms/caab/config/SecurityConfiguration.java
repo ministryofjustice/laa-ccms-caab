@@ -1,10 +1,10 @@
 package uk.gov.laa.ccms.caab.config;
 
-import static org.springframework.security.config.Customizer.withDefaults;
-
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -25,6 +25,9 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class SecurityConfiguration {
 
+  @Value("${portal.logoutUrl}")
+  private String logoutUrl;
+
   /**
    * Configures Spring Security filters and settings.
    *
@@ -42,9 +45,17 @@ public class SecurityConfiguration {
             .authorizeHttpRequests(authorize -> authorize
                     .anyRequest().authenticated())
             .csrf(AbstractHttpConfigurer::disable)
+            .logout((logout) -> logout
+                .addLogoutHandler((req, res, auth) -> {
+                  try {
+                    res.sendRedirect(logoutUrl);
+                  } catch (IOException e) {
+                    throw new RuntimeException("Failed to redirect to Identity Provider.", e);
+                  }
+                })
+            )
             .saml2Login(saml2 -> saml2
                     .authenticationManager(new ProviderManager(authenticationProvider)))
-            .saml2Logout(withDefaults())
             .build();
   }
 
