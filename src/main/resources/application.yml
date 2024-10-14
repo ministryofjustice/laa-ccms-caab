@@ -11,6 +11,9 @@ search:
 submission:
   max-poll-count: 6
 
+portal:
+  logoutUrl: ${PORTAL_URL}/oam/server/logout?end_url=${PORTAL_URL}/LAALogin/pages/Logout.jsp
+
 spring:
   security:
     saml2:
