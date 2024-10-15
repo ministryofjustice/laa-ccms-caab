@@ -8,6 +8,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -298,7 +299,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
         .willReturn(okJson(clientTransactionResponseString)));
 
     Mono<ClientTransactionResponse> clientTransactionResponseMono =
-        soaApiClient.updateDocument(new Document().documentId("56789"), "12345", loginId, userType);
+        soaApiClient.updateDocument(new Document().documentId("56789"), "12345", null, loginId, userType);
 
     ClientTransactionResponse response = clientTransactionResponseMono.block();
 
@@ -335,7 +336,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     Document document = new Document()
         .fileData("Y29udGVudA==") //content
         .documentId("12345")
-        .channel("E")
+        .channel(ELECTRONIC.getCode())
         .documentType("DOC_TYPE")
         .fileExtension("ext")
         .status("status")

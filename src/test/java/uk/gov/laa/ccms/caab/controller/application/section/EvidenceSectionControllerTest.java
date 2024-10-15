@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
+import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_REQUIRED;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FORM_DATA;
@@ -222,16 +223,17 @@ class EvidenceSectionControllerTest {
 
     @Test
     void postAddEvidenceScreen_registerDocumentFail_throwsException() throws Exception {
-        EvidenceUploadFormData formData = buildEvidenceUploadFormData();
+        final EvidenceUploadFormData formData = buildEvidenceUploadFormData();
         final String filename = formData.getFile().getOriginalFilename();
 
-        List<EvidenceRequired> evidenceRequired = List.of(
+        final List<EvidenceRequired> evidenceRequired = List.of(
             new EvidenceRequired("code", "desc"));
 
         when(evidenceService.registerDocument(
             formData.getDocumentType(),
             filename.substring(filename.lastIndexOf(".") + 1),
             formData.getDocumentDescription(),
+            ELECTRONIC.getCode(),
             user.getLoginId(),
             user.getUserType())).thenReturn(Mono.empty());
 
@@ -251,16 +253,17 @@ class EvidenceSectionControllerTest {
         final String tdsId = "123";
         final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
 
-        EvidenceUploadFormData formData = buildEvidenceUploadFormData();
+        final EvidenceUploadFormData formData = buildEvidenceUploadFormData();
         final String filename = formData.getFile().getOriginalFilename();
 
-        List<EvidenceRequired> evidenceRequired = List.of(
+        final List<EvidenceRequired> evidenceRequired = List.of(
             new EvidenceRequired("code", "desc"));
 
         when(evidenceService.registerDocument(
             formData.getDocumentType(),
             filename.substring(filename.lastIndexOf(".") + 1),
             formData.getDocumentDescription(),
+            ELECTRONIC.getCode(),
             user.getLoginId(),
             user.getUserType())).thenReturn(Mono.just(registeredDocumentId));
 

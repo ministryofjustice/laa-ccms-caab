@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
+import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_REQUIRED;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FORM_DATA;
@@ -192,6 +193,7 @@ public class EvidenceSectionController {
         evidenceUploadFormData.getDocumentType(),
         fileExtension,
         evidenceUploadFormData.getDocumentDescription(),
+        ELECTRONIC.getCode(),
         userDetail.getLoginId(),
         userDetail.getUserType())
         .blockOptional()

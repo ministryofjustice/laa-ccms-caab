@@ -1070,6 +1070,7 @@ class SoaApiClientTest {
     Mono<ClientTransactionResponse> documentUploadedMono =
         soaApiClient.updateDocument(document,
             "12345",
+            null,
             loginId,
             userType);
 

@@ -73,6 +73,7 @@ import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.OpponentMapper;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
@@ -82,6 +83,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
+import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
@@ -120,6 +122,7 @@ import uk.gov.laa.ccms.soa.gateway.model.Award;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
+import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
@@ -128,6 +131,7 @@ import uk.gov.laa.ccms.soa.gateway.model.PriorAuthority;
 import uk.gov.laa.ccms.soa.gateway.model.PriorAuthorityAttribute;
 import uk.gov.laa.ccms.soa.gateway.model.ScopeLimitation;
 import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
+import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 
 /**
  * Service class to handle Applications.
@@ -1919,5 +1923,46 @@ public class ApplicationService {
       final Integer priorAuthorityId,
       final UserDetail user) {
     caabApiClient.deletePriorAuthority(priorAuthorityId, user.getLoginId()).block();
+  }
+
+  /**
+   * Creates a new case using the provided user, application, assessments, and evidence documents.
+   *
+   * @param user the user creating the case
+   * @param application the application details for the case
+   * @param meansAssessment the means assessment details for the case
+   * @param meritsAssessment the merits assessment details for the case
+   * @param caseDocs the list of evidence documents for the case
+   * @return the {@link CaseTransactionResponse} for the created case
+   */
+  public CaseTransactionResponse createCase(
+      final UserDetail user,
+      final ApplicationDetail application,
+      final AssessmentDetail meansAssessment,
+      final AssessmentDetail meritsAssessment,
+      final List<BaseEvidenceDocumentDetail> caseDocs) {
+
+    final CaseMappingContext caseMappingContext = CaseMappingContext.builder()
+        .tdsApplication(application)
+        .meansAssessment(meansAssessment)
+        .meritsAssessment(meritsAssessment)
+        .caseDocs(caseDocs)
+        .user(user)
+        .build();
+
+
+    final CaseDetail caseToSubmit = applicationMapper.toCaseDetail(caseMappingContext);
+
+    return soaApiClient.createCase(user.getLoginId(), user.getUserType(), caseToSubmit)
+        .block();
+
+  }
+
+  public Mono<TransactionStatus> getCaseStatus(
+      final String transactionId,
+      final String loginId,
+      final String userType) {
+    log.debug("SOA Case Status to get using transaction Id: {}", transactionId);
+    return soaApiClient.getCaseStatus(transactionId, loginId, userType);
   }
 }

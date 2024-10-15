@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -186,7 +188,7 @@ public class NotificationService {
       String loginId) {
     String attachmentId = caabApiClient.createNotificationAttachment(notificationAttachment,
         loginId).block();
-    if (notificationAttachment.getSendBy().equals("E")) {
+    if (notificationAttachment.getSendBy().equals(ELECTRONIC.getCode())) {
       String extension = FileUtil.getFileExtension(notificationAttachment.getFileName());
       s3ApiClient.uploadDraftDocument(attachmentId, notificationAttachment.getFileData(),
           extension);
@@ -204,7 +206,7 @@ public class NotificationService {
       String loginId) {
     caabApiClient.updateNotificationAttachment(notificationAttachment,
         loginId).block();
-    if (notificationAttachment.getSendBy().equals("E")) {
+    if (notificationAttachment.getSendBy().equals(ELECTRONIC.getCode())) {
       String extension = FileUtil.getFileExtension(notificationAttachment.getFileName());
       s3ApiClient.uploadDraftDocument(String.valueOf(notificationAttachment.getId()),
           notificationAttachment.getFileData(),
@@ -244,7 +246,6 @@ public class NotificationService {
           .block();
 
       // Delete draft documents from TDS and S3
-
       removeDraftNotificationAttachments(notificationId, providerId, notificationAttachmentIds,
           loginId);
     }
@@ -291,7 +292,7 @@ public class NotificationService {
     // First ensure that the notification attachment exists and is related to the notification.
     // (We don't want to retrieve the notification attachment by its id, as that will include the
     // (possibly) 8MB of file data.)
-    BaseNotificationAttachmentDetail notificationAttachment =
+    final BaseNotificationAttachmentDetail notificationAttachment =
         getDraftNotificationAttachments(
             notificationId, providerId)
             .map(NotificationAttachmentDetails::getContent)
@@ -306,8 +307,8 @@ public class NotificationService {
                 String.format("Invalid notification attachment id: %s", notificationAttachmentId)));
 
     caabApiClient.deleteNotificationAttachment(notificationAttachmentId, loginId).block();
-    if (notificationAttachment.getSendBy().equals("E")) {
-      String fileExtension = FileUtil.getFileExtension(notificationAttachment.getFileName());
+    if (notificationAttachment.getSendBy().equals(ELECTRONIC.getCode())) {
+      final String fileExtension = FileUtil.getFileExtension(notificationAttachment.getFileName());
       s3ApiClient.removeDraftDocument(FileUtil.getFilename(String.valueOf(notificationAttachmentId),
           fileExtension));
     }

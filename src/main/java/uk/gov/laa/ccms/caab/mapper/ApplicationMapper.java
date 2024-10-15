@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.mapper;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_COST;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_COST_DESCRIPTION;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FINANCIAL;
@@ -8,16 +10,31 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_LAN
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTHER_ASSET;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_ORGANISATION;
+import static uk.gov.laa.ccms.caab.util.OpponentUtil.getAssessmentMappingId;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.lang3.tuple.Pair;
 import org.mapstruct.AfterMapping;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.Named;
 import org.springframework.data.domain.Page;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
@@ -29,6 +46,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AssessmentResult;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseAwardDetail;
+import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.BooleanDisplayValue;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.ClientDetail;
@@ -58,16 +76,29 @@ import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
+import uk.gov.laa.ccms.soa.gateway.model.AssessmentScreen;
 import uk.gov.laa.ccms.soa.gateway.model.Award;
 import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
+import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
+import uk.gov.laa.ccms.soa.gateway.model.CaseDoc;
 import uk.gov.laa.ccms.soa.gateway.model.CaseStatus;
 import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
 import uk.gov.laa.ccms.soa.gateway.model.CostLimitation;
 import uk.gov.laa.ccms.soa.gateway.model.LinkedCase;
+import uk.gov.laa.ccms.soa.gateway.model.OpaAttribute;
+import uk.gov.laa.ccms.soa.gateway.model.OpaEntity;
+import uk.gov.laa.ccms.soa.gateway.model.OpaGoal;
+import uk.gov.laa.ccms.soa.gateway.model.OpaInstance;
 import uk.gov.laa.ccms.soa.gateway.model.OtherParty;
+import uk.gov.laa.ccms.soa.gateway.model.OtherPartyOrganisation;
+import uk.gov.laa.ccms.soa.gateway.model.OtherPartyPerson;
+import uk.gov.laa.ccms.soa.gateway.model.PriorAuthority;
+import uk.gov.laa.ccms.soa.gateway.model.PriorAuthorityAttribute;
+import uk.gov.laa.ccms.soa.gateway.model.RecordHistory;
 import uk.gov.laa.ccms.soa.gateway.model.Recovery;
 import uk.gov.laa.ccms.soa.gateway.model.ScopeLimitation;
+import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.TimeRelatedAward;
 import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
 
@@ -664,6 +695,443 @@ public interface ApplicationMapper {
   @Mapping(target = "dateUsed", source = "value")
   @Mapping(target = "contractFlag", ignore = true)
   DevolvedPowersDetail toDevolvedPowers(Pair<Boolean, Date> devolvedPowersInfo);
+
+
+  @Mapping(target = ".", source = "tdsApplication")
+  @Mapping(target = "caseReferenceNumber", source = "tdsApplication.caseReferenceNumber")
+  @Mapping(target = "applicationDetails", source = "context")
+  @Mapping(target = "linkedCases", source = "tdsApplication.linkedCases")
+  @Mapping(target = "recordHistory", source = ".", qualifiedByName = "toSoaRecordHistory")
+  //costs are not required as no awards will have been granted at this stage
+  @Mapping(target = "certificateType", ignore = true)
+  @Mapping(target = "certificateDate", ignore = true)
+  @Mapping(target = "preCertificateCosts", ignore = true)
+  @Mapping(target = "legalHelpCosts", ignore = true)
+  @Mapping(target = "undertakingAmount", ignore = true)
+  @Mapping(target = "awards", ignore = true)
+  @Mapping(target = "dischargeStatus", ignore = true)
+  @Mapping(target = "caseStatus", ignore = true)
+  @Mapping(target = "availableFunctions", ignore = true)
+  CaseDetail toCaseDetail(CaseMappingContext context);
+
+  @Mapping(target = "ccmsDocumentId", source = "registeredDocumentId")
+  @Mapping(target = "documentSubject", source = "documentType.displayValue")
+  CaseDoc toSoaCaseDoc(BaseEvidenceDocumentDetail evidenceDocumentDetail);
+
+  @Mapping(target = "priorAuthorityType", source = "type.id")
+  @Mapping(target = "description", source = "summary")
+  @Mapping(target = "reasonForRequest", source = "justification")
+  @Mapping(target = "requestAmount", source = "amountRequested",
+      qualifiedByName = "mapBigDecimalDefault")
+  @Mapping(target = "decisionStatus", source = "status")
+  @Mapping(target = "details", source = "items")
+  @Mapping(target = "assessedAmount", ignore = true)
+  PriorAuthority toSoaPriorAuthority(PriorAuthorityDetail priorAuthorityDetail);
+
+  @Mapping(target = "name", source = "code.id")
+  @Mapping(target = "value", source = "value.id")
+  PriorAuthorityAttribute toSoaPriorAuthorityAttribute(
+      ReferenceDataItemDetail referenceDataItemDetail);
+
+  @BeanMapping(ignoreByDefault = true)
+  @Mapping(target = "caseReferenceNumber", source = "lscCaseReference")
+  @Mapping(target = "linkType", source = "relationToCase")
+  LinkedCase toSoaLinkedCase(LinkedCaseDetail linkedCase);
+
+  @Mapping(target = "client",
+      source = "tdsApplication.client")
+  @Mapping(target = "preferredAddress",
+      source = "tdsApplication.correspondenceAddress.preferredAddress")
+  @Mapping(target = "providerDetails",
+      source = "tdsApplication.providerDetails")
+  @Mapping(target = "categoryOfLaw",
+      source = "tdsApplication")
+  @Mapping(target = "applicationAmendmentType",
+      source = "tdsApplication.applicationType.id")
+  @Mapping(target = "correspondenceAddress",
+      source = "tdsApplication.correspondenceAddress")
+  @Mapping(target = "proceedings", source = "tdsApplication.proceedings")
+  @Mapping(target = "larDetails.larScopeFlag", source = "tdsApplication.larScopeFlag")
+  @Mapping(target = "otherParties", source = "tdsApplication.opponents")
+  @Mapping(target = "meansAssesments", source = "meansAssessment",
+      qualifiedByName = "mapMeansAssessment")
+  @Mapping(target = "meritsAssesments", source = "meritsAssessment",
+      qualifiedByName = "mapMeritsAssessment")
+  @Mapping(target = "devolvedPowersDate", source = "tdsApplication",
+      qualifiedByName = "mapDevolvedPowersDate")
+  @Mapping(target = "larDetails.legalHelpOfficeCode", ignore = true)
+  @Mapping(target = "larDetails.legalHelpUfn", ignore = true)
+  @Mapping(target = "externalResources", ignore = true)
+  @Mapping(target = "dateOfFirstAttendance", ignore = true)
+  @Mapping(target = "purposeOfApplication", ignore = true)
+  @Mapping(target = "fixedHearingDateInd", ignore = true)
+  @Mapping(target = "dateOfHearing", ignore = true)
+  @Mapping(target = "purposeOfHearing", ignore = true)
+  @Mapping(target = "highProfileCaseInd", ignore = true)
+  @Mapping(target = "certificateType", ignore = true)
+  SubmittedApplicationDetails toSubmittedApplicationDetails(CaseMappingContext context);
+
+  /**
+   * Maps and returns the devolved powers date from the provided application details.
+   * The date is retrieved based on the application type being either emergency or substantive
+   * devolved powers.
+   *
+   * @param app the application details
+   * @return the devolved powers date, or {@code null} if the application or devolved powers
+   *         details are not present
+   */
+  @Named("mapDevolvedPowersDate")
+  default Date mapDevolvedPowersDate(final ApplicationDetail app) {
+    if (app != null && app.getApplicationType() != null) {
+      final ApplicationType appType = app.getApplicationType();
+      final DevolvedPowersDetail devolvedPowers = appType.getDevolvedPowers();
+
+      if (devolvedPowers != null) {
+        if (APP_TYPE_EMERGENCY_DEVOLVED_POWERS.equalsIgnoreCase(appType.getId())) {
+          return devolvedPowers.getDateUsed();
+        } else if (APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS.equalsIgnoreCase(appType.getId())) {
+          return devolvedPowers.getDateUsed();
+        }
+      }
+    }
+    return null;
+  }
+
+  @Mapping(target = "clientReferenceNumber", source = "reference")
+  BaseClient toBaseClient(ClientDetail client);
+
+  @Mapping(target = "providerCaseReferenceNumber", source = "providerCaseReference")
+  @Mapping(target = "providerFirmId", source = "provider.id")
+  @Mapping(target = "providerOfficeId", source = "office.id")
+  @Mapping(target = "contactUserId.userLoginId", source = "providerContact.id")
+  @Mapping(target = "supervisorContactId", source = "supervisor.id")
+  @Mapping(target = "feeEarnerContactId", source = "feeEarner.id")
+  @Mapping(target = "contactDetails", ignore = true)
+  @Mapping(target = "contactUserId.userName", ignore = true)
+  @Mapping(target = "contactUserId.userType", ignore = true)
+  uk.gov.laa.ccms.soa.gateway.model.ProviderDetail toSoaProviderDetail(
+      ApplicationProviderDetails providerDetail);
+
+  @Mapping(target = "categoryOfLawCode", source = "categoryOfLaw.id")
+  @Mapping(target = "categoryOfLawDescription", source = "categoryOfLaw.displayValue")
+  @Mapping(target = "requestedAmount", source = "costs", qualifiedByName = "mapRequestedAmount")
+  @Mapping(target = "grantedAmount", ignore = true)
+  @Mapping(target = "totalPaidToDate", ignore = true)
+  @Mapping(target = "costLimitations", ignore = true)
+  CategoryOfLaw toSoaCategoryOfLaw(ApplicationDetail applicationDetail);
+
+  @Mapping(target = "addressId", source = "id")
+  @Mapping(target = "house", source = "houseNameOrNumber")
+  @Mapping(target = "careOfName", source = "careOf")
+  @Mapping(target = "postalCode", source = "postcode")
+  @Mapping(target = "addressLine3", ignore = true)
+  @Mapping(target = "addressLine4", ignore = true)
+  @Mapping(target = "province", ignore = true)
+  @Mapping(target = "state", ignore = true)
+  uk.gov.laa.ccms.soa.gateway.model.AddressDetail toSoaAddressDetail(AddressDetail addressDetail);
+
+  @Mapping(target = "proceedingCaseId", source = "id", qualifiedByName = "mapProceedingId")
+  @Mapping(target = "status", source = "status.id")
+  @Mapping(target = "leadProceedingIndicator", source = "leadProceedingInd")
+  @Mapping(target = "proceedingType", source = "proceedingType.id")
+  @Mapping(target = "proceedingDescription", source = "description")
+  @Mapping(target = "orderType", source = "typeOfOrder.id")
+  @Mapping(target = "matterType", source = "matterType.id")
+  @Mapping(target = "levelOfService", source = "levelOfService.id")
+  @Mapping(target = "clientInvolvementType", source = "clientInvolvement.id")
+  @Mapping(target = "outcome", ignore = true)
+  @Mapping(target = "dateApplied", ignore = true)
+  @Mapping(target = "outcomeCourtCaseNumber", ignore = true)
+  @Mapping(target = "scopeLimitationApplied", ignore = true)
+  @Mapping(target = "devolvedPowersInd", ignore = true)
+  @Mapping(target = "availableFunctions", ignore = true)
+  uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail toSoaProceedingDetail(
+      ProceedingDetail proceedingDetail);
+
+  @Mapping(target = "scopeLimitation", source = "scopeLimitation.id")
+  @Mapping(target = "scopeLimitationWording", source = "scopeLimitationWording")
+  @Mapping(target = "delegatedFunctionsApply", source = "delegatedFuncApplyInd.flag")
+  @Mapping(target = "scopeLimitationId", ignore = true)
+  ScopeLimitation toSoaScopeLimitation(ScopeLimitationDetail scopeLimitationDetail);
+
+  @Mapping(target = "otherPartyId", source = ".", qualifiedByName = "mapOpponentId")
+  @Mapping(target = "person", source = ".", qualifiedByName = "mapPerson")
+  @Mapping(target = "organisation", source = ".", qualifiedByName = "mapOrganisation")
+  OtherParty toSoaOtherParty(OpponentDetail opponentDetail);
+
+  @Mapping(target = "name.title", source = "title")
+  @Mapping(target = "name.surname", source = "surname")
+  @Mapping(target = "name.middleName", source = "middleNames")
+  @Mapping(target = "name.firstName", source = "firstName")
+  @Mapping(target = "relationToClient", source = "relationshipToClient")
+  @Mapping(target = "relationToCase", source = "relationshipToCase")
+  @Mapping(target = "niNumber", source = "nationalInsuranceNumber")
+  @Mapping(target = "partyLegalAidedInd", source = "legalAided")
+  @Mapping(target = "courtOrderedMeansAssesment", source = "courtOrderedMeansAssessment")
+  @Mapping(target = "contactName", source = "contactNameRole")
+  @Mapping(target = "employersName", source = "employerName")
+  @Mapping(target = "organizationAddress", source = "employerAddress")
+  @Mapping(target = "assessedIncome", source = "assessedIncome",
+      qualifiedByName = "mapBigDecimalDefault")
+  @Mapping(target = "assessedAssets", source = "assessedAssets",
+      qualifiedByName = "mapBigDecimalDefault")
+  @Mapping(target = "contactDetails", ignore = true)
+  @Mapping(target = "address", ignore = true)
+  @Mapping(target = "publicFundingAppliedInd", ignore = true)
+  @Mapping(target = "organizationName", ignore = true)
+  OtherPartyPerson toSoaPerson(OpponentDetail opponentDetail);
+
+  /**
+   * Maps the provided {@link BigDecimal} to a scaled value with 2 decimal places.
+   *
+   * @param value the {@link BigDecimal} value to be mapped
+   * @return the scaled {@link BigDecimal} value, or {@code BigDecimal.ZERO} if the value is
+   *         {@code null}
+   */
+  @Named("mapBigDecimalDefault")
+  default BigDecimal mapBigDecimalDefault(final BigDecimal value) {
+    return value != null
+        ? value.setScale(2, RoundingMode.HALF_UP)
+        : BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+  }
+
+  @Mapping(target = "relationToClient", source = "relationshipToClient")
+  @Mapping(target = "relationToCase", source = "relationshipToCase")
+  @Mapping(target = "organizationName", source = "organisationName")
+  @Mapping(target = "organizationType", source = "organisationType")
+  @Mapping(target = "contactName", source = "contactNameRole")
+  @Mapping(target = "contactDetails", ignore = true)
+  OtherPartyOrganisation toSoaOrganisation(OpponentDetail opponentDetail);
+
+  /**
+   * Maps the provided assessment details into the given
+   * {@link uk.gov.laa.ccms.soa.gateway.model.AssessmentResult}. It organizes entity types,
+   * entities, and their attributes into an assessment screen summary.
+   *
+   * @param assessmentResult the assessment result to which the mapped data will be added
+   * @param assessment the assessment details containing entities and their attributes
+   */
+  @Named("mapIntoAssessment")
+  default void mapIntoAssessment(
+      final uk.gov.laa.ccms.soa.gateway.model.AssessmentResult assessmentResult,
+      final AssessmentDetail assessment) {
+
+    final AssessmentScreen assessmentScreen = new AssessmentScreen()
+        .screenName("SUMMARY");
+
+    final AtomicInteger sequenceNumber = new AtomicInteger(1);
+
+    // Use a map to track existing OpaEntity by entityName
+    final Map<String, OpaEntity> entityMap = new HashMap<>();
+
+    assessment.getEntityTypes().stream()
+        .filter(entityType -> entityType.getEntities() != null)
+        .forEach(entityType -> entityType.getEntities().forEach(entity -> {
+
+          // Find existing OpaEntity or create a new one
+          final OpaEntity opaEntity = entityMap.computeIfAbsent(entityType.getName(), name ->
+              new OpaEntity()
+                  .sequenceNumber(sequenceNumber.getAndIncrement())
+                  .entityName(entityType.getName()));
+
+          final OpaInstance opaInstance = new OpaInstance()
+              .instanceLabel(entity.getName());
+
+          // Only add the attributes if they have values
+          Optional.ofNullable(entity.getAttributes()).stream()
+              .flatMap(Collection::stream)
+              .filter(attribute -> attribute.getValue() != null)
+              .map(this::toOpaAttribute)
+              .forEach(opaInstance::addAttributesItem);
+
+          // Only add the instance if it has attributes
+          Optional.of(opaInstance)
+              .filter(inst -> inst.getAttributes() != null && !inst.getAttributes().isEmpty())
+              .ifPresent(inst -> opaEntity.addInstancesItem(opaInstance));
+
+        }));
+
+    // Add each unique OpaEntity from the map to the assessmentScreen
+    entityMap.values().stream()
+        .filter(ent -> ent.getInstances() != null && !ent.getInstances().isEmpty())
+        .forEach(assessmentScreen::addEntityItem);
+
+    assessmentResult.addAssessmentDetailsItem(assessmentScreen);
+  }
+
+  /**
+   * Maps the means assessment details into a list of
+   * {@link uk.gov.laa.ccms.soa.gateway.model.AssessmentResult} using the goal attribute from the
+   * means rule base.
+   *
+   * @param meansAssessment the means assessment details to be mapped
+   * @return a list containing the mapped means assessment result
+   */
+  @Named("mapMeansAssessment")
+  default List<uk.gov.laa.ccms.soa.gateway.model.AssessmentResult> mapMeansAssessment(
+      final AssessmentDetail meansAssessment) {
+    return mapAssessment(meansAssessment, AssessmentRulebase.MEANS.getGoalAttributeName());
+  }
+
+  /**
+   * Maps the merits assessment details into a list of
+   * {@link uk.gov.laa.ccms.soa.gateway.model.AssessmentResult} using the goal attribute from the
+   * merits rule base.
+   *
+   * @param meritsAssessment the merits assessment details to be mapped
+   * @return a list containing the mapped merits assessment result
+   */
+  @Named("mapMeritsAssessment")
+  default List<uk.gov.laa.ccms.soa.gateway.model.AssessmentResult> mapMeritsAssessment(
+      final AssessmentDetail meritsAssessment) {
+    return mapAssessment(meritsAssessment, AssessmentRulebase.MERITS.getGoalAttributeName());
+  }
+
+  /**
+   * Maps the provided assessment details into a list of
+   * {@link uk.gov.laa.ccms.soa.gateway.model.AssessmentResult}. An {@link OpaGoal} with the
+   * specified goal attribute is created and added to the result.
+   *
+   * @param assessmentDetail the assessment details to be mapped
+   * @param goalAttribute the goal attribute to be set in the assessment result
+   * @return a list containing the mapped assessment result, or an empty list if the assessment
+   *         detail is null
+   */
+  default List<uk.gov.laa.ccms.soa.gateway.model.AssessmentResult> mapAssessment(
+      final AssessmentDetail assessmentDetail, final String goalAttribute) {
+    if (assessmentDetail == null) {
+      return Collections.emptyList();
+    }
+
+    final uk.gov.laa.ccms.soa.gateway.model.AssessmentResult assessmentResult =
+        new uk.gov.laa.ccms.soa.gateway.model.AssessmentResult();
+
+    final OpaGoal opaGoal = new OpaGoal()
+        .attribute(goalAttribute)
+        .attributeValue("true");
+
+    assessmentResult.addResultsItem(opaGoal);
+    mapIntoAssessment(assessmentResult, assessmentDetail);
+
+    return List.of(assessmentResult);
+  }
+
+  // MapStruct mappings for attributes
+  @Mapping(target = "attribute", source = "name")
+  @Mapping(target = "responseType", source = "type")
+  @Mapping(target = "responseValue", source = "value")
+  @Mapping(target = "userDefinedInd", source = ".",
+      qualifiedByName = "mapUserDefinedInd")
+  @Mapping(target = "caption", ignore = true)
+  @Mapping(target = "responseText", ignore = true)
+  OpaAttribute toOpaAttribute(AssessmentAttributeDetail attribute);
+
+
+  @Named("toSoaRecordHistory")
+  @Mapping(target = "dateCreated", source = "tdsApplication.auditTrail.created")
+  @Mapping(target = "dateLastUpdated", source = "tdsApplication.auditTrail.lastSaved")
+  @Mapping(target = "createdBy", ignore = true)
+  @Mapping(target = "lastUpdatedBy.userLoginId", source = "user.loginId")
+  @Mapping(target = "lastUpdatedBy.userName", source = "user.username")
+  @Mapping(target = "lastUpdatedBy.userType", source = "user.userType")
+  RecordHistory toSoaRecordHistory(CaseMappingContext context);
+
+  /**
+   * Maps and returns a boolean indicating if the assessment attribute is user-defined.
+   *
+   * @param attribute the assessment attribute detail
+   * @return {@code true} if the attribute is user-defined, {@code false} otherwise,
+   *        or {@code null} if the attribute is null
+   */
+  @Named("mapUserDefinedInd")
+  default Boolean mapUserDefinedInd(final AssessmentAttributeDetail attribute) {
+    if (attribute == null) {
+      return null;
+    }
+    return !"intermediate".equalsIgnoreCase(attribute.getInferencingType())
+        && (!attribute.getName().startsWith("SA_"))
+        && (!Boolean.TRUE.equals(attribute.getPrepopulated()));
+  }
+
+  /**
+   * Maps and returns the person details from the provided opponent detail if it is of type
+   * "individual".
+   *
+   * @param opponentDetail the opponent detail
+   * @return the mapped person, or {@code null} if the opponent is not an individual
+   */
+  @Named("mapPerson")
+  default OtherPartyPerson mapPerson(final OpponentDetail opponentDetail) {
+    if (opponentDetail == null || opponentDetail.getType() == null) {
+      return null;
+    }
+    return opponentDetail.getType().equalsIgnoreCase(OPPONENT_TYPE_INDIVIDUAL)
+        ? toSoaPerson(opponentDetail)
+        : null;
+  }
+
+  /**
+   * Maps and returns the organisation details from the provided opponent detail if it is of type
+   * "organisation".
+   *
+   * @param opponentDetail the opponent detail
+   * @return the mapped organisation, or {@code null} if the opponent is not an organisation
+   */
+  @Named("mapOrganisation")
+  default OtherPartyOrganisation mapOrganisation(final OpponentDetail opponentDetail) {
+    if (opponentDetail == null || opponentDetail.getType() == null) {
+      return null;
+    }
+    return opponentDetail.getType().equalsIgnoreCase(OPPONENT_TYPE_ORGANISATION)
+        ? toSoaOrganisation(opponentDetail)
+        : null;
+  }
+
+
+  /**
+   * Maps and returns the proceeding ID by formatting the provided ID.
+   * If the ID is not null, it is prefixed with "P_".
+   *
+   * @param id the proceeding ID to be formatted
+   * @return the formatted proceeding ID, or {@code null} if the input ID is {@code null}
+   */
+  @Named("mapProceedingId")
+  default String proceedingId(final Integer id) {
+    return id != null
+        ? String.format("P_%s", id)
+        : null;
+  }
+
+  /**
+   * Maps and returns the opponent ID from the provided opponent details.
+   *
+   * @param opponent the opponent details
+   * @return the mapped opponent ID, or {@code null} if the opponent is {@code null}
+   */
+  @Named("mapOpponentId")
+  default String opponentId(final OpponentDetail opponent) {
+    if (opponent == null) {
+      return null;
+    }
+    return getAssessmentMappingId(opponent);
+  }
+
+  /**
+   * Maps the requested amount from the provided cost structure details.
+   * If the requested cost limitation is not available, the default cost limitation is returned.
+   *
+   * @param costs the cost structure details
+   * @return the requested or default cost limitation, or {@code null} if the cost structure is null
+   */
+  @Named("mapRequestedAmount")
+  default BigDecimal mapRequestedAmount(final CostStructureDetail costs) {
+    if (costs == null) {
+      return null;
+    }
+    return costs.getRequestedCostLimitation() != null
+        ? costs.getRequestedCostLimitation()
+        : costs.getDefaultCostLimitation();
+  }
 
   /**
    * Map a List of OtherParty conditionally to an Individual or Organisation OpponentDetail.

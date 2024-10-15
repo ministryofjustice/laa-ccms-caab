@@ -2,11 +2,15 @@ package uk.gov.laa.ccms.caab.controller.application.section;
 
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.DECLARATION_APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.CcmsModule.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_SUMMARY;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_CASE;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessment;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDetail;
 
 import jakarta.servlet.http.HttpSession;
 import java.util.Collections;
@@ -26,10 +30,14 @@ import org.springframework.validation.ObjectError;
 import org.springframework.validation.Validator;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.function.Tuple3;
+import reactor.util.function.Tuple4;
 import reactor.util.function.Tuple7;
 import reactor.util.function.Tuple8;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
@@ -44,7 +52,6 @@ import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
-import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ProviderDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.CorrespondenceAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.declaration.DeclarationSubmissionValidator;
@@ -55,6 +62,7 @@ import uk.gov.laa.ccms.caab.bean.validators.priorauthority.PriorAuthorityTypeDet
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
+import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
@@ -64,6 +72,9 @@ import uk.gov.laa.ccms.caab.mapper.context.submission.GeneralDetailsSubmissionSu
 import uk.gov.laa.ccms.caab.mapper.context.submission.OpponentSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.ProceedingSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -76,12 +87,14 @@ import uk.gov.laa.ccms.caab.model.summary.SubmissionSummaryDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.ClientService;
+import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 
@@ -99,6 +112,7 @@ public class ApplicationSubmissionController {
   private final AssessmentService assessmentService;
   private final LookupService lookupService;
   private final ClientService clientService;
+  private final EvidenceService evidenceService;
 
   //mappers
   private final ClientDetailMapper clientDetailsMapper;
@@ -116,6 +130,8 @@ public class ApplicationSubmissionController {
   private final PriorAuthorityDetailsValidator priorAuthorityDetailsValidator;
   private final OrganisationOpponentValidator organisationOpponentValidator;
   private final IndividualOpponentValidator individualOpponentValidator;
+
+  private final SearchConstants searchConstants;
 
   protected static final String PARENT_LOOKUP = "PARENT";
   protected static final String CHILD_LOOKUP = "CHILD";
@@ -166,17 +182,18 @@ public class ApplicationSubmissionController {
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       final Model model
   ) {
+    // Fetch data reactively
     final Mono<ApplicationFormData> providerDetailsMono =
         applicationService.getMonoProviderDetailsFormData(applicationId);
     final Mono<AddressFormData> generalDetailsMono =
         applicationService.getMonoCorrespondenceAddressFormData(applicationId);
     final Mono<ApplicationDetail> applicationMono =
         applicationService.getApplication(applicationId);
-    final Mono<List<AbstractOpponentFormData>> opponentsMono =
-        Mono.fromCallable(() ->
-                applicationService.getOpponents(applicationId))
-            .subscribeOn(Schedulers.boundedElastic());
+    final Mono<List<AbstractOpponentFormData>> opponentsMono = Mono.fromCallable(() ->
+            applicationService.getOpponents(applicationId))
+        .subscribeOn(Schedulers.boundedElastic());
 
+    // Combine all Monos in a reactive manner using Mono.zip
     return Mono.zip(providerDetailsMono, generalDetailsMono, applicationMono, opponentsMono)
         .flatMap(tuple -> {
           final ApplicationFormData providerDetailsFormData = tuple.getT1();
@@ -187,22 +204,28 @@ public class ApplicationSubmissionController {
           boolean validationFailed = false;
 
           // Validate Provider Details
-          if (validateAndAddErrors(providerDetailsFormData, providerDetailsValidator,
-              model, "providerDetailsErrors")) {
+          if (validateAndAddErrors(
+              providerDetailsFormData,
+              providerDetailsValidator, model, "providerDetailsErrors")) {
             validationFailed = true;
           }
 
           // Validate General Details
-          if (validateAndAddErrors(generalDetailsFormData, correspondenceAddressValidator,
-              model, "generalDetailsErrors")) {
+          if (validateAndAddErrors(
+              generalDetailsFormData,
+              correspondenceAddressValidator, model, "generalDetailsErrors")) {
             validationFailed = true;
           }
 
-          // Validate Proceedings
-          if (application.getProceedings() != null && !application.getProceedings().isEmpty()) {
-            if (validateProceedings(application.getProceedings(), model)) {
-              validationFailed = true;
-            }
+          // Validate Proceedings - Now returns a reactive Mono<Boolean>
+          final Mono<Boolean> proceedingsValidationMono =
+              application.getProceedings() != null && !application.getProceedings().isEmpty()
+              ? validateProceedings(application.getProceedings(), model)
+              : Mono.just(false);
+
+          // Validate Opponents
+          if (validateOpponents(opponents, model)) {
+            validationFailed = true;
           }
 
           // Validate Prior Authorities
@@ -210,14 +233,15 @@ public class ApplicationSubmissionController {
             validationFailed = true;
           }
 
-          // Validate Opponents
-          if (validateOpponents(opponents, model)) {
-            validationFailed = true;
-          }
-
-          return validationFailed
-              ? Mono.just("application/application-validation-error-correction")
-              : Mono.just("redirect:/application/summary");
+          final boolean finalValidationFailed = validationFailed;
+          // Wait for the proceedings validation to complete
+          return proceedingsValidationMono.map(proceedingsValidationFailed -> {
+            if (proceedingsValidationFailed || finalValidationFailed) {
+              return "application/application-validation-error-correction";
+            } else {
+              return "redirect:/application/summary";
+            }
+          });
         });
   }
 
@@ -257,48 +281,60 @@ public class ApplicationSubmissionController {
    * @param model the model to add any validation errors to
    * @return {@code true} if there are validation errors, {@code false} otherwise
    */
-  protected boolean validateProceedings(
+  protected Mono<Boolean> validateProceedings(
       final List<ProceedingDetail> proceedings, final Model model) {
     if (proceedings == null || proceedings.isEmpty()) {
-      return false;
+      return Mono.just(false);
     }
 
     final Set<String> proceedingsErrors = new HashSet<>();
-    for (final ProceedingDetail proceeding : proceedings) {
-      final String orderTypeDisplayValue =
-          Optional.ofNullable(proceeding.getTypeOfOrder())
-          .map(StringDisplayValue::getId)
-          .map(id -> lookupService.getOrderTypeDescription(id).block())
-          .orElse(null);
 
-      final ProceedingFlowFormData proceedingDetailsFormData =
-          proceedingAndCostsMapper.toProceedingFlow(proceeding, orderTypeDisplayValue);
-
-      // Validate each section
-      if (validateAndAddErrors(proceedingDetailsFormData.getMatterTypeDetails(),
-          matterTypeValidator, model, "proceedingMatterTypeDetails")) {
-        proceedingsErrors.addAll(
-            getErrorsFromModel(model, "proceedingMatterTypeDetails"));
-      }
-
-      if (validateAndAddErrors(proceedingDetailsFormData.getProceedingDetails(),
-          proceedingTypeValidator, model, "proceedingTypeDetails")) {
-        proceedingsErrors.addAll(
-            getErrorsFromModel(model, "proceedingTypeDetails"));
-      }
-
-      if (validateAndAddErrors(proceedingDetailsFormData,
-          furtherDetailsValidator, model, "proceedingFurtherDetails")) {
-        proceedingsErrors.addAll(
-            getErrorsFromModel(model, "proceedingFurtherDetails"));
-      }
-    }
-
-    if (!proceedingsErrors.isEmpty()) {
-      model.addAttribute("proceedingsErrors", proceedingsErrors);
-      return true;
-    }
-    return false;
+    return Flux.fromIterable(proceedings)
+        .flatMap(proceeding -> Optional.ofNullable(proceeding.getTypeOfOrder())
+            .map(StringDisplayValue::getId)
+            .map(lookupService::getOrderTypeDescription)
+            .orElse(Mono.empty())
+            .map(orderTypeDisplayValue ->
+                proceedingAndCostsMapper.toProceedingFlow(proceeding, orderTypeDisplayValue)
+            )
+            .flatMap(proceedingDetailsFormData -> Mono.just(
+                validateAndAddErrors(proceedingDetailsFormData.getMatterTypeDetails(),
+                    matterTypeValidator, model, "proceedingMatterTypeDetails"))
+                .flatMap(isError -> {
+                  if (isError) {
+                    proceedingsErrors.addAll(
+                        getErrorsFromModel(model, "proceedingMatterTypeDetails"));
+                  }
+                  return Mono.just(isError);
+                })
+                .flatMap(isError -> {
+                  if (!isError) {
+                    return Mono.just(validateAndAddErrors(
+                        proceedingDetailsFormData.getProceedingDetails(),
+                        proceedingTypeValidator, model, "proceedingTypeDetails"));
+                  } else {
+                    return Mono.just(true);
+                  }
+                })
+                .flatMap(isError -> {
+                  if (isError) {
+                    proceedingsErrors.addAll(getErrorsFromModel(model, "proceedingTypeDetails"));
+                  }
+                  return Mono.just(validateAndAddErrors(proceedingDetailsFormData,
+                      furtherDetailsValidator, model, "proceedingFurtherDetails"));
+                })
+                .doOnNext(isError -> {
+                  if (isError) {
+                    proceedingsErrors.addAll(getErrorsFromModel(model, "proceedingFurtherDetails"));
+                  }
+                })))
+        .then(Mono.defer(() -> {
+          if (!proceedingsErrors.isEmpty()) {
+            model.addAttribute("proceedingsErrors", proceedingsErrors);
+            return Mono.just(true);
+          }
+          return Mono.just(false);
+        }));
   }
 
   /**
@@ -649,8 +685,11 @@ public class ApplicationSubmissionController {
   public String applicationDeclarationPost(
       @ModelAttribute("summarySubmissionFormData")
       final SummarySubmissionFormData summarySubmissionFormData,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       final BindingResult bindingResult,
-      final Model model) {
+      final Model model,
+      final HttpSession session) {
 
     declarationSubmissionValidator.validate(summarySubmissionFormData, bindingResult);
 
@@ -658,8 +697,69 @@ public class ApplicationSubmissionController {
       return applicationDeclarationDetails(model, summarySubmissionFormData);
     }
 
-    //perform submission logic here CCLS-2179
-    return "redirect:todo";
+    final EvidenceDocumentDetails evidenceDocumentDetails =
+        evidenceService.getEvidenceDocumentsForCase(
+            activeCase.getCaseReferenceNumber(), APPLICATION).block();
+
+    //register previously uploaded documents
+    evidenceService.registerPreviouslyUploadedDocuments(evidenceDocumentDetails, user);
+
+    evidenceService.uploadAndUpdateDocuments(
+        evidenceDocumentDetails, activeCase.getCaseReferenceNumber(), user)
+        .block();
+
+
+    //map application to case
+    final Mono<ApplicationDetail> applicationMono =
+        applicationService.getApplication(
+            String.valueOf(activeCase.getApplicationId()));
+
+    final Mono<AssessmentDetails> meansAssessmentsMono =
+        assessmentService.getAssessments(
+            List.of(AssessmentRulebase.MEANS.getName()),
+            user.getProvider().getId().toString(),
+            activeCase.getCaseReferenceNumber());
+
+    final Mono<AssessmentDetails> meritsAssessmentsMono =
+        assessmentService.getAssessments(
+            List.of(AssessmentRulebase.MERITS.getName()),
+            user.getProvider().getId().toString(),
+            activeCase.getCaseReferenceNumber());
+
+    final Mono<EvidenceDocumentDetails> caseDocsMono =
+        evidenceService.getEvidenceDocumentsForCase(
+            activeCase.getCaseReferenceNumber(), APPLICATION);
+
+    //need to block all 3 of these to get the data
+
+    final Tuple4<ApplicationDetail, AssessmentDetails, AssessmentDetails, EvidenceDocumentDetails>
+        applicationMonos = Mono.zip(
+            applicationMono, meansAssessmentsMono, meritsAssessmentsMono, caseDocsMono)
+            .blockOptional().orElseThrow(() ->
+                new CaabApplicationException("Failed to retrieve application and assessment data"));
+
+    final ApplicationDetail application = applicationMonos.getT1();
+
+    final AssessmentDetail meansAssessment =
+        getMostRecentAssessmentDetail(applicationMonos.getT2().getContent());
+
+    final AssessmentDetail meritsAssessment =
+        getMostRecentAssessmentDetail(applicationMonos.getT3().getContent());
+
+    final List<BaseEvidenceDocumentDetail> caseDocs = applicationMonos.getT4().getContent();
+
+    //add case to ebs
+    final CaseTransactionResponse response =
+        applicationService.createCase(
+            user,
+            application,
+            meansAssessment,
+            meritsAssessment,
+            caseDocs);
+
+    session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
+
+    return "redirect:/submissions/%s".formatted(SUBMISSION_CREATE_CASE);
   }
 
   /**
@@ -680,12 +780,5 @@ public class ApplicationSubmissionController {
     model.addAttribute("summarySubmissionFormData", summarySubmissionFormData);
     return "application/sections/application-submit-declaration";
   }
-
-
-
-
-
-
-
 
 }

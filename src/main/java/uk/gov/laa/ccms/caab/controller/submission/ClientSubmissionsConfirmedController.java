@@ -44,8 +44,7 @@ public class ClientSubmissionsConfirmedController {
       @SessionAttribute(APPLICATION_FORM_DATA) final ApplicationFormData applicationFormData,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(CLIENT_REFERENCE) final String clientReference,
-      HttpSession session
-  ) throws ParseException {
+      final HttpSession session) throws ParseException {
 
     final ClientDetail clientInformation = clientService.getClient(
         clientReference,
@@ -67,4 +66,6 @@ public class ClientSubmissionsConfirmedController {
   public String clientUpdateSubmitted() {
     return "redirect:/application/sections";
   }
+
+
 }

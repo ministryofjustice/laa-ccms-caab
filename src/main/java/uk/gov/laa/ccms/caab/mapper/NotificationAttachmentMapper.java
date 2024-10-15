@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.mapper;
 
+import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
+
 import org.mapstruct.AfterMapping;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
@@ -82,7 +84,7 @@ public interface NotificationAttachmentMapper {
       @MappingTarget NotificationAttachmentUploadFormData notificationAttachmentUploadFormData,
       NotificationAttachmentDetail notificationAttachmentDetail) {
 
-    if (notificationAttachmentDetail.getSendBy().equals("E")) {
+    if (notificationAttachmentDetail.getSendBy().equals(ELECTRONIC.getCode())) {
       notificationAttachmentUploadFormData.setFileExtension(
           FileUtil.getFileExtension(notificationAttachmentDetail.getFileName()));
     }
@@ -98,7 +100,7 @@ public interface NotificationAttachmentMapper {
   @AfterMapping
   default void setFileExtension(@MappingTarget BaseDocument baseDocument,
       NotificationAttachmentDetail notificationAttachmentDetail) {
-    if (notificationAttachmentDetail.getSendBy().equals("E")) {
+    if (notificationAttachmentDetail.getSendBy().equals(ELECTRONIC.getCode())) {
       baseDocument.setFileExtension(
           FileUtil.getFileExtension(notificationAttachmentDetail.getFileName()));
     }
@@ -114,7 +116,7 @@ public interface NotificationAttachmentMapper {
   @AfterMapping
   default void setFileExtension(@MappingTarget Document document,
       NotificationAttachmentDetail notificationAttachmentDetail) {
-    if (notificationAttachmentDetail.getSendBy().equals("E")) {
+    if (notificationAttachmentDetail.getSendBy().equals(ELECTRONIC.getCode())) {
       document.setFileExtension(
           FileUtil.getFileExtension(notificationAttachmentDetail.getFileName()));
     }

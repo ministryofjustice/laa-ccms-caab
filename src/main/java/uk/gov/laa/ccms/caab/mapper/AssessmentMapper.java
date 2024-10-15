@@ -284,24 +284,28 @@ public interface AssessmentMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "proceeding.clientInvolvement.id")
   @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toClientInvolvementTypeAttribute(
       ProceedingDetail proceeding, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "proceeding.leadProceedingInd")
   @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toLeadProceedingAttribute(
       ProceedingDetail proceeding, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "proceeding.levelOfService.id")
   @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toLevelOfServiceAttribute(
       ProceedingDetail proceeding, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "proceeding.matterType.id")
   @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toMatterTypeAttribute(
       ProceedingDetail proceeding, AssessmentAttribute attribute);
 
@@ -309,6 +313,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "proceeding",
       qualifiedByName = "mapNewOrExistingAttribute")
   @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toNewOrExistingAttribute(
       ProceedingDetail proceeding, AssessmentAttribute attribute);
 
@@ -321,6 +326,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "proceeding",
       qualifiedByName = "mapProceedingIdAttribute")
   @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toProceedingIdAttribute(
       ProceedingDetail proceeding, AssessmentAttribute attribute);
 
@@ -333,12 +339,14 @@ public interface AssessmentMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "proceeding.proceedingType.id")
   @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toProceedingNameAttribute(
       ProceedingDetail proceeding, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "proceeding.typeOfOrder.id")
   @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toProceedingOrderTypeAttribute(
       ProceedingDetail proceeding, AssessmentAttribute attribute);
 
@@ -346,6 +354,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "proceeding",
       qualifiedByName = "mapRequestedScopeAttribute")
   @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toRequestedScopeAttribute(
       ProceedingDetail proceeding, AssessmentAttribute attribute);
 
@@ -359,6 +368,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "proceeding",
       qualifiedByName = "mapScopeLimitIsDefaultAttribute")
   @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toScopeLimitIsDefaultAttribute(
       ProceedingDetail proceeding, AssessmentAttribute attribute);
 
@@ -436,6 +446,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "opponent.dateOfBirth", dateFormat = "dd-MM-yyyy")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toOpponentDobAttribute(
       OpponentDetail opponent, AssessmentAttribute attribute);
 
@@ -444,6 +455,7 @@ public interface AssessmentMapper {
       qualifiedByName = "mapOpponentOpaInstanceMappingId")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toOtherPartyIdAttribute(
       OpponentDetail opponent, AssessmentAttribute attribute);
 
@@ -456,6 +468,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "opponentContext", qualifiedByName = "mapPartyName")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toOtherPartyNameAttribute(
       AssessmentOpponentMappingContext opponentContext, AssessmentAttribute attribute);
 
@@ -468,6 +481,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "opponent", qualifiedByName = "mapOpponentType")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toOtherPartyTypeAttribute(
       OpponentDetail opponent, AssessmentAttribute attribute);
 
@@ -480,6 +494,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "opponent.relationshipToCase")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toRelationshipToCaseAttribute(
       OpponentDetail opponent, AssessmentAttribute attribute);
 
@@ -487,6 +502,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "opponent.relationshipToClient")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toRelationshipToClientAttribute(
       OpponentDetail opponent, AssessmentAttribute attribute);
 
@@ -542,6 +558,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "application.caseReferenceNumber")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toApplicationCaseRefAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -549,6 +566,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "application", qualifiedByName = "mapAppAmendType")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toAppAmendTypeAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -561,6 +579,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "application.categoryOfLaw.id")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toCategoryOfLawAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -568,6 +587,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "client.personalInformation.vulnerableClient")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toClientVulnerableAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
@@ -575,6 +595,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "application.costLimit.changed")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toCostLimitChangedFlagAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -582,6 +603,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "client.address.country")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toCountryAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
@@ -589,6 +611,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "client.address.county")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toCountyAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
@@ -598,6 +621,7 @@ public interface AssessmentMapper {
       dateFormat = "dd-MM-yyyy")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toDateAssessmentStartedAttribute(AssessmentAttribute attribute);
 
   @Named("mapDateAssessmentStarted")
@@ -610,6 +634,7 @@ public interface AssessmentMapper {
       source = "client.personalInformation.dateOfBirth", dateFormat = "dd-MM-yyyy")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toDateOfBirthAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
@@ -617,6 +642,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "application.costs.defaultCostLimitation")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toDefaultCostLimitationAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -625,6 +651,7 @@ public interface AssessmentMapper {
       source = "application.applicationType.devolvedPowers.dateUsed", dateFormat = "dd-MM-yyyy")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toDelegatedFunctionsDateAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -632,6 +659,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "application.applicationType.devolvedPowers.contractFlag")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toDevolvedPowersContractFlagAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -639,6 +667,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "application", qualifiedByName = "mapEcfFlag")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toEcfFlagAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -651,6 +680,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "client.name.firstName")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toFirstNameAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
@@ -658,6 +688,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "client.personalInformation.highProfileClient")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toHighProfileAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
@@ -665,6 +696,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "client.personalInformation.homeOfficeNumber")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toHomeOfficeNoAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
@@ -672,6 +704,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "application", qualifiedByName = "mapLarScopeFlag")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toLarScopeFlagAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -684,6 +717,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "application.leadProceedingChanged")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toLeadProceedingChangedAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -691,6 +725,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "client.personalInformation.maritalStatus")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toMaritalStatusAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
@@ -698,6 +733,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "application", qualifiedByName = "mapNewApplOrAmendment")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toNewApplOrAmendmentAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -710,6 +746,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "client.personalInformation.nationalInsuranceNumber")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toNiNoAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
@@ -717,6 +754,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", constant = "N/A")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toPoaOrBillFlagAttribute(
       AssessmentAttribute attribute);
 
@@ -724,6 +762,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "client.address.postalCode")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toPostCodeAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
@@ -731,6 +770,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "application.providerDetails.providerCaseReference")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toProviderCaseReferenceAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -738,6 +778,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "application", qualifiedByName = "mapProviderHasContract")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toProviderHasContractAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -750,6 +791,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "application.costs.requestedCostLimitation")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toReqCostLimitationAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
@@ -757,6 +799,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "client.name.surname")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toSurnameAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
@@ -764,6 +807,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "client.name.surnameAtBirth")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toSurnameAtBirthAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
 
@@ -771,6 +815,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "user.provider.id")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toUserProviderFirmIdAttribute(
       UserDetail user, AssessmentAttribute attribute);
 
@@ -778,6 +823,7 @@ public interface AssessmentMapper {
   @Mapping(target = "value", source = "user.userType")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toUserTypeAttribute(
       UserDetail user, AssessmentAttribute attribute);
 

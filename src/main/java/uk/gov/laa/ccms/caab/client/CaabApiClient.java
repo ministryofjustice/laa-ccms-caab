@@ -20,6 +20,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
+import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
@@ -868,6 +869,35 @@ public class CaabApiClient {
             RESOURCE_TYPE_EVIDENCE));
   }
 
+
+  /**
+   * Updates an existing evidence document with the provided data.
+   *
+   * @param data the evidence document details to be updated
+   * @param loginId the login ID of the user performing the update
+   * @return a {@link Mono} that completes when the update is finished, or emits an error if the
+   *         document has no ID
+   */
+  public Mono<Void> updateEvidenceDocument(
+      final EvidenceDocumentDetail data,
+      final String loginId) {
+
+    if (data.getId() == null) {
+      return Mono.error(new IllegalArgumentException("EvidenceDocumentDetail must have an ID"));
+    }
+
+    return caabApiWebClient
+        .patch()
+        .uri("/evidence/{evidence-document-id}", data.getId())
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(data)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiUpdateError(
+            e, RESOURCE_TYPE_EVIDENCE, "id", String.valueOf(data.getId())));
+  }
+
   /**
    * Fetches the uploaded evidence documents based on the supplied search criteria.
    * This method communicates with the CAAB API client to fetch the evidence documents.
@@ -949,7 +979,7 @@ public class CaabApiClient {
         .retrieve()
         .bodyToMono(Void.class)
         .onErrorResume(e -> caabApiClientErrorHandler.handleApiDeleteError(e,
-            RESOURCE_TYPE_EVIDENCE, "id", String.valueOf(e)));
+            RESOURCE_TYPE_EVIDENCE, "id", String.valueOf(evidenceDocumentId)));
   }
 
   /**

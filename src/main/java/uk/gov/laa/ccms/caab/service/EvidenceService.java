@@ -5,6 +5,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_D
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OPA_EVIDENCE_ITEMS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_DOCUMENT_CODE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS;
+import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MERITS;
 import static uk.gov.laa.ccms.caab.util.EvidenceUtil.isEvidenceProvided;
@@ -15,6 +16,7 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
@@ -25,6 +27,7 @@ import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
@@ -33,6 +36,7 @@ import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.util.EvidenceUtil;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 
@@ -47,6 +51,8 @@ public class EvidenceService {
   private final AssessmentService assessmentService;
 
   private final CaseOutcomeService caseOutcomeService;
+
+  private final EvidenceMapper evidenceMapper;
 
   private final CaabApiClient caabApiClient;
 
@@ -137,10 +143,12 @@ public class EvidenceService {
       final String documentType,
       final String fileExtension,
       final String documentDescription,
+      final String channel,
       final String userId,
       final String userType) {
 
     final Document document = new Document()
+        .channel(channel)
         .documentType(documentType)
         .fileExtension(fileExtension)
         .text(documentDescription);
@@ -164,6 +172,12 @@ public class EvidenceService {
       final String userId) {
 
     return caabApiClient.createEvidenceDocument(evidenceDocumentDetail, userId);
+  }
+
+  public Mono<Void> updateDocument(
+      final EvidenceDocumentDetail evidenceDocumentDetail,
+      final String userId) {
+    return caabApiClient.updateEvidenceDocument(evidenceDocumentDetail, userId);
   }
 
   /**
@@ -337,15 +351,15 @@ public class EvidenceService {
     final Mono<EvidenceDocumentDetails> evidenceUploadedMono =
         getEvidenceDocumentsForCase(caseReferenceNumber, APPLICATION);
 
-    Tuple2<List<EvidenceDocumentTypeLookupValueDetail>,
+    final Tuple2<List<EvidenceDocumentTypeLookupValueDetail>,
         EvidenceDocumentDetails> combinedResult = Mono.zip(
             evidenceRequiredMono,
             evidenceUploadedMono)
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException("Failed to retrieve evidence data"));
 
-    List<EvidenceDocumentTypeLookupValueDetail> evidenceRequired = combinedResult.getT1();
-    List<BaseEvidenceDocumentDetail> evidenceProvided = combinedResult.getT2().getContent();
+    final List<EvidenceDocumentTypeLookupValueDetail> evidenceRequired = combinedResult.getT1();
+    final List<BaseEvidenceDocumentDetail> evidenceProvided = combinedResult.getT2().getContent();
 
     return evidenceRequired.stream()
         .allMatch(required -> isEvidenceProvided(required.getDescription(), evidenceProvided));
@@ -359,9 +373,176 @@ public class EvidenceService {
             && Boolean.parseBoolean(attribute.getValue()));
   }
 
-  private Stream<AssessmentAttributeDetail> flattenAttributes(AssessmentDetail assessment) {
+  private Stream<AssessmentAttributeDetail> flattenAttributes(final AssessmentDetail assessment) {
     return assessment.getEntityTypes().stream()
         .flatMap(entityType -> entityType.getEntities().stream()
                 .flatMap(entity -> entity.getAttributes().stream()));
+  }
+
+  /**
+   * Uploads and updates the status of multiple evidence documents for a given case reference.
+   *
+   * @param evidenceDocumentDetails the details of the evidence documents to be uploaded and updated
+   * @param caseReferenceNumber the reference number of the case to which the documents belong
+   * @param user the user details for the upload operation
+   * @return a {@link Mono} that completes when all uploads and updates are done
+   */
+  public Mono<Void> uploadAndUpdateDocuments(
+      final EvidenceDocumentDetails evidenceDocumentDetails,
+      final String caseReferenceNumber,
+      final UserDetail user) {
+
+    if (evidenceDocumentDetails != null) {
+      return Flux.fromIterable(evidenceDocumentDetails.getContent())
+          .flatMap(evidenceDocumentDetail ->
+              uploadAndUpdateDocument(evidenceDocumentDetail, caseReferenceNumber, user))
+          .then();
+    } else {
+      return Mono.empty();
+    }
+  }
+
+  /**
+   * Uploads and updates the status of an evidence document for a given case reference.
+   * If the document has already been successfully transferred, no action is performed.
+   *
+   * @param evidenceDocument the evidence document to be uploaded and updated
+   * @param caseReferenceNumber the reference number of the case to which the document belongs
+   * @param user the user details for the upload operation
+   * @return a {@link Mono} that completes when the upload and update are done
+   */
+  public Mono<Void> uploadAndUpdateDocument(
+      final BaseEvidenceDocumentDetail evidenceDocument,
+      final String caseReferenceNumber,
+      final UserDetail user) {
+
+    // Return an empty Mono if the evidenceDocument is null
+    if (evidenceDocument == null) {
+      return Mono.empty();
+    }
+
+    // Retrieve and log the transfer status of the evidence document
+    final String transferStatus = evidenceDocument.getTransferStatus();
+    log.debug("evidenceDocument.getStatus() - " + transferStatus);
+
+    // If the document has already been successfully transferred, no further action is needed
+    if ("Success".equalsIgnoreCase(transferStatus)) {
+      return Mono.empty();
+    }
+
+    final Integer documentId = evidenceDocument.getId();
+
+    // Proceed to upload and update the document
+    return this.getEvidenceDocument(documentId)
+        .flatMap(detailedEvidenceDocument ->
+            uploadDocumentAndUpdateStatus(
+                detailedEvidenceDocument, caseReferenceNumber, user, documentId))
+        .onErrorResume(e -> handleUploadError(e, documentId, user.getLoginId()));
+  }
+
+  /**
+   * Uploads the document to the SOA API and updates its transfer status to "SUCCESS".
+   *
+   * @param detailedEvidenceDocument The detailed evidence document with full data.
+   * @param caseReferenceNumber      The case reference number.
+   * @param user                     The user details.
+   * @param documentId               The ID of the document.
+   * @return A Mono signaling when the operation has completed.
+   */
+  protected Mono<Void> uploadDocumentAndUpdateStatus(
+      final EvidenceDocumentDetail detailedEvidenceDocument,
+      final String caseReferenceNumber,
+      final UserDetail user,
+      final Integer documentId) {
+
+    // Map the detailed evidence document to the Document type required by the SOA API
+    final Document document = evidenceMapper.toDocument(detailedEvidenceDocument);
+
+    // Upload the document to the SOA API
+    return soaApiClient.updateDocument(
+            document,
+            null, // Assuming null is acceptable for the second parameter
+            caseReferenceNumber,
+            user.getLoginId(),
+            user.getUserType())
+        .then(
+            // After successful upload, update the document's transfer status to "SUCCESS"
+            updateDocument(
+                new EvidenceDocumentDetail()
+                    .id(documentId)
+                    .transferStatus("SUCCESS")
+                    .transferResponseCode("200")
+                    .transferResponseDescription("Successfully uploaded document"),
+                user.getLoginId()));
+  }
+
+  /**
+   * Handles errors that occur during the upload and updates the document's status to "FAILED".
+   *
+   * @param e        The exception that was thrown.
+   * @param documentId The ID of the document.
+   * @param loginId   The login ID of the user.
+   * @return A Mono signaling when the error handling has completed.
+   */
+  protected Mono<Void> handleUploadError(
+      final Throwable e,
+      final Integer documentId,
+      final String loginId) {
+    // Log the error that occurred during upload or update
+    log.error("Error uploading and updating document", e);
+
+    // Update the document's transfer status to "FAILED" due to the error
+    return updateDocument(
+        new EvidenceDocumentDetail()
+            .id(documentId)
+            .transferStatus("FAILED")
+            .transferResponseCode("404")
+            .transferResponseDescription("WebService call to operation uploadDocument failed"),
+        loginId);
+  }
+
+  /**
+   * Registers previously uploaded documents if they are not already registered.
+   *
+   * @param evidenceDocumentDetails the details of the evidence documents to be registered
+   * @param user the details of the user performing the registration
+   */
+  public void registerPreviouslyUploadedDocuments(
+      final EvidenceDocumentDetails evidenceDocumentDetails, final UserDetail user) {
+    if (evidenceDocumentDetails != null) {
+
+      for (final BaseEvidenceDocumentDetail evidenceDocumentDetail :
+          evidenceDocumentDetails.getContent()) {
+
+        log.debug("Documents ID - " + evidenceDocumentDetail.getId() + ", - DOC_TYPE - "
+            + evidenceDocumentDetail.getDocumentType().getDisplayValue());
+
+        if (evidenceDocumentDetail.getRegisteredDocumentId() == null) {
+
+          final String registeredDocumentId = registerDocument(
+              evidenceDocumentDetail.getDocumentType().getId(),
+              evidenceDocumentDetail.getFileExtension(),
+              evidenceDocumentDetail.getDescription(),
+              ELECTRONIC.getCode(),
+              user.getLoginId(),
+              user.getUserType())
+              .blockOptional()
+              .orElseThrow(() -> new CaabApplicationException("Failed to register document"));
+
+          if (registeredDocumentId != null) {
+            //set on the existing object in memory
+            evidenceDocumentDetail.setRegisteredDocumentId(registeredDocumentId);
+
+            //create the patch request
+            final EvidenceDocumentDetail patch = new EvidenceDocumentDetail()
+                .id(evidenceDocumentDetail.getId())
+                .registeredDocumentId(registeredDocumentId);
+
+            updateDocument(patch, user.getLoginId()).block();
+
+          }
+        }
+      }
+    }
   }
 }
