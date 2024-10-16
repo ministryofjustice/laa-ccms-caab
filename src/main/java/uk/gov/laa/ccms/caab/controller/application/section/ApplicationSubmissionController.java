@@ -730,8 +730,6 @@ public class ApplicationSubmissionController {
         evidenceService.getEvidenceDocumentsForCase(
             activeCase.getCaseReferenceNumber(), APPLICATION);
 
-    //need to block all 3 of these to get the data
-
     final Tuple4<ApplicationDetail, AssessmentDetails, AssessmentDetails, EvidenceDocumentDetails>
         applicationMonos = Mono.zip(
             applicationMono, meansAssessmentsMono, meritsAssessmentsMono, caseDocsMono)
@@ -748,7 +746,6 @@ public class ApplicationSubmissionController {
 
     final List<BaseEvidenceDocumentDetail> caseDocs = applicationMonos.getT4().getContent();
 
-    //add case to ebs
     final CaseTransactionResponse response =
         applicationService.createCase(
             user,
