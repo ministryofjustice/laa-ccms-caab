@@ -149,7 +149,7 @@ public class EvidenceServiceTest {
         eq(userType))).thenReturn(Mono.just(clientTransactionResponse));
 
     final Mono<String> resultMono = evidenceService.registerDocument(
-        documentType, fileExtension, documentDescription, userId, userType);
+        documentType, fileExtension, documentDescription, null, userId, userType);
 
     StepVerifier.create(resultMono)
         .expectNext(docId)

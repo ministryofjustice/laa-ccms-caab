@@ -10,7 +10,8 @@ public enum CcmsModule {
 
   APPLICATION("A", "Create Application"),
   AMENDMENT("M", "Application Amendment"),
-  OUTCOME("O", "Record Outcome");
+  OUTCOME("O", "Record Outcome"),
+  REQUEST("R", "Provider Request");
 
   private final String code;
 

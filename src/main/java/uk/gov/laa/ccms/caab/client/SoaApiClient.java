@@ -20,6 +20,7 @@ import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
+import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
@@ -342,6 +343,55 @@ public class SoaApiClient {
   }
 
   /**
+   * Creates a new case with the provided case details.
+   *
+   * @param loginId the login ID of the user creating the case
+   * @param userType the type of user creating the case
+   * @param caseDetail the details of the case to be created
+   * @return a {@link Mono} emitting the {@link CaseTransactionResponse} for the created case
+   */
+  public Mono<CaseTransactionResponse> createCase(
+      final String loginId,
+      final String userType,
+      final CaseDetail caseDetail) {
+    return soaApiWebClient
+        .post()
+        .uri(builder -> builder.path("/cases")
+            .build())
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(caseDetail)
+        .retrieve()
+        .bodyToMono(CaseTransactionResponse.class)
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiCreateError(
+            e, "Cases"));
+  }
+
+  /**
+   * Retrieves the case status for a given transaction.
+   *
+   * @param transactionId the unique identifier of the transaction
+   * @param loginId the login ID of the user making the request
+   * @param userType the type of user making the request
+   * @return a {@link Mono} emitting the {@link TransactionStatus} of the case
+   */
+  public Mono<TransactionStatus> getCaseStatus(
+      final String transactionId,
+      final String loginId,
+      final String userType) {
+    return soaApiWebClient
+        .get()
+        .uri("/cases/status/{transactionId}", transactionId)
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .retrieve()
+        .bodyToMono(TransactionStatus.class)
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
+            e, "case transaction status", "transaction id", transactionId));
+  }
+
+  /**
    * Fetches a summary of case references.
    *
    * @param loginId  The login identifier for the user.
@@ -546,12 +596,15 @@ public class SoaApiClient {
   public Mono<ClientTransactionResponse> updateDocument(
       final Document document,
       final String notificationId,
+      final String caseReferenceNumber,
       final String loginId,
       final String userType) {
 
     final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
     Optional.ofNullable(notificationId)
         .ifPresent(param -> queryParams.add("notification-reference", notificationId));
+    Optional.ofNullable(caseReferenceNumber)
+        .ifPresent(param -> queryParams.add("case-reference-number", caseReferenceNumber));
 
     return soaApiWebClient
         .put()
@@ -613,5 +666,6 @@ public class SoaApiClient {
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
             e, "Document", "id", documentId));
   }
+
 
 }

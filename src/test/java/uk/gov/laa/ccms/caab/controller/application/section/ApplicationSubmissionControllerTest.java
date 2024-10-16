@@ -4,7 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
@@ -15,11 +21,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static uk.gov.laa.ccms.caab.constants.CcmsModule.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_VIEW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_CASE;
 import static uk.gov.laa.ccms.caab.controller.application.section.ApplicationSubmissionController.CHILD_LOOKUP;
 import static uk.gov.laa.ccms.caab.controller.application.section.ApplicationSubmissionController.PARENT_LOOKUP;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
@@ -80,6 +88,7 @@ import uk.gov.laa.ccms.caab.mapper.context.submission.GeneralDetailsSubmissionSu
 import uk.gov.laa.ccms.caab.mapper.context.submission.OpponentSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.ProceedingSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -91,11 +100,13 @@ import uk.gov.laa.ccms.caab.model.summary.SubmissionSummaryDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.ClientService;
+import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 
 @ExtendWith(SpringExtension.class)
 class ApplicationSubmissionControllerTest {
@@ -118,6 +129,9 @@ class ApplicationSubmissionControllerTest {
 
   @Mock
   private ClientService clientService;
+
+  @Mock
+  private EvidenceService evidenceService;
 
   @Mock
   private ClientDetailMapper clientDetailsMapper;
@@ -191,7 +205,7 @@ class ApplicationSubmissionControllerTest {
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/home"));
 
-    verify(applicationService, Mockito.times(1))
+    verify(applicationService, times(1))
         .abandonApplication(applicationDetail, userDetail);
   }
 
@@ -238,14 +252,14 @@ class ApplicationSubmissionControllerTest {
         .andExpect(view().name("application/sections/application-summary-complete"))
         .andExpect(model().attributeExists("submissionSummary"));
 
-    verify(applicationService, Mockito.times(1)).getApplication(any());
-    verify(assessmentService, Mockito.times(1)).getAssessments(any(), any(), any());
-    verify(clientService, Mockito.times(1)).getClient(any(), any(), any());
-    verify(lookupService, Mockito.times(1)).getAssessmentSummaryAttributes(PARENT_LOOKUP);
-    verify(lookupService, Mockito.times(1)).getAssessmentSummaryAttributes(CHILD_LOOKUP);
-    verify(lookupService, Mockito.times(1)).getProceedingSubmissionMappingContext();
-    verify(lookupService, Mockito.times(1)).getOpponentSubmissionMappingContext();
-    verify(lookupService, Mockito.times(1)).getGeneralDetailsSubmissionMappingContext();
+    verify(applicationService, times(1)).getApplication(any());
+    verify(assessmentService, times(1)).getAssessments(any(), any(), any());
+    verify(clientService, times(1)).getClient(any(), any(), any());
+    verify(lookupService, times(1)).getAssessmentSummaryAttributes(PARENT_LOOKUP);
+    verify(lookupService, times(1)).getAssessmentSummaryAttributes(CHILD_LOOKUP);
+    verify(lookupService, times(1)).getProceedingSubmissionMappingContext();
+    verify(lookupService, times(1)).getOpponentSubmissionMappingContext();
+    verify(lookupService, times(1)).getGeneralDetailsSubmissionMappingContext();
   }
 
   @Test
@@ -291,8 +305,8 @@ class ApplicationSubmissionControllerTest {
         .andExpect(view().name("application/sections/application-submit-declaration"))
         .andExpect(model().attributeExists("summarySubmissionFormData"));
 
-    verify(lookupService, Mockito.times(1)).getDeclarations(any());
-    verify(submissionSummaryDisplayMapper, Mockito.times(1)).toDeclarationFormDataDynamicOptionList(declarationLookupDetail);
+    verify(lookupService, times(1)).getDeclarations(any());
+    verify(submissionSummaryDisplayMapper, times(1)).toDeclarationFormDataDynamicOptionList(declarationLookupDetail);
   }
 
   @Test
@@ -300,13 +314,56 @@ class ApplicationSubmissionControllerTest {
   void testApplicationDeclarationPost_success() throws Exception {
     final SummarySubmissionFormData formData = new SummarySubmissionFormData();
 
-    mockMvc.perform(post("/application/declaration")
-            .flashAttr("summarySubmissionFormData", formData))
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("todo"));
+    // Mock user session attributes
+    final UserDetail mockUser = buildUserDetail();
+    final ActiveCase mockActiveCase = ActiveCase.builder()
+        .providerId(1)
+        .applicationId(1)
+        .caseReferenceNumber("caseRef123")
+        .clientReferenceNumber("clientRef456")
+        .build();
 
-    verify(declarationSubmissionValidator, Mockito.times(1)).validate(any(), any());
-    Mockito.verifyNoInteractions(applicationService);
+    // Mock evidence service behavior
+    final EvidenceDocumentDetails mockEvidenceDocDetails = mock(EvidenceDocumentDetails.class);
+    when(evidenceService.getEvidenceDocumentsForCase(anyString(), eq(APPLICATION))).thenReturn(Mono.just(mockEvidenceDocDetails));
+    doNothing().when(evidenceService).registerPreviouslyUploadedDocuments(any(), any());
+    when(evidenceService.uploadAndUpdateDocuments(any(), anyString(), any())).thenReturn(Mono.empty());
+
+    // Mock application service
+    final ApplicationDetail mockApplicationDetail = mock(ApplicationDetail.class);
+    when(applicationService.getApplication(anyString())).thenReturn(Mono.just(mockApplicationDetail));
+
+    // Mock assessment service
+    final AssessmentDetails mockMeansAssessments = mock(AssessmentDetails.class);
+    final AssessmentDetails mockMeritsAssessments = mock(AssessmentDetails.class);
+    when(assessmentService.getAssessments(anyList(), anyString(), anyString()))
+        .thenReturn(Mono.just(mockMeansAssessments))
+        .thenReturn(Mono.just(mockMeritsAssessments));
+
+    // Mock application service case creation
+    final CaseTransactionResponse mockCaseTransactionResponse = mock(CaseTransactionResponse.class);
+    when(applicationService.createCase(any(), any(), any(), any(), any())).thenReturn(mockCaseTransactionResponse);
+    when(mockCaseTransactionResponse.getTransactionId()).thenReturn("transactionId123");
+
+    // Perform the test
+    mockMvc.perform(post("/application/declaration")
+            .flashAttr("summarySubmissionFormData", formData)
+            .sessionAttr(USER_DETAILS, mockUser)
+            .sessionAttr(ACTIVE_CASE, mockActiveCase))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/submissions/%s".formatted(SUBMISSION_CREATE_CASE)));
+
+    // Verify interactions
+    verify(declarationSubmissionValidator, times(1)).validate(any(), any());
+    verify(evidenceService, times(2)).getEvidenceDocumentsForCase(anyString(), eq(APPLICATION));
+    verify(evidenceService, times(1)).registerPreviouslyUploadedDocuments(any(), any());
+    verify(evidenceService, times(1)).uploadAndUpdateDocuments(any(), anyString(), any());
+    verify(applicationService, times(1)).getApplication(anyString());
+    verify(assessmentService, times(2)).getAssessments(anyList(), anyString(), anyString());
+    verify(applicationService, times(1)).createCase(any(), any(), any(), any(), any());
+
+    // Ensure no other interactions occur
+    Mockito.verifyNoMoreInteractions(applicationService, evidenceService, assessmentService);
   }
 
   @Test
@@ -398,10 +455,10 @@ class ApplicationSubmissionControllerTest {
   @DisplayName("Test validateProceedings with proceeding errors")
   void testValidateProceedings_WithErrors() {
     // Mock ProceedingDetail and ProceedingFlowFormData
-    ProceedingDetail proceedingDetail = new ProceedingDetail();
+    final ProceedingDetail proceedingDetail = new ProceedingDetail();
     proceedingDetail.setTypeOfOrder(new StringDisplayValue().id("orderTypeId").displayValue("Order Type"));
 
-    ProceedingFlowFormData proceedingFlowFormData = new ProceedingFlowFormData("edit");
+    final ProceedingFlowFormData proceedingFlowFormData = new ProceedingFlowFormData("edit");
     proceedingFlowFormData.setMatterTypeDetails(new ProceedingFormDataMatterTypeDetails());
     proceedingFlowFormData.setProceedingDetails(new ProceedingFormDataProceedingDetails());
 
@@ -441,9 +498,10 @@ class ApplicationSubmissionControllerTest {
     when(model.containsAttribute("proceedingFurtherDetails")).thenReturn(true);
     when(model.getAttribute("proceedingFurtherDetails")).thenReturn(List.of("Further Details validation failed."));
 
-    List<ProceedingDetail> proceedings = List.of(proceedingDetail);
+    final List<ProceedingDetail> proceedings = List.of(proceedingDetail);
 
-    boolean result = applicationSubmissionController.validateProceedings(proceedings, model);
+    final boolean result = Boolean.TRUE.equals(
+        applicationSubmissionController.validateProceedings(proceedings, model).block());
 
     assertTrue(result);
   }
@@ -453,7 +511,8 @@ class ApplicationSubmissionControllerTest {
   void testValidateProceedings_WithNoProceedings() {
     final List<ProceedingDetail> proceedings = List.of();
 
-    final boolean result = applicationSubmissionController.validateProceedings(proceedings, model);
+    final boolean result = Boolean.TRUE.equals(
+        applicationSubmissionController.validateProceedings(proceedings, model).block());
 
     assertFalse(result);
   }
@@ -461,7 +520,8 @@ class ApplicationSubmissionControllerTest {
   @Test
   @DisplayName("Test validateProceedings with null proceedings returns false")
   void testValidateProceedings_WithNullProceedings() {
-    final boolean result = applicationSubmissionController.validateProceedings(null, model);
+    final boolean result = Boolean.TRUE.equals(
+        applicationSubmissionController.validateProceedings(null, model).block());
 
     assertFalse(result);
   }

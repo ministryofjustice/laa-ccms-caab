@@ -246,7 +246,7 @@ public class SoaModelUtils {
                 .address(buildAddressDetail("opo"))
                 .contactDetails(buildContactDetail("op"))
                 .contactName("name")
-                .currentlyTrading("curtrad")
+                .currentlyTrading(true)
                 .relationToCase("reltocase")
                 .organizationName("orgname")
                 .organizationType("orgtype")
@@ -347,13 +347,17 @@ public class SoaModelUtils {
                                 .caption(prefix + "capti")
                                 .instanceLabel(prefix + "label")
                                 .addAttributesItem(
-                                    new OpaAttribute()
-                                        .userDefinedInd(Boolean.TRUE)
-                                        .attribute(prefix + "attt")
-                                        .responseText(prefix + "response")
-                                        .responseType(prefix + "restype")
-                                        .responseValue(prefix + "resval")
-                                        .caption(prefix + "caption")))));
+                                    buildOpaAttribute(prefix)))));
+  }
+
+  public static OpaAttribute buildOpaAttribute(final String prefix) {
+    return new OpaAttribute()
+        .userDefinedInd(Boolean.TRUE)
+        .attribute(prefix + "attt")
+        .responseText(prefix + "response")
+        .responseType(prefix + "restype")
+        .responseValue(prefix + "resval")
+        .caption(prefix + "caption");
   }
 
   public static Award buildCostAward() {

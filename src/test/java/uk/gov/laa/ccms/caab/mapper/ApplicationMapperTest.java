@@ -16,9 +16,13 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTH
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_ORGANISATION;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
+import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildProceedingNameAttribute;
+import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildBaseApplication;
+import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildPriorAuthorityDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildPriorAuthorityTypeDetail;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildAddressDetail;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildAssessmentResult;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildBaseClient;
@@ -39,25 +43,41 @@ import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildScopeLimitation;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildTimeRelatedAward;
 
 import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.data.domain.PageImpl;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AssessmentResult;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
+import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.model.BooleanDisplayValue;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.ClientDetail;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
+import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.LiablePartyDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
@@ -69,21 +89,31 @@ import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.RecoveryDetail;
 import uk.gov.laa.ccms.caab.model.ReferenceDataItemDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
+import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.Award;
 import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
+import uk.gov.laa.ccms.soa.gateway.model.CaseDoc;
 import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
+import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
 import uk.gov.laa.ccms.soa.gateway.model.CostLimitation;
 import uk.gov.laa.ccms.soa.gateway.model.LinkedCase;
+import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
+import uk.gov.laa.ccms.soa.gateway.model.OpaAttribute;
 import uk.gov.laa.ccms.soa.gateway.model.OtherParty;
+import uk.gov.laa.ccms.soa.gateway.model.OtherPartyOrganisation;
+import uk.gov.laa.ccms.soa.gateway.model.OtherPartyPerson;
 import uk.gov.laa.ccms.soa.gateway.model.OutcomeDetail;
 import uk.gov.laa.ccms.soa.gateway.model.PriorAuthority;
+import uk.gov.laa.ccms.soa.gateway.model.PriorAuthorityAttribute;
+import uk.gov.laa.ccms.soa.gateway.model.RecordHistory;
 import uk.gov.laa.ccms.soa.gateway.model.Recovery;
 import uk.gov.laa.ccms.soa.gateway.model.ScopeLimitation;
 import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
@@ -93,6 +123,8 @@ public class ApplicationMapperTest {
 
   private final ApplicationMapper applicationMapper = new ApplicationMapperImpl() {
   };
+
+  private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
   @Test
   void testToApplicationDetailDevolvedPowers() {
@@ -574,7 +606,7 @@ public class ApplicationMapperTest {
         result.getRelationshipToCase());
     assertFalse(result.getDeleteInd());
 
-    assertEquals(Boolean.parseBoolean(soaOtherParty.getOrganisation().getCurrentlyTrading()),
+    assertEquals(soaOtherParty.getOrganisation().isCurrentlyTrading(),
         result.getCurrentlyTrading());
     assertEquals(soaOtherParty.getOrganisation().getOtherInformation(),
         result.getOtherInformation());
@@ -1088,6 +1120,596 @@ public class ApplicationMapperTest {
                 .code("priorAuthCode")
                 .description("priorAuthDesc"))))
         .build();
+  }
+
+  @Test
+  @DisplayName("Test toCaseDetail with valid CaseMappingContext")
+  void testToCaseDetail_Valid() {
+    final ApplicationDetail applicationDetail = buildApplicationDetail(1, false, new Date());
+    final LinkedCaseDetail linkedCaseDetail = new LinkedCaseDetail().lscCaseReference("LC123").relationToCase("Related");
+    final PriorAuthorityDetail priorAuthorityDetail = new PriorAuthorityDetail().summary("Test Prior Authority");
+    final BaseEvidenceDocumentDetail caseDocDetail = new BaseEvidenceDocumentDetail().registeredDocumentId("DOC123");
+    applicationDetail.setLinkedCases(Collections.singletonList(linkedCaseDetail));
+    applicationDetail.setPriorAuthorities(Collections.singletonList(priorAuthorityDetail));
+
+    final CaseMappingContext context = CaseMappingContext.builder()
+        .tdsApplication(applicationDetail)
+        .caseDocs(Collections.singletonList(caseDocDetail))
+        .build();
+
+    final CaseDetail result = applicationMapper.toCaseDetail(context);
+
+    assertNotNull(result);
+    assertEquals(applicationDetail.getCaseReferenceNumber(), result.getCaseReferenceNumber());
+    assertNotNull(result.getApplicationDetails());
+    assertNotNull(result.getLinkedCases());
+    assertEquals(1, result.getLinkedCases().size());
+    assertEquals("LC123", result.getLinkedCases().get(0).getCaseReferenceNumber());
+    assertNotNull(result.getPriorAuthorities());
+    assertEquals(1, result.getPriorAuthorities().size());
+    assertEquals("Test Prior Authority", result.getPriorAuthorities().get(0).getDescription());
+    assertNotNull(result.getCaseDocs());
+    assertEquals(1, result.getCaseDocs().size());
+    assertEquals("DOC123", result.getCaseDocs().get(0).getCcmsDocumentId());
+    assertNotNull(result.getRecordHistory());
+  }
+
+  @Test
+  @DisplayName("Test toCaseDetail with null CaseMappingContext")
+  void testToCaseDetail_Null() {
+    assertNull(applicationMapper.toCaseDetail(null));
+  }
+
+
+  @Test
+  @DisplayName("Test toSoaCaseDoc with valid BaseEvidenceDocumentDetail")
+  void testToSoaCaseDoc_Valid() {
+    final BaseEvidenceDocumentDetail evidenceDocumentDetail
+        = new BaseEvidenceDocumentDetail()
+        .documentType(new StringDisplayValue()
+            .displayValue("Test Document"))
+        .registeredDocumentId("12345");
+
+    final CaseDoc result = applicationMapper.toSoaCaseDoc(evidenceDocumentDetail);
+
+    assertNotNull(result);
+    assertEquals("12345", result.getCcmsDocumentId());
+    assertEquals("Test Document", result.getDocumentSubject());
+  }
+
+  @Test
+  @DisplayName("Test toSoaCaseDoc with null BaseEvidenceDocumentDetail")
+  void testToSoaCaseDoc_Null() {
+    assertNull(applicationMapper.toSoaCaseDoc(null));
+  }
+
+  @Test
+  @DisplayName("Test toSoaPriorAuthority with valid PriorAuthorityDetail")
+  void testToSoaPriorAuthority_Valid() {
+    final PriorAuthorityDetail priorAuthorityDetail = new PriorAuthorityDetail()
+        .summary("Test Summary")
+        .justification("Test Justification")
+        .amountRequested(new BigDecimal("1000.00"))
+        .status("Approved")
+        .items(Collections.singletonList(new ReferenceDataItemDetail()
+            .code(new StringDisplayValue().id("PA123").displayValue("Test Attribute"))));
+
+    final PriorAuthority result = applicationMapper.toSoaPriorAuthority(priorAuthorityDetail);
+
+    assertNotNull(result);
+    assertEquals("Test Summary", result.getDescription());
+    assertEquals("Test Justification", result.getReasonForRequest());
+    assertEquals(new BigDecimal("1000.00"), result.getRequestAmount());
+    assertEquals("Approved", result.getDecisionStatus());
+    assertNotNull(result.getDetails());
+    assertEquals(1, result.getDetails().size());
+    assertEquals("PA123", result.getDetails().get(0).getName());
+  }
+
+  @Test
+  @DisplayName("Test toSoaPriorAuthority with null PriorAuthorityDetail")
+  void testToSoaPriorAuthority_Null() {
+    assertNull(applicationMapper.toSoaPriorAuthority(null));
+  }
+
+
+  @Test
+  @DisplayName("Test toSoaPriorAuthorityAttribute with valid ReferenceDataItemDetail")
+  void testToSoaPriorAuthorityAttribute_Valid() {
+    final ReferenceDataItemDetail referenceDataItemDetail = new ReferenceDataItemDetail()
+        .code(new StringDisplayValue().id("AttributeName"))
+        .value(new StringDisplayValue().id("AttributeValue"));
+
+    final PriorAuthorityAttribute result = applicationMapper.toSoaPriorAuthorityAttribute(referenceDataItemDetail);
+
+    assertNotNull(result);
+    assertEquals("AttributeName", result.getName());
+    assertEquals("AttributeValue", result.getValue());
+  }
+
+  @Test
+  @DisplayName("Test toSoaPriorAuthorityAttribute with null ReferenceDataItemDetail")
+  void testToSoaPriorAuthorityAttribute_Null() {
+    assertNull(applicationMapper.toSoaPriorAuthorityAttribute(null));
+  }
+
+
+  @Test
+  @DisplayName("Test toSoaLinkedCase with valid LinkedCaseDetail")
+  void testToSoaLinkedCase_Valid() {
+
+    final LinkedCaseDetail linkedCaseDetail = new LinkedCaseDetail()
+        .lscCaseReference("LSC123")
+        .relationToCase("Related Case");
+
+    final LinkedCase result = applicationMapper.toSoaLinkedCase(linkedCaseDetail);
+
+    assertNotNull(result);
+    assertEquals("LSC123", result.getCaseReferenceNumber());
+    assertEquals("Related Case", result.getLinkType());
+  }
+
+  @Test
+  @DisplayName("Test toSoaLinkedCase with null LinkedCaseDetail")
+  void testToSoaLinkedCase_Null() {
+    assertNull(applicationMapper.toSoaLinkedCase(null));
+  }
+
+
+  @Test
+  @DisplayName("Test toSubmittedApplicationDetails with valid CaseMappingContext")
+  void testToSubmittedApplicationDetails_Valid() {
+    final ApplicationDetail applicationDetail = new ApplicationDetail();
+    applicationDetail.setApplicationType(new ApplicationType().id("type123"));
+    applicationDetail.setCorrespondenceAddress(new AddressDetail().preferredAddress("preferred"));
+    applicationDetail.setClient(new ClientDetail().reference("client123"));
+    applicationDetail.setProviderDetails(new ApplicationProviderDetails().providerCaseReference("CASE123"));
+    applicationDetail.setCategoryOfLaw(new StringDisplayValue().id("category123"));
+    applicationDetail.setCosts(new CostStructureDetail().requestedCostLimitation(new BigDecimal("1000.00")));
+
+    final CaseMappingContext context = CaseMappingContext.builder()
+        .tdsApplication(applicationDetail)
+        .meansAssessment(new AssessmentDetail())
+        .meritsAssessment(new AssessmentDetail())
+        .caseDocs(Collections.singletonList(new BaseEvidenceDocumentDetail()))
+        .build();
+
+    final SubmittedApplicationDetails result = applicationMapper.toSubmittedApplicationDetails(context);
+
+    assertNotNull(result);
+    assertNotNull(result.getLarDetails());
+    assertEquals("client123", result.getClient().getClientReferenceNumber());
+    assertEquals("preferred", result.getPreferredAddress());
+    assertEquals("CASE123", result.getProviderDetails().getProviderCaseReferenceNumber());
+    assertEquals("category123", result.getCategoryOfLaw().getCategoryOfLawCode());
+    assertEquals(new BigDecimal("1000.00"), result.getCategoryOfLaw().getRequestedAmount());
+  }
+
+  @Test
+  @DisplayName("Test toSubmittedApplicationDetails with null CaseMappingContext")
+  void testToSubmittedApplicationDetails_Null() {
+    assertNull(applicationMapper.toSubmittedApplicationDetails(null));
+  }
+
+
+  @Test
+  @DisplayName("Test toBaseClient with valid ClientDetail")
+  void testToBaseClient_Valid() {
+    final ClientDetail clientDetail = new ClientDetail();
+    clientDetail.setReference("12345");
+    clientDetail.setFirstName("John");
+    clientDetail.setSurname("Doe");
+
+    final BaseClient result = applicationMapper.toBaseClient(clientDetail);
+
+    assertNotNull(result);
+    assertEquals("12345", result.getClientReferenceNumber());
+    assertEquals("John", result.getFirstName());
+    assertEquals("Doe", result.getSurname());
+  }
+
+  @Test
+  @DisplayName("Test toBaseClient with null ClientDetail")
+  void testToBaseClient_Null() {
+    assertNull(applicationMapper.toBaseClient(null));
+  }
+
+  @Test
+  @DisplayName("Test toSoaProviderDetail with valid ApplicationProviderDetails")
+  void testToSoaProviderDetail_Valid() {
+    final StringDisplayValue providerContact = new StringDisplayValue();
+    providerContact.setId("user123");
+
+    final ApplicationProviderDetails providerDetails = new ApplicationProviderDetails();
+    providerDetails.setProviderContact(providerContact);
+    providerDetails.setProviderCaseReference("CASE123");
+    providerDetails.provider(new IntDisplayValue().id(100));
+    providerDetails.office(new IntDisplayValue().id(200));
+    providerDetails.supervisor(new StringDisplayValue().id("300"));
+    providerDetails.feeEarner(new StringDisplayValue().id("400"));
+
+    final uk.gov.laa.ccms.soa.gateway.model.ProviderDetail result = applicationMapper.toSoaProviderDetail(providerDetails);
+
+    assertNotNull(result);
+    assertEquals("user123", result.getContactUserId().getUserLoginId());
+    assertEquals("CASE123", result.getProviderCaseReferenceNumber());
+    assertEquals("100", result.getProviderFirmId());
+    assertEquals("200", result.getProviderOfficeId());
+    assertEquals("300", result.getSupervisorContactId());
+    assertEquals("400", result.getFeeEarnerContactId());
+  }
+
+  @Test
+  @DisplayName("Test toSoaProviderDetail with null ApplicationProviderDetails")
+  void testToSoaProviderDetail_Null() {
+    assertNull(applicationMapper.toSoaProviderDetail(null));
+  }
+
+
+  @ParameterizedTest
+  @CsvSource({
+      "'LAW123', 'Test Law Description', '1000', '500', '1000'",  // Case with requested amount
+      "'LAW124', 'Another Law Description', '', '500', '500'",    // Case with default amount (requested amount is null)
+      "'LAW125', 'Third Law Description', '', '', ''"             // Case with no costs (null amounts)
+  })
+  @DisplayName("Parameterized Test toSoaCategoryOfLaw with different ApplicationDetail inputs")
+  void testToSoaCategoryOfLaw_Parameterized(
+      final String lawCode,
+      final String lawDescription,
+      final String requestedCostStr,
+      final String defaultCostStr,
+      final String expectedCostStr) {
+
+    // Setup: Create mock objects for ApplicationDetail and related fields
+    final StringDisplayValue categoryOfLaw = new StringDisplayValue();
+    categoryOfLaw.setId(lawCode);
+    categoryOfLaw.setDisplayValue(lawDescription);
+
+    final CostStructureDetail costStructureDetail = new CostStructureDetail();
+    costStructureDetail.setRequestedCostLimitation(requestedCostStr.isEmpty() ? null : new BigDecimal(requestedCostStr));
+    costStructureDetail.setDefaultCostLimitation(defaultCostStr.isEmpty() ? null : new BigDecimal(defaultCostStr));
+
+    final ApplicationDetail applicationDetail = new ApplicationDetail();
+    applicationDetail.setCategoryOfLaw(categoryOfLaw);
+    applicationDetail.setCosts(costStructureDetail);
+
+    // Call the method under test
+    final CategoryOfLaw result = applicationMapper.toSoaCategoryOfLaw(applicationDetail);
+
+    // Assertions
+    if (expectedCostStr.isEmpty()) {
+      assertNull(result.getRequestedAmount());  // No costs provided, so requested amount should be null
+    } else {
+      assertNotNull(result);
+      assertEquals(lawCode, result.getCategoryOfLawCode());
+      assertEquals(lawDescription, result.getCategoryOfLawDescription());
+      assertEquals(new BigDecimal(expectedCostStr), result.getRequestedAmount());
+    }
+  }
+
+  @Test
+  @DisplayName("Test toSoaCategoryOfLaw with null ApplicationDetail")
+  void testToSoaCategoryOfLaw_Null() {
+    assertNull(applicationMapper.toSoaCategoryOfLaw(null));
+  }
+
+
+  @Test
+  @DisplayName("Test toSoaAddressDetail with valid AddressDetail")
+  void testToSoaAddressDetail_Valid() {
+    final AddressDetail addressDetail = new AddressDetail();
+    addressDetail.setId(123);
+    addressDetail.setHouseNameOrNumber("1234 House");
+    addressDetail.setCareOf("Care Of Name");
+    addressDetail.setPostcode("12345");
+    addressDetail.setAddressLine1("Line 1");
+    addressDetail.setAddressLine2("Line 2");
+    addressDetail.setCity("Test City");
+    addressDetail.setCountry("Test Country");
+    addressDetail.setCounty("Test County");
+
+    final uk.gov.laa.ccms.soa.gateway.model.AddressDetail result = applicationMapper.toSoaAddressDetail(addressDetail);
+
+    assertNotNull(result);
+    assertEquals("123", result.getAddressId());
+    assertEquals("1234 House", result.getHouse());
+    assertEquals("Care Of Name", result.getCareOfName());
+    assertEquals("12345", result.getPostalCode());
+    assertEquals("Line 1", result.getAddressLine1());
+    assertEquals("Line 2", result.getAddressLine2());
+    assertEquals("Test City", result.getCity());
+    assertEquals("Test Country", result.getCountry());
+    assertEquals("Test County", result.getCounty());
+  }
+
+  @Test
+  @DisplayName("Test toSoaAddressDetail with null AddressDetail")
+  void testToSoaAddressDetail_Null() {
+    assertNull(applicationMapper.toSoaAddressDetail(null));
+  }
+
+  @Test
+  @DisplayName("Test toSoaProceedingDetail with valid ProceedingDetail")
+  void testToSoaProceedingDetail_Valid() {
+    final ProceedingDetail proceedingDetail = new ProceedingDetail();
+    proceedingDetail.setId(123);
+    proceedingDetail.setStatus(new StringDisplayValue().id("Status"));
+    proceedingDetail.setTypeOfOrder(new StringDisplayValue().id("Order"));
+    proceedingDetail.setMatterType(new StringDisplayValue().id("Matter"));
+    proceedingDetail.setLevelOfService(new StringDisplayValue().id("Service"));
+    proceedingDetail.setClientInvolvement(new StringDisplayValue().id("Involvement"));
+    proceedingDetail.setLeadProceedingInd(true);
+    proceedingDetail.setDescription("Test Description");
+    proceedingDetail.setDateCostsValid(new Date());
+    proceedingDetail.setStage("Test Stage");
+    proceedingDetail.setDateDevolvedPowersUsed(new Date());
+    proceedingDetail.setDateGranted(new Date());
+
+    final uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail result = applicationMapper.toSoaProceedingDetail(proceedingDetail);
+
+    assertNotNull(result);
+    assertEquals("P_123", result.getProceedingCaseId());
+    assertEquals("Status", result.getStatus());
+    assertTrue(result.isLeadProceedingIndicator());
+    assertEquals("Test Description", result.getProceedingDescription());
+    assertEquals("Order", result.getOrderType());
+    assertEquals("Matter", result.getMatterType());
+    assertEquals("Service", result.getLevelOfService());
+    assertEquals("Involvement", result.getClientInvolvementType());
+    assertNotNull(result.getDateCostsValid());
+    assertEquals("Test Stage", result.getStage());
+    assertNotNull(result.getDateDevolvedPowersUsed());
+    assertNotNull(result.getDateGranted());
+  }
+
+  @Test
+  @DisplayName("Test toSoaProceedingDetail with null ProceedingDetail")
+  void testToSoaProceedingDetail_Null() {
+    assertNull(applicationMapper.toSoaProceedingDetail(null));
+  }
+
+  @Test
+  @DisplayName("Test toSoaScopeLimitation with valid ScopeLimitationDetail")
+  void testToSoaScopeLimitation_Valid() {
+    final ScopeLimitationDetail scopeLimitationDetail = new ScopeLimitationDetail();
+    scopeLimitationDetail.setScopeLimitation(new StringDisplayValue().id("scopeId").displayValue("Scope Description"));
+    scopeLimitationDetail.setScopeLimitationWording("Scope Limitation Wording");
+    scopeLimitationDetail.setDelegatedFuncApplyInd(new BooleanDisplayValue().flag(true));
+
+    final ScopeLimitation result = applicationMapper.toSoaScopeLimitation(scopeLimitationDetail);
+
+    assertNotNull(result);
+    assertEquals("scopeId", result.getScopeLimitation());
+    assertEquals("Scope Limitation Wording", result.getScopeLimitationWording());
+    assertTrue(result.isDelegatedFunctionsApply());
+  }
+
+  @Test
+  @DisplayName("Test toSoaScopeLimitation with null ScopeLimitationDetail")
+  void testToSoaScopeLimitation_Null() {
+    assertNull(applicationMapper.toSoaScopeLimitation(null));
+  }
+
+
+  @Test
+  @DisplayName("Test toSoaOtherParty with individual type OpponentDetail")
+  void testToSoaOtherParty_Individual() {
+    final OpponentDetail opponentDetail = new OpponentDetail();
+    opponentDetail.setType(OPPONENT_TYPE_INDIVIDUAL);
+    opponentDetail.setRelationshipToClient("ClientRelInd");
+    opponentDetail.setRelationshipToCase("CaseRelInd");
+    opponentDetail.setNationalInsuranceNumber("NI12345");
+    opponentDetail.setLegalAided(true);
+
+    final OtherParty result = applicationMapper.toSoaOtherParty(opponentDetail);
+
+    assertNotNull(result);
+    assertNotNull(result.getPerson());
+    assertNull(result.getOrganisation());
+    assertEquals("ClientRelInd", result.getPerson().getRelationToClient());
+    assertEquals("CaseRelInd", result.getPerson().getRelationToCase());
+    assertEquals("NI12345", result.getPerson().getNiNumber());
+    assertTrue(result.getPerson().isPartyLegalAidedInd());
+  }
+
+  @Test
+  @DisplayName("Test toSoaOtherParty with organisation type OpponentDetail")
+  void testToSoaOtherParty_Organisation() {
+    final OpponentDetail opponentDetail = new OpponentDetail();
+    opponentDetail.setType(OPPONENT_TYPE_ORGANISATION);
+    opponentDetail.setRelationshipToClient("ClientRelOrg");
+    opponentDetail.setRelationshipToCase("CaseRelOrg");
+    opponentDetail.setOrganisationName("OrgName");
+    opponentDetail.setOrganisationType("Private");
+
+    final OtherParty result = applicationMapper.toSoaOtherParty(opponentDetail);
+
+    assertNotNull(result);
+    assertNull(result.getPerson());
+    assertNotNull(result.getOrganisation());
+    assertEquals("ClientRelOrg", result.getOrganisation().getRelationToClient());
+    assertEquals("CaseRelOrg", result.getOrganisation().getRelationToCase());
+    assertEquals("OrgName", result.getOrganisation().getOrganizationName());
+    assertEquals("Private", result.getOrganisation().getOrganizationType());
+  }
+
+  @Test
+  @DisplayName("Test toSoaOtherParty with null or unknown type OpponentDetail")
+  void testToSoaOtherParty_NullOrUnknownType() {
+    final OpponentDetail opponentDetail = new OpponentDetail();
+    opponentDetail.setType(null);
+
+    final OtherParty result = applicationMapper.toSoaOtherParty(opponentDetail);
+
+    assertNotNull(result);
+    assertNull(result.getPerson());
+    assertNull(result.getOrganisation());
+  }
+
+  @Test
+  @DisplayName("Test toSoaOtherParty with null OpponentDetail")
+  void testToSoaOtherParty_Null() {
+    assertNull(applicationMapper.toSoaOtherParty(null));
+  }
+
+  @ParameterizedTest
+  @DisplayName("Test toSoaPerson with valid OpponentDetail inputs")
+  @CsvSource({
+      "'TestClientRel', 'TestCaseRel', '123456', 'true', 'true', 'John Doe', 'Test Employer', 'Employer Address', '1000', '500', '1990-01-01', 'Employed', 'Cert123', 'Monthly', '2023-10-12', 'OtherInfo'",
+      "'ClientRel2', 'CaseRel2', '987654', 'false', 'false', 'Jane Smith', 'Another Employer', 'Another Address', '2000', '1000', '1985-05-05', 'Unemployed', 'Cert456', 'Weekly', '2023-08-20', 'Info2'"
+  })
+  void testToSoaPerson_Valid(final String relationToClient, final String relationToCase, final String niNumber, final boolean legalAided,
+                             final boolean courtOrderedMeansAssesment, final String contactName, final String employerName,
+                             final String employerAddress, final String assessedIncome, final String assessedAssets, final String dateOfBirth,
+                             final String employmentStatus, final String certificateNumber, final String assessedIncomeFrequency,
+                             final String assessmentDate, final String otherInformation) throws ParseException {
+
+    final Date parsedDateOfBirth = dateFormat.parse(dateOfBirth);
+    final Date parsedAssessmentDate = dateFormat.parse(assessmentDate);
+
+    final OpponentDetail opponentDetail = new OpponentDetail();
+    opponentDetail.setRelationshipToClient(relationToClient);
+    opponentDetail.setRelationshipToCase(relationToCase);
+    opponentDetail.setNationalInsuranceNumber(niNumber);
+    opponentDetail.setLegalAided(legalAided);
+    opponentDetail.setCourtOrderedMeansAssessment(courtOrderedMeansAssesment);
+    opponentDetail.setContactNameRole(contactName);
+    opponentDetail.setEmployerName(employerName);
+    opponentDetail.setEmployerAddress(employerAddress);
+    opponentDetail.setAssessedIncome(new BigDecimal(assessedIncome));
+    opponentDetail.setAssessedAssets(new BigDecimal(assessedAssets));
+    opponentDetail.setDateOfBirth(parsedDateOfBirth);
+    opponentDetail.setEmploymentStatus(employmentStatus);
+    opponentDetail.setCertificateNumber(certificateNumber);
+    opponentDetail.setAssessedIncomeFrequency(assessedIncomeFrequency);
+    opponentDetail.setAssessmentDate(parsedAssessmentDate);
+    opponentDetail.setOtherInformation(otherInformation);
+
+    // Call the method under test
+    final OtherPartyPerson result = applicationMapper.toSoaPerson(opponentDetail);
+
+    assertNotNull(result);
+    assertEquals(relationToClient, result.getRelationToClient());
+    assertEquals(relationToCase, result.getRelationToCase());
+    assertEquals(niNumber, result.getNiNumber());
+    assertEquals(legalAided, result.isPartyLegalAidedInd());
+    assertEquals(courtOrderedMeansAssesment, result.isCourtOrderedMeansAssesment());
+    assertEquals(contactName, result.getContactName());
+    assertEquals(employerName, result.getEmployersName());
+    assertEquals(employerAddress, result.getOrganizationAddress());
+    assertEquals(new BigDecimal(assessedIncome).setScale(2), result.getAssessedIncome());
+    assertEquals(new BigDecimal(assessedAssets).setScale(2), result.getAssessedAssets());
+    assertEquals(parsedDateOfBirth, result.getDateOfBirth());
+    assertEquals(employmentStatus, result.getEmploymentStatus());
+    assertEquals(certificateNumber, result.getCertificateNumber());
+    assertEquals(assessedIncomeFrequency, result.getAssessedIncomeFrequency());
+    assertEquals(parsedAssessmentDate, result.getAssessmentDate());
+    assertEquals(otherInformation, result.getOtherInformation());
+  }
+
+  @Test
+  @DisplayName("Test toSoaPerson with null OpponentDetail")
+  void testToSoaPerson_NullOpponentDetail() {
+    assertNull(applicationMapper.toSoaPerson(null));
+  }
+
+  @ParameterizedTest
+  @DisplayName("Test toSoaOrganisation with valid OpponentDetail inputs")
+  @CsvSource({
+      "'ClientRelation', 'CaseRelation', 'OrgName', 'OrgType', 'ContactName', 'true', 'OtherInfo'",
+      "'ClientRelation2', 'CaseRelation2', 'OrgName2', 'OrgType2', 'ContactName2', 'false', 'OtherInfo2'"
+  })
+  void testToSoaOrganisation_Valid(final String relationToClient, final String relationToCase, final String organisationName, final String organisationType,
+                                   final String contactName, final boolean currentlyTrading, final String otherInformation) {
+    final OpponentDetail opponentDetail = new OpponentDetail();
+    opponentDetail.setRelationshipToClient(relationToClient);
+    opponentDetail.setRelationshipToCase(relationToCase);
+    opponentDetail.setOrganisationName(organisationName);
+    opponentDetail.setOrganisationType(organisationType);
+    opponentDetail.setContactNameRole(contactName);
+    opponentDetail.setCurrentlyTrading(currentlyTrading);
+    opponentDetail.setOtherInformation(otherInformation);
+
+    final OtherPartyOrganisation result = applicationMapper.toSoaOrganisation(opponentDetail);
+
+    assertNotNull(result);
+    assertEquals(relationToClient, result.getRelationToClient());
+    assertEquals(relationToCase, result.getRelationToCase());
+    assertEquals(organisationName, result.getOrganizationName());
+    assertEquals(organisationType, result.getOrganizationType());
+    assertEquals(contactName, result.getContactName());
+    assertEquals(currentlyTrading, result.isCurrentlyTrading());
+    assertEquals(otherInformation, result.getOtherInformation());
+    assertNull(result.getAddress());
+  }
+
+  @Test
+  @DisplayName("Test toSoaOrganisation with null OpponentDetail")
+  void testToSoaOrganisation_NullOpponentDetail() {
+    assertNull(applicationMapper.toSoaOrganisation(null));
+  }
+
+  @ParameterizedTest
+  @DisplayName("Test toOpaAttribute with different AssessmentAttributeDetail inputs, with different user defined indicator values")
+  @CsvSource({
+      "'TestName', 'TestType', 'TestValue', 'nonIntermediate', true",
+      "'SA_TestName', 'TestType', 'TestValue', 'intermediate', false",
+      "'TestName', 'TestType', 'TestValue', 'intermediate', false",
+      "'SA_TestName', 'TestType', 'TestValue', 'nonIntermediate', false",
+      "'TestName', 'TestType', 'TestValue', 'nonIntermediate', true"
+  })
+  void testToOpaAttribute_Valid_userDefinedIndicator(final String name, final String type, final String value,
+                                final String inferencingType, final boolean expectedUserDefinedInd) {
+    final AssessmentAttributeDetail assessmentAttributeDetail =
+        new AssessmentAttributeDetail()
+            .name(name)
+            .type(type)
+            .value(value)
+            .inferencingType(inferencingType)
+            .prepopulated(false);
+
+    final OpaAttribute result = applicationMapper.toOpaAttribute(assessmentAttributeDetail);
+
+    assertNotNull(result);
+    assertEquals(name, result.getAttribute());
+    assertEquals(type, result.getResponseType());
+    assertEquals(value, result.getResponseValue());
+    assertEquals(expectedUserDefinedInd, result.isUserDefinedInd());
+  }
+
+  @Test
+  @DisplayName("Test toOpaAttribute with null AssessmentAttributeDetail")
+  void testToOpaAttribute_Null() {
+    assertNull(applicationMapper.toOpaAttribute(null));
+  }
+
+  @Test
+  @DisplayName("Test toSoaRecordHistory with valid CaseMappingContext")
+  void testToSoaRecordHistory_ValidContext() {
+    final Date testDate = new Date();
+    final ApplicationDetail application = buildApplicationDetail(1, false, testDate);
+    application.getAuditTrail().created(testDate);
+    application.getAuditTrail().lastSaved(testDate);
+
+    final UserDetail user = buildUserDetail();
+
+    final CaseMappingContext caseMappingContext = CaseMappingContext.builder()
+        .tdsApplication(application)
+        .user(user)
+        .build();
+
+    final RecordHistory result = applicationMapper.toSoaRecordHistory(caseMappingContext);
+
+    assertNotNull(result);
+    assertEquals("testLoginId", result.getLastUpdatedBy().getUserLoginId());
+    assertEquals(testDate, result.getDateLastUpdated());
+    assertEquals(testDate, result.getDateCreated());
+  }
+
+  @Test
+  @DisplayName("Test toSoaRecordHistory with null context")
+  void testToSoaRecordHistory_NullContext() {
+    assertNull( applicationMapper.toSoaRecordHistory(null));
   }
 
 

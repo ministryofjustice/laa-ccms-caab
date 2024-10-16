@@ -6,10 +6,12 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceRequired;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
+import uk.gov.laa.ccms.caab.constants.SendBy;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.util.EvidenceUtil;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupValueDetail;
+import uk.gov.laa.ccms.soa.gateway.model.Document;
 
 /**
  * Mapper class to convert Evidence between various formats.
@@ -57,5 +59,14 @@ public interface EvidenceMapper {
   @Mapping(target = "evidenceDescriptions", source = "evidenceTypes")
   @Mapping(target = "ccmsModule", source = "ccmsModule.code")
   EvidenceDocumentDetail toEvidenceDocumentDetail(final EvidenceUploadFormData formData);
+
+  @Mapping(target = "statusDescription", ignore = true)
+  @Mapping(target = "documentLink", ignore = true)
+  @Mapping(target = "status", ignore = true)
+  @Mapping(target = "documentId", source = "registeredDocumentId")
+  @Mapping(target = "channel", constant = "E")
+  @Mapping(target = "documentType", source = "documentType.id")
+  @Mapping(target = "text", source = "description")
+  Document toDocument(final EvidenceDocumentDetail evidenceDocumentDetail);
 
 }

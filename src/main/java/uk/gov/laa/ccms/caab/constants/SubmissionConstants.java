@@ -21,6 +21,12 @@ public class SubmissionConstants {
    */
   public static final String SUBMISSION_UPDATE_CLIENT = "client-update";
 
+
+  /**
+   * submission used for create case.
+   */
+  public static final String SUBMISSION_CREATE_CASE = "case-create";
+
   /**
    * the maximum amount of poll request for a submission.
    */

@@ -196,13 +196,13 @@
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
           <h2 class="govuk-heading-m">Means assessment</h2>
-          <div th:insert="application/partials/summary-fragments :: assessmentSummaryFragment(summary=${submissionSummary.meansAssessment}, isSinglePageSummary=${false})"></div>
+          <div th:insert="~{application/partials/summary-fragments :: assessmentSummaryFragment(summary=${submissionSummary.meansAssessment}, isSinglePageSummary=${false})}"></div>
         </div>
       </div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
           <h2 class="govuk-heading-m">Merits assessment</h2>
-          <div th:insert="application/partials/summary-fragments :: assessmentSummaryFragment(summary=${submissionSummary.meritsAssessment}, isSinglePageSummary=${false})"></div>
+          <div th:insert="~{application/partials/summary-fragments :: assessmentSummaryFragment(summary=${submissionSummary.meritsAssessment}, isSinglePageSummary=${false})}"></div>
         </div>
       </div>
       <div class="govuk-button-group">

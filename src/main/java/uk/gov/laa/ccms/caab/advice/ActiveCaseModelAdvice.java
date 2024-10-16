@@ -22,6 +22,7 @@ import uk.gov.laa.ccms.caab.controller.application.section.EditProceedingsAndCos
 import uk.gov.laa.ccms.caab.controller.application.section.EvidenceSectionController;
 import uk.gov.laa.ccms.caab.controller.application.section.OpponentsSectionController;
 import uk.gov.laa.ccms.caab.controller.application.section.ProviderDetailsSectionController;
+import uk.gov.laa.ccms.caab.controller.submission.CaseSubmissionController;
 
 
 /**
@@ -44,7 +45,8 @@ import uk.gov.laa.ccms.caab.controller.application.section.ProviderDetailsSectio
     EditProceedingsAndCostsSectionController.class,
     OpponentsSectionController.class,
     EvidenceSectionController.class,
-    AssessmentController.class
+    AssessmentController.class,
+    CaseSubmissionController.class
 })
 public class ActiveCaseModelAdvice {
 
