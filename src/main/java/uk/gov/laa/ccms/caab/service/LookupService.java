@@ -47,6 +47,7 @@ import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProceedingDetails;
+import uk.gov.laa.ccms.data.model.ProviderRequestTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
@@ -627,6 +628,20 @@ public class LookupService {
   public Mono<DeclarationLookupDetail> getDeclarations(
       final String submissionType) {
     return ebsApiClient.getDeclarations(submissionType, null);
+  }
+
+
+  /**
+   * Retrieves provider request types based on parameters.
+   *
+   * @param type the type provider request
+   * @param isCaseRelated whether the request is case related
+   * @return a Mono emitting the declaration lookup details
+   */
+  public Mono<ProviderRequestTypeLookupDetail> getProviderRequestTypes(
+      final Boolean isCaseRelated,
+      final String type) {
+    return ebsApiClient.getProviderRequestTypes(isCaseRelated, type);
   }
 
 

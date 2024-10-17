@@ -42,6 +42,7 @@ import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProceedingDetails;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.ProviderRequestTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
@@ -1079,6 +1080,68 @@ public class EbsApiClientTest {
 
     assertEquals(expectedUri, actualUri.toString());
   }
+
+  @ParameterizedTest
+  @CsvSource({
+      "true, type1, /lookup/provider-request-types?size=1000&is-case-related=true&type=type1",
+      "true, , /lookup/provider-request-types?size=1000&is-case-related=true",
+      ", type1, /lookup/provider-request-types?size=1000&type=type1",
+      ", , /lookup/provider-request-types?size=1000"
+  })
+  @DisplayName("getProviderRequestTypes parameterized test")
+  void testGetProviderRequestTypes(final Boolean isCaseRelated, final String type, final String expectedUri) {
+    final ProviderRequestTypeLookupDetail mockDetail = new ProviderRequestTypeLookupDetail();
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(ProviderRequestTypeLookupDetail.class)).thenReturn(Mono.just(mockDetail));
+
+    final Mono<ProviderRequestTypeLookupDetail> result = ebsApiClient.getProviderRequestTypes(isCaseRelated, type);
+
+    StepVerifier.create(result)
+        .expectNext(mockDetail)
+        .verifyComplete();
+
+    final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+    verify(requestHeadersUriMock).uri(uriCaptor.capture());
+
+    final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    assertEquals(expectedUri, actualUri.toString());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+      "true, type1, /lookup/provider-request-types?size=1000&is-case-related=true&type=type1",
+      "true, , /lookup/provider-request-types?size=1000&is-case-related=true"
+  })
+  @DisplayName("getProviderRequestTypes handles errors in a parameterized test")
+  void testGetProviderRequestTypes_handlesError(final Boolean isCaseRelated, final String type, final String expectedUri) {
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(ProviderRequestTypeLookupDetail.class)).thenReturn(Mono.error(new RuntimeException("Error")));
+
+    when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("Provider request types"), any())).thenReturn(Mono.empty());
+
+    final Mono<ProviderRequestTypeLookupDetail> result = ebsApiClient.getProviderRequestTypes(isCaseRelated, type);
+
+    StepVerifier.create(result)
+        .verifyComplete();
+
+    final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+    verify(requestHeadersUriMock).uri(uriCaptor.capture());
+
+    final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+    assertEquals(expectedUri, actualUri.toString());
+  }
+
+
+
 
 
 }

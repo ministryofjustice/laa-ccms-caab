@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.client;
 
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,7 @@ import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProceedingDetails;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.ProviderRequestTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
@@ -712,6 +714,35 @@ public class EbsApiClient {
         .bodyToMono(DeclarationLookupDetail.class)
         .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
             e, "Declarations", queryParams));
+  }
+
+  /**
+   * Retrieves declaration details based on the provided type and bill type.
+   * Constructs a query with the given parameters and sends a GET request to the API.
+   *
+   * @param type the type of provider requests to retrieve
+   * @param isCaseRelated the case related filter, may be null to retrieve all
+   * @return a Mono emitting the {@link ProviderRequestTypeLookupDetail} or handling errors
+   */
+  public Mono<ProviderRequestTypeLookupDetail> getProviderRequestTypes(
+      final Boolean isCaseRelated,
+      final String type) {
+    final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
+
+    Optional.ofNullable(isCaseRelated)
+        .ifPresent(param -> queryParams.add("is-case-related", String.valueOf(param)));
+    Optional.ofNullable(type)
+        .ifPresent(param -> queryParams.add("type", param));
+
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/lookup/provider-request-types")
+            .queryParams(queryParams)
+            .build())
+        .retrieve()
+        .bodyToMono(ProviderRequestTypeLookupDetail.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
+            e, "Provider request types", queryParams));
   }
 
 
