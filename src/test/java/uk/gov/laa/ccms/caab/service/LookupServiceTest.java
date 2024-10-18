@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,6 +27,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -57,6 +60,7 @@ import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProceedingDetails;
+import uk.gov.laa.ccms.data.model.ProviderRequestTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
@@ -698,6 +702,7 @@ public class LookupServiceTest {
         .verifyComplete();
   }
 
+
   @Test
   @DisplayName("getProceedingSubmissionMappingContext returns correct ProceedingSubmissionSummaryMappingContext")
   void getProceedingSubmissionMappingContext_success() {
@@ -752,6 +757,30 @@ public class LookupServiceTest {
         .verifyComplete();
 
     verify(ebsApiClient).getDeclarations(submissionType, null);
+  }
+
+  @ParameterizedTest
+  @DisplayName("getProviderRequestTypes with different parameters returns data successfully")
+  @CsvSource({
+      "true, TYPE1",
+      "false, TYPE2",
+      ", TYPE3",  // Case related is null
+      "true, ",   // Type is null
+      ", "        // Both are null
+  })
+  void getProviderRequestTypes_withParameters_success(final Boolean isCaseRelated, final String type) {
+    final ProviderRequestTypeLookupDetail mockProviderRequestTypeDetail = new ProviderRequestTypeLookupDetail(); // Populate as needed
+
+    when(ebsApiClient.getProviderRequestTypes(isCaseRelated, type))
+        .thenReturn(Mono.just(mockProviderRequestTypeDetail));
+
+    final Mono<ProviderRequestTypeLookupDetail> result = lookupService.getProviderRequestTypes(isCaseRelated, type);
+
+    StepVerifier.create(result)
+        .expectNext(mockProviderRequestTypeDetail)
+        .verifyComplete();
+
+    verify(ebsApiClient).getProviderRequestTypes(isCaseRelated, type);
   }
 
 

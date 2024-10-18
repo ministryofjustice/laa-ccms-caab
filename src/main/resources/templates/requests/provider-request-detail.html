@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>LAA CCMS - Provider request</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/home}" class="govuk-back-link">Cancel and return to Home</a>
+  </div>
+  <div id="main-content">
+    <form action="#" th:action="@{/provider-requests/types}" method="post">
+      <span class="govuk-caption-l">General request</span>
+      <h1 class="govuk-heading-l">
+        Request details
+      </h1>
+      <div class="govuk-body-l">
+        Please complete further details for your request and click 'Submit'.
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>
