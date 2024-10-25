@@ -74,9 +74,6 @@ public abstract class FileUploadValidator extends AbstractValidator {
         validateFileSize(fileUploadFormData, errors);
       }
     }
-
-    validateDocumentType(fileUploadFormData, errors);
-    validateDocumentDescription(fileUploadFormData, errors);
   }
 
   /**

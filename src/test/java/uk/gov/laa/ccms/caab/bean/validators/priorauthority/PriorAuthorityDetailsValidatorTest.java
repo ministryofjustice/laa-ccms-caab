@@ -11,8 +11,8 @@ import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataDetails;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataDynamicOption;
+import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityDetailsFormData;
 
 @ExtendWith(SpringExtension.class)
 class PriorAuthorityDetailsValidatorTest {
@@ -20,19 +20,19 @@ class PriorAuthorityDetailsValidatorTest {
   @InjectMocks
   private PriorAuthorityDetailsValidator priorAuthorityDetailsValidator;
 
-  private PriorAuthorityFormDataDetails priorAuthorityFormDataDetails;
+  private PriorAuthorityDetailsFormData priorAuthorityDetailsFormData;
 
   private Errors errors;
 
   @BeforeEach
   public void setUp() {
-    priorAuthorityFormDataDetails = new PriorAuthorityFormDataDetails();
-    errors = new BeanPropertyBindingResult(priorAuthorityFormDataDetails, "priorAuthorityFormDataDetails");
+    priorAuthorityDetailsFormData = new PriorAuthorityDetailsFormData();
+    errors = new BeanPropertyBindingResult(priorAuthorityDetailsFormData, "priorAuthorityFormDataDetails");
   }
 
   @Test
   public void supports_ReturnsTrueForPriorAuthorityFormDataDetailsClass() {
-    assertTrue(priorAuthorityDetailsValidator.supports(PriorAuthorityFormDataDetails.class));
+    assertTrue(priorAuthorityDetailsValidator.supports(PriorAuthorityDetailsFormData.class));
   }
 
   @Test
@@ -42,12 +42,12 @@ class PriorAuthorityDetailsValidatorTest {
 
   @Test
   public void validate_WithMissingFields_HasErrors() {
-    priorAuthorityFormDataDetails.setSummary(null);
-    priorAuthorityFormDataDetails.setJustification(null);
-    priorAuthorityFormDataDetails.setValueRequired(true);
-    priorAuthorityFormDataDetails.setAmountRequested(null);
+    priorAuthorityDetailsFormData.setSummary(null);
+    priorAuthorityDetailsFormData.setJustification(null);
+    priorAuthorityDetailsFormData.setValueRequired(true);
+    priorAuthorityDetailsFormData.setAmountRequested(null);
 
-    priorAuthorityDetailsValidator.validate(priorAuthorityFormDataDetails, errors);
+    priorAuthorityDetailsValidator.validate(priorAuthorityDetailsFormData, errors);
 
     assertTrue(errors.hasFieldErrors("summary"));
     assertTrue(errors.hasFieldErrors("justification"));
@@ -56,52 +56,52 @@ class PriorAuthorityDetailsValidatorTest {
 
   @Test
   public void validate_WithInvalidCurrency_HasErrors() {
-    priorAuthorityFormDataDetails.setValueRequired(true);
-    priorAuthorityFormDataDetails.setAmountRequested("invalid");
+    priorAuthorityDetailsFormData.setValueRequired(true);
+    priorAuthorityDetailsFormData.setAmountRequested("invalid");
 
-    priorAuthorityDetailsValidator.validate(priorAuthorityFormDataDetails, errors);
+    priorAuthorityDetailsValidator.validate(priorAuthorityDetailsFormData, errors);
 
     assertTrue(errors.hasFieldErrors("amountRequested"));
   }
 
   @Test
   public void validate_WithValidDetails_NoErrors() {
-    priorAuthorityFormDataDetails.setSummary("Valid summary");
-    priorAuthorityFormDataDetails.setJustification("Valid justification");
-    priorAuthorityFormDataDetails.setValueRequired(true);
-    priorAuthorityFormDataDetails.setAmountRequested("100.00");
+    priorAuthorityDetailsFormData.setSummary("Valid summary");
+    priorAuthorityDetailsFormData.setJustification("Valid justification");
+    priorAuthorityDetailsFormData.setValueRequired(true);
+    priorAuthorityDetailsFormData.setAmountRequested("100.00");
 
-    priorAuthorityDetailsValidator.validate(priorAuthorityFormDataDetails, errors);
+    priorAuthorityDetailsValidator.validate(priorAuthorityDetailsFormData, errors);
 
     assertFalse(errors.hasErrors());
   }
 
   @Test
   public void validate_DynamicOptionsValidation_AMT() {
-    final Map<String, PriorAuthorityFormDataDynamicOption> dynamicOptions = new HashMap<>();
-    final PriorAuthorityFormDataDynamicOption option = new PriorAuthorityFormDataDynamicOption();
+    final Map<String, DynamicOptionFormData> dynamicOptions = new HashMap<>();
+    final DynamicOptionFormData option = new DynamicOptionFormData();
     option.setMandatory(true);
     option.setFieldType("AMT");
     option.setFieldValue("invalid");
     dynamicOptions.put("amtKey", option);
-    priorAuthorityFormDataDetails.setDynamicOptions(dynamicOptions);
+    priorAuthorityDetailsFormData.setDynamicOptions(dynamicOptions);
 
-    priorAuthorityDetailsValidator.validate(priorAuthorityFormDataDetails, errors);
+    priorAuthorityDetailsValidator.validate(priorAuthorityDetailsFormData, errors);
 
     assertTrue(errors.hasErrors());
   }
 
   @Test
   public void validate_DynamicOptionsValidation_INT() {
-    final Map<String, PriorAuthorityFormDataDynamicOption> dynamicOptions = new HashMap<>();
-    final PriorAuthorityFormDataDynamicOption option = new PriorAuthorityFormDataDynamicOption();
+    final Map<String, DynamicOptionFormData> dynamicOptions = new HashMap<>();
+    final DynamicOptionFormData option = new DynamicOptionFormData();
     option.setMandatory(true);
     option.setFieldType("INT");
     option.setFieldValue("invalid number");
     dynamicOptions.put("intKey", option);
-    priorAuthorityFormDataDetails.setDynamicOptions(dynamicOptions);
+    priorAuthorityDetailsFormData.setDynamicOptions(dynamicOptions);
 
-    priorAuthorityDetailsValidator.validate(priorAuthorityFormDataDetails, errors);
+    priorAuthorityDetailsValidator.validate(priorAuthorityDetailsFormData, errors);
 
     assertTrue(errors.hasFieldErrors("dynamicOptions[intKey].fieldValue"));
   }

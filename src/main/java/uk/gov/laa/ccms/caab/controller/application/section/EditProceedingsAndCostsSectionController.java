@@ -40,9 +40,9 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataDetails;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataTypeDetails;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityTypeFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataFurtherDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
@@ -1342,7 +1342,7 @@ public class EditProceedingsAndCostsSectionController {
 
     model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
     model.addAttribute("priorAuthorityTypeDetails",
-        priorAuthorityFlow.getPriorAuthorityTypeFormDataDetails());
+        priorAuthorityFlow.getPriorAuthorityTypeFormData());
 
     populatePriorAuthorityTypeDropdown(model);
 
@@ -1373,7 +1373,7 @@ public class EditProceedingsAndCostsSectionController {
       @SessionAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA)
       final PriorAuthorityFlowFormData priorAuthorityFlow,
       @ModelAttribute("priorAuthorityTypeDetails")
-      final PriorAuthorityFormDataTypeDetails priorAuthorityTypeDetails,
+      final PriorAuthorityTypeFormData priorAuthorityTypeDetails,
       final Model model,
       final BindingResult bindingResult) {
 
@@ -1386,7 +1386,7 @@ public class EditProceedingsAndCostsSectionController {
       return "application/prior-authority-type";
     }
 
-    priorAuthorityFlow.setPriorAuthorityTypeFormDataDetails(priorAuthorityTypeDetails);
+    priorAuthorityFlow.setPriorAuthorityTypeFormData(priorAuthorityTypeDetails);
     model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
 
     return "redirect:/application/prior-authorities/add/details";
@@ -1407,12 +1407,12 @@ public class EditProceedingsAndCostsSectionController {
       final PriorAuthorityFlowFormData priorAuthorityFlow,
       final Model model) {
 
-    final PriorAuthorityFormDataDetails priorAuthorityDetails =
-        priorAuthorityFlow.getPriorAuthorityFormDataDetails();
+    final PriorAuthorityDetailsFormData priorAuthorityDetails =
+        priorAuthorityFlow.getPriorAuthorityDetailsFormData();
 
     final PriorAuthorityTypeDetail priorAuthorityDynamicForm =
         applicationService.getPriorAuthorityTypeDetail(
-            priorAuthorityFlow.getPriorAuthorityTypeFormDataDetails().getPriorAuthorityType());
+            priorAuthorityFlow.getPriorAuthorityTypeFormData().getPriorAuthorityType());
 
     populatePriorAuthorityDetailsLookupDropdowns(model, priorAuthorityDynamicForm);
 
@@ -1423,7 +1423,7 @@ public class EditProceedingsAndCostsSectionController {
           priorAuthorityDetails,
           priorAuthorityDynamicForm);
 
-      priorAuthorityFlow.setPriorAuthorityFormDataDetails(priorAuthorityDetails);
+      priorAuthorityFlow.setPriorAuthorityDetailsFormData(priorAuthorityDetails);
     }
 
     model.addAttribute("priorAuthorityDynamicForm", priorAuthorityDynamicForm);
@@ -1454,21 +1454,21 @@ public class EditProceedingsAndCostsSectionController {
       final PriorAuthorityFlowFormData priorAuthorityFlow,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @ModelAttribute("priorAuthorityDetails")
-      final PriorAuthorityFormDataDetails priorAuthorityDetails,
+      final PriorAuthorityDetailsFormData priorAuthorityDetails,
       final Model model,
       final BindingResult bindingResult) {
 
 
-    proceedingAndCostsMapper.toPriorAuthorityFormDataDetails(
+    proceedingAndCostsMapper.toPriorAuthorityDetailsFormData(
         priorAuthorityDetails,
         priorAuthorityFlow);
 
     priorAuthorityDetailsValidator.validate(priorAuthorityDetails, bindingResult);
-    priorAuthorityFlow.setPriorAuthorityFormDataDetails(priorAuthorityDetails);
+    priorAuthorityFlow.setPriorAuthorityDetailsFormData(priorAuthorityDetails);
 
     final PriorAuthorityTypeDetail priorAuthorityDynamicForm =
         applicationService.getPriorAuthorityTypeDetail(
-        priorAuthorityFlow.getPriorAuthorityTypeFormDataDetails().getPriorAuthorityType());
+        priorAuthorityFlow.getPriorAuthorityTypeFormData().getPriorAuthorityType());
 
     if (bindingResult.hasErrors()) {
       populatePriorAuthorityDetailsLookupDropdowns(model, priorAuthorityDynamicForm);

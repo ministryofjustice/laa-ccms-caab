@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.bean.validators.request;
 
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataTypeDetails;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestTypeFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
@@ -11,7 +10,7 @@ import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
  * {@link uk.gov.laa.ccms.caab.bean.request.ProviderRequestTypeFormData} objects.
  */
 @Component
-public class ProviderRequestTypeDetailsValidator extends AbstractValidator {
+public class ProviderRequestTypesValidator extends AbstractValidator {
 
   /**
    * Determines if the Validator supports the provided class.

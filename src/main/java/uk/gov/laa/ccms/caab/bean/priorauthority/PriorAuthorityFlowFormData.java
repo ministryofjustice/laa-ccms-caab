@@ -12,12 +12,12 @@ public class PriorAuthorityFlowFormData {
   /**
    * The details of the prior authority type form data.
    */
-  private PriorAuthorityFormDataTypeDetails priorAuthorityTypeFormDataDetails;
+  private PriorAuthorityTypeFormData priorAuthorityTypeFormData;
 
   /**
    * The details of the prior authority form data, including the dynamic form information.
    */
-  private PriorAuthorityFormDataDetails priorAuthorityFormDataDetails;
+  private PriorAuthorityDetailsFormData priorAuthorityDetailsFormData;
 
   /**
    * The action to be performed.
@@ -37,7 +37,7 @@ public class PriorAuthorityFlowFormData {
    */
   public PriorAuthorityFlowFormData(final String action) {
     this.action = action;
-    this.priorAuthorityTypeFormDataDetails = new PriorAuthorityFormDataTypeDetails();
-    this.priorAuthorityFormDataDetails = new PriorAuthorityFormDataDetails();
+    this.priorAuthorityTypeFormData = new PriorAuthorityTypeFormData();
+    this.priorAuthorityDetailsFormData = new PriorAuthorityDetailsFormData();
   }
 }

@@ -39,6 +39,8 @@ public class NotificationAttachmentUploadValidator extends FileUploadValidator {
       validateDocumentDescription(notificationAttachmentUploadFormData, errors);
     } else {
       validateFile(notificationAttachmentUploadFormData, errors);
+      validateDocumentType(notificationAttachmentUploadFormData, errors);
+      validateDocumentDescription(notificationAttachmentUploadFormData, errors);
     }
 
   }

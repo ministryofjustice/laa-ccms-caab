@@ -30,13 +30,11 @@ import org.springframework.validation.ObjectError;
 import org.springframework.validation.Validator;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-import reactor.util.function.Tuple3;
 import reactor.util.function.Tuple4;
 import reactor.util.function.Tuple7;
 import reactor.util.function.Tuple8;
@@ -73,7 +71,6 @@ import uk.gov.laa.ccms.caab.mapper.context.submission.OpponentSubmissionSummaryM
 import uk.gov.laa.ccms.caab.mapper.context.submission.ProceedingSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
-import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -356,12 +353,12 @@ public class ApplicationSubmissionController {
       final PriorAuthorityFlowFormData priorAuthorityFlow =
           proceedingAndCostsMapper.toPriorAuthorityFlowFormData(priorAuthority);
 
-      if (validateAndAddErrors(priorAuthorityFlow.getPriorAuthorityTypeFormDataDetails(),
+      if (validateAndAddErrors(priorAuthorityFlow.getPriorAuthorityTypeFormData(),
           priorAuthorityTypeValidator, model, "priorAuthorityType")) {
         priorAuthorityErrors.addAll(getErrorsFromModel(model, "priorAuthorityType"));
       }
 
-      if (validateAndAddErrors(priorAuthorityFlow.getPriorAuthorityFormDataDetails(),
+      if (validateAndAddErrors(priorAuthorityFlow.getPriorAuthorityDetailsFormData(),
           priorAuthorityDetailsValidator, model, "priorAuthorityDetails")) {
         priorAuthorityErrors.addAll(getErrorsFromModel(model, "priorAuthorityDetails"));
       }

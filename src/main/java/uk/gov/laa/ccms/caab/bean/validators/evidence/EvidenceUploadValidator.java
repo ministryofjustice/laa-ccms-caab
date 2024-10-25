@@ -53,6 +53,8 @@ public class EvidenceUploadValidator extends FileUploadValidator {
         (EvidenceUploadFormData) target;
 
     validateFile(notificationAttachmentUploadFormData, errors);
+    validateDocumentType(notificationAttachmentUploadFormData, errors);
+    validateDocumentDescription(notificationAttachmentUploadFormData, errors);
 
     if (notificationAttachmentUploadFormData.getEvidenceTypes() == null
         || notificationAttachmentUploadFormData.getEvidenceTypes().isEmpty()) {
