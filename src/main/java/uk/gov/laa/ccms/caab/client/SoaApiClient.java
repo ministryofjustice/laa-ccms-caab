@@ -33,6 +33,7 @@ import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
+import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
 
 /**
  * Client class responsible for interactions with the Service-Oriented Architecture (SOA) Api.
@@ -665,6 +666,31 @@ public class SoaApiClient {
         .bodyToMono(CoverSheet.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
             e, "Document", "id", documentId));
+  }
+
+  /**
+   * Update user profile options in EBS.
+   *
+   * @param userOptions           The user profile options to update.
+   * @param loginId               The login identifier for the user.
+   * @param userType              Type of the user (e.g., admin, user).
+   * @return A Mono wrapping a {@link ClientTransactionResponse}.
+   */
+  public Mono<ClientTransactionResponse> updateUserOptions(
+      final UserOptions userOptions,
+      final String loginId,
+      final String userType) {
+    return soaApiWebClient
+        .put()
+        .uri("users/options")
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(userOptions)
+        .retrieve()
+        .bodyToMono(ClientTransactionResponse.class)
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiUpdateError(
+            e, "User", "loginId", userOptions.getUserLoginId()));
   }
 
 

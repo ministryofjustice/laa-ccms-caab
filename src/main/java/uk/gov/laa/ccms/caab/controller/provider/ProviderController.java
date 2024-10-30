@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.provider;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
+import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -22,6 +24,8 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @RequiredArgsConstructor
 @Slf4j
 public class ProviderController {
+
+  private final UserService userService;
 
   /**
    * Loads the provider switch view, where the current user can select a firm to
@@ -36,23 +40,24 @@ public class ProviderController {
       @SessionAttribute(USER_DETAILS) UserDetail user,
       Model model) {
 
-    log.info(user.toString());
-
-    List<BaseProvider> userFirms = user.getFirms();
+    // Sort by primary firm first, then by name
+    List<BaseProvider> userFirms = user.getFirms().stream()
+        .sorted(Comparator.comparing(BaseProvider::getName))
+        .sorted(Comparator.comparing(BaseProvider::getIsPrimary).reversed())
+        .toList();
 
     model.addAttribute("userFirms", userFirms);
 
-    log.info(userFirms.toString());
-
-    return "provider/provider-switch.html";
+    return "provider/provider-switch";
   }
 
   /**
-   * Loads the provider switch view, where the current user can select a firm to
-   * act on behalf on.
+   * Updates the current provider via the session.
    *
-   * @param user    the logged-in user.
-   * @return the provider switch view.
+   * @param user            the logged-in user.
+   * @param providerId      the ID of the selected provider to switch to.
+   * @param session         the current session.
+   * @return a redirect to the home page.
    */
   @GetMapping("/provider-switch/{provider_id}")
   public String switchProvider(
@@ -60,18 +65,21 @@ public class ProviderController {
       @PathVariable(value = "provider_id") Integer providerId,
       HttpSession session) {
 
-    log.info(user.toString());
-
     BaseProvider newProvider = user.getFirms().stream()
         .filter(firm -> firm.getId().equals(providerId))
         .findFirst()
         .orElseThrow(() -> new CaabApplicationException("Unable to change Provider."));
 
+//    userService.updateUserOptions(newProvider.getId(), user.getLoginId(), user.getUserType())
+//        .block();
+
     user.setProvider(newProvider);
+
+    log.info(user.toString());
 
     session.setAttribute("user", user);
 
-    return "redirect:/";
+    return "redirect:/home";
   }
 
 }
