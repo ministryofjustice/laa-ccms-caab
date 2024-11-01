@@ -17,7 +17,10 @@
                 <span th:if="${pageCategory == 'home'}">
                     On Behalf of:
                     <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
-                        <a th:href="@{/provider-switch}" th:text="${user.provider.name}"></a>
+                        <a th:if="${#lists.size(user.firms) > 1}" th:href="@{/provider-switch}"
+                        th:text="${user.provider.name}"></a>
+                        <span th:if="${#lists.size(user.firms) <= 1}"
+                              th:text="${user.provider.name}"></span>
                     </span>
                 </span>
                 <a th:href="@{/logout}" class="govuk-!-text-align-right govuk-!-padding-right-2">

@@ -682,7 +682,7 @@ public class SoaApiClient {
       final String userType) {
     return soaApiWebClient
         .put()
-        .uri("users/options")
+        .uri("/users/options")
         .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .contentType(MediaType.APPLICATION_JSON)

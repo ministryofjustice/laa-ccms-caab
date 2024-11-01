@@ -10,14 +10,20 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
+import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.data.model.BaseUser;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
+import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
+import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
   @Mock
   private EbsApiClient ebsApiClient;
+
+  @Mock
+  private SoaApiClient soaApiClient;
 
   @InjectMocks
   private UserService userService;
@@ -52,5 +58,25 @@ public class UserServiceTest {
     StepVerifier.create(userDetailsMono)
         .expectNextMatches(userList -> userList.getContent().get(0).getLoginId().equals("login1"))
         .verifyComplete();
+  }
+
+  @Test
+  void updateUserOptions_updatesUser() {
+    String loginId = "loginId";
+    String userType = "userType";
+    UserOptions userOptions = new UserOptions()
+        .userLoginId(loginId)
+        .providerFirmId("12345");
+
+    ClientTransactionResponse userUpdatedResponse = new ClientTransactionResponse();
+
+    when(soaApiClient.updateUserOptions(userOptions, loginId, userType)).thenReturn(Mono.just(userUpdatedResponse));
+
+    Mono<ClientTransactionResponse> responseMono = userService.updateUserOptions(12345, loginId,
+        userType);
+    StepVerifier.create(responseMono)
+        .expectNextMatches(userUpdated -> userUpdated == userUpdatedResponse)
+        .verifyComplete();
+
   }
 }

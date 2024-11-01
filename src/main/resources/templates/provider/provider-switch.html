@@ -9,20 +9,24 @@
     <a th:href="@{/home}" class="govuk-back-link">Return to home</a>
   </div>
   <div id="main-content">
-    <h1 class="govuk-heading-l">
-      Your firm
-    </h1>
-    <p class="govuk-body-l">
-      Please select the firm that you wish to do work for. Note that selecting a firm will filter
-      your view of notifications to those belonging to the selected firm.
-    </p>
-    <ul class="govuk-list">
-      <li th:each="userFirm : ${userFirms}">
-        <a class="govuk-link"
-           th:href="@{/provider-switch/{provider-id}(provider-id=${userFirm.id})}"
-           th:text="${userFirm.name}" />
-      </li>
-    </ul>
+    <form action="#" th:action="@{/provider-switch}" th:object="${providerFirmFormData}"
+          method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <h1 class="govuk-heading-l">
+        Your firm
+      </h1>
+      <p class="govuk-body-l">
+        Please select the firm that you wish to do work for. Note that selecting a firm will filter
+        your view of notifications to those belonging to the selected firm.
+      </p>
+      <div
+        th:replace="~{partials/forms :: dropdown('providerFirmId', 'Available firms', ${providerFirms}, 'id', 'name', true)}"></div>
+      <div class="govuk-button-group">
+        <button type="submit" class="govuk-button" data-module="govuk-button">
+          Confirm
+        </button>
+      </div>
+    </form>
   </div>
 </div>
 </body>
