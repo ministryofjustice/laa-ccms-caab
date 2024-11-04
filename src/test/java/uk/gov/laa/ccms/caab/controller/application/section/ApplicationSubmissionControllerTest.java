@@ -38,7 +38,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -65,8 +64,8 @@ import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataDetails;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataTypeDetails;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityDetailsFormData;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityTypeFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
@@ -392,8 +391,8 @@ class ApplicationSubmissionControllerTest {
     proceedingFlowFormData.setProceedingDetails(new ProceedingFormDataProceedingDetails());
 
     final PriorAuthorityFlowFormData priorAuthorityFlowFormData = new PriorAuthorityFlowFormData("edit");
-    priorAuthorityFlowFormData.setPriorAuthorityTypeFormDataDetails(new PriorAuthorityFormDataTypeDetails());
-    priorAuthorityFlowFormData.setPriorAuthorityFormDataDetails(new PriorAuthorityFormDataDetails());
+    priorAuthorityFlowFormData.setPriorAuthorityTypeFormData(new PriorAuthorityTypeFormData());
+    priorAuthorityFlowFormData.setPriorAuthorityDetailsFormData(new PriorAuthorityDetailsFormData());
 
     when(applicationService.getMonoProviderDetailsFormData(applicationId))
         .thenReturn(Mono.just(mockProviderDetails));
@@ -531,8 +530,8 @@ class ApplicationSubmissionControllerTest {
   void testValidatePriorAuthorities_WithErrors() {
     final PriorAuthorityDetail priorAuthorityDetail = new PriorAuthorityDetail();
     final PriorAuthorityFlowFormData priorAuthorityFlowFormData = new PriorAuthorityFlowFormData("edit");
-    priorAuthorityFlowFormData.setPriorAuthorityTypeFormDataDetails(new PriorAuthorityFormDataTypeDetails());
-    priorAuthorityFlowFormData.setPriorAuthorityFormDataDetails(new PriorAuthorityFormDataDetails());
+    priorAuthorityFlowFormData.setPriorAuthorityTypeFormData(new PriorAuthorityTypeFormData());
+    priorAuthorityFlowFormData.setPriorAuthorityDetailsFormData(new PriorAuthorityDetailsFormData());
 
     when(proceedingAndCostsMapper.toPriorAuthorityFlowFormData(any()))
         .thenReturn(priorAuthorityFlowFormData);

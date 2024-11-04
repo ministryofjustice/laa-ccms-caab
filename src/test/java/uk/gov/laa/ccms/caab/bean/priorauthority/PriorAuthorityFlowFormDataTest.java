@@ -13,7 +13,7 @@ class PriorAuthorityFlowFormDataTest {
     final PriorAuthorityFlowFormData formData = new PriorAuthorityFlowFormData(expectedAction);
 
     assertEquals(expectedAction, formData.getAction());
-    assertNotNull(formData.getPriorAuthorityTypeFormDataDetails());
-    assertNotNull(formData.getPriorAuthorityFormDataDetails());
+    assertNotNull(formData.getPriorAuthorityTypeFormData());
+    assertNotNull(formData.getPriorAuthorityDetailsFormData());
   }
 }

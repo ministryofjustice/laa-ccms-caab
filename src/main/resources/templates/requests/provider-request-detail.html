@@ -9,13 +9,138 @@
     <a th:href="@{/home}" class="govuk-back-link">Cancel and return to Home</a>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/provider-requests/types}" method="post">
+    <form action="#" th:action="@{/provider-requests/details}" th:object="${providerRequestDetails}" method="post" enctype="multipart/form-data">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <span class="govuk-caption-l">General request</span>
       <h1 class="govuk-heading-l">
         Request details
       </h1>
-      <div class="govuk-body-l">
-        Please complete further details for your request and click 'Submit'.
+      <!--  For file upload, both true and false enable a different type of file upload. -->
+      <div class="govuk-body-l"
+           th:text="'Please complete further details for your request and click \'Submit\'.' + (*{fileUploadEnabled} ? '' : ' If you have documents to upload, use the link below.')">
+      </div>
+
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+
+          <dl class="govuk-body">
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Request type', ${providerRequestFlow.requestTypeFormData.providerRequestTypeDisplayValue})}"></div>
+          </dl>
+
+          <div class="govuk-form-group" th:if="*{fileUploadEnabled}" th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
+            <label class="govuk-label" th:for="fileUpload"
+                   th:text="*{fileUploadLabel}">
+            </label>
+            <input class="govuk-file-upload" id="file" name="file" type="file">
+          </div>
+
+          <th:block th:each="option : ${providerRequestDynamicForm.dataItems}">
+            <div class="govuk-form-group" th:classappend="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')} ? 'govuk-form-group--error' : ''">
+
+              <label class="govuk-label" th:for="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                     th:text="${option.label} + (${option.mandatoryFlag} ? '' : ' (optional)')">
+              </label>
+
+              <span th:if="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')}"
+                    th:errors="*{dynamicOptions[__${option.code}__].fieldValue}" class="govuk-error-message">
+              </span>
+
+              <th:block  th:if="${option.type == 'LOV'}">
+                <input type="hidden" th:id="'dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'"
+                       th:name="'dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'"
+                       th:value="*{dynamicOptions[__${option.code}__].fieldValueDisplayValue}">
+                <select class="govuk-select"
+                        data-module="govuk-select"
+                        th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                        th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
+                        th:errorclass="govuk-select--error"
+                        th:attr="onchange=|document.getElementById('dynamicOptions[${option.code}].fieldValueDisplayValue').value = this.options[this.selectedIndex].text;|">
+                  <option value="">Please Select</option>
+                  <option th:each="item : ${__${option.code}__}"
+                          th:value="${item['code']}"
+                          th:text="${item['description']}">
+                  </option>
+                </select>
+              </th:block>
+              <th:block th:if="${option.type == 'FTS'}">
+                <input class="govuk-input govuk-input--width-20"
+                       type="text"
+                       data-module="govuk-input"
+                       th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                       th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
+                       th:errorclass="govuk-select--error">
+              </th:block>
+              <th:block th:if="${option.type == 'FTL'}">
+                <input class="govuk-input"
+                       th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                       th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
+                       type="text"
+                       data-module="govuk-input"
+                       th:errorclass="govuk-select--error">
+              </th:block>
+              <th:block th:if="${option.type == 'AMT'}">
+                <div class="govuk-input__wrapper">
+                  <div class="govuk-input__prefix" aria-hidden="true">£</div>
+                  <input class="govuk-input govuk-input--width-10"
+                         th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                         th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
+                         type="text" spellcheck="false"
+                         th:errorclass="govuk-select--error">
+                </div>
+              </th:block>
+              <th:block th:if="${option.type == 'INT'}">
+                <input class="govuk-input govuk-date-input__input govuk-input--width-10"
+                       th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                       th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
+                       type="text"
+                       inputmode="numeric"
+                       maxlength="10"
+                       th:errorclass="govuk-select--error">
+              </th:block>
+              <th:block th:if="${option.type == 'DAT'}">
+                <div class="moj-datepicker" data-module="moj-date-picker">
+                    <div id="'dynamicOptions[' + ${option.code} + '].fieldValue-info'" class="govuk-hint">
+                      For example, 17/5/2024.
+                    </div>
+                    <input class="govuk-input moj-js-datepicker-input"
+                           th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                           th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
+                           type="text"
+                           aria-describedby="'dynamicOptions[' + ${option.code} + '].fieldValue-info'"
+                           autocomplete="off"
+                           th:errorclass="govuk-select--error">
+                </div>
+              </th:block>
+
+            </div>
+          </th:block>
+
+          <div class="govuk-form-group govuk-character-count" data-module="govuk-character-count" data-maxlength="8000" th:classappend="${#fields.hasErrors('additionalInformation')} ? 'govuk-form-group--error' : ''">
+            <label class="govuk-label" for="additionalInformation"
+                   th:text="(*{additionalInformationLabel}) + ' (optional) '">
+            </label>
+            <textarea class="govuk-textarea govuk-js-character-count govuk-!-margin-bottom-2"
+                      id="additionalInformation"
+                      name="additionalInformation"
+                      th:text="*{additionalInformation}"
+                      rows="5"
+                      maxlength="8000">
+            </textarea>
+            <div id="additionalInformation-info" class="govuk-hint govuk-character-count__message">
+              You can enter up to 8000 characters
+            </div>
+          </div>
+
+          <div class="govuk-button-group">
+            <button type="submit" class="govuk-button" data-module="govuk-button">
+              Submit
+            </button>
+            <a class="govuk-link" th:href="@{/provider-requests/types}">
+              Back
+            </a>
+          </div>
+
+        </div>
       </div>
     </form>
   </div>

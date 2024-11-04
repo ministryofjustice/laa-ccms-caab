@@ -13,7 +13,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataTypeDetails;
 
 @ExtendWith(SpringExtension.class)
 class CostDetailsValidatorTest {

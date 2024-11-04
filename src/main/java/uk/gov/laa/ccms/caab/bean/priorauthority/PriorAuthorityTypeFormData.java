@@ -7,7 +7,7 @@ import lombok.Data;
  * It includes the prior authority type and its display value.
  */
 @Data
-public class PriorAuthorityFormDataTypeDetails {
+public class PriorAuthorityTypeFormData {
 
   /**
    * The type of the prior authority.

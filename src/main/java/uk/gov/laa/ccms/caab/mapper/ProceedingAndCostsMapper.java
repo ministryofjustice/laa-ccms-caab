@@ -9,10 +9,10 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
+import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataDetails;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataDynamicOption;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
@@ -198,19 +198,19 @@ public interface ProceedingAndCostsMapper {
 
   @Mapping(target = "action", constant = "edit")
   @Mapping(target = "priorAuthorityId", source = "priorAuthority.id")
-  @Mapping(target = "priorAuthorityTypeFormDataDetails.priorAuthorityType",
+  @Mapping(target = "priorAuthorityTypeFormData.priorAuthorityType",
         source = "priorAuthority.type.id")
-  @Mapping(target = "priorAuthorityTypeFormDataDetails.priorAuthorityTypeDisplayValue",
+  @Mapping(target = "priorAuthorityTypeFormData.priorAuthorityTypeDisplayValue",
         source = "priorAuthority.type.displayValue")
-  @Mapping(target = "priorAuthorityFormDataDetails.summary",
+  @Mapping(target = "priorAuthorityDetailsFormData.summary",
         source = "priorAuthority.summary")
-  @Mapping(target = "priorAuthorityFormDataDetails.justification",
+  @Mapping(target = "priorAuthorityDetailsFormData.justification",
         source = "priorAuthority.justification")
-  @Mapping(target = "priorAuthorityFormDataDetails.valueRequired",
+  @Mapping(target = "priorAuthorityDetailsFormData.valueRequired",
         source = "priorAuthority.valueRequired")
-  @Mapping(target = "priorAuthorityFormDataDetails.amountRequested",
+  @Mapping(target = "priorAuthorityDetailsFormData.amountRequested",
         source = "priorAuthority.amountRequested")
-  @Mapping(target = "priorAuthorityFormDataDetails.dynamicOptions",
+  @Mapping(target = "priorAuthorityDetailsFormData.dynamicOptions",
         source = "priorAuthority.items", qualifiedByName = "toDynamicOptions")
   PriorAuthorityFlowFormData toPriorAuthorityFlowFormData(
       final PriorAuthorityDetail priorAuthority);
@@ -222,7 +222,7 @@ public interface ProceedingAndCostsMapper {
    * @return a map of dynamic options or null if items is null.
    */
   @Named("toDynamicOptions")
-  default Map<String, PriorAuthorityFormDataDynamicOption> toDynamicOptions(
+  default Map<String, DynamicOptionFormData> toDynamicOptions(
       final List<ReferenceDataItemDetail> items) {
 
     if (items != null) {
@@ -230,8 +230,8 @@ public interface ProceedingAndCostsMapper {
           java.util.stream.Collectors.toMap(
               item -> item.getCode().getId(),
               item -> {
-                final PriorAuthorityFormDataDynamicOption option =
-                    new PriorAuthorityFormDataDynamicOption();
+                final DynamicOptionFormData option =
+                    new DynamicOptionFormData();
                 option.setFieldDescription(item.getCode().getDisplayValue());
                 option.setFieldType(item.getType());
                 option.setMandatory(item.getMandatory());
@@ -249,9 +249,9 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "amountRequested", ignore = true)
   @Mapping(target = "dynamicOptions", ignore = true)
   @Mapping(target = "valueRequired",
-      source = "priorAuthorityFlowFormData.priorAuthorityFormDataDetails.valueRequired")
-  void toPriorAuthorityFormDataDetails(
-      @MappingTarget PriorAuthorityFormDataDetails priorAuthorityDetails,
+      source = "priorAuthorityFlowFormData.priorAuthorityDetailsFormData.valueRequired")
+  void toPriorAuthorityDetailsFormData(
+      @MappingTarget PriorAuthorityDetailsFormData priorAuthorityDetails,
       PriorAuthorityFlowFormData priorAuthorityFlowFormData);
 
 
@@ -263,11 +263,11 @@ public interface ProceedingAndCostsMapper {
    */
   @AfterMapping
   default void mapDynamicOptions(
-      @MappingTarget final PriorAuthorityFormDataDetails priorAuthorityDetails,
+      @MappingTarget final PriorAuthorityDetailsFormData priorAuthorityDetails,
       final PriorAuthorityFlowFormData priorAuthorityFlowFormData) {
 
-    if (priorAuthorityFlowFormData.getPriorAuthorityFormDataDetails().getDynamicOptions() != null) {
-      priorAuthorityFlowFormData.getPriorAuthorityFormDataDetails()
+    if (priorAuthorityFlowFormData.getPriorAuthorityDetailsFormData().getDynamicOptions() != null) {
+      priorAuthorityFlowFormData.getPriorAuthorityDetailsFormData()
           .getDynamicOptions().forEach((key, value) -> {
             if (priorAuthorityDetails.getDynamicOptions().containsKey(key)) {
               priorAuthorityDetails.getDynamicOptions().get(key)
@@ -286,23 +286,23 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "fieldType", source = "dataType")
   @Mapping(target = "fieldValue", ignore = true)
   @Mapping(target = "fieldValueDisplayValue", ignore = true)
-  PriorAuthorityFormDataDynamicOption toPriorAuthorityFormDataDynamicOption(
+  DynamicOptionFormData toPriorAuthorityFormDataDynamicOption(
       uk.gov.laa.ccms.data.model.PriorAuthorityDetail formOption);
 
   /**
-   * Populates dynamic options in PriorAuthorityFormDataDetails.
+   * Populates dynamic options in priorAuthorityDetailsFormData.
    *
    * @param priorAuthorityDetails the target to populate.
    * @param priorAuthorityTypeDetail the source of dynamic options.
    */
   @AfterMapping
   default void populatePriorAuthorityDetailsForm(
-      @MappingTarget final PriorAuthorityFormDataDetails priorAuthorityDetails,
+      @MappingTarget final PriorAuthorityDetailsFormData priorAuthorityDetails,
       final PriorAuthorityTypeDetail priorAuthorityTypeDetail) {
 
     for (final uk.gov.laa.ccms.data.model.PriorAuthorityDetail formOption :
         priorAuthorityTypeDetail.getPriorAuthorities()) {
-      final PriorAuthorityFormDataDynamicOption dynamicOption =
+      final DynamicOptionFormData dynamicOption =
           toPriorAuthorityFormDataDynamicOption(formOption);
       priorAuthorityDetails.getDynamicOptions().put(formOption.getCode(), dynamicOption);
     }
@@ -311,22 +311,22 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "id",
       source = "priorAuthorityFlowFormData.priorAuthorityId")
   @Mapping(target = "type.id",
-      source = "priorAuthorityFlowFormData.priorAuthorityTypeFormDataDetails.priorAuthorityType")
+      source = "priorAuthorityFlowFormData.priorAuthorityTypeFormData.priorAuthorityType")
   @Mapping(target = "type.displayValue",
-      source = "priorAuthorityFlowFormData.priorAuthorityTypeFormDataDetails"
+      source = "priorAuthorityFlowFormData.priorAuthorityTypeFormData"
           + ".priorAuthorityTypeDisplayValue")
   @Mapping(target = "summary",
-      source = "priorAuthorityFlowFormData.priorAuthorityFormDataDetails.summary")
+      source = "priorAuthorityFlowFormData.priorAuthorityDetailsFormData.summary")
   @Mapping(target = "justification",
-      source = "priorAuthorityFlowFormData.priorAuthorityFormDataDetails.justification")
+      source = "priorAuthorityFlowFormData.priorAuthorityDetailsFormData.justification")
   @Mapping(target = "valueRequired",
-      source = "priorAuthorityFlowFormData.priorAuthorityFormDataDetails.valueRequired")
+      source = "priorAuthorityFlowFormData.priorAuthorityDetailsFormData.valueRequired")
   @Mapping(target = "amountRequested",
-      source = "priorAuthorityFlowFormData.priorAuthorityFormDataDetails.amountRequested")
+      source = "priorAuthorityFlowFormData.priorAuthorityDetailsFormData.amountRequested")
   @Mapping(target = "status", constant = "Draft")
   @Mapping(target = "items",
       expression = "java(toReferenceDataItems("
-          + "priorAuthorityFlowFormData.getPriorAuthorityFormDataDetails().getDynamicOptions(), "
+          + "priorAuthorityFlowFormData.getPriorAuthorityDetailsFormData().getDynamicOptions(), "
           + "priorAuthorityDynamicForm))")
   @Mapping(target = "ebsId", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
@@ -341,12 +341,12 @@ public interface ProceedingAndCostsMapper {
    * @return the list of converted ReferenceDataItems.
    */
   default List<ReferenceDataItemDetail> toReferenceDataItems(
-      final Map<String, PriorAuthorityFormDataDynamicOption> dynamicOptionsMap,
+      final Map<String, DynamicOptionFormData> dynamicOptionsMap,
       final PriorAuthorityTypeDetail priorAuthorityDynamicForm) {
 
     final List<ReferenceDataItemDetail> referenceDataItems = new ArrayList<>();
 
-    for (final Map.Entry<String, PriorAuthorityFormDataDynamicOption> entry :
+    for (final Map.Entry<String, DynamicOptionFormData> entry :
         dynamicOptionsMap.entrySet()) {
 
       final ReferenceDataItemDetail referenceDataItem = toReferenceDataItem(
@@ -375,6 +375,6 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "lovLookUp", ignore = true)
   ReferenceDataItemDetail toReferenceDataItem(
       final String key,
-      final PriorAuthorityFormDataDynamicOption dynamicOption);
+      final DynamicOptionFormData dynamicOption);
 
 }

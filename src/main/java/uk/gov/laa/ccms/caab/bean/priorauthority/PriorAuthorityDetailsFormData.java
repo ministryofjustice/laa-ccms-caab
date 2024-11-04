@@ -4,13 +4,15 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
+import uk.gov.laa.ccms.caab.bean.file.FileUploadFormData;
 
 /**
  * This class represents the details of a prior authority details form data.
  */
 @Data
 @NoArgsConstructor
-public class PriorAuthorityFormDataDetails {
+public class PriorAuthorityDetailsFormData  {
 
   /**
    * The summary of the prior authority .
@@ -36,6 +38,6 @@ public class PriorAuthorityFormDataDetails {
    * A map of dynamic options for the prior authority.
    * The key is the option name and the value is the PriorAuthorityFormDataDynamicOption object.
    */
-  private Map<String, PriorAuthorityFormDataDynamicOption> dynamicOptions = new HashMap<>();
+  private Map<String, DynamicOptionFormData> dynamicOptions = new HashMap<>();
 
 }

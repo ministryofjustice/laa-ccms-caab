@@ -45,10 +45,10 @@ public abstract class AbstractValidator implements Validator {
   protected static String GENERIC_NUMERIC_LIMIT_ERROR = "'%s' must be less than %s";
 
   protected static final String GENERIC_MAX_LENGTH =
-      "Please enter a maximum of %s characters for %s.";
+      "Please enter a maximum of %s characters for '%s'.";
 
   protected static final String GENERIC_MIN_LENGTH =
-      "Please enter a minimum of %s characters for %s.";
+      "Please enter a minimum of %s characters for '%s'.";
 
   protected static final String GENERIC_DOUBLE_SPACES =
       "Your input for '%s' contains double spaces. Please amend your entry.";

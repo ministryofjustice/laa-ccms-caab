@@ -12,10 +12,10 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestTypeFormData;
 
 @ExtendWith(SpringExtension.class)
-class ProviderRequestTypeDetailsValidatorTest {
+class ProviderRequestTypesValidatorTest {
 
   @InjectMocks
-  private ProviderRequestTypeDetailsValidator providerRequestTypeDetailsValidator;
+  private ProviderRequestTypesValidator providerRequestTypesValidator;
 
   private ProviderRequestTypeFormData providerRequestTypeFormData;
 
@@ -29,18 +29,18 @@ class ProviderRequestTypeDetailsValidatorTest {
 
   @Test
   public void supports_ReturnsTrueForProviderRequestTypeFormDataClass() {
-    assertTrue(providerRequestTypeDetailsValidator.supports(ProviderRequestTypeFormData.class));
+    assertTrue(providerRequestTypesValidator.supports(ProviderRequestTypeFormData.class));
   }
 
   @Test
   public void supports_ReturnsFalseForOtherClasses() {
-    assertFalse(providerRequestTypeDetailsValidator.supports(Object.class));
+    assertFalse(providerRequestTypesValidator.supports(Object.class));
   }
 
   @Test
   public void validate_WithNullProviderRequestType_HasErrors() {
     providerRequestTypeFormData.setProviderRequestType(null);
-    providerRequestTypeDetailsValidator.validate(providerRequestTypeFormData, errors);
+    providerRequestTypesValidator.validate(providerRequestTypeFormData, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("providerRequestType"));
     assertEquals("Please complete 'Request type'.", errors.getFieldError("providerRequestType").getDefaultMessage());
@@ -49,7 +49,7 @@ class ProviderRequestTypeDetailsValidatorTest {
   @Test
   public void validate_WithValidProviderRequestType_NoErrors() {
     providerRequestTypeFormData.setProviderRequestType("Valid Provider Request Type");
-    providerRequestTypeDetailsValidator.validate(providerRequestTypeFormData, errors);
+    providerRequestTypesValidator.validate(providerRequestTypeFormData, errors);
     assertFalse(errors.hasErrors());
   }
 }

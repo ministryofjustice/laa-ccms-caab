@@ -68,9 +68,9 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataDetails;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataTypeDetails;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityTypeFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataFurtherDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
@@ -1214,15 +1214,16 @@ class EditProceedingsAndCostsSectionControllerTest {
             .andExpect(view().name("application/prior-authority-type"))
             .andExpect(model().attribute("priorAuthorityTypes", priorAuthorityTypes))
             .andExpect(model().attribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow))
-            .andExpect(model().attribute("priorAuthorityTypeDetails", priorAuthorityFlow.getPriorAuthorityTypeFormDataDetails()));
+            .andExpect(model().attribute("priorAuthorityTypeDetails", priorAuthorityFlow.getPriorAuthorityTypeFormData()));
 
         verify(lookupService, times(1)).getPriorAuthorityTypes();
     }
 
     @Test
     void testPriorAuthorityTypePostWithValidationErrors() throws Exception {
-        final PriorAuthorityFormDataTypeDetails priorAuthorityFormDataTypeDetails = new PriorAuthorityFormDataTypeDetails();
-        priorAuthorityFormDataTypeDetails.setPriorAuthorityType("1");
+        final PriorAuthorityTypeFormData
+            priorAuthorityTypeFormData = new PriorAuthorityTypeFormData();
+        priorAuthorityTypeFormData.setPriorAuthorityType("1");
 
         final List<PriorAuthorityTypeDetail> priorAuthorityTypes = List.of(
             new PriorAuthorityTypeDetail().code("1").description("Type 1"),
@@ -1238,23 +1239,26 @@ class EditProceedingsAndCostsSectionControllerTest {
             final BindingResult errors = invocation.getArgument(1);
             errors.rejectValue("priorAuthorityType", "required.priorAuthorityType", "Please complete 'Prior authority type'.");
             return null;
-        }).when(priorAuthorityTypeDetailsValidator).validate(any(PriorAuthorityFormDataTypeDetails.class), any(BindingResult.class));
+        }).when(priorAuthorityTypeDetailsValidator).validate(any(PriorAuthorityTypeFormData.class), any(BindingResult.class));
 
         mockMvc.perform(post("/application/prior-authorities/add/type")
                 .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
-                .flashAttr("priorAuthorityTypeDetails", priorAuthorityFormDataTypeDetails))
+                .flashAttr("priorAuthorityTypeDetails", priorAuthorityTypeFormData))
             .andExpect(status().isOk())
             .andExpect(view().name("application/prior-authority-type"))
             .andExpect(model().attributeHasFieldErrors("priorAuthorityTypeDetails", "priorAuthorityType"))
-            .andExpect(model().attribute("priorAuthorityTypeDetails", priorAuthorityFormDataTypeDetails))
+            .andExpect(model().attribute("priorAuthorityTypeDetails",
+                priorAuthorityTypeFormData))
             .andExpect(model().attribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow));
 
-        verify(priorAuthorityTypeDetailsValidator, times(1)).validate(any(PriorAuthorityFormDataTypeDetails.class), any(BindingResult.class));
+        verify(priorAuthorityTypeDetailsValidator, times(1)).validate(any(
+            PriorAuthorityTypeFormData.class), any(BindingResult.class));
     }
 
     @Test
     void testPriorAuthorityTypePostValidationPasses() throws Exception {
-        final PriorAuthorityFormDataTypeDetails priorAuthorityTypeDetails = new PriorAuthorityFormDataTypeDetails();
+        final PriorAuthorityTypeFormData
+            priorAuthorityTypeDetails = new PriorAuthorityTypeFormData();
         priorAuthorityTypeDetails.setPriorAuthorityType("1");
 
         final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData("add");
@@ -1266,17 +1270,17 @@ class EditProceedingsAndCostsSectionControllerTest {
             .andExpect(redirectedUrl("/application/prior-authorities/add/details"));
 
         verify(priorAuthorityTypeDetailsValidator, times(1)).validate(any(
-            PriorAuthorityFormDataTypeDetails.class), any(BindingResult.class));
+            PriorAuthorityTypeFormData.class), any(BindingResult.class));
     }
 
     @Test
     void testPriorAuthorityDetailsForAddAction() throws Exception {
         final String priorAuthorityAction = "add";
-        final PriorAuthorityFormDataTypeDetails typeDetails = new PriorAuthorityFormDataTypeDetails();
+        final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
         typeDetails.setPriorAuthorityType("1");
 
         final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(priorAuthorityAction);
-        priorAuthorityFlow.setPriorAuthorityTypeFormDataDetails(typeDetails);
+        priorAuthorityFlow.setPriorAuthorityTypeFormData(typeDetails);
 
         final PriorAuthorityTypeDetail priorAuthorityDynamicForm = createPriorAuthorityTypeDetail();
 
@@ -1305,11 +1309,11 @@ class EditProceedingsAndCostsSectionControllerTest {
     @Test
     void testPriorAuthorityDetailsForEditAction() throws Exception {
         final String priorAuthorityAction = "edit";
-        final PriorAuthorityFormDataTypeDetails typeDetails = new PriorAuthorityFormDataTypeDetails();
+        final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
         typeDetails.setPriorAuthorityType("1");
 
         final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(priorAuthorityAction);
-        priorAuthorityFlow.setPriorAuthorityTypeFormDataDetails(typeDetails);
+        priorAuthorityFlow.setPriorAuthorityTypeFormData(typeDetails);
 
         final PriorAuthorityTypeDetail priorAuthorityDynamicForm = createPriorAuthorityTypeDetail();
 
@@ -1351,7 +1355,7 @@ class EditProceedingsAndCostsSectionControllerTest {
         final String applicationId = "app123";
         final UserDetail user = new UserDetail();
 
-        final PriorAuthorityFormDataTypeDetails typeDetails = new PriorAuthorityFormDataTypeDetails();
+        final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
         typeDetails.setPriorAuthorityType("1");
 
         final PriorAuthorityTypeDetail priorAuthorityDynamicForm = createPriorAuthorityTypeDetail();
@@ -1364,10 +1368,11 @@ class EditProceedingsAndCostsSectionControllerTest {
         commonLookupDetail.setContent(commonLookupValues);
         when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupDetail));
 
-        final PriorAuthorityFormDataDetails priorAuthorityDetails = new PriorAuthorityFormDataDetails();
+        final PriorAuthorityDetailsFormData
+            priorAuthorityDetails = new PriorAuthorityDetailsFormData();
         final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(action);
-        priorAuthorityFlow.setPriorAuthorityTypeFormDataDetails(typeDetails);
-        priorAuthorityFlow.setPriorAuthorityFormDataDetails(priorAuthorityDetails);
+        priorAuthorityFlow.setPriorAuthorityTypeFormData(typeDetails);
+        priorAuthorityFlow.setPriorAuthorityDetailsFormData(priorAuthorityDetails);
 
         doAnswer(invocation -> {
             final BindingResult errors = invocation.getArgument(1);
@@ -1395,13 +1400,14 @@ class EditProceedingsAndCostsSectionControllerTest {
         final String applicationId = "app123";
         final UserDetail user = new UserDetail();
 
-        final PriorAuthorityFormDataTypeDetails typeDetails = new PriorAuthorityFormDataTypeDetails();
+        final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
         typeDetails.setPriorAuthorityType("1");
 
-        final PriorAuthorityFormDataDetails priorAuthorityDetails = new PriorAuthorityFormDataDetails();
+        final PriorAuthorityDetailsFormData
+            priorAuthorityDetails = new PriorAuthorityDetailsFormData();
         final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(action);
-        priorAuthorityFlow.setPriorAuthorityTypeFormDataDetails(typeDetails);
-        priorAuthorityFlow.setPriorAuthorityFormDataDetails(priorAuthorityDetails);
+        priorAuthorityFlow.setPriorAuthorityTypeFormData(typeDetails);
+        priorAuthorityFlow.setPriorAuthorityDetailsFormData(priorAuthorityDetails);
 
         mockMvc.perform(post("/application/prior-authorities/{action}/details", action)
                 .sessionAttr(APPLICATION_ID, applicationId)

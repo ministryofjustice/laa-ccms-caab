@@ -15,11 +15,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataDetails;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataDynamicOption;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataTypeDetails;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityTypeFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataFurtherDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
@@ -283,7 +283,7 @@ class ProceedingAndCostsMapperTest {
     final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
     priorAuthority.setId(123);
     priorAuthority.setType(new StringDisplayValue().id("PA001").displayValue("Prior Authority Type"));
-    final PriorAuthorityFormDataDetails formDataDetails = new PriorAuthorityFormDataDetails();
+    final PriorAuthorityDetailsFormData formDataDetails = new PriorAuthorityDetailsFormData();
     formDataDetails.setSummary("Test Summary");
 
     final PriorAuthorityFlowFormData result = mapper.toPriorAuthorityFlowFormData(priorAuthority);
@@ -291,8 +291,8 @@ class ProceedingAndCostsMapperTest {
     assertNotNull(result);
     assertEquals("edit", result.getAction());
     assertEquals(priorAuthority.getId(), result.getPriorAuthorityId());
-    assertEquals(priorAuthority.getType().getId(), result.getPriorAuthorityTypeFormDataDetails().getPriorAuthorityType());
-    assertEquals(priorAuthority.getType().getDisplayValue(), result.getPriorAuthorityTypeFormDataDetails().getPriorAuthorityTypeDisplayValue());
+    assertEquals(priorAuthority.getType().getId(), result.getPriorAuthorityTypeFormData().getPriorAuthorityType());
+    assertEquals(priorAuthority.getType().getDisplayValue(), result.getPriorAuthorityTypeFormData().getPriorAuthorityTypeDisplayValue());
   }
 
   @Test
@@ -319,12 +319,12 @@ class ProceedingAndCostsMapperTest {
     items.add(item1);
     items.add(item2);
 
-    final Map<String, PriorAuthorityFormDataDynamicOption> result = mapper.toDynamicOptions(items);
+    final Map<String, DynamicOptionFormData> result = mapper.toDynamicOptions(items);
 
     assertNotNull(result);
     assertEquals(2, result.size());
 
-    final PriorAuthorityFormDataDynamicOption option1 = result.get("Item1");
+    final DynamicOptionFormData option1 = result.get("Item1");
     assertNotNull(option1);
     assertEquals("Item 1 Description", option1.getFieldDescription());
     assertEquals("Type1", option1.getFieldType());
@@ -332,7 +332,7 @@ class ProceedingAndCostsMapperTest {
     assertEquals("Value1", option1.getFieldValue());
     assertEquals("Value 1 Description", option1.getFieldValueDisplayValue());
 
-    final PriorAuthorityFormDataDynamicOption option2 = result.get("Item2");
+    final DynamicOptionFormData option2 = result.get("Item2");
     assertNotNull(option2);
     assertEquals("Item 2 Description", option2.getFieldDescription());
     assertEquals("Type2", option2.getFieldType());
@@ -343,7 +343,7 @@ class ProceedingAndCostsMapperTest {
 
   @Test
   void testToDynamicOptions_withNull() {
-    final Map<String, PriorAuthorityFormDataDynamicOption> result = mapper.toDynamicOptions(null);
+    final Map<String, DynamicOptionFormData> result = mapper.toDynamicOptions(null);
 
     assertNull(result);
   }
@@ -351,48 +351,48 @@ class ProceedingAndCostsMapperTest {
 
   @Test
   void testToPriorAuthorityFormDataDetails() {
-    final PriorAuthorityFormDataDetails priorAuthorityDetails = new PriorAuthorityFormDataDetails();
+    final PriorAuthorityDetailsFormData priorAuthorityDetails = new PriorAuthorityDetailsFormData();
     final PriorAuthorityFlowFormData priorAuthorityFlowFormData = new PriorAuthorityFlowFormData("edit");
-    final PriorAuthorityFormDataDetails formDataDetails = new PriorAuthorityFormDataDetails();
+    final PriorAuthorityDetailsFormData formDataDetails = new PriorAuthorityDetailsFormData();
     formDataDetails.setValueRequired(true);
-    priorAuthorityFlowFormData.setPriorAuthorityFormDataDetails(formDataDetails);
+    priorAuthorityFlowFormData.setPriorAuthorityDetailsFormData(formDataDetails);
 
-    mapper.toPriorAuthorityFormDataDetails(priorAuthorityDetails, priorAuthorityFlowFormData);
+    mapper.toPriorAuthorityDetailsFormData(priorAuthorityDetails, priorAuthorityFlowFormData);
 
     assertEquals(formDataDetails.isValueRequired(), priorAuthorityDetails.isValueRequired());
   }
 
   @Test
   void testToPriorAuthorityFormDataDetails_withNull() {
-    final PriorAuthorityFormDataDetails priorAuthorityDetails = new PriorAuthorityFormDataDetails();
+    final PriorAuthorityDetailsFormData priorAuthorityDetails = new PriorAuthorityDetailsFormData();
 
-    mapper.toPriorAuthorityFormDataDetails(priorAuthorityDetails, null);
+    mapper.toPriorAuthorityDetailsFormData(priorAuthorityDetails, null);
 
     assertFalse(priorAuthorityDetails.isValueRequired());
   }
 
   @Test
   void testMapDynamicOptions() {
-    final PriorAuthorityFormDataDetails priorAuthorityDetails = new PriorAuthorityFormDataDetails();
+    final PriorAuthorityDetailsFormData priorAuthorityDetails = new PriorAuthorityDetailsFormData();
     priorAuthorityDetails.setDynamicOptions(new HashMap<>());
 
     final String key = "Option1";
-    final PriorAuthorityFormDataDynamicOption optionDetails = new PriorAuthorityFormDataDynamicOption();
+    final DynamicOptionFormData optionDetails = new DynamicOptionFormData();
     optionDetails.setFieldDescription("Description 1");
     optionDetails.setFieldType("Type 1");
     optionDetails.setMandatory(true);
     priorAuthorityDetails.getDynamicOptions().put(key, optionDetails);
 
     final PriorAuthorityFlowFormData priorAuthorityFlowFormData = new PriorAuthorityFlowFormData("edit");
-    final PriorAuthorityFormDataDetails formDataDetails = new PriorAuthorityFormDataDetails();
+    final PriorAuthorityDetailsFormData formDataDetails = new PriorAuthorityDetailsFormData();
     formDataDetails.setDynamicOptions(new HashMap<>());
-    final PriorAuthorityFormDataDynamicOption newOptionDetails = new PriorAuthorityFormDataDynamicOption();
+    final DynamicOptionFormData newOptionDetails = new DynamicOptionFormData();
     newOptionDetails.setFieldDescription("Updated Description 1");
     newOptionDetails.setFieldType("Updated Type 1");
     newOptionDetails.setMandatory(false);
     formDataDetails.getDynamicOptions().put(key, newOptionDetails);
 
-    priorAuthorityFlowFormData.setPriorAuthorityFormDataDetails(formDataDetails);
+    priorAuthorityFlowFormData.setPriorAuthorityDetailsFormData(formDataDetails);
 
     mapper.mapDynamicOptions(priorAuthorityDetails, priorAuthorityFlowFormData);
 
@@ -404,7 +404,7 @@ class ProceedingAndCostsMapperTest {
 
   @Test
   void testPopulatePriorAuthorityDetailsForm() {
-    final PriorAuthorityFormDataDetails priorAuthorityDetails = new PriorAuthorityFormDataDetails();
+    final PriorAuthorityDetailsFormData priorAuthorityDetails = new PriorAuthorityDetailsFormData();
     priorAuthorityDetails.setDynamicOptions(new HashMap<>());
 
     final PriorAuthorityTypeDetail priorAuthorityTypeDetail = new PriorAuthorityTypeDetail();
@@ -435,12 +435,12 @@ class ProceedingAndCostsMapperTest {
     assertTrue(priorAuthorityDetails.getDynamicOptions().containsKey("Detail1"));
     assertTrue(priorAuthorityDetails.getDynamicOptions().containsKey("Detail2"));
 
-    PriorAuthorityFormDataDynamicOption option1 = priorAuthorityDetails.getDynamicOptions().get("Detail1");
+    DynamicOptionFormData option1 = priorAuthorityDetails.getDynamicOptions().get("Detail1");
     assertEquals("Description 1", option1.getFieldDescription());
     assertEquals("Type1", option1.getFieldType());
     assertTrue(option1.isMandatory());
 
-    PriorAuthorityFormDataDynamicOption option2 = priorAuthorityDetails.getDynamicOptions().get("Detail2");
+    DynamicOptionFormData option2 = priorAuthorityDetails.getDynamicOptions().get("Detail2");
     assertEquals("Description 2", option2.getFieldDescription());
     assertEquals("Type2", option2.getFieldType());
     assertFalse(option2.isMandatory());
@@ -448,7 +448,7 @@ class ProceedingAndCostsMapperTest {
 
   @Test
   void testPopulatePriorAuthorityDetailsForm_withEmptyDetails() {
-    final PriorAuthorityFormDataDetails priorAuthorityDetails = new PriorAuthorityFormDataDetails();
+    final PriorAuthorityDetailsFormData priorAuthorityDetails = new PriorAuthorityDetailsFormData();
     priorAuthorityDetails.setDynamicOptions(new HashMap<>());
 
     final PriorAuthorityTypeDetail priorAuthorityTypeDetail = new PriorAuthorityTypeDetail();
@@ -469,7 +469,7 @@ class ProceedingAndCostsMapperTest {
     formOption.setDescription("Option Description");
     formOption.setDataType("Option Type");
 
-    final PriorAuthorityFormDataDynamicOption result = mapper.toPriorAuthorityFormDataDynamicOption(formOption);
+    final DynamicOptionFormData result = mapper.toPriorAuthorityFormDataDynamicOption(formOption);
 
     assertNotNull(result);
     assertTrue(result.isMandatory());
@@ -481,7 +481,7 @@ class ProceedingAndCostsMapperTest {
   void testToPriorAuthorityFormDataDynamicOption_withNull() {
     final uk.gov.laa.ccms.data.model.PriorAuthorityDetail formOption = null;
 
-    final PriorAuthorityFormDataDynamicOption result =
+    final DynamicOptionFormData result =
         mapper.toPriorAuthorityFormDataDynamicOption(formOption);
 
     assertNull(result);
@@ -493,17 +493,17 @@ class ProceedingAndCostsMapperTest {
         new PriorAuthorityFlowFormData("edit");
     priorAuthorityFlowFormData.setPriorAuthorityId(123);
 
-    final PriorAuthorityFormDataTypeDetails typeDetails = new PriorAuthorityFormDataTypeDetails();
+    final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
     typeDetails.setPriorAuthorityType("Type1");
     typeDetails.setPriorAuthorityTypeDisplayValue("Type Display 1");
-    priorAuthorityFlowFormData.setPriorAuthorityTypeFormDataDetails(typeDetails);
+    priorAuthorityFlowFormData.setPriorAuthorityTypeFormData(typeDetails);
 
-    final PriorAuthorityFormDataDetails formDataDetails = new PriorAuthorityFormDataDetails();
+    final PriorAuthorityDetailsFormData formDataDetails = new PriorAuthorityDetailsFormData();
     formDataDetails.setSummary("Test Summary");
     formDataDetails.setJustification("Test Justification");
     formDataDetails.setValueRequired(true);
     formDataDetails.setAmountRequested("2000");
-    priorAuthorityFlowFormData.setPriorAuthorityFormDataDetails(formDataDetails);
+    priorAuthorityFlowFormData.setPriorAuthorityDetailsFormData(formDataDetails);
 
     final PriorAuthorityTypeDetail priorAuthorityDynamicForm = new PriorAuthorityTypeDetail();
 
@@ -526,8 +526,8 @@ class ProceedingAndCostsMapperTest {
 
   @Test
   void testToReferenceDataItems() {
-    final Map<String, PriorAuthorityFormDataDynamicOption> dynamicOptionsMap = new HashMap<>();
-    final PriorAuthorityFormDataDynamicOption dynamicOption1 = new PriorAuthorityFormDataDynamicOption();
+    final Map<String, DynamicOptionFormData> dynamicOptionsMap = new HashMap<>();
+    final DynamicOptionFormData dynamicOption1 = new DynamicOptionFormData();
     dynamicOption1.setFieldDescription("Description 1");
     dynamicOption1.setFieldType("Type1");
     dynamicOption1.setMandatory(true);
@@ -556,7 +556,7 @@ class ProceedingAndCostsMapperTest {
   @Test
   void testToReferenceDataItem() {
     final String key = "key1";
-    final PriorAuthorityFormDataDynamicOption dynamicOption = new PriorAuthorityFormDataDynamicOption();
+    final DynamicOptionFormData dynamicOption = new DynamicOptionFormData();
     dynamicOption.setFieldDescription("Field Description");
     dynamicOption.setFieldType("Field Type");
     dynamicOption.setMandatory(true);
