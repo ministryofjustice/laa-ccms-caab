@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>LAA CCMS - Your firm</title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/home}" class="govuk-back-link">Return to home</a>
+  </div>
+  <div id="main-content">
+    <form action="#" th:action="@{/provider-switch}" th:object="${providerFirmFormData}"
+          method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <h1 class="govuk-heading-l">
+        Your firm
+      </h1>
+      <p class="govuk-body-l">
+        Please select the firm that you wish to do work for. Note that selecting a firm will filter
+        your view of notifications to those belonging to the selected firm.
+      </p>
+      <div
+        th:replace="~{partials/forms :: dropdown('providerFirmId', 'Available firms', ${providerFirms}, 'id', 'name', true)}"></div>
+      <div class="govuk-button-group">
+        <button type="submit" class="govuk-button" data-module="govuk-button">
+          Confirm
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

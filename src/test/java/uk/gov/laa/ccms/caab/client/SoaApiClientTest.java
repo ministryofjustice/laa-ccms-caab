@@ -42,6 +42,7 @@ import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
+import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -1082,6 +1083,40 @@ class SoaApiClientTest {
     URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
     assertEquals(expectedUri, actualUri.toString());
+  }
+
+  @Test
+  void updateUser_Successful() {
+
+    String loginId = "user1";
+    String userType = "userType";
+    String expectedUri = "/users/options";
+    String providerFirmId = "1234";
+    UserOptions userOptions = new UserOptions()
+        .userLoginId(loginId)
+        .providerFirmId(providerFirmId);
+
+    ClientTransactionResponse mockUserUpdated = new ClientTransactionResponse();
+    mockUserUpdated.setTransactionId("123");
+
+    when(soaApiWebClientMock.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri)).thenReturn(
+        requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
+        requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Role", userType)).thenReturn(
+        requestBodyMock);
+    when(requestBodyMock.contentType(any(MediaType.class))).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(UserOptions.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(ClientTransactionResponse.class)).thenReturn(Mono.just(mockUserUpdated));
+
+    Mono<ClientTransactionResponse> userUpdatedMono = soaApiClient.updateUserOptions(
+        userOptions, loginId, userType);
+
+    StepVerifier.create(userUpdatedMono)
+        .expectNext(mockUserUpdated)
+        .verifyComplete();
   }
 
 }

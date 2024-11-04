@@ -36,6 +36,7 @@ import uk.gov.laa.ccms.soa.gateway.model.Notification;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
 
 public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
 
@@ -358,6 +359,29 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     assertEquals(document, response);
   }
 
+  @Test
+  public void testUpdateUserOptions_returnsData() throws Exception {
+    String loginId = USER_1;
+    String userType = USER_TYPE;
+    ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse()
+        .transactionId("01234");
+
+    String clientTransactionResponseString = objectMapper
+        .writeValueAsString(clientTransactionResponse);
+
+    wiremock.stubFor(put("/users/options")
+        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
+        .willReturn(okJson(clientTransactionResponseString)));
+
+    Mono<ClientTransactionResponse> clientTransactionResponseMono =
+        soaApiClient.updateUserOptions(new UserOptions(), loginId, userType);
+
+    ClientTransactionResponse response = clientTransactionResponseMono.block();
+
+    assertEquals(clientTransactionResponse, response);
+  }
+
   private NotificationSummary buildNotificationSummary() {
     return new NotificationSummary()
         .notifications(10)
@@ -411,4 +435,5 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
                 )
         );
   }
+
 }
