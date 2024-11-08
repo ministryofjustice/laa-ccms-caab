@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.bean.request;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -26,5 +27,14 @@ public class ProviderRequestDetailsFormData extends FileUploadFormData {
   private String additionalInformationLabel;
 
   private String additionalInformation;
+
+  private Integer documentIdToDelete;
+
+  private UUID documentSessionId;
+
+  public ProviderRequestDetailsFormData() {
+    super();
+    this.documentSessionId = UUID.randomUUID();
+  }
 
 }

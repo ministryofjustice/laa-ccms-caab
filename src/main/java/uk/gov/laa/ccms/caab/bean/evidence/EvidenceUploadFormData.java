@@ -29,7 +29,7 @@ public class EvidenceUploadFormData extends FileUploadFormData implements Serial
   /**
    * The application or outcome that this upload relates to.
    */
-  private Integer applicationOrOutcomeId;
+  private String applicationOrOutcomeId;
 
   /**
    * The related case reference number.

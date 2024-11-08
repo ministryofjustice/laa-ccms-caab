@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.bean.request;
 
+import java.util.UUID;
 import lombok.Data;
 
 /**
@@ -8,13 +9,16 @@ import lombok.Data;
 @Data
 public class ProviderRequestFlowFormData {
 
-
   private ProviderRequestTypeFormData requestTypeFormData;
 
   private ProviderRequestDetailsFormData requestDetailsFormData;
 
   public ProviderRequestFlowFormData() {
     this.requestTypeFormData = new ProviderRequestTypeFormData();
+    this.requestDetailsFormData = new ProviderRequestDetailsFormData();
+  }
+
+  public void resetRequestDetailsFormData() {
     this.requestDetailsFormData = new ProviderRequestDetailsFormData();
   }
 
