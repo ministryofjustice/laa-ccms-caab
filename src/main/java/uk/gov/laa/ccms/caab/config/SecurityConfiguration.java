@@ -18,6 +18,7 @@ import org.springframework.security.saml2.provider.service.authentication.OpenSa
 import org.springframework.security.saml2.provider.service.authentication.Saml2AuthenticatedPrincipal;
 import org.springframework.security.saml2.provider.service.authentication.Saml2Authentication;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
 
 /**
  * Configuration class for customizing Spring Security settings.
@@ -42,21 +43,23 @@ public class SecurityConfiguration {
     authenticationProvider.setResponseAuthenticationConverter(groupsConverter());
 
     return http
-            .authorizeHttpRequests(authorize -> authorize
-                    .anyRequest().authenticated())
-            .csrf(AbstractHttpConfigurer::disable)
-            .logout((logout) -> logout
-                .addLogoutHandler((req, res, auth) -> {
-                  try {
-                    res.sendRedirect(logoutUrl);
-                  } catch (IOException e) {
-                    throw new RuntimeException("Failed to redirect to Identity Provider.", e);
-                  }
-                })
-            )
-            .saml2Login(saml2 -> saml2
-                    .authenticationManager(new ProviderManager(authenticationProvider)))
-            .build();
+      .authorizeHttpRequests(authorize -> authorize
+              .anyRequest().authenticated())
+      .csrf(AbstractHttpConfigurer::disable)
+      .sessionManagement(sessionManagement -> sessionManagement
+          .invalidSessionStrategy(new SimpleRedirectInvalidSessionStrategy("/home")))
+      .logout((logout) -> logout
+          .addLogoutHandler((req, res, auth) -> {
+            try {
+              res.sendRedirect(logoutUrl);
+            } catch (IOException e) {
+              throw new RuntimeException("Failed to redirect to Identity Provider.", e);
+            }
+          })
+      )
+      .saml2Login(saml2 -> saml2
+              .authenticationManager(new ProviderManager(authenticationProvider)))
+      .build();
   }
 
 
