@@ -218,3 +218,60 @@ To check the current Docker context, use:
 ```sh
 docker context show
 ```
+
+## Recreating frontend static resources
+
+To provide a clean way of
+
+### Prerequisites
+
+In order to download/recompile frontend static resources, you will need to have `npm` installed. This will be used to 
+manage the GOVUK and MoJ frontends. It will also be used to download the tools required to compile the various resources.
+
+With `npm` installed on your machine, you will need to ensure you have `gulp` installed on your system globally rather 
+than at project level.
+
+```sh
+npm install -g gulp
+```
+
+Check this has installed by checking the version.
+
+```shell
+gulp --version
+```
+
+Next download the dev dependencies for this project.
+
+```sh
+# Whilst in the project directory
+npm install
+```
+
+### Recreating the frontend resources
+
+Recreating the frontend resources can be done by just running gulp.
+
+```shell
+# Whilst in the project directory
+gulp
+```
+
+By running this command, UPDATE WHAT HAPPENS HERE.
+
+### Updating the various frontend toolkits
+
+To change which version of the toolkit is downloaded, check the file `./package.json`. From this file, change the 
+version number to whichever version you require.
+
+- To check what versions are available for the GOV UK Frontend, go [here](https://www.npmjs.com/package/govuk-frontend).
+- To check what versions are available for the MoJ UK Frontend, go [here](https://www.npmjs.com/package/@ministryofjustice/frontend).
+
+If a version has been modified within this file, you will need to download the new version using node package manager,
+and then copy the new files to the Spring Boot resources folder.
+
+```sh
+# Whilst in the project directory
+npm install
+gulp
+```

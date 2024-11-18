@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "@ministryofjustice/frontend": "^3.0.3",
+    "govuk-frontend": "^5.7.1",
+    "gulp": "^5.0.0"
+  }
+}
