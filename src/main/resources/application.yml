@@ -55,10 +55,11 @@ server:
   tomcat:
     max-swallow-size: -1
     max-http-form-post-size: -1
-
-  # required to be on civil in order for OPA integration with OWD,
-  # otherwise issues occur with the JSESSIONID cookie
   servlet:
+    session:
+      timeout: 60m
+    # required to be on civil in order for OPA integration with OWD,
+    # otherwise issues occur with the JSESSIONID cookie
     context-path: /civil
 
 laa:

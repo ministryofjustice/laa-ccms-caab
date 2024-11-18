@@ -1,12 +1,12 @@
-package uk.gov.laa.ccms.caab.bean.priorauthority;
+package uk.gov.laa.ccms.caab.bean.common;
 
 import lombok.Data;
 
 /**
- * Represents a dynamic option in prior authority form data.
+ * Represents a dynamic option in form data, used for prior authorities and provider requests.
  */
 @Data
-public class PriorAuthorityFormDataDynamicOption {
+public class DynamicOptionFormData {
 
   /**
    * The identifier of the field value, mapped from ReferenceDataItem's

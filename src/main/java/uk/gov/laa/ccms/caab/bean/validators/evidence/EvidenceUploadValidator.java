@@ -49,13 +49,15 @@ public class EvidenceUploadValidator extends FileUploadValidator {
    */
   @Override
   public void validate(final Object target, final Errors errors) {
-    final EvidenceUploadFormData notificationAttachmentUploadFormData =
+    final EvidenceUploadFormData evidenceUploadFormData =
         (EvidenceUploadFormData) target;
 
-    validateFile(notificationAttachmentUploadFormData, errors);
+    validateFile(evidenceUploadFormData, errors);
+    validateDocumentType(evidenceUploadFormData, errors);
+    validateDocumentDescription(evidenceUploadFormData, errors);
 
-    if (notificationAttachmentUploadFormData.getEvidenceTypes() == null
-        || notificationAttachmentUploadFormData.getEvidenceTypes().isEmpty()) {
+    if (evidenceUploadFormData.getEvidenceTypes() == null
+        || evidenceUploadFormData.getEvidenceTypes().isEmpty()) {
       errors.rejectValue("evidenceTypes",
           "required.evidenceTypes", EVIDENCE_TYPES_REQUIRED_ERROR);
     }

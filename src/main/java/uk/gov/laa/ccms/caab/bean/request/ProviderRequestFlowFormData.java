@@ -11,8 +11,11 @@ public class ProviderRequestFlowFormData {
 
   private ProviderRequestTypeFormData requestTypeFormData;
 
+  private ProviderRequestDetailsFormData requestDetailsFormData;
+
   public ProviderRequestFlowFormData() {
     this.requestTypeFormData = new ProviderRequestTypeFormData();
+    this.requestDetailsFormData = new ProviderRequestDetailsFormData();
   }
 
 

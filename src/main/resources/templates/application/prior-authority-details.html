@@ -23,7 +23,7 @@
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
           <dl class="govuk-body">
-            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Prior authority type', ${priorAuthorityFlow.priorAuthorityTypeFormDataDetails.priorAuthorityTypeDisplayValue})}"></div>
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Prior authority type', ${priorAuthorityFlow.priorAuthorityTypeFormData.priorAuthorityTypeDisplayValue})}"></div>
           </dl>
 
           <div th:replace="~{partials/forms :: textInput('summary', 'Summary', 'govuk-input--width-20')}"></div>
@@ -56,7 +56,7 @@
                         th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
                         th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
                         th:errorclass="govuk-select--error"
-                        th:attr="onchange=|document.getElementById('dynamicOptions[${option.code}].fieldValueDisplayValue').value = this.options[this.selectedIndex].text;|">>
+                        th:attr="onchange=|document.getElementById('dynamicOptions[${option.code}].fieldValueDisplayValue').value = this.options[this.selectedIndex].text;|">
                   <option value="">Please Select</option>
                   <option th:each="item : ${__${option.code}__}"
                           th:value="${item['code']}"

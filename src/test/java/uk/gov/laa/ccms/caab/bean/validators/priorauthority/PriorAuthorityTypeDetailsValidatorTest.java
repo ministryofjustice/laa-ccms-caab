@@ -9,7 +9,7 @@ import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFormDataTypeDetails;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityTypeFormData;
 
 @ExtendWith(SpringExtension.class)
 class PriorAuthorityTypeDetailsValidatorTest {
@@ -17,19 +17,19 @@ class PriorAuthorityTypeDetailsValidatorTest {
   @InjectMocks
   private PriorAuthorityTypeDetailsValidator priorAuthorityTypeDetailsValidator;
 
-  private PriorAuthorityFormDataTypeDetails priorAuthorityTypeDetails;
+  private PriorAuthorityTypeFormData priorAuthorityTypeDetails;
 
   private Errors errors;
 
   @BeforeEach
   public void setUp() {
-    priorAuthorityTypeDetails = new PriorAuthorityFormDataTypeDetails();
+    priorAuthorityTypeDetails = new PriorAuthorityTypeFormData();
     errors = new BeanPropertyBindingResult(priorAuthorityTypeDetails, "priorAuthorityTypeDetails");
   }
 
   @Test
   public void supports_ReturnsTrueForPriorAuthorityFormDataTypeDetailsClass() {
-    assertTrue(priorAuthorityTypeDetailsValidator.supports(PriorAuthorityFormDataTypeDetails.class));
+    assertTrue(priorAuthorityTypeDetailsValidator.supports(PriorAuthorityTypeFormData.class));
   }
 
   @Test

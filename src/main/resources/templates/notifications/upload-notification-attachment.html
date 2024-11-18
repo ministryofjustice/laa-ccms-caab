@@ -19,7 +19,7 @@
           th:text="*{sendBy.code} == 'P' ? 'Postal' : 'Electronic'"></span> Documents or
         Evidence</h1>
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <div th:if="*{sendBy.code} == 'E'" class="govuk-warning-text">
+      <div th:if="(*{sendBy.code}) == 'E'" class="govuk-warning-text">
         <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
         <strong class="govuk-warning-text__text">
           <span class="govuk-visually-hidden">Warning</span>
@@ -41,8 +41,7 @@
         </label>
         <input class="govuk-file-upload" id="file" name="file" type="file">
       </div>
-      <div
-          th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', 'Document Type', ${documentTypes}, 'code', 'description')}"></div>
+      <div th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', 'Document Type', ${documentTypes}, 'code', 'description')}"></div>
       <div th:replace="~{partials/forms :: largeTextInput('documentDescription', 'Document description (Maximum 255 characters allowed)')}"></div>
 
       <input type="hidden" th:id="sendBy" th:name="sendBy"
