@@ -40,7 +40,7 @@ docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-cc
 
 ### Run laa-ccms-caab-saml-mock standalone
 
-```
+```shell
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-saml-mock
 ```
 

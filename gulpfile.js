@@ -19,6 +19,8 @@ function copyGOVUKJavaScript() {
   return gulp
   .src('./node_modules/govuk-frontend/dist/govuk/govuk-frontend.min.js')
   .pipe(rename('all.js'))
+  // Add spring context path to asset locations
+  .pipe(replace('/assets/', '/civil/assets/'))
   .pipe(gulp.dest('./src/main/resources/static/js/'), {overwrite: true} );
 }
 
@@ -53,6 +55,8 @@ function copyMOJJavaScript() {
   .src('./node_modules/@ministryofjustice/frontend/moj/all.js')
   .pipe(uglify())
   .pipe(rename('moj-frontend.min.js'))
+  // Add spring context path to asset locations
+  .pipe(replace('/assets/', '/civil/assets/'))
   .pipe(gulp.dest('./src/main/resources/static/moj-frontend/javascript'), {overwrite: true} );
 }
 
