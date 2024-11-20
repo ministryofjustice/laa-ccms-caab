@@ -1,6 +1,7 @@
 const gulp = require("gulp");
-const {parallel} = require("gulp");
+const parallel = require("gulp");
 const rename = require("gulp-rename");
+const uglify = require('gulp-uglify');
 const sass = require("gulp-sass")(require("sass"));
 
 
@@ -25,7 +26,8 @@ function copyGOVUKAssets(){
 }
 
 function copyMOJStyleSheets() {
-  // MoJ don't contain
+  // MoJ frontend does not come with a compiled minified css stylesheet, so
+  //  compile it ourselves with 'sass'
   return gulp
   .src('./node_modules/@ministryofjustice/frontend/moj/all.scss')
   .pipe(sass({
@@ -36,11 +38,14 @@ function copyMOJStyleSheets() {
 }
 
 function copyMOJJavaScript() {
-  // MoJ doesn't provide a minified version of their JS file via npm, and if you try
-  //  and use `gulp-minify`, it errors so this file is not minified.
+  // MoJ NPM package does not come with a 'minified' javascript, so uglify it
+  //  ourselves. (Looking at the MoJ frontend repository, this is how they package
+  //  the javascript themselves for GitHub release:
+  //  https://github.com/ministryofjustice/moj-frontend/blob/main/gulp/dist.js)
   return gulp
   .src('./node_modules/@ministryofjustice/frontend/moj/all.js')
-  .pipe(rename('moj-frontend.js'))
+  .pipe(uglify())
+  .pipe(rename('moj-frontend.min.js'))
   .pipe(gulp.dest('./src/main/resources/static/moj-frontend/javascript'), {overwrite: true} );
 }
 
