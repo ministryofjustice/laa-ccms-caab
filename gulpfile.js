@@ -5,7 +5,6 @@ const uglify = require('gulp-uglify');
 const sass = require("gulp-sass")(require("sass"));
 const replace = require('gulp-replace');
 
-
 function copyGOVUKStyleSheets() {
   return gulp
   .src('./node_modules/govuk-frontend/dist/govuk/govuk-frontend.min.css')
@@ -26,11 +25,9 @@ function copyGOVUKJavaScript() {
 
 function copyGOVUKAssets(){
   return gulp
-  .src('./node_modules/govuk-frontend/dist/govuk/assets/**/*')
+  .src('./node_modules/govuk-frontend/dist/govuk/assets/**/*', { encoding: false })
   .pipe(gulp.dest('./src/main/resources/static/assets/'), {overwrite: true} );
 }
-
-// sed -i '' 's|/assets/|/civil/assets/|g' src/main/resources/static/moj-frontend/moj-frontend.min.css
 
 function copyMOJStyleSheets() {
   // MoJ frontend does not come with a compiled minified css stylesheet, so
@@ -62,7 +59,7 @@ function copyMOJJavaScript() {
 
 function copyMOJAssets(){
   return gulp
-  .src('./node_modules/@ministryofjustice/frontend/moj/assets/**/*')
+  .src('./node_modules/@ministryofjustice/frontend/moj/assets/**/*', { encoding: false })
   .pipe(gulp.dest('./src/main/resources/static/assets/'), {overwrite: true} );
 }
 
