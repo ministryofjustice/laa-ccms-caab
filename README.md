@@ -241,6 +241,10 @@ docker context show
 
 ## Recreating frontend static resources
 
+> **_INFORMATION:_**  When cloning this project for the first time, you do not need
+> to run gulp as the static resources should already be created within the project.
+> This tool is just incase you wish to recreate them.
+
 To provide a clean way of recreating the static resources, a gulp workflow has been implemented. This
 helps automate the creation of frontend static resources when new versions of frontend toolkits
 have been released, and to compile the projects own style sheets into a minified format for better
