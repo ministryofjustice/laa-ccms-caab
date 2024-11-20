@@ -7,12 +7,14 @@ const sass = require("gulp-sass")(require("sass"));
 function copyGOVUKStyleSheets() {
   return gulp
   .src('./node_modules/govuk-frontend/dist/govuk/govuk-frontend.min.css')
-  .pipe(gulp.dest('./src/main/resources/static/css/'), {overwrite: true} );
+  .pipe(rename('all.css'))
+  .pipe(gulp.dest('./src/main/resources/static/govuk-frontend/'), {overwrite: true} );
 }
 
 function copyGOVUKJavaScript() {
   return gulp
   .src('./node_modules/govuk-frontend/dist/govuk/govuk-frontend.min.js')
+  .pipe(rename('all.js'))
   .pipe(gulp.dest('./src/main/resources/static/js/'), {overwrite: true} );
 }
 
@@ -29,8 +31,8 @@ function copyMOJStyleSheets() {
   .pipe(sass({
     outputStyle: 'compressed' // Minify the CSS output
   }).on('error', sass.logError))
-  .pipe(rename('mojuk-frontend.min.css'))
-  .pipe(gulp.dest('./src/main/resources/static/css/'), {overwrite: true} );
+  .pipe(rename('moj-frontend.min.css'))
+  .pipe(gulp.dest('./src/main/resources/static/moj-frontend/'), {overwrite: true} );
 }
 
 function copyMOJJavaScript() {
@@ -38,8 +40,8 @@ function copyMOJJavaScript() {
   //  and use `gulp-minify`, it errors so this file is not minified.
   return gulp
   .src('./node_modules/@ministryofjustice/frontend/moj/all.js')
-  .pipe(rename('mojuk-frontend.js'))
-  .pipe(gulp.dest('./src/main/resources/static/js/'), {overwrite: true} );
+  .pipe(rename('moj-frontend.js'))
+  .pipe(gulp.dest('./src/main/resources/static/moj-frontend/javascript'), {overwrite: true} );
 }
 
 function copyMOJAssets(){
