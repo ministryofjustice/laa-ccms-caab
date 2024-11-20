@@ -3,12 +3,15 @@ const {parallel} = require("gulp");
 const rename = require("gulp-rename");
 const uglify = require('gulp-uglify');
 const sass = require("gulp-sass")(require("sass"));
+const replace = require('gulp-replace');
 
 
 function copyGOVUKStyleSheets() {
   return gulp
   .src('./node_modules/govuk-frontend/dist/govuk/govuk-frontend.min.css')
   .pipe(rename('all.css'))
+  // Add spring context path to asset locations
+  .pipe(replace('/assets/', '/civil/assets/'))
   .pipe(gulp.dest('./src/main/resources/static/govuk-frontend/'), {overwrite: true} );
 }
 
@@ -25,6 +28,8 @@ function copyGOVUKAssets(){
   .pipe(gulp.dest('./src/main/resources/static/assets/'), {overwrite: true} );
 }
 
+// sed -i '' 's|/assets/|/civil/assets/|g' src/main/resources/static/moj-frontend/moj-frontend.min.css
+
 function copyMOJStyleSheets() {
   // MoJ frontend does not come with a compiled minified css stylesheet, so
   //  compile it ourselves with 'sass'
@@ -34,6 +39,8 @@ function copyMOJStyleSheets() {
     outputStyle: 'compressed' // Minify the CSS output
   }).on('error', sass.logError))
   .pipe(rename('moj-frontend.min.css'))
+  // Add spring context path to asset locations
+  .pipe(replace('/assets/', '/civil/assets/'))
   .pipe(gulp.dest('./src/main/resources/static/moj-frontend/'), {overwrite: true} );
 }
 
