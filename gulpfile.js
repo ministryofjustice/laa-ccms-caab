@@ -1,5 +1,5 @@
 const gulp = require("gulp");
-const parallel = require("gulp");
+const {parallel} = require("gulp");
 const rename = require("gulp-rename");
 const uglify = require('gulp-uglify');
 const sass = require("gulp-sass")(require("sass"));
@@ -59,8 +59,8 @@ function copyMOJAssets(){
 gulp.task('copyGOVUKAssets',
     parallel(copyGOVUKStyleSheets, copyGOVUKJavaScript, copyGOVUKAssets));
 // GOV UK Copy Task called "copyMOJUKAssets"
-gulp.task('copyMOJUKAssets', parallel(copyMOJStyleSheets, copyMOJJavaScript, copyMOJAssets));
+gulp.task('copyMOJAssets', parallel(copyMOJStyleSheets, copyMOJJavaScript, copyMOJAssets));
 
 // As a default task, it should just run all other tasks, so defined as a series
 //  by each other tasks name.
-gulp.task('default', gulp.series('copyGOVUKAssets', 'copyMOJUKAssets'));
+gulp.task('default', gulp.series('copyGOVUKAssets', 'copyMOJAssets'));

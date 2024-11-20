@@ -2,7 +2,7 @@
 
 ## How to run this application:
 
-The laa-ccms-caab-ui requires multiple other microservices in order to run locally and function 
+The laa-ccms-caab-ui requires multiple other microservices in order to run locally and function
 correctly. They are:
 
 - [laa-ccms-caab-api](https://github.com/ministryofjustice/laa-ccms-caab-api)
@@ -13,7 +13,8 @@ correctly. They are:
 
 ## Set up laa-ccms-caab-saml-mock
 
-This step requires maven to be installed on your machine. You can use [homebrew](https://formulae.brew.sh/formula/maven) to install it.
+This step requires maven to be installed on your machine. You can
+use [homebrew](https://formulae.brew.sh/formula/maven) to install it.
 
 ```
 brew install maven
@@ -74,25 +75,26 @@ Liquibase 'updateSql' Successful
 
 When you see this message you can stop the liquibase container.
 
-
 ### Run laa-ccms-caab-db standalone
 
 ```
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-db
 ```
 
-## Wiremock standalone 
+## Wiremock standalone
 
-This is required due to a dependency on the ordinance survey api, instead of calling the real thing we call this.
+This is required due to a dependency on the ordinance survey api, instead of calling the real thing
+we call this.
 The wiremock can handle and postcode request.
 
 ```
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-wiremock
 ```
 
-## ClamAV 
+## ClamAV
 
-To facilitate local virus scan when uploading files in the UI, a ClamAV container can be started using
+To facilitate local virus scan when uploading files in the UI, a ClamAV container can be started
+using
 the following command:
 
 ```
@@ -102,8 +104,10 @@ docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-cc
 ## LocalStack (AWS)
 
 LocalStack provides lightweight instances of AWS components, such as S3. When running locally, it is
-recommended to install [LocalStack Desktop](https://docs.localstack.cloud/user-guide/tools/localstack-desktop/)
-to monitor and manage components. [LocalStack AWS CLI (`awslocal`)](https://docs.localstack.cloud/user-guide/integrations/aws-cli/#localstack-aws-cli-awslocal)
+recommended to
+install [LocalStack Desktop](https://docs.localstack.cloud/user-guide/tools/localstack-desktop/)
+to monitor and manage components. [LocalStack AWS CLI (
+`awslocal`)](https://docs.localstack.cloud/user-guide/integrations/aws-cli/#localstack-aws-cli-awslocal)
 can also be useful if more in-depth interactions are required.
 
 **Note: persistence is a pro feature, so files in S3 will not endure on container shutdown.**
@@ -119,16 +123,19 @@ An S3 bucket `laa-ccms-documents` will be created on startup if it does not alre
 
 ## OPA/OIA and connector
 
-The OPA/OIA and connector services are not required for the ui to start up locally, but if you want to test / develop features for the integration then this is required.
+The OPA/OIA and connector services are not required for the ui to start up locally, but if you want
+to test / develop features for the integration then this is required.
 
-This [connector guide](https://github.com/ministryofjustice/laa-ccms-connector/blob/main/documentation/gradle-docker-build.md) can be followed to get the connector/opa/oia up and running.
+This [connector guide](https://github.com/ministryofjustice/laa-ccms-connector/blob/main/documentation/gradle-docker-build.md)
+can be followed to get the connector/opa/oia up and running.
 
-If you are running on an M series mac and using colima. You will most likely need 2 docker contexts/vms. 
-One running x86_64 architecture and the other running arm64 architecture. 
+If you are running on an M series mac and using colima. You will most likely need 2 docker
+contexts/vms.
+One running x86_64 architecture and the other running arm64 architecture.
 
-See guide below [M series Macbook/Colima development setup](#m-series-macbookcolima-development-setup) for more information.
-
-
+See guide
+below [M series Macbook/Colima development setup](#m-series-macbookcolima-development-setup) for
+more information.
 
 ## secrets.gradle (required for gradle build)
 
@@ -139,22 +146,26 @@ project.ext.gitPackageUser = "{your name}"
 project.ext.gitPackageKey = "{your personal api token}"
 ```
 
-Replace the username with your own name, and replace the key with a personal access token to 
+Replace the username with your own name, and replace the key with a personal access token to
 read GitHub packages.
 
-Find more information [here](https://docs.github.com/en/enterprise-server@3.6/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) for setting up presonal access tokens.
-
+Find more
+information [here](https://docs.github.com/en/enterprise-server@3.6/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
+for setting up presonal access tokens.
 
 ## GDS templates
 
-These have been committed to the repo, but if you need these updated you can update the [templates](./templates.sh) script and rerun it.
+These have been committed to the repo, but if you need these updated you can update
+the [templates](./templates.sh) script and rerun it.
 Update the version when necessary.
 
 ## M series Macbook/Colima development setup
 
 ### Prerequisites
+
 1. **Docker**: Ensure Docker is installed and running on your machine.
-2. **Colima**: If you're using an M series Mac and Colima, you might need two Docker contexts/VMs: one for x86_64 architecture and another for arm64 architecture.
+2. **Colima**: If you're using an M series Mac and Colima, you might need two Docker contexts/VMs:
+   one for x86_64 architecture and another for arm64 architecture.
 
 ### Setting Up Virtual Machines (VMs)
 
@@ -164,36 +175,42 @@ We need two VMs, one for x86_64 and one for aarch64:
 
 **VM Profile Overview Example:**
 
-| PROFILE  | STATUS  | ARCH    | CPUS | MEMORY | DISK  | RUNTIME | ADDRESS       |
-|----------|---------|---------|------|--------|-------|---------|---------------|
-| default  | Running | x86_64  | 4    | 6GiB   | 50GiB | docker  | 192.168.106.2 |
-| aarch64  | Running | aarch64 | 6    | 6GiB   | 50GiB | docker  | 192.168.106.3 |
+| PROFILE | STATUS  | ARCH    | CPUS | MEMORY | DISK  | RUNTIME | ADDRESS       |
+|---------|---------|---------|------|--------|-------|---------|---------------|
+| default | Running | x86_64  | 4    | 6GiB   | 50GiB | docker  | 192.168.106.2 |
+| aarch64 | Running | aarch64 | 6    | 6GiB   | 50GiB | docker  | 192.168.106.3 |
 
 **Create VMs using Colima:**
 
 For aarch64:
+
 ```sh
 colima start --cpu 6 --memory 6 --disk 50 --network-address --arch aarch64 --vm-type=vz --vz-rosetta --profile aarch64
 ```
 
 For x86_64:
+
 ```sh
 colima start --arch x86_64 --cpu 4 --memory 6 --disk 50 --network-address
 ```
 
 #### Default Usage
-The x86_64 profile will be used by default for running the Oracle DB. All other services should be able to run on the aarch64 profile.
+
+The x86_64 profile will be used by default for running the Oracle DB. All other services should be
+able to run on the aarch64 profile.
 
 #### Restarting Profiles
 
 If a profile fails to run, you can restart it using:
 
 For aarch64:
+
 ```sh
 colima start --profile aarch64
 ```
 
 For default (x86_64):
+
 ```sh
 colima start --profile default
 ```
@@ -203,33 +220,40 @@ colima start --profile default
 To switch between Docker contexts, use the following commands:
 
 Switch to default (x86_64) context:
+
 ```sh
 unset DOCKER_HOST
 docker context use colima
 ```
 
 Switch to aarch64 context:
+
 ```sh
 unset DOCKER_HOST
 docker context use colima-aarch64
 ```
 
 To check the current Docker context, use:
+
 ```sh
 docker context show
 ```
 
 ## Recreating frontend static resources
 
-To provide a clean way of
+To provide a clean way of recreating the static resources, a gulp workflow has been implemented. This
+helps automate the creation of frontend static resources when new versions of frontend toolkits
+have been released, and to compile the projects own style sheets into a minified format for better
+browser performance for the end user.
 
 ### Prerequisites
 
-In order to download/recompile frontend static resources, you will need to have `npm` installed. This will be used to 
-manage the GOVUK and MoJ frontends. It will also be used to download the tools required to compile the various resources.
+In order to download/recompile frontend static resources, you will need to have `npm` installed.
+This will be used to manage the GOVUK and MoJ frontends as a package manager. It will also be used to 
+download the dev dependencies required to compile the various resources.
 
-With `npm` installed on your machine, you will need to ensure you have `gulp` installed on your system globally rather 
-than at project level.
+With `npm` installed on your machine, you will need to ensure you have `gulp` installed on your
+system globally rather than at project level.
 
 ```sh
 npm install -g gulp
@@ -248,30 +272,55 @@ Next download the dev dependencies for this project.
 npm install
 ```
 
-### Recreating the frontend resources
+### Gulp tasks and recreating the frontend resources
 
 Recreating the frontend resources can be done by just running gulp.
 
+There are three tasks defined in the `gulpfile.js`:
+
+| Task            | Description                                                        |
+|-----------------|--------------------------------------------------------------------|
+| default         | Runs all the below tasks                                           |
+| copyGOVUKAssets | Copies all the GOV UK Frontend assets from `node_modules`          |
+| copyMoJAssets   | Copies and compiles of the MoJ Frontend assets from `node_modules` |
+
+You can also view all the available tasks using the command:
+```shell
+# Whilst in the project directory
+gulp --tasks
+```
+
+To run the default task, you can just run gulp without any additional parameters:
 ```shell
 # Whilst in the project directory
 gulp
 ```
 
-By running this command, UPDATE WHAT HAPPENS HERE.
+To run a specific task, define the name of the task:
+```shell
+# Whilst in the project directory
+gulp copyGOVUKAssets
+gulp copyMoJAssets
+```
 
 ### Updating the various frontend toolkits
 
-To change which version of the toolkit is downloaded, check the file `./package.json`. From this file, change the 
+To change which version of the toolkit is downloaded, check the file `./package.json`. From this
+file, change the
 version number to whichever version you require.
 
-- To check what versions are available for the GOV UK Frontend, go [here](https://www.npmjs.com/package/govuk-frontend).
-- To check what versions are available for the MoJ UK Frontend, go [here](https://www.npmjs.com/package/@ministryofjustice/frontend).
+- To check what versions are available for the GOV UK Frontend,
+  go [here](https://www.npmjs.com/package/govuk-frontend).
+- To check what versions are available for the MoJ UK Frontend,
+  go [here](https://www.npmjs.com/package/@ministryofjustice/frontend).
 
-If a version has been modified within this file, you will need to download the new version using node package manager,
-and then copy the new files to the Spring Boot resources folder.
+If a version has been modified within this file, you will need to download the new version using
+`npm`, and then copy the new files to the Spring Boot resources folder using gulp as described above.
 
 ```sh
 # Whilst in the project directory
 npm install
+# Runs the default task as described below
 gulp
 ```
+
