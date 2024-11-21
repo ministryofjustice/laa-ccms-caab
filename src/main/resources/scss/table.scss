@@ -1,0 +1,14 @@
+/* Allow breaking of words on table header */
+.ccms-compact-table th * {
+  white-space: normal;
+}
+
+/* Allow breaking of words on table field */
+.ccms-compact-table td {
+  overflow-wrap: break-word;
+}
+
+/* Allow font size to scale on table size */
+.ccms-compact-table {
+  font-size: unset;
+}

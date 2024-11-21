@@ -1,0 +1,9 @@
+@media print {
+    body *:not(.print-section) {
+        display: none;
+    }
+    .print-section {
+        display: block;
+        page-break-before: always; /* Ensure each section is on a separate page */
+    }
+}
