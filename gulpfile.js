@@ -1,9 +1,11 @@
 const gulp = require("gulp");
-const {parallel} = require("gulp");
+const {parallel, series} = require("gulp");
 const rename = require("gulp-rename");
 const uglify = require('gulp-uglify');
 const sass = require("gulp-sass")(require("sass"));
 const replace = require('gulp-replace');
+const plumber = require('gulp-plumber');
+const autoprefixer = require('gulp-autoprefixer').default || require('gulp-autoprefixer');
 
 function copyGOVUKStyleSheets() {
   return gulp
@@ -37,6 +39,7 @@ function copyMOJStyleSheets() {
   .pipe(sass({
     outputStyle: 'compressed' // Minify the CSS output
   }).on('error', sass.logError))
+  .pipe(autoprefixer({cascade: false}))
   .pipe(rename('moj-frontend.min.css'))
   // Add spring context path to asset locations
   .pipe(replace('/assets/', '/civil/assets/'))
@@ -63,12 +66,27 @@ function copyMOJAssets(){
   .pipe(gulp.dest('./src/main/resources/static/assets/'), {overwrite: true} );
 }
 
+function compileCCMSStyleSheets(){
+  return gulp.src('./src/main/resources/scss/ccms.scss')
+  // Will highlight errors in your CSS file incase they are missed
+  .pipe(plumber())
+  .pipe(sass({
+    outputStyle: "compressed"
+  }))
+  .pipe(plumber.stop())
+  .pipe(autoprefixer({cascade: false})) // Adds up to date vendor prefixes
+  .pipe(gulp.dest('./src/main/resources/static/ccms/'));
+}
+
 // GOV UK Copy Task called "copyGOVUKAssets"
 gulp.task('copyGOVUKAssets',
     parallel(copyGOVUKStyleSheets, copyGOVUKJavaScript, copyGOVUKAssets));
 // GOV UK Copy Task called "copyMOJUKAssets"
 gulp.task('copyMOJAssets', parallel(copyMOJStyleSheets, copyMOJJavaScript, copyMOJAssets));
 
+// CCMS Task called "compileCCMSAssets"
+gulp.task('compileCCMSAssets', compileCCMSStyleSheets);
+
 // As a default task, it should just run all other tasks, so defined as a series
 //  by each other tasks name.
-gulp.task('default', gulp.series('copyGOVUKAssets', 'copyMOJAssets'));
+gulp.task('default', gulp.series('copyGOVUKAssets', 'copyMOJAssets', 'compileCCMSAssets'));
