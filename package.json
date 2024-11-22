@@ -1,7 +1,7 @@
 {
   "devDependencies": {
     "@ministryofjustice/frontend": "^2.2.4",
-    "govuk-frontend": "^5.3.1",
+    "govuk-frontend": "^5.7.1",
     "gulp": "^5.0.0",
     "gulp-minify": "^3.1.0",
     "gulp-rename": "^2.0.0",
