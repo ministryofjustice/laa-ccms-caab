@@ -30,7 +30,7 @@
           <td class="govuk-table__cell" th:text="${documentStat.count}"/>
           <td class="govuk-table__cell" th:text="${document.description}"></td>
           <td class="govuk-table__cell">
-            <img th:if="${document.provided}" th:src="@{/tick.gif}" alt="Evidence provided"/>
+            <img th:if="${document.provided}" th:src="@{/assets/ccms/tick.gif}" alt="Evidence provided"/>
           </td>
         <tr>
         <tr class="govuk-table__row" th:if="${evidenceRequired.isEmpty()}">
