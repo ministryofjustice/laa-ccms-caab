@@ -299,7 +299,7 @@ class EvidenceSectionControllerTest {
             .andExpect(redirectedUrl("/application/sections/evidence"));
 
         verify(evidenceService).removeDocument(
-            activeCase.getApplicationId().toString(),
+            String.valueOf(activeCase.getApplicationId()),
             tdsId,
             APPLICATION,
             user.getLoginId());
