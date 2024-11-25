@@ -101,3 +101,4 @@ htmlReport/
 # LocalStack
 localstack/
 !localstack/init-s3.sh
+/src/main/resources/application-secret.yml
