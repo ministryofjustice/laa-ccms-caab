@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.bean.request;
 
-import java.util.UUID;
 import lombok.Data;
 
 /**
