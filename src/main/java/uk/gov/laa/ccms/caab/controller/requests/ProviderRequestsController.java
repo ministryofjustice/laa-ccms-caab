@@ -326,7 +326,6 @@ public class ProviderRequestsController {
     //todo if its a case related request we need to register the doc else we dont
     // will be done as part of amendments in a later story
     if (false) {
-      // All clear, so register the document in EBS before saving to the TDS.
       final String registeredDocumentId = evidenceService.registerDocument(
               evidenceUploadFormData.getDocumentType(),
               fileExtension,
