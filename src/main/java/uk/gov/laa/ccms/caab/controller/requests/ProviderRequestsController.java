@@ -229,7 +229,7 @@ public class ProviderRequestsController {
         return providerRequestsDetails(providerRequestFlow, providerRequestDetailsForm, model);
       }
 
-      if (providerRequestDetailsForm.isFileUploadEnabled()) {
+      if (providerRequestDetailsForm.isClaimUploadEnabled()) {
         try {
           avScanService.performAvScan(
               null,
@@ -403,10 +403,10 @@ public class ProviderRequestsController {
 
     populateProviderRequestDetailsLookupDropdowns(model, dynamicForm);
 
-    providerRequestDetailsForm.setFileUploadEnabled(
-        dynamicForm.getIsFileUploadEnabled());
-    providerRequestDetailsForm.setFileUploadLabel(
-        dynamicForm.getFileUploadPrompt());
+    providerRequestDetailsForm.setClaimUploadEnabled(
+        dynamicForm.getIsClaimUploadEnabled());
+    providerRequestDetailsForm.setClaimUploadLabel(
+        dynamicForm.getClaimUploadPrompt());
     providerRequestDetailsForm.setAdditionalInformationLabel(
         dynamicForm.getAdditionalInformationPrompt());
 
@@ -417,7 +417,7 @@ public class ProviderRequestsController {
     }
 
     //if file upload is not enabled, then evidence upload is available
-    if (!providerRequestDetailsForm.isFileUploadEnabled()) {
+    if (!providerRequestDetailsForm.isClaimUploadEnabled()) {
       final String documentSessionId = providerRequestFlow.getRequestDetailsFormData()
           .getDocumentSessionId().toString();
 
