@@ -22,7 +22,8 @@ function copyGOVUKJavaScript() {
   .pipe(rename('all.js'))
   // Add spring context path to asset locations
   .pipe(replace('/assets/', '/civil/assets/'))
-  .pipe(gulp.dest('./src/main/resources/static/js/'), {overwrite: true} );
+  .pipe(gulp.dest('./src/main/resources/static/govuk-frontend/'),
+      {overwrite: true});
 }
 
 function copyGOVUKAssets(){
@@ -71,6 +72,7 @@ function compileCCMSStyleSheets(){
   // Will highlight errors in your CSS file incase they are missed
   .pipe(plumber())
   .pipe(sass({
+    includePaths: ['node_modules'],
     outputStyle: "compressed"
   }))
   .pipe(plumber.stop())

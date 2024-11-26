@@ -153,12 +153,6 @@ Find more
 information [here](https://docs.github.com/en/enterprise-server@3.6/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
 for setting up presonal access tokens.
 
-## GDS templates
-
-These have been committed to the repo, but if you need these updated you can update
-the [templates](./templates.sh) script and rerun it.
-Update the version when necessary.
-
 ## M series Macbook/Colima development setup
 
 ### Prerequisites
@@ -239,7 +233,7 @@ To check the current Docker context, use:
 docker context show
 ```
 
-## Recreating frontend static resources
+## Recreating frontend static resources (GDS & MoJ templates)
 
 > **_INFORMATION:_**  When cloning this project for the first time, you do not need
 > to run gulp as the static resources should already be created within the project.
