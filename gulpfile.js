@@ -71,6 +71,7 @@ function compileCCMSStyleSheets(){
   // Will highlight errors in your CSS file incase they are missed
   .pipe(plumber())
   .pipe(sass({
+    includePaths: ['node_modules'],
     outputStyle: "compressed"
   }))
   .pipe(plumber.stop())
