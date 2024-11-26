@@ -42,7 +42,7 @@
         <input class="govuk-file-upload" id="file" name="file" type="file">
       </div>
       <div th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', 'Document Type', ${documentTypes}, 'code', 'description')}"></div>
-      <div th:replace="~{partials/forms :: largeTextInput('documentDescription', 'Document description (Maximum 255 characters allowed)')}"></div>
+      <div th:replace="~{partials/forms :: largeTextInput('documentDescription', 'Document description', 255)}"></div>
 
       <input type="hidden" th:id="sendBy" th:name="sendBy"
              th:value="*{sendBy}">

@@ -157,7 +157,7 @@ public class ApplicationSubmissionController {
 
     final ApplicationDetail application =
         Optional.ofNullable(applicationService.getApplication(
-                activeCase.getApplicationId().toString()).block())
+                String.valueOf(activeCase.getApplicationId())).block())
             .orElseThrow(() -> new CaabApplicationException(
                 "Failed to retrieve application detail"));
 
@@ -450,7 +450,7 @@ public class ApplicationSubmissionController {
 
     //Pre-processing data - application data
     final Mono<ApplicationDetail> applicationMono =
-        applicationService.getApplication(activeCase.getApplicationId().toString());
+        applicationService.getApplication(String.valueOf(activeCase.getApplicationId()));
 
     //Pre-processing data - means and merits assessment data
     final Mono<AssessmentDetails> assessmentDetailsMono =

@@ -1,0 +1,43 @@
+.moreLess:hover {
+    color: #2E8ACA;
+    cursor: pointer;
+}
+
+.moreLess {
+    color: #005EA5;
+    text-decoration: underline;
+}
+
+.moreLessInfo:hover {
+    color: #2E8ACA;
+    cursor: pointer;
+}
+
+.moreLessInfo {
+    color: #005EA5;
+    text-decoration: underline;
+}
+
+.documentDescriptionMore {
+    width: 175px;
+    overflow: hidden !important;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    float: left;
+}
+
+.documentDescriptionLess {
+    width: 175px;
+    float: left;
+    word-wrap: break-word;
+}
+
+.ccms-button-as-link {
+    border: none;
+    background: none;
+    padding: 0;
+    color: #1d70b8;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-bottom: 0;
+}

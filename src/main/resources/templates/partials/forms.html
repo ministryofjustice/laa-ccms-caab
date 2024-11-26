@@ -73,8 +73,10 @@
          th:field="*{__${fieldId}__}">
 </div>
 
-<div th:fragment="largeTextInput(fieldId, label)"
-     class="govuk-form-group"
+<div th:fragment="largeTextInput(fieldId, label, maxLength)"
+     class="govuk-form-group govuk-character-count"
+     data-module="govuk-character-count"
+     th:data-maxlength="${maxLength}"
      th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
   <fieldset class="govuk-fieldset">
     <label class="govuk-label" th:for="${fieldId}" th:text="${label}"></label>
@@ -83,14 +85,15 @@
           class="govuk-error-message">
     </span>
     <textarea
-            class="govuk-textarea govuk-!-margin-bottom-2"
+            class="govuk-textarea govuk-js-character-count govuk-!-margin-bottom-2"
             th:errorclass="govuk-input--error"
             th:id="${fieldId}"
             th:name="${fieldId}"
             rows="5"
-            maxlength="2000"
+            th:maxlength="${maxLength}"
             th:field="*{__${fieldId}__}">
     </textarea>
+    <div th:id="(${fieldId}) + '-info'" class="govuk-hint govuk-character-count__message"></div>
   </fieldset>
 </div>
 

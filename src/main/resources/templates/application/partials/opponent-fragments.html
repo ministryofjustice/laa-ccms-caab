@@ -27,7 +27,7 @@
 <th:block th:fragment="sharedOrganisationConfirmation">
   <div th:replace="~{partials/forms :: dropdown('relationshipToCase', 'Relationship to case', ${relationshipsToCase}, 'code', 'description', false)}"></div>
   <div th:replace="~{partials/forms :: dropdown('relationshipToClient', 'Relationship to client', ${relationshipsToClient}, 'code', 'description', false)}"></div>
-  <div th:replace="~{partials/forms :: largeTextInput('otherInformation', 'Any other information about the liable organisation  (Maximum 2000 characters allowed)')}"></div>
+  <div th:replace="~{partials/forms :: largeTextInput('otherInformation', 'Any other information about the liable organisation', 2000)}"></div>
 </th:block>
 
 <div th:fragment="createOrganisation"
@@ -50,7 +50,7 @@
     <div th:replace="~{partials/forms :: textInput('telephoneWork', 'Telephone (optional)', 'govuk-input--width-20')}"></div>
     <div th:replace="~{partials/forms :: textInput('faxNumber', 'Fax (optional)', 'govuk-input--width-20')}"></div>
     <div th:replace="~{partials/forms :: textInput('emailAddress', 'Email address (optional)', 'govuk-input--width-20')}"></div>
-    <div th:replace="~{partials/forms :: largeTextInput('otherInformation', 'Any other information about the liable organisation  (Maximum 2000 characters allowed)')}"></div>
+    <div th:replace="~{partials/forms :: largeTextInput('otherInformation', 'Any other information about the liable organisation', 2000)}"></div>
   </div>
 </div>
 

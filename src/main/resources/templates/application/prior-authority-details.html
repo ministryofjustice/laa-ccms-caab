@@ -27,7 +27,7 @@
           </dl>
 
           <div th:replace="~{partials/forms :: textInput('summary', 'Summary', 'govuk-input--width-20')}"></div>
-          <div th:replace="~{partials/forms :: largeTextInput('justification', 'Justification')}"></div>
+          <div th:replace="~{partials/forms :: largeTextInput('justification', 'Justification', 8000)}"></div>
 
           <th:block th:if="*{valueRequired}">
             <div th:replace="~{partials/forms :: currencyInput('amountRequested', 'Amount requested', '10')}"></div>

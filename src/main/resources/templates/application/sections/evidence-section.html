@@ -110,7 +110,7 @@
             <td class="govuk-table__cell" th:text="${uploadedDoc.fileName}"></td>
             <td class="govuk-table__cell" th:text="${uploadedDoc.documentType.displayValue}"></td>
             <td class="govuk-table__cell" th:text="${uploadedDoc.description}"></td>
-            <td class="govuk-table__cell" th:text="${uploadedDoc.auditTrail.created}"></td>
+            <td class="govuk-table__cell" th:text="${#dates.format(uploadedDoc.auditTrail.created, 'dd/MM/yyyy')}"></td>
             <td class="govuk-table__cell">
               <a th:href="@{/application/evidence/{id}/remove(id=${uploadedDoc.id})}"
                  class="govuk-link"

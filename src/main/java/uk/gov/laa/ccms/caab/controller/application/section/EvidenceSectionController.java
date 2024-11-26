@@ -128,7 +128,7 @@ public class EvidenceSectionController {
 
     // Initialise the form data object.
     final EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
-    evidenceUploadFormData.setApplicationOrOutcomeId(activeCase.getApplicationId());
+    evidenceUploadFormData.setApplicationOrOutcomeId(String.valueOf(activeCase.getApplicationId()));
     evidenceUploadFormData.setCaseReferenceNumber(activeCase.getCaseReferenceNumber());
     evidenceUploadFormData.setProviderId(activeCase.getProviderId());
     evidenceUploadFormData.setDocumentSender(userDetail.getLoginId());
