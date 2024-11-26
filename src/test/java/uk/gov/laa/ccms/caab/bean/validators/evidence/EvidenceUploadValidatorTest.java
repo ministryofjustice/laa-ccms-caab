@@ -126,7 +126,7 @@ class EvidenceUploadValidatorTest {
 
   private EvidenceUploadFormData buildEvidenceUploadFormData() {
     EvidenceUploadFormData formData = new EvidenceUploadFormData();
-    formData.setApplicationOrOutcomeId(123);
+    formData.setApplicationOrOutcomeId("123");
     formData.setCaseReferenceNumber("caseRef");
     formData.setCcmsModule(CcmsModule.APPLICATION);
     formData.setDocumentDescription("doc desc");

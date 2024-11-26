@@ -102,7 +102,7 @@ public class ApplicationSectionsController {
 
     final ApplicationDetail application =
         Optional.ofNullable(applicationService.getApplication(
-                activeCase.getApplicationId().toString()).block())
+                String.valueOf(activeCase.getApplicationId())).block())
             .orElseThrow(() -> new CaabApplicationException(
                 "Failed to retrieve application detail"));
 

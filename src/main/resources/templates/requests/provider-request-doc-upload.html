@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>LAA CCMS - Provider request</title>
+
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/provider-requests/details}" class="govuk-back-link">Return to requests</a>
+  </div>
+  <div id="main-content">
+    <h1 class="govuk-heading-l">
+      Upload a document
+    </h1>
+
+    <form action="#" th:action="@{/provider-requests/documents}" method="post" th:object="${evidenceUploadForm}" enctype="multipart/form-data">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <div class="govuk-warning-text">
+        <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+        <strong class="govuk-warning-text__text">
+          <span class="govuk-visually-hidden">Warning</span>
+          We can only accept <span th:text="${validExtensions}"/> files that are less than <span th:text="${maxFileSize}"/>.
+        </strong>
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+          <div class="govuk-form-group" th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
+            <label class="govuk-label" for="file">
+              Choose file
+            </label>
+            <input class="govuk-file-upload" id="file" name="file" type="file">
+          </div>
+          <div th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', 'Document type', ${documentTypes}, 'code', 'description')}"></div>
+          <div th:replace="~{partials/forms :: largeTextInput('documentDescription', 'Document description (Optional)', 255)}"></div>
+
+          <div class="govuk-button-group">
+            <button class="govuk-button" data-module="govuk-button">
+              Upload
+            </button>
+            <a class="govuk-link" th:href="@{/provider-requests/details}">
+              Back
+            </a>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

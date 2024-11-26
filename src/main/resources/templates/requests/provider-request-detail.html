@@ -111,35 +111,88 @@
                            th:errorclass="govuk-select--error">
                 </div>
               </th:block>
-
             </div>
           </th:block>
 
-          <div class="govuk-form-group govuk-character-count" data-module="govuk-character-count" data-maxlength="8000" th:classappend="${#fields.hasErrors('additionalInformation')} ? 'govuk-form-group--error' : ''">
-            <label class="govuk-label" for="additionalInformation"
-                   th:text="(*{additionalInformationLabel}) + ' (optional) '">
-            </label>
-            <textarea class="govuk-textarea govuk-js-character-count govuk-!-margin-bottom-2"
-                      id="additionalInformation"
-                      name="additionalInformation"
-                      th:text="*{additionalInformation}"
-                      rows="5"
-                      maxlength="8000">
-            </textarea>
-            <div id="additionalInformation-info" class="govuk-hint govuk-character-count__message">
-              You can enter up to 8000 characters
+          <div th:replace="~{partials/forms :: largeTextInput('additionalInformation', (*{additionalInformationLabel}) + ' (optional) ', 8000)}"></div>
+
+
+
+        </div>
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+          <th:block th:unless="${documentsUploaded.isEmpty()}" class="govuk-form-group">
+            <table class="govuk-table">
+              <caption class="govuk-table__caption govuk-table__caption--m">Documents</caption>
+              <thead class="govuk-table__head">
+              <tr class="govuk-table__row">
+                <th scope="col" class="govuk-table__header">File</th>
+                <th scope="col" class="govuk-table__header">Type</th>
+                <th scope="col" class="govuk-table__header">Description</th>
+                <th scope="col" class="govuk-table__header">Date</th>
+                <th scope="col" class="govuk-table__header"></th>
+              </tr>
+              </thead>
+              <tbody class="govuk-table__body">
+              <input type="hidden" name="documentIdToDelete" id="documentIdToDelete" />
+              <tr class="govuk-table__row" th:each="uploadedDoc: ${documentsUploaded}" th:unless="${documentsUploaded.isEmpty()}">
+                <td class="govuk-table__cell" th:text="${uploadedDoc.fileName}"></td>
+                <td class="govuk-table__cell" th:text="${uploadedDoc.documentType.displayValue}"></td>
+                <td class="govuk-table__cell">
+                  <div class="documentDescriptionMore">
+                    <span th:text="${uploadedDoc.description}"></span>
+                  </div>
+                  <div>
+                    <span class="govuk-body moreLess">more</span>
+                  </div>
+                </td>
+                <td class="govuk-table__cell" th:text="${#dates.format(uploadedDoc.auditTrail.created, 'dd/MM/yyyy')}"></td>
+                <td class="govuk-table__cell">
+                  <button type="submit" name="action" value="document_delete" class="govuk-body ccms-button-as-link" th:onclick="|document.getElementById('documentIdToDelete').value='${uploadedDoc.id}'; this.form.submit();|">
+                    Remove
+                  </button>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+            <button type="submit" name="action" value="document_upload" class="govuk-button govuk-button--secondary">
+              Add another document
+            </button>
+          </th:block>
+
+
+
+          <th:block th:unless="*{fileUploadEnabled}" >
+            <div th:if="${documentsUploaded.isEmpty()}" class="govuk-form-group">
+              <table class="govuk-table">
+                <caption class="govuk-table__caption govuk-table__caption--m">Documents</caption>
+                <thead class="govuk-table__head">
+                <tr class="govuk-table__row">
+                  <th scope="col" class="govuk-table__header">Documents</th>
+                </tr>
+                </thead>
+                <tbody class="govuk-table__body">
+                <tr class="govuk-table__row">
+                  <th scope="row" class="govuk-table__cell">
+                    <button type="submit" name="action" value="document_upload" class="govuk-body ccms-button-as-link">
+                      Document upload
+                    </button>
+                  </th>
+                </tr>
+                </tbody>
+              </table>
             </div>
-          </div>
+          </th:block>
 
           <div class="govuk-button-group">
-            <button type="submit" class="govuk-button" data-module="govuk-button">
+            <button type="submit" name="action" value="submit" class="govuk-button" data-module="govuk-button">
               Submit
             </button>
             <a class="govuk-link" th:href="@{/provider-requests/types}">
               Back
             </a>
           </div>
-
         </div>
       </div>
     </form>

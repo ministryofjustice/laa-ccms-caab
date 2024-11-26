@@ -35,7 +35,7 @@ public class EvidenceMapperTest {
   @Test
   void testEvidenceUploadFormData_toEvidenceDocumentDetail() throws IOException {
     EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
-    evidenceUploadFormData.setApplicationOrOutcomeId(123);
+    evidenceUploadFormData.setApplicationOrOutcomeId("123");
     evidenceUploadFormData.setCaseReferenceNumber("caseRef");
     evidenceUploadFormData.setCcmsModule(CcmsModule.APPLICATION);
     evidenceUploadFormData.setDocumentDescription("doc desc");

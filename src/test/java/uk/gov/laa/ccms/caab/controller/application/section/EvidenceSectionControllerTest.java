@@ -299,7 +299,7 @@ class EvidenceSectionControllerTest {
             .andExpect(redirectedUrl("/application/sections/evidence"));
 
         verify(evidenceService).removeDocument(
-            activeCase.getApplicationId().toString(),
+            String.valueOf(activeCase.getApplicationId()),
             tdsId,
             APPLICATION,
             user.getLoginId());
@@ -314,7 +314,7 @@ class EvidenceSectionControllerTest {
 
     private EvidenceUploadFormData buildEvidenceUploadFormData() {
         EvidenceUploadFormData formData = new EvidenceUploadFormData();
-        formData.setApplicationOrOutcomeId(123);
+        formData.setApplicationOrOutcomeId("123");
         formData.setCaseReferenceNumber("caseRef");
         formData.setCcmsModule(CcmsModule.APPLICATION);
         formData.setDocumentDescription("doc desc");

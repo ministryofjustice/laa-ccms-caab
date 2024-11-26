@@ -5,17 +5,19 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
+import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestFlowFormData;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.data.model.ProviderRequestDataLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ProviderRequestTypeLookupValueDetail;
 
 /**
  * Maps and populates provider request details form data between related objects.
  */
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = CommonMapper.class)
 public interface ProviderRequestsMapper {
 
   /**
@@ -65,12 +67,15 @@ public interface ProviderRequestsMapper {
   @Mapping(target = "documentType", ignore = true)
   @Mapping(target = "documentTypeDisplayValue", ignore = true)
   @Mapping(target = "documentDescription", ignore = true)
+  @Mapping(target = "documentIdToDelete", ignore = true)
   @Mapping(target = "fileUploadLabel",
       source = "providerRequestFlowFormData.requestDetailsFormData.fileUploadLabel")
   @Mapping(target = "additionalInformationLabel",
       source = "providerRequestFlowFormData.requestDetailsFormData.additionalInformationLabel")
   @Mapping(target = "fileUploadEnabled",
       source = "providerRequestFlowFormData.requestDetailsFormData.fileUploadEnabled")
+  @Mapping(target = "documentSessionId",
+      source = "providerRequestFlowFormData.requestDetailsFormData.documentSessionId")
   void toProviderRequestDetailsFormData(
       @MappingTarget ProviderRequestDetailsFormData providerRequestDetails,
       ProviderRequestFlowFormData providerRequestFlowFormData);
@@ -100,4 +105,20 @@ public interface ProviderRequestsMapper {
           });
     }
   }
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "auditTrail", ignore = true)
+  @Mapping(target = "notificationReference", ignore = true)
+  @Mapping(target = "transferStatus", ignore = true)
+  @Mapping(target = "transferResponseCode", ignore = true)
+  @Mapping(target = "transferResponseDescription", ignore = true)
+  @Mapping(target = "evidenceDescriptions", ignore = true)
+  @Mapping(target = "transferRetryCount", constant = "0")
+  @Mapping(target = "fileName", source = "file.originalFilename")
+  @Mapping(target = "fileData", source = "file")
+  @Mapping(target = "description", source = "documentDescription")
+  @Mapping(target = "documentType.id", source = "documentType")
+  @Mapping(target = "documentType.displayValue", source = "documentTypeDisplayValue")
+  @Mapping(target = "ccmsModule", source = "ccmsModule.code")
+  EvidenceDocumentDetail toProviderRequestDocumentDetail(final EvidenceUploadFormData formData);
 }
