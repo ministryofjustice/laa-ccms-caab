@@ -404,7 +404,7 @@ public class ProviderRequestsController {
     populateProviderRequestDetailsLookupDropdowns(model, dynamicForm);
 
     providerRequestDetailsForm.setFileUploadEnabled(
-        dynamicForm.getIsFileUploadEnabled());
+        Boolean.TRUE.equals(dynamicForm.getIsFileUploadEnabled()));
     providerRequestDetailsForm.setFileUploadLabel(
         dynamicForm.getFileUploadPrompt());
     providerRequestDetailsForm.setAdditionalInformationLabel(
