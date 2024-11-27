@@ -17,7 +17,7 @@
       </h1>
       <!--  For file upload, both true and false enable a different type of file upload. -->
       <div class="govuk-body-l"
-           th:text="'Please complete further details for your request and click \'Submit\'.' + (*{fileUploadEnabled} ? '' : ' If you have documents to upload, use the link below.')">
+           th:text="'Please complete further details for your request and click \'Submit\'.' + (*{claimUploadEnabled} ? '' : ' If you have documents to upload, use the link below.')">
       </div>
 
       <div class="govuk-grid-row">
@@ -27,9 +27,9 @@
             <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Request type', ${providerRequestFlow.requestTypeFormData.providerRequestTypeDisplayValue})}"></div>
           </dl>
 
-          <div class="govuk-form-group" th:if="*{fileUploadEnabled}" th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
+          <div class="govuk-form-group" th:if="*{claimUploadEnabled}" th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
             <label class="govuk-label" th:for="fileUpload"
-                   th:text="*{fileUploadLabel}">
+                   th:text="*{claimUploadLabel}">
             </label>
             <input class="govuk-file-upload" id="file" name="file" type="file">
           </div>
@@ -163,7 +163,7 @@
 
 
 
-          <th:block th:unless="*{fileUploadEnabled}" >
+          <th:block th:unless="*{claimUploadEnabled}" >
             <div th:if="${documentsUploaded.isEmpty()}" class="govuk-form-group">
               <table class="govuk-table">
                 <caption class="govuk-table__caption govuk-table__caption--m">Documents</caption>

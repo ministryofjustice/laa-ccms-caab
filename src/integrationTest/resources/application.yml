@@ -82,6 +82,9 @@ laa:
           DOCX,
           RTF,
           TIFF
+      claim-upload:
+        valid-extensions: >
+          XML
       opa:
         security:
           password: passw0rd

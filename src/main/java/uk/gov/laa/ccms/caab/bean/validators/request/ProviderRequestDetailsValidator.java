@@ -29,7 +29,7 @@ public class ProviderRequestDetailsValidator extends FileUploadValidator {
   private static final BigDecimal MAX_COST_LIMIT = new BigDecimal("100000000.00");
 
   public ProviderRequestDetailsValidator(
-      @Value("${laa.ccms.caab.upload.valid-extensions}") final List<String> validExtensions,
+      @Value("${laa.ccms.caab.claim-upload.valid-extensions}") final List<String> validExtensions,
       @Value("${spring.servlet.multipart.max-file-size}") final String maxFileSize) {
     super(validExtensions, maxFileSize);
   }
@@ -44,7 +44,7 @@ public class ProviderRequestDetailsValidator extends FileUploadValidator {
     final ProviderRequestDetailsFormData formData =
         (ProviderRequestDetailsFormData) target;
 
-    if (formData.isFileUploadEnabled()) {
+    if (formData.isClaimUploadEnabled()) {
       validateFile(formData, errors);
     }
 
