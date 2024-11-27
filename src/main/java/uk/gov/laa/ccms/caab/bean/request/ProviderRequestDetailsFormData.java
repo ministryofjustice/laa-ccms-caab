@@ -18,9 +18,9 @@ import uk.gov.laa.ccms.caab.bean.file.FileUploadFormData;
 @EqualsAndHashCode(callSuper = false)
 public class ProviderRequestDetailsFormData extends FileUploadFormData {
 
-  private boolean fileUploadEnabled;
+  private boolean claimUploadEnabled;
 
-  private String fileUploadLabel;
+  private String claimUploadLabel;
 
   private Map<String, DynamicOptionFormData> dynamicOptions = new HashMap<>();
 

@@ -68,12 +68,12 @@ public interface ProviderRequestsMapper {
   @Mapping(target = "documentTypeDisplayValue", ignore = true)
   @Mapping(target = "documentDescription", ignore = true)
   @Mapping(target = "documentIdToDelete", ignore = true)
-  @Mapping(target = "fileUploadLabel",
-      source = "providerRequestFlowFormData.requestDetailsFormData.fileUploadLabel")
+  @Mapping(target = "claimUploadLabel",
+      source = "providerRequestFlowFormData.requestDetailsFormData.claimUploadLabel")
   @Mapping(target = "additionalInformationLabel",
       source = "providerRequestFlowFormData.requestDetailsFormData.additionalInformationLabel")
-  @Mapping(target = "fileUploadEnabled",
-      source = "providerRequestFlowFormData.requestDetailsFormData.fileUploadEnabled")
+  @Mapping(target = "claimUploadEnabled",
+      source = "providerRequestFlowFormData.requestDetailsFormData.claimUploadEnabled")
   @Mapping(target = "documentSessionId",
       source = "providerRequestFlowFormData.requestDetailsFormData.documentSessionId")
   void toProviderRequestDetailsFormData(

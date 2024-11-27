@@ -145,8 +145,8 @@ class ProviderRequestsControllerTest {
    */
   private ProviderRequestTypeLookupValueDetail createDefaultDynamicForm() {
     final ProviderRequestTypeLookupValueDetail dynamicForm = new ProviderRequestTypeLookupValueDetail();
-    dynamicForm.setIsFileUploadEnabled(true);
-    dynamicForm.setFileUploadPrompt("Upload Files");
+    dynamicForm.setIsClaimUploadEnabled(true);
+    dynamicForm.setClaimUploadPrompt("Upload Files");
     dynamicForm.setAdditionalInformationPrompt("Additional Info");
     return dynamicForm;
   }
@@ -277,8 +277,8 @@ class ProviderRequestsControllerTest {
     providerRequestFlow.setRequestTypeFormData(providerRequestType);
 
     final ProviderRequestTypeLookupValueDetail dynamicForm = new ProviderRequestTypeLookupValueDetail();
-    dynamicForm.setIsFileUploadEnabled(true);
-    dynamicForm.setFileUploadPrompt("Upload Files");
+    dynamicForm.setIsClaimUploadEnabled(true);
+    dynamicForm.setClaimUploadPrompt("Upload Files");
     dynamicForm.setAdditionalInformationPrompt("Additional Info");
 
     final ProviderRequestTypeLookupDetail lookupDetail = new ProviderRequestTypeLookupDetail();
@@ -297,8 +297,8 @@ class ProviderRequestsControllerTest {
     verify(model).addAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow);
 
     assertEquals("requests/provider-request-detail", viewName);
-    assertTrue(providerRequestDetailsForm.isFileUploadEnabled());
-    assertEquals("Upload Files", providerRequestDetailsForm.getFileUploadLabel());
+    assertTrue(providerRequestDetailsForm.isClaimUploadEnabled());
+    assertEquals("Upload Files", providerRequestDetailsForm.getClaimUploadLabel());
     assertEquals("Additional Info", providerRequestDetailsForm.getAdditionalInformationLabel());
   }
 
@@ -313,8 +313,8 @@ class ProviderRequestsControllerTest {
     providerRequestFlow.setRequestDetailsFormData(providerRequestDetailsForm);
 
     final ProviderRequestTypeLookupValueDetail dynamicForm = new ProviderRequestTypeLookupValueDetail();
-    dynamicForm.setIsFileUploadEnabled(true);
-    dynamicForm.setFileUploadPrompt("Upload Files");
+    dynamicForm.setIsClaimUploadEnabled(true);
+    dynamicForm.setClaimUploadPrompt("Upload Files");
     dynamicForm.setAdditionalInformationPrompt("Additional Info");
 
     final ProviderRequestTypeLookupDetail lookupDetail = new ProviderRequestTypeLookupDetail();
@@ -376,7 +376,7 @@ class ProviderRequestsControllerTest {
 
     final ProviderRequestTypeLookupValueDetail dynamicForm =
         new ProviderRequestTypeLookupValueDetail()
-            .isFileUploadEnabled(false)
+            .isClaimUploadEnabled(false)
             .additionalInformationPrompt("Additional Info");
 
     final ProviderRequestTypeLookupDetail lookupDetail = new ProviderRequestTypeLookupDetail();
@@ -415,7 +415,7 @@ class ProviderRequestsControllerTest {
         eq(userDetails.getLoginId()));
 
     final ProviderRequestTypeLookupValueDetail dynamicForm = new ProviderRequestTypeLookupValueDetail();
-    dynamicForm.setIsFileUploadEnabled(false);
+    dynamicForm.setIsClaimUploadEnabled(false);
     dynamicForm.setAdditionalInformationPrompt("Additional Info");
 
     final ProviderRequestTypeLookupDetail lookupDetail = new ProviderRequestTypeLookupDetail();
@@ -457,7 +457,7 @@ class ProviderRequestsControllerTest {
 
     final ProviderRequestTypeLookupValueDetail dynamicForm =
         new ProviderRequestTypeLookupValueDetail()
-            .isFileUploadEnabled(false)
+            .isClaimUploadEnabled(false)
             .additionalInformationPrompt("Additional Info");
 
     final ProviderRequestTypeLookupDetail lookupDetail = new ProviderRequestTypeLookupDetail();
@@ -489,7 +489,7 @@ class ProviderRequestsControllerTest {
     final ProviderRequestTypeFormData providerRequestType = new ProviderRequestTypeFormData();
     providerRequestType.setProviderRequestType("testType");
     providerRequestFlow.setRequestTypeFormData(providerRequestType);
-    providerRequestDetailsForm.setFileUploadEnabled(true);
+    providerRequestDetailsForm.setClaimUploadEnabled(true);
     providerRequestDetailsForm.setFile(new MockMultipartFile(
         "theFile",
         "originalName.ppp",
@@ -498,7 +498,7 @@ class ProviderRequestsControllerTest {
 
     final ProviderRequestTypeLookupValueDetail dynamicForm =
         new ProviderRequestTypeLookupValueDetail()
-            .isFileUploadEnabled(true)
+            .isClaimUploadEnabled(true)
             .additionalInformationPrompt("Additional Info");
 
     final ProviderRequestTypeLookupDetail lookupDetail = new ProviderRequestTypeLookupDetail();
