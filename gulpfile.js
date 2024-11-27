@@ -32,23 +32,6 @@ function copyGOVUKAssets(){
   .pipe(gulp.dest('./src/main/resources/static/assets/'), {overwrite: true} );
 }
 
-/*
-function copyMOJStyleSheets() {
-  // MoJ frontend does not come with a compiled minified css stylesheet, so
-  //  compile it ourselves with 'sass'
-  return gulp
-  .src('./node_modules/@ministryofjustice/frontend/moj/all.scss')
-  .pipe(sass({
-    outputStyle: 'compressed' // Minify the CSS output
-  }).on('error', sass.logError))
-  .pipe(autoprefixer({cascade: false}))
-  .pipe(rename('moj-frontend.min.css'))
-  // Add spring context path to asset locations
-  .pipe(replace('/assets/', '/civil/assets/'))
-  .pipe(gulp.dest('./src/main/resources/static/moj-frontend/'), {overwrite: true} );
-}
-*/
-
 function copyMOJStyleSheets() {
   // MoJ frontend does not come with a compiled minified css stylesheet, so
   //  compile it ourselves with 'sass'
@@ -60,8 +43,7 @@ function copyMOJStyleSheets() {
   }).on('error', sass.logError))
   .pipe(autoprefixer({cascade: false}))
   .pipe(rename('moj-frontend.min.css'))
-  // Add spring context path to asset locations
-  .pipe(replace('/assets/', '/civil/assets/'))
+  .pipe(autoprefixer({cascade: false})) // Adds up to date vendor prefixes
   .pipe(gulp.dest('./src/main/resources/static/moj-frontend/'),
       {overwrite: true});
 }
