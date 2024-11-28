@@ -1,0 +1,11 @@
+// Setting asset path as per guidance on MoJ Design System:
+//  https://design-patterns.service.justice.gov.uk/production/installing-with-npm/
+$moj-assets-path: '/civil/assets/';
+
+@import "govuk-frontend/dist/govuk/base";
+@import "@ministryofjustice/frontend/moj/settings/all";
+@import "@ministryofjustice/frontend/moj/helpers/all";
+@import "@ministryofjustice/frontend/moj/objects/all";
+
+@import "@ministryofjustice/frontend/moj/components/date-picker/date-picker";
+@import "@ministryofjustice/frontend/moj/components/page-header-actions/page-header-actions";

@@ -404,7 +404,7 @@ public class ProviderRequestsController {
     populateProviderRequestDetailsLookupDropdowns(model, dynamicForm);
 
     providerRequestDetailsForm.setClaimUploadEnabled(
-        dynamicForm.getIsClaimUploadEnabled());
+        Boolean.TRUE.equals(dynamicForm.getIsClaimUploadEnabled()));
     providerRequestDetailsForm.setClaimUploadLabel(
         dynamicForm.getClaimUploadPrompt());
     providerRequestDetailsForm.setAdditionalInformationLabel(
