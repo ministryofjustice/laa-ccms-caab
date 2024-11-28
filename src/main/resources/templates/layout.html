@@ -21,9 +21,9 @@
 
 <footer th:replace="~{partials/footer :: footer}"></footer>
 
-<script type="module" src="/civil/govuk-frontend/all.js"></script>
+<script type="module" src="/civil/webjars/govuk-frontend/dist/govuk/govuk-frontend.min.js"></script>
 <script type="module">
-    import { initAll } from '/civil/govuk-frontend/all.js'
+    import {initAll} from '/civil/webjars/govuk-frontend/dist/govuk/govuk-frontend.min.js'
     initAll()
 </script>
 <script
@@ -32,7 +32,8 @@
     crossorigin="anonymous">
 </script>
 <script th:src="@{/ccms/caab.js}"></script>
-<script src="/civil/moj-frontend/javascript/moj-frontend.min.js"></script>
+<!--TODO: Change when MoJ Frontend comes compiled with css-->
+<script th:src="@{/webjars/ministryofjustice__frontend/moj/moj-frontend.min.js}"></script>
 <script>
     window.MOJFrontend.initAll();
 </script>

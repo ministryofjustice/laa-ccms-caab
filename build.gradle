@@ -80,6 +80,15 @@ dependencies {
 	//ClamAV virus scan
 	implementation 'fi.solita.clamav:clamav-client:1.0.1'
 
+	// Front end
+	// https://mvnrepository.com/artifact/org.webjars/webjars-locator
+	implementation 'org.webjars:webjars-locator:0.52'
+	// https://mvnrepository.com/artifact/org.webjars.npm/govuk-frontend
+	implementation 'org.webjars.npm:govuk-frontend:5.7.1'
+	implementation 'org.webjars.npm:ministryofjustice__frontend:3.1.0'
+	//implementation 'org.webjars.npm:@ministryofjustice/frontend:3.0.3'
+
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.mockito:mockito-core:5.8.0'
 	testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'

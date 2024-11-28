@@ -44,6 +44,7 @@ public class SecurityConfiguration {
 
     return http
       .authorizeHttpRequests(authorize -> authorize
+          .requestMatchers("/webjars/**").permitAll()
               .anyRequest().authenticated())
       .csrf(AbstractHttpConfigurer::disable)
       .sessionManagement(sessionManagement -> sessionManagement

@@ -7,8 +7,10 @@
     <link rel="shortcut icon" sizes="16x16 32x32 48x48" th:href="@{/assets/images/favicon.ico}" type="image/x-icon">
     <link rel="mask-icon" th:href="@{/assets/images/govuk-mask-icon.svg}" color="blue">
     <link rel="apple-touch-icon" th:href="@{/assets/images/govuk-icon-180.png}">
-    <link th:href="@{/govuk-frontend/all.css}" rel="stylesheet">
-    <link th:href="@{/moj-frontend/moj-frontend.min.css}" rel="stylesheet" />
+    <link th:href="@{/webjars/govuk-frontend/dist/govuk/govuk-frontend.min.css}" rel="stylesheet"/>
+    <!--TODO: Update this once Moj frontend has a compiled version-->
+    <link th:href="@{/webjars/ministryofjustice__frontend/moj/moj-frontend.min.css}"
+          rel="stylesheet"/>
     <link th:href="@{/ccms/ccms.css}" rel="stylesheet" />
     <meta property="og:image" content="&lt;YOUR-DOMAIN&gt;/images/govuk-opengraph-image.png">
     <meta property="og:image" content="&lt;YOUR-DOMAIN&gt;/images/govuk-opengraph-image.png">
