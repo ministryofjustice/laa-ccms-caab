@@ -29,10 +29,10 @@
       </p>
       <div th:replace="~{application/partials/client-fragments :: clientSummaryFragment}"></div>
       <div class="govuk-button-group">
-        <button type="submit" class="govuk-button" data-module="govuk-button">
-          Submit amendments
-        </button>
+        <div th:replace="~{partials/actions :: restrictedSubmitButton('Submit amendments',
+              ${user.functions}, ${'SUBUC'})}"></div>
       </div>
+      <div th:replace="~{partials/actions :: restrictedActionMessage('submit client amendments', ${user.functions}, ${'SUBUC'})}"></div>
     </form>
   </div>
 </div>

@@ -165,9 +165,14 @@
 
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-one-third">
-          <button type="submit" class="govuk-button" data-module="govuk-button">
-            Submit
-          </button>
+          <div th:replace="~{partials/actions :: restrictedSubmitButton('Submit',
+              ${user.functions}, ${'SUBDOC'})}"></div>
+        </div>
+        <div class="govuk-grid-column-full">
+          <div
+              th:replace="~{partials/actions :: restrictedActionMessage('submit documents', ${user.functions}, ${'SUBDOC'})}"></div>
+        </div>
+        <div class="govuk-grid-column-one-third">
           <p class="govuk-body govuk-!-font-size-15-!-text-align-left">
             <a class="govuk-back-link"
                th:href="@{/notifications/{notification_id}(notification_id=${notificationId})}">
@@ -187,7 +192,7 @@
   for(var i = 0; i < links.length; i++) {
     var link = links[i];
     link.onclick = function() {
-      ldr = this.parentElement.getElementsByClassName('loader-small')[0];
+      ldr = this.closest('td').getElementsByClassName('loader-small')[0];
       console.log("Link with ID: " + this.id + " activating spinner with ID: " + ldr.id);
       if (ldr.style.visibility == "hidden") {
         ldr.style.visibility = "visible"

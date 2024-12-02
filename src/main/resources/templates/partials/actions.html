@@ -1,0 +1,38 @@
+<!--
+  To display anchors that may be displayed either as a standard anchor link or a button via govuk
+  classes.
+-->
+<span
+    th:fragment="restrictedActionLink(actionText, userRoles, allowedRoles, isButton, additionalClasses, url, revertToText)">
+  <a th:if="${viewListUtil.containsAny(allowedRoles, userRoles)}"
+     th:classappend="${(isButton ? 'govuk-button' : 'govuk-link') + ' ' + additionalClasses}"
+     th:attrappend="data-module=${isButton ? 'govuk-button' : null}"
+     th:text="${actionText}"
+     th:href="${(viewListUtil.containsAny(allowedRoles, userRoles)) ? url : null}">
+  </a>
+  <span
+      th:if="${!viewListUtil.containsAny(allowedRoles, userRoles) and revertToText and !isButton }"
+       th:text="${actionText}">
+  </span>
+</span>
+
+<!--
+  To display buttons used to submit forms.
+-->
+<button th:fragment="restrictedSubmitButton(actionText, userRoles, allowedRoles)"
+        th:if="${viewListUtil.containsAny(allowedRoles, userRoles)}"
+        class="govuk-button"
+        data-module="govuk-button"
+        type="submit"
+        th:text="${actionText}">
+</button>
+
+<!--
+  To display a message describing why an action is not available.
+-->
+<div th:fragment="restrictedActionMessage(actionDescription, userRoles, allowedRoles)"
+     th:unless="${viewListUtil.containsAny(allowedRoles, userRoles)}"
+     class="govuk-inset-text"
+     th:text="${'You cannot ' + actionDescription + '. This is because the provider you are currently acting on behalf of does not have
+      the authority to perform this action.'}">
+</div>

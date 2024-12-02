@@ -11,43 +11,49 @@
                 <span class="govuk-caption-l">Civil legal aid applications, amendments and billing.</span>
             </h1>
 
-
-            <a class="govuk-button" data-module="govuk-button" th:href="@{/application/office}">
-                New application
-            </a>
+            <div
+                th:replace="~{partials/actions :: restrictedActionLink('New application', ${user.functions}, ${'CA'}, true, '', @{/application/office}, false)}"></div>
+            <div th:replace="~{partials/actions :: restrictedActionMessage('create a new application', ${user.functions}, ${'CA'})}"></div>
 
             <!--  Notifications  -->
             <h2 class="govuk-heading-m">
                 Your Actions and Notifications
             </h2>
 
-            <div th:if="${showNotifications}">
+            <div th:if="${showNotifications}"
+                 th:with="noActions=${#strings.equals(actionsMsg, 'No Outstanding Actions')},
+                          noNotifications=${#strings.equals(notificationsMsg, 'View Notifications (none outstanding)')}">
+                <th:block th:if="${viewListUtil.containsAny({'NOT'}, user.functions)}">
                 <div class="govuk-body">
                     You currently have:
                 </div>
                 <ul class="govuk-list">
-                   <div th:if="${#strings.equals(actionsMsg, 'No Outstanding Actions')}">
+                   <div th:if="${noActions}">
                         <li>
                             <div th:text="${actionsMsg}"> </div>
                         </li>
                     </div>
-                    <div th:unless="${#strings.equals(actionsMsg, 'No Outstanding Actions')}">
+                    <div th:unless="${noActions}">
                         <li>
-                            <a th:text="${actionsMsg}"
-                               th:href="@{/notifications/search?notification_type=A}"> </a>
+                            <div
+                                th:replace="~{partials/actions :: restrictedActionLink(${actionsMsg}, ${user.functions}, ${'NOT'}, false, '', @{/notifications/search?notification_type=A}, true)}"></div>
                         </li>
                     </div>
-                    <div th:if="${#strings.equals(actionsMsg, 'View Notifications (none outstanding)')}">
+                    <div th:if="${noNotifications}">
                         <li>
                             <div th:text="${notificationsMsg}"></div>
                         </li>
                     </div>
-                    <div th:unless="${#strings.equals(actionsMsg, 'View Notifications (none outstanding)')}">
+                    <div th:unless="${noNotifications}">
                         <li>
-                            <a th:text="${notificationsMsg}" th:href="@{/notifications/search?notification_type=N}"></a>
+                            <div
+                                th:replace="~{partials/actions :: restrictedActionLink(${notificationsMsg}, ${user.functions}, ${'NOT'}, false, '', @{/notifications/search?notification_type=N}, true)}"></div>
                         </li>
                     </div>
                 </ul>
+                </th:block>
+                <div
+                    th:replace="~{partials/actions :: restrictedActionMessage('view actions / notifications', ${user.functions}, ${'NOT'})}"></div>
             </div>
 
             <div class="govuk-body" th:unless="${showNotifications}">
@@ -69,9 +75,8 @@
 
             <p class="govuk-body">For non case related queries please create a general request.</p>
 
-            <a class="govuk-button govuk-button--secondary" data-module="govuk-button" th:href="@{/provider-requests/types}">
-                Create general request
-            </a>
+            <div th:replace="~{partials/actions :: restrictedActionLink('Create general request', ${user.functions}, ${'PRC'}, true, 'govuk-button--secondary', @{/provider-requests/types}, false)}"></div>
+            <div th:replace="~{partials/actions :: restrictedActionMessage('create a general request', ${user.functions}, ${'PRC'})}"></div>
 
         </div>
     </body>

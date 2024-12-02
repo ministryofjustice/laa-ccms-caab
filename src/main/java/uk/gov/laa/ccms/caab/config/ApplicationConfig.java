@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.config;
 
 import fi.solita.clamav.ClamAVClient;
 import java.util.Locale;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -13,6 +14,9 @@ import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.i18n.FixedLocaleResolver;
+import org.thymeleaf.spring6.SpringTemplateEngine;
+import org.thymeleaf.spring6.view.ThymeleafViewResolver;
+import uk.gov.laa.ccms.caab.util.ViewListUtil;
 
 /**
  * Configuration class for creating WebClient instances used for making HTTP requests.
@@ -133,6 +137,23 @@ public class ApplicationConfig implements WebMvcConfigurer {
   @Bean("clamAvClient")
   ClamAVClient clamAvClient() {
     return new ClamAVClient(avApiHostName, avApiPort, avApiTimeout);
+  }
+
+  /**
+   * Configures the @{link ThymeleafViewResolver} to make custom utility classes available to all
+   * templates.
+   *
+   * @param templateEngine the template engine.
+   * @return the configured @{link ThymeleafViewResolver}.
+   */
+  @Bean
+  public ThymeleafViewResolver thymeleafViewResolver(
+      @Autowired SpringTemplateEngine templateEngine) {
+    ThymeleafViewResolver thymeleafViewResolver = new ThymeleafViewResolver();
+    thymeleafViewResolver.setTemplateEngine(templateEngine);
+    thymeleafViewResolver.setCharacterEncoding("UTF-8");
+    thymeleafViewResolver.addStaticVariable("viewListUtil", new ViewListUtil());
+    return thymeleafViewResolver;
   }
 
   /**

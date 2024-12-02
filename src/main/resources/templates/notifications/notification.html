@@ -100,16 +100,13 @@
             <td class="govuk-table__cell" th:text="${attachment.text}"></td>
             <td th:if="${documentLinks.get(attachment.getDocumentId)} != null"
                 class="govuk-table__cell">
-              <a
-                  th:href="${documentLinks.get(attachment.getDocumentId)}"
-                  th:target="_blank" class="govuk-link">
-                Download</a>
+              <div
+                  th:replace="~{partials/actions :: restrictedActionLink('Download', ${user.functions}, ${'ATT'}, false, '', ${documentLinks.get(attachment.getDocumentId)}, true)}"></div>
             </td>
             <td th:if="${documentLinks.get(attachment.getDocumentId)} == null"
                 class="govuk-table__cell">
-              <a
-                  th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/retrieve(notification_id=${notification.getNotificationId},attachment_id=${attachment.getDocumentId})}" class="govuk-link ccms-download-link">
-                Retrieve</a>
+              <div th:replace="~{partials/actions :: restrictedActionLink('Retrieve',
+              ${user.functions}, ${'ATT'}, false, 'ccms-download-link', @{/notifications/{notification_id}/attachments/{attachment_id}/retrieve(notification_id=${notification.getNotificationId},attachment_id=${attachment.getDocumentId})}, true)}"></div>
               <div
                    style="visibility:hidden;display:inline-block"
                    class="loader-small"></div>
@@ -117,17 +114,24 @@
           </tr>
           </tbody>
         </table>
+        <div
+            th:replace="~{partials/actions :: restrictedActionMessage('retrieve / download attachments', ${user.functions}, ${'ATT'})}"></div>
       </div>
     </div>
     <div class="govuk-grid-row">
-      <div class="govuk-grid-column-one-third">
-        <p th:if="${notification.evidenceAllowed}" class="govuk-body govuk-!-text-align-left">
-          <a class="govuk-button govuk-button--secondary"
-             data-module="govuk-button"
-             th:href="@{/notifications/{notification_id}/provide-documents-or-evidence(notification_id=${notification.getNotificationId})}">
-            Provide documents or evidence
-          </a>
+      <div class="govuk-grid-column-one-third"
+           th:if="${viewListUtil.containsAny({'EVID'}, user.functions)}">
+        <p class="govuk-body govuk-!-text-align-left">
+          <div
+            th:replace="~{partials/actions :: restrictedActionLink('Provide Documents or evidence', ${user.functions}, ${'EVID'}, true, 'govuk-button--secondary', @{/notifications/{notification_id}/provide-documents-or-evidence(notification_id=${notification.getNotificationId})}, false)}">
+          </div>
         </p>
+      </div>
+      <div class="govuk-grid-column-full">
+        <div
+            th:replace="~{partials/actions :: restrictedActionMessage('provide documents or evidence', ${user.functions}, ${'EVID'})}"></div>
+      </div>
+      <div class="govuk-grid-column-one-third">
         <p class="govuk-body govuk-!-font-size-15-!-text-align-left">
           <a class="govuk-back-link"
              th:href="@{/notifications/search?notification_type=all}">
@@ -145,7 +149,7 @@
   for(var i = 0; i < links.length; i++) {
     var link = links[i];
     link.onclick = function() {
-      ldr = this.parentElement.getElementsByClassName('loader-small')[0];
+      ldr = this.closest('td').getElementsByClassName('loader-small')[0];
       console.log("Link with ID: " + this.id + " activating spinner with ID: " + ldr.id);
       if (ldr.style.visibility == "hidden") {
         ldr.style.visibility = "visible"

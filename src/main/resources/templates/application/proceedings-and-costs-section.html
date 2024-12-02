@@ -56,8 +56,8 @@
           <tbody class="govuk-table__body">
           <tr class="govuk-table__row" th:each="proceeding : ${proceedings}" th:unless="${proceedings.isEmpty()}">
             <td class="govuk-table__cell">
-              <a th:href="@{/application/proceedings/{id}/summary(id=${proceeding.id})}"
-                 class="govuk-link" th:text="${proceeding.matterType.displayValue}"></a>
+              <div th:replace="~{partials/actions :: restrictedActionLink(${proceeding.matterType.displayValue},
+              ${user.functions}, ${'VIEWPROC'}, false, '', @{/application/proceedings/{id}/summary(id=${proceeding.id})}, true)}"></div>
             </td>
             <td class="govuk-table__cell" th:text="${proceeding.proceedingType.displayValue}"></td>
             <td class="govuk-table__cell" th:text="${proceeding.levelOfService.displayValue}"></td>
@@ -73,7 +73,8 @@
             <th:block th:unless="${proceeding.leadProceedingInd}">
               <td class="govuk-table__cell"></td>
               <td class="govuk-table__cell">
-                <a th:href="@{/application/proceedings/{id}/remove(id=${proceeding.id})}" class="govuk-link">Delete</a>
+                <div th:replace="~{partials/actions :: restrictedActionLink('Delete',
+              ${user.functions}, ${'DELPROC'}, false, '', @{/application/proceedings/{id}/remove(id=${proceeding.id})}, true)}"></div>
                  |
                 <a th:href="@{/application/proceedings/{id}/make-lead(id=${proceeding.id})}" class="govuk-link">Make lead</a>
               </td>
@@ -84,11 +85,13 @@
           </tr>
           </tbody>
         </table>
-        <a class="govuk-button govuk-button--secondary"
-           data-module="govuk-button"
-           th:href="@{/application/proceedings/add/matter-type}">
-          Add proceeding
-        </a>
+        <div th:replace="~{partials/actions :: restrictedActionMessage('view proceedings', ${user.functions}, ${'VIEWPROC'})}"></div>
+        <div
+            th:replace="~{partials/actions :: restrictedActionMessage('delete proceedings', ${user.functions}, ${'DELPROC'})}"></div>
+        <div
+            th:replace="~{partials/actions :: restrictedActionLink('Add proceeding', ${user.functions}, ${'ADDPROC'}, true, 'govuk-button--secondary', @{/application/proceedings/add/matter-type}, false)}"></div>
+        <div
+            th:replace="~{partials/actions :: restrictedActionMessage('add a proceeding', ${user.functions}, ${'ADDPROC'})}"></div>
       </div>
       <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="case-costs" aria-labelledby="tab_case-costs">
         <h2 class="govuk-heading-l">Case costs</h2>
