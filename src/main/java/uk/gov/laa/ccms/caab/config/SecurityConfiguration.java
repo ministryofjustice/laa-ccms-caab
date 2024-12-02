@@ -138,7 +138,8 @@ public class SecurityConfiguration {
     };
   }
 
-  private Collection<? extends GrantedAuthority> getUserFunctions(Saml2AuthenticatedPrincipal principal) {
+  private Collection<? extends GrantedAuthority> getUserFunctions(
+      Saml2AuthenticatedPrincipal principal) {
     return userService.getUser(principal.getName()).blockOptional()
         .orElseThrow(() -> new RuntimeException("Failed to retrieve user functions."))
         .getFunctions()
