@@ -14,6 +14,10 @@
 
     <div th:if="${breadcrumbs != null}" th:replace="${breadcrumbs}"></div>
 
+    <th:block th:if="${userRoles != null and pageRoles != null}">
+        <div th:replace="~{partials/actions :: restrictedActionsMessage(${userRoles}, ${pageRoles})}"></div>
+    </th:block>
+
     <main class="govuk-main-wrapper" id="main-content" role="main" style="padding-top: 0px;">
         <th:block th:replace="${mainContent}">Default Main Content</th:block>
     </main>

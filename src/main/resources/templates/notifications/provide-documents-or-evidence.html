@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='SUBDOC')}" xmlns:th="http://www.thymeleaf.org">
 <head>
   <title>Provide Documents or Evidence</title>
 </head>
@@ -167,12 +167,6 @@
         <div class="govuk-grid-column-one-third">
           <div th:replace="~{partials/actions :: restrictedSubmitButton('Submit',
               ${user.functions}, ${'SUBDOC'})}"></div>
-        </div>
-        <div class="govuk-grid-column-full">
-          <div
-              th:replace="~{partials/actions :: restrictedActionMessage('submit documents', ${user.functions}, ${'SUBDOC'})}"></div>
-        </div>
-        <div class="govuk-grid-column-one-third">
           <p class="govuk-body govuk-!-font-size-15-!-text-align-left">
             <a class="govuk-back-link"
                th:href="@{/notifications/{notification_id}(notification_id=${notificationId})}">

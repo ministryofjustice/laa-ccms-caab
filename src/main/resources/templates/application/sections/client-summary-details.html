@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"
-      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='SUBUC')}"
       xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
 <head>
   <title>LAA CCMS - Create application</title>
@@ -32,7 +32,6 @@
         <div th:replace="~{partials/actions :: restrictedSubmitButton('Submit amendments',
               ${user.functions}, ${'SUBUC'})}"></div>
       </div>
-      <div th:replace="~{partials/actions :: restrictedActionMessage('submit client amendments', ${user.functions}, ${'SUBUC'})}"></div>
     </form>
   </div>
 </div>

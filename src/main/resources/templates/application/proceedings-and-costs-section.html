@@ -1,10 +1,23 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='VIEWPROC,ADDPROC,DELPROC')}" xmlns:th="http://www.thymeleaf.org">
 <head>
   <title>LAA CCMS - Create application</title>
 </head>
 <body>
 <div class="govuk-width-container">
+  <div class="govuk-notification-banner" role="region" aria-labelledby="govuk-notification-banner-title" data-module="govuk-notification-banner">
+    <div class="govuk-notification-banner__header">
+      <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">
+        Important
+      </h2>
+    </div>
+    <div class="govuk-notification-banner__content">
+      <p class="govuk-notification-banner__heading">
+        You have 7 days left to send your application.
+        <a class="govuk-notification-banner__link" href="#">View application</a>.
+      </p>
+    </div>
+  </div>
   <div id="breadcrumbs">
     <a th:href="@{/application/sections}" class="govuk-back-link">Return to create application</a>
   </div>
@@ -85,13 +98,8 @@
           </tr>
           </tbody>
         </table>
-        <div th:replace="~{partials/actions :: restrictedActionMessage('view proceedings', ${user.functions}, ${'VIEWPROC'})}"></div>
-        <div
-            th:replace="~{partials/actions :: restrictedActionMessage('delete proceedings', ${user.functions}, ${'DELPROC'})}"></div>
         <div
             th:replace="~{partials/actions :: restrictedActionLink('Add proceeding', ${user.functions}, ${'ADDPROC'}, true, 'govuk-button--secondary', @{/application/proceedings/add/matter-type}, false)}"></div>
-        <div
-            th:replace="~{partials/actions :: restrictedActionMessage('add a proceeding', ${user.functions}, ${'ADDPROC'})}"></div>
       </div>
       <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="case-costs" aria-labelledby="tab_case-costs">
         <h2 class="govuk-heading-l">Case costs</h2>

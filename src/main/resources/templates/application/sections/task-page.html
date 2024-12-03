@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='SUBAPP')}" xmlns:th="http://www.thymeleaf.org">
 <head>
   <title>LAA CCMS - Application summary</title>
 </head>
@@ -123,8 +123,6 @@
               Abandon application
             </a>
           </div>
-          <div
-              th:replace="~{partials/actions :: restrictedActionMessage('submit applications', ${user.functions}, ${'SUBAPP'})}"></div>
         </div>
       </div>
     </form>

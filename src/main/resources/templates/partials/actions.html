@@ -2,7 +2,7 @@
   To display anchors that may be displayed either as a standard anchor link or a button via govuk
   classes.
 -->
-<span
+<th:block
     th:fragment="restrictedActionLink(actionText, userRoles, allowedRoles, isButton, additionalClasses, url, revertToText)">
   <a th:if="${viewListUtil.containsAny(allowedRoles, userRoles)}"
      th:classappend="${(isButton ? 'govuk-button' : 'govuk-link') + ' ' + additionalClasses}"
@@ -14,7 +14,7 @@
       th:if="${!viewListUtil.containsAny(allowedRoles, userRoles) and revertToText and !isButton }"
        th:text="${actionText}">
   </span>
-</span>
+</th:block>
 
 <!--
   To display buttons used to submit forms.
@@ -28,11 +28,17 @@
 </button>
 
 <!--
-  To display a message describing why an action is not available.
+  To display a message describing why certain actions are not available.
 -->
-<div th:fragment="restrictedActionMessage(actionDescription, userRoles, allowedRoles)"
-     th:unless="${viewListUtil.containsAny(allowedRoles, userRoles)}"
-     class="govuk-inset-text"
-     th:text="${'You cannot ' + actionDescription + '. This is because the provider you are currently acting on behalf of does not have
-      the authority to perform this action.'}">
-</div>
+<th:block th:fragment="restrictedActionsMessage(userRoles, allowedRoles)"
+          th:with="allowedRoleList=${#lists.toList(#strings.arraySplit(allowedRoles, ','))},
+                   missingRoles=${viewListUtil.findMissingRoles(userRoles, allowedRoleList)}">
+  <div th:unless="${#lists.isEmpty(missingRoles)}"
+      class="govuk-inset-text">
+    <span>You cannot perform the following actions: </span>
+    <span th:each="role,iterStat : ${missingRoles}"
+          th:text="${role.description} + ${!iterStat.last ? ', ' : '.'}"></span>
+    <span>This is because the provider you are currently acting on behalf of does not have
+        the authority to perform these actions.</span>
+  </div>
+</th:block>

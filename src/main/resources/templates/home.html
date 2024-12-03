@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'home'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'home'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='YCA,NOT,CA,PRC')}" xmlns:th="http://www.thymeleaf.org">
     <head>
         <title>Homepage</title>
     </head>
@@ -11,9 +12,7 @@
                 <span class="govuk-caption-l">Civil legal aid applications, amendments and billing.</span>
             </h1>
 
-            <div
-                th:replace="~{partials/actions :: restrictedActionLink('New application', ${user.functions}, ${'CA'}, true, '', @{/application/office}, false)}"></div>
-            <div th:replace="~{partials/actions :: restrictedActionMessage('create a new application', ${user.functions}, ${'CA'})}"></div>
+            <div th:replace="~{partials/actions :: restrictedActionLink('New application', ${user.functions}, ${'CA'}, true, '', @{/application/office}, false)}"></div>
 
             <!--  Notifications  -->
             <h2 class="govuk-heading-m">
@@ -52,8 +51,6 @@
                     </div>
                 </ul>
                 </th:block>
-                <div
-                    th:replace="~{partials/actions :: restrictedActionMessage('view actions / notifications', ${user.functions}, ${'NOT'})}"></div>
             </div>
 
             <div class="govuk-body" th:unless="${showNotifications}">
@@ -76,7 +73,6 @@
             <p class="govuk-body">For non case related queries please create a general request.</p>
 
             <div th:replace="~{partials/actions :: restrictedActionLink('Create general request', ${user.functions}, ${'PRC'}, true, 'govuk-button--secondary', @{/provider-requests/types}, false)}"></div>
-            <div th:replace="~{partials/actions :: restrictedActionMessage('create a general request', ${user.functions}, ${'PRC'})}"></div>
 
         </div>
     </body>
