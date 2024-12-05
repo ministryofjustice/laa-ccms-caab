@@ -118,7 +118,7 @@
           <div class="govuk-button-group">
             <div
                 th:replace="~{partials/actions :: restrictedSubmitButton('Complete application',
-                ${user.functions}, ${'SUBAPP'})}"></div>
+                ${user.functions}, 'SUBAPP')}"></div>
             <a class="govuk-button govuk-button--secondary" data-module="govuk-button" th:href="@{/application/abandon}">
               Abandon application
             </a>

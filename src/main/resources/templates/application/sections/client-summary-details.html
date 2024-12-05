@@ -30,7 +30,7 @@
       <div th:replace="~{application/partials/client-fragments :: clientSummaryFragment}"></div>
       <div class="govuk-button-group">
         <div th:replace="~{partials/actions :: restrictedSubmitButton('Submit amendments',
-              ${user.functions}, ${'SUBUC'})}"></div>
+              ${user.functions}, 'SUBUC')}"></div>
       </div>
     </form>
   </div>

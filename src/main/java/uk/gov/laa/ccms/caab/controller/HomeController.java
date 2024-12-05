@@ -8,7 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.service.NotificationService;
+import uk.gov.laa.ccms.caab.util.UserRoleUtil;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
@@ -38,7 +40,8 @@ public class HomeController {
     NotificationSummary notificationSummary = notificationService.getNotificationsSummary(
             user.getLoginId(), user.getUserType()).block();
 
-    boolean showNotifications = notificationSummary != null;
+    boolean showNotifications =
+        notificationSummary != null && UserRoleUtil.hasRole(user, UserRole.VIEW_NOTIFICATIONS);
     model.addAttribute("showNotifications", showNotifications);
 
     if (showNotifications) {

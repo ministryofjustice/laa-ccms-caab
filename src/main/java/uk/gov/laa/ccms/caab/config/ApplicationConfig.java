@@ -16,7 +16,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.i18n.FixedLocaleResolver;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
-import uk.gov.laa.ccms.caab.util.ViewListUtil;
+import uk.gov.laa.ccms.caab.util.UserRoleUtil;
 
 /**
  * Configuration class for creating WebClient instances used for making HTTP requests.
@@ -152,7 +152,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
     ThymeleafViewResolver thymeleafViewResolver = new ThymeleafViewResolver();
     thymeleafViewResolver.setTemplateEngine(templateEngine);
     thymeleafViewResolver.setCharacterEncoding("UTF-8");
-    thymeleafViewResolver.addStaticVariable("viewListUtil", new ViewListUtil());
+    thymeleafViewResolver.addStaticVariable("userRoleUtil", new UserRoleUtil());
     return thymeleafViewResolver;
   }
 

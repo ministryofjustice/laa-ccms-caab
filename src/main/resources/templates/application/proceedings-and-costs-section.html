@@ -70,7 +70,7 @@
           <tr class="govuk-table__row" th:each="proceeding : ${proceedings}" th:unless="${proceedings.isEmpty()}">
             <td class="govuk-table__cell">
               <div th:replace="~{partials/actions :: restrictedActionLink(${proceeding.matterType.displayValue},
-              ${user.functions}, ${'VIEWPROC'}, false, '', @{/application/proceedings/{id}/summary(id=${proceeding.id})}, true)}"></div>
+              ${user.functions}, 'VIEWPROC', false, '', @{/application/proceedings/{id}/summary(id=${proceeding.id})}, true)}"></div>
             </td>
             <td class="govuk-table__cell" th:text="${proceeding.proceedingType.displayValue}"></td>
             <td class="govuk-table__cell" th:text="${proceeding.levelOfService.displayValue}"></td>
@@ -87,7 +87,7 @@
               <td class="govuk-table__cell"></td>
               <td class="govuk-table__cell">
                 <div th:replace="~{partials/actions :: restrictedActionLink('Delete',
-              ${user.functions}, ${'DELPROC'}, false, '', @{/application/proceedings/{id}/remove(id=${proceeding.id})}, true)}"></div>
+              ${user.functions}, 'DELPROC', false, '', @{/application/proceedings/{id}/remove(id=${proceeding.id})}, true)}"></div>
                  |
                 <a th:href="@{/application/proceedings/{id}/make-lead(id=${proceeding.id})}" class="govuk-link">Make lead</a>
               </td>
@@ -99,7 +99,7 @@
           </tbody>
         </table>
         <div
-            th:replace="~{partials/actions :: restrictedActionLink('Add proceeding', ${user.functions}, ${'ADDPROC'}, true, 'govuk-button--secondary', @{/application/proceedings/add/matter-type}, false)}"></div>
+            th:replace="~{partials/actions :: restrictedActionLink('Add proceeding', ${user.functions}, 'ADDPROC', true, 'govuk-button--secondary', @{/application/proceedings/add/matter-type}, false)}"></div>
       </div>
       <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="case-costs" aria-labelledby="tab_case-costs">
         <h2 class="govuk-heading-l">Case costs</h2>

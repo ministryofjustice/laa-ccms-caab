@@ -3,15 +3,15 @@
   classes.
 -->
 <th:block
-    th:fragment="restrictedActionLink(actionText, userRoles, allowedRoles, isButton, additionalClasses, url, revertToText)">
-  <a th:if="${viewListUtil.containsAny(allowedRoles, userRoles)}"
+    th:fragment="restrictedActionLink(actionText, userRoles, actionRole, isButton, additionalClasses, url, revertToText)">
+  <a th:if="${#lists.contains(userRoles, actionRole)}"
      th:classappend="${(isButton ? 'govuk-button' : 'govuk-link') + ' ' + additionalClasses}"
      th:attrappend="data-module=${isButton ? 'govuk-button' : null}"
      th:text="${actionText}"
-     th:href="${(viewListUtil.containsAny(allowedRoles, userRoles)) ? url : null}">
+     th:href="${(#lists.contains(userRoles, actionRole)) ? url : null}">
   </a>
   <span
-      th:if="${!viewListUtil.containsAny(allowedRoles, userRoles) and revertToText and !isButton }"
+      th:if="${!#lists.contains(userRoles, actionRole) and revertToText and !isButton }"
        th:text="${actionText}">
   </span>
 </th:block>
@@ -19,8 +19,8 @@
 <!--
   To display buttons used to submit forms.
 -->
-<button th:fragment="restrictedSubmitButton(actionText, userRoles, allowedRoles)"
-        th:if="${viewListUtil.containsAny(allowedRoles, userRoles)}"
+<button th:fragment="restrictedSubmitButton(actionText, userRoles, actionRole)"
+        th:if="${#lists.contains(userRoles, actionRole)}"
         class="govuk-button"
         data-module="govuk-button"
         type="submit"
@@ -30,9 +30,9 @@
 <!--
   To display a message describing why certain actions are not available.
 -->
-<th:block th:fragment="restrictedActionsMessage(userRoles, allowedRoles)"
-          th:with="allowedRoleList=${#lists.toList(#strings.arraySplit(allowedRoles, ','))},
-                   missingRoles=${viewListUtil.findMissingRoles(userRoles, allowedRoleList)}">
+<th:block th:fragment="restrictedActionsMessage(userRoles, pageRoles)"
+          th:with="pageRoleList=${#lists.toList(#strings.arraySplit(pageRoles, ','))},
+                   missingRoles=${userRoleUtil.findMissingRoles(userRoles, pageRoleList)}">
   <div th:unless="${#lists.isEmpty(missingRoles)}"
       class="govuk-inset-text">
     <span>You cannot perform the following actions: </span>

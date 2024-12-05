@@ -101,12 +101,12 @@
             <td th:if="${documentLinks.get(attachment.getDocumentId)} != null"
                 class="govuk-table__cell">
               <div
-                  th:replace="~{partials/actions :: restrictedActionLink('Download', ${user.functions}, ${'ATT'}, false, '', ${documentLinks.get(attachment.getDocumentId)}, true)}"></div>
+                  th:replace="~{partials/actions :: restrictedActionLink('Download', ${user.functions}, 'ATT', false, '', ${documentLinks.get(attachment.getDocumentId)}, true)}"></div>
             </td>
             <td th:if="${documentLinks.get(attachment.getDocumentId)} == null"
                 class="govuk-table__cell">
               <div th:replace="~{partials/actions :: restrictedActionLink('Retrieve',
-              ${user.functions}, ${'ATT'}, false, 'ccms-download-link', @{/notifications/{notification_id}/attachments/{attachment_id}/retrieve(notification_id=${notification.getNotificationId},attachment_id=${attachment.getDocumentId})}, true)}"></div>
+              ${user.functions}, 'ATT', false, 'ccms-download-link', @{/notifications/{notification_id}/attachments/{attachment_id}/retrieve(notification_id=${notification.getNotificationId},attachment_id=${attachment.getDocumentId})}, true)}"></div>
               <div
                    style="visibility:hidden;display:inline-block"
                    class="loader-small"></div>
@@ -118,10 +118,10 @@
     </div>
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-one-third"
-           th:if="${viewListUtil.containsAny({'EVID'}, user.functions)}">
+           th:if="${#lists.contains(user.functions, 'EVID')}">
         <p class="govuk-body govuk-!-text-align-left">
           <div
-            th:replace="~{partials/actions :: restrictedActionLink('Provide Documents or evidence', ${user.functions}, ${'EVID'}, true, 'govuk-button--secondary', @{/notifications/{notification_id}/provide-documents-or-evidence(notification_id=${notification.getNotificationId})}, false)}">
+            th:replace="~{partials/actions :: restrictedActionLink('Provide Documents or evidence', ${user.functions}, 'EVID', true, 'govuk-button--secondary', @{/notifications/{notification_id}/provide-documents-or-evidence(notification_id=${notification.getNotificationId})}, false)}">
           </div>
         </p>
         <p class="govuk-body govuk-!-font-size-15-!-text-align-left">

@@ -12,7 +12,7 @@
                 <span class="govuk-caption-l">Civil legal aid applications, amendments and billing.</span>
             </h1>
 
-            <div th:replace="~{partials/actions :: restrictedActionLink('New application', ${user.functions}, ${'CA'}, true, '', @{/application/office}, false)}"></div>
+            <div th:replace="~{partials/actions :: restrictedActionLink('New application', ${user.functions}, 'CA', true, '', @{/application/office}, false)}"></div>
 
             <!--  Notifications  -->
             <h2 class="govuk-heading-m">
@@ -22,7 +22,6 @@
             <div th:if="${showNotifications}"
                  th:with="noActions=${#strings.equals(actionsMsg, 'No Outstanding Actions')},
                           noNotifications=${#strings.equals(notificationsMsg, 'View Notifications (none outstanding)')}">
-                <th:block th:if="${viewListUtil.containsAny({'NOT'}, user.functions)}">
                 <div class="govuk-body">
                     You currently have:
                 </div>
@@ -35,7 +34,7 @@
                     <div th:unless="${noActions}">
                         <li>
                             <div
-                                th:replace="~{partials/actions :: restrictedActionLink(${actionsMsg}, ${user.functions}, ${'NOT'}, false, '', @{/notifications/search?notification_type=A}, true)}"></div>
+                                th:replace="~{partials/actions :: restrictedActionLink(${actionsMsg}, ${user.functions}, 'NOT', false, '', @{/notifications/search?notification_type=A}, true)}"></div>
                         </li>
                     </div>
                     <div th:if="${noNotifications}">
@@ -46,11 +45,10 @@
                     <div th:unless="${noNotifications}">
                         <li>
                             <div
-                                th:replace="~{partials/actions :: restrictedActionLink(${notificationsMsg}, ${user.functions}, ${'NOT'}, false, '', @{/notifications/search?notification_type=N}, true)}"></div>
+                                th:replace="~{partials/actions :: restrictedActionLink(${notificationsMsg}, ${user.functions}, 'NOT', false, '', @{/notifications/search?notification_type=N}, true)}"></div>
                         </li>
                     </div>
                 </ul>
-                </th:block>
             </div>
 
             <div class="govuk-body" th:unless="${showNotifications}">
@@ -72,7 +70,7 @@
 
             <p class="govuk-body">For non case related queries please create a general request.</p>
 
-            <div th:replace="~{partials/actions :: restrictedActionLink('Create general request', ${user.functions}, ${'PRC'}, true, 'govuk-button--secondary', @{/provider-requests/types}, false)}"></div>
+            <div th:replace="~{partials/actions :: restrictedActionLink('Create general request', ${user.functions}, 'PRC', true, 'govuk-button--secondary', @{/provider-requests/types}, false)}"></div>
 
         </div>
     </body>
