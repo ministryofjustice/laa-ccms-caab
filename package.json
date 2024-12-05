@@ -10,6 +10,6 @@
     "gulp-replace": "^1.1.4",
     "gulp-sass": "^5.1.0",
     "gulp-uglify": "^3.0.2",
-    "sass": "^1.81.0"
+    "sass": "^1.82.0"
   }
 }
