@@ -68,6 +68,12 @@ public class EbsApiClient {
                 e, "User", "login id", loginId));
   }
 
+  /**
+   * Retrieves a summary of notification counts for a user based on their login ID.
+   *
+   * @param loginId the login ID of the user whose notification summary is to be retrieved
+   * @return a Mono emitting the NotificationSummary for the specified user
+   */
   public Mono<NotificationSummary> getUserNotificationSummary(final String loginId) {
     return ebsApiWebClient
         .get()
