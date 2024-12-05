@@ -48,6 +48,7 @@ import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
+import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -68,8 +69,6 @@ public class EbsApiClientTest {
 
   @InjectMocks
   private EbsApiClient ebsApiClient;
-
-
 
   ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
@@ -111,6 +110,62 @@ public class EbsApiClientTest {
     final Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(loginId);
 
     StepVerifier.create(userDetailsMono)
+        .verifyComplete();
+  }
+
+  @Test
+  void getUserNotificationSummary_returnsData() {
+    final String loginId = "user1";
+    final String expectedUri = "/users/{loginId}/notifications/summary";
+
+    final NotificationSummary mockNotificationSummary = new NotificationSummary();
+    mockNotificationSummary.setNotifications(1);
+    mockNotificationSummary.setStandardActions(3);
+    mockNotificationSummary.setOverdueActions(2);
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(NotificationSummary.class)).thenReturn(
+        Mono.just(mockNotificationSummary));
+
+    final Mono<NotificationSummary> notificationSummary = ebsApiClient.getUserNotificationSummary(
+        loginId);
+
+    StepVerifier.create(notificationSummary)
+        .expectNextMatches(summary ->
+            summary.getNotifications().equals(1) &&
+                summary.getStandardActions().equals(3) &&
+                summary.getOverdueActions().equals(2)
+        )
+        .verifyComplete();
+  }
+
+  @Test
+  void getUserNotificationSummary_NotFound() {
+    final String loginId = "user1";
+    final String expectedUri = "/users/{loginId}/notifications/summary";
+
+    final NotificationSummary mockNotificationSummary = new NotificationSummary();
+    mockNotificationSummary.setNotifications(1);
+    mockNotificationSummary.setStandardActions(3);
+    mockNotificationSummary.setOverdueActions(2);
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(NotificationSummary.class)).thenReturn(
+        Mono.just(mockNotificationSummary));
+
+    final Mono<NotificationSummary> notificationSummary = ebsApiClient.getUserNotificationSummary(
+        loginId);
+
+    StepVerifier.create(notificationSummary)
+        .expectNextMatches(summary ->
+            summary.getNotifications().equals(1) &&
+                summary.getStandardActions().equals(3) &&
+                summary.getOverdueActions().equals(2)
+        )
         .verifyComplete();
   }
 

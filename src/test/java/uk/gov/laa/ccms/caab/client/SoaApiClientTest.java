@@ -37,7 +37,6 @@ import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
-import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
@@ -67,64 +66,6 @@ class SoaApiClientTest {
   @InjectMocks
   private SoaApiClient soaApiClient;
 
-  @Test
-  void getNotificationsSummary_returnData() {
-
-    String loginId = "user1";
-    String userType = "userType";
-    String expectedUri = "/users/{loginId}/notifications/summary";
-
-    NotificationSummary mockSummary = new NotificationSummary()
-        .notifications(10)
-        .standardActions(5)
-        .overdueActions(2);
-
-    when(soaApiWebClientMock.get()).thenReturn(requestHeadersUriMock);
-    when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
-    when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
-        requestHeadersMock);
-    when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(
-        requestHeadersMock);
-    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(NotificationSummary.class)).thenReturn(Mono.just(mockSummary));
-
-    Mono<NotificationSummary> summaryMono =
-        soaApiClient.getNotificationsSummary(loginId, userType);
-
-    StepVerifier.create(summaryMono)
-        .expectNextMatches(summary ->
-            summary.getNotifications() == 10 &&
-                summary.getStandardActions() == 5 &&
-                summary.getOverdueActions() == 2)
-        .verifyComplete();
-  }
-
-  @Test
-  void getNotificationsSummary_notFound() {
-    String loginId = "user1";
-    String userType = "userType";
-    String expectedUri = "/users/{loginId}/notifications/summary";
-
-    when(soaApiWebClientMock.get()).thenReturn(requestHeadersUriMock);
-    when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
-    when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
-        requestHeadersMock);
-    when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(
-        requestHeadersMock);
-    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(NotificationSummary.class)).thenReturn(Mono.error(
-        new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
-
-    when(apiClientErrorHandler.handleApiRetrieveError(
-        any(), eq("Notification summary"), eq("user login id"), eq(loginId)))
-        .thenReturn(Mono.empty());
-
-    Mono<NotificationSummary> summaryMono =
-        soaApiClient.getNotificationsSummary(loginId, userType);
-
-    StepVerifier.create(summaryMono)
-        .verifyComplete();
-  }
 
   @Test
   void getContractDetails_returnsData() {

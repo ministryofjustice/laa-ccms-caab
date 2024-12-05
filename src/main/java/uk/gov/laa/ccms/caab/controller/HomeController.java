@@ -38,7 +38,7 @@ public class HomeController {
 
     // Retrieve a summary of the User's Notifications & Actions from the SOA Gateway
     NotificationSummary notificationSummary = notificationService.getNotificationsSummary(
-            user.getLoginId(), user.getUserType()).block();
+        user.getLoginId()).block();
 
     boolean showNotifications =
         notificationSummary != null && UserRoleUtil.hasRole(user, UserRole.VIEW_NOTIFICATIONS);

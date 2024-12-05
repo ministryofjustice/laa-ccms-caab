@@ -25,6 +25,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.S3ApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -49,6 +50,9 @@ class NotificationServiceTest {
   private CaabApiClient caabApiClient;
 
   @Mock
+  private EbsApiClient ebsApiClient;
+
+  @Mock
   private NotificationAttachmentMapper notificationAttachmentMapper;
 
   @Mock
@@ -61,17 +65,16 @@ class NotificationServiceTest {
   void getNotificationsSummary_returnData() {
 
     String loginId = "user1";
-    String userType = "userType";
 
     NotificationSummary mockSummary = new NotificationSummary()
         .notifications(10)
         .standardActions(5)
         .overdueActions(2);
 
-    when(soaApiClient.getNotificationsSummary(loginId, userType)).thenReturn(Mono.just(mockSummary));
+    when(ebsApiClient.getUserNotificationSummary(loginId)).thenReturn(Mono.just(mockSummary));
 
     Mono<NotificationSummary> summaryMono =
-        notificationService.getNotificationsSummary(loginId, userType);
+        notificationService.getNotificationsSummary(loginId);
 
     StepVerifier.create(summaryMono)
         .expectNextMatches(summary ->
