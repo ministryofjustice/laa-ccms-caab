@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='SUBAPP')}" xmlns:th="http://www.thymeleaf.org">
 <head>
   <title>LAA CCMS - Application summary</title>
 </head>
@@ -116,9 +116,9 @@
             </tbody>
           </table>
           <div class="govuk-button-group">
-            <button type="submit" class="govuk-button" data-module="govuk-button">
-              Complete application
-            </button>
+            <div
+                th:replace="~{partials/actions :: restrictedSubmitButton('Complete application',
+                ${user.functions}, 'SUBAPP')}"></div>
             <a class="govuk-button govuk-button--secondary" data-module="govuk-button" th:href="@{/application/abandon}">
               Abandon application
             </a>

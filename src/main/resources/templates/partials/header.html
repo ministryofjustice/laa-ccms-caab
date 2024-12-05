@@ -37,7 +37,8 @@
                                 Home
                             </a>
                         </li>
-                        <li class="govuk-service-navigation__item"
+                        <li th:if="${#lists.contains(user.functions, 'YCA')}"
+                            class="govuk-service-navigation__item"
                             th:classappend="${pageCategory == 'cases'} ? 'govuk-service-navigation__item--active'">
                             <a class="govuk-service-navigation__link"
                                th:href="@{/application/search}"
@@ -46,7 +47,8 @@
                                     applications</strong>
                             </a>
                         </li>
-                        <li class="govuk-service-navigation__item"
+                        <li th:if="${#lists.contains(user.functions, 'NOT')}"
+                            class="govuk-service-navigation__item"
                             th:classappend="${pageCategory == 'actions'} ? 'govuk-service-navigation__item--active'">
                             <a class="govuk-service-navigation__link"
                                th:href="@{/notifications/search(notification_type=all)}"
