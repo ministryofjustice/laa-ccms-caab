@@ -80,8 +80,8 @@ public class HomeControllerTest {
         .overdueActions(overdueActions);
 
     // Mock the SOA Gateway service to return the notification summary
-    when(notificationService.getNotificationsSummary(userDetails.getLoginId(),
-        userDetails.getUserType())).thenReturn(Mono.just(notificationSummary));
+    when(notificationService.getNotificationsSummary(userDetails.getLoginId())).thenReturn(
+        Mono.just(notificationSummary));
 
     this.mockMvc.perform(get("/").flashAttr("user", userDetails))
         .andDo(print())
@@ -98,8 +98,8 @@ public class HomeControllerTest {
   public void testHomeHandlesNullNotifications() throws Exception {
 
     // Mock the SOA Gateway service to return the notification summary
-    when(notificationService.getNotificationsSummary(userDetails.getLoginId(),
-        userDetails.getUserType())).thenReturn(Mono.empty());
+    when(notificationService.getNotificationsSummary(userDetails.getLoginId())).thenReturn(
+        Mono.empty());
 
     this.mockMvc.perform(get("/").flashAttr("user", userDetails))
         .andDo(print())

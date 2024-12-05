@@ -85,26 +85,6 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testGetNotificationsSummary_returnData() throws Exception {
-    String loginId = USER_1;
-    String userType = USER_TYPE;
-    NotificationSummary expectedSummary = buildNotificationSummary();
-    String summaryJson = objectMapper.writeValueAsString(expectedSummary);
-
-    wiremock.stubFor(get(String.format("/users/%s/notifications/summary", loginId))
-        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
-        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
-        .willReturn(okJson(summaryJson)));
-
-    Mono<NotificationSummary> summaryMono =
-        soaApiClient.getNotificationsSummary(loginId, userType);
-
-    NotificationSummary summary = summaryMono.block();
-
-    assertEquals(summaryJson, objectMapper.writeValueAsString(summary));
-  }
-
-  @Test
   public void testGetCases_returnData() throws Exception {
     String loginId = USER_1;
     String userType = USER_TYPE;

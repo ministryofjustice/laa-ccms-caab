@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.client;
 
-import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +31,7 @@ import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
+import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
 /**
  * Client class responsible for interacting with the ebs-api microservice to retrieve various data
@@ -66,6 +66,16 @@ public class EbsApiClient {
             .bodyToMono(UserDetail.class)
             .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
                 e, "User", "login id", loginId));
+  }
+
+  public Mono<NotificationSummary> getUserNotificationSummary(final String loginId) {
+    return ebsApiWebClient
+        .get()
+        .uri("/users/{loginId}/notifications/summary", loginId)
+        .retrieve()
+        .bodyToMono(NotificationSummary.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
+            e, "User", "login id", loginId));
   }
 
   /**
