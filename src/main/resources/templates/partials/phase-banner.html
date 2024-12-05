@@ -1,32 +1,41 @@
-<div th:fragment="phase-banner" class="govuk-phase-banner" th:style="${activeCase} ? 'background: #dee0e2;'">
+<div th:fragment="phase-banner" class="govuk-phase-banner"
+     th:style="${activeCase} ? 'background: #dee0e2;'">
+  <div class="govuk-width-container">
+
     <div class="govuk-grid-row">
-        <div th:if="${activeCase}" class="govuk-grid-column-one-half">
-            <p class="govuk-body govuk-!-font-size-16" style="margin-bottom: 0; white-space: nowrap">
-                <img class="govuk-!-padding-left-2 govuk-!-padding-right-2" src="/civil/case-open.png" alt="case">
-                <span class="govuk-!-padding-right-2" th:text="${activeCase.client}"></span>
-                <span class="govuk-!-padding-right-2" th:text="${activeCase.caseReferenceNumber}"></span>
-                <span class="govuk-!-padding-right-2" th:text="${activeCase.providerCaseReferenceNumber}"></span>
-            </p>
-        </div>
-        <div th:class="${activeCase} ? 'govuk-grid-column-one-half' : 'govuk-grid-column-full'" >
-            <p class="govuk-body govuk-!-font-size-14 govuk-!-text-align-right" style="margin-bottom: 0; white-space: nowrap">
+      <div th:if="${activeCase}" class="govuk-grid-column-one-half">
+        <p class="govuk-body govuk-!-font-size-16" style="margin-bottom: 0; white-space: nowrap">
+          <img class="govuk-!-padding-left-2 govuk-!-padding-right-2"
+               th:src="@{/assets/ccms/case-open.png}" alt="case"/>
+          <span class="govuk-!-padding-right-2" th:text="${activeCase.client}"></span>
+          <span class="govuk-!-padding-right-2" th:text="${activeCase.caseReferenceNumber}"></span>
+          <span class="govuk-!-padding-right-2"
+                th:text="${activeCase.providerCaseReferenceNumber}"></span>
+        </p>
+      </div>
+      <div th:class="${activeCase} ? 'govuk-grid-column-one-half' : 'govuk-grid-column-full'">
+        <p class="govuk-body govuk-!-font-size-14 govuk-!-text-align-right"
+           style="margin-bottom: 0; white-space: nowrap">
                 <span class="govuk-!-padding-left-2">
                     Logged in as:
                 </span>
-                <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" sec:authentication="name"></span>
-                <span th:if="${pageCategory == 'home'}">
+          <span class="govuk-!-font-weight-bold govuk-!-padding-right-2"
+                sec:authentication="name"></span>
+          <span th:if="${pageCategory == 'home'}">
                     On Behalf of:
                     <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
                         <a th:if="${#lists.size(user.firms) > 1}" th:href="@{/provider-switch}"
-                        th:text="${user.provider.name}"></a>
+                           th:text="${user.provider.name}"></a>
                         <span th:if="${#lists.size(user.firms) <= 1}"
                               th:text="${user.provider.name}"></span>
                     </span>
                 </span>
-                <a th:href="@{/logout}" class="govuk-!-text-align-right govuk-!-padding-right-2">
-                    Logout
-                </a>
-            </p>
-        </div>
+          <a th:href="@{/logout}" class="govuk-!-text-align-right govuk-!-padding-right-2">
+            Logout
+          </a>
+        </p>
+      </div>
     </div>
+  </div>
+
 </div>

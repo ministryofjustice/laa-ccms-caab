@@ -16,13 +16,13 @@ correctly. They are:
 This step requires maven to be installed on your machine. You can
 use [homebrew](https://formulae.brew.sh/formula/maven) to install it.
 
-```
+```shell
 brew install maven
 ```
 
 Next steps:
 
-```
+```shell
 cd ..
 
 git clone git@github.com:ministryofjustice/laa-ccms-caab-saml-mock.git laa-ccms-caab-saml-mock
@@ -46,7 +46,7 @@ docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-cc
 
 ## Setup laa-ccms-caab-db
 
-```
+```shell
 cd ..
 
 git clone git@github.com:ministryofjustice/laa-ccms-provider-ui-database.git laa-ccms-caab-db
@@ -77,7 +77,7 @@ When you see this message you can stop the liquibase container.
 
 ### Run laa-ccms-caab-db standalone
 
-```
+```shell
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-db
 ```
 
@@ -87,7 +87,7 @@ This is required due to a dependency on the ordinance survey api, instead of cal
 we call this.
 The wiremock can handle and postcode request.
 
-```
+```shell
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-wiremock
 ```
 
@@ -97,7 +97,7 @@ To facilitate local virus scan when uploading files in the UI, a ClamAV containe
 using
 the following command:
 
-```
+```shell
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-clam-av
 ```
 
@@ -114,7 +114,7 @@ can also be useful if more in-depth interactions are required.
 
 A configured LocalStack container can be started via docker compose:
 
-```
+```shell
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-localstack
 ```
 
