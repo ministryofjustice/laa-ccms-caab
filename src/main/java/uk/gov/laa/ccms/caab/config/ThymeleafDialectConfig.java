@@ -4,16 +4,22 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
-import uk.gov.laa.ccms.caab.dialect.GovUKDialect;
+import uk.gov.laa.ccms.caab.dialect.GovUkDialect;
 
+/**
+ * Custom ThymeleafDialectConfig.
+ */
 @Configuration
 public class ThymeleafDialectConfig {
 
-    @Bean
-    public SpringTemplateEngine templateEngine(SpringResourceTemplateResolver templateResolver) {
-        SpringTemplateEngine templateEngine = new SpringTemplateEngine();
-        templateEngine.setTemplateResolver(templateResolver);
-        templateEngine.addDialect(new GovUKDialect());
-        return templateEngine;
-    }
+  /**
+   * SpringTemplateEngine with custom dialect.
+   */
+  @Bean
+  public SpringTemplateEngine templateEngine(SpringResourceTemplateResolver templateResolver) {
+    SpringTemplateEngine templateEngine = new SpringTemplateEngine();
+    templateEngine.setTemplateResolver(templateResolver);
+    templateEngine.addDialect(new GovUkDialect());
+    return templateEngine;
+  }
 }

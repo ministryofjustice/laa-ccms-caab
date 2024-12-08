@@ -12,7 +12,7 @@ public class ThymeleafTestConfig {
     @Bean
     public SpringTemplateEngine templateEngine() {
         SpringTemplateEngine templateEngine = new SpringTemplateEngine();
-        templateEngine.addDialect(new GovUKDialect());
+        templateEngine.addDialect(new GovUkDialect());
         templateEngine.addTemplateResolver(templateResolver());
         return templateEngine;
     }
