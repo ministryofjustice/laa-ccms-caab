@@ -9,21 +9,21 @@ import org.thymeleaf.templatemode.TemplateMode;
 @Configuration
 public class ThymeleafTestConfig {
 
-    @Bean
-    public SpringTemplateEngine templateEngine() {
-        SpringTemplateEngine templateEngine = new SpringTemplateEngine();
-        templateEngine.addDialect(new GovUkDialect());
-        templateEngine.addTemplateResolver(templateResolver());
-        return templateEngine;
-    }
+  @Bean
+  public SpringTemplateEngine testTemplateEngine() {
+    SpringTemplateEngine templateEngine = new SpringTemplateEngine();
+    templateEngine.addDialect(new GovUkDialect());
+    templateEngine.addTemplateResolver(templateResolver());
+    return templateEngine;
+  }
 
-    @Bean
-    public SpringResourceTemplateResolver templateResolver() {
-        SpringResourceTemplateResolver resolver = new SpringResourceTemplateResolver();
-        resolver.setPrefix("classpath:/templates/");
-        resolver.setSuffix(".html");
-        resolver.setTemplateMode(TemplateMode.HTML);
-        resolver.setCacheable(false);
-        return resolver;
-    }
+  @Bean
+  public SpringResourceTemplateResolver templateResolver() {
+    SpringResourceTemplateResolver resolver = new SpringResourceTemplateResolver();
+    resolver.setPrefix("classpath:/templates/");
+    resolver.setSuffix(".html");
+    resolver.setTemplateMode(TemplateMode.HTML);
+    resolver.setCacheable(false);
+    return resolver;
+  }
 }
