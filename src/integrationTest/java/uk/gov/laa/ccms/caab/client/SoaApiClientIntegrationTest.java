@@ -33,7 +33,6 @@ import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
-import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
@@ -82,26 +81,6 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
 
     assertNotNull(response);
     assertEquals(contractDetailsJson, objectMapper.writeValueAsString(response.block()));
-  }
-
-  @Test
-  public void testGetNotificationsSummary_returnData() throws Exception {
-    String loginId = USER_1;
-    String userType = USER_TYPE;
-    NotificationSummary expectedSummary = buildNotificationSummary();
-    String summaryJson = objectMapper.writeValueAsString(expectedSummary);
-
-    wiremock.stubFor(get(String.format("/users/%s/notifications/summary", loginId))
-        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
-        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
-        .willReturn(okJson(summaryJson)));
-
-    Mono<NotificationSummary> summaryMono =
-        soaApiClient.getNotificationsSummary(loginId, userType);
-
-    NotificationSummary summary = summaryMono.block();
-
-    assertEquals(summaryJson, objectMapper.writeValueAsString(summary));
   }
 
   @Test
@@ -380,13 +359,6 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     ClientTransactionResponse response = clientTransactionResponseMono.block();
 
     assertEquals(clientTransactionResponse, response);
-  }
-
-  private NotificationSummary buildNotificationSummary() {
-    return new NotificationSummary()
-        .notifications(10)
-        .standardActions(5)
-        .overdueActions(2);
   }
 
   private ContractDetails buildContractDetails() {

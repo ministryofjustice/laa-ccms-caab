@@ -15,6 +15,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.S3ApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -23,9 +24,9 @@ import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
 import uk.gov.laa.ccms.caab.util.FileUtil;
+import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
-import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 
 /**
@@ -36,6 +37,7 @@ import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 @Slf4j
 public class NotificationService {
 
+  private final EbsApiClient ebsApiClient;
   private final SoaApiClient soaApiClient;
   private final CaabApiClient caabApiClient;
   private final S3ApiClient s3ApiClient;
@@ -48,11 +50,10 @@ public class NotificationService {
    * Retrieve the summary of notifications for a given user.
    *
    * @param loginId  The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
    * @return A Mono wrapping the NotificationSummary for the specified user.
    */
-  public Mono<NotificationSummary> getNotificationsSummary(String loginId, String userType) {
-    return soaApiClient.getNotificationsSummary(loginId, userType);
+  public Mono<NotificationSummary> getNotificationsSummary(String loginId) {
+    return ebsApiClient.getUserNotificationSummary(loginId);
   }
 
   /**
