@@ -5,7 +5,9 @@
         <div class="govuk-header__logo">
             <a href="#" class="govuk-header__link govuk-header__link--homepage">
                   <span class="govuk-header__logotype">
-                        <img src="/civil/assets/images/moj-logotype-crest.png" class="govuk-header__logotype-crown-fallback-image" width="36" height="32" alt="">
+                        <img src="/civil/assets/images/moj-logotype-crest-2024.png"
+                             class="govuk-header__logotype-crown-fallback-image" width="36"
+                             height="32" alt="">
                       <span class="govuk-header__product-name">
                           Legal Aid Agency
                       </span>
@@ -37,7 +39,8 @@
                                 Home
                             </a>
                         </li>
-                        <li class="govuk-service-navigation__item"
+                        <li th:if="${#lists.contains(user.functions, 'YCA')}"
+                            class="govuk-service-navigation__item"
                             th:classappend="${pageCategory == 'cases'} ? 'govuk-service-navigation__item--active'">
                             <a class="govuk-service-navigation__link"
                                th:href="@{/application/search}"
@@ -46,7 +49,8 @@
                                     applications</strong>
                             </a>
                         </li>
-                        <li class="govuk-service-navigation__item"
+                        <li th:if="${#lists.contains(user.functions, 'NOT')}"
+                            class="govuk-service-navigation__item"
                             th:classappend="${pageCategory == 'actions'} ? 'govuk-service-navigation__item--active'">
                             <a class="govuk-service-navigation__link"
                                th:href="@{/notifications/search(notification_type=all)}"

@@ -12,6 +12,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.thymeleaf.spring6.SpringTemplateEngine;
+import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = ApplicationConfig.class)
@@ -46,6 +48,12 @@ class ApplicationConfigTest {
   @Autowired
   private ClamAVClient clamAvClient;
 
+  @Autowired
+  private ThymeleafViewResolver thymeleafViewResolver;
+
+  @MockBean
+  private SpringTemplateEngine templateEngine;
+
   @MockBean
   private LoggingInterceptor loggingInterceptor;
 
@@ -72,5 +80,10 @@ class ApplicationConfigTest {
   @Test
   void avApiClientBeanExists() {
     assertNotNull(clamAvClient, "clamAvClient bean should not be null");
+  }
+
+  @Test
+  void thymeleafViewResolverBeanExists() {
+    assertNotNull(thymeleafViewResolver, "thymeleafViewResolver bean should not be null");
   }
 }

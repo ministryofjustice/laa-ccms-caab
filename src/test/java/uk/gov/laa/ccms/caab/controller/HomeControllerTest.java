@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,7 +63,8 @@ public class HomeControllerTest {
   private static final UserDetail userDetails = new UserDetail()
       .userId(1)
       .userType("testUserType")
-      .loginId("testLoginId");
+      .loginId("testLoginId")
+      .functions(List.of("NOT"));
 
   @ParameterizedTest
   @MethodSource("userDetailsAndNotificationParameters")
