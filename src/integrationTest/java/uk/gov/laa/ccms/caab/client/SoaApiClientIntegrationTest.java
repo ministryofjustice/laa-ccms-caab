@@ -33,7 +33,6 @@ import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
-import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
@@ -360,13 +359,6 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     ClientTransactionResponse response = clientTransactionResponseMono.block();
 
     assertEquals(clientTransactionResponse, response);
-  }
-
-  private NotificationSummary buildNotificationSummary() {
-    return new NotificationSummary()
-        .notifications(10)
-        .standardActions(5)
-        .overdueActions(2);
   }
 
   private ContractDetails buildContractDetails() {

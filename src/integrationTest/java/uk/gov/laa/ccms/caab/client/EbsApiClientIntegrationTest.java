@@ -32,6 +32,7 @@ import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
+import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -195,6 +196,41 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
 
+  @Test
+  public void testGetUserNotificationSummary_returnData() throws Exception {
+    final String loginId = "user1";
+    final NotificationSummary expectedNotificationsummary = buildUserNotificationSummary();
+    final String notificationSummaryJson = objectMapper.writeValueAsString(
+        expectedNotificationsummary);
+
+    wiremock.stubFor(get(String.format("/users/%s/notifications/summary", loginId))
+        .willReturn(okJson(notificationSummaryJson)));
+
+    final Mono<NotificationSummary> userNotificationSummary = ebsApiClient.getUserNotificationSummary(
+        loginId);
+
+    final NotificationSummary userDetails = userNotificationSummary.block();
+
+    assertEquals(notificationSummaryJson, objectMapper.writeValueAsString(userDetails));
+  }
+
+  @Test
+  public void testGetUserNotificationSummary_notFound() {
+    final String loginId = "user1";
+    final String expectedMessage = String.format(USER_ERROR_MESSAGE, loginId);
+
+    wiremock.stubFor(get(String.format("/users/%s/notifications/summary", loginId))
+        .willReturn(notFound()));
+
+    final Mono<NotificationSummary> notificationSummary = ebsApiClient.getUserNotificationSummary(
+        loginId);
+
+    StepVerifier.create(notificationSummary)
+        .expectErrorMatches(throwable -> throwable instanceof EbsApiClientException
+            && throwable.getMessage().equals(expectedMessage)
+        ).verify();
+  }
+
   // You may need to build the AmendmentTypeLookupDetail for the test
   private AmendmentTypeLookupDetail buildAmendmentTypeLookupDetail() {
     final AmendmentTypeLookupDetail detail = new AmendmentTypeLookupDetail();
@@ -261,6 +297,10 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
             .addFeeEarnersItem(new ContactDetail()
                 .id(1)
                 .name("FeeEarner1")));
+  }
+
+  private NotificationSummary buildUserNotificationSummary() {
+    return new NotificationSummary().notifications(5).overdueActions(3).standardActions(7);
   }
 
 }
