@@ -10,8 +10,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.service.NotificationService;
-import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.caab.util.UserRoleUtil;
+import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
