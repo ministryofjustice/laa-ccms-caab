@@ -1,7 +1,9 @@
 package uk.gov.laa.ccms.caab.util;
 
+import java.util.UUID;
 import uk.gov.laa.ccms.data.model.BaseOffice;
 import uk.gov.laa.ccms.data.model.BaseProvider;
+import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
@@ -100,4 +102,8 @@ public class EbsModelUtils {
                 .copyParty(Boolean.TRUE));
   }
 
+  public static CaseReferenceSummary buildCaseReferenceSummary() {
+    return new CaseReferenceSummary()
+        .caseReferenceNumber(UUID.randomUUID().toString());
+  }
 }

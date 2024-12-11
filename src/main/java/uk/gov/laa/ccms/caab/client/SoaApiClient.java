@@ -19,7 +19,6 @@ import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
-import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
@@ -367,28 +366,6 @@ public class SoaApiClient {
         .bodyToMono(TransactionStatus.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
             e, "case transaction status", "transaction id", transactionId));
-  }
-
-  /**
-   * Fetches a summary of case references.
-   *
-   * @param loginId  The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
-   * @return A Mono wrapping the CaseReferenceSummary.
-   */
-  public Mono<CaseReferenceSummary> getCaseReference(
-      final String loginId,
-      final String userType) {
-    return soaApiWebClient
-        .get()
-        .uri("/case-reference")
-        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
-        .header(SOA_GATEWAY_USER_ROLE, userType)
-        .retrieve()
-        .bodyToMono(CaseReferenceSummary.class)
-        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
-            e, "case reference", null));
-
   }
 
   /**
