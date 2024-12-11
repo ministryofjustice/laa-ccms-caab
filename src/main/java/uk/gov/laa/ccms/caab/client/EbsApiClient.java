@@ -767,7 +767,7 @@ public class EbsApiClient {
    * reference service.
    *
    * @return a {@link Mono} emitting the {@link CaseReferenceSummary} containing the details of the
-   * next allocated case reference
+   *     next allocated case reference
    */
   public Mono<CaseReferenceSummary> postAllocateNextCaseReference() {
     return ebsApiWebClient
