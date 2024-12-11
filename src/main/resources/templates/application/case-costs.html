@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
-      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html" xmlns:govuk="http://www.thymeleaf.org">
 <head>
   <title>LAA CCMS - Create application</title>
 </head>
@@ -68,9 +68,7 @@
             </div>
           </div>
           <div class="govuk-button-group">
-            <button type="submit" class="govuk-button" data-module="govuk-button">
-              Confirm
-            </button>
+            <govuk:button type="submit" th:text="#{site.confirm}"/>
           </div>
         </div>
       </div>

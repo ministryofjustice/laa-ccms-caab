@@ -32,6 +32,7 @@ repositories {
 	githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-caab-api')
 	githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-soa-gateway-api')
 	githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-caab-assessment-api')
+	githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-spring-boot-common')
 }
 
 dependencies {
@@ -74,6 +75,8 @@ dependencies {
 	//SAML security
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 	implementation 'org.springframework.security:spring-security-saml2-service-provider'
+
+	implementation 'uk.gov.laa.ccms.springboot:laa-ccms-spring-boot-starter-govuk-dialect:0.0.12-444b7ec-SNAPSHOT'
 
 	//ClamAV virus scan
 	implementation 'fi.solita.clamav:clamav-client:1.0.1'
