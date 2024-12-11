@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
     <title>LAA CCMS - Start new application</title>
 </head>
@@ -18,9 +19,7 @@
             new client' button.
         </p>
         <form action="#" th:action="@{/application/client/results}" method="post">
-            <button class="govuk-button" data-module="govuk-button">
-                Register new client
-            </button>
+            <govuk:button type="submit" th:text="#{application.register}"/>
         </form>
     </div>
 </div>
