@@ -898,7 +898,7 @@ class SoaApiClientTest {
     Document document = new Document();
     String loginId = "user1";
     String userType = "userType";
-    String expectedUri = "/documents?notification-reference=12345";
+    String expectedUri = "/documents?notification-reference=12345&case-reference-number=98765";
 
     ClientTransactionResponse mockDocumentRegistered = new ClientTransactionResponse();
     mockDocumentRegistered.setTransactionId("123");
@@ -919,6 +919,7 @@ class SoaApiClientTest {
     Mono<ClientTransactionResponse> documentRegisteredMono =
         soaApiClient.uploadDocument(document,
             "12345",
+            "98765",
             loginId,
             userType);
 
