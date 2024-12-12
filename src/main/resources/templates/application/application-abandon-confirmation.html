@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
     <title>LAA CCMS - Abandon application</title>
 </head>
@@ -18,12 +19,10 @@
         <form action="#" th:action="@{/application/abandon/confirmed}" method="post">
             <div class="govuk-button-group">
                 <!-- Change the anchor tag to a button -->
-                <button type="submit" class="govuk-button" data-module="govuk-button">
-                    Confirm
-                </button>
-                <a class="govuk-button govuk-button--secondary" data-module="govuk-button" th:href="@{/application/sections}">
-                    Cancel
-                </a>
+                <govuk:button type="submit" th:text="#{site.confirm}"/>
+                <govuk:button classes="govuk-button--secondary"
+                              th:text="#{site.cancel}"
+                              th:href="@{/application/sections}"/>
             </div>
         </form>
     </div>

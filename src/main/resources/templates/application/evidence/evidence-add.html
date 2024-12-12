@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
   <title>LAA CCMS - Create application</title>
 
@@ -57,11 +58,7 @@
           </div>
         </fieldset>
       </div>
-
-      <button type="submit" class="govuk-button" data-module="govuk-button">
-        Upload
-      </button>
-
+      <govuk:button type="submit" th:text="#{site.upload}"/>
     </form>
 
   </div>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
-      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html" xmlns:govuk="http://www.thymeleaf.org">
 <head>
   <title>LAA CCMS - Create application</title>
 </head>
@@ -104,15 +104,11 @@
           </th:block>
 
           <div class="govuk-button-group">
-            <button type="submit" class="govuk-button" data-module="govuk-button">
-              Confirm
-            </button>
+            <govuk:button type="submit" th:text="#{site.confirm}"/>
             <th:block th:if="${priorAuthorityFlow.action} == 'add'">
-              <a class="govuk-button govuk-button--secondary"
-                 data-module="govuk-button"
-                 th:href="@{/application/prior-authorities/add/type}">
-                Back
-              </a>
+              <govuk:button classes="govuk-button--secondary"
+                            th:text="#{site.back}"
+                            th:href="@{/application/prior-authorities/add/type}"/>
             </th:block>
           </div>
         </div>
