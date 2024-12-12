@@ -4,6 +4,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.serverError;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
@@ -27,6 +29,7 @@ import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.BaseOffice;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.BaseUser;
+import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -56,6 +59,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   private static final String USER_ERROR_MESSAGE = "Failed to retrieve User with login id: %s";
+  private static final String CASE_REFERENCE_MESSAGE = "Failed to retrieve case reference";
 
   @Test
   public void testGetUser_returnData() throws Exception {
@@ -226,6 +230,46 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
         loginId);
 
     StepVerifier.create(notificationSummary)
+        .expectErrorMatches(throwable -> throwable instanceof EbsApiClientException
+            && throwable.getMessage().equals(expectedMessage)
+        ).verify();
+  }
+
+  @Test
+  public void testPostAllocateCaseReference_createsNewReference() throws JsonProcessingException {
+    // Given
+    CaseReferenceSummary expected =
+        new CaseReferenceSummary().caseReferenceNumber("1234567890");
+    String caseReferenceJson = objectMapper.writeValueAsString(expected);
+
+    wiremock.stubFor(post("/case-reference")
+        .willReturn(okJson(caseReferenceJson)));
+
+    // When
+    Mono<CaseReferenceSummary> caseReferenceSummaryMono =
+        ebsApiClient.postAllocateNextCaseReference();
+    CaseReferenceSummary response = caseReferenceSummaryMono.block();
+
+    // Then
+    assertEquals(expected, response);
+  }
+
+  @Test
+  public void testPostAllocateCaseReference_handlesError() throws JsonProcessingException {
+    // Given
+    CaseReferenceSummary expected =
+        new CaseReferenceSummary().caseReferenceNumber("1234567890");
+    final String expectedMessage = String.format(CASE_REFERENCE_MESSAGE);
+
+    wiremock.stubFor(post("/case-reference")
+        .willReturn(serverError()));
+
+    // When
+    Mono<CaseReferenceSummary> caseReferenceSummaryMono =
+        ebsApiClient.postAllocateNextCaseReference();
+
+    // Then
+    StepVerifier.create(caseReferenceSummaryMono)
         .expectErrorMatches(throwable -> throwable instanceof EbsApiClientException
             && throwable.getMessage().equals(expectedMessage)
         ).verify();
