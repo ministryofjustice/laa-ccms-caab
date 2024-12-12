@@ -1,6 +1,6 @@
 plugins {
 	id 'net.researchgate.release' version '3.0.2'
-	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.8'
+	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.11'
 }
 
 subprojects {
@@ -58,7 +58,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	implementation 'org.springframework.data:spring-data-commons:3.2.1'
+	implementation 'org.springframework.data:spring-data-commons'
 
 	// AWS S3 Integration
 	implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.1.1")
@@ -66,8 +66,7 @@ dependencies {
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
 	implementation 'software.amazon.awssdk:sts:2.26.19'
 
-
-	implementation 'org.springframework.boot:spring-boot-devtools'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
 	implementation 'org.json:json:20240303'
 
@@ -81,8 +80,6 @@ dependencies {
 	implementation 'fi.solita.clamav:clamav-client:1.0.1'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.mockito:mockito-core:5.8.0'
-	testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'io.projectreactor:reactor-test:3.6.1'
 
