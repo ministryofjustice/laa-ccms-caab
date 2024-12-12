@@ -8,8 +8,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.thymeleaf.spring6.SpringTemplateEngine;
@@ -51,10 +51,10 @@ class ApplicationConfigTest {
   @Autowired
   private ThymeleafViewResolver thymeleafViewResolver;
 
-  @MockBean
+  @MockitoBean
   private SpringTemplateEngine templateEngine;
 
-  @MockBean
+  @MockitoBean
   private LoggingInterceptor loggingInterceptor;
 
   @Test
