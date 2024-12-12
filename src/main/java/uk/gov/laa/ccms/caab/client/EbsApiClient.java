@@ -11,6 +11,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
@@ -761,6 +762,22 @@ public class EbsApiClient {
             e, "Provider request types", queryParams));
   }
 
+  /**
+   * Allocates the next available case reference by sending a POST request to the external case
+   * reference service.
+   *
+   * @return a {@link Mono} emitting the {@link CaseReferenceSummary} containing the details of the
+   *     next allocated case reference
+   */
+  public Mono<CaseReferenceSummary> postAllocateNextCaseReference() {
+    return ebsApiWebClient
+        .post()
+        .uri("/case-reference")
+        .retrieve()
+        .bodyToMono(CaseReferenceSummary.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
+            e, "case reference", null));
+  }
 
 }
 

@@ -38,8 +38,7 @@ dependencies {
 
 
 	implementation 'uk.gov.laa.ccms.data:data-api:0.0.24'
-
-	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.38-cfdf45d-SNAPSHOT'
+	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.40-18b2f2e-SNAPSHOT'
 
 	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.37'
 

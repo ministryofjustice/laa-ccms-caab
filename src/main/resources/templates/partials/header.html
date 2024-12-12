@@ -39,7 +39,7 @@
                                 Home
                             </a>
                         </li>
-                        <li th:if="${#lists.contains(user.functions, 'YCA')}"
+                        <li th:if="${#lists.contains(user?.functions, 'YCA')}"
                             class="govuk-service-navigation__item"
                             th:classappend="${pageCategory == 'cases'} ? 'govuk-service-navigation__item--active'">
                             <a class="govuk-service-navigation__link"
@@ -49,7 +49,7 @@
                                     applications</strong>
                             </a>
                         </li>
-                        <li th:if="${#lists.contains(user.functions, 'NOT')}"
+                        <li th:if="${#lists.contains(user?.functions, 'NOT')}"
                             class="govuk-service-navigation__item"
                             th:classappend="${pageCategory == 'actions'} ? 'govuk-service-navigation__item--active'">
                             <a class="govuk-service-navigation__link"

@@ -24,7 +24,6 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
-import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
@@ -140,27 +139,6 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     ClientDetail response = clientMono.block();
 
     assertEquals(clientDetail, response);
-  }
-
-  @Test
-  public void testGetCaseReference_returnData() throws Exception {
-    String loginId = USER_1;
-    String userType = USER_TYPE;
-    CaseReferenceSummary caseReferenceSummary =
-        new CaseReferenceSummary(); // Fill with appropriate data
-    String caseReferenceJson = objectMapper.writeValueAsString(caseReferenceSummary);
-
-    wiremock.stubFor(get("/case-reference")
-        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
-        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
-        .willReturn(okJson(caseReferenceJson)));
-
-    Mono<CaseReferenceSummary> caseReferenceMono =
-        soaApiClient.getCaseReference(loginId, userType);
-
-    CaseReferenceSummary response = caseReferenceMono.block();
-
-    assertEquals(caseReferenceSummary, response);
   }
 
   @Test

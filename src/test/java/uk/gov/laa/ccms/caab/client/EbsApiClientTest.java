@@ -29,6 +29,7 @@ import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.BaseUser;
+import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
@@ -61,6 +62,10 @@ public class EbsApiClientTest {
   private WebClient.RequestHeadersSpec requestHeadersMock;
   @Mock
   private WebClient.RequestHeadersUriSpec requestHeadersUriMock;
+  @Mock
+  private WebClient.RequestBodyUriSpec requestBodyUriMock;
+  @Mock
+  private WebClient.RequestBodySpec requestBodySpec;
   @Mock
   private WebClient.ResponseSpec responseMock;
 
@@ -1196,7 +1201,47 @@ public class EbsApiClientTest {
   }
 
 
+  @Test
+  @DisplayName("postAllocateNextCaseReference creates case reference")
+  void testPostAllocateNextCaseReference_createsCaseReference() {
+    when(webClientMock.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri("/case-reference")).thenReturn(requestBodySpec);
+    when(requestBodySpec.retrieve()).thenReturn(responseMock);
+    CaseReferenceSummary caseReferenceSummary = new CaseReferenceSummary().caseReferenceNumber(
+        "123");
+    when(responseMock.bodyToMono(CaseReferenceSummary.class)).thenReturn(
+        Mono.just(caseReferenceSummary));
 
+    final Mono<CaseReferenceSummary> result = ebsApiClient.postAllocateNextCaseReference();
 
+    StepVerifier.create(result)
+        .expectNext(caseReferenceSummary)
+        .verifyComplete();
+
+    verify(responseMock).bodyToMono(CaseReferenceSummary.class);
+  }
+
+  @Test
+  @DisplayName("postAllocateNextCaseReference handles errors")
+  void testPostAllocateNextCaseReference_handlesError() {
+    when(webClientMock.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri("/case-reference")).thenReturn(requestBodySpec);
+    when(requestBodySpec.retrieve()).thenReturn(responseMock);
+    CaseReferenceSummary caseReferenceSummary = new CaseReferenceSummary().caseReferenceNumber(
+        "123");
+    when(responseMock.bodyToMono(CaseReferenceSummary.class))
+        .thenReturn(Mono.error(
+            new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+
+    when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("case reference"),
+        any())).thenReturn(Mono.empty());
+
+    final Mono<CaseReferenceSummary> result = ebsApiClient.postAllocateNextCaseReference();
+
+    StepVerifier.create(result)
+        .verifyComplete();
+
+    verify(responseMock).bodyToMono(CaseReferenceSummary.class);
+  }
 
 }
