@@ -295,7 +295,7 @@ class NotificationServiceTest {
     ClientTransactionResponse idResponse = new ClientTransactionResponse();
     idResponse.setReferenceNumber("001");
 
-    when(soaApiClient.uploadDocument(document, notificationId, loginId, userType)).thenReturn(Mono.just(idResponse));
+    when(soaApiClient.uploadDocument(document, notificationId, null, loginId, userType)).thenReturn(Mono.just(idResponse));
 
     when(caabApiClient.deleteNotificationAttachments(notificationId, providerId, null, null, loginId))
         .thenReturn(Mono.empty());
@@ -307,7 +307,7 @@ class NotificationServiceTest {
     verify(caabApiClient).getNotificationAttachment(notificationAttachmentId);
 
     // Upload to EBS
-    verify(soaApiClient).uploadDocument(document, notificationId, loginId, userType);
+    verify(soaApiClient).uploadDocument(document, notificationId, null, loginId, userType);
 
     // Delete from TDS and S3
     verify(caabApiClient).deleteNotificationAttachments(notificationId, providerId, null, null, loginId);

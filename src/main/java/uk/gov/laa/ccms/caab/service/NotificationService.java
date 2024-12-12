@@ -242,7 +242,8 @@ public class NotificationService {
 
       Flux.fromStream(notificationAttachmentDetails.stream()
               .map(notificationAttachmentMapper::toDocument)
-              .map(document -> soaApiClient.uploadDocument(document, notificationId, loginId,
+              .map(document -> soaApiClient.uploadDocument(document, notificationId,
+                  null, loginId,
                   userType))).flatMap(mono -> mono).collectList()
           .block();
 

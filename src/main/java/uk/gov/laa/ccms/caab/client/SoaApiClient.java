@@ -30,6 +30,8 @@ import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
+import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestResponse;
 import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
 
@@ -503,8 +505,7 @@ public class SoaApiClient {
       final Document document,
       final String loginId,
       final String userType) {
-
-    return uploadDocument(document, null, loginId, userType);
+    return uploadDocument(document, null, null, loginId, userType);
   }
 
   /**
@@ -518,12 +519,15 @@ public class SoaApiClient {
   public Mono<ClientTransactionResponse> uploadDocument(
       final Document document,
       final String notificationId,
+      final String caseReferenceNumber,
       final String loginId,
       final String userType) {
 
     final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
     Optional.ofNullable(notificationId)
         .ifPresent(param -> queryParams.add("notification-reference", notificationId));
+    Optional.ofNullable(caseReferenceNumber)
+        .ifPresent(param -> queryParams.add("case-reference-number", caseReferenceNumber));
 
     return soaApiWebClient
         .post()
@@ -538,6 +542,34 @@ public class SoaApiClient {
         .bodyToMono(ClientTransactionResponse.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiCreateError(
             e, "Document"));
+  }
+
+
+  /**
+   * Submits a provider request to the API.
+   *
+   * @param providerRequest the details of the provider request to be submitted
+   * @param loginId the login ID of the user submitting the request
+   * @param userType the role of the user submitting the request
+   * @return a {@code Mono} emitting the response of the submitted provider request
+   */
+  public Mono<ProviderRequestResponse> submitProviderRequest(
+      final ProviderRequestDetail providerRequest,
+      final String loginId,
+      final String userType) {
+
+    return soaApiWebClient
+        .post()
+        .uri(builder -> builder.path("/provider-requests")
+            .build())
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(providerRequest)
+        .retrieve()
+        .bodyToMono(ProviderRequestResponse.class)
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiCreateError(
+            e, "Provider request"));
   }
 
   /**
