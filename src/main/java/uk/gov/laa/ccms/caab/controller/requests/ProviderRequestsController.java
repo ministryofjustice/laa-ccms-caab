@@ -81,7 +81,7 @@ public class ProviderRequestsController {
 
   private final ProviderRequestsMapper providerRequestsMapper;
 
-  private static final String UNRELATED_CASE_REFERNCE = "-1";
+  private static final String UNRELATED_CASE_REFERENCE = "-1";
 
 
 
@@ -277,7 +277,7 @@ public class ProviderRequestsController {
         //using the list of documents, we need to upload them to ebs through soa.
         // we also update the status of the documents in the tds to say they have been uploaded
         evidenceService.uploadAndUpdateDocuments(
-            documents, UNRELATED_CASE_REFERNCE, notificationId, userDetail).block();
+            documents, UNRELATED_CASE_REFERENCE, notificationId, userDetail).block();
       }
       return "redirect:/submissions/provider-request/confirmed";
     }
@@ -325,7 +325,7 @@ public class ProviderRequestsController {
 
     //set the additional details for the evidence upload
     evidenceUploadFormData.setApplicationOrOutcomeId(documentSessionId);
-    evidenceUploadFormData.setCaseReferenceNumber(UNRELATED_CASE_REFERNCE);
+    evidenceUploadFormData.setCaseReferenceNumber(UNRELATED_CASE_REFERENCE);
     evidenceUploadFormData.setProviderId(userDetail.getProvider().getId());
     evidenceUploadFormData.setDocumentSender(userDetail.getLoginId());
     evidenceUploadFormData.setCcmsModule(REQUEST);
