@@ -195,8 +195,6 @@ class ApplicationServiceTest {
 
   @Test
   void getCaseReference_returnsCaseReferenceSummary_Successful() {
-    final String loginId = "user1";
-    final String userType = "userType";
 
     final CaseReferenceSummary mockCaseReferenceSummary = new CaseReferenceSummary();
 
@@ -204,7 +202,7 @@ class ApplicationServiceTest {
         Mono.just(mockCaseReferenceSummary));
 
     final Mono<CaseReferenceSummary> caseReferenceSummaryMono =
-        applicationService.getCaseReference(loginId, userType);
+        applicationService.getCaseReference();
 
     StepVerifier.create(caseReferenceSummaryMono)
         .expectNextMatches(summary -> summary == mockCaseReferenceSummary)

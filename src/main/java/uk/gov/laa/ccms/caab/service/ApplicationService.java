@@ -312,11 +312,9 @@ public class ApplicationService {
   /**
    * Fetches a unique case reference.
    *
-   * @param loginId  The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
    * @return A Mono wrapping the CaseReferenceSummary.
    */
-  public Mono<CaseReferenceSummary> getCaseReference(final String loginId, final String userType) {
+  public Mono<CaseReferenceSummary> getCaseReference() {
     return ebsApiClient.postAllocateNextCaseReference();
   }
 
@@ -373,7 +371,7 @@ public class ApplicationService {
         ContractDetails,
         AmendmentTypeLookupDetail>> combinedResult =
         Mono.zip(
-            this.getCaseReference(user.getLoginId(), user.getUserType()),
+            this.getCaseReference(),
             lookupService.getCategoryOfLaw(applicationFormData.getCategoryOfLawId()),
             soaApiClient.getContractDetails(
                 user.getProvider().getId(),
@@ -426,7 +424,7 @@ public class ApplicationService {
         ContractDetails,
         RelationshipToCaseLookupDetail>> combinedResult =
         Mono.zip(
-            this.getCaseReference(user.getLoginId(), user.getUserType()),
+            this.getCaseReference(),
             lookupService.getCategoryOfLaw(applicationToCopy.getCategoryOfLaw().getId()),
             soaApiClient.getContractDetails(
                 user.getProvider().getId(),
