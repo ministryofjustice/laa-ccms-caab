@@ -1,6 +1,6 @@
 plugins {
 	id 'net.researchgate.release' version '3.0.2'
-	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.12'
+	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.14'
 }
 
 subprojects {

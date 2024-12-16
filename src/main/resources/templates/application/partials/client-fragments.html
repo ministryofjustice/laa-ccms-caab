@@ -1,3 +1,10 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>LAA CCMS - Start new application</title>
+</head>
+<body>
 <!--Client summary fragment-->
 <div th:fragment="clientSummaryFragment"
      th:with="baseLinkUrl=*{action == 'edit'} ? @{/application/sections/client} :  @{/application/client}"
@@ -82,8 +89,8 @@
         <ul class="govuk-summary-card__actions">
           <li class="govuk-summary-card__action">
             <a class="govuk-link" th:href="${baseLinkUrl} + '/details/address'">
-            Edit address details
-          </a>
+              Edit address details
+            </a>
           </li>
         </ul>
       </div>
@@ -105,8 +112,8 @@
         <ul class="govuk-summary-card__actions">
           <li class="govuk-summary-card__action">
             <a class="govuk-link" th:href="${baseLinkUrl} + '/details/equal-opportunities-monitoring'">
-            Edit equal opportunities details
-          </a>
+              Edit equal opportunities details
+            </a>
           </li>
         </ul>
       </div>
@@ -269,32 +276,10 @@
       </fieldset>
     </div>
     <div class="govuk-form-group">
-      <details class="govuk-details" data-module="govuk-details">
-        <summary class="govuk-details__summary">
-          <span class="govuk-details__summary-text">
-            Help with High profile client
-          </span>
-        </summary>
-        <div class="govuk-details__text">
-          Please tick the appropriate box if you deem this matter to be high profile;
-          by which we mean the proceedings have attracted media attention
-          and/or are likely to attract media attention or involve person(s)
-          that are noteworthy.
-        </div>
-      </details>
-      <details class="govuk-details" data-module="govuk-details">
-        <summary class="govuk-details__summary">
-          <span class="govuk-details__summary-text">
-            Help with Mental incapacity
-          </span>
-        </summary>
-        <div class="govuk-details__text">
-          Please tick the appropriate box if you consider your client to have
-          a mental impairment which has a substantial and long-term adverse
-          effect on a persons ability to carry out normal day-to-day
-          activities.
-        </div>
-      </details>
+      <govuk:details th:summaryText="#{client.details1.summaryText}"
+                     th:text="#{client.details1.text}"/>
+        <govuk:details th:summaryText="#{client.details2.summaryText}"
+                       th:text="#{client.details2.text}"/>
     </div>
   </div>
 </div>
@@ -636,19 +621,13 @@
                 maxlength="2000">
               </textarea>
       </fieldset>
-      <details class="govuk-details" data-module="govuk-details">
-        <summary class="govuk-details__summary">
-                <span class="govuk-details__summary-text">
-                  Help with special considerations
-                </span>
-        </summary>
-        <div class="govuk-details__text">
-          Enter any special requirements your client may have, and any other needs that
-          should be considered when dealing with the LAA.
-          <br>
-          Maximum 2000 characters allowed.
-        </div>
-      </details>
+
+      <govuk:details th:summaryText="#{client.monitoring.summaryText}"
+                     th:text="#{client.monitoring.text}"/>
     </div>
   </div>
 </div>
+
+</body>
+</html>
+
