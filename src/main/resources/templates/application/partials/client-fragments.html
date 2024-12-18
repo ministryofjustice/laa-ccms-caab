@@ -1,3 +1,10 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>LAA CCMS - Start new application</title>
+</head>
+<body>
 <!--Client summary fragment-->
 <div th:fragment="clientSummaryFragment"
      th:with="baseLinkUrl=*{action == 'edit'} ? @{/application/sections/client} :  @{/application/client}"
@@ -82,8 +89,8 @@
         <ul class="govuk-summary-card__actions">
           <li class="govuk-summary-card__action">
             <a class="govuk-link" th:href="${baseLinkUrl} + '/details/address'">
-            Edit address details
-          </a>
+              Edit address details
+            </a>
           </li>
         </ul>
       </div>
@@ -105,8 +112,8 @@
         <ul class="govuk-summary-card__actions">
           <li class="govuk-summary-card__action">
             <a class="govuk-link" th:href="${baseLinkUrl} + '/details/equal-opportunities-monitoring'">
-            Edit equal opportunities details
-          </a>
+              Edit equal opportunities details
+            </a>
           </li>
         </ul>
       </div>
@@ -180,17 +187,10 @@
 
     <div class="govuk-form-group" th:if="*{clientFlowFormAction == 'edit' || nationalInsuranceNumber == null || nationalInsuranceNumber.isEmpty()}">
       <div th:replace="~{partials/forms :: textInput('nationalInsuranceNumber', 'National Insurance Number (optional)', 'govuk-input--width-20')}"></div>
-      <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
-        <summary class="govuk-details__summary">
-              <span class="govuk-details__summary-text">
-                National Insurance Number
-              </span>
-        </summary>
-        <div class="govuk-details__text">
-          If the client's National Insurance Number is unknown, please leave
-          this field blank
-        </div>
-      </details>
+
+      <govuk:details classes="govuk-!-margin-top-2"
+                     th:summaryText="#{client.basic.insurance.summaryText}"
+                     th:text="#{client.basic.insurance.text}"/>
     </div>
 
     <!-- Show paragraph if homeOfficeNumber exists -->
@@ -205,19 +205,10 @@
     <!-- Show input field if homeOfficeNumber does not exist -->
     <div class="govuk-form-group" th:if="*{clientFlowFormAction == 'edit' || homeOfficeNumber == null || homeOfficeNumber.isEmpty()}">
       <div th:replace="~{partials/forms :: textInput('homeOfficeNumber', 'Home Office Number (optional)', 'govuk-input--width-20')}"></div>
-      <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
-        <summary class="govuk-details__summary">
-          <span class="govuk-details__summary-text">
-            Help with Home Office Number
-          </span>
-        </summary>
-        <div class="govuk-details__text">
-          Please enter the client's Home Office reference number allocated
-          by the Home Office. The number consists of a letter followed by
-          a series of numbers (usually 7) and should be cited on documents
-          or correspondence from the Home Office.
-        </div>
-      </details>
+
+      <govuk:details classes="govuk-!-margin-top-2"
+                     th:summaryText="#{client.basic.homeOffice.summaryText}"
+                     th:text="#{client.basic.homeOffice.text}"/>
     </div>
 
     <!-- Show paragraph if gender exists -->
@@ -269,32 +260,10 @@
       </fieldset>
     </div>
     <div class="govuk-form-group">
-      <details class="govuk-details" data-module="govuk-details">
-        <summary class="govuk-details__summary">
-          <span class="govuk-details__summary-text">
-            Help with High profile client
-          </span>
-        </summary>
-        <div class="govuk-details__text">
-          Please tick the appropriate box if you deem this matter to be high profile;
-          by which we mean the proceedings have attracted media attention
-          and/or are likely to attract media attention or involve person(s)
-          that are noteworthy.
-        </div>
-      </details>
-      <details class="govuk-details" data-module="govuk-details">
-        <summary class="govuk-details__summary">
-          <span class="govuk-details__summary-text">
-            Help with Mental incapacity
-          </span>
-        </summary>
-        <div class="govuk-details__text">
-          Please tick the appropriate box if you consider your client to have
-          a mental impairment which has a substantial and long-term adverse
-          effect on a persons ability to carry out normal day-to-day
-          activities.
-        </div>
-      </details>
+      <govuk:details th:summaryText="#{client.details.higherProfile.summaryText}"
+                     th:text="#{client.details.higherProfile.text}"/>
+        <govuk:details th:summaryText="#{client.details.mentalIncapacity.summaryText}"
+                       th:text="#{client.details.mentalIncapacity.text}"/>
     </div>
   </div>
 </div>
@@ -381,32 +350,16 @@
                data-module="govuk-input"
                th:value="*{password}">
         <br>
-        <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
-          <summary class="govuk-details__summary">
-            <span class="govuk-details__summary-text">
-              Help with Password
-            </span>
-          </summary>
-          <div class="govuk-details__text">
-            Please enter the LAA password your client has chosen. This password
-            will be used to verify your client's identity if they ever need to
-            contact us. If your client cannot provide their password, the
-            password reminder will be used as a prompt.
-          </div>
-        </details>
+        <govuk:details classes="govuk-!-margin-top-2"
+                       th:summaryText="#{client.contract.passwordHelp.summaryText }"
+                       th:text="#{client.contract.passwordHelp.text }"/>
       </div>
       <div class="govuk-form-group">
         <div th:replace="~{partials/forms :: textInput('passwordReminder', 'Password reminder', 'govuk-input--width-20')}"></div>
-        <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
-          <summary class="govuk-details__summary">
-            <span class="govuk-details__summary-text">
-              Help with Password reminder
-            </span>
-          </summary>
-          <div class="govuk-details__text">
-            Please enter a prompt which can be used as a password reminder.
-          </div>
-        </details>
+
+        <govuk:details classes="govuk-!-margin-top-2"
+                       th:summaryText="#{client.contract.passwordReminder.summaryText }"
+                       th:text="#{client.contract.passwordReminder.text }"/>
       </div>
     </div>
   </div>
@@ -580,44 +533,20 @@
         Ethnic monitoring
       </h2>
       <div th:replace="~{partials/forms :: dropdown('ethnicOrigin', 'Which ethnicity would your client describe themselves as being?', ${ethnicOrigins}, 'code', 'description', false)}"></div>
-      <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
-        <summary class="govuk-details__summary">
-                <span class="govuk-details__summary-text">
-                  Help with ethnic monitoring
-                </span>
-        </summary>
-        <div class="govuk-details__text">
-          Please select the ethnicity which your client would describe themselves as being.
-          Please inform your client that this section is voluntary, and that any information
-          entered will be treated with the strictest confidence (can only be seen by those
-          directly dealing with your case), and that information will only be used for
-          statistical monitoring and research.
-        </div>
-      </details>
+
+      <govuk:details classes="govuk-!-margin-top-2"
+                     th:summaryText="#{client.monitoring.ethnic.summaryText}"
+                     th:text="#{client.monitoring.ethnic.text}"/>
     </div>
     <div class="govuk-form-group">
       <h2 class="govuk-heading-m">
         Disability monitoring
       </h2>
       <div th:replace="~{partials/forms :: dropdown('disability', 'Would your client describe themselves as being disabled?', ${disabilities}, 'code', 'description', false)}"></div>
-      <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
-        <summary class="govuk-details__summary">
-                <span class="govuk-details__summary-text">
-                  Help with disability monitoring
-                </span>
-        </summary>
-        <div class="govuk-details__text">
-          The Disability Discrimination Act defines disability as: a physical or mental
-          impairment which has a substantial and long-term adverse effect on a person's
-          ability to carry out normal day-to-day activities. If a client considers himself or
-          herself to have a disability please select the most appropriate definition. If the
-          client has multiple disabilities please select the definition that reflects the
-          predominant disability. Please inform your client that this section is voluntary,
-          and that any information entered will be treated with the strictest confidence (can
-          only be seen by those directly dealing with your case), and that information will
-          only be used for statistical monitoring and research.
-        </div>
-      </details>
+
+      <govuk:details classes="govuk-!-margin-top-2"
+                     th:summaryText="#{client.monitoring.disability.summaryText}"
+                     th:text="#{client.monitoring.disability.text}"/>
     </div>
     <div class="govuk-form-group">
       <h2 class="govuk-heading-m">
@@ -636,19 +565,13 @@
                 maxlength="2000">
               </textarea>
       </fieldset>
-      <details class="govuk-details" data-module="govuk-details">
-        <summary class="govuk-details__summary">
-                <span class="govuk-details__summary-text">
-                  Help with special considerations
-                </span>
-        </summary>
-        <div class="govuk-details__text">
-          Enter any special requirements your client may have, and any other needs that
-          should be considered when dealing with the LAA.
-          <br>
-          Maximum 2000 characters allowed.
-        </div>
-      </details>
+
+      <govuk:details th:summaryText="#{client.monitoring.specialConsiderations.summaryText}"
+                     th:text="#{client.monitoring.specialConsiderations.text}"/>
     </div>
   </div>
 </div>
+
+</body>
+</html>
+

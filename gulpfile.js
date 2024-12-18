@@ -3,6 +3,7 @@ const {parallel, series} = require("gulp");
 const rename = require("gulp-rename");
 const uglify = require('gulp-uglify');
 const sass = require("gulp-sass")(require("sass"));
+//const sass = require('gulp-sass/legacy')(require('sass'))
 const replace = require('gulp-replace');
 const plumber = require('gulp-plumber');
 const autoprefixer = require('gulp-autoprefixer').default || require('gulp-autoprefixer');
@@ -38,8 +39,9 @@ function copyMOJStyleSheets() {
   return gulp
   .src('./src/main/resources/scss/moj.scss')
   .pipe(sass({
-    includePaths: 'node_modules',
-    outputStyle: 'compressed' // Minify the CSS output
+    quietDeps: true, // Supress deprecation warnings
+    includePaths: ['node_modules'],
+    style: 'compressed' // Minify the CSS output
   }).on('error', sass.logError))
   .pipe(autoprefixer({cascade: false}))
   .pipe(rename('moj-frontend.min.css'))
@@ -73,8 +75,8 @@ function compileCCMSStyleSheets(){
   // Will highlight errors in your CSS file incase they are missed
   .pipe(plumber())
   .pipe(sass({
-    includePaths: ['node_modules'],
-    outputStyle: "compressed"
+    includePaths: ['./node_modules'],
+    style: "compressed"
   }))
   .pipe(plumber.stop())
   .pipe(autoprefixer({cascade: false})) // Adds up to date vendor prefixes
@@ -86,7 +88,7 @@ function compileCCMSAssessmentStyleSheets(){
   // Will highlight errors in your CSS file incase they are missed
   .pipe(plumber())
   .pipe(sass({
-    outputStyle: "compressed"
+    style: "compressed"
   }))
   .pipe(plumber.stop())
   .pipe(autoprefixer({cascade: false})) // Adds up to date vendor prefixes

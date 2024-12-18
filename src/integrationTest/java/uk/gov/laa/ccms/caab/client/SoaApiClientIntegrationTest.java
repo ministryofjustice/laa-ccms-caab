@@ -233,7 +233,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
         .willReturn(okJson(clientTransactionResponseString)));
 
     Mono<ClientTransactionResponse> clientTransactionResponseMono =
-        soaApiClient.uploadDocument(new Document(), "12345", loginId, userType);
+        soaApiClient.uploadDocument(new Document(), "12345", null, loginId, userType);
 
     ClientTransactionResponse response = clientTransactionResponseMono.block();
 
