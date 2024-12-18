@@ -55,3 +55,25 @@ jobs:
           arguments: integrationTest
         env:
           AWS_REGION: eu-west-2
+
+  vulnerability-scan:
+    runs-on: ubuntu-22.04
+
+    env:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      SNYK_ORG: legal-aid-agency
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - name: Identify new vulnerabilities
+        run: ./snyk/snyk_delta_all_projects.sh --org=$SNYK_ORG
+      - name: Run code test
+        uses: snyk/actions/gradle@0.4.0
+        with:
+          command: code test
+          args: --org=${SNYK_ORG}
