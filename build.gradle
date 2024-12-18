@@ -1,6 +1,6 @@
 plugins {
 	id 'net.researchgate.release' version '3.0.2'
-	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.12'
+	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.15'
 }
 
 subprojects {
@@ -37,13 +37,13 @@ repositories {
 
 dependencies {
 
-	implementation 'uk.gov.laa.ccms.data:data-api:0.0.24'
+	implementation 'uk.gov.laa.ccms.data:data-api:0.0.25'
 
-    implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.40'
+	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.42'
 
 	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.39'
 
-	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.18'
+	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.21'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'

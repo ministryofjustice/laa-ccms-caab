@@ -326,7 +326,7 @@ class ApplicationSubmissionControllerTest {
     final EvidenceDocumentDetails mockEvidenceDocDetails = mock(EvidenceDocumentDetails.class);
     when(evidenceService.getEvidenceDocumentsForCase(anyString(), eq(APPLICATION))).thenReturn(Mono.just(mockEvidenceDocDetails));
     doNothing().when(evidenceService).registerPreviouslyUploadedDocuments(any(), any());
-    when(evidenceService.uploadAndUpdateDocuments(any(), anyString(), any())).thenReturn(Mono.empty());
+    when(evidenceService.uploadAndUpdateDocuments(any(), anyString(),eq(null), any())).thenReturn(Mono.empty());
 
     // Mock application service
     final ApplicationDetail mockApplicationDetail = mock(ApplicationDetail.class);
@@ -356,7 +356,7 @@ class ApplicationSubmissionControllerTest {
     verify(declarationSubmissionValidator, times(1)).validate(any(), any());
     verify(evidenceService, times(2)).getEvidenceDocumentsForCase(anyString(), eq(APPLICATION));
     verify(evidenceService, times(1)).registerPreviouslyUploadedDocuments(any(), any());
-    verify(evidenceService, times(1)).uploadAndUpdateDocuments(any(), anyString(), any());
+    verify(evidenceService, times(1)).uploadAndUpdateDocuments(any(), anyString(), eq(null), any());
     verify(applicationService, times(1)).getApplication(anyString());
     verify(assessmentService, times(2)).getAssessments(anyList(), anyString(), anyString());
     verify(applicationService, times(1)).createCase(any(), any(), any(), any(), any());
