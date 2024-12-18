@@ -1,6 +1,13 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>LAA CCMS - Start new application</title>
+</head>
+<body>
 <!-- Opponent fragments -->
 <div th:fragment="sharedOrganisationSummary"
-    class="govuk-summary-card">
+     class="govuk-summary-card">
   <div class="govuk-summary-card__title-wrapper">
     <h2 class="govuk-summary-card__title">Selected organisation</h2>
   </div>
@@ -80,17 +87,14 @@
     <div th:replace="~{partials/forms :: textInput('emailAddress', 'Email address (optional)', 'govuk-input--width-20')}"></div>
     <div th:replace="~{partials/forms :: radios('legalAided', 'Party is legal aided? (optional)', ${legalAidedOptions}, 'key', 'value', false)}"></div>
     <div th:replace="~{partials/forms :: textInput('certificateNumber', 'Certificate number (optional)', 'govuk-input--width-20')}"></div>
-    <details class="govuk-details govuk-!-margin-top-2" data-module="govuk-details">
-      <summary class="govuk-details__summary">
-          <span class="govuk-details__summary-text">
-            Help with certificate number
-          </span>
-      </summary>
-      <div class="govuk-details__text">
-        If this individual party is in receipt of Legal Aid and you know their LAA Reference number, please enter it here.
-      </div>
-    </details>
 
+    <govuk:details classes="govuk-!-margin-top-2"
+                   th:summaryText="#{opponent.individual.certificate.summaryText}"
+                   th:text="#{opponent.individual.certificate.text}"/>
   </div>
 </div>
+
+</body>
+</html>
+
 
