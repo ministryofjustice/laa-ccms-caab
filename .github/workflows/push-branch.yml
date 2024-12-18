@@ -71,6 +71,12 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
       - uses: snyk/actions/setup@0.4.0
+      - name: Install snyk-delta
+        run: |
+          npm config set prefix '~/.local/'
+          mkdir -p ~/.local/bin
+          export PATH="$HOME/.local/bin/:$PATH"
+          npm install -g snyk-delta
       - name: Identify new vulnerabilities
         run: ./snyk/snyk_delta_all_projects.sh --org=$SNYK_ORG
       - name: Run code test
