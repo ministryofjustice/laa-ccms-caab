@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
-      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html" xmlns:govuk="http://www.thymeleaf.org">
 <head>
   <title>LAA CCMS - Create application</title>
 </head>
@@ -43,27 +43,16 @@
       <div th:replace="~{partials/forms :: dropdownWithDisplayValue('levelOfService', 'Form of Civil Legal Service', ${levelOfServiceTypes}, 'levelOfServiceCode', 'description')}"></div>
       <th:block th:if="${orderTypes}">
         <div th:replace="~{partials/forms :: dropdownWithDisplayValue('typeOfOrder', 'Type of order', ${orderTypes}, 'code', 'description')}"></div>
-        <details class="govuk-details" data-module="govuk-details">
-          <summary class="govuk-details__summary">
-            <span class="govuk-details__summary-text">
-              Help with Type of order
-            </span>
-          </summary>
-          <div class="govuk-details__text">
-            Please select from the options provided should you require an order for enforcement, if
-            you wish to appeal against an order, or require representation otherwise.
-          </div>
-        </details>
+
+        <govuk:details th:summaryText="#{proceedings.furtherDetails.summaryText}"
+                       th:text="#{proceedings.furtherDetails.text}"/>
+
       </th:block>
       <div class="govuk-button-group">
-        <button type="submit" class="govuk-button" data-module="govuk-button">
-          Next
-        </button>
-        <a class="govuk-button govuk-button--secondary"
-           data-module="govuk-button"
-           th:href="@{/application/proceedings/{action}/proceeding-type(action=${proceedingFlow.action})}">
-          Back
-        </a>
+        <govuk:button type="submit" th:text="#{site.next}"/>
+        <govuk:button classes="govuk-button--secondary"
+                      th:href="@{/application/proceedings/{action}/proceeding-type(action=${proceedingFlow.action})}"
+                      th:text="#{site.back}"/>
       </div>
     </form>
   </div>

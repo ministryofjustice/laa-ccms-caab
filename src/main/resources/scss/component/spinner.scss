@@ -1,11 +1,9 @@
 @use "sass:map";
 
-@import "govuk-frontend/dist/govuk/settings/colours-palette";
-
 .loader {
     margin: auto;
     border: 12px solid #dee0e2;
-    border-top: 12px solid map.get($govuk-colours, "blue");
+    border-top: 12px solid #1d70b8;
     border-radius: 50%;
     width: 80px;
     height: 80px;
@@ -15,7 +13,7 @@
 .loader-small {
     margin: auto;
     border: 4px solid #dee0e2;
-    border-top: 4px solid map.get($govuk-colours, "blue");
+    border-top: 4px solid #1d70b8;
     border-radius: 50%;
     width: 20px;
     height: 20px;

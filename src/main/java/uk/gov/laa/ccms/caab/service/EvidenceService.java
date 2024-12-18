@@ -390,12 +390,14 @@ public class EvidenceService {
   public Mono<Void> uploadAndUpdateDocuments(
       final EvidenceDocumentDetails evidenceDocumentDetails,
       final String caseReferenceNumber,
+      final String notificationId,
       final UserDetail user) {
 
     if (evidenceDocumentDetails != null) {
       return Flux.fromIterable(evidenceDocumentDetails.getContent())
           .flatMap(evidenceDocumentDetail ->
-              uploadAndUpdateDocument(evidenceDocumentDetail, caseReferenceNumber, user))
+              uploadAndUpdateDocument(
+                  evidenceDocumentDetail, caseReferenceNumber, notificationId, user))
           .then();
     } else {
       return Mono.empty();
@@ -414,6 +416,7 @@ public class EvidenceService {
   public Mono<Void> uploadAndUpdateDocument(
       final BaseEvidenceDocumentDetail evidenceDocument,
       final String caseReferenceNumber,
+      final String notificationId,
       final UserDetail user) {
 
     // Return an empty Mono if the evidenceDocument is null
@@ -436,7 +439,7 @@ public class EvidenceService {
     return this.getEvidenceDocument(documentId)
         .flatMap(detailedEvidenceDocument ->
             uploadDocumentAndUpdateStatus(
-                detailedEvidenceDocument, caseReferenceNumber, user, documentId))
+                detailedEvidenceDocument, caseReferenceNumber, notificationId, user, documentId))
         .onErrorResume(e -> handleUploadError(e, documentId, user.getLoginId()));
   }
 
@@ -452,28 +455,33 @@ public class EvidenceService {
   protected Mono<Void> uploadDocumentAndUpdateStatus(
       final EvidenceDocumentDetail detailedEvidenceDocument,
       final String caseReferenceNumber,
+      final String notificationId,
       final UserDetail user,
       final Integer documentId) {
 
     // Map the detailed evidence document to the Document type required by the SOA API
     final Document document = evidenceMapper.toDocument(detailedEvidenceDocument);
 
-    // Upload the document to the SOA API
-    return soaApiClient.updateDocument(
-            document,
-            null, // Assuming null is acceptable for the second parameter
-            caseReferenceNumber,
-            user.getLoginId(),
-            user.getUserType())
-        .then(
-            // After successful upload, update the document's transfer status to "SUCCESS"
-            updateDocument(
-                new EvidenceDocumentDetail()
-                    .id(documentId)
-                    .transferStatus("SUCCESS")
-                    .transferResponseCode("200")
-                    .transferResponseDescription("Successfully uploaded document"),
-                user.getLoginId()));
+    final boolean isDocumentPreviouslyRegisteredInEbs =
+        detailedEvidenceDocument.getRegisteredDocumentId() != null;
+
+    // Determine the API operation (upload or update) based on if the document is already
+    // registered
+    final Mono<ClientTransactionResponse> apiOperation = isDocumentPreviouslyRegisteredInEbs
+        ? soaApiClient.updateDocument(
+            document, notificationId, caseReferenceNumber, user.getLoginId(), user.getUserType())
+        : soaApiClient.uploadDocument(
+            document, notificationId, caseReferenceNumber, user.getLoginId(), user.getUserType());
+
+    // Perform the API operation and update the document's transfer status after success
+    return apiOperation.then(updateDocument(
+        new EvidenceDocumentDetail()
+            .id(documentId)
+            .notificationReference(notificationId)
+            .transferStatus("SUCCESS")
+            .transferResponseCode("200")
+            .transferResponseDescription("Successfully uploaded document"),
+        user.getLoginId()));
   }
 
   /**

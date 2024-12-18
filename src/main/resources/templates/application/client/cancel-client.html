@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
     <title>LAA CCMS - Start new application</title>
 </head>
@@ -19,14 +20,10 @@
                 continue registering this new client.
             </p>
             <div class="govuk-button-group">
-                <button type="submit" class="govuk-button" data-module="govuk-button">
-                    Confirm
-                </button>
-                <a class="govuk-button govuk-button--secondary"
-                   data-module="govuk-button"
-                   th:href="@{/application/client/details/basic}">
-                    Back
-                </a>
+                <govuk:button type="submit" th:text="#{site.confirm}"/>
+                <govuk:button classes="govuk-button--secondary"
+                              th:text="#{site.back}"
+                              th:href="@{/application/client/details/basic}"/>
             </div>
         </form>
     </div>
