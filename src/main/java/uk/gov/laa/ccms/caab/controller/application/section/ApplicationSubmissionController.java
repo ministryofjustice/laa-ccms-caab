@@ -702,7 +702,10 @@ public class ApplicationSubmissionController {
     evidenceService.registerPreviouslyUploadedDocuments(evidenceDocumentDetails, user);
 
     evidenceService.uploadAndUpdateDocuments(
-        evidenceDocumentDetails, activeCase.getCaseReferenceNumber(), user)
+        evidenceDocumentDetails,
+            activeCase.getCaseReferenceNumber(),
+            null,
+            user)
         .block();
 
 
