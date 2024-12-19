@@ -24,7 +24,6 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
@@ -36,7 +35,6 @@ import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
-import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
@@ -345,88 +343,6 @@ class SoaApiClientTest {
 
     StepVerifier.create(clientDetailMono)
         .verifyComplete();
-  }
-
-  @Test
-  void getNotifications_Successful() {
-    NotificationSearchCriteria criteria = new NotificationSearchCriteria();
-    criteria.setAssignedToUserId("testUserId");
-
-    criteria.setLoginId("testUserId");
-    criteria.setUserType("testUserType");
-    int page = 10, size = 10;
-    String expectedUri = String.format("/notifications?assigned-to-user-id=%s&include-closed=%s&page=%s&" +
-            "size=%s",
-        criteria.getAssignedToUserId(),
-        criteria.isIncludeClosed(),
-        page,
-        size);
-
-    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
-
-    when(soaApiWebClientMock.get()).thenReturn(requestHeadersUriMock);
-    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-
-    Notifications notificationsObj = new Notifications();
-
-    when(requestHeadersMock.header("SoaGateway-User-Login-Id", criteria.getLoginId())).thenReturn(
-        requestHeadersMock);
-    when(requestHeadersMock.header("SoaGateway-User-Role", criteria.getUserType())).thenReturn(
-        requestHeadersMock);
-    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(Notifications.class)).thenReturn(
-        Mono.just(notificationsObj));
-    Mono<Notifications> notificationsMono = soaApiClient.getNotifications(criteria, page,
-        size);
-
-    StepVerifier.create(notificationsMono)
-        .expectNextMatches(notifications -> notifications == notificationsObj)
-        .verifyComplete();
-    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
-    assertEquals(expectedUri, actualUri.toString());
-  }
-
-  @Test
-  void getNotifications_handlesError() {
-
-    NotificationSearchCriteria criteria = new NotificationSearchCriteria();
-    criteria.setAssignedToUserId("testUserId");
-    criteria.setLoginId("testUserId");
-    criteria.setUserType("testUserType");
-    int page = 10, size = 10;
-    String expectedUri = String.format("/notifications?assigned-to-user-id=%s&include-closed=%s&page=%s&" +
-            "size=%s",
-        criteria.getAssignedToUserId(),
-        criteria.isIncludeClosed(),
-        page,
-        size);
-
-
-    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
-
-
-    when(soaApiWebClientMock.get()).thenReturn(requestHeadersUriMock);
-    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-    when(requestHeadersMock.header("SoaGateway-User-Login-Id", criteria.getLoginId())).thenReturn(
-        requestHeadersMock);
-    when(requestHeadersMock.header("SoaGateway-User-Role", criteria.getUserType())).thenReturn(
-        requestHeadersMock);
-    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(Notifications.class)).thenReturn(Mono.error(
-        new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
-
-    when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("Notifications"), any())).thenReturn(Mono.empty());
-
-    Mono<Notifications> notificationsMono =
-        soaApiClient.getNotifications(criteria, page, size );
-
-    StepVerifier.create(notificationsMono)
-        .verifyComplete();
-    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
-    assertEquals(expectedUri, actualUri.toString());
-    assertEquals(expectedUri, actualUri.toString());
   }
 
   @Test

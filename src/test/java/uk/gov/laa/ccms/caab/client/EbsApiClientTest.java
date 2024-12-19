@@ -25,6 +25,7 @@ import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -39,6 +40,7 @@ import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
+import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
@@ -172,6 +174,83 @@ public class EbsApiClientTest {
                 summary.getOverdueActions().equals(2)
         )
         .verifyComplete();
+  }
+
+  @Test
+  void getNotifications_successful() {
+    NotificationSearchCriteria criteria = new NotificationSearchCriteria();
+    criteria.setAssignedToUserId("testUserId");
+
+    criteria.setLoginId("testUserId");
+    criteria.setUserType("testUserType");
+    int page = 10, size = 10;
+    String expectedUri = String.format(
+        "/notifications?assigned-to-user-id=%s&include-closed=%s&page=%s&" +
+            "size=%s",
+        criteria.getAssignedToUserId(),
+        criteria.isIncludeClosed(),
+        page,
+        size);
+
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+
+    Notifications notificationsObj = new Notifications();
+
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Notifications.class)).thenReturn(
+        Mono.just(notificationsObj));
+    Mono<uk.gov.laa.ccms.data.model.Notifications> notificationsMono = ebsApiClient.getNotifications(
+        criteria, page,
+        size);
+
+    StepVerifier.create(notificationsMono)
+        .expectNextMatches(notifications -> notifications == notificationsObj)
+        .verifyComplete();
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+    assertEquals(expectedUri, actualUri.toString());
+  }
+
+  @Test
+  void getNotifications_handlesError() {
+
+    NotificationSearchCriteria criteria = new NotificationSearchCriteria();
+    criteria.setAssignedToUserId("testUserId");
+    criteria.setLoginId("testUserId");
+    criteria.setUserType("testUserType");
+    int page = 10, size = 10;
+    String expectedUri = String.format(
+        "/notifications?assigned-to-user-id=%s&include-closed=%s&page=%s&" +
+            "size=%s",
+        criteria.getAssignedToUserId(),
+        criteria.isIncludeClosed(),
+        page,
+        size);
+
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Notifications.class)).thenReturn(Mono.error(
+        new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+
+    when(
+        apiClientErrorHandler.handleApiRetrieveError(any(), eq("Notifications"), any())).thenReturn(
+        Mono.empty());
+
+    Mono<Notifications> notificationsMono =
+        ebsApiClient.getNotifications(criteria, page, size);
+
+    StepVerifier.create(notificationsMono)
+        .verifyComplete();
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+    assertEquals(expectedUri, actualUri.toString());
+    assertEquals(expectedUri, actualUri.toString());
   }
 
   @Test

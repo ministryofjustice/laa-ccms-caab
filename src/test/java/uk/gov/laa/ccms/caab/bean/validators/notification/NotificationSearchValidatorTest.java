@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,6 +28,9 @@ class NotificationSearchValidatorTest {
   @BeforeEach
   public void setup() {
     criteria = new NotificationSearchCriteria();
+    // Setup notification from/ to date to pass validation by default
+    criteria.setNotificationFromDate("01/01/2023");
+    criteria.setNotificationToDate("01/01/2024");
     errors = new BeanPropertyBindingResult(criteria, "criteria");
   }
 
@@ -43,6 +47,9 @@ class NotificationSearchValidatorTest {
 
   @Test
   void testAllFieldsBlankValidator() {
+    // Set dates to empty
+    criteria.setNotificationFromDate("");
+    criteria.setNotificationToDate("");
     validator.validate(criteria, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
@@ -50,10 +57,7 @@ class NotificationSearchValidatorTest {
 
   @Test
   void testValidateFromDate() {
-    criteria.setNotificationFromDateDay("12");
-    criteria.setNotificationFromDateMonth("12");
-    criteria.setNotificationFromDateYear("");
-
+    criteria.setNotificationFromDate("12/12/");
     validator.validate(criteria, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
@@ -63,9 +67,7 @@ class NotificationSearchValidatorTest {
 
   @Test
   void testValidateToDate() {
-    criteria.setNotificationToDateDay("12");
-    criteria.setNotificationToDateMonth("12");
-    criteria.setNotificationToDateYear("");
+    criteria.setNotificationToDate("12/12/");
     validator.validate(criteria, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
@@ -74,53 +76,36 @@ class NotificationSearchValidatorTest {
 
   @Test
   void validateNonNumericalDates() {
-    criteria.setNotificationFromDateDay("A");
-    criteria.setNotificationFromDateMonth("12");
-    criteria.setNotificationFromDateYear("2021");
-    criteria.setNotificationToDateDay("13");
-    criteria.setNotificationToDateMonth("12");
-    criteria.setNotificationToDateYear("B");
+    criteria.setNotificationFromDate("A/12/2021");
+    criteria.setNotificationToDate("13/12/B");
     validator.validate(criteria, errors);
     assertTrue(errors.hasErrors());
-    assertEquals(4, errors.getErrorCount());
+    assertEquals(2, errors.getErrorCount());
     assertNotNull(errors.getFieldError("notificationFromDate"));
-    assertNotNull(errors.getFieldError("notificationFromDateDay"));
     assertNotNull(errors.getFieldError("notificationToDate"));
-    assertNotNull(errors.getFieldError("notificationToDateYear"));
   }
 
   @Test
   void validateInvalidDate() {
-    criteria.setNotificationToDateDay("12");
-    criteria.setNotificationToDateMonth("12");
-    criteria.setNotificationToDateYear("2021/");
+    criteria.setNotificationToDate("12/13/2021");
     validator.validate(criteria, errors);
     assertTrue(errors.hasErrors());
-    assertEquals(2, errors.getErrorCount());
-    assertNotNull(errors.getFieldError("notificationToDateYear"));
+    assertEquals(1, errors.getErrorCount());
     assertNotNull(errors.getFieldError("notificationToDate"));
   }
 
   @Test
   void testValidFromAndToDates() {
-    criteria.setNotificationFromDateDay("12");
-    criteria.setNotificationFromDateMonth("12");
-    criteria.setNotificationFromDateYear("2021");
-    criteria.setNotificationToDateDay("13");
-    criteria.setNotificationToDateMonth("12");
-    criteria.setNotificationToDateYear("2021");
+    criteria.setNotificationFromDate("12/12/2021");
+    criteria.setNotificationToDate("13/12/2021");
     validator.validate(criteria, errors);
     assertFalse(errors.hasErrors());
   }
 
   @Test
   void testInvalidFromAndToDates() {
-    criteria.setNotificationFromDateDay("13");
-    criteria.setNotificationFromDateMonth("12");
-    criteria.setNotificationFromDateYear("2021");
-    criteria.setNotificationToDateDay("12");
-    criteria.setNotificationToDateMonth("12");
-    criteria.setNotificationToDateYear("2021");
+    criteria.setNotificationFromDate("13/12/2021");
+    criteria.setNotificationToDate("12/12/2021");
     validator.validate(criteria, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
@@ -128,12 +113,28 @@ class NotificationSearchValidatorTest {
 
   @Test
   void testValidDates() {
-    criteria.setNotificationFromDateDay("11");
-    criteria.setNotificationFromDateMonth("12");
-    criteria.setNotificationFromDateYear("2021");
-    criteria.setNotificationToDateDay("12");
-    criteria.setNotificationToDateMonth("12");
-    criteria.setNotificationToDateYear("2022");
+    criteria.setNotificationFromDate("11/12/2021");
+    criteria.setNotificationToDate("12/12/2022");
+    validator.validate(criteria, errors);
+    assertFalse(errors.hasErrors());
+    assertEquals(0, errors.getErrorCount());
+  }
+
+  @Test
+  @DisplayName("Should have validation errors when more than 3 years")
+  void testShouldHaveValidationErrorsWhenMoreThan3Years() {
+    criteria.setNotificationFromDate("11/12/2021");
+    criteria.setNotificationToDate("12/12/2024");
+    validator.validate(criteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  @DisplayName("Should not have validation errors when just under 3 years")
+  void testShouldNotHaveValidationErrorsWhenJustUnder3Years() {
+    criteria.setNotificationFromDate("11/12/2021");
+    criteria.setNotificationToDate("10/12/2024");
     validator.validate(criteria, errors);
     assertFalse(errors.hasErrors());
     assertEquals(0, errors.getErrorCount());
@@ -141,7 +142,8 @@ class NotificationSearchValidatorTest {
 
   @Test
   void testCaseRefDoubleSpaceValidation() {
-    criteria.setCaseReference("  ");
+    // Requires some text, otherwise value is disregarded for being blank
+    criteria.setCaseReference("1  3");
     validator.validate(criteria, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
