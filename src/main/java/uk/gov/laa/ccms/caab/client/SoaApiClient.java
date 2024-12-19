@@ -376,6 +376,7 @@ public class SoaApiClient {
    * @param size     The size or number of records per page.
    * @return A Mono wrapping the Notifications
    */
+  @Deprecated
   public Mono<Notifications> getNotifications(
       final NotificationSearchCriteria criteria,
       final Integer page,

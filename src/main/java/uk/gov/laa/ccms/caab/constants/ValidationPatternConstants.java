@@ -102,7 +102,7 @@ public class ValidationPatternConstants {
   public static final String TELEPHONE_PATTERN = "^[0-9 \\+\\-\\(\\)]*$";
 
   /**
-   * pattern for double-space, also takes into account characters wrapped around the double space
+   * Pattern for double-space, also takes into account characters wrapped around the double space.
    */
   public static final String DOUBLE_SPACE = ".* {2,}.*";
 

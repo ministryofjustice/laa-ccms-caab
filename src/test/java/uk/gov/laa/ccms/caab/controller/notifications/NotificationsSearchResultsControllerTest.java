@@ -3,7 +3,6 @@ package uk.gov.laa.ccms.caab.controller.notifications;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -34,9 +33,9 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.NotificationService;
+import uk.gov.laa.ccms.data.model.Notification;
+import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.Notification;
-import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -162,12 +161,11 @@ class NotificationsSearchResultsControllerTest {
     return new Notifications()
         .addContentItem(
             new Notification()
-                .user(new uk.gov.laa.ccms.soa.gateway.model.UserDetail()
-                    .userLoginId("user1")
+                .user(new UserDetail()
+                    .loginId("user1")
                     .userType("user1"))
                 .notificationId("234")
                 .notificationType("N"));
-
   }
 
   private static final UserDetail userDetails = new UserDetail()
