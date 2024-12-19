@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -133,9 +134,7 @@ class ActionsAndNotificationsControllerTest {
 
   private static NotificationSearchCriteria buildNotificationSearchCritieria() {
     NotificationSearchCriteria criteria = new NotificationSearchCriteria();
-    criteria.setNotificationToDateDay("12");
-    criteria.setNotificationToDateMonth("12");
-    criteria.setNotificationToDateYear("2025");
+    criteria.setNotificationToDate("12/12/2025");
     return criteria;
   }
 
@@ -351,7 +350,7 @@ class ActionsAndNotificationsControllerTest {
     Exception exception = assertThrows(Exception.class, () ->
             mockMvc.perform(get("/notifications/123")
                 .flashAttrs(flashMap)));
-    assertTrue(exception.getCause() instanceof CaabApplicationException);
+    assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals("Notification with id 123 not found", exception.getCause().getMessage());
 
   }

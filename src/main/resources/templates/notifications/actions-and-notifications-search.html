@@ -8,7 +8,8 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/notifications/search?notification_type=N}" class="govuk-back-link">Cancel and return
+    <a th:href="@{/notifications/search?notification_type=N}" class="govuk-back-link">Cancel and
+      return
       to search results</a>
   </div>
   <div id="main-content">
@@ -26,15 +27,39 @@
       </div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
-          <div th:replace="~{partials/forms :: dropdown('assignedToUserId', 'Assigned to', ${users}, 'loginId', 'loginId', false)}"></div>
-          <h2 class="govuk-heading-m">
-            Notification dates
-          </h2>
+
+          <h2 class="govuk-heading-m">Responsibility information</h2>
+          <div
+              th:replace="~{partials/forms :: dropdown('assignedToUserId', 'Assigned to', ${users}, 'loginId', 'loginId', false)}"></div>
+          <div
+              th:replace="~{partials/forms :: dropdown('feeEarnerId', 'Fee earner', ${feeEarners}, 'id', 'name', false)}"></div>
+
+          <h2 class="govuk-heading-m">Notification dates</h2>
           <div class="govuk-form-group"
-               th:classappend="${#fields.hasErrors('notificationFromDateDay') || #fields.hasErrors('notificationFromDateMonth') || #fields.hasErrors('notificationFromDateYear') || #fields.hasErrors('notificationFromDate')}  ? 'govuk-form-group--error' : ''">
+               th:classappend="${#fields.hasErrors('notificationFromDate')} ? 'govuk-form-group--error' : ''">
+            <div class="moj-datepicker" data-module="moj-date-picker">
+              <label class="govuk-label" for="notification-from-date-field-value">
+                From
+              </label>
+              <div id="notification-from-date-hint" class="govuk-hint">
+                For example, 17/5/2024.
+              </div>
+              <span th:if="${#fields.hasErrors('notificationFromDate')}"
+                    th:errors="*{notificationFromDate}" class="govuk-error-message"></span>
+              <input class="govuk-input moj-js-datepicker-input"
+                     id="notification-from-date-field-value"
+                     th:field="*{notificationFromDate}"
+                     type="text"
+                     aria-describedby="notification-from-date-hint"
+                     autocomplete="off"
+                     th:errorclass="govuk-select--error">
+            </div>
+          </div>
+          <!--<div class="govuk-form-group"
+               th:classappend="${#fields.hasErrors('notificationFromDateDay') || #fields.hasErrors('notificationFromDateMonth') || #fields.hasErrors('notificationFromDateYear') || #fields.hasErrors('notificationFromDate')}  ? 'govuk-form-group&#45;&#45;error' : ''">
             <fieldset class="govuk-fieldset" role="group"
                       aria-describedby="notf-hint not-from-date-error">
-              <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">
+              <legend class="govuk-fieldset__legend govuk-fieldset__legend&#45;&#45;s">
                 From
               </legend>
               <div id="notf-hint" class="govuk-hint">
@@ -54,12 +79,33 @@
                 <div th:replace="~{partials/forms::numericInput('notificationFromDateYear', 'Year', '4')}"></div>
               </div>
             </fieldset>
-          </div>
+          </div>-->
           <div class="govuk-form-group"
-               th:classappend="${#fields.hasErrors('notificationToDateDay') || #fields.hasErrors('notificationToDateMonth') || #fields.hasErrors('notificationToDateYear') || #fields.hasErrors('notificationToDate')} ? 'govuk-form-group--error' : ''">
+               th:classappend="${#fields.hasErrors('notificationToDate')} ? 'govuk-form-group--error' : ''">
+            <div class="moj-datepicker" data-module="moj-date-picker">
+              <label class="govuk-label" for="notification-to-date-field-value">
+                To
+              </label>
+              <div id="notification-to-date-hint" class="govuk-hint">
+                For example, 17/5/2024.
+              </div>
+              <span th:if="${#fields.hasErrors('notificationToDate')}"
+                    th:errors="*{notificationToDate}" class="govuk-error-message"></span>
+
+              <input class="govuk-input moj-js-datepicker-input"
+                     id="notification-to-date-field-value"
+                     th:field="*{notificationToDate}"
+                     type="text"
+                     aria-describedby="notification-from-date-hint"
+                     autocomplete="off"
+                     th:errorclass="govuk-select--error">
+            </div>
+          </div>
+          <!--<div class="govuk-form-group"
+               th:classappend="${#fields.hasErrors('notificationToDateDay') || #fields.hasErrors('notificationToDateMonth') || #fields.hasErrors('notificationToDateYear') || #fields.hasErrors('notificationToDate')} ? 'govuk-form-group&#45;&#45;error' : ''">
             <fieldset class="govuk-fieldset" role="group"
                       aria-describedby="nott-hint nott-error">
-              <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">
+              <legend class="govuk-fieldset__legend govuk-fieldset__legend&#45;&#45;s">
                 To
               </legend>
               <div id="nott-hint" class="govuk-hint">
@@ -74,35 +120,46 @@
                     </span>
               </p>
               <div class="govuk-date-input" id="notificationToDate">
-                <div th:replace="~{partials/forms::numericInput('notificationToDateDay', 'Day', '2')}"></div>
-                <div th:replace="~{partials/forms::numericInput('notificationToDateMonth', 'Month', '2')}"></div>
-                <div th:replace="~{partials/forms::numericInput('notificationToDateYear', 'Year', '4')}"></div>
+                <div
+                    th:replace="~{partials/forms::numericInput('notificationToDateDay', 'Day', '2')}"></div>
+                <div
+                    th:replace="~{partials/forms::numericInput('notificationToDateMonth', 'Month', '2')}"></div>
+                <div
+                    th:replace="~{partials/forms::numericInput('notificationToDateYear', 'Year', '4')}"></div>
               </div>
             </fieldset>
           </div>
-          <div th:replace="~{partials/forms :: textInput('providerCaseReference', 'Provider case reference', 'govuk-input--width-20')}"></div>
-          <div th:replace="~{partials/forms :: textInput('caseReference', 'LAA application / case reference', 'govuk-input--width-20')}"></div>
-          <div th:replace="~{partials/forms :: textInput('clientSurname', 'Client surname', 'govuk-input--width-20')}"></div>
-          <div th:replace="~{partials/forms :: dropdown('feeEarnerId', 'Fee earner', ${feeEarners}, 'id', 'name', false)}"></div>
-          <div th:replace="~{partials/forms :: dropdown('notificationType', 'Action / Notification Type', ${notificationTypes}, 'code', 'description', false)}"></div>
+          -->
+          <h2 class="govuk-heading-m">Case information</h2>
+
+          <div
+              th:replace="~{partials/forms :: textInput('providerCaseReference', 'Provider case reference', 'govuk-input--width-20')}"></div>
+          <div
+              th:replace="~{partials/forms :: textInput('caseReference', 'LAA application / case reference', 'govuk-input--width-20')}"></div>
+          <div
+              th:replace="~{partials/forms :: textInput('clientSurname', 'Client surname', 'govuk-input--width-20')}"></div>
+
+          <h2 class="govuk-heading-m">Notification details</h2>
+          <div
+              th:replace="~{partials/forms :: dropdown('notificationType', 'Action / Notification Type', ${notificationTypes}, 'code', 'description', false)}"></div>
           <div class="govuk-form-group">
             <fieldset class="govuk-fieldset">
-              <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
-                <h2 class="govuk-fieldset__heading">
-                  Include closed notifications?
-                </h2>
+              <legend class="govuk-fieldset__legend">
+                Include closed notifications?
               </legend>
               <div class="govuk-radios govuk-radios--inline" data-module="govuk-radios">
                 <div class="govuk-radios__item">
                   <input class="govuk-radios__input" id="includeClosed-yes" name="includeClosed"
-                         type="radio" value="true" th:checked="${notificationSearchCriteria.includeClosed}">
+                         type="radio" value="true"
+                         th:checked="${notificationSearchCriteria.includeClosed}">
                   <label class="govuk-label govuk-radios__label" for="includeClosed-yes">
                     Yes
                   </label>
                 </div>
                 <div class="govuk-radios__item">
                   <input class="govuk-radios__input" id="includeClosed-no" name="includeClosed"
-                         type="radio" value="false" th:checked="${!notificationSearchCriteria.includeClosed}">
+                         type="radio" value="false"
+                         th:checked="${!notificationSearchCriteria.includeClosed}">
                   <label class="govuk-label govuk-radios__label" for="includeClosed-no">
                     No
                   </label>
