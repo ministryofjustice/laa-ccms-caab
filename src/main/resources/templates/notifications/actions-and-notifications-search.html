@@ -16,10 +16,12 @@
     <form action="#" th:action="@{/notifications/search}" th:object="${notificationSearchCriteria}"
           method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l">Search for notifications</span>
+      <!--<span class="govuk-caption-l">Search for notifications</span>
       <h1 class="govuk-heading-l">
         Search
-      </h1>
+      </h1>-->
+      <span class="govuk-caption-l">Search for notifications</span>
+      <h1>Your actions / notifications</h1>
       <div class="govuk-body-l">
         Please enter as many details as you have available in the provided search fields in
         order to find your required action or notification. At least one of the search criteria
@@ -34,7 +36,20 @@
           <div
               th:replace="~{partials/forms :: dropdown('feeEarnerId', 'Fee earner', ${feeEarners}, 'id', 'name', false)}"></div>
 
-          <h2 class="govuk-heading-m">Notification dates</h2>
+          <h2 class="govuk-heading-m">Case information</h2>
+
+          <div
+              th:replace="~{partials/forms :: textInput('providerCaseReference', 'Provider case reference', 'govuk-input--width-20')}"></div>
+          <div
+              th:replace="~{partials/forms :: textInput('caseReference', 'LAA application / case reference', 'govuk-input--width-20')}"></div>
+          <div
+              th:replace="~{partials/forms :: textInput('clientSurname', 'Client surname', 'govuk-input--width-20')}"></div>
+
+          <h2 class="govuk-heading-m">Notification details</h2>
+          <div class="govuk-inset-text">
+            Notifications can only be returned within a date range of 3 years. If no date is
+            provided, only notifications from up to 3 years ago will be returned.
+          </div>
           <div class="govuk-form-group"
                th:classappend="${#fields.hasErrors('notificationFromDate')} ? 'govuk-form-group--error' : ''">
             <div class="moj-datepicker" data-module="moj-date-picker">
@@ -42,7 +57,8 @@
                 From
               </label>
               <div id="notification-from-date-hint" class="govuk-hint">
-                For example, 17/5/2024.
+                For example, 17/5/2024. Notifications of up to 3 years after this date will be
+                returned.
               </div>
               <span th:if="${#fields.hasErrors('notificationFromDate')}"
                     th:errors="*{notificationFromDate}" class="govuk-error-message"></span>
@@ -55,31 +71,6 @@
                      th:errorclass="govuk-select--error">
             </div>
           </div>
-          <!--<div class="govuk-form-group"
-               th:classappend="${#fields.hasErrors('notificationFromDateDay') || #fields.hasErrors('notificationFromDateMonth') || #fields.hasErrors('notificationFromDateYear') || #fields.hasErrors('notificationFromDate')}  ? 'govuk-form-group&#45;&#45;error' : ''">
-            <fieldset class="govuk-fieldset" role="group"
-                      aria-describedby="notf-hint not-from-date-error">
-              <legend class="govuk-fieldset__legend govuk-fieldset__legend&#45;&#45;s">
-                From
-              </legend>
-              <div id="notf-hint" class="govuk-hint">
-                For example, 27 3 2007
-              </div>
-              <p id="not-from-date-error" class="govuk-error-message">
-                <span th:each="error : ${#fields.detailedErrors()}">
-                    <span th:inline="text"
-                          th:if="${error.fieldName == 'notificationFromDateDay' || error.fieldName == 'notificationFromDateMonth' || error.fieldName == 'notificationFromDateYear'}">
-                        <span th:utext="${error.message + '<br>'}"></span>
-                    </span>
-                </span>
-              </p>
-              <div class="govuk-date-input" id="notificationFromDate">
-                <div th:replace="~{partials/forms::numericInput('notificationFromDateDay', 'Day', '2')}"></div>
-                <div th:replace="~{partials/forms::numericInput('notificationFromDateMonth', 'Month', '2')}"></div>
-                <div th:replace="~{partials/forms::numericInput('notificationFromDateYear', 'Year', '4')}"></div>
-              </div>
-            </fieldset>
-          </div>-->
           <div class="govuk-form-group"
                th:classappend="${#fields.hasErrors('notificationToDate')} ? 'govuk-form-group--error' : ''">
             <div class="moj-datepicker" data-module="moj-date-picker">
@@ -87,7 +78,8 @@
                 To
               </label>
               <div id="notification-to-date-hint" class="govuk-hint">
-                For example, 17/5/2024.
+                For example, 17/5/2024. Notifications of up to 3 years before this date will be
+                returned.
               </div>
               <span th:if="${#fields.hasErrors('notificationToDate')}"
                     th:errors="*{notificationToDate}" class="govuk-error-message"></span>
@@ -101,45 +93,6 @@
                      th:errorclass="govuk-select--error">
             </div>
           </div>
-          <!--<div class="govuk-form-group"
-               th:classappend="${#fields.hasErrors('notificationToDateDay') || #fields.hasErrors('notificationToDateMonth') || #fields.hasErrors('notificationToDateYear') || #fields.hasErrors('notificationToDate')} ? 'govuk-form-group&#45;&#45;error' : ''">
-            <fieldset class="govuk-fieldset" role="group"
-                      aria-describedby="nott-hint nott-error">
-              <legend class="govuk-fieldset__legend govuk-fieldset__legend&#45;&#45;s">
-                To
-              </legend>
-              <div id="nott-hint" class="govuk-hint">
-                For example, 27 3 2007
-              </div>
-              <p id="nott-error" class="govuk-error-message">
-                    <span th:each="error : ${#fields.detailedErrors()}">
-                        <span th:inline="text"
-                              th:if="${error.fieldName == 'notificationToDateDay' || error.fieldName == 'notificationToDateMonth' || error.fieldName == 'notificationToDateYear'}">
-                            <span th:utext="${error.message + '<br>'}"></span>
-                        </span>
-                    </span>
-              </p>
-              <div class="govuk-date-input" id="notificationToDate">
-                <div
-                    th:replace="~{partials/forms::numericInput('notificationToDateDay', 'Day', '2')}"></div>
-                <div
-                    th:replace="~{partials/forms::numericInput('notificationToDateMonth', 'Month', '2')}"></div>
-                <div
-                    th:replace="~{partials/forms::numericInput('notificationToDateYear', 'Year', '4')}"></div>
-              </div>
-            </fieldset>
-          </div>
-          -->
-          <h2 class="govuk-heading-m">Case information</h2>
-
-          <div
-              th:replace="~{partials/forms :: textInput('providerCaseReference', 'Provider case reference', 'govuk-input--width-20')}"></div>
-          <div
-              th:replace="~{partials/forms :: textInput('caseReference', 'LAA application / case reference', 'govuk-input--width-20')}"></div>
-          <div
-              th:replace="~{partials/forms :: textInput('clientSurname', 'Client surname', 'govuk-input--width-20')}"></div>
-
-          <h2 class="govuk-heading-m">Notification details</h2>
           <div
               th:replace="~{partials/forms :: dropdown('notificationType', 'Action / Notification Type', ${notificationTypes}, 'code', 'description', false)}"></div>
           <div class="govuk-form-group">

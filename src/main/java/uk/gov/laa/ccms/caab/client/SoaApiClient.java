@@ -15,7 +15,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
@@ -27,7 +26,6 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
-import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestDetail;
@@ -368,61 +366,6 @@ public class SoaApiClient {
         .bodyToMono(TransactionStatus.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
             e, "case transaction status", "transaction id", transactionId));
-  }
-
-  /**
-   * Searches and retrieves notifications based on search criteria.
-   *
-   * @param criteria The {@link NotificationSearchCriteria} class.
-   * @param page     The page number for pagination.
-   * @param size     The size or number of records per page.
-   * @return A Mono wrapping the Notifications
-   */
-  @Deprecated
-  public Mono<Notifications> getNotifications(
-      final NotificationSearchCriteria criteria,
-      final Integer page,
-      final Integer size) {
-
-    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
-    Optional.ofNullable(criteria.getCaseReference())
-        .ifPresent(caseReference -> queryParams.add(CASE_REFERENCE_NUMBER, caseReference));
-    Optional.ofNullable(criteria.getProviderCaseReference())
-        .ifPresent(providerCaseReference -> queryParams.add(
-            "provider-case-reference", providerCaseReference));
-    Optional.ofNullable(criteria.getAssignedToUserId())
-        .ifPresent(assignedToUserId -> queryParams.add("assigned-to-user-id", assignedToUserId));
-    Optional.ofNullable(criteria.getClientSurname())
-        .ifPresent(clientSurname -> queryParams.add("client-surname", clientSurname));
-    Optional.ofNullable(criteria.getFeeEarnerId())
-        .ifPresent(feeEarnerId -> queryParams.add("fee-earner-id", String.valueOf(feeEarnerId)));
-    Optional.of(criteria.isIncludeClosed())
-        .ifPresent(param -> queryParams.add("include-closed", String.valueOf(param)));
-    Optional.ofNullable(criteria.getNotificationType())
-        .ifPresent(notificationType -> queryParams.add("notification-type", notificationType));
-    Optional.ofNullable(criteria.getNotificationFromDate())
-        .ifPresent(dateFrom -> queryParams.add("date-from", dateFrom));
-    Optional.ofNullable(criteria.getNotificationToDate())
-        .ifPresent(dateTo -> queryParams.add("date-to", dateTo));
-    Optional.ofNullable(page)
-        .ifPresent(param -> queryParams.add("page", String.valueOf(param)));
-    Optional.ofNullable(size)
-        .ifPresent(param -> queryParams.add("size", String.valueOf(param)));
-    Optional.ofNullable(criteria.getSort())
-        .ifPresent(sort -> queryParams.add("sort", sort));
-
-    return soaApiWebClient
-        .get()
-        .uri(builder -> builder.path("/notifications")
-            .queryParams(queryParams)
-            .build())
-        .header(SOA_GATEWAY_USER_LOGIN_ID, criteria.getLoginId())
-        .header(SOA_GATEWAY_USER_ROLE, criteria.getUserType())
-        .retrieve()
-        .bodyToMono(Notifications.class)
-        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
-            e, "Notifications", queryParams));
-
   }
 
   /**

@@ -790,7 +790,7 @@ public class EbsApiClient {
    * @param page     the page number to retrieve in the paginated result set
    * @param pageSize the number of notifications to retrieve per page
    * @return a {@code Mono<Notifications>} containing the retrieved notifications that match the
-   * search criteria
+   *     search criteria
    */
   public Mono<Notifications> getNotifications(
       final NotificationSearchCriteria criteria,
