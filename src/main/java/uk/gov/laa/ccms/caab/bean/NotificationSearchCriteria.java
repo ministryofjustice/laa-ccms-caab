@@ -45,39 +45,9 @@ public class NotificationSearchCriteria {
   private String notificationType;
 
   /**
-   * The day of the {@see notificationFromDate}.
-   */
-  private String notificationFromDateDay;
-
-  /**
-   * The month of the {@see notificationFromDate}.
-   */
-  private String notificationFromDateMonth;
-
-  /**
-   * The year of the {@see notificationFromDate}.
-   */
-  private String notificationFromDateYear;
-
-  /**
    * The date from which to start the search.
    */
   private String notificationFromDate;
-
-  /**
-   * The day of the {@see notificationToDate}.
-   */
-  private String notificationToDateDay;
-
-  /**
-   * The month of the {@see notificationToDate}.
-   */
-  private String notificationToDateMonth;
-
-  /**
-   * The year of the {@see notificationToDate}.
-   */
-  private String notificationToDateYear;
 
   /**
    * The date to search up to.
@@ -98,24 +68,6 @@ public class NotificationSearchCriteria {
    * the sort field and direction.
    */
   private String sort;
-
-  /**
-   * Retrieves the formatted date to search from.
-   *
-   * @return The formatted from date (yyyy-MM-dd).
-   */
-  public String getDateFrom() {
-    return getDate(notificationFromDateYear, notificationFromDateMonth, notificationFromDateDay);
-  }
-
-  /**
-   * Retrieves the formatted date to search up to.
-   *
-   * @return The formatted to date (yyyy-MM-dd).
-   */
-  public String getDateTo() {
-    return getDate(notificationToDateYear, notificationToDateMonth, notificationToDateDay);
-  }
 
   /**
    * Returns an ISO formatted date based on the day, month, and year values.
@@ -148,13 +100,7 @@ public class NotificationSearchCriteria {
    */
   public static void reset(NotificationSearchCriteria criteria) {
     criteria.setSort("");
-    criteria.setNotificationFromDateDay("");
-    criteria.setNotificationFromDateMonth("");
-    criteria.setNotificationFromDateYear("");
     criteria.setNotificationFromDate("");
-    criteria.setNotificationToDateDay("");
-    criteria.setNotificationToDateMonth("");
-    criteria.setNotificationToDateYear("");
     criteria.setNotificationToDate("");
     criteria.setNotificationType("");
     criteria.setCaseReference("");

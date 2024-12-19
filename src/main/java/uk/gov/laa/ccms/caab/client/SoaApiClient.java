@@ -397,9 +397,9 @@ public class SoaApiClient {
         .ifPresent(param -> queryParams.add("include-closed", String.valueOf(param)));
     Optional.ofNullable(criteria.getNotificationType())
         .ifPresent(notificationType -> queryParams.add("notification-type", notificationType));
-    Optional.ofNullable(criteria.getDateFrom())
+    Optional.ofNullable(criteria.getNotificationFromDate())
         .ifPresent(dateFrom -> queryParams.add("date-from", dateFrom));
-    Optional.ofNullable(criteria.getDateTo())
+    Optional.ofNullable(criteria.getNotificationToDate())
         .ifPresent(dateTo -> queryParams.add("date-to", dateTo));
     Optional.ofNullable(page)
         .ifPresent(param -> queryParams.add("page", String.valueOf(param)));

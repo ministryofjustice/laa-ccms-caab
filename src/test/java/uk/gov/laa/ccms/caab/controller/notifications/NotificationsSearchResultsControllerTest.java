@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.notifications;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -103,7 +104,7 @@ class NotificationsSearchResultsControllerTest {
         this.mockMvc.perform(get("/notifications/search-results")
             .flashAttrs(flashMap)));
 
-    assertTrue(exception.getCause() instanceof CaabApplicationException);
+    assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals("Error retrieving notifications", exception.getCause().getMessage());
 
   }
@@ -176,9 +177,7 @@ class NotificationsSearchResultsControllerTest {
 
   private static NotificationSearchCriteria buildNotificationSearchCritieria() {
     NotificationSearchCriteria criteria = new NotificationSearchCriteria();
-    criteria.setNotificationToDateDay("12");
-    criteria.setNotificationToDateMonth("12");
-    criteria.setNotificationToDateYear("2022");
+    criteria.setNotificationToDate("12/12/2022");
     return criteria;
   }
 }
