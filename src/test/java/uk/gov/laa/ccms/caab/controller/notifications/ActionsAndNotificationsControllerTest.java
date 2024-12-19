@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -258,9 +257,9 @@ class ActionsAndNotificationsControllerTest {
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
-      errors.rejectValue("notificationToDateYear", "invalid.input",
-          "Your date range is invalid."
-              + " Please amend your entry for the year field");
+      errors.rejectValue("notificationToDate",
+          "validation.date.range-exceeds-three-years.error-text",
+          "Your date range is invalid.");
       return null;
     }).when(notificationSearchValidator).validate(any(), any());
 
@@ -268,7 +267,7 @@ class ActionsAndNotificationsControllerTest {
             .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(
-            model().attribute("notificationSearchCriteria", hasProperty("notificationToDateDay")))
+            model().attribute("notificationSearchCriteria", hasProperty("notificationToDate")))
         .andExpect(model().hasErrors())
         .andExpect(forwardedUrl("notifications/actions-and-notifications-search"));
   }
@@ -306,7 +305,7 @@ class ActionsAndNotificationsControllerTest {
             .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(
-            model().attribute("notificationSearchCriteria", hasProperty("notificationToDateDay")))
+            model().attribute("notificationSearchCriteria", hasProperty("notificationToDate")))
         .andExpect(forwardedUrl("notifications/actions-and-notifications-search"));
   }
 
