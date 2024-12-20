@@ -30,9 +30,6 @@ import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
-import uk.gov.laa.ccms.soa.gateway.model.Notification;
-import uk.gov.laa.ccms.soa.gateway.model.Notifications;
-import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
 
 public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
@@ -341,20 +338,6 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     searchCriteria.setOfficeId(345);
     searchCriteria.setClientSurname("clientSurname");
     return searchCriteria;
-  }
-
-  private Notifications buildNotifications() {
-    return new Notifications()
-        .addContentItem(
-            new Notification()
-                .notificationType("N")
-                .user(
-                    new UserDetail()
-                        .userName("testUserName")
-                        .userType("testUserType")
-                        .userLoginId("testUserName")
-                )
-        );
   }
 
 }

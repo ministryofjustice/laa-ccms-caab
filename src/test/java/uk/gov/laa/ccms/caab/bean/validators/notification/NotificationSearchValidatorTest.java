@@ -28,9 +28,6 @@ class NotificationSearchValidatorTest {
   @BeforeEach
   public void setup() {
     criteria = new NotificationSearchCriteria();
-    // Setup notification from/ to date to pass validation by default
-    criteria.setNotificationFromDate("01/01/2023");
-    criteria.setNotificationToDate("01/01/2024");
     errors = new BeanPropertyBindingResult(criteria, "criteria");
   }
 

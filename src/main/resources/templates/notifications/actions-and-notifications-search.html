@@ -8,7 +8,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/notifications/search?notification_type=N}" class="govuk-back-link">Cancel and
+    <a th:href="@{/notifications/search(notification_type='N')}" class="govuk-back-link">Cancel and
       return
       to search results</a>
   </div>
@@ -16,12 +16,8 @@
     <form action="#" th:action="@{/notifications/search}" th:object="${notificationSearchCriteria}"
           method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <!--<span class="govuk-caption-l">Search for notifications</span>
-      <h1 class="govuk-heading-l">
-        Search
-      </h1>-->
       <span class="govuk-caption-l">Search for notifications</span>
-      <h1>Your actions / notifications</h1>
+      <h1 class="govuk-heading-l">Your actions / notifications</h1>
       <div class="govuk-body-l">
         Please enter as many details as you have available in the provided search fields in
         order to find your required action or notification. At least one of the search criteria
@@ -36,20 +32,18 @@
           <div
               th:replace="~{partials/forms :: dropdown('feeEarnerId', 'Fee earner', ${feeEarners}, 'id', 'name', false)}"></div>
 
-          <h2 class="govuk-heading-m">Case information</h2>
-
-          <div
-              th:replace="~{partials/forms :: textInput('providerCaseReference', 'Provider case reference', 'govuk-input--width-20')}"></div>
-          <div
-              th:replace="~{partials/forms :: textInput('caseReference', 'LAA application / case reference', 'govuk-input--width-20')}"></div>
-          <div
-              th:replace="~{partials/forms :: textInput('clientSurname', 'Client surname', 'govuk-input--width-20')}"></div>
-
-          <h2 class="govuk-heading-m">Notification details</h2>
-          <div class="govuk-inset-text">
-            Notifications can only be returned within a date range of 3 years. If no date is
-            provided, only notifications from up to 3 years ago will be returned.
-          </div>
+          <h2 class="govuk-heading-m">Notification dates</h2>
+          <details class="govuk-details">
+            <summary class="govuk-details__summary">
+              <span class="govuk-details__summary-text">
+                Help with notification dates
+              </span>
+            </summary>
+            <div class="govuk-details__text">
+              Notifications can only be returned within a date range of 3 years. If no date is
+              provided, only notifications from up to 3 years ago will be returned.
+            </div>
+          </details>
           <div class="govuk-form-group"
                th:classappend="${#fields.hasErrors('notificationFromDate')} ? 'govuk-form-group--error' : ''">
             <div class="moj-datepicker" data-module="moj-date-picker">
@@ -93,6 +87,18 @@
                      th:errorclass="govuk-select--error">
             </div>
           </div>
+
+          <h2 class="govuk-heading-m">Case information</h2>
+
+          <div
+              th:replace="~{partials/forms :: textInput('providerCaseReference', 'Provider case reference', 'govuk-input--width-20')}"></div>
+          <div
+              th:replace="~{partials/forms :: textInput('caseReference', 'LAA application / case reference', 'govuk-input--width-20')}"></div>
+          <div
+              th:replace="~{partials/forms :: textInput('clientSurname', 'Client surname', 'govuk-input--width-20')}"></div>
+
+          <h2 class="govuk-heading-m">Notification details</h2>
+
           <div
               th:replace="~{partials/forms :: dropdown('notificationType', 'Action / Notification Type', ${notificationTypes}, 'code', 'description', false)}"></div>
           <div class="govuk-form-group">

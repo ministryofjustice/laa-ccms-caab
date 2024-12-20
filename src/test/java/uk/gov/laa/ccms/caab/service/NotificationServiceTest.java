@@ -98,6 +98,8 @@ class NotificationServiceTest {
                 .notificationType("N"));
     NotificationSearchCriteria criteria = new NotificationSearchCriteria();
     criteria.setAssignedToUserId("user1");
+    criteria.setNotificationFromDate("2024-01-01");
+    criteria.setNotificationToDate("2025-01-01");
 
     criteria.setLoginId("user1");
     criteria.setUserType("user1");

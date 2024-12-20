@@ -78,6 +78,12 @@ public class NotificationSearchValidator extends AbstractValidator {
     }
   }
 
+  private boolean dateFullyPopulated(String year, String month, String day) {
+    return StringUtils.hasText(year)
+        && StringUtils.hasText(month)
+        && StringUtils.hasText(day);
+  }
+
   private void validateDateFieldFormats(NotificationSearchCriteria criteria, Errors errors) {
     String dateFromFieldName = "notificationFromDate";
     String dateFromDisplayName = "date from";
@@ -85,38 +91,49 @@ public class NotificationSearchValidator extends AbstractValidator {
     String dateToFieldName = "notificationToDate";
     String dateToDisplayName = "date to";
 
+    boolean fromDateEmpty = criteria.getNotificationFromDate() == null
+        || !StringUtils.hasText(criteria.getNotificationFromDate());
+    boolean toDateEmpty = criteria.getNotificationToDate() == null
+        || !StringUtils.hasText(criteria.getNotificationToDate());
+
     // Validate from
     Date from = null;
-    try {
-      String dateFrom = criteria.getNotificationFromDate();
-      from = validateValidDateField(dateFrom, dateFromFieldName, dateFromDisplayName,
-          DATE_FORMAT, errors);
-    } catch (CaabApplicationException e) {
-      reportInvalidDate(dateFromFieldName, dateFromDisplayName, errors);
+    if (!fromDateEmpty) {
+      try {
+        String dateFrom = criteria.getNotificationFromDate();
+        from = validateValidDateField(dateFrom, dateFromFieldName, dateFromDisplayName,
+            DATE_FORMAT, errors);
+      } catch (CaabApplicationException e) {
+        reportInvalidDate(dateFromFieldName, dateFromDisplayName, errors);
+      }
     }
 
     // Validate to
     Date to = null;
-    try {
-      String dateTo = criteria.getNotificationToDate();
-      to = validateValidDateField(dateTo, dateToFieldName, dateToDisplayName,
-          DATE_FORMAT, errors);
-    } catch (CaabApplicationException e) {
-      reportInvalidDate(dateToFieldName, dateToDisplayName, errors);
+    if (!toDateEmpty) {
+      try {
+        String dateTo = criteria.getNotificationToDate();
+        to = validateValidDateField(dateTo, dateToFieldName, dateToDisplayName,
+            DATE_FORMAT, errors);
+      } catch (CaabApplicationException e) {
+        reportInvalidDate(dateToFieldName, dateToDisplayName, errors);
+      }
     }
 
+    boolean fromInvalid = fromDateEmpty || from == null;
     //  Validate from date is not in the future
-    if (from != null) {
+    if (!fromInvalid) {
       validateDateInPast(from, dateFromFieldName, dateFromDisplayName, errors);
     }
 
+    boolean toInvalid = toDateEmpty || to == null;
     // Validate to date is not in the future
-    if (to != null) {
+    if (!toInvalid) {
       validateDateInPast(to, dateToFieldName, dateToDisplayName, errors);
     }
 
     // Validate that To is after From date
-    if (from != null && to != null) {
+    if (!fromInvalid && !toInvalid) {
       validateFromBeforeToDates(from, dateFromFieldName, to, errors);
       validateLessThanThreeYearsBetweenDates(from, dateToFieldName, to, errors);
     }
@@ -139,7 +156,7 @@ public class NotificationSearchValidator extends AbstractValidator {
       errors.rejectValue(fieldName, "validation.date.range-exceeds-three-years.error-text");
     }
   }
-  
+
   private void validateCaseRef(final String caseRef, Errors errors) {
     if (StringUtils.hasText(caseRef)) {
       //check no double spaces

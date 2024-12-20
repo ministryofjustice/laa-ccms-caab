@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.bean;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
@@ -8,7 +10,30 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
  * Represents the search criteria to search for Notifications.
  */
 @Data
+@NoArgsConstructor
 public class NotificationSearchCriteria {
+
+  /**
+   * Constructs a new NotificationSearchCriteria by copying the values from another
+   * NotificationSearchCriteria instance.
+   *
+   * @param criteria the NotificationSearchCriteria instance from which the values will be copied.
+   *                 Must not be null.
+   */
+  public NotificationSearchCriteria(@NotNull NotificationSearchCriteria criteria) {
+    this.caseReference = criteria.getCaseReference();
+    this.clientSurname = criteria.getClientSurname();
+    this.providerCaseReference = criteria.getProviderCaseReference();
+    this.feeEarnerId = criteria.getFeeEarnerId();
+    this.assignedToUserId = criteria.getAssignedToUserId();
+    this.includeClosed = criteria.isIncludeClosed();
+    this.notificationType = criteria.getNotificationType();
+    this.notificationFromDate = criteria.getNotificationFromDate();
+    this.notificationToDate = criteria.getNotificationToDate();
+    this.loginId = criteria.getLoginId();
+    this.userType = criteria.getUserType();
+    this.sort = criteria.getSort();
+  }
 
   /**
    * The LAA Application/Case Reference.

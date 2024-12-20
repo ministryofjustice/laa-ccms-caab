@@ -24,6 +24,7 @@ import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
 import uk.gov.laa.ccms.caab.util.FileUtil;
+import uk.gov.laa.ccms.caab.util.NotificationSearchUtil;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
@@ -49,7 +50,7 @@ public class NotificationService {
   /**
    * Retrieve the summary of notifications for a given user.
    *
-   * @param loginId  The login identifier for the user.
+   * @param loginId The login identifier for the user.
    * @return A Mono wrapping the NotificationSummary for the specified user.
    */
   public Mono<NotificationSummary> getNotificationsSummary(String loginId) {
@@ -57,7 +58,8 @@ public class NotificationService {
   }
 
   /**
-   * Search and retrieve notifications based on search criteria.
+   * Search and retrieve notifications based on search criteria. Uses
+   * {@link NotificationSearchUtil} to pre-process the criteria.
    *
    * @param searchCriteria The criteria on which to search.
    * @param page           The page number for pagination.
@@ -66,7 +68,8 @@ public class NotificationService {
    */
   public Mono<Notifications> getNotifications(NotificationSearchCriteria searchCriteria,
       final Integer page, final Integer size) {
-    return ebsApiClient.getNotifications(searchCriteria, page, size);
+    return ebsApiClient.getNotifications(
+        NotificationSearchUtil.prepareNotificationSearchCriteria(searchCriteria), page, size);
   }
 
   /**
@@ -112,11 +115,11 @@ public class NotificationService {
    * If the cover sheet with the provided ID does not exist in S3, fetch it from the appropriate
    * data store and upload it.
    *
-   * @param attachmentId      The ID of the notification attachment to retrieve a cover sheet for.
-   * @param loginId           The login identifier for the user.
-   * @param userType          Type of the user (e.g., admin, user).
-   * @param isDraftDocument   Whether the document is a draft document.
-   * @param isCoverSheet      Whether the document is a cover sheet.
+   * @param attachmentId    The ID of the notification attachment to retrieve a cover sheet for.
+   * @param loginId         The login identifier for the user.
+   * @param userType        Type of the user (e.g., admin, user).
+   * @param isDraftDocument Whether the document is a draft document.
+   * @param isCoverSheet    Whether the document is a cover sheet.
    */
   private void retrieveDocument(String attachmentId,
       String loginId, String userType, boolean isDraftDocument, boolean isCoverSheet) {
