@@ -231,7 +231,7 @@ public abstract class AbstractValidator implements Validator {
   }
 
 
-  protected void validateFromAfterToDates(final Date fromDate, final String fieldName,
+  protected void validateFromBeforeToDates(final Date fromDate, final String fieldName,
       final Date toDate, Errors errors) {
     if (!toDate.after(fromDate)) {
       errors.rejectValue(fieldName, "invalid.input",

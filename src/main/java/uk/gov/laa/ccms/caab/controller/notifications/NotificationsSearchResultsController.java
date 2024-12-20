@@ -21,9 +21,9 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.NotificationService;
+import uk.gov.laa.ccms.data.model.Notification;
+import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.Notification;
-import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 
 /**
  * Controller for handling redirects for Notifications and Actions searches.
@@ -54,7 +54,7 @@ public class NotificationsSearchResultsController {
   public String notificationsSearchResults(
       @RequestParam(value = "page", defaultValue = "0") int page,
       @RequestParam(value = "size", defaultValue = "10") int size,
-      @RequestParam(value = "pageSort", defaultValue = "assignDate,asc") String pageSort,
+      @RequestParam(value = "pageSort", defaultValue = "dateAssigned,asc") String pageSort,
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
       @ModelAttribute(USER_DETAILS) UserDetail user,
       HttpServletRequest request,

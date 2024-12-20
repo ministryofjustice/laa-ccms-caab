@@ -12,8 +12,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.data.model.Notification;
 import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
-import uk.gov.laa.ccms.soa.gateway.model.Notification;
 
 class PaginationUtilTest {
 
@@ -31,19 +31,19 @@ class PaginationUtilTest {
 
   @Test
   void testSortAscendingCorrectInPaginationUtil() {
-    final Pageable pageable = PageRequest.of(0, 10, Sort.by("clientReferenceNumber").ascending());
+    final Pageable pageable = PageRequest.of(0, 10, Sort.by("caseReferenceNumber").ascending());
     final List<Notification> notificationList = new ArrayList<>();
-    notificationList.add(new Notification().clientReferenceNumber("12345"));
-    notificationList.add(new Notification().clientReferenceNumber("11234"));
-    notificationList.sort(Comparator.comparing(Notification::getClientReferenceNumber));
+    notificationList.add(new Notification().caseReferenceNumber("12345"));
+    notificationList.add(new Notification().caseReferenceNumber("11234"));
+    notificationList.sort(Comparator.comparing(Notification::getCaseReferenceNumber));
     final Page<Notification> notificationPage = PaginationUtil.paginateList(pageable, notificationList);
     assertEquals(2, notificationPage.getTotalElements());
-    assertEquals("11234", notificationPage.getContent().get(0).getClientReferenceNumber());
+    assertEquals("11234", notificationPage.getContent().get(0).getCaseReferenceNumber());
   }
 
   @Test
   void testSortEmptyListInPaginationUtil() {
-    final Pageable pageable = PageRequest.of(0, 10, Sort.by("clientReferenceNumber").ascending());
+    final Pageable pageable = PageRequest.of(0, 10, Sort.by("caseReferenceNumber").ascending());
     final List<Notification> notificationList = new ArrayList<>();
     final Page<Notification> notificationPage = PaginationUtil.paginateList(pageable, notificationList);
     assertEquals(0, notificationPage.getTotalElements());
@@ -53,8 +53,8 @@ class PaginationUtilTest {
   void testInvalidSortThrowsException() {
     final Pageable pageable = PageRequest.of(0, 10, Sort.by("invalidProperty").ascending());
     final List<Notification> notificationList = new ArrayList<>();
-    notificationList.add(new Notification().clientReferenceNumber("12345"));
-    notificationList.add(new Notification().clientReferenceNumber("11234"));
+    notificationList.add(new Notification().caseReferenceNumber("12345"));
+    notificationList.add(new Notification().caseReferenceNumber("11234"));
     assertThrows(CaabApplicationException.class,
         () -> PaginationUtil.paginateList(pageable, notificationList));
   }

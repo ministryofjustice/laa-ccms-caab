@@ -24,6 +24,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
+import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.BaseOffice;
@@ -35,7 +36,9 @@ import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
+import uk.gov.laa.ccms.data.model.Notification;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
+import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -236,6 +239,33 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
+  public void testGetNotifications_returnsData() throws JsonProcessingException {
+    Notifications notifications = buildNotifications();
+    String notificationsJson = objectMapper.writeValueAsString(notifications);
+
+    NotificationSearchCriteria criteria = new NotificationSearchCriteria();
+    criteria.setAssignedToUserId("testUserId");
+
+    criteria.setLoginId("testUserId");
+    criteria.setUserType("testUserType");
+    int page = 10;
+    int size = 10;
+
+    wiremock.stubFor(
+        get(String.format("/notifications?assigned-to-user-id=%s&include-closed=%s&page=%s&" +
+                "size=%s",
+            criteria.getAssignedToUserId(),
+            criteria.isIncludeClosed(),
+            page,
+            size))
+            .willReturn(okJson(notificationsJson)));
+    Mono<Notifications> notificationsMono =
+        ebsApiClient.getNotifications(criteria, page, size);
+    Notifications response = notificationsMono.block();
+    assertEquals(notifications, response);
+  }
+
+  @Test
   public void testPostAllocateCaseReference_createsNewReference() throws JsonProcessingException {
     // Given
     CaseReferenceSummary expected =
@@ -345,6 +375,20 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
   private NotificationSummary buildUserNotificationSummary() {
     return new NotificationSummary().notifications(5).overdueActions(3).standardActions(7);
+  }
+
+  private Notifications buildNotifications() {
+    return new Notifications()
+        .addContentItem(
+            new Notification()
+                .notificationType("N")
+                .user(
+                    new UserDetail()
+                        .username("testUserName")
+                        .userType("testUserType")
+                        .loginId("testUserName")
+                )
+        );
   }
 
 }

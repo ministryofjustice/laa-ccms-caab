@@ -21,7 +21,6 @@ import org.springframework.test.context.DynamicPropertySource;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
@@ -31,9 +30,6 @@ import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
-import uk.gov.laa.ccms.soa.gateway.model.Notification;
-import uk.gov.laa.ccms.soa.gateway.model.Notifications;
-import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
 
 public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
@@ -139,34 +135,6 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     ClientDetail response = clientMono.block();
 
     assertEquals(clientDetail, response);
-  }
-
-  @Test
-  public void testGetNotifications_returnsData() throws JsonProcessingException {
-    Notifications notifications = buildNotifications();
-    String notificationsJson = objectMapper.writeValueAsString(notifications);
-
-    NotificationSearchCriteria criteria = new NotificationSearchCriteria();
-    criteria.setAssignedToUserId("testUserId");
-
-    criteria.setLoginId("testUserId");
-    criteria.setUserType("testUserType");
-    int page = 10;
-    int size = 10;
-
-    wiremock.stubFor(get(String.format("/notifications?assigned-to-user-id=%s&include-closed=%s&page=%s&" +
-            "size=%s",
-        criteria.getAssignedToUserId(),
-        criteria.isIncludeClosed(),
-        page,
-        size))
-        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(criteria.getLoginId()))
-        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(criteria.getUserType()))
-        .willReturn(okJson(notificationsJson)));
-    Mono<Notifications> notificationsMono =
-        soaApiClient.getNotifications(criteria, page, size);
-    Notifications response = notificationsMono.block();
-    assertEquals(notifications, response);
   }
 
   @Test
@@ -370,20 +338,6 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     searchCriteria.setOfficeId(345);
     searchCriteria.setClientSurname("clientSurname");
     return searchCriteria;
-  }
-
-  private Notifications buildNotifications() {
-    return new Notifications()
-        .addContentItem(
-            new Notification()
-                .notificationType("N")
-                .user(
-                    new UserDetail()
-                        .userName("testUserName")
-                        .userType("testUserType")
-                        .userLoginId("testUserName")
-                )
-        );
   }
 
 }
