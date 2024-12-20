@@ -79,6 +79,37 @@ jobs:
         env:
           AWS_REGION: eu-west-2
 
+  vulnerability-report:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-22.04
+
+    env:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      SNYK_ORG: legal-aid-agency
+      SNYK_TEST_EXCLUDE: build
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Generate Snyk report and upload to LAA Dashboard
+        uses: snyk/actions/gradle@0.4.0
+        continue-on-error: true
+        with:
+          command: monitor
+          args: --org=${SNYK_ORG} --all-projects --exclude=$SNYK_TEST_EXCLUDE
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+      - name: Generate sarif Snyk report
+        uses: snyk/actions/gradle@0.4.0
+        continue-on-error: true
+        with:
+          args: --org=${SNYK_ORG} --all-projects --exclude=$SNYK_TEST_EXCLUDE --sarif-file-output=snyk-report.sarif
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+      - name: Upload result to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: snyk-report.sarif
+
   ecr:
     needs: [ build-test, define-image-tag ]
     runs-on: ubuntu-latest
