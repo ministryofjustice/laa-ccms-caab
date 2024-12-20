@@ -86,6 +86,7 @@ jobs:
     env:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       SNYK_ORG: legal-aid-agency
+      SNYK_TEST_EXCLUDE: build
 
     steps:
       - uses: actions/checkout@v3
@@ -94,14 +95,14 @@ jobs:
         continue-on-error: true
         with:
           command: monitor
-          args: --org=${SNYK_ORG} --all-projects
+          args: --org=${SNYK_ORG} --all-projects --exclude=$SNYK_TEST_EXCLUDE
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
       - name: Generate sarif Snyk report
         uses: snyk/actions/gradle@0.4.0
         continue-on-error: true
         with:
-          args: --org=${SNYK_ORG} --all-projects --sarif-file-output=snyk-report.sarif
+          args: --org=${SNYK_ORG} --all-projects --exclude=$SNYK_TEST_EXCLUDE --sarif-file-output=snyk-report.sarif
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
       - name: Upload result to GitHub Code Scanning
