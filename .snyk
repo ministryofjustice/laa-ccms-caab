@@ -8,5 +8,5 @@ exclude:
     - src/integrationTest
     # [CWE-547] Hardcoded Secret - Legacy code from PUI
     - src/main/java/uk/gov/laa/ccms/caab/opa/security/Encryptor.java
-    # [CWE-352] Cross-Site Request Forgery (CSRF) - To be implemented: Ticket TBC
+    # [CWE-352] Cross-Site Request Forgery (CSRF) - To be implemented: Ticket https://dsdmoj.atlassian.net/browse/CCMSPUI-499
     - src/main/java/uk/gov/laa/ccms/caab/config/SecurityConfiguration.java
