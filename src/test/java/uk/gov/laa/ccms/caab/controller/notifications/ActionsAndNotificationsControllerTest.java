@@ -112,11 +112,6 @@ class ActionsAndNotificationsControllerTest {
         .addContentItem(buildNotification());
   }
 
-  private static uk.gov.laa.ccms.soa.gateway.model.Notifications getNotificationsSoaMock() {
-    return new uk.gov.laa.ccms.soa.gateway.model.Notifications()
-        .addContentItem(buildNotificationSoa());
-  }
-
   private static Notification buildNotification() {
     return new Notification()
         .user(new UserDetail()
@@ -126,17 +121,6 @@ class ActionsAndNotificationsControllerTest {
         .notificationType("N")
         .attachedDocuments(buildAttachedDocuments())
         .uploadedDocuments(buildUploadedDocuments());
-  }
-
-  private static uk.gov.laa.ccms.soa.gateway.model.Notification buildNotificationSoa() {
-    return new uk.gov.laa.ccms.soa.gateway.model.Notification()
-        .user(new uk.gov.laa.ccms.soa.gateway.model.UserDetail()
-            .userLoginId("user1")
-            .userType("user1"))
-        .notificationId("234")
-        .notificationType("N")
-        .attachedDocuments(buildAttachedDocumentsSoa())
-        .uploadedDocuments(buildUploadedDocumentsSoa());
   }
 
   private static List<Document> buildUploadedDocuments() {
@@ -351,7 +335,7 @@ class ActionsAndNotificationsControllerTest {
   @Test
   void testGetNotification() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
-    uk.gov.laa.ccms.soa.gateway.model.Notifications notificationsMock = getNotificationsSoaMock();
+    Notifications notificationsMock = getNotificationsMock();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
     flashMap.put("notificationSearchCriteria", criteria);
@@ -366,7 +350,7 @@ class ActionsAndNotificationsControllerTest {
   @Test
   void testGetNotification_throwsException_whenNotification_notFound() {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
-    uk.gov.laa.ccms.soa.gateway.model.Notifications notificationsMock = getNotificationsSoaMock();
+    Notifications notificationsMock = getNotificationsMock();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
     flashMap.put("notificationSearchCriteria", criteria);
@@ -383,7 +367,7 @@ class ActionsAndNotificationsControllerTest {
   @Test
   void testReturnToNotifications_Data_RedirectsToResultsPage() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
-    uk.gov.laa.ccms.soa.gateway.model.Notifications notificationsMock = getNotificationsSoaMock();
+    Notifications notificationsMock = getNotificationsMock();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("notificationSearchCriteria", criteria);
     mockMvc.perform(get("/notifications")
@@ -525,7 +509,7 @@ class ActionsAndNotificationsControllerTest {
     when(notificationAttachmentUploadValidator.getMaxFileSize())
         .thenReturn(maxFileSize);
 
-    uk.gov.laa.ccms.soa.gateway.model.Notification notification = buildNotificationSoa();
+    Notification notification = buildNotification();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
 
@@ -564,7 +548,7 @@ class ActionsAndNotificationsControllerTest {
     when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
         .thenReturn(Mono.just(notificationAttachmentDetails));
 
-    uk.gov.laa.ccms.soa.gateway.model.Notification notification = buildNotificationSoa();
+    Notification notification = buildNotification();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
     flashMap.put("attachmentUploadFormData", attachmentUploadFormData);
@@ -606,7 +590,7 @@ class ActionsAndNotificationsControllerTest {
     when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
         .thenReturn(Mono.just(notificationAttachmentDetails));
 
-    uk.gov.laa.ccms.soa.gateway.model.Notification notification = buildNotificationSoa();
+    Notification notification = buildNotification();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
     flashMap.put("attachmentUploadFormData", attachmentUploadFormData);
@@ -652,7 +636,7 @@ class ActionsAndNotificationsControllerTest {
     when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
         .thenReturn(Mono.just(notificationAttachmentDetails));
 
-    uk.gov.laa.ccms.soa.gateway.model.Notification notification = buildNotificationSoa();
+    Notification notification = buildNotification();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
     flashMap.put("attachmentUploadFormData", attachmentUploadFormData);
@@ -674,7 +658,7 @@ class ActionsAndNotificationsControllerTest {
   void testGetProvideDocumentsOrEvidence_populatesDraftAttachments_andDisplaysPage()
       throws Exception {
 
-    uk.gov.laa.ccms.soa.gateway.model.Notification notification = buildNotificationSoa();
+    Notification notification = buildNotification();
 
     BaseNotificationAttachmentDetail baseNotificationAttachment =
         new BaseNotificationAttachmentDetail();
@@ -702,8 +686,11 @@ class ActionsAndNotificationsControllerTest {
         userDetails.getUserId())).thenReturn(Mono.just(notificationAttachmentDetails));
     when(notificationService.getDraftDocumentLinks(List.of(baseNotificationAttachment))).thenReturn(draftDocumentLinks);
     when(notificationService.getDocumentLinks(notification.getUploadedDocuments())).thenReturn(documentLinks);
-    when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification.getUploadedDocuments().getFirst(), "Test Document"))
+    when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
+        any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
         .thenReturn(new BaseNotificationAttachmentDetail());
+    //when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification.getUploadedDocuments().getFirst(), "Test Document"))
+    //    .thenReturn(new BaseNotificationAttachmentDetail());
 
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
@@ -727,7 +714,7 @@ class ActionsAndNotificationsControllerTest {
   void testPostProvideDocumentsOrEvidence_submitsDraftAttachments_andDisplaysPage()
       throws Exception {
 
-    uk.gov.laa.ccms.soa.gateway.model.Notification notification = buildNotificationSoa();
+    Notification notification = buildNotification();
 
     BaseNotificationAttachmentDetail baseNotificationAttachment =
         new BaseNotificationAttachmentDetail();
@@ -740,8 +727,11 @@ class ActionsAndNotificationsControllerTest {
     when(notificationService.getDraftNotificationAttachments(notification.getNotificationId(),
         userDetails.getUserId())).thenReturn(Mono.just(notificationAttachmentDetails));
 
-    when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification.getUploadedDocuments().getFirst(), "Test Document"))
+    when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
+        any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
         .thenReturn(new BaseNotificationAttachmentDetail());
+    /*when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification.getUploadedDocuments().getFirst(), "Test Document"))
+        .thenReturn(new BaseNotificationAttachmentDetail());*/
 
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
@@ -761,7 +751,7 @@ class ActionsAndNotificationsControllerTest {
   void testPostProvideDocumentsOrEvidence_noDocumentsToSubmit()
       throws Exception {
 
-    uk.gov.laa.ccms.soa.gateway.model.Notification notification = buildNotificationSoa();
+    Notification notification = buildNotification();
 
     NotificationAttachmentDetails notificationAttachmentDetails =
         new NotificationAttachmentDetails();
@@ -780,8 +770,11 @@ class ActionsAndNotificationsControllerTest {
 
     when(notificationService.getDraftNotificationAttachments(notification.getNotificationId(),
         userDetails.getUserId())).thenReturn(Mono.just(notificationAttachmentDetails));
-    when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification.getUploadedDocuments().getFirst(), "Test Document"))
+    when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
+        any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
         .thenReturn(new BaseNotificationAttachmentDetail());
+    /*when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification.getUploadedDocuments().getFirst(), "Test Document"))
+        .thenReturn(new BaseNotificationAttachmentDetail());*/
 
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
@@ -801,15 +794,16 @@ class ActionsAndNotificationsControllerTest {
   @Test
   void testGetNotification_populatesDocumentUrls() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
-    uk.gov.laa.ccms.soa.gateway.model.Notifications notificationsMock = getNotificationsSoaMock();
+    Notifications notificationsMock = getNotificationsMock();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
     flashMap.put("notificationSearchCriteria", criteria);
     flashMap.put("notificationsSearchResults", notificationsMock);
 
-    List<uk.gov.laa.ccms.soa.gateway.model.Document> documents = buildAttachedDocumentsSoa();
+    List<Document> documents = buildAttachedDocuments();
 
     when(notificationService.getDocumentLinks(documents)).thenReturn(Map.of("567", "doc-url"));
+    //when(notificationService.getDocumentLinks(documents)).thenReturn(Map.of("567", "doc-url"));
 
     mockMvc.perform(get("/notifications/234")
             .flashAttrs(flashMap))

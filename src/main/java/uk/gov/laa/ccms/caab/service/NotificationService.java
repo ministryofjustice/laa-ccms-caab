@@ -238,8 +238,6 @@ public class NotificationService {
 
     if (notificationAttachmentDetails != null && !notificationAttachmentDetails.isEmpty()) {
 
-      // Upload documents to EBS
-
       Flux.fromStream(notificationAttachmentDetails.stream()
               .map(notificationAttachmentMapper::toDocument)
               .map(document -> soaApiClient.uploadDocument(document, notificationId,
@@ -373,9 +371,9 @@ public class NotificationService {
    * @param documents The list of uploaded documents for which to generate access URLs.
    * @return a map of document ID / URL pairs.
    */
-  public Map<String, String> getDocumentLinks(List<Document> documents) {
+  public Map<String, String> getDocumentLinks(List<uk.gov.laa.ccms.data.model.Document> documents) {
     List<String> documentIds = documents.stream()
-        .map(Document::getDocumentId)
+        .map(uk.gov.laa.ccms.data.model.Document::getDocumentId)
         .toList();
     return getDocumentLinks(documentIds, false);
   }

@@ -316,9 +316,9 @@ class NotificationServiceTest {
 
   @Test
   void getDocumentLinks_success() {
-    List<Document> documents = List.of(
-        new Document().documentId("1"),
-        new Document().documentId("2")
+    List<uk.gov.laa.ccms.data.model.Document> documents = List.of(
+        new uk.gov.laa.ccms.data.model.Document().documentId("1"),
+        new uk.gov.laa.ccms.data.model.Document().documentId("2")
     );
 
     when(s3ApiClient.getDocumentUrl("1")).thenReturn(Optional.of("link 1"));
