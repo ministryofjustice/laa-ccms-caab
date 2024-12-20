@@ -79,6 +79,8 @@ jobs:
           npm install -g snyk-delta
       - name: Identify new vulnerabilities
         run: ./snyk/snyk_delta_all_projects.sh --org=$SNYK_ORG
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
       - name: Run code test
         uses: snyk/actions/gradle@0.4.0
         with:
