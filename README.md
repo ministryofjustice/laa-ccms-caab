@@ -360,3 +360,19 @@ vulnerabilities, this plugin will also report code quality issues.
 The [.snyk](.snyk) file is used to configure exclusions for scanning. If a vulnerability is not
 deemed to be a threat, or will be dealt with later, it can be added here to stop the pipeline
 failing. See [documentation](https://docs.snyk.io/manage-risk/policies/the-.snyk-file) for more details.
+
+### False Positives
+
+Snyk may report that new vulnerabilities have been introduced on a feature branch and fail the
+pipeline, even if this is not the case. As newly identified vulnerabilities are always being
+published, the report for the main branch may become outdated when a new vulnerability is published.
+
+If you think this may be the case, simply re-run the `monitor` command against the `main` branch
+to update the report on the Snyk server, then re-run your pipeline.
+
+```shell
+snyk monitor --org=legal-aid-agency --all-projects
+```
+
+You should then see the new vulnerability in the LAA Dashboard, otherwise it is a new
+vulnerability introduced on the feature branch that needs to be resolved.
