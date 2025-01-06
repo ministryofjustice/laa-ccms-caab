@@ -1,6 +1,6 @@
 {
   "devDependencies": {
-    "@ministryofjustice/frontend": "^3.2.1",
+    "@ministryofjustice/frontend": "^3.3.0",
     "govuk-frontend": "^5.7.1",
     "gulp": "^5.0.0",
     "gulp-autoprefixer": "^9.0.0",
@@ -10,6 +10,6 @@
     "gulp-replace": "^1.1.4",
     "gulp-sass": "^6.0.0",
     "gulp-uglify": "^3.0.2",
-    "sass": "^1.83.0"
+    "sass": "^1.83.1"
   }
 }
