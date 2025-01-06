@@ -110,10 +110,10 @@ jobs:
                    else .
                    end
                )
-          ' > snyk-report.sarif
+          ' > snyk-report-cleansed.sarif
       - name: Upload result to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: snyk-report.sarif
+          sarif_file: snyk-report-cleansed.sarif
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
