@@ -15,7 +15,7 @@ import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 @Slf4j
 public class NotificationSearchUtil {
 
-  public static final DateTimeFormatter MOJ_DATE_PICKER = DateTimeFormatter.ofPattern("d/MM/yyyy");
+  public static final DateTimeFormatter MOJ_DATE_PICKER = DateTimeFormatter.ofPattern("d/M/yyyy");
   public static final DateTimeFormatter ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
 

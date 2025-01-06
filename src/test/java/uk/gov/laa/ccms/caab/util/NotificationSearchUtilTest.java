@@ -11,7 +11,7 @@ import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 class NotificationSearchUtilTest {
 
   String toMojStringDate(LocalDate localDate) {
-    return localDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+    return localDate.format(java.time.format.DateTimeFormatter.ofPattern("d/M/yyyy"));
   }
 
   String toResultStringDate(LocalDate localDate) {
