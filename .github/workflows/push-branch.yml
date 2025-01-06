@@ -100,11 +100,11 @@ jobs:
               |= (
                   if .properties["security-severity"] == "undefined"
                   then .properties["security-severity"] =
-                   (  if .shortDescription.text | test("(?i)critical") then "critical"
-                      elif .shortDescription.text | test("(?i)high") then "high"
-                      elif .shortDescription.text | test("(?i)medium") then "medium"
-                      elif .shortDescription.text | test("(?i)low") then "low"
-                      else "undefined"
+                   (  if .shortDescription.text | test("(?i)critical") then "9.0"
+                      elif .shortDescription.text | test("(?i)high") then "7.0"
+                      elif .shortDescription.text | test("(?i)medium") then "4.0"
+                      elif .shortDescription.text | test("(?i)low") then "0.1"
+                      else ""
                       end
                    )
                    else .
