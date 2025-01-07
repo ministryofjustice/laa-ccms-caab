@@ -66,12 +66,12 @@ public class ApplicationTypeSectionController {
   /**
    * Processes the user's delegated functions selection and redirects accordingly.
    *
-   * @param applicationId The id of the application
-   * @param user The details of the active user
+   * @param applicationId       The id of the application
+   * @param user                The details of the active user
    * @param applicationFormData The details of the current application.
-   * @param bindingResult Validation result for the delegated functions form.
+   * @param bindingResult       Validation result for the delegated functions form.
    * @return The path to the next step in the application summary edit or the current page based on
-   *         validation.
+   * validation.
    */
   @PostMapping("/application/sections/application-type")
   public String delegatedFunction(
@@ -82,9 +82,7 @@ public class ApplicationTypeSectionController {
     delegatedFunctionsValidator.validate(applicationFormData, bindingResult);
 
     if (!applicationFormData.isDelegatedFunctions()) {
-      applicationFormData.setDelegatedFunctionUsedDay(null);
-      applicationFormData.setDelegatedFunctionUsedMonth(null);
-      applicationFormData.setDelegatedFunctionUsedYear(null);
+      applicationFormData.setDelegatedFunctionUsedDate(null);
     }
 
     if (bindingResult.hasErrors()) {
@@ -95,7 +93,6 @@ public class ApplicationTypeSectionController {
 
     return "redirect:/application/sections";
   }
-
 
 
 }

@@ -1892,9 +1892,7 @@ class ApplicationServiceTest {
     applicationFormData.setExceptionalFunding(false);
     applicationFormData.setApplicationTypeCategory(APP_TYPE_SUBSTANTIVE);
     applicationFormData.setDelegatedFunctions(true);
-    applicationFormData.setDelegatedFunctionUsedDay("01");
-    applicationFormData.setDelegatedFunctionUsedMonth("01");
-    applicationFormData.setDelegatedFunctionUsedYear("2022");
+    applicationFormData.setDelegatedFunctionUsedDate("01/01/2022");
     return applicationFormData;
   }
   @Test
