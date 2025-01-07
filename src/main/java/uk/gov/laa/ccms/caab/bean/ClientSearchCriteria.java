@@ -2,8 +2,9 @@ package uk.gov.laa.ccms.caab.bean;
 
 
 import java.io.Serializable;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import lombok.Data;
-import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 /**
@@ -25,18 +26,7 @@ public class ClientSearchCriteria implements Serializable {
   /**
    * The day of birth of the client.
    */
-  String dobDay;
-
-  /**
-   * The month of birth of the client.
-   */
-  String dobMonth;
-
-  /**
-   * The year of birth of the client.
-   */
-  String dobYear;
-
+  String dateOfBirth;
   /**
    * The gender of the client.
    */
@@ -58,14 +48,14 @@ public class ClientSearchCriteria implements Serializable {
    * @return The formatted date of birth (yyyy-MM-dd), or null if the date components are not valid
    *         integers.
    */
-  public String getDateOfBirth() {
-    try {
-      int year = Integer.parseInt(dobYear);
-      int month = Integer.parseInt(dobMonth);
-      int day = Integer.parseInt(dobDay);
+  public String getDoB() {
 
-      return String.format("%d-%02d-%02d", year, month, day);
-    } catch (NumberFormatException e) {
+    try {
+      DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("d/M/yyyy");
+      LocalDate date = LocalDate.parse(dateOfBirth, inputFormatter);
+      return date.toString();
+
+    } catch (Exception e) {
       // Handle the exception if any of the dobYear, dobMonth, or dobDay is not a valid integer
       throw new CaabApplicationException("Unable to format date of birth", e);
     }

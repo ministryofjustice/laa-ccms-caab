@@ -109,7 +109,7 @@ public class SoaApiClient {
         .ifPresent(forename -> queryParams.add("first-name", forename));
     Optional.ofNullable(clientSearchCriteria.getSurname())
         .ifPresent(surname -> queryParams.add("surname", surname));
-    Optional.ofNullable(clientSearchCriteria.getDateOfBirth())
+    Optional.ofNullable(clientSearchCriteria.getDoB())
         .ifPresent(dateOfBirth -> queryParams.add("date-of-birth", dateOfBirth));
     Optional.ofNullable(clientSearchCriteria.getUniqueIdentifier(
         UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE))
