@@ -560,7 +560,7 @@ public class SoaApiClient {
    * @param userType              Type of the user (e.g., admin, user).
    * @return A Mono wrapping the retrieved {@link Document} with file content.
    */
-  public Mono<uk.gov.laa.ccms.soa.gateway.model.Document> downloadDocument(
+  public Mono<Document> downloadDocument(
       final String documentId,
       final String loginId,
       final String userType) {
@@ -570,7 +570,7 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .retrieve()
-        .bodyToMono(uk.gov.laa.ccms.soa.gateway.model.Document.class)
+        .bodyToMono(Document.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
             e, "Document", "id", documentId));
   }

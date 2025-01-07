@@ -78,11 +78,6 @@ public class NotificationSearchValidator extends AbstractValidator {
     }
   }
 
-  private boolean dateFullyPopulated(String year, String month, String day) {
-    return StringUtils.hasText(year)
-        && StringUtils.hasText(month)
-        && StringUtils.hasText(day);
-  }
 
   private void validateDateFieldFormats(NotificationSearchCriteria criteria, Errors errors) {
     String dateFromFieldName = "notificationFromDate";

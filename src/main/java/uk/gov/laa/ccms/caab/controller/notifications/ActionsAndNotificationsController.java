@@ -578,20 +578,16 @@ public class ActionsAndNotificationsController {
       Map<String, String> documentTypes) {
     return notification
         .getUploadedDocuments().stream()
-        // Temp
-        .map(document -> {
-          Document soaDocument = new Document();
-          soaDocument.setDocumentId(document.getDocumentId());
-          soaDocument.setChannel(document.getChannel());
-          soaDocument.setDocumentLink(document.getDocumentLink());
-          soaDocument.setFileData(document.getFileData());
-          soaDocument.setStatus(document.getStatus());
-          soaDocument.setStatusDescription(document.getStatusDescription());
-          soaDocument.setFileExtension(document.getFileExtension());
-          soaDocument.setText(document.getText());
-          soaDocument.setDocumentType(document.getDocumentType());
-          return soaDocument;
-        })
+        .map(document -> new Document()
+            .documentId(document.getDocumentId())
+            .channel(document.getChannel())
+            .documentLink(document.getDocumentLink())
+            .fileData(document.getFileData())
+            .status(document.getStatus())
+            .statusDescription(document.getStatusDescription())
+            .fileExtension(document.getFileExtension())
+            .text(document.getText())
+            .documentType(document.getDocumentType()))
         .map(document -> notificationAttachmentMapper.toBaseNotificationAttachmentDetail(document,
             documentTypes.get(document.getDocumentType())))
         .map(notificationAttachment -> notificationAttachment.status("Submitted"))
