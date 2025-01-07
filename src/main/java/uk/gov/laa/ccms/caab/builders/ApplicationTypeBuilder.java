@@ -11,8 +11,10 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBST
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS_DISPLAY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DISPLAY;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 
@@ -34,7 +36,7 @@ public class ApplicationTypeBuilder {
    * Builder method for application type.
    *
    * @param applicationTypeCategory the category selected for the application type.
-   * @param isDelegatedFunctions the boolean whether delegate functions used.
+   * @param isDelegatedFunctions    the boolean whether delegate functions used.
    * @return the builder with amended contract flag.
    */
   public ApplicationTypeBuilder applicationType(
@@ -69,14 +71,16 @@ public class ApplicationTypeBuilder {
    */
   public ApplicationTypeBuilder devolvedPowers(
       final boolean isDelegatedFunctions,
-      final String date) throws ParseException {
+      final String date) {
 
     DevolvedPowersDetail devolvedPowers = new DevolvedPowersDetail();
     devolvedPowers.setUsed(isDelegatedFunctions);
 
     if (isDelegatedFunctions) {
-      SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-      devolvedPowers.setDateUsed(sdf.parse(date));
+      DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("d/M/yyyy");
+      LocalDate dateUsed = LocalDate.parse(date, inputFormatter);
+      devolvedPowers.setDateUsed(
+          Date.from(dateUsed.atStartOfDay(ZoneId.systemDefault()).toInstant()));
     }
 
     applicationType.setDevolvedPowers(devolvedPowers);

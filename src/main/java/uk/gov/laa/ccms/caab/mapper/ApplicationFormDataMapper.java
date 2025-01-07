@@ -49,7 +49,7 @@ public interface ApplicationFormDataMapper {
     LocalDate localDate = dateUsed.toInstant()
         .atZone(ZoneId.systemDefault())
         .toLocalDate();
-    return localDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+    return localDate.format(DateTimeFormatter.ofPattern("d/M/yyyy"));
   }
 
 }
