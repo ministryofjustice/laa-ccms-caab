@@ -54,7 +54,7 @@ public class ApplicationTypeBuilderTest {
     devolvedPowers.setUsed(true);
     devolvedPowers.setDateUsed(sdf.parse("01-01-2022"));
 
-    ApplicationType result = builder.devolvedPowers(true, "01", "01", "2022").build();
+    ApplicationType result = builder.devolvedPowers(true, "01/01/2022").build();
     assertEquals(devolvedPowers, result.getDevolvedPowers());
   }
 

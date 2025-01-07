@@ -33,14 +33,8 @@ public class DelegatedFunctionsValidator extends AbstractValidator {
     ApplicationFormData applicationFormData = (ApplicationFormData) target;
 
     if (applicationFormData.isDelegatedFunctions()) {
-      validateNumericField("delegatedFunctionUsedDay",
-          applicationFormData.getDelegatedFunctionUsedDay(), "the day", errors);
-
-      validateNumericField("delegatedFunctionUsedMonth",
-          applicationFormData.getDelegatedFunctionUsedMonth(), "the month", errors);
-
-      validateNumericField("delegatedFunctionUsedYear",
-          applicationFormData.getDelegatedFunctionUsedYear(), "the year", errors);
+      validateValidDateField(applicationFormData.getDelegatedFunctionUsedDate(),
+          "delegatedFunctionUsedDate", "the date", "dd/MM/yyyy", errors);
     }
   }
 }

@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.mapper;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -19,15 +20,9 @@ public interface ApplicationFormDataMapper {
 
   @Mapping(target = "applicationTypeCategory", source = "id")
   @Mapping(target = "delegatedFunctions", source = "devolvedPowers.used")
-  @Mapping(target = "delegatedFunctionUsedDay",
+  @Mapping(target = "delegatedFunctionUsedDate",
       source = "devolvedPowers.dateUsed",
-      qualifiedByName = "mapDevolvedPowersDay")
-  @Mapping(target = "delegatedFunctionUsedMonth",
-      source = "devolvedPowers.dateUsed",
-      qualifiedByName = "mapDevolvedPowersMonth")
-  @Mapping(target = "delegatedFunctionUsedYear",
-      source = "devolvedPowers.dateUsed",
-      qualifiedByName = "mapDevolvedPowersYear")
+      qualifiedByName = "mapDevolvedPowersDate")
   @Mapping(target = "devolvedPowersContractFlag",
       source = "devolvedPowers.contractFlag")
   ApplicationFormData toApplicationTypeFormData(ApplicationType applicationType);
@@ -46,42 +41,15 @@ public interface ApplicationFormDataMapper {
    * @param dateUsed The Date to translate.
    * @return Translated day string.
    */
-  @Named("mapDevolvedPowersDay")
-  default String mapDevolvedPowersDay(Date dateUsed) {
-    if (dateUsed != null) {
-      LocalDate localDate = dateUsed.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-      return Integer.toString(localDate.getDayOfMonth());
+  @Named("mapDevolvedPowersDate")
+  default String mapDevolvedPowersDate(Date dateUsed) {
+    if (dateUsed == null) {
+      return null;
     }
-    return null;
+    LocalDate localDate = dateUsed.toInstant()
+        .atZone(ZoneId.systemDefault())
+        .toLocalDate();
+    return localDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
   }
 
-  /**
-   * Translates Date into a month string.
-   *
-   * @param dateUsed The Date to translate.
-   * @return Translated month string.
-   */
-  @Named("mapDevolvedPowersMonth")
-  default String mapDevolvedPowersMonth(Date dateUsed) {
-    if (dateUsed != null) {
-      LocalDate localDate = dateUsed.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-      return Integer.toString(localDate.getMonthValue());
-    }
-    return null;
-  }
-
-  /**
-   * Translates Date into a year string.
-   *
-   * @param dateUsed The Date to translate.
-   * @return Translated year string.
-   */
-  @Named("mapDevolvedPowersYear")
-  default String mapDevolvedPowersYear(Date dateUsed) {
-    if (dateUsed != null) {
-      LocalDate localDate = dateUsed.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-      return Integer.toString(localDate.getYear());
-    }
-    return null;
-  }
 }

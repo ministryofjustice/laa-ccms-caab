@@ -65,24 +65,18 @@ public class ApplicationTypeBuilder {
    * Builder method for devolved powers.
    *
    * @param isDelegatedFunctions the boolean whether delegate functions used.
-   * @param day the day when the delegate function was used.
-   * @param month the month when the delegate function was used.
-   * @param year the year when the delegate function was used.
    * @return the builder with amended contract flag.
    */
   public ApplicationTypeBuilder devolvedPowers(
       final boolean isDelegatedFunctions,
-      final String day,
-      final String month,
-      final String year) throws ParseException {
+      final String date) throws ParseException {
 
     DevolvedPowersDetail devolvedPowers = new DevolvedPowersDetail();
     devolvedPowers.setUsed(isDelegatedFunctions);
 
     if (isDelegatedFunctions) {
-      String dateString = day + "-" + month + "-" + year;
       SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-      devolvedPowers.setDateUsed(sdf.parse(dateString));
+      devolvedPowers.setDateUsed(sdf.parse(date));
     }
 
     applicationType.setDevolvedPowers(devolvedPowers);
