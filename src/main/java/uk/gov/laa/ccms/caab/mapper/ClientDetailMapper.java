@@ -1,8 +1,5 @@
 package uk.gov.laa.ccms.caab.mapper;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -19,6 +16,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
+import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
@@ -125,10 +123,7 @@ public interface ClientDetailMapper {
     if (basicDetails == null) {
       return null;
     }
-    DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("d/M/yyyy");
-    LocalDate localDate = LocalDate.parse(basicDetails.getDateOfBirth(), inputFormatter);
-
-    return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    return DateUtils.convertToDate(basicDetails.getDateOfBirth());
   }
 
   @Mapping(target = "contactDetails", source = "contacts")
@@ -177,7 +172,7 @@ public interface ClientDetailMapper {
   }
 
   @Mapping(target = "basicDetails.dateOfBirth", source = "personalInformation.dateOfBirth",
-      qualifiedByName = "mapDayFromDate")
+      qualifiedByName = "mapComponentDateFromDate")
   @Mapping(target = "basicDetails.mentalIncapacity",
       source = "personalInformation.mentalCapacityInd")
   void addClientFormDataBasicDetailsFromClientPersonalDetail(
@@ -206,7 +201,7 @@ public interface ClientDetailMapper {
   @Named("mapListToString")
   default String mapListToString(List<String> values) {
     if (values != null && !values.isEmpty()) {
-      return values.get(0);
+      return values.getFirst();
     }
     return null;
   }
@@ -217,13 +212,12 @@ public interface ClientDetailMapper {
    * @param date The date to convert
    * @return Translated String value.
    */
-  @Named("mapDayFromDate")
-  default String mapDayFromDate(Date date) {
+  @Named("mapComponentDateFromDate")
+  default String mapComponentDateFromDate(Date date) {
     if (date == null) {
       return null;
     }
-    final LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-    return localDate.format(DateTimeFormatter.ofPattern("d/M/yyyy"));
+    return DateUtils.convertToComponentDate(date);
   }
 
 }

@@ -2,10 +2,9 @@ package uk.gov.laa.ccms.caab.bean;
 
 
 import java.io.Serializable;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import lombok.Data;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.util.DateUtils;
 
 /**
  * Represents the details used for client search.
@@ -49,14 +48,9 @@ public class ClientSearchCriteria implements Serializable {
    *         integers.
    */
   public String getDoB() {
-
     try {
-      DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("d/M/yyyy");
-      LocalDate date = LocalDate.parse(dateOfBirth, inputFormatter);
-      return date.toString();
-
+      return DateUtils.convertToDateString(dateOfBirth);
     } catch (Exception e) {
-      // Handle the exception if any of the dobYear, dobMonth, or dobDay is not a valid integer
       throw new CaabApplicationException("Unable to format date of birth", e);
     }
   }
