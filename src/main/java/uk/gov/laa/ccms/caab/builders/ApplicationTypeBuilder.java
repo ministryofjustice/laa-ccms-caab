@@ -17,6 +17,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
+import uk.gov.laa.ccms.caab.util.DateUtils;
 
 /**
  * Helper class for constructing an {@link ApplicationType} instance using a builder pattern.
@@ -77,13 +78,10 @@ public class ApplicationTypeBuilder {
     devolvedPowers.setUsed(isDelegatedFunctions);
 
     if (isDelegatedFunctions) {
-      DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("d/M/yyyy");
-      LocalDate dateUsed = LocalDate.parse(date, inputFormatter);
-      devolvedPowers.setDateUsed(
-          Date.from(dateUsed.atStartOfDay(ZoneId.systemDefault()).toInstant()));
+      devolvedPowers.setDateUsed(DateUtils.convertToDate(date));
     }
-
     applicationType.setDevolvedPowers(devolvedPowers);
+
     return this;
   }
 

@@ -10,6 +10,7 @@ import org.mapstruct.Named;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.util.DateUtils;
 
 /**
  * Maps between ApplicationFormData and ApplicationType models. Requires the
@@ -46,10 +47,7 @@ public interface ApplicationFormDataMapper {
     if (dateUsed == null) {
       return null;
     }
-    LocalDate localDate = dateUsed.toInstant()
-        .atZone(ZoneId.systemDefault())
-        .toLocalDate();
-    return localDate.format(DateTimeFormatter.ofPattern("d/M/yyyy"));
+    return DateUtils.convertToComponentDate(dateUsed);
   }
 
 }
