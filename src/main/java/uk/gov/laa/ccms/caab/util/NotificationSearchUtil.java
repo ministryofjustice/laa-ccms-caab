@@ -31,7 +31,7 @@ public class NotificationSearchUtil {
    * @return the updated NotificationSearchCriteria object with adjusted date fields
    */
   public static NotificationSearchCriteria
-  prepareNotificationSearchCriteria(NotificationSearchCriteria criteria) {
+      prepareNotificationSearchCriteria(NotificationSearchCriteria criteria) {
     NotificationSearchCriteria copyCriteria = new NotificationSearchCriteria(criteria);
 
     boolean fromNotSet = copyCriteria.getNotificationFromDate() == null
