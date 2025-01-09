@@ -48,14 +48,13 @@ public class ApplicationTypeSectionController {
    * Handles the GET request for the application type section of application summary.
    *
    * @param applicationId The id of the application
-   * @param model The model for the view.
+   * @param model         The model for the view.
    * @return The view name for the application summary page.
    */
   @GetMapping("/application/sections/application-type")
   public String applicationSummaryApplicationType(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
-      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
-      Model model) {
+      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData, Model model) {
 
     applicationFormData = applicationService.getApplicationTypeFormData(applicationId);
     model.addAttribute(APPLICATION_FORM_DATA, applicationFormData);
@@ -71,7 +70,7 @@ public class ApplicationTypeSectionController {
    * @param applicationFormData The details of the current application.
    * @param bindingResult       Validation result for the delegated functions form.
    * @return The path to the next step in the application summary edit or the current page based on
-   * validation.
+   *         validation.
    */
   @PostMapping("/application/sections/application-type")
   public String delegatedFunction(
