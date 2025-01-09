@@ -15,7 +15,7 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.i18n.FixedLocaleResolver;
-import org.springframework.web.servlet.resource.WebJarsResourceResolver;
+import org.springframework.web.servlet.resource.LiteWebJarsResourceResolver;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import uk.gov.laa.ccms.caab.util.UserRoleUtil;
@@ -58,7 +58,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
         .addResourceHandler("/webjars/**")
         .addResourceLocations("classpath:/META-INF/resources/webjars/")
         .resourceChain(true)
-        .addResolver(new WebJarsResourceResolver());
+        .addResolver(new LiteWebJarsResourceResolver());
   }
 
   /**
