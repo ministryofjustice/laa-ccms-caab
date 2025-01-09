@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.bean.validators.application;
 
 import static org.springframework.util.StringUtils.hasText;
+import static uk.gov.laa.ccms.caab.util.DateUtils.COMPONENT_DATE_PATTERN;
 
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
@@ -36,11 +37,14 @@ public class DelegatedFunctionsValidator extends AbstractValidator {
     ApplicationFormData applicationFormData = (ApplicationFormData) target;
     if (applicationFormData.isDelegatedFunctions()) {
       ValidationUtils.rejectIfEmpty(errors, "delegatedFunctionUsedDate",
-          "required.delegatedFunctionUsedDate", "Please complete 'the date'");
+          "required.delegatedFunctionUsedDate",
+          "Please complete when the delegated function was used?");
 
       if (hasText(applicationFormData.getDelegatedFunctionUsedDate())) {
         validateValidDateField(applicationFormData.getDelegatedFunctionUsedDate(),
-            "delegatedFunctionUsedDate", "the date", "dd/MM/yyyy", errors);
+            "delegatedFunctionUsedDate", "when the delegated function was used?",
+            COMPONENT_DATE_PATTERN,
+            errors);
       }
     }
   }
