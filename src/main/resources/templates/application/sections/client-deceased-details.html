@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
-      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html" xmlns:moj="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
   <title>LAA CCMS - Create application</title>
 </head>
@@ -22,39 +22,23 @@
         death, and click 'Confirm', otherwise click 'Cancel and return to amend client' to return
         to the summary page
       </p>
-      <div class="govuk-form-group" th:classappend="${#fields.hasErrors('dateOfDeath') || #fields.hasErrors('dodDay')|| #fields.hasErrors('dodYear')|| #fields.hasErrors('dodYear')} ? 'govuk-form-group--error' : ''">
-        <fieldset class="govuk-fieldset" role="group" aria-describedby="date-of-death-hint date-of-death-error">
-          <legend class="govuk-fieldset__legend">
-            <h1 class="govuk-fieldset__heading">
-              When was your client's death registered?
-            </h1>
-          </legend>
-          <div id="date-of-death-hint" class="govuk-hint">
-            For example, 27 3 2007
-          </div>
-          <p id="date-of-death-error" class="govuk-error-message">
-          <span th:each="error : ${#fields.detailedErrors()}">
-              <span th:inline="text" th:if="${error.fieldName == 'dodDay' || error.fieldName == 'dodMonth' || error.fieldName == 'dodYear'}">
-                  <span th:utext="${error.message + '<br>'}"></span>
-              </span>
-          </span>
-          </p>
-          <div class="govuk-date-input" id="dateOfDeath">
-            <div th:replace="partials/forms::numericInput('dodDay', 'Day', '2')"></div>
-            <div th:replace="partials/forms::numericInput('dodMonth', 'Month', '2')"></div>
-            <div th:replace="partials/forms::numericInput('dodYear', 'Year', '4')"></div>
-          </div>
-        </fieldset>
-      </div>
+
+      <moj:datepicker
+              id="dod"
+              name="dateOfDeath"
+              th:label="#{client.deceased.dod.label}"
+              th:hint="#{client.deceased.dod.hint}"
+              th:errorMessage="${#fields.hasErrors('dateOfDeath') ? #fields.errors('dateOfDeath').getFirst() : ''}"
+              th:value="*{__${'dateOfDeath'}__}">
+      </moj:datepicker>
+
       <p class="govuk-body">
         Once this amendment is submitted, this and any related cases will be referred to the LAA who
         will discharge the case. All other possible activity on this case will thereafter be
         suspended.
       </p>
       <div class="govuk-button-group">
-        <button type="submit" class="govuk-button" data-module="govuk-button">
-          Confirm
-        </button>
+        <govuk:button type="submit" th:text="#{site.confirm}"/>
       </div>
     </form>
   </div>
