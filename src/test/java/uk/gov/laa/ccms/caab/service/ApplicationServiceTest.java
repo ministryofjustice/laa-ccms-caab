@@ -45,6 +45,7 @@ import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MERITS_PR
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationProviderDetails;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCaseReferenceSummary;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCategoryOfLawLookupValueDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildPriorAuthorityTypeDetails;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildProviderDetail;
@@ -52,7 +53,6 @@ import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildRelationshipToCaseLoo
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildAwardTypeLookupDetail;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCaseDetail;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCaseReferenceSummary;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildClientDetail;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildPriorAuthority;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildProceedingDetail;
@@ -124,6 +124,7 @@ import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
@@ -144,7 +145,6 @@ import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
-import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.PriorAuthority;
@@ -195,16 +195,14 @@ class ApplicationServiceTest {
 
   @Test
   void getCaseReference_returnsCaseReferenceSummary_Successful() {
-    final String loginId = "user1";
-    final String userType = "userType";
 
     final CaseReferenceSummary mockCaseReferenceSummary = new CaseReferenceSummary();
 
-    when(soaApiClient.getCaseReference(loginId, userType)).thenReturn(
+    when(ebsApiClient.postAllocateNextCaseReference()).thenReturn(
         Mono.just(mockCaseReferenceSummary));
 
     final Mono<CaseReferenceSummary> caseReferenceSummaryMono =
-        applicationService.getCaseReference(loginId, userType);
+        applicationService.getCaseReference();
 
     StepVerifier.create(caseReferenceSummaryMono)
         .expectNextMatches(summary -> summary == mockCaseReferenceSummary)
@@ -480,7 +478,7 @@ class ApplicationServiceTest {
     final AmendmentTypeLookupDetail amendmentTypes =
         new AmendmentTypeLookupDetail().addContentItem(amendmentType);
 
-    when(soaApiClient.getCaseReference(user.getLoginId(), user.getUserType())).thenReturn(
+    when(ebsApiClient.postAllocateNextCaseReference()).thenReturn(
         Mono.just(caseReferenceSummary));
     when(soaApiClient.getContractDetails(anyInt(), anyInt(), anyString(),
         anyString())).thenReturn(Mono.just(contractDetails));
@@ -495,7 +493,7 @@ class ApplicationServiceTest {
     StepVerifier.create(applicationMono)
         .verifyComplete();
 
-    verify(soaApiClient).getCaseReference(user.getLoginId(), user.getUserType());
+    verify(ebsApiClient).postAllocateNextCaseReference();
     verify(lookupService).getCategoryOfLaw(applicationFormData.getCategoryOfLawId());
     verify(soaApiClient).getContractDetails(anyInt(), anyInt(), anyString(), anyString());
     verify(ebsApiClient).getAmendmentTypes(any());
@@ -524,7 +522,7 @@ class ApplicationServiceTest {
     when(soaApiClient.getCase(copyCaseReference, user.getLoginId(), user.getUserType()))
         .thenReturn(Mono.just(soaCase));
 
-    when(soaApiClient.getCaseReference(user.getLoginId(), user.getUserType()))
+    when(ebsApiClient.postAllocateNextCaseReference())
         .thenReturn(Mono.just(caseReferenceSummary));
 
     /* START ApplicationMappingContext */
@@ -710,7 +708,7 @@ class ApplicationServiceTest {
     applicationToCopy.getOpponents().get(0).setType(opponentType);
     applicationToCopy.getOpponents().get(0).setSharedInd(opponentShared);
 
-    when(soaApiClient.getCaseReference(userDetail.getLoginId(), userDetail.getUserType()))
+    when(ebsApiClient.postAllocateNextCaseReference())
         .thenReturn(Mono.just(caseReferenceSummary));
 
     CategoryOfLawLookupValueDetail categoryOfLawLookupValueDetail =

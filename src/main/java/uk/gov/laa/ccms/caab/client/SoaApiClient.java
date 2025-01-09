@@ -19,7 +19,6 @@ import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
-import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
@@ -28,10 +27,11 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
-import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
+import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestResponse;
 import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
 
@@ -52,28 +52,6 @@ public class SoaApiClient {
   private final WebClient soaApiWebClient;
 
   private final SoaApiClientErrorHandler soaApiClientErrorHandler;
-
-  /**
-   * Retrieve the summary of notifications for a given user.
-   *
-   * @param loginId  The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
-   * @return A Mono wrapping the NotificationSummary for the specified user.
-   */
-  public Mono<NotificationSummary> getNotificationsSummary(
-      final String loginId,
-      final String userType) {
-
-    return soaApiWebClient
-        .get()
-        .uri("/users/{loginId}/notifications/summary", loginId)
-        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
-        .header(SOA_GATEWAY_USER_ROLE, userType)
-        .retrieve()
-        .bodyToMono(NotificationSummary.class)
-        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
-            e, "Notification summary", "user login id", loginId));
-  }
 
   /**
    * Fetches the contract details for the given criteria.
@@ -393,28 +371,6 @@ public class SoaApiClient {
   }
 
   /**
-   * Fetches a summary of case references.
-   *
-   * @param loginId  The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
-   * @return A Mono wrapping the CaseReferenceSummary.
-   */
-  public Mono<CaseReferenceSummary> getCaseReference(
-      final String loginId,
-      final String userType) {
-    return soaApiWebClient
-        .get()
-        .uri("/case-reference")
-        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
-        .header(SOA_GATEWAY_USER_ROLE, userType)
-        .retrieve()
-        .bodyToMono(CaseReferenceSummary.class)
-        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
-            e, "case reference", null));
-
-  }
-
-  /**
    * Searches and retrieves notifications based on search criteria.
    *
    * @param criteria The {@link NotificationSearchCriteria} class.
@@ -549,8 +505,7 @@ public class SoaApiClient {
       final Document document,
       final String loginId,
       final String userType) {
-
-    return uploadDocument(document, null, loginId, userType);
+    return uploadDocument(document, null, null, loginId, userType);
   }
 
   /**
@@ -564,12 +519,15 @@ public class SoaApiClient {
   public Mono<ClientTransactionResponse> uploadDocument(
       final Document document,
       final String notificationId,
+      final String caseReferenceNumber,
       final String loginId,
       final String userType) {
 
     final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
     Optional.ofNullable(notificationId)
         .ifPresent(param -> queryParams.add("notification-reference", notificationId));
+    Optional.ofNullable(caseReferenceNumber)
+        .ifPresent(param -> queryParams.add("case-reference-number", caseReferenceNumber));
 
     return soaApiWebClient
         .post()
@@ -584,6 +542,34 @@ public class SoaApiClient {
         .bodyToMono(ClientTransactionResponse.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiCreateError(
             e, "Document"));
+  }
+
+
+  /**
+   * Submits a provider request to the API.
+   *
+   * @param providerRequest the details of the provider request to be submitted
+   * @param loginId the login ID of the user submitting the request
+   * @param userType the role of the user submitting the request
+   * @return a {@code Mono} emitting the response of the submitted provider request
+   */
+  public Mono<ProviderRequestResponse> submitProviderRequest(
+      final ProviderRequestDetail providerRequest,
+      final String loginId,
+      final String userType) {
+
+    return soaApiWebClient
+        .post()
+        .uri(builder -> builder.path("/provider-requests")
+            .build())
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(providerRequest)
+        .retrieve()
+        .bodyToMono(ProviderRequestResponse.class)
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiCreateError(
+            e, "Provider request"));
   }
 
   /**

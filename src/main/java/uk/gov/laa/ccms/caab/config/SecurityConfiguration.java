@@ -1,13 +1,16 @@
 package uk.gov.laa.ccms.caab.config;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -19,18 +22,23 @@ import org.springframework.security.saml2.provider.service.authentication.Saml2A
 import org.springframework.security.saml2.provider.service.authentication.Saml2Authentication;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
+import uk.gov.laa.ccms.caab.service.UserService;
 
 /**
  * Configuration class for customizing Spring Security settings.
  */
 @Configuration
+@RequiredArgsConstructor
 public class SecurityConfiguration {
 
   @Value("${portal.logoutUrl}")
   private String logoutUrl;
 
+  private final UserService userService;
+
   /**
-   * Configures Spring Security filters and settings.
+   * Configures Spring Security filters and settings, along with endpoint restrictions based on
+   * granted user authorities (actions).
    *
    * @param http The HttpSecurity instance to be configured.
    * @return A SecurityFilterChain instance with configured security settings.
@@ -44,8 +52,51 @@ public class SecurityConfiguration {
 
     return http
       .authorizeHttpRequests(authorize -> authorize
-          .requestMatchers("/webjars/**").permitAll()
-              .anyRequest().authenticated())
+          .requestMatchers(HttpMethod.GET,
+              "/provider-requests/*")
+            .hasAuthority(UserRole.CREATE_PROVIDER_REQUEST.getCode())
+          .requestMatchers(HttpMethod.GET,
+              "/application/office",
+              "/application/category-of-law",
+              "/application/application-type",
+              "/application/delegated-functions",
+              "/application/copy-case/search",
+              "/application/client/search",
+              "/application/client/*/confirm")
+            .hasAuthority(UserRole.CREATE_APPLICATION.getCode())
+          .requestMatchers(HttpMethod.GET,
+              "/application/search",
+              "/application/search/results")
+            .hasAuthority(UserRole.VIEW_CASES_AND_APPLICATIONS.getCode())
+          .requestMatchers(HttpMethod.GET,
+              "/notifications/search",
+              "/notifications/search-results")
+            .hasAuthority(UserRole.VIEW_NOTIFICATIONS.getCode())
+          .requestMatchers(HttpMethod.GET,
+              "/application/proceedings/add/matter-type")
+            .hasAuthority(UserRole.ADD_PROCEEDING.getCode())
+          .requestMatchers(
+              "/notifications/*/attachments/*")
+            .hasAuthority(UserRole.VIEW_NOTIFICATION_ATTACHMENT.getCode())
+          .requestMatchers(
+              "/application/proceedings/*/remove")
+            .hasAuthority(UserRole.DELETE_PROCEEDING.getCode())
+          .requestMatchers(
+              "/application/proceedings/*/summary")
+            .hasAuthority(UserRole.VIEW_PROCEEDING.getCode())
+          .requestMatchers(HttpMethod.GET,
+              "/notifications/*/provide-documents-or-evidence")
+            .hasAuthority(UserRole.UPLOAD_EVIDENCE.getCode())
+          .requestMatchers(HttpMethod.POST,
+              "/notifications/*/provide-documents-or-evidence")
+            .hasAuthority(UserRole.SUBMIT_DOCUMENT_UPLOAD.getCode())
+          .requestMatchers(HttpMethod.POST,
+              "/application/sections/client/details/summary")
+            .hasAuthority(UserRole.SUBMIT_UPDATE_CLIENT.getCode())
+          .requestMatchers(HttpMethod.POST,
+              "/application/sections")
+            .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
+          .anyRequest().authenticated())
       .csrf(AbstractHttpConfigurer::disable)
       .sessionManagement(sessionManagement -> sessionManagement
           .invalidSessionStrategy(new SimpleRedirectInvalidSessionStrategy("/home")))
@@ -62,7 +113,6 @@ public class SecurityConfiguration {
               .authenticationManager(new ProviderManager(authenticationProvider)))
       .build();
   }
-
 
   /**
    * Creates a custom converter for processing SAML response tokens.
@@ -83,7 +133,18 @@ public class SecurityConfiguration {
       } else {
         authorities.addAll(authentication.getAuthorities());
       }
+      authorities.addAll(getUserFunctions(principal));
       return new Saml2Authentication(principal, authentication.getSaml2Response(), authorities);
     };
+  }
+
+  private Collection<? extends GrantedAuthority> getUserFunctions(
+      Saml2AuthenticatedPrincipal principal) {
+    return userService.getUser(principal.getName()).blockOptional()
+        .orElseThrow(() -> new RuntimeException("Failed to retrieve user functions."))
+        .getFunctions()
+        .stream()
+        .map(SimpleGrantedAuthority::new)
+        .toList();
   }
 }

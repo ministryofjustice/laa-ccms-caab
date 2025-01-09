@@ -9,18 +9,15 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.UUID;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
-import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.AssessmentScreen;
 import uk.gov.laa.ccms.soa.gateway.model.Award;
 import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
 import uk.gov.laa.ccms.soa.gateway.model.BaseContact;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDoc;
-import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CaseStatus;
 import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
@@ -56,6 +53,7 @@ import uk.gov.laa.ccms.soa.gateway.model.Recovery;
 import uk.gov.laa.ccms.soa.gateway.model.RecoveryAmount;
 import uk.gov.laa.ccms.soa.gateway.model.ScopeLimitation;
 import uk.gov.laa.ccms.soa.gateway.model.ServiceAddress;
+import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.TimeRelatedAward;
 import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.Valuation;
@@ -590,11 +588,6 @@ public class SoaModelUtils {
         .remainderAuthorisation(remainderAuth)
         .contractualDevolvedPowers("CATDEVPOW")
         .authorisationType("AUTHTYPE1");
-  }
-
-  public static CaseReferenceSummary buildCaseReferenceSummary() {
-    return new CaseReferenceSummary()
-        .caseReferenceNumber(UUID.randomUUID().toString());
   }
 
   public static CaseSummary buildCaseSummary() {

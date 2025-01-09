@@ -9,8 +9,16 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    groups:
+      gradle-updates:
+        patterns:
+          - "**" # Matches all Gradle dependencies
 
   - package-ecosystem: "npm"
     directory: "/" # Location of package.json
     schedule:
       interval: "weekly"
+    groups:
+      npm-updates:
+        patterns:
+          - "**" # Matches all NPM packages

@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
@@ -49,6 +50,7 @@ import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.service.ProviderRequestService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ProviderRequestDataLookupValueDetail;
@@ -69,6 +71,8 @@ public class ProviderRequestsController {
 
   private final LookupService lookupService;
   private final EvidenceService evidenceService;
+  private final ProviderRequestService providerRequestService;
+  private final AvScanService avScanService;
 
   private final ProviderRequestTypesValidator providerRequestTypeValidator;
   private final ProviderRequestDetailsValidator providerRequestDetailsValidator;
@@ -77,7 +81,9 @@ public class ProviderRequestsController {
 
   private final ProviderRequestsMapper providerRequestsMapper;
 
-  private final AvScanService avScanService;
+  private static final String UNRELATED_CASE_REFERENCE = "-1";
+
+
 
 
   /**
@@ -192,7 +198,7 @@ public class ProviderRequestsController {
    * @param providerRequestDetailsForm form data for provider request details.
    * @param model Spring MVC model to hold attributes for the view.
    * @param bindingResult holds validation errors, if any.
-   * @return todo
+   * @return the view name or redirection for the appropriate linked page.
    */
   @PostMapping("/provider-requests/details")
   public String postRequestDetail(
@@ -245,8 +251,35 @@ public class ProviderRequestsController {
         }
       }
 
-      //todo as part of ccmspui-311 - submit general request
-      return "redirect:/home";
+      //call soa-api a register the notification request
+      //we need to pass the providerRequestFlow and user details into the service.
+      final String notificationId = providerRequestService.submitProviderRequest(
+          providerRequestFlow.getRequestTypeFormData(),
+          providerRequestDetailsForm,
+          userDetail);
+
+      //check if we are not a claim upload enabled request,
+      // if not then we might have documents
+      if (!providerRequestDetailsForm.isClaimUploadEnabled()) {
+        //we need the session id, as this is key used to associate the documents with the request
+        final String documentSessionId = providerRequestFlow.getRequestDetailsFormData()
+            .getDocumentSessionId().toString();
+
+        //return all the documents for the request
+        final EvidenceDocumentDetails documents =
+            evidenceService.getEvidenceDocumentsForApplicationOrOutcome(
+                    documentSessionId,
+                    CcmsModule.REQUEST)
+                .blockOptional()
+                .orElseThrow(() -> new CaabApplicationException(
+                    String.format("Invalid document session id: %s", documentSessionId)));
+
+        //using the list of documents, we need to upload them to ebs through soa.
+        // we also update the status of the documents in the tds to say they have been uploaded
+        evidenceService.uploadAndUpdateDocuments(
+            documents, UNRELATED_CASE_REFERENCE, notificationId, userDetail).block();
+      }
+      return "redirect:/submissions/provider-request/confirmed";
     }
   }
 
@@ -292,7 +325,7 @@ public class ProviderRequestsController {
 
     //set the additional details for the evidence upload
     evidenceUploadFormData.setApplicationOrOutcomeId(documentSessionId);
-    evidenceUploadFormData.setCaseReferenceNumber("-1");
+    evidenceUploadFormData.setCaseReferenceNumber(UNRELATED_CASE_REFERENCE);
     evidenceUploadFormData.setProviderId(userDetail.getProvider().getId());
     evidenceUploadFormData.setDocumentSender(userDetail.getLoginId());
     evidenceUploadFormData.setCcmsModule(REQUEST);
@@ -416,7 +449,7 @@ public class ProviderRequestsController {
           dynamicForm);
     }
 
-    //if file upload is not enabled, then evidence upload is available
+    //if claim upload is not enabled, then evidence upload is available
     if (!providerRequestDetailsForm.isClaimUploadEnabled()) {
       final String documentSessionId = providerRequestFlow.getRequestDetailsFormData()
           .getDocumentSessionId().toString();
@@ -493,6 +526,12 @@ public class ProviderRequestsController {
         getCommaDelimitedString(providerRequestDocumentUploadValidator.getValidExtensions()));
     model.addAttribute("maxFileSize",
         providerRequestDocumentUploadValidator.getMaxFileSize());
+  }
+
+  @PostMapping("/submissions/provider-request/confirmed")
+  public String clientUpdateSubmitted(final SessionStatus sessionStatus) {
+    sessionStatus.setComplete();
+    return "redirect:/home";
   }
 
 }

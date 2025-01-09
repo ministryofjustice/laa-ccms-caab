@@ -25,6 +25,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.S3ApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -32,11 +33,11 @@ import uk.gov.laa.ccms.caab.mapper.NotificationAttachmentMapper;
 import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
+import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
-import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
 
@@ -47,6 +48,9 @@ class NotificationServiceTest {
 
   @Mock
   private CaabApiClient caabApiClient;
+
+  @Mock
+  private EbsApiClient ebsApiClient;
 
   @Mock
   private NotificationAttachmentMapper notificationAttachmentMapper;
@@ -61,17 +65,16 @@ class NotificationServiceTest {
   void getNotificationsSummary_returnData() {
 
     String loginId = "user1";
-    String userType = "userType";
 
     NotificationSummary mockSummary = new NotificationSummary()
         .notifications(10)
         .standardActions(5)
         .overdueActions(2);
 
-    when(soaApiClient.getNotificationsSummary(loginId, userType)).thenReturn(Mono.just(mockSummary));
+    when(ebsApiClient.getUserNotificationSummary(loginId)).thenReturn(Mono.just(mockSummary));
 
     Mono<NotificationSummary> summaryMono =
-        notificationService.getNotificationsSummary(loginId, userType);
+        notificationService.getNotificationsSummary(loginId);
 
     StepVerifier.create(summaryMono)
         .expectNextMatches(summary ->
@@ -292,7 +295,7 @@ class NotificationServiceTest {
     ClientTransactionResponse idResponse = new ClientTransactionResponse();
     idResponse.setReferenceNumber("001");
 
-    when(soaApiClient.uploadDocument(document, notificationId, loginId, userType)).thenReturn(Mono.just(idResponse));
+    when(soaApiClient.uploadDocument(document, notificationId, null, loginId, userType)).thenReturn(Mono.just(idResponse));
 
     when(caabApiClient.deleteNotificationAttachments(notificationId, providerId, null, null, loginId))
         .thenReturn(Mono.empty());
@@ -304,7 +307,7 @@ class NotificationServiceTest {
     verify(caabApiClient).getNotificationAttachment(notificationAttachmentId);
 
     // Upload to EBS
-    verify(soaApiClient).uploadDocument(document, notificationId, loginId, userType);
+    verify(soaApiClient).uploadDocument(document, notificationId, null, loginId, userType);
 
     // Delete from TDS and S3
     verify(caabApiClient).deleteNotificationAttachments(notificationId, providerId, null, null, loginId);

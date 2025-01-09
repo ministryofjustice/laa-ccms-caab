@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
     <title>LAA CCMS - Start new application</title>
 </head>
@@ -25,7 +27,8 @@
                 <div class="govuk-grid-column-two-thirds">
                     <div th:replace="~{partials/forms :: textInput('forename', 'First name', 'govuk-input--width-20')}"></div>
                     <div th:replace="~{partials/forms :: textInput('surname', 'Surname at birth', 'govuk-input--width-20')}"></div>
-                    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('dobDay') || #fields.hasErrors('dobMonth') || #fields.hasErrors('dobYear')} ? 'govuk-form-group--error' : ''">
+                    <div class="govuk-form-group"
+                         th:classappend="${#fields.hasErrors('dobDay') || #fields.hasErrors('dobMonth') || #fields.hasErrors('dobYear')} ? 'govuk-form-group--error' : ''">
                         <fieldset class="govuk-fieldset" role="group" aria-describedby="dob-hint dob-error">
                             <legend class="govuk-fieldset__legend">
                                 Date of birth
@@ -35,7 +38,8 @@
                             </div>
                             <p id="dob-error" class="govuk-error-message">
                                 <span th:each="error : ${#fields.detailedErrors()}">
-                                    <span th:inline="text" th:if="${error.fieldName == 'dobDay' || error.fieldName == 'dobMonth' || error.fieldName == 'dobYear'}">
+                                    <span th:inline="text"
+                                          th:if="${error.fieldName == 'dobDay' || error.fieldName == 'dobMonth' || error.fieldName == 'dobYear'}">
                                         <span th:utext="${error.message + '<br>'}"></span>
                                     </span>
                                 </span>
@@ -51,23 +55,10 @@
                     <div th:replace="~{partials/forms :: dropdown('uniqueIdentifierType', 'Unique identifier type (optional)', ${uniqueIdentifierTypes}, 'code', 'description', false)}"></div>
                     <div th:replace="~{partials/forms :: textInput('uniqueIdentifierValue', 'Unique identifier value (optional)', 'govuk-input--width-20')}"></div>
                     <div class="govuk-form-group">
-                        <details class="govuk-details" data-module="govuk-details">
-                            <summary class="govuk-details__summary">
-                                <span class="govuk-details__summary-text">
-                                  Help with unique identifier
-                                </span>
-                            </summary>
-                            <div class="govuk-details__text">
-                                Please select an option to use as your unique identifier. It is recommended that you use
-                                your client's National Insurance Number but if this is not available please select
-                                otherwise.<br><br>
-                                If the client's unique identifier is unknown, please leave the fields blank.
-                            </div>
-                        </details>
+                        <govuk:details th:summaryText="#{client.search.summaryText}"
+                                       th:text="#{client.search.text}"/>
                     </div>
-                    <button class="govuk-button" data-module="govuk-button">
-                        Search
-                    </button>
+                    <govuk:button type="submit" th:text="#{site.search}"/>
                 </div>
             </div>
         </form>

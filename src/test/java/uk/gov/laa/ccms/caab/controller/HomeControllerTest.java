@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,8 +26,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.service.NotificationService;
+import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -62,7 +63,8 @@ public class HomeControllerTest {
   private static final UserDetail userDetails = new UserDetail()
       .userId(1)
       .userType("testUserType")
-      .loginId("testLoginId");
+      .loginId("testLoginId")
+      .functions(List.of("NOT"));
 
   @ParameterizedTest
   @MethodSource("userDetailsAndNotificationParameters")
@@ -80,8 +82,8 @@ public class HomeControllerTest {
         .overdueActions(overdueActions);
 
     // Mock the SOA Gateway service to return the notification summary
-    when(notificationService.getNotificationsSummary(userDetails.getLoginId(),
-        userDetails.getUserType())).thenReturn(Mono.just(notificationSummary));
+    when(notificationService.getNotificationsSummary(userDetails.getLoginId())).thenReturn(
+        Mono.just(notificationSummary));
 
     this.mockMvc.perform(get("/").flashAttr("user", userDetails))
         .andDo(print())
@@ -98,8 +100,8 @@ public class HomeControllerTest {
   public void testHomeHandlesNullNotifications() throws Exception {
 
     // Mock the SOA Gateway service to return the notification summary
-    when(notificationService.getNotificationsSummary(userDetails.getLoginId(),
-        userDetails.getUserType())).thenReturn(Mono.empty());
+    when(notificationService.getNotificationsSummary(userDetails.getLoginId())).thenReturn(
+        Mono.empty());
 
     this.mockMvc.perform(get("/").flashAttr("user", userDetails))
         .andDo(print())

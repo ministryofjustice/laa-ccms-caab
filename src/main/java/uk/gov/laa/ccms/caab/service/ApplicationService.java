@@ -100,6 +100,7 @@ import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
@@ -121,7 +122,6 @@ import uk.gov.laa.ccms.soa.gateway.model.AssessmentResult;
 import uk.gov.laa.ccms.soa.gateway.model.Award;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
-import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -312,12 +312,10 @@ public class ApplicationService {
   /**
    * Fetches a unique case reference.
    *
-   * @param loginId  The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
    * @return A Mono wrapping the CaseReferenceSummary.
    */
-  public Mono<CaseReferenceSummary> getCaseReference(final String loginId, final String userType) {
-    return soaApiClient.getCaseReference(loginId, userType);
+  public Mono<CaseReferenceSummary> getCaseReference() {
+    return ebsApiClient.postAllocateNextCaseReference();
   }
 
   /**
@@ -373,7 +371,7 @@ public class ApplicationService {
         ContractDetails,
         AmendmentTypeLookupDetail>> combinedResult =
         Mono.zip(
-            this.getCaseReference(user.getLoginId(), user.getUserType()),
+            this.getCaseReference(),
             lookupService.getCategoryOfLaw(applicationFormData.getCategoryOfLawId()),
             soaApiClient.getContractDetails(
                 user.getProvider().getId(),
@@ -426,7 +424,7 @@ public class ApplicationService {
         ContractDetails,
         RelationshipToCaseLookupDetail>> combinedResult =
         Mono.zip(
-            this.getCaseReference(user.getLoginId(), user.getUserType()),
+            this.getCaseReference(),
             lookupService.getCategoryOfLaw(applicationToCopy.getCategoryOfLaw().getId()),
             soaApiClient.getContractDetails(
                 user.getProvider().getId(),

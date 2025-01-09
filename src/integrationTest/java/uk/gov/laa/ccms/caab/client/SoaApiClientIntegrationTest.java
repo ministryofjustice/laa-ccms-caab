@@ -24,7 +24,6 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
-import uk.gov.laa.ccms.soa.gateway.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
@@ -33,7 +32,6 @@ import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
-import uk.gov.laa.ccms.soa.gateway.model.NotificationSummary;
 import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
@@ -82,26 +80,6 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
 
     assertNotNull(response);
     assertEquals(contractDetailsJson, objectMapper.writeValueAsString(response.block()));
-  }
-
-  @Test
-  public void testGetNotificationsSummary_returnData() throws Exception {
-    String loginId = USER_1;
-    String userType = USER_TYPE;
-    NotificationSummary expectedSummary = buildNotificationSummary();
-    String summaryJson = objectMapper.writeValueAsString(expectedSummary);
-
-    wiremock.stubFor(get(String.format("/users/%s/notifications/summary", loginId))
-        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
-        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
-        .willReturn(okJson(summaryJson)));
-
-    Mono<NotificationSummary> summaryMono =
-        soaApiClient.getNotificationsSummary(loginId, userType);
-
-    NotificationSummary summary = summaryMono.block();
-
-    assertEquals(summaryJson, objectMapper.writeValueAsString(summary));
   }
 
   @Test
@@ -161,27 +139,6 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     ClientDetail response = clientMono.block();
 
     assertEquals(clientDetail, response);
-  }
-
-  @Test
-  public void testGetCaseReference_returnData() throws Exception {
-    String loginId = USER_1;
-    String userType = USER_TYPE;
-    CaseReferenceSummary caseReferenceSummary =
-        new CaseReferenceSummary(); // Fill with appropriate data
-    String caseReferenceJson = objectMapper.writeValueAsString(caseReferenceSummary);
-
-    wiremock.stubFor(get("/case-reference")
-        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
-        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
-        .willReturn(okJson(caseReferenceJson)));
-
-    Mono<CaseReferenceSummary> caseReferenceMono =
-        soaApiClient.getCaseReference(loginId, userType);
-
-    CaseReferenceSummary response = caseReferenceMono.block();
-
-    assertEquals(caseReferenceSummary, response);
   }
 
   @Test
@@ -276,7 +233,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
         .willReturn(okJson(clientTransactionResponseString)));
 
     Mono<ClientTransactionResponse> clientTransactionResponseMono =
-        soaApiClient.uploadDocument(new Document(), "12345", loginId, userType);
+        soaApiClient.uploadDocument(new Document(), "12345", null, loginId, userType);
 
     ClientTransactionResponse response = clientTransactionResponseMono.block();
 
@@ -380,13 +337,6 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     ClientTransactionResponse response = clientTransactionResponseMono.block();
 
     assertEquals(clientTransactionResponse, response);
-  }
-
-  private NotificationSummary buildNotificationSummary() {
-    return new NotificationSummary()
-        .notifications(10)
-        .standardActions(5)
-        .overdueActions(2);
   }
 
   private ContractDetails buildContractDetails() {

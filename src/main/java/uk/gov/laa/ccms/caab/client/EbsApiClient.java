@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.client;
 
-import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +11,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
@@ -20,6 +20,7 @@ import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
@@ -66,6 +67,22 @@ public class EbsApiClient {
             .bodyToMono(UserDetail.class)
             .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
                 e, "User", "login id", loginId));
+  }
+
+  /**
+   * Retrieves a summary of notification counts for a user based on their login ID.
+   *
+   * @param loginId the login ID of the user whose notification summary is to be retrieved
+   * @return a Mono emitting the NotificationSummary for the specified user
+   */
+  public Mono<NotificationSummary> getUserNotificationSummary(final String loginId) {
+    return ebsApiWebClient
+        .get()
+        .uri("/users/{loginId}/notifications/summary", loginId)
+        .retrieve()
+        .bodyToMono(NotificationSummary.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
+            e, "User", "login id", loginId));
   }
 
   /**
@@ -745,6 +762,22 @@ public class EbsApiClient {
             e, "Provider request types", queryParams));
   }
 
+  /**
+   * Allocates the next available case reference by sending a POST request to the external case
+   * reference service.
+   *
+   * @return a {@link Mono} emitting the {@link CaseReferenceSummary} containing the details of the
+   *     next allocated case reference
+   */
+  public Mono<CaseReferenceSummary> postAllocateNextCaseReference() {
+    return ebsApiWebClient
+        .post()
+        .uri("/case-reference")
+        .retrieve()
+        .bodyToMono(CaseReferenceSummary.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
+            e, "case reference", null));
+  }
 
 }
 

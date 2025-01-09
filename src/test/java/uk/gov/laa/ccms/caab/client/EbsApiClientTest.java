@@ -29,6 +29,7 @@ import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.BaseUser;
+import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
@@ -37,6 +38,7 @@ import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
@@ -61,6 +63,10 @@ public class EbsApiClientTest {
   @Mock
   private WebClient.RequestHeadersUriSpec requestHeadersUriMock;
   @Mock
+  private WebClient.RequestBodyUriSpec requestBodyUriMock;
+  @Mock
+  private WebClient.RequestBodySpec requestBodySpec;
+  @Mock
   private WebClient.ResponseSpec responseMock;
 
   @Mock
@@ -68,8 +74,6 @@ public class EbsApiClientTest {
 
   @InjectMocks
   private EbsApiClient ebsApiClient;
-
-
 
   ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
@@ -111,6 +115,62 @@ public class EbsApiClientTest {
     final Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(loginId);
 
     StepVerifier.create(userDetailsMono)
+        .verifyComplete();
+  }
+
+  @Test
+  void getUserNotificationSummary_returnsData() {
+    final String loginId = "user1";
+    final String expectedUri = "/users/{loginId}/notifications/summary";
+
+    final NotificationSummary mockNotificationSummary = new NotificationSummary();
+    mockNotificationSummary.setNotifications(1);
+    mockNotificationSummary.setStandardActions(3);
+    mockNotificationSummary.setOverdueActions(2);
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(NotificationSummary.class)).thenReturn(
+        Mono.just(mockNotificationSummary));
+
+    final Mono<NotificationSummary> notificationSummary = ebsApiClient.getUserNotificationSummary(
+        loginId);
+
+    StepVerifier.create(notificationSummary)
+        .expectNextMatches(summary ->
+            summary.getNotifications().equals(1) &&
+                summary.getStandardActions().equals(3) &&
+                summary.getOverdueActions().equals(2)
+        )
+        .verifyComplete();
+  }
+
+  @Test
+  void getUserNotificationSummary_NotFound() {
+    final String loginId = "user1";
+    final String expectedUri = "/users/{loginId}/notifications/summary";
+
+    final NotificationSummary mockNotificationSummary = new NotificationSummary();
+    mockNotificationSummary.setNotifications(1);
+    mockNotificationSummary.setStandardActions(3);
+    mockNotificationSummary.setOverdueActions(2);
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(NotificationSummary.class)).thenReturn(
+        Mono.just(mockNotificationSummary));
+
+    final Mono<NotificationSummary> notificationSummary = ebsApiClient.getUserNotificationSummary(
+        loginId);
+
+    StepVerifier.create(notificationSummary)
+        .expectNextMatches(summary ->
+            summary.getNotifications().equals(1) &&
+                summary.getStandardActions().equals(3) &&
+                summary.getOverdueActions().equals(2)
+        )
         .verifyComplete();
   }
 
@@ -1141,7 +1201,47 @@ public class EbsApiClientTest {
   }
 
 
+  @Test
+  @DisplayName("postAllocateNextCaseReference creates case reference")
+  void testPostAllocateNextCaseReference_createsCaseReference() {
+    when(webClientMock.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri("/case-reference")).thenReturn(requestBodySpec);
+    when(requestBodySpec.retrieve()).thenReturn(responseMock);
+    CaseReferenceSummary caseReferenceSummary = new CaseReferenceSummary().caseReferenceNumber(
+        "123");
+    when(responseMock.bodyToMono(CaseReferenceSummary.class)).thenReturn(
+        Mono.just(caseReferenceSummary));
 
+    final Mono<CaseReferenceSummary> result = ebsApiClient.postAllocateNextCaseReference();
 
+    StepVerifier.create(result)
+        .expectNext(caseReferenceSummary)
+        .verifyComplete();
+
+    verify(responseMock).bodyToMono(CaseReferenceSummary.class);
+  }
+
+  @Test
+  @DisplayName("postAllocateNextCaseReference handles errors")
+  void testPostAllocateNextCaseReference_handlesError() {
+    when(webClientMock.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri("/case-reference")).thenReturn(requestBodySpec);
+    when(requestBodySpec.retrieve()).thenReturn(responseMock);
+    CaseReferenceSummary caseReferenceSummary = new CaseReferenceSummary().caseReferenceNumber(
+        "123");
+    when(responseMock.bodyToMono(CaseReferenceSummary.class))
+        .thenReturn(Mono.error(
+            new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+
+    when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("case reference"),
+        any())).thenReturn(Mono.empty());
+
+    final Mono<CaseReferenceSummary> result = ebsApiClient.postAllocateNextCaseReference();
+
+    StepVerifier.create(result)
+        .verifyComplete();
+
+    verify(responseMock).bodyToMono(CaseReferenceSummary.class);
+  }
 
 }

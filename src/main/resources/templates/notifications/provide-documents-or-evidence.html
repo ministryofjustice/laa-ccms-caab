@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='SUBDOC')}" xmlns:th="http://www.thymeleaf.org">
 <head>
   <title>Provide Documents or Evidence</title>
 </head>
@@ -165,9 +165,8 @@
 
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-one-third">
-          <button type="submit" class="govuk-button" data-module="govuk-button">
-            Submit
-          </button>
+          <div th:replace="~{partials/actions :: restrictedSubmitButton('Submit',
+              ${user.functions}, 'SUBDOC')}"></div>
           <p class="govuk-body govuk-!-font-size-15-!-text-align-left">
             <a class="govuk-back-link"
                th:href="@{/notifications/{notification_id}(notification_id=${notificationId})}">
@@ -187,7 +186,7 @@
   for(var i = 0; i < links.length; i++) {
     var link = links[i];
     link.onclick = function() {
-      ldr = this.parentElement.getElementsByClassName('loader-small')[0];
+      ldr = this.closest('td').getElementsByClassName('loader-small')[0];
       console.log("Link with ID: " + this.id + " activating spinner with ID: " + ldr.id);
       if (ldr.style.visibility == "hidden") {
         ldr.style.visibility = "visible"

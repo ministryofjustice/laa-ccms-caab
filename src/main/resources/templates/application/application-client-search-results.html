@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
     <title>LAA CCMS - Start new application</title>
 </head>
@@ -51,9 +52,7 @@
             </h2>
             <p class="govuk-body">If your search has not returned the client you were looking for, you can register a new
                 client by clicking the 'Register new client' button.</p>
-            <button type="submit" class="govuk-button" data-module="govuk-button">
-                Register new client
-            </button>
+            <govuk:button type="submit" th:text="#{client.register}"/>
         </form>
     </div>
 </div>
