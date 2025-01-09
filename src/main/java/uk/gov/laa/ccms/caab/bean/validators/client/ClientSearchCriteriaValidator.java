@@ -30,7 +30,7 @@ public class ClientSearchCriteriaValidator extends AbstractValidator {
    *
    * @param clazz The class to check for support.
    * @return {@code true} if the class is assignable from {@link ClientSearchCriteria},
-   * {@code false} otherwise.
+   *         {@code false} otherwise.
    */
   @Override
   public boolean supports(Class<?> clazz) {
