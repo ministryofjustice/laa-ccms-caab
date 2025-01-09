@@ -37,9 +37,9 @@ repositories {
 
 dependencies {
 
-	implementation 'uk.gov.laa.ccms.data:data-api:0.0.27-398d49f-SNAPSHOT'
+	implementation 'uk.gov.laa.ccms.data:data-api:0.0.29'
 
-	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.44-6b47c10-SNAPSHOT'
+	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.46'
 
 	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.39'
 
