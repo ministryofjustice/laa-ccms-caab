@@ -40,13 +40,13 @@
     <table class="govuk-table ccms-compact-table">
       <thead class="govuk-table__head">
       <tr class="govuk-table__row">
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'assignDate','Date Assigned')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'subject','Subject')}"></th>
+        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dateAssigned','Date Assigned')}"></th>
+        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'notificationSubject','Subject')}"></th>
         <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dueDate','Due Date')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'user.userLoginId','Assigned To')}"></th>
+        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'userLoginId','Assigned To')}"></th>
         <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'status','Status')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'caseReferenceNumber','LAA Ref')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'providerCaseReferenceNumber','Provider Ref')}"></th>
+        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'lscCaseRefReference','LAA Ref')}"></th>
+        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'providerCaseReference','Provider Ref')}"></th>
         <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'clientName','Client')}"></th>
         <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'feeEarner','Fee Earner')}"></th>
       </tr>
@@ -54,13 +54,13 @@
       <tbody class="govuk-table__body">
       <tr class="govuk-table__row" th:each="notification : ${notificationsSearchResults.content}">
         <td class="govuk-table__cell"
-            th:text="${#dates.format(notification.assignDate,'dd-MM-yyyy')}"></td>
+            th:text="${#temporals.format(notification?.assignDate,'dd-MM-yyyy')}"></td>
         <td class="govuk-table__cell"><a
             th:href="@{/notifications/{notification_id}(notification_id=${notification.notificationId})}"
             th:text="${notification.subject}"></a></td>
         <td class="govuk-table__cell"
-            th:text="${#dates.format(notification.dueDate,'dd-MM-yyy')}"></td>
-        <td class="govuk-table__cell" th:text="${notification.user.userLoginId}"></td>
+            th:text="${#temporals.format(notification.dueDate,'dd-MM-yyy')}"></td>
+        <td class="govuk-table__cell" th:text="${notification.user.loginId}"></td>
         <td class="govuk-table__cell" th:text="${notification.status}"></td>
         <td class="govuk-table__cell" th:text="${notification.caseReferenceNumber}"></td>
         <td class="govuk-table__cell" th:text="${notification.providerCaseReferenceNumber}"></td>

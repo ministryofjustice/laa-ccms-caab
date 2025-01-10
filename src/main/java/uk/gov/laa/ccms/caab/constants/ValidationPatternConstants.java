@@ -38,12 +38,12 @@ public class ValidationPatternConstants {
   /**
    * Validation pattern for home office reference numbers.
    */
-  public static final String HOME_OFFICE_NUMBER_PATTERN = "^[A-Za-z0-9\s]*$";
+  public static final String HOME_OFFICE_NUMBER_PATTERN = "^[A-Za-z0-9 ]*$";
 
   /**
    * Validation pattern for case reference numbers.
    */
-  public static final String CASE_REFERENCE_NUMBER_PATTERN = "^[A-Za-z0-9\s/]*$";
+  public static final String CASE_REFERENCE_NUMBER_PATTERN = "^[A-Za-z0-9 /]*$";
 
   /**
    * Neagtive validation pattern for case reference numbers.
@@ -102,9 +102,9 @@ public class ValidationPatternConstants {
   public static final String TELEPHONE_PATTERN = "^[0-9 \\+\\-\\(\\)]*$";
 
   /**
-   * pattern for double-space.
+   * Pattern for double-space, also takes into account characters wrapped around the double space.
    */
-  public static final String DOUBLE_SPACE = "[ ]{2,}";
+  public static final String DOUBLE_SPACE = ".* {2,}.*";
 
   /**
    * pattern for case reference - contains alphanumerics and also allows a forward slash for

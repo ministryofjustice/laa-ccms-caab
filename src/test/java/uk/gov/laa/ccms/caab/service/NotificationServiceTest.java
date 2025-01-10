@@ -33,13 +33,13 @@ import uk.gov.laa.ccms.caab.mapper.NotificationAttachmentMapper;
 import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
+import uk.gov.laa.ccms.data.model.Notification;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
+import uk.gov.laa.ccms.data.model.Notifications;
+import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
-import uk.gov.laa.ccms.soa.gateway.model.Notification;
-import uk.gov.laa.ccms.soa.gateway.model.Notifications;
-import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
@@ -92,23 +92,25 @@ class NotificationServiceTest {
         .addContentItem(
             new Notification()
                 .user(new UserDetail()
-                    .userLoginId("user1")
+                    .loginId("user1")
                     .userType("user1"))
                 .notificationId("234")
                 .notificationType("N"));
     NotificationSearchCriteria criteria = new NotificationSearchCriteria();
     criteria.setAssignedToUserId("user1");
+    criteria.setNotificationFromDate("2024-01-01");
+    criteria.setNotificationToDate("2025-01-01");
 
     criteria.setLoginId("user1");
     criteria.setUserType("user1");
-    when(soaApiClient.getNotifications(criteria,1, 10))
+    when(ebsApiClient.getNotifications(criteria, 1, 10))
         .thenReturn(Mono.just(notificationsMock));
     Mono<Notifications> notificationsMono = notificationService.getNotifications(criteria,
         1, 10);
 
     StepVerifier.create(notificationsMono)
         .expectNextMatches(notifications ->
-            notifications.getContent().get(0).getUser().getUserLoginId().equals("user1"))
+            notifications.getContent().get(0).getUser().getLoginId().equals("user1"))
         .verifyComplete();
   }
 
@@ -316,9 +318,9 @@ class NotificationServiceTest {
 
   @Test
   void getDocumentLinks_success() {
-    List<Document> documents = List.of(
-        new Document().documentId("1"),
-        new Document().documentId("2")
+    List<uk.gov.laa.ccms.data.model.Document> documents = List.of(
+        new uk.gov.laa.ccms.data.model.Document().documentId("1"),
+        new uk.gov.laa.ccms.data.model.Document().documentId("2")
     );
 
     when(s3ApiClient.getDocumentUrl("1")).thenReturn(Optional.of("link 1"));

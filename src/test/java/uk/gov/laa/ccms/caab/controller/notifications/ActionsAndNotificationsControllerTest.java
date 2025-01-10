@@ -4,8 +4,8 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -68,12 +68,12 @@ import uk.gov.laa.ccms.data.model.BaseUser;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
+import uk.gov.laa.ccms.data.model.Document;
+import uk.gov.laa.ccms.data.model.Notification;
+import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
-import uk.gov.laa.ccms.soa.gateway.model.Document;
-import uk.gov.laa.ccms.soa.gateway.model.Notification;
-import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -114,8 +114,8 @@ class ActionsAndNotificationsControllerTest {
 
   private static Notification buildNotification() {
     return new Notification()
-        .user(new uk.gov.laa.ccms.soa.gateway.model.UserDetail()
-            .userLoginId("user1")
+        .user(new UserDetail()
+            .loginId("user1")
             .userType("user1"))
         .notificationId("234")
         .notificationType("N")
@@ -127,15 +127,23 @@ class ActionsAndNotificationsControllerTest {
     return List.of(new Document().documentId("890").channel("P").documentType("TST_DOC"));
   }
 
+  private static List<uk.gov.laa.ccms.soa.gateway.model.Document> buildUploadedDocumentsSoa() {
+    return List.of(new uk.gov.laa.ccms.soa.gateway.model.Document().documentId("890").channel("P")
+        .documentType("TST_DOC"));
+  }
+
   private static List<Document> buildAttachedDocuments() {
     return List.of(new Document().documentId("567").channel("E").documentType("TST_DOC"));
   }
 
+  private static List<uk.gov.laa.ccms.soa.gateway.model.Document> buildAttachedDocumentsSoa() {
+    return List.of(new uk.gov.laa.ccms.soa.gateway.model.Document().documentId("567").channel("E")
+        .documentType("TST_DOC"));
+  }
+
   private static NotificationSearchCriteria buildNotificationSearchCritieria() {
     NotificationSearchCriteria criteria = new NotificationSearchCriteria();
-    criteria.setNotificationToDateDay("12");
-    criteria.setNotificationToDateMonth("12");
-    criteria.setNotificationToDateYear("2025");
+    criteria.setNotificationToDate("12/12/2025");
     return criteria;
   }
 
@@ -259,9 +267,9 @@ class ActionsAndNotificationsControllerTest {
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
-      errors.rejectValue("notificationToDateYear", "invalid.input",
-          "Your date range is invalid."
-              + " Please amend your entry for the year field");
+      errors.rejectValue("notificationToDate",
+          "validation.date.range-exceeds-three-years.error-text",
+          "Your date range is invalid.");
       return null;
     }).when(notificationSearchValidator).validate(any(), any());
 
@@ -269,7 +277,7 @@ class ActionsAndNotificationsControllerTest {
             .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(
-            model().attribute("notificationSearchCriteria", hasProperty("notificationToDateDay")))
+            model().attribute("notificationSearchCriteria", hasProperty("notificationToDate")))
         .andExpect(model().hasErrors())
         .andExpect(forwardedUrl("notifications/actions-and-notifications-search"));
   }
@@ -307,7 +315,7 @@ class ActionsAndNotificationsControllerTest {
             .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(
-            model().attribute("notificationSearchCriteria", hasProperty("notificationToDateDay")))
+            model().attribute("notificationSearchCriteria", hasProperty("notificationToDate")))
         .andExpect(forwardedUrl("notifications/actions-and-notifications-search"));
   }
 
@@ -351,7 +359,7 @@ class ActionsAndNotificationsControllerTest {
     Exception exception = assertThrows(Exception.class, () ->
             mockMvc.perform(get("/notifications/123")
                 .flashAttrs(flashMap)));
-    assertTrue(exception.getCause() instanceof CaabApplicationException);
+    assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals("Notification with id 123 not found", exception.getCause().getMessage());
 
   }
@@ -678,8 +686,11 @@ class ActionsAndNotificationsControllerTest {
         userDetails.getUserId())).thenReturn(Mono.just(notificationAttachmentDetails));
     when(notificationService.getDraftDocumentLinks(List.of(baseNotificationAttachment))).thenReturn(draftDocumentLinks);
     when(notificationService.getDocumentLinks(notification.getUploadedDocuments())).thenReturn(documentLinks);
-    when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification.getUploadedDocuments().getFirst(), "Test Document"))
+    when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
+        any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
         .thenReturn(new BaseNotificationAttachmentDetail());
+    //when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification.getUploadedDocuments().getFirst(), "Test Document"))
+    //    .thenReturn(new BaseNotificationAttachmentDetail());
 
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
@@ -716,8 +727,11 @@ class ActionsAndNotificationsControllerTest {
     when(notificationService.getDraftNotificationAttachments(notification.getNotificationId(),
         userDetails.getUserId())).thenReturn(Mono.just(notificationAttachmentDetails));
 
-    when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification.getUploadedDocuments().getFirst(), "Test Document"))
+    when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
+        any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
         .thenReturn(new BaseNotificationAttachmentDetail());
+    /*when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification.getUploadedDocuments().getFirst(), "Test Document"))
+        .thenReturn(new BaseNotificationAttachmentDetail());*/
 
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
@@ -756,8 +770,11 @@ class ActionsAndNotificationsControllerTest {
 
     when(notificationService.getDraftNotificationAttachments(notification.getNotificationId(),
         userDetails.getUserId())).thenReturn(Mono.just(notificationAttachmentDetails));
-    when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification.getUploadedDocuments().getFirst(), "Test Document"))
+    when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
+        any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
         .thenReturn(new BaseNotificationAttachmentDetail());
+    /*when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification.getUploadedDocuments().getFirst(), "Test Document"))
+        .thenReturn(new BaseNotificationAttachmentDetail());*/
 
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
@@ -786,6 +803,7 @@ class ActionsAndNotificationsControllerTest {
     List<Document> documents = buildAttachedDocuments();
 
     when(notificationService.getDocumentLinks(documents)).thenReturn(Map.of("567", "doc-url"));
+    //when(notificationService.getDocumentLinks(documents)).thenReturn(Map.of("567", "doc-url"));
 
     mockMvc.perform(get("/notifications/234")
             .flashAttrs(flashMap))

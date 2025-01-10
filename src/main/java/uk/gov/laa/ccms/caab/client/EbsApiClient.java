@@ -1,13 +1,12 @@
 package uk.gov.laa.ccms.caab.client;
 
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -21,6 +20,7 @@ import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
+import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
@@ -40,17 +40,14 @@ import uk.gov.laa.ccms.data.model.UserDetails;
  */
 @Service
 @Slf4j
-@RequiredArgsConstructor
-public class EbsApiClient {
-
-  private final WebClient ebsApiWebClient;
+public class EbsApiClient extends BaseApiClient {
 
   private final EbsApiClientErrorHandler ebsApiClientErrorHandler;
 
-  private MultiValueMap<String, String> createDefaultQueryParams() {
-    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
-    queryParams.add("size", "1000");
-    return queryParams;
+  protected EbsApiClient(WebClient ebsApiWebClient,
+      EbsApiClientErrorHandler ebsApiClientErrorHandler) {
+    super(ebsApiWebClient);
+    this.ebsApiClientErrorHandler = ebsApiClientErrorHandler;
   }
 
   /**
@@ -60,7 +57,7 @@ public class EbsApiClient {
    * @return A Mono containing the UserDetail or an error handler if an error occurs.
    */
   public Mono<UserDetail> getUser(final String loginId) {
-    return ebsApiWebClient
+    return webClient
             .get()
             .uri("/users/{loginId}", loginId)
             .retrieve()
@@ -76,7 +73,7 @@ public class EbsApiClient {
    * @return a Mono emitting the NotificationSummary for the specified user
    */
   public Mono<NotificationSummary> getUserNotificationSummary(final String loginId) {
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri("/users/{loginId}/notifications/summary", loginId)
         .retrieve()
@@ -93,7 +90,7 @@ public class EbsApiClient {
    */
   public Mono<ProviderDetail> getProvider(final Integer providerId) {
 
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri("/providers/{providerId}", String.valueOf(providerId))
         .retrieve()
@@ -124,7 +121,7 @@ public class EbsApiClient {
     Optional.ofNullable(sort)
         .ifPresent(param -> queryParams.add("sort", param));
 
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/lookup/common")
             .queryParams(queryParams)
@@ -179,7 +176,7 @@ public class EbsApiClient {
     Optional.ofNullable(categoryOfLaw)
         .ifPresent(param -> queryParams.add("category-of-law", param));
 
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/lookup/matter-types")
             .queryParams(queryParams)
@@ -199,7 +196,7 @@ public class EbsApiClient {
    *         occurs.
    */
   public Mono<RelationshipToCaseLookupDetail> getPersonRelationshipsToCaseValues() {
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/lookup/person-to-case-relationships")
             .build())
@@ -227,7 +224,7 @@ public class EbsApiClient {
     Optional.ofNullable(description)
         .ifPresent(param -> queryParams.add("description", param));
 
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/lookup/organisation-to-case-relationships")
             .queryParams(queryParams)
@@ -251,7 +248,7 @@ public class EbsApiClient {
     Optional.ofNullable(copyAllowed)
         .ifPresent(param -> queryParams.add("copy-allowed", String.valueOf(param)));
 
-    return ebsApiWebClient
+    return webClient
             .get()
             .uri(builder -> builder.path("/lookup/case-status")
                     .queryParams(queryParams)
@@ -273,7 +270,7 @@ public class EbsApiClient {
     final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
     Optional.ofNullable(applicationType)
         .ifPresent(param -> queryParams.add("application-type", param));
-    return ebsApiWebClient
+    return webClient
             .get()
             .uri(builder -> builder.path("/lookup/amendment-types")
                 .queryParams(queryParams)
@@ -291,7 +288,7 @@ public class EbsApiClient {
    */
   public Mono<CommonLookupDetail> getCountries() {
     final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
-    return ebsApiWebClient
+    return webClient
             .get()
             .uri(builder -> builder.path("/lookup/countries")
                     .queryParams(queryParams)
@@ -317,7 +314,7 @@ public class EbsApiClient {
         .ifPresent(param -> queryParams.add("code", param));
     Optional.ofNullable(valueRequired)
         .ifPresent(param -> queryParams.add("value-required", String.valueOf(valueRequired)));
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/prior-authority-types")
             .queryParams(queryParams)
@@ -338,7 +335,7 @@ public class EbsApiClient {
     final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
     Optional.ofNullable(providerId)
         .ifPresent(param -> queryParams.add("provider-id", String.valueOf(param)));
-    return  ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/users")
             .queryParams(queryParams)
@@ -357,7 +354,7 @@ public class EbsApiClient {
    * @return A Mono containing the ProceedingDetail or an error handler if an error occurs.
    */
   public Mono<ProceedingDetail> getProceeding(final String proceedingCode) {
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri("/proceedings/{proceeding-code}", proceedingCode)
         .retrieve()
@@ -391,7 +388,7 @@ public class EbsApiClient {
     Optional.ofNullable(isLead)
         .ifPresent(param -> queryParams.add("lead", String.valueOf(param)));
 
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/proceedings")
             .queryParams(queryParams)
@@ -413,7 +410,7 @@ public class EbsApiClient {
     final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
     Optional.ofNullable(proceedingCode)
         .ifPresent(code -> queryParams.add("proceeding-code", code));
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/lookup/proceeding-client-involvement-types")
             .queryParams(queryParams)
@@ -443,7 +440,7 @@ public class EbsApiClient {
     Optional.ofNullable(matterType)
         .ifPresent(param -> queryParams.add("matter-type", param));
 
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/lookup/level-of-service")
             .queryParams(queryParams)
@@ -496,7 +493,7 @@ public class EbsApiClient {
     Optional.ofNullable(scopeLimitationDetail.getScopeDefault())
         .ifPresent(scopeDefault -> queryParams.add("scope-default", String.valueOf(scopeDefault)));
 
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/scope-limitations")
             .queryParams(queryParams)
@@ -525,7 +522,7 @@ public class EbsApiClient {
     Optional.ofNullable(outcomeResult)
         .ifPresent(param -> queryParams.add("outcome-result", param));
 
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/lookup/outcome-results")
             .queryParams(queryParams)
@@ -554,7 +551,7 @@ public class EbsApiClient {
     Optional.ofNullable(stageEnd)
         .ifPresent(param -> queryParams.add("stage-end", param));
 
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/lookup/stage-ends")
             .queryParams(queryParams)
@@ -581,7 +578,7 @@ public class EbsApiClient {
         .ifPresent(param -> queryParams.add("code", param));
     Optional.ofNullable(awardType)
         .ifPresent(param -> queryParams.add("award-type", param));
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/lookup/award-types")
             .queryParams(queryParams)
@@ -614,7 +611,7 @@ public class EbsApiClient {
     Optional.ofNullable(copyCostLimit)
         .ifPresent(param -> queryParams.add("copy-cost-limit", String.valueOf(param)));
 
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/lookup/categories-of-law")
             .queryParams(queryParams)
@@ -641,7 +638,7 @@ public class EbsApiClient {
         .ifPresent(param -> queryParams.add("code", param));
     Optional.ofNullable(description)
         .ifPresent(param -> queryParams.add("description", param));
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/lookup/person-to-case-relationships")
             .queryParams(queryParams)
@@ -669,7 +666,7 @@ public class EbsApiClient {
     Optional.ofNullable(code)
         .ifPresent(param -> queryParams.add("code", param));
 
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/lookup/evidence-document-types")
             .queryParams(queryParams)
@@ -693,7 +690,7 @@ public class EbsApiClient {
     Optional.ofNullable(summaryType)
         .ifPresent(param -> queryParams.add("summary-type", param));
 
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/lookup/assessment-summary-attributes")
             .queryParams(queryParams)
@@ -722,7 +719,7 @@ public class EbsApiClient {
     Optional.ofNullable(billType)
         .ifPresent(param -> queryParams.add("billType", param));
 
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/lookup/declarations")
             .queryParams(queryParams)
@@ -751,7 +748,7 @@ public class EbsApiClient {
     Optional.ofNullable(type)
         .ifPresent(param -> queryParams.add("type", param));
 
-    return ebsApiWebClient
+    return webClient
         .get()
         .uri(builder -> builder.path("/lookup/provider-request-types")
             .queryParams(queryParams)
@@ -770,7 +767,7 @@ public class EbsApiClient {
    *     next allocated case reference
    */
   public Mono<CaseReferenceSummary> postAllocateNextCaseReference() {
-    return ebsApiWebClient
+    return webClient
         .post()
         .uri("/case-reference")
         .retrieve()
@@ -778,6 +775,55 @@ public class EbsApiClient {
         .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
             e, "case reference", null));
   }
+
+  /**
+   * Retrieves a list of notifications based on the specified search criteria, pagination, and
+   * sorting options.
+   *
+   * @param criteria the criteria used to filter the notifications, such as case reference, client
+   *                 surname, assigned user ID, or other relevant attributes
+   * @param page     the page number to retrieve in the paginated result set
+   * @param pageSize the number of notifications to retrieve per page
+   * @return a {@code Mono<Notifications>} containing the retrieved notifications that match the
+   *     search criteria
+   */
+  public Mono<Notifications> getNotifications(
+      final NotificationSearchCriteria criteria,
+      final Integer page,
+      final Integer pageSize) {
+    final MultiValueMap<String, String> queryParams = buildQueryParams(
+        criteria, page, pageSize);
+
+    return webClient
+        .get()
+        .uri(builder -> builder.path("/notifications")
+            .queryParams(queryParams)
+            .build())
+        .retrieve()
+        .bodyToMono(Notifications.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
+            e, "Notifications", queryParams));
+  }
+
+  private static MultiValueMap<String, String> buildQueryParams(
+      NotificationSearchCriteria criteria, Integer page, Integer pageSize) {
+    final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
+
+    addQueryParam(queryParams, "case-reference-number", criteria.getCaseReference());
+    addQueryParam(queryParams, "provider-case-reference", criteria.getProviderCaseReference());
+    addQueryParam(queryParams, "assigned-to-user-id", criteria.getAssignedToUserId());
+    addQueryParam(queryParams, "client-surname", criteria.getClientSurname());
+    addQueryParam(queryParams, "fee-earner-id", criteria.getFeeEarnerId());
+    addQueryParam(queryParams, "include-closed", criteria.isIncludeClosed());
+    addQueryParam(queryParams, "notification-type", criteria.getNotificationType());
+    addQueryParam(queryParams, "date-from", criteria.getNotificationFromDate());
+    addQueryParam(queryParams, "date-to", criteria.getNotificationToDate());
+    addQueryParam(queryParams, "page", page);
+    addQueryParam(queryParams, "size", pageSize);
+    addQueryParam(queryParams, "sort", criteria.getSort());
+    return queryParams;
+  }
+
 
 }
 
