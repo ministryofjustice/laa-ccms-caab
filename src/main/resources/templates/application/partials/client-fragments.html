@@ -33,7 +33,7 @@
           <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('First name', *{basicDetails.firstName})}"></div>
           <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Middle name(s)', *{basicDetails.middleNames})}"></div>
           <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Surname at birth', *{basicDetails.surnameAtBirth})}"></div>
-          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Date of birth', *{basicDetails.dobDay + '/' + basicDetails.dobMonth + '/' + basicDetails.dobYear})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Date of birth', *{basicDetails.dateOfBirth})}"></div>
           <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('NI number', *{basicDetails.nationalInsuranceNumber})}"></div>
           <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Home office number', *{basicDetails.homeOfficeNumber})}"></div>
           <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Gender', ${gender.description})}"></div>
