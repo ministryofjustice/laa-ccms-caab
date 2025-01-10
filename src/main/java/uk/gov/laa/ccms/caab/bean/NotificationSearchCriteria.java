@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.bean;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
@@ -8,7 +10,30 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
  * Represents the search criteria to search for Notifications.
  */
 @Data
+@NoArgsConstructor
 public class NotificationSearchCriteria {
+
+  /**
+   * Constructs a new NotificationSearchCriteria by copying the values from another
+   * NotificationSearchCriteria instance.
+   *
+   * @param criteria the NotificationSearchCriteria instance from which the values will be copied.
+   *                 Must not be null.
+   */
+  public NotificationSearchCriteria(@NotNull NotificationSearchCriteria criteria) {
+    this.caseReference = criteria.getCaseReference();
+    this.clientSurname = criteria.getClientSurname();
+    this.providerCaseReference = criteria.getProviderCaseReference();
+    this.feeEarnerId = criteria.getFeeEarnerId();
+    this.assignedToUserId = criteria.getAssignedToUserId();
+    this.includeClosed = criteria.isIncludeClosed();
+    this.notificationType = criteria.getNotificationType();
+    this.notificationFromDate = criteria.getNotificationFromDate();
+    this.notificationToDate = criteria.getNotificationToDate();
+    this.loginId = criteria.getLoginId();
+    this.userType = criteria.getUserType();
+    this.sort = criteria.getSort();
+  }
 
   /**
    * The LAA Application/Case Reference.
@@ -45,39 +70,9 @@ public class NotificationSearchCriteria {
   private String notificationType;
 
   /**
-   * The day of the {@see notificationFromDate}.
-   */
-  private String notificationFromDateDay;
-
-  /**
-   * The month of the {@see notificationFromDate}.
-   */
-  private String notificationFromDateMonth;
-
-  /**
-   * The year of the {@see notificationFromDate}.
-   */
-  private String notificationFromDateYear;
-
-  /**
    * The date from which to start the search.
    */
   private String notificationFromDate;
-
-  /**
-   * The day of the {@see notificationToDate}.
-   */
-  private String notificationToDateDay;
-
-  /**
-   * The month of the {@see notificationToDate}.
-   */
-  private String notificationToDateMonth;
-
-  /**
-   * The year of the {@see notificationToDate}.
-   */
-  private String notificationToDateYear;
 
   /**
    * The date to search up to.
@@ -98,24 +93,6 @@ public class NotificationSearchCriteria {
    * the sort field and direction.
    */
   private String sort;
-
-  /**
-   * Retrieves the formatted date to search from.
-   *
-   * @return The formatted from date (yyyy-MM-dd).
-   */
-  public String getDateFrom() {
-    return getDate(notificationFromDateYear, notificationFromDateMonth, notificationFromDateDay);
-  }
-
-  /**
-   * Retrieves the formatted date to search up to.
-   *
-   * @return The formatted to date (yyyy-MM-dd).
-   */
-  public String getDateTo() {
-    return getDate(notificationToDateYear, notificationToDateMonth, notificationToDateDay);
-  }
 
   /**
    * Returns an ISO formatted date based on the day, month, and year values.
@@ -148,13 +125,7 @@ public class NotificationSearchCriteria {
    */
   public static void reset(NotificationSearchCriteria criteria) {
     criteria.setSort("");
-    criteria.setNotificationFromDateDay("");
-    criteria.setNotificationFromDateMonth("");
-    criteria.setNotificationFromDateYear("");
     criteria.setNotificationFromDate("");
-    criteria.setNotificationToDateDay("");
-    criteria.setNotificationToDateMonth("");
-    criteria.setNotificationToDateYear("");
     criteria.setNotificationToDate("");
     criteria.setNotificationType("");
     criteria.setCaseReference("");

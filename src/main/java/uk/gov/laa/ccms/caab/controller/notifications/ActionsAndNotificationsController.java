@@ -52,10 +52,11 @@ import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
+import uk.gov.laa.ccms.data.model.Notification;
+import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
-import uk.gov.laa.ccms.soa.gateway.model.Notification;
-import uk.gov.laa.ccms.soa.gateway.model.Notifications;
+import uk.gov.laa.ccms.soa.gateway.model.Document;
 
 /**
  * Controller for handling requests for actions and notifications.
@@ -577,6 +578,16 @@ public class ActionsAndNotificationsController {
       Map<String, String> documentTypes) {
     return notification
         .getUploadedDocuments().stream()
+        .map(document -> new Document()
+            .documentId(document.getDocumentId())
+            .channel(document.getChannel())
+            .documentLink(document.getDocumentLink())
+            .fileData(document.getFileData())
+            .status(document.getStatus())
+            .statusDescription(document.getStatusDescription())
+            .fileExtension(document.getFileExtension())
+            .text(document.getText())
+            .documentType(document.getDocumentType()))
         .map(document -> notificationAttachmentMapper.toBaseNotificationAttachmentDetail(document,
             documentTypes.get(document.getDocumentType())))
         .map(notificationAttachment -> notificationAttachment.status("Submitted"))

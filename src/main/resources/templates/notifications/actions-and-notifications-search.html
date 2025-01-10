@@ -1,116 +1,117 @@
-<!DOCTYPE html>
+<!DOCTYPE html >
 <html lang="en"
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}"
-      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html"
+      xmlns:govuk="http://www.thymeleaf.org">
 <head>
-  <title>LAA CCMS - Your actions / notifications</title>
+  <title th:text="|#{service.name} - #{client.notifications.search.heading}|"/>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/notifications/search?notification_type=N}" class="govuk-back-link">Cancel and return
-      to search results</a>
+    <a th:href="@{/notifications/search(notification_type='N')}" class="govuk-back-link"
+       th:text="#{client.notifications.search.goBack}"/>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/notifications/search}" th:object="${notificationSearchCriteria}"
           method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l">Search for notifications</span>
-      <h1 class="govuk-heading-l">
-        Search
-      </h1>
-      <div class="govuk-body-l">
-        Please enter as many details as you have available in the provided search fields in
-        order to find your required action or notification. At least one of the search criteria
-        fields should be completed.
-      </div>
+
+      <span class="govuk-caption-l" th:text="#{client.notifications.search.subHeading}"/>
+      <h1 class="govuk-heading-l" th:text="#{client.notifications.search.heading}"/>
+      <div class="govuk-body-l" th:text="#{client.notifications.search.leadParagraph}"/>
+
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
-          <div th:replace="~{partials/forms :: dropdown('assignedToUserId', 'Assigned to', ${users}, 'loginId', 'loginId', false)}"></div>
-          <h2 class="govuk-heading-m">
-            Notification dates
-          </h2>
+
+          <h2 class="govuk-heading-m"
+              th:text="#{client.notifications.search.responsibilityInformation.heading}"/>
+          <div
+              th:replace="~{partials/forms :: dropdown('assignedToUserId', #{client.notifications.search.responsibilityInformation.assignedTo.label}, ${users}, 'loginId', 'loginId', false)}"></div>
+          <div
+              th:replace="~{partials/forms :: dropdown('feeEarnerId', #{client.notifications.search.responsibilityInformation.feeEarner.label}, ${feeEarners}, 'id', 'name', false)}"></div>
+
+          <h2 class="govuk-heading-m"
+              th:text="#{client.notifications.search.notificationDates.heading}"/>
+          <govuk:details classes="govuk-!-margin-top-2"
+                         th:summaryText="#{client.notifications.search.notificationDates.datesHelp.summaryText}"
+                         th:text="#{client.notifications.search.notificationDates.datesHelp.text}"/>
           <div class="govuk-form-group"
-               th:classappend="${#fields.hasErrors('notificationFromDateDay') || #fields.hasErrors('notificationFromDateMonth') || #fields.hasErrors('notificationFromDateYear') || #fields.hasErrors('notificationFromDate')}  ? 'govuk-form-group--error' : ''">
-            <fieldset class="govuk-fieldset" role="group"
-                      aria-describedby="notf-hint not-from-date-error">
-              <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">
-                From
-              </legend>
-              <div id="notf-hint" class="govuk-hint">
-                For example, 27 3 2007
-              </div>
-              <p id="not-from-date-error" class="govuk-error-message">
-                <span th:each="error : ${#fields.detailedErrors()}">
-                    <span th:inline="text"
-                          th:if="${error.fieldName == 'notificationFromDateDay' || error.fieldName == 'notificationFromDateMonth' || error.fieldName == 'notificationFromDateYear'}">
-                        <span th:utext="${error.message + '<br>'}"></span>
-                    </span>
-                </span>
-              </p>
-              <div class="govuk-date-input" id="notificationFromDate">
-                <div th:replace="~{partials/forms::numericInput('notificationFromDateDay', 'Day', '2')}"></div>
-                <div th:replace="~{partials/forms::numericInput('notificationFromDateMonth', 'Month', '2')}"></div>
-                <div th:replace="~{partials/forms::numericInput('notificationFromDateYear', 'Year', '4')}"></div>
-              </div>
-            </fieldset>
+               th:classappend="${#fields.hasErrors('notificationFromDate')} ? 'govuk-form-group--error' : ''">
+            <div class="moj-datepicker" data-module="moj-date-picker">
+              <label class="govuk-label" for="notification-from-date-field-value"
+                     th:text="#{client.notifications.search.notificationDates.from.label}"/>
+              <div id="notification-from-date-hint" class="govuk-hint"
+                   th:text="#{client.notifications.search.notificationDates.from.hintText}"/>
+              <span th:if="${#fields.hasErrors('notificationFromDate')}"
+                    th:errors="*{notificationFromDate}" class="govuk-error-message"></span>
+              <input class="govuk-input moj-js-datepicker-input"
+                     id="notification-from-date-field-value"
+                     th:field="*{notificationFromDate}"
+                     type="text"
+                     aria-describedby="notification-from-date-hint"
+                     autocomplete="off"
+                     th:errorclass="govuk-select--error">
+            </div>
           </div>
           <div class="govuk-form-group"
-               th:classappend="${#fields.hasErrors('notificationToDateDay') || #fields.hasErrors('notificationToDateMonth') || #fields.hasErrors('notificationToDateYear') || #fields.hasErrors('notificationToDate')} ? 'govuk-form-group--error' : ''">
-            <fieldset class="govuk-fieldset" role="group"
-                      aria-describedby="nott-hint nott-error">
-              <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">
-                To
-              </legend>
-              <div id="nott-hint" class="govuk-hint">
-                For example, 27 3 2007
-              </div>
-              <p id="nott-error" class="govuk-error-message">
-                    <span th:each="error : ${#fields.detailedErrors()}">
-                        <span th:inline="text"
-                              th:if="${error.fieldName == 'notificationToDateDay' || error.fieldName == 'notificationToDateMonth' || error.fieldName == 'notificationToDateYear'}">
-                            <span th:utext="${error.message + '<br>'}"></span>
-                        </span>
-                    </span>
-              </p>
-              <div class="govuk-date-input" id="notificationToDate">
-                <div th:replace="~{partials/forms::numericInput('notificationToDateDay', 'Day', '2')}"></div>
-                <div th:replace="~{partials/forms::numericInput('notificationToDateMonth', 'Month', '2')}"></div>
-                <div th:replace="~{partials/forms::numericInput('notificationToDateYear', 'Year', '4')}"></div>
-              </div>
-            </fieldset>
+               th:classappend="${#fields.hasErrors('notificationToDate')} ? 'govuk-form-group--error' : ''">
+            <div class="moj-datepicker" data-module="moj-date-picker">
+              <label class="govuk-label" for="notification-to-date-field-value"
+                     th:text="#{client.notifications.search.notificationDates.to.label}"/>
+              <div id="notification-to-date-hint" class="govuk-hint"
+                   th:text="#{client.notifications.search.notificationDates.to.hintText}"/>
+              <span th:if="${#fields.hasErrors('notificationToDate')}"
+                    th:errors="*{notificationToDate}" class="govuk-error-message"></span>
+
+              <input class="govuk-input moj-js-datepicker-input"
+                     id="notification-to-date-field-value"
+                     th:field="*{notificationToDate}"
+                     type="text"
+                     aria-describedby="notification-from-date-hint"
+                     autocomplete="off"
+                     th:errorclass="govuk-select--error">
+            </div>
           </div>
-          <div th:replace="~{partials/forms :: textInput('providerCaseReference', 'Provider case reference', 'govuk-input--width-20')}"></div>
-          <div th:replace="~{partials/forms :: textInput('caseReference', 'LAA application / case reference', 'govuk-input--width-20')}"></div>
-          <div th:replace="~{partials/forms :: textInput('clientSurname', 'Client surname', 'govuk-input--width-20')}"></div>
-          <div th:replace="~{partials/forms :: dropdown('feeEarnerId', 'Fee earner', ${feeEarners}, 'id', 'name', false)}"></div>
-          <div th:replace="~{partials/forms :: dropdown('notificationType', 'Action / Notification Type', ${notificationTypes}, 'code', 'description', false)}"></div>
+
+          <h2 class="govuk-heading-m"
+              th:text="#{client.notifications.search.caseInformation.heading}"/>
+
+          <div
+              th:replace="~{partials/forms :: textInput('providerCaseReference', #{client.notifications.search.caseInformation.providerCaseReference.label}, 'govuk-input--width-20')}"></div>
+          <div
+              th:replace="~{partials/forms :: textInput('caseReference', #{client.notifications.search.caseInformation.laaApplicationCaseReference.label}, 'govuk-input--width-20')}"></div>
+          <div
+              th:replace="~{partials/forms :: textInput('clientSurname', #{client.notifications.search.caseInformation.clientSurname.label}, 'govuk-input--width-20')}"></div>
+
+          <h2 class="govuk-heading-m"
+              th:text="#{client.notifications.search.notificationDetails.heading}"/>
+
+          <div
+              th:replace="~{partials/forms :: dropdown('notificationType', #{client.notifications.search.notificationDetails.actionType.label}, ${notificationTypes}, 'code', 'description', false)}"></div>
           <div class="govuk-form-group">
             <fieldset class="govuk-fieldset">
-              <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
-                <h2 class="govuk-fieldset__heading">
-                  Include closed notifications?
-                </h2>
-              </legend>
+              <legend class="govuk-fieldset__legend"
+                      th:text="#{client.notifications.search.includeClosedNotifications.legendText}"/>
               <div class="govuk-radios govuk-radios--inline" data-module="govuk-radios">
                 <div class="govuk-radios__item">
                   <input class="govuk-radios__input" id="includeClosed-yes" name="includeClosed"
-                         type="radio" value="true" th:checked="${notificationSearchCriteria.includeClosed}">
-                  <label class="govuk-label govuk-radios__label" for="includeClosed-yes">
-                    Yes
-                  </label>
+                         type="radio" value="true"
+                         th:checked="${notificationSearchCriteria.includeClosed}">
+                  <label class="govuk-label govuk-radios__label" for="includeClosed-yes"
+                         th:text="#{site.yes}"/>
                 </div>
                 <div class="govuk-radios__item">
                   <input class="govuk-radios__input" id="includeClosed-no" name="includeClosed"
-                         type="radio" value="false" th:checked="${!notificationSearchCriteria.includeClosed}">
-                  <label class="govuk-label govuk-radios__label" for="includeClosed-no">
-                    No
-                  </label>
+                         type="radio" value="false"
+                         th:checked="${!notificationSearchCriteria.includeClosed}">
+                  <label class="govuk-label govuk-radios__label" for="includeClosed-no"
+                         th:text="#{site.no}"/>
                 </div>
               </div>
             </fieldset>
           </div>
-          <button class="govuk-button" data-module="govuk-button">Search</button>
+          <button class="govuk-button" data-module="govuk-button" th:text="#{site.search}"/>
         </div>
       </div>
     </form>
