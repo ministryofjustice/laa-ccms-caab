@@ -6,9 +6,9 @@ import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CHARACTE
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.DOUBLE_SPACE;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.FIRST_CHARACTER_MUST_BE_ALPHA;
 
+import java.time.LocalDate;
 import java.util.Date;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
@@ -25,6 +25,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 public class NotificationSearchValidator extends AbstractValidator {
 
   private static final String ISO_DATE_FORMAT = "yyyy-MM-dd";
+  private static final String DATE_FORMAT = "dd/MM/yyyy";
 
   /**
    * Determines if the Validator supports the provided class.
@@ -64,12 +65,8 @@ public class NotificationSearchValidator extends AbstractValidator {
     if (!errors.hasErrors()) {
       NotificationSearchCriteria searchCriteria = (NotificationSearchCriteria) target;
       if (!StringUtils.hasText(searchCriteria.getAssignedToUserId())
-          && !StringUtils.hasText(searchCriteria.getNotificationFromDateDay())
-          && !StringUtils.hasText(searchCriteria.getNotificationFromDateMonth())
-          && !StringUtils.hasText(searchCriteria.getNotificationFromDateYear())
-          && !StringUtils.hasText(searchCriteria.getNotificationToDateDay())
-          && !StringUtils.hasText(searchCriteria.getNotificationToDateMonth())
-          && !StringUtils.hasText(searchCriteria.getNotificationToDateYear())
+          && !StringUtils.hasText(searchCriteria.getNotificationFromDate())
+          && !StringUtils.hasText(searchCriteria.getNotificationToDate())
           && !StringUtils.hasText(searchCriteria.getProviderCaseReference())
           && !StringUtils.hasText(searchCriteria.getCaseReference())
           && !StringUtils.hasText(searchCriteria.getClientSurname())
@@ -89,93 +86,70 @@ public class NotificationSearchValidator extends AbstractValidator {
     String dateToFieldName = "notificationToDate";
     String dateToDisplayName = "date to";
 
-    Triple<String, String, String> fromYear = Triple.of(criteria.getNotificationFromDateYear(),
-        "year", "notificationFromDateYear");
-    Triple<String, String, String> fromMonth = Triple.of(criteria.getNotificationFromDateMonth(),
-        "month", "notificationFromDateMonth");
-    Triple<String, String, String> fromDay = Triple.of(criteria.getNotificationFromDateDay(),
-        "day", "notificationFromDateDay");
+    boolean fromDateEmpty = criteria.getNotificationFromDate() == null
+        || !StringUtils.hasText(criteria.getNotificationFromDate());
+    boolean toDateEmpty = criteria.getNotificationToDate() == null
+        || !StringUtils.hasText(criteria.getNotificationToDate());
 
-    Triple<String, String, String> toYear = Triple.of(criteria.getNotificationToDateYear(),
-        "year", "notificationToDateYear");
-    Triple<String, String, String> toMonth = Triple.of(criteria.getNotificationToDateMonth(),
-        "month", "notificationToDateMonth");
-    Triple<String, String, String> toDay = Triple.of(criteria.getNotificationToDateDay(),
-        "day", "notificationToDateDay");
-
-    boolean fromDateFullyPopulated = dateFullyPopulated(fromYear.getLeft(), fromMonth.getLeft(),
-        fromDay.getLeft());
-    boolean toDateFullyPopulated = dateFullyPopulated(toYear.getLeft(), toMonth.getLeft(),
-        toDay.getLeft());
-
-    boolean fromDateEmpty = dateEmpty(fromYear.getLeft(), fromMonth.getLeft(), fromDay.getLeft());
-    boolean toDateEmpty = dateEmpty(toYear.getLeft(), toMonth.getLeft(), toDay.getLeft());
-
-    if (!fromDateEmpty && !fromDateFullyPopulated) {
-      reportMissingDateFields(dateFromFieldName, dateFromDisplayName, errors);
-    }
-
+    // Validate from
     Date from = null;
-
-    if (fromDateFullyPopulated) {
-      validateNumericField(fromYear.getRight(), fromYear.getLeft(), fromYear.getMiddle(), errors);
-      validateNumericField(fromMonth.getRight(), fromMonth.getLeft(),
-          fromMonth.getMiddle(), errors);
-      validateNumericField(fromDay.getRight(), fromDay.getLeft(), fromDay.getMiddle(), errors);
-
+    if (!fromDateEmpty) {
       try {
-        String dateFrom = criteria.getDateFrom();
+        String dateFrom = criteria.getNotificationFromDate();
         from = validateValidDateField(dateFrom, dateFromFieldName, dateFromDisplayName,
-            ISO_DATE_FORMAT, errors);
+            DATE_FORMAT, errors);
       } catch (CaabApplicationException e) {
         reportInvalidDate(dateFromFieldName, dateFromDisplayName, errors);
       }
-
-      //ensure date is in the past and not the future
-      if (from != null) {
-        validateDateInPast(from, dateFromFieldName, dateFromDisplayName, errors);
-      }
     }
 
-    if (!toDateEmpty && !toDateFullyPopulated) {
-      reportMissingDateFields(dateToFieldName, dateToDisplayName, errors);
-    }
-
+    // Validate to
     Date to = null;
-
-    if (toDateFullyPopulated) {
-      validateNumericField(toYear.getRight(), toYear.getLeft(), toYear.getMiddle(), errors);
-      validateNumericField(toMonth.getRight(), toMonth.getLeft(), toMonth.getMiddle(), errors);
-      validateNumericField(toDay.getRight(), toDay.getLeft(), toDay.getMiddle(), errors);
-
+    if (!toDateEmpty) {
       try {
-        String dateTo = criteria.getDateTo();
-        to = validateValidDateField(dateTo, dateToFieldName, dateFromDisplayName,
-            ISO_DATE_FORMAT, errors);
+        String dateTo = criteria.getNotificationToDate();
+        to = validateValidDateField(dateTo, dateToFieldName, dateToDisplayName,
+            DATE_FORMAT, errors);
       } catch (CaabApplicationException e) {
         reportInvalidDate(dateToFieldName, dateToDisplayName, errors);
       }
-
-      if (to != null) {
-        validateDateInPast(to, dateToFieldName, dateToDisplayName, errors);
-      }
     }
 
-    if (from != null && to != null) {
-      validateFromAfterToDates(from, dateFromFieldName, to, errors);
+    boolean fromInvalid = fromDateEmpty || from == null;
+    //  Validate from date is not in the future
+    if (!fromInvalid) {
+      validateDateInPast(from, dateFromFieldName, dateFromDisplayName, errors);
     }
+
+    boolean toInvalid = toDateEmpty || to == null;
+    // Validate to date is not in the future
+    if (!toInvalid) {
+      validateDateInPast(to, dateToFieldName, dateToDisplayName, errors);
+    }
+
+    // Validate that To is after From date
+    if (!fromInvalid && !toInvalid) {
+      validateFromBeforeToDates(from, dateFromFieldName, to, errors);
+      validateLessThanThreeYearsBetweenDates(from, dateToFieldName, to, errors);
+    }
+
   }
 
-  private boolean dateEmpty(String year, String month, String day) {
-    return !StringUtils.hasText(year)
-        && !StringUtils.hasText(month)
-        && !StringUtils.hasText(day);
-  }
 
-  private boolean dateFullyPopulated(String year, String month, String day) {
-    return StringUtils.hasText(year)
-        && StringUtils.hasText(month)
-        && StringUtils.hasText(day);
+  protected void validateLessThanThreeYearsBetweenDates(final Date fromDate, final String fieldName,
+      final Date toDate, Errors errors) {
+
+    LocalDate fromLocalDate = fromDate.toInstant().atZone(java.time.ZoneId.systemDefault())
+        .toLocalDate();
+    LocalDate toLocalDate = toDate.toInstant().atZone(java.time.ZoneId.systemDefault())
+        .toLocalDate();
+    LocalDate threeYearsAfterFrom = fromLocalDate.plusYears(3L);
+
+    // If three years after From date is still before the To date, then the date range is more than
+    //  three years
+    if (threeYearsAfterFrom.isBefore(toLocalDate)) {
+      errors.rejectValue(fieldName, "validation.date.range-exceeds-three-years.error-text");
+    }
   }
 
   private void validateCaseRef(final String caseRef, Errors errors) {

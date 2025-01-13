@@ -1,8 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.notifications;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -33,9 +33,9 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.NotificationService;
+import uk.gov.laa.ccms.data.model.Notification;
+import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.Notification;
-import uk.gov.laa.ccms.soa.gateway.model.Notifications;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -103,7 +103,7 @@ class NotificationsSearchResultsControllerTest {
         this.mockMvc.perform(get("/notifications/search-results")
             .flashAttrs(flashMap)));
 
-    assertTrue(exception.getCause() instanceof CaabApplicationException);
+    assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals("Error retrieving notifications", exception.getCause().getMessage());
 
   }
@@ -161,12 +161,11 @@ class NotificationsSearchResultsControllerTest {
     return new Notifications()
         .addContentItem(
             new Notification()
-                .user(new uk.gov.laa.ccms.soa.gateway.model.UserDetail()
-                    .userLoginId("user1")
+                .user(new UserDetail()
+                    .loginId("user1")
                     .userType("user1"))
                 .notificationId("234")
                 .notificationType("N"));
-
   }
 
   private static final UserDetail userDetails = new UserDetail()
@@ -176,9 +175,7 @@ class NotificationsSearchResultsControllerTest {
 
   private static NotificationSearchCriteria buildNotificationSearchCritieria() {
     NotificationSearchCriteria criteria = new NotificationSearchCriteria();
-    criteria.setNotificationToDateDay("12");
-    criteria.setNotificationToDateMonth("12");
-    criteria.setNotificationToDateYear("2022");
+    criteria.setNotificationToDate("12/12/2022");
     return criteria;
   }
 }
