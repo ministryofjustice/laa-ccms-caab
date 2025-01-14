@@ -16,9 +16,7 @@ public class ClientFormDataBasicDetails extends AbstractClientFormData {
   private String middleNames;
   private String surnameAtBirth;
 
-  private String dobDay;
-  private String dobMonth;
-  private String dobYear;
+  private String dateOfBirth;
   private String countryOfOrigin;
   private String nationalInsuranceNumber;
   private String homeOfficeNumber;

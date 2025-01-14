@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
-      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
+      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org" xmlns:moj="http://www.thymeleaf.org">
 <head>
     <title>LAA CCMS - Start new application</title>
 </head>
@@ -27,30 +27,16 @@
                 <div class="govuk-grid-column-two-thirds">
                     <div th:replace="~{partials/forms :: textInput('forename', 'First name', 'govuk-input--width-20')}"></div>
                     <div th:replace="~{partials/forms :: textInput('surname', 'Surname at birth', 'govuk-input--width-20')}"></div>
-                    <div class="govuk-form-group"
-                         th:classappend="${#fields.hasErrors('dobDay') || #fields.hasErrors('dobMonth') || #fields.hasErrors('dobYear')} ? 'govuk-form-group--error' : ''">
-                        <fieldset class="govuk-fieldset" role="group" aria-describedby="dob-hint dob-error">
-                            <legend class="govuk-fieldset__legend">
-                                Date of birth
-                            </legend>
-                            <div id="dob-hint" class="govuk-hint">
-                                For example, 27 3 2007
-                            </div>
-                            <p id="dob-error" class="govuk-error-message">
-                                <span th:each="error : ${#fields.detailedErrors()}">
-                                    <span th:inline="text"
-                                          th:if="${error.fieldName == 'dobDay' || error.fieldName == 'dobMonth' || error.fieldName == 'dobYear'}">
-                                        <span th:utext="${error.message + '<br>'}"></span>
-                                    </span>
-                                </span>
-                            </p>
-                            <div class="govuk-date-input" id="dob">
-                                <div th:replace="partials/forms::numericInput('dobDay', 'Day', '2')"></div>
-                                <div th:replace="partials/forms::numericInput('dobMonth', 'Month', '2')"></div>
-                                <div th:replace="partials/forms::numericInput('dobYear', 'Year', '4')"></div>
-                            </div>
-                        </fieldset>
-                    </div>
+
+                    <moj:datepicker
+                            id="dob"
+                            name="dateOfBirth"
+                            th:label="#{client.search.dob.label}"
+                            th:hint="#{client.search.dob.hint}"
+                            th:errorMessage="${#fields.hasErrors('dateOfBirth') ? #fields.errors('dateOfBirth').getFirst() : ''}"
+                            th:value="*{__${'dateOfBirth'}__}">
+                    </moj:datepicker>
+
                     <div th:replace="~{partials/forms :: dropdown('gender', 'Gender (optional)', ${genders}, 'code', 'description', false)}"></div>
                     <div th:replace="~{partials/forms :: dropdown('uniqueIdentifierType', 'Unique identifier type (optional)', ${uniqueIdentifierTypes}, 'code', 'description', false)}"></div>
                     <div th:replace="~{partials/forms :: textInput('uniqueIdentifierValue', 'Unique identifier value (optional)', 'govuk-input--width-20')}"></div>

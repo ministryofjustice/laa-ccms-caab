@@ -1,7 +1,5 @@
 package uk.gov.laa.ccms.caab.mapper;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -18,6 +16,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
+import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
@@ -121,15 +120,10 @@ public interface ClientDetailMapper {
    */
   @Named("mapDateOfBirth")
   default Date mapDateOfBirth(final ClientFormDataBasicDetails basicDetails) {
-    if (basicDetails != null) {
-      final int day = Integer.parseInt(basicDetails.getDobDay());
-      final int month = Integer.parseInt(basicDetails.getDobMonth());
-      final int year = Integer.parseInt(basicDetails.getDobYear());
-
-      final LocalDate localDate = LocalDate.of(year, month, day);
-      return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    if (basicDetails == null) {
+      return null;
     }
-    return null;
+    return DateUtils.convertToDate(basicDetails.getDateOfBirth());
   }
 
   @Mapping(target = "contactDetails", source = "contacts")
@@ -147,7 +141,7 @@ public interface ClientDetailMapper {
    * Adds the basic details to the client flow form data from soa client details, using nameDetails
    * and personal information.
    *
-   * @param clientFlowFormData The client flow form data with basic details to be amended.
+   * @param clientFlowFormData  The client flow form data with basic details to be amended.
    * @param clientDetailDetails The returned soa client details to map from.
    */
   @BeforeMapping
@@ -177,12 +171,8 @@ public interface ClientDetailMapper {
     }
   }
 
-  @Mapping(target = "basicDetails.dobDay", source = "personalInformation.dateOfBirth",
-      qualifiedByName = "mapDayFromDate")
-  @Mapping(target = "basicDetails.dobMonth", source = "personalInformation.dateOfBirth",
-      qualifiedByName = "mapMonthFromDate")
-  @Mapping(target = "basicDetails.dobYear", source = "personalInformation.dateOfBirth",
-      qualifiedByName = "mapYearFromDate")
+  @Mapping(target = "basicDetails.dateOfBirth", source = "personalInformation.dateOfBirth",
+      qualifiedByName = "mapComponentDateFromDate")
   @Mapping(target = "basicDetails.mentalIncapacity",
       source = "personalInformation.mentalCapacityInd")
   void addClientFormDataBasicDetailsFromClientPersonalDetail(
@@ -191,7 +181,7 @@ public interface ClientDetailMapper {
 
   @Mapping(target = "middleNames", source = "name.middleName")
   void addClientFormDataBasicDetailsFromNameDetail(
-      @MappingTarget ClientFormDataBasicDetails basicDetails,  NameDetail name);
+      @MappingTarget ClientFormDataBasicDetails basicDetails, NameDetail name);
 
   @Mapping(target = "telephoneMobile",
       source = "mobileNumber")
@@ -211,7 +201,7 @@ public interface ClientDetailMapper {
   @Named("mapListToString")
   default String mapListToString(List<String> values) {
     if (values != null && !values.isEmpty()) {
-      return values.get(0);
+      return values.getFirst();
     }
     return null;
   }
@@ -222,42 +212,12 @@ public interface ClientDetailMapper {
    * @param date The date to convert
    * @return Translated String value.
    */
-  @Named("mapDayFromDate")
-  default String mapDayFromDate(Date date) {
-    if (date != null) {
-      final LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-      return Integer.toString(localDate.getDayOfMonth());
+  @Named("mapComponentDateFromDate")
+  default String mapComponentDateFromDate(Date date) {
+    if (date == null) {
+      return null;
     }
-    return null;
+    return DateUtils.convertToComponentDate(date);
   }
 
-  /**
-   * Translates a Date and extracts the month.
-   *
-   * @param date The date to convert
-   * @return Translated String value.
-   */
-  @Named("mapMonthFromDate")
-  default String mapMonthFromDate(Date date) {
-    if (date != null) {
-      final LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-      return Integer.toString(localDate.getMonthValue());
-    }
-    return null;
-  }
-
-  /**
-   * Translates a Date and extracts the year.
-   *
-   * @param date The date to convert
-   * @return Translated String value.
-   */
-  @Named("mapYearFromDate")
-  default String mapYearFromDate(Date date) {
-    if (date != null) {
-      final LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-      return Integer.toString(localDate.getYear());
-    }
-    return null;
-  }
 }

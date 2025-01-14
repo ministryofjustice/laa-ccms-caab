@@ -9,14 +9,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails;
 
-@ExtendWith(SpringExtension.class)
+@ExtendWith(MockitoExtension.class)
 class ClientDeceasedDetailsValidatorTest {
 
   private ClientFormDataDeceasedDetails deceasedDetails;
@@ -27,42 +27,38 @@ class ClientDeceasedDetailsValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     deceasedDetails = new ClientFormDataDeceasedDetails();
     errors = new BeanPropertyBindingResult(deceasedDetails, "deceasedDetails");
   }
 
   @Test
-  public void supports_ReturnsTrueForClientFormDataDeceasedDetailsClass() {
+  void supports_ReturnsTrueForClientFormDataDeceasedDetailsClass() {
     assertTrue(validator.supports(ClientFormDataDeceasedDetails.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(validator.supports(Object.class));
   }
 
   @ParameterizedTest
-  @CsvSource({",01,2000,dodDay",
-      "01,,2000,dodMonth",
-      "01,01,,dodYear"})
-  public void testValidate_numericFieldsError(String dodDay, String dodMonth, String dodYear, String erroredField){
-    deceasedDetails.setDodDay(dodDay);
-    deceasedDetails.setDodMonth(dodMonth);
-    deceasedDetails.setDodYear(dodYear);
+  @ValueSource(strings = {"/01/2000",
+      "01//2000",
+      "01/01/"})
+  void testValidate_numericFieldsError(String dodDay) {
+    deceasedDetails.setDateOfDeath(dodDay);
 
     validator.validate(deceasedDetails, errors);
 
     assertTrue(errors.hasErrors());
-    assertNotNull(errors.getFieldError(erroredField));
-    assertEquals("invalid.numeric", errors.getFieldError(erroredField).getCode());
+    assertNotNull(errors.getFieldError("dateOfDeath"));
+    assertEquals("invalid.format", errors.getFieldError("dateOfDeath").getCode());
   }
 
   @Test
-  public void testValidate_futureDateError(){
-    deceasedDetails.setDodDay("1");
-    deceasedDetails.setDodMonth("1");
-    deceasedDetails.setDodYear("3000");
+  void testValidate_futureDateError() {
+    deceasedDetails.setDateOfDeath("1/1/3000");
 
     validator.validate(deceasedDetails, errors);
 
@@ -72,16 +68,13 @@ class ClientDeceasedDetailsValidatorTest {
   }
 
   @Test
-  public void testValidate(){
-    deceasedDetails.setDodDay("01");
-    deceasedDetails.setDodMonth("01");
-    deceasedDetails.setDodYear("2000");
+  void testValidate() {
+    deceasedDetails.setDateOfDeath("01/01/2000");
 
     validator.validate(deceasedDetails, errors);
 
     assertFalse(errors.hasErrors());
   }
-
 
 
 }

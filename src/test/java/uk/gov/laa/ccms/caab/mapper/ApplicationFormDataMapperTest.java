@@ -41,9 +41,7 @@ class ApplicationFormDataMapperTest {
     // Verify that the mapping is correct
     assertNotNull(result);
     assertEquals("SampleId", result.getApplicationTypeCategory());
-    assertEquals("23", result.getDelegatedFunctionUsedDay());
-    assertEquals("10", result.getDelegatedFunctionUsedMonth());
-    assertEquals("2023", result.getDelegatedFunctionUsedYear());
+    assertEquals("23/10/2023", result.getDelegatedFunctionUsedDate());
     assertEquals("ContractFlag", result.getDevolvedPowersContractFlag());
   }
 

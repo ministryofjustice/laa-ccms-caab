@@ -1,11 +1,11 @@
 <h1 class="govuk-heading-l">
   Delegated functions
 </h1>
-<div class="govuk-body-l">
+<p class="govuk-body-l">
   If you have exercised delegated functions in a Special Children Act matter, please select 'no' to use of
   delegated functions here. You will be asked to confirm the details of the exercise of the delegated
   functions in the merits assessment.
-</div>
+</p>
 <div class="govuk-grid-row">
   <div class="govuk-grid-column-two-thirds">
     <div class="govuk-form-group">
@@ -34,32 +34,16 @@
         </div>
       </fieldset>
     </div>
-    <div class="govuk-form-group" th:classappend="${#fields.hasErrors('delegatedFunctionUsedDay')} ? 'govuk-form-group--error' : ''">
-      <fieldset class="govuk-fieldset" role="group" aria-describedby="delegated-function-used-hint delegated-function-used-error">
-        <legend class="govuk-fieldset__legend">
-          <h1 class="govuk-fieldset__heading">
-            When was the delegated function used?
-          </h1>
-        </legend>
-        <div id="delegated-function-used-hint" class="govuk-hint">
-          For example, 27 3 2007
-        </div>
-        <p id="delegated-function-used-error" class="govuk-error-message">
-          <span th:each="error : ${#fields.detailedErrors()}">
-              <span th:inline="text" th:if="${error.fieldName == 'delegatedFunctionUsedDay' || error.fieldName == 'delegatedFunctionUsedMonth' || error.fieldName == 'delegatedFunctionUsedYear'}">
-                  <span th:utext="${error.message + '<br>'}"></span>
-              </span>
-          </span>
-        </p>
-        <div class="govuk-date-input" id="delegated-function-used">
-          <div th:replace="partials/forms::numericInput('delegatedFunctionUsedDay', 'Day', '2')"></div>
-          <div th:replace="partials/forms::numericInput('delegatedFunctionUsedMonth', 'Month', '2')"></div>
-          <div th:replace="partials/forms::numericInput('delegatedFunctionUsedYear', 'Year', '4')"></div>
-        </div>
-      </fieldset>
-    </div>
-    <button class="govuk-button" data-module="govuk-button">
-      Continue
-    </button>
+
+    <moj:datepicker
+            id="delegated-function-used"
+            name="delegatedFunctionUsedDate"
+            th:label="#{select.delegatedFunctions.date.label}"
+            th:hint="#{select.delegatedFunctions.date.hint}"
+            th:value="*{__${'delegatedFunctionUsedDate'}__}"
+            th:errorMessage="${#fields.hasErrors('delegatedFunctionUsedDate') ? #fields.errors('delegatedFunctionUsedDate').getFirst() : ''}">
+    </moj:datepicker>
+
+    <govuk:button th:text="#{site.continue}"/>
   </div>
 </div>

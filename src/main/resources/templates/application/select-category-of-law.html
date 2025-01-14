@@ -18,12 +18,12 @@
             </h1>
             <div class="govuk-body-l" th:if="${applicationFormData.exceptionalFunding}">
                 Please select the relevant Category of Law or click
-                <a th:href="@{/application/category-of-law}">revert to standard application</a>
+                <a class="govuk-link govuk-link--no-visited-state" th:href="@{/application/category-of-law}">revert to standard application</a>
                 if you do not wish to apply for exceptional case funding.
             </div>
             <div class="govuk-body-l" th:unless="${applicationFormData.exceptionalFunding}">
                 Please select the relevant Category of Law or click
-                <a th:href="@{/application/category-of-law?exceptional_funding=true}">Exceptional Funding</a>
+                <a class="govuk-link govuk-link--no-visited-state" th:href="@{/application/category-of-law?exceptional_funding=true}">Exceptional Funding</a>
                 if you wish to apply for exceptional case funding.
             </div>
             <div class="govuk-grid-row">

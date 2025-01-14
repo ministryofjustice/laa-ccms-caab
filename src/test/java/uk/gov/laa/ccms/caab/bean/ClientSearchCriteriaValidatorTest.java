@@ -20,7 +20,7 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientSearchCriteriaValidator;
 
 @ExtendWith(SpringExtension.class)
-public class ClientSearchCriteriaValidatorTest {
+class ClientSearchCriteriaValidatorTest {
 
   @InjectMocks
   private ClientSearchCriteriaValidator validator;
@@ -28,25 +28,25 @@ public class ClientSearchCriteriaValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     clientSearchCriteria = new ClientSearchCriteria();
     errors = new BeanPropertyBindingResult(clientSearchCriteria, "clientSearchCriteria");
   }
 
   @Test
-  public void supports_ReturnsTrueForClientSearchDetailsClass() {
+  void supports_ReturnsTrueForClientSearchDetailsClass() {
     assertTrue(validator.supports(ClientSearchCriteria.class));
   }
 
   @Test
-  public void testValidateForename_Valid() {
+  void testValidateForename_Valid() {
     clientSearchCriteria.setForename("John");
     validator.validateForename(clientSearchCriteria, errors);
     assertFalse(errors.hasErrors());
   }
 
   @Test
-  public void testValidateForename_Invalid() {
+  void testValidateForename_Invalid() {
     validator.validateForename(clientSearchCriteria, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("forename"));
@@ -54,14 +54,14 @@ public class ClientSearchCriteriaValidatorTest {
   }
 
   @Test
-  public void testValidateSurnameAtBirth_Valid() {
+  void testValidateSurnameAtBirth_Valid() {
     clientSearchCriteria.setSurname("Doe");
     validator.validateSurnameAtBirth(clientSearchCriteria, errors);
     assertFalse(errors.hasErrors());
   }
 
   @Test
-  public void testValidateSurnameAtBirth_Invalid() {
+  void testValidateSurnameAtBirth_Invalid() {
     validator.validateSurnameAtBirth(clientSearchCriteria, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("surname"));
@@ -69,52 +69,42 @@ public class ClientSearchCriteriaValidatorTest {
   }
 
   @Test
-  public void testValidateDateOfBirth_Valid() {
-    clientSearchCriteria.setDobDay("01");
-    clientSearchCriteria.setDobMonth("12");
-    clientSearchCriteria.setDobYear("1990");
+  void testValidateDateOfBirth_Valid() {
+    clientSearchCriteria.setDateOfBirth("01/12/1990");
     validator.validateDateOfBirth(clientSearchCriteria, errors);
     assertFalse(errors.hasErrors());
   }
 
   @Test
-  public void testValidateDateOfBirth_Invalid() {
-    clientSearchCriteria.setDobDay("");
-    clientSearchCriteria.setDobMonth("");
-    clientSearchCriteria.setDobYear("");
+  void testValidateDateOfBirth_Invalid() {
+    clientSearchCriteria.setDateOfBirth("");
     validator.validateDateOfBirth(clientSearchCriteria, errors);
     assertTrue(errors.hasErrors());
-    assertNotNull(errors.getFieldError("dobDay"));
-    assertEquals("required.dob-day", errors.getFieldError("dobDay").getCode());
-    assertNotNull(errors.getFieldError("dobMonth"));
-    assertEquals("required.dob-month", errors.getFieldError("dobMonth").getCode());
-    assertNotNull(errors.getFieldError("dobYear"));
-    assertEquals("required.dob-year", errors.getFieldError("dobYear").getCode());
+    assertNotNull(errors.getFieldError("dateOfBirth"));
+    assertEquals("required.dob", errors.getFieldError("dateOfBirth").getCode());
   }
 
   @ParameterizedTest
   @CsvSource({
-      "abc, 12, 1990, dobDay",
-      "1, ab, 1990, dobMonth",
-      "1, 12, abcd, dobYear"
+      "abc/12/1990, dateOfBirth",
+      "1/ab/1990, dateOfBirth",
+      "1/12/abcd, dateOfBirth"
   })
-  public void testValidateDateOfBirth_InvalidNumeric(String dobDay, String dobMonth, String dobYear,
-                                                     String field) {
-    clientSearchCriteria.setDobDay(dobDay);
-    clientSearchCriteria.setDobMonth(dobMonth);
-    clientSearchCriteria.setDobYear(dobYear);
+  void testValidateDateOfBirth_InvalidNumeric(String dobDay, String field) {
+    clientSearchCriteria.setDateOfBirth(dobDay);
+
     validator.validateDateOfBirth(clientSearchCriteria, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError(field));
-    assertEquals("invalid.numeric", errors.getFieldError(field).getCode());
+    assertEquals("invalid.format", errors.getFieldError(field).getCode());
   }
 
   @ParameterizedTest
   @CsvSource({"1, AB123456C",
       "2, TEST",
       "3, TEST"})
-  public void testValidateUniqueIdentifierType_Valid(Integer uniqueIdentifierType,
-                                                     String uniqueIdentifierValue) {
+  void testValidateUniqueIdentifierType_Valid(Integer uniqueIdentifierType,
+                                              String uniqueIdentifierValue) {
     clientSearchCriteria.setUniqueIdentifierType(uniqueIdentifierType);
     clientSearchCriteria.setUniqueIdentifierValue(uniqueIdentifierValue);
     validator.validateUniqueIdentifierType(clientSearchCriteria, errors);
@@ -122,7 +112,7 @@ public class ClientSearchCriteriaValidatorTest {
   }
 
   @Test
-  public void testValidateUniqueIdentifierType_InvalidNationalInsuranceNumber() {
+  void testValidateUniqueIdentifierType_InvalidNationalInsuranceNumber() {
     clientSearchCriteria.setUniqueIdentifierType(UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER);
     clientSearchCriteria.setUniqueIdentifierValue("ABC123");
     validator.validateUniqueIdentifierType(clientSearchCriteria, errors);
@@ -134,7 +124,7 @@ public class ClientSearchCriteriaValidatorTest {
 
   @ParameterizedTest
   @CsvSource({"----"})
-  public void testValidateUniqueIdentifierType_InvalidHomeOfficeReference(
+  void testValidateUniqueIdentifierType_InvalidHomeOfficeReference(
       String uniqueIdentifierValue) {
     clientSearchCriteria.setUniqueIdentifierType(UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE);
     clientSearchCriteria.setUniqueIdentifierValue(uniqueIdentifierValue);
@@ -148,7 +138,7 @@ public class ClientSearchCriteriaValidatorTest {
   @ParameterizedTest
   @CsvSource({"TEST  TEST",
       "----"})
-  public void testValidateUniqueIdentifierType_InvalidCaseReferenceNumber(
+  void testValidateUniqueIdentifierType_InvalidCaseReferenceNumber(
       String uniqueIdentifierValue) {
     clientSearchCriteria.setUniqueIdentifierType(UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER);
     clientSearchCriteria.setUniqueIdentifierValue(uniqueIdentifierValue);
@@ -160,12 +150,10 @@ public class ClientSearchCriteriaValidatorTest {
   }
 
   @Test
-  public void testValidate_Valid() {
+  void testValidate_Valid() {
     clientSearchCriteria.setForename("John");
     clientSearchCriteria.setSurname("Doe");
-    clientSearchCriteria.setDobDay("01");
-    clientSearchCriteria.setDobMonth("12");
-    clientSearchCriteria.setDobYear("1990");
+    clientSearchCriteria.setDateOfBirth("01/12/1990");
     clientSearchCriteria.setUniqueIdentifierType(1);
     clientSearchCriteria.setUniqueIdentifierValue("AB123456C");
     validator.validate(clientSearchCriteria, errors);
@@ -174,20 +162,18 @@ public class ClientSearchCriteriaValidatorTest {
 
   @ParameterizedTest
   @CsvSource({
-      "'','','','','', 5",
-      "'',Doe,'',12,1990,2",
-      "John,'','',12,1990,2",
-      "John,Doe,'','',1990,2",
-      "John,Doe,1,'',1990,1",
-      "John,Doe,1,12,'',1",
+      "'','','', 3",
+      "'',Doe,12/1990,2",
+      "John,'',12/1990,2",
+      "John,Doe,1990,1",
+      "John,Doe,1/1990,1",
+      "John,Doe,1/12/,1",
   })
-  public void testValidate_Invalid(String forename, String surname, String dobDay,
-                                   String dobMonth, String dobYear, int expectedErrorCount) {
+  void testValidate_Invalid(String forename, String surname, String dobDay,
+                            int expectedErrorCount) {
     clientSearchCriteria.setForename(forename);
     clientSearchCriteria.setSurname(surname);
-    clientSearchCriteria.setDobDay(dobDay);
-    clientSearchCriteria.setDobMonth(dobMonth);
-    clientSearchCriteria.setDobYear(dobYear);
+    clientSearchCriteria.setDateOfBirth(dobDay);
 
     validator.validate(clientSearchCriteria, errors);
 

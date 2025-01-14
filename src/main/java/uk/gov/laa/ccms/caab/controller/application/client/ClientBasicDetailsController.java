@@ -117,9 +117,7 @@ public class ClientBasicDetailsController {
 
     basicDetails.setFirstName(clientSearchCriteria.getForename());
     basicDetails.setSurnameAtBirth(clientSearchCriteria.getSurname());
-    basicDetails.setDobDay(clientSearchCriteria.getDobDay());
-    basicDetails.setDobMonth(clientSearchCriteria.getDobMonth());
-    basicDetails.setDobYear(clientSearchCriteria.getDobYear());
+    basicDetails.setDateOfBirth(clientSearchCriteria.getDateOfBirth());
 
     basicDetails.setNationalInsuranceNumber(
             clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER));

@@ -211,9 +211,7 @@ public class ClientBasicDetailsControllerTest {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
     clientSearchCriteria.setForename("John");
     clientSearchCriteria.setSurname("Doe");
-    clientSearchCriteria.setDobYear("1990");
-    clientSearchCriteria.setDobMonth("02");
-    clientSearchCriteria.setDobDay("01");
+    clientSearchCriteria.setDateOfBirth("01/02/1990");
     clientSearchCriteria.setUniqueIdentifierType(UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER);
     clientSearchCriteria.setUniqueIdentifierValue("AA111111A");
     clientSearchCriteria.setGender("MALE");

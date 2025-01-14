@@ -68,6 +68,7 @@ public class ClientDetailMapperTest {
   private final String disability = "TEST";
   private final String specialConsiderations = "TEST SPECIAL CONSIDERATIONS";
 
+  private String dateofBirth = "10/6/2000";
   private String day = "10";
   private String month = "6";
   private String year = "2000";
@@ -88,22 +89,20 @@ public class ClientDetailMapperTest {
 
   @Test
   void testMapStringToListNullValue() {
-    List<String> result = clientDetailMapper.mapStringToList( null);
+    List<String> result = clientDetailMapper.mapStringToList(null);
     assertNull(result);
   }
 
   @ParameterizedTest
   @CsvSource({
-      "1, 1, 2000, 1, 0, 2000",
-      "15, 7, 1990, 15, 6, 1990",
-      "31, 12, 2022, 31, 11, 2022"
+      "1/1/2000, 1, 0, 2000",
+      "15/7/1990, 15, 6, 1990",
+      "31/12/2022, 31, 11, 2022"
   })
-  void testMapDateOfBirth(String day, String month, String year, int expectedDay, int expectedMonth, int expectedYear) {
+  void testMapDateOfBirth(String day, int expectedDay, int expectedMonth, int expectedYear) {
     // Create a ClientDetails object for testing
     ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
-    basicDetails.setDobDay(day);
-    basicDetails.setDobMonth(month);
-    basicDetails.setDobYear(year);
+    basicDetails.setDateOfBirth(day);
 
     // Perform the mapping
     Date dateOfBirth = clientDetailMapper.mapDateOfBirth(basicDetails);
@@ -131,7 +130,8 @@ public class ClientDetailMapperTest {
       "John, James,, John James",
       ",,,",
   })
-  void testMapFullName(String firstName, String middleNames, String surname, String expectedFullName) {
+  void testMapFullName(String firstName, String middleNames, String surname,
+                       String expectedFullName) {
     // Create a ClientDetails object for testing
     ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
     basicDetails.setFirstName(firstName);
@@ -168,7 +168,8 @@ public class ClientDetailMapperTest {
 
     ClientFlowFormData clientFlowFormData = buildClientFlowFormData();
 
-    ClientDetailDetails clientDetailDetails = clientDetailMapper.toClientDetailDetails(clientFlowFormData);
+    ClientDetailDetails clientDetailDetails =
+        clientDetailMapper.toClientDetailDetails(clientFlowFormData);
     assertEquals(expectedClientDetailDetails, clientDetailDetails);
   }
 
@@ -177,7 +178,8 @@ public class ClientDetailMapperTest {
     ClientFlowFormData clientFlowFormData = buildClientFlowFormData();
     clientFlowFormData.getMonitoringDetails().setEthnicOrigin(null);
 
-    ClientDetailDetails clientDetailDetails = clientDetailMapper.toClientDetailDetails(clientFlowFormData);
+    ClientDetailDetails clientDetailDetails =
+        clientDetailMapper.toClientDetailDetails(clientFlowFormData);
 
     assertNull(clientDetailDetails.getEthnicMonitoring());
   }
@@ -187,7 +189,8 @@ public class ClientDetailMapperTest {
     ClientFlowFormData clientFlowFormData = buildClientFlowFormData();
     clientFlowFormData.getMonitoringDetails().setSpecialConsiderations(null);
 
-    ClientDetailDetails clientDetailDetails = clientDetailMapper.toClientDetailDetails(clientFlowFormData);
+    ClientDetailDetails clientDetailDetails =
+        clientDetailMapper.toClientDetailDetails(clientFlowFormData);
 
     assertNull(clientDetailDetails.getSpecialConsiderations());
   }
@@ -197,7 +200,8 @@ public class ClientDetailMapperTest {
     ClientFlowFormData clientFlowFormData = buildClientFlowFormData();
     clientFlowFormData.getMonitoringDetails().setDisability(null);
 
-    ClientDetailDetails clientDetailDetails = clientDetailMapper.toClientDetailDetails(clientFlowFormData);
+    ClientDetailDetails clientDetailDetails =
+        clientDetailMapper.toClientDetailDetails(clientFlowFormData);
 
     assertNull(clientDetailDetails.getDisabilityMonitoring().getDisabilityType());
   }
@@ -234,7 +238,8 @@ public class ClientDetailMapperTest {
     ClientFormDataBasicDetails clientFormDataBasicDetails = new ClientFormDataBasicDetails();
     addPersonalInformationToClientFormDataBasicDetails(clientFormDataBasicDetails);
 
-    ClientPersonalDetail personalDetail = clientDetailMapper.toClientPersonalDetail(clientFormDataBasicDetails);
+    ClientPersonalDetail personalDetail =
+        clientDetailMapper.toClientPersonalDetail(clientFormDataBasicDetails);
 
     assertEquals(expectedPersonalDetail, personalDetail);
   }
@@ -285,7 +290,8 @@ public class ClientDetailMapperTest {
 
     ClientDetailDetails clientDetailDetails = buildClientDetailDetails();
 
-    ClientFlowFormData clientFlowFormData = clientDetailMapper.toClientFlowFormData(clientDetailDetails);
+    ClientFlowFormData clientFlowFormData =
+        clientDetailMapper.toClientFlowFormData(clientDetailDetails);
 
     assertEquals(expectedClientFlowFormData, clientFlowFormData);
   }
@@ -297,31 +303,34 @@ public class ClientDetailMapperTest {
   }
 
   @Test
-  void toClientFlowFormData_monitoringDetails_null(){
+  void toClientFlowFormData_monitoringDetails_null() {
     ClientDetailDetails clientDetailDetails = buildClientDetailDetails();
     clientDetailDetails.setDisabilityMonitoring(null);
 
-    ClientFlowFormData clientFlowFormData = clientDetailMapper.toClientFlowFormData(clientDetailDetails);
+    ClientFlowFormData clientFlowFormData =
+        clientDetailMapper.toClientFlowFormData(clientDetailDetails);
 
     assertNull(clientFlowFormData.getMonitoringDetails().getDisability());
   }
 
   @Test
-  void addClientFormDataBasicDetailsFromNameDetail(){
-    ClientFormDataBasicDetails expectedClientFormDataBasicDetails = new ClientFormDataBasicDetails();
+  void addClientFormDataBasicDetailsFromNameDetail() {
+    ClientFormDataBasicDetails expectedClientFormDataBasicDetails =
+        new ClientFormDataBasicDetails();
     addNameDetailToClientFormDataBasicDetails(expectedClientFormDataBasicDetails);
 
     NameDetail nameDetail = buildNameDetail();
     ClientFormDataBasicDetails clientFormDataBasicDetails = new ClientFormDataBasicDetails();
 
-    clientDetailMapper.addClientFormDataBasicDetailsFromNameDetail(clientFormDataBasicDetails, nameDetail);
+    clientDetailMapper.addClientFormDataBasicDetailsFromNameDetail(clientFormDataBasicDetails,
+        nameDetail);
 
     assertEquals(expectedClientFormDataBasicDetails, clientFormDataBasicDetails);
   }
 
 
   @Test
-  void addClientFormDataBasicDetailsFromNameDetail_null(){
+  void addClientFormDataBasicDetailsFromNameDetail_null() {
     ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
 
     clientDetailMapper.addClientFormDataBasicDetailsFromNameDetail(basicDetails, null);
@@ -334,28 +343,28 @@ public class ClientDetailMapperTest {
   }
 
   @Test
-  void addClientFormDataBasicDetailsFromClientPersonalDetail(){
-    ClientFormDataBasicDetails expectedClientFormDataBasicDetails = new ClientFormDataBasicDetails();
+  void addClientFormDataBasicDetailsFromClientPersonalDetail() {
+    ClientFormDataBasicDetails expectedClientFormDataBasicDetails =
+        new ClientFormDataBasicDetails();
     addPersonalInformationToClientFormDataBasicDetails(expectedClientFormDataBasicDetails);
 
     ClientPersonalDetail clientPersonalDetail = buildClientPersonalDetail();
     ClientFormDataBasicDetails clientFormDataBasicDetails = new ClientFormDataBasicDetails();
 
-    clientDetailMapper.addClientFormDataBasicDetailsFromClientPersonalDetail(clientFormDataBasicDetails, clientPersonalDetail);
+    clientDetailMapper.addClientFormDataBasicDetailsFromClientPersonalDetail(
+        clientFormDataBasicDetails, clientPersonalDetail);
 
     assertEquals(expectedClientFormDataBasicDetails, clientFormDataBasicDetails);
   }
 
 
   @Test
-  void addClientFormDataBasicDetailsFromClientPersonalDetail_null(){
+  void addClientFormDataBasicDetailsFromClientPersonalDetail_null() {
     ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
 
     clientDetailMapper.addClientFormDataBasicDetailsFromClientPersonalDetail(basicDetails, null);
 
-    assertNull(basicDetails.getDobDay());
-    assertNull(basicDetails.getDobMonth());
-    assertNull(basicDetails.getDobYear());
+    assertNull(basicDetails.getDateOfBirth());
     assertNull(basicDetails.getCountryOfOrigin());
     assertNull(basicDetails.getNationalInsuranceNumber());
     assertNull(basicDetails.getHomeOfficeNumber());
@@ -368,39 +377,45 @@ public class ClientDetailMapperTest {
   }
 
   @Test
-  void testToClientFormDataContactDetails(){
-    ClientFormDataContactDetails expectedClientFormDataContactDetails = buildClientFormDataContactDetails();
+  void testToClientFormDataContactDetails() {
+    ClientFormDataContactDetails expectedClientFormDataContactDetails =
+        buildClientFormDataContactDetails();
     ContactDetail contactDetail = buildContactDetail();
 
-    ClientFormDataContactDetails clientFormDataContactDetails = clientDetailMapper.toClientFormDataContactDetails(contactDetail);
+    ClientFormDataContactDetails clientFormDataContactDetails =
+        clientDetailMapper.toClientFormDataContactDetails(contactDetail);
 
     assertEquals(expectedClientFormDataContactDetails, clientFormDataContactDetails);
   }
 
   @Test
-  void testToClientFormDataContactDetails_null(){
-    ClientFormDataContactDetails contactDetails = clientDetailMapper.toClientFormDataContactDetails(null);
+  void testToClientFormDataContactDetails_null() {
+    ClientFormDataContactDetails contactDetails =
+        clientDetailMapper.toClientFormDataContactDetails(null);
     assertNull(contactDetails);
   }
 
   @Test
-  void testToClientFormDataAddressDetails(){
-    ClientFormDataAddressDetails expectedClientFormDataAddressDetails = buildClientFormDataAddressDetails();
+  void testToClientFormDataAddressDetails() {
+    ClientFormDataAddressDetails expectedClientFormDataAddressDetails =
+        buildClientFormDataAddressDetails();
     AddressDetail addressDetail = buildAddressDetail();
 
-    ClientFormDataAddressDetails clientFormDataAddressDetails = clientDetailMapper.toClientFormDataAddressDetails(addressDetail);
+    ClientFormDataAddressDetails clientFormDataAddressDetails =
+        clientDetailMapper.toClientFormDataAddressDetails(addressDetail);
 
     assertEquals(expectedClientFormDataAddressDetails, clientFormDataAddressDetails);
   }
 
   @Test
-  void testToClientFormDataAddressDetails_null(){
-    ClientFormDataAddressDetails addressDetails = clientDetailMapper.toClientFormDataAddressDetails(null);
+  void testToClientFormDataAddressDetails_null() {
+    ClientFormDataAddressDetails addressDetails =
+        clientDetailMapper.toClientFormDataAddressDetails(null);
     assertNull(addressDetails);
   }
 
   @Test
-  void testToClientFlowFormData_null(){
+  void testToClientFlowFormData_null() {
     ClientFlowFormData clientFlowFormData = clientDetailMapper.toClientFlowFormData(null);
     assertNull(clientFlowFormData);
   }
@@ -408,7 +423,7 @@ public class ClientDetailMapperTest {
 
   //SOA Helper methods
 
-  private ClientDetailDetails buildClientDetailDetails(){
+  private ClientDetailDetails buildClientDetailDetails() {
     ClientDetailDetails clientDetailDetails = new ClientDetailDetails();
     clientDetailDetails.setNoFixedAbode(false);
     clientDetailDetails.setName(buildNameDetail());
@@ -435,7 +450,8 @@ public class ClientDetailMapperTest {
   private ClientPersonalDetail buildClientPersonalDetail() {
     ClientPersonalDetail personalInformation = new ClientPersonalDetail();
 
-    LocalDate localDate = LocalDate.of(Integer.parseInt(year), Integer.parseInt(month), Integer.parseInt(day));
+    LocalDate localDate =
+        LocalDate.of(Integer.parseInt(year), Integer.parseInt(month), Integer.parseInt(day));
     Date dateOfBirth = Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
 
     personalInformation.setDateOfBirth(dateOfBirth);
@@ -464,7 +480,7 @@ public class ClientDetailMapperTest {
     return contactDetail;
   }
 
-  private AddressDetail buildAddressDetail(){
+  private AddressDetail buildAddressDetail() {
     AddressDetail addressDetail = new AddressDetail();
     addressDetail.setCountry(country);
     addressDetail.setHouse(houseNameNumber);
@@ -475,8 +491,9 @@ public class ClientDetailMapperTest {
     return addressDetail;
   }
 
-  private ClientDetailDetailsDisabilityMonitoring buildDisabilityMonitoring(){
-    ClientDetailDetailsDisabilityMonitoring disabilityMonitoring = new ClientDetailDetailsDisabilityMonitoring();
+  private ClientDetailDetailsDisabilityMonitoring buildDisabilityMonitoring() {
+    ClientDetailDetailsDisabilityMonitoring disabilityMonitoring =
+        new ClientDetailDetailsDisabilityMonitoring();
     List<String> disabilities = new ArrayList<>();
     disabilities.add(disability);
     disabilityMonitoring.setDisabilityType(disabilities);
@@ -494,17 +511,16 @@ public class ClientDetailMapperTest {
     return clientFlowFormData;
   }
 
-  private ClientFormDataBasicDetails buildClientFormDataBasicDetails(){
+  private ClientFormDataBasicDetails buildClientFormDataBasicDetails() {
     ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
     addPersonalInformationToClientFormDataBasicDetails(basicDetails);
     addNameDetailToClientFormDataBasicDetails(basicDetails);
     return basicDetails;
   }
 
-  private void addPersonalInformationToClientFormDataBasicDetails(ClientFormDataBasicDetails basicDetails){
-    basicDetails.setDobDay(day);
-    basicDetails.setDobMonth(month);
-    basicDetails.setDobYear(year);
+  private void addPersonalInformationToClientFormDataBasicDetails(
+      ClientFormDataBasicDetails basicDetails) {
+    basicDetails.setDateOfBirth(dateofBirth);
     basicDetails.setCountryOfOrigin(countryOfOrigin);
     basicDetails.setGender(gender);
     basicDetails.setMaritalStatus(maritalStatus);
@@ -516,7 +532,7 @@ public class ClientDetailMapperTest {
     basicDetails.setMentalIncapacity(clientStatuses);
   }
 
-  private void addNameDetailToClientFormDataBasicDetails(ClientFormDataBasicDetails basicDetails){
+  private void addNameDetailToClientFormDataBasicDetails(ClientFormDataBasicDetails basicDetails) {
     basicDetails.setTitle(title);
     basicDetails.setFirstName(firstname);
     basicDetails.setMiddleNames(middleNames);
@@ -524,7 +540,7 @@ public class ClientDetailMapperTest {
     basicDetails.setSurname(surname);
   }
 
-  private ClientFormDataContactDetails buildClientFormDataContactDetails(){
+  private ClientFormDataContactDetails buildClientFormDataContactDetails() {
     ClientFormDataContactDetails contactDetails = new ClientFormDataContactDetails();
     contactDetails.setTelephoneHome(telephoneHome);
     contactDetails.setTelephoneWork(telephoneWork);
@@ -537,7 +553,7 @@ public class ClientDetailMapperTest {
     return contactDetails;
   }
 
-  private ClientFormDataAddressDetails buildClientFormDataAddressDetails(){
+  private ClientFormDataAddressDetails buildClientFormDataAddressDetails() {
     ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
     addressDetails.setVulnerableClient(false);
     addressDetails.setNoFixedAbode(noFixedAbode);
@@ -550,7 +566,7 @@ public class ClientDetailMapperTest {
     return addressDetails;
   }
 
-  private ClientFormDataMonitoringDetails buildClientFormDataMonitoringDetails(){
+  private ClientFormDataMonitoringDetails buildClientFormDataMonitoringDetails() {
     ClientFormDataMonitoringDetails monitoringDetails = new ClientFormDataMonitoringDetails();
     monitoringDetails.setEthnicOrigin(ethnicOrigin);
     monitoringDetails.setDisability(disability);

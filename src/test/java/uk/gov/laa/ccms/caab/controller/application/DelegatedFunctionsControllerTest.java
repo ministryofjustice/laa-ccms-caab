@@ -69,8 +69,8 @@ public class DelegatedFunctionsControllerTest {
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
 
-      errors.rejectValue("delegatedFunctionUsedDay", "invalid.numeric",
-          "Please enter a numeric value for the day.");
+      errors.rejectValue("delegatedFunctionUsedDate", "invalid.format",
+          "Please enter the date.");
       return null;
     }).when(delegatedFunctionsValidator).validate(any(), any());
     this.mockMvc.perform(post("/application/delegated-functions")

@@ -36,11 +36,11 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class ClientSearchControllerTest {
+class ClientSearchControllerTest {
 
   @Mock
   private LookupService lookupService;
-  
+
   @Mock
   private ClientSearchCriteriaValidator clientSearchCriteriaValidator;
 
@@ -52,13 +52,13 @@ public class ClientSearchControllerTest {
   private UserDetail user;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(clientSearchController).build();
     this.user = buildUser();
   }
 
   @Test
-  public void testGetClientSearchDetails() {
+  void testGetClientSearchDetails() {
     ClientSearchController clientSearchController =
         new ClientSearchController(lookupService, clientSearchCriteriaValidator);
     ClientSearchCriteria clientSearchCriteria = clientSearchController.getClientSearchDetails();
@@ -66,9 +66,10 @@ public class ClientSearchControllerTest {
   }
 
   @Test
-  public void testClientSearch_Get() throws Exception {
+  void testClientSearch_Get() throws Exception {
     when(lookupService.getCommonValues(COMMON_VALUE_GENDER)).thenReturn(Mono.empty());
-    when(lookupService.getCommonValues(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE)).thenReturn(Mono.empty());
+    when(lookupService.getCommonValues(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE)).thenReturn(
+        Mono.empty());
 
     this.mockMvc.perform(get("/application/client/search")
             .flashAttr(APPLICATION_FORM_DATA, new ApplicationFormData())
@@ -81,11 +82,12 @@ public class ClientSearchControllerTest {
   }
 
   @Test
-  public void testClientSearch_Post_WithErrors() throws Exception {
+  void testClientSearch_Post_WithErrors() throws Exception {
     final ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
 
     when(lookupService.getCommonValues(COMMON_VALUE_GENDER)).thenReturn(Mono.empty());
-    when(lookupService.getCommonValues(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE)).thenReturn(Mono.empty());
+    when(lookupService.getCommonValues(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE)).thenReturn(
+        Mono.empty());
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
@@ -106,7 +108,7 @@ public class ClientSearchControllerTest {
   }
 
   @Test
-  public void testClientSearch_Post_Successful() throws Exception {
+  void testClientSearch_Post_Successful() throws Exception {
     final ClientSearchCriteria clientSearchCriteria = buildClientSearchDetails();
 
     this.mockMvc.perform(post("/application/client/search")
@@ -127,9 +129,7 @@ public class ClientSearchControllerTest {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
     clientSearchCriteria.setForename("Test");
     clientSearchCriteria.setSurname("User");
-    clientSearchCriteria.setDobDay("01");
-    clientSearchCriteria.setDobMonth("01");
-    clientSearchCriteria.setDobYear("2000");
+    clientSearchCriteria.setDateOfBirth("01/01/2000");
     return clientSearchCriteria;
   }
 }

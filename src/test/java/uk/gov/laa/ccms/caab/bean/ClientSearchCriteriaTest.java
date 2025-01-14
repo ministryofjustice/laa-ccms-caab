@@ -13,45 +13,41 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 @ExtendWith(SpringExtension.class)
-public class ClientSearchCriteriaTest {
+class ClientSearchCriteriaTest {
 
   private ClientSearchCriteria clientSearchCriteria;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     clientSearchCriteria = new ClientSearchCriteria();
   }
 
   @Test
-  public void testGetDateOfBirth() {
+  void testGetDateOfBirth() {
     // Set the date components
-    clientSearchCriteria.setDobDay("01");
-    clientSearchCriteria.setDobMonth("02");
-    clientSearchCriteria.setDobYear("1990");
+    clientSearchCriteria.setDateOfBirth("01/02/1990");
 
     // Get the formatted date of birth
-    String dateOfBirth = clientSearchCriteria.getDateOfBirth();
+    String dateOfBirth = clientSearchCriteria.getDoB();
 
     // Check the result
     assertEquals("1990-02-01", dateOfBirth);
   }
 
   @ParameterizedTest
-  @CsvSource({",01,2000",
-      "01,,2000",
-      "01,01,"})
-  public void testGetDateOfBirth_NullComponent(String dobDay, String dobMonth, String dobYear) {
-    clientSearchCriteria.setDobDay(dobDay);
-    clientSearchCriteria.setDobMonth(dobMonth);
-    clientSearchCriteria.setDobYear(dobYear);
+  @CsvSource({"01/2000",
+      "01//2000",
+      "01/01/"})
+  void testGetDateOfBirth_NullComponent(String dobDay) {
+    clientSearchCriteria.setDateOfBirth(dobDay);
 
     Assertions.assertThrows(CaabApplicationException.class, () -> {
-      clientSearchCriteria.getDateOfBirth();
+      clientSearchCriteria.getDoB();
     });
   }
 
   @Test
-  public void testGetUniqueIdentifier_MatchingType() {
+  void testGetUniqueIdentifier_MatchingType() {
     // Set the unique identifier type and value
     clientSearchCriteria.setUniqueIdentifierType(1); // Assuming 1 represents the matching type
     clientSearchCriteria.setUniqueIdentifierValue("ABC123");
@@ -65,7 +61,7 @@ public class ClientSearchCriteriaTest {
   }
 
   @Test
-  public void testGetUniqueIdentifier_NonMatchingType() {
+  void testGetUniqueIdentifier_NonMatchingType() {
     // Set the unique identifier type and value
     clientSearchCriteria.setUniqueIdentifierType(1); // Assuming 1 represents the matching type
     clientSearchCriteria.setUniqueIdentifierValue("ABC123");

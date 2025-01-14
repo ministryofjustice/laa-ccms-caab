@@ -7,8 +7,5 @@ import lombok.Data;
  */
 @Data
 public class ClientFormDataDeceasedDetails {
-  private String dodDay;
-  private String dodMonth;
-  private String dodYear;
   private String dateOfDeath;
 }
