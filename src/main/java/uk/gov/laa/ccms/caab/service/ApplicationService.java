@@ -100,6 +100,7 @@ import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CaseDetails;
 import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
@@ -121,7 +122,6 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.AssessmentResult;
 import uk.gov.laa.ccms.soa.gateway.model.Award;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
-import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -197,7 +197,7 @@ public class ApplicationService {
       // Set page and size to min and max respectively. Because we are combining 2 searches
       // we will have to return all records for pagination by the caller.
       final CaseDetails caseDetails = Optional.ofNullable(
-              soaApiClient.getCases(
+              ebsApiClient.getCases(
                   caseSearchCriteria,
                   user.getLoginId(),
                   user.getUserType(),

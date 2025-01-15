@@ -6,10 +6,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.CaseDetails;
 import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
@@ -825,5 +827,49 @@ public class EbsApiClient extends BaseApiClient {
   }
 
 
+  public Mono<CaseDetails> getCases(CaseSearchCriteria caseSearchCriteria, String loginId,
+      String userType, int page, Integer size) {
+    // TODO: Implement getCases
+
+    /**
+     * final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+     *     Optional.ofNullable(caseSearchCriteria.getCaseReference())
+     *         .ifPresent(caseReference -> queryParams.add(
+     *             CASE_REFERENCE_NUMBER, caseReference));
+     *     Optional.ofNullable(caseSearchCriteria.getProviderCaseReference())
+     *         .ifPresent(providerCaseReference -> queryParams.add(
+     *             "provider-case-reference", providerCaseReference));
+     *     Optional.ofNullable(caseSearchCriteria.getStatus())
+     *         .ifPresent(status -> queryParams.add(
+     *             "case-status", status));
+     *     Optional.ofNullable(caseSearchCriteria.getFeeEarnerId())
+     *         .ifPresent(feeEarnerId -> queryParams.add(
+     *             "fee-earner-id", String.valueOf(feeEarnerId)));
+     *     Optional.ofNullable(caseSearchCriteria.getOfficeId())
+     *         .ifPresent(officeId -> queryParams.add(
+     *             "office-id", String.valueOf(officeId)));
+     *     Optional.ofNullable(caseSearchCriteria.getClientSurname())
+     *         .ifPresent(clientSurname -> queryParams.add(
+     *             "client-surname", clientSurname));
+     *     Optional.ofNullable(page)
+     *         .ifPresent(param -> queryParams.add("page", String.valueOf(param)));
+     *     Optional.ofNullable(size)
+     *         .ifPresent(param -> queryParams.add("size", String.valueOf(param)));
+     *
+     *     return soaApiWebClient
+     *         .get()
+     *         .uri(builder -> builder.path("/cases")
+     *             .queryParams(queryParams)
+     *             .build())
+     *         .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+     *         .header(SOA_GATEWAY_USER_ROLE, userType)
+     *         .retrieve()
+     *         .bodyToMono(CaseDetails.class)
+     *         .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
+     *             e, "Cases", queryParams));
+     */
+
+    return Mono.empty();
+  }
 }
 

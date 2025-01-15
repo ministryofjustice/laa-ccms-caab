@@ -69,6 +69,7 @@ import uk.gov.laa.ccms.caab.model.ReferenceDataItemDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
+import uk.gov.laa.ccms.data.model.CaseSummary;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
@@ -82,7 +83,6 @@ import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDoc;
 import uk.gov.laa.ccms.soa.gateway.model.CaseStatus;
-import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
 import uk.gov.laa.ccms.soa.gateway.model.CostLimitation;
 import uk.gov.laa.ccms.soa.gateway.model.LinkedCase;
@@ -113,7 +113,7 @@ public interface ApplicationMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "status", source = "caseStatusDisplay")
   @Mapping(target = "providerDetails", source = ".")
-  BaseApplicationDetail toBaseApplication(CaseSummary soaCaseSummary);
+  BaseApplicationDetail toBaseApplication(CaseSummary ebsCaseSummary);
 
   @Mapping(target = "providerCaseReference", source = "providerCaseReferenceNumber")
   @Mapping(target = "feeEarner.displayValue", source = "feeEarnerName")
@@ -121,7 +121,7 @@ public interface ApplicationMapper {
   @Mapping(target = "office", ignore = true)
   @Mapping(target = "supervisor", ignore = true)
   @Mapping(target = "providerContact", ignore = true)
-  ApplicationProviderDetails toApplicationProviderDetails(CaseSummary soaCaseSummary);
+  ApplicationProviderDetails toApplicationProviderDetails(CaseSummary ebsCaseSummary);
 
   @Mapping(target = ".", source = "soaCaseDetail")
   @Mapping(target = "certificate", source = "certificate")
