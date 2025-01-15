@@ -89,7 +89,7 @@ public class ClientAddressDetailsController {
    */
   @PostMapping("/application/client/details/address")
   public String clientDetailsAddress(
-      @RequestParam String action,
+      @RequestParam(required = false) String action,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @ModelAttribute("addressDetails") ClientFormDataAddressDetails addressDetails,
       BindingResult bindingResult,
