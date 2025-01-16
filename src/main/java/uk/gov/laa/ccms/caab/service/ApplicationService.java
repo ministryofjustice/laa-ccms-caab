@@ -203,7 +203,7 @@ public class ApplicationService {
                   user.getUserType(),
                   0,
                   searchConstants.getMaxSearchResultsCases()).block())
-          .orElseThrow(() -> new CaabApplicationException("Failed to retrieve SOA Cases"));
+          .orElseThrow(() -> new CaabApplicationException("Failed to retrieve EBS Cases"));
 
       if (caseDetails.getTotalElements() > searchConstants.getMaxSearchResultsCases()) {
         throw new TooManyResultsException(
