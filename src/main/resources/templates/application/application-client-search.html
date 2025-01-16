@@ -45,9 +45,9 @@
                                 </span>
                             </p>
                             <div class="govuk-date-input" id="dob">
-                                <div th:replace="partials/forms::numericInput('dobDay', 'Day', '2')"></div>
-                                <div th:replace="partials/forms::numericInput('dobMonth', 'Month', '2')"></div>
-                                <div th:replace="partials/forms::numericInput('dobYear', 'Year', '4')"></div>
+                                <div th:replace="~{partials/forms::numericInput('dobDay', 'Day', '2')}"></div>
+                                <div th:replace="~{partials/forms::numericInput('dobMonth', 'Month', '2')}"></div>
+                                <div th:replace="~{partials/forms::numericInput('dobYear', 'Year', '4')}"></div>
                             </div>
                         </fieldset>
                     </div>
