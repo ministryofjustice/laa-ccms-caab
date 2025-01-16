@@ -854,12 +854,12 @@ public class EbsApiClient extends BaseApiClient {
     final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
 
     addQueryParam(queryParams, "provider-id", providerId);
-    addQueryParam(queryParams, "client-surname", criteria.getClientSurname());
     addQueryParam(queryParams, "case-reference-number", criteria.getCaseReference());
     addQueryParam(queryParams, "provider-case-reference", criteria.getProviderCaseReference());
     addQueryParam(queryParams, "case-status", criteria.getStatus());
     addQueryParam(queryParams, "fee-earner-id", criteria.getFeeEarnerId());
     addQueryParam(queryParams, "office-id", criteria.getOfficeId());
+    addQueryParam(queryParams, "client-surname", criteria.getClientSurname());
     addQueryParam(queryParams, "page", page);
     addQueryParam(queryParams, "size", pageSize);
     return queryParams;

@@ -20,10 +20,6 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
-import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
-import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
-import uk.gov.laa.ccms.soa.gateway.model.CaseDetails;
-import uk.gov.laa.ccms.soa.gateway.model.CaseSummary;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
@@ -76,44 +72,6 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
 
     assertNotNull(response);
     assertEquals(contractDetailsJson, objectMapper.writeValueAsString(response.block()));
-  }
-
-  @Test
-  public void testGetCases_returnData() throws Exception {
-    String loginId = USER_1;
-    String userType = USER_TYPE;
-    int page = 0;
-    int size = 20;
-    CaseSearchCriteria searchCriteria = buildCopyCaseSearchCriteria();
-    CaseDetails caseDetails = buildCaseDetails();
-    String caseDetailsJson = objectMapper.writeValueAsString(caseDetails);
-
-    wiremock.stubFor(get(String.format("/cases?case-reference-number=%s&" +
-            "provider-case-reference=%s&" +
-            "case-status=%s&" +
-            "fee-earner-id=%s&" +
-            "office-id=%s&" +
-            "client-surname=%s&" +
-            "page=%s&" +
-            "size=%s",
-        searchCriteria.getCaseReference(),
-        searchCriteria.getProviderCaseReference(),
-        searchCriteria.getStatus(),
-        searchCriteria.getFeeEarnerId(),
-        searchCriteria.getOfficeId(),
-        searchCriteria.getClientSurname(),
-        page,
-        size))
-        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
-        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
-        .willReturn(okJson(caseDetailsJson)));
-
-    CaseDetails response =
-        soaApiClient.getCases(searchCriteria, loginId, userType, page, size).block();
-
-    assertNotNull(response);
-    assertEquals(1, response.getContent().size());
-    assertEquals(caseDetailsJson, objectMapper.writeValueAsString(response));
   }
 
   @Test
@@ -318,26 +276,5 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
             .authorisationType("AUTHTYPE1"));
   }
 
-  private CaseDetails buildCaseDetails() {
-    return new CaseDetails()
-        .addContentItem(new CaseSummary()
-            .caseReferenceNumber("caseref1")
-            .providerCaseReferenceNumber("provcaseref")
-            .caseStatusDisplay("app")
-            .client(new BaseClient().firstName("firstname").surname("thesurname"))
-            .feeEarnerName("feeEarner")
-            .categoryOfLaw("CAT1"));
-  }
-
-  private CaseSearchCriteria buildCopyCaseSearchCriteria() {
-    CaseSearchCriteria searchCriteria = new CaseSearchCriteria();
-    searchCriteria.setCaseReference("123");
-    searchCriteria.setProviderCaseReference("456");
-    searchCriteria.setStatus("caseStat");
-    searchCriteria.setFeeEarnerId(678);
-    searchCriteria.setOfficeId(345);
-    searchCriteria.setClientSurname("clientSurname");
-    return searchCriteria;
-  }
 
 }
