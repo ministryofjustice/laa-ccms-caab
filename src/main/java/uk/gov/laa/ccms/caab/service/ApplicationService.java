@@ -198,9 +198,7 @@ public class ApplicationService {
       // we will have to return all records for pagination by the caller.
       final CaseDetails caseDetails = Optional.ofNullable(
               ebsApiClient.getCases(
-                  caseSearchCriteria,
-                  user.getLoginId(),
-                  user.getUserType(),
+                  caseSearchCriteria, user.getProvider().getId(),
                   0,
                   searchConstants.getMaxSearchResultsCases()).block())
           .orElseThrow(() -> new CaabApplicationException("Failed to retrieve SOA Cases"));

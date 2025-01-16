@@ -277,7 +277,7 @@ class ApplicationServiceTest {
         mockEbsApplication);
 
     when(ebsApiClient.getCases(
-        caseSearchCriteria, userDetail.getLoginId(), userDetail.getUserType(), page, size))
+        caseSearchCriteria, userDetail.getProvider().getId(), page, size))
         .thenReturn(Mono.just(mockCaseDetails));
     when(applicationMapper.toBaseApplication(mockCaseDetails.getContent().get(0)))
         .thenReturn(mockEbsApplication);
@@ -288,8 +288,7 @@ class ApplicationServiceTest {
     final List<BaseApplicationDetail> result =
         applicationService.getCases(caseSearchCriteria, userDetail);
 
-    verify(ebsApiClient).getCases(caseSearchCriteria, userDetail.getLoginId(),
-        userDetail.getUserType(), page, size);
+    verify(ebsApiClient).getCases(caseSearchCriteria, userDetail.getProvider().getId(), page, size);
     verify(caabApiClient).getApplications(caseSearchCriteria,
         userDetail.getProvider().getId(), page, size);
 
@@ -338,8 +337,8 @@ class ApplicationServiceTest {
     // expected result, only the soa case retained
     final List<BaseApplicationDetail> expectedResult = List.of(mockEbsApplication);
 
-    when(ebsApiClient.getCases(caseSearchCriteria, userDetail.getLoginId(),
-        userDetail.getUserType(), page, size)).thenReturn(Mono.just(mockCaseDetails));
+    when(ebsApiClient.getCases(caseSearchCriteria, userDetail.getProvider().getId(),
+        page, size)).thenReturn(Mono.just(mockCaseDetails));
     when(applicationMapper.toBaseApplication(mockCaseDetails.getContent().get(0)))
         .thenReturn(mockEbsApplication);
     when(caabApiClient.getApplications(caseSearchCriteria,
@@ -350,8 +349,7 @@ class ApplicationServiceTest {
     final List<BaseApplicationDetail> result =
         applicationService.getCases(caseSearchCriteria, userDetail);
 
-    verify(ebsApiClient).getCases(caseSearchCriteria, userDetail.getLoginId(),
-        userDetail.getUserType(), page, size);
+    verify(ebsApiClient).getCases(caseSearchCriteria, userDetail.getProvider().getId(), page, size);
     verify(caabApiClient).getApplications(caseSearchCriteria,
         userDetail.getProvider().getId(), page, size);
 
@@ -381,8 +379,8 @@ class ApplicationServiceTest {
         .addContentItem(new CaseSummary())
         .addContentItem(new CaseSummary());
 
-    when(ebsApiClient.getCases(caseSearchCriteria, userDetail.getLoginId(),
-        userDetail.getUserType(), page, size)).thenReturn(Mono.just(mockCaseDetails));
+    when(ebsApiClient.getCases(caseSearchCriteria, userDetail.getProvider().getId(),
+        page, size)).thenReturn(Mono.just(mockCaseDetails));
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
 
     assertThrows(TooManyResultsException.class, () ->
@@ -417,7 +415,7 @@ class ApplicationServiceTest {
         .addContentItem(new BaseApplicationDetail().caseReferenceNumber("3"));
 
     when(ebsApiClient.getCases(caseSearchCriteria,
-        userDetail.getLoginId(), userDetail.getUserType(), page, size))
+        userDetail.getProvider().getId(), page, size))
         .thenReturn(Mono.just(mockCaseDetails));
     when(applicationMapper.toBaseApplication(mockCaseDetails.getContent().get(0)))
         .thenReturn(new BaseApplicationDetail()

@@ -113,6 +113,7 @@ public interface ApplicationMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "status", source = "caseStatusDisplay")
   @Mapping(target = "providerDetails", source = ".")
+  @Mapping(target = "client.reference", source = "client.clientReferenceNumber")
   BaseApplicationDetail toBaseApplication(CaseSummary ebsCaseSummary);
 
   @Mapping(target = "providerCaseReference", source = "providerCaseReferenceNumber")
