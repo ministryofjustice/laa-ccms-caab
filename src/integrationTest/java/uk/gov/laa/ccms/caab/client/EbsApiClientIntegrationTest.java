@@ -24,15 +24,19 @@ import org.springframework.test.context.DynamicPropertySource;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.BaseClient;
 import uk.gov.laa.ccms.data.model.BaseOffice;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.BaseUser;
+import uk.gov.laa.ccms.data.model.CaseDetails;
 import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CaseSummary;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
@@ -112,7 +116,8 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
         .withQueryParam("sort", equalTo(sort))
         .willReturn(okJson(commonValuesJson)));
 
-    final Mono<CommonLookupDetail> commonValuesMono = ebsApiClient.getCommonValues(type, code, descr, sort);
+    final Mono<CommonLookupDetail> commonValuesMono = ebsApiClient.getCommonValues(type, code,
+        descr, sort);
 
     final CommonLookupDetail commonValues = commonValuesMono.block();
 
@@ -121,7 +126,8 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
   @Test
   public void testGetCaseStatusValues_returnData() throws Exception {
-    final String caseStatusValuesJson = objectMapper.writeValueAsString(buildCaseStatusLookupDetail());
+    final String caseStatusValuesJson = objectMapper.writeValueAsString(
+        buildCaseStatusLookupDetail());
 
     final Boolean copyAllowed = true;
 
@@ -129,7 +135,8 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
         .withQueryParam("copy-allowed", equalTo(copyAllowed.toString()))
         .willReturn(okJson(caseStatusValuesJson)));
 
-    final Mono<CaseStatusLookupDetail> lookupDetailMono = ebsApiClient.getCaseStatusValues(copyAllowed);
+    final Mono<CaseStatusLookupDetail> lookupDetailMono = ebsApiClient.getCaseStatusValues(
+        copyAllowed);
 
     final CaseStatusLookupDetail response = lookupDetailMono.block();
 
@@ -191,7 +198,8 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   @Test
   public void testGetUsers_notFound() {
     final Integer providerId = 123;
-    final String expectedMessage = "Failed to retrieve Users with parameters: size=1000, provider-id=123";
+    final String expectedMessage = "Failed to retrieve Users with parameters: size=1000, "
+        + "provider-id=123";
     wiremock.stubFor(get(String.format("/users?size=1000&provider-id=%s", providerId))
         .willReturn(notFound()));
     final Mono<UserDetails> userDetailsMono = ebsApiClient.getUsers(providerId);
@@ -213,8 +221,9 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     wiremock.stubFor(get(String.format("/users/%s/notifications/summary", loginId))
         .willReturn(okJson(notificationSummaryJson)));
 
-    final Mono<NotificationSummary> userNotificationSummary = ebsApiClient.getUserNotificationSummary(
-        loginId);
+    final Mono<NotificationSummary> userNotificationSummary =
+        ebsApiClient.getUserNotificationSummary(
+            loginId);
 
     final NotificationSummary userDetails = userNotificationSummary.block();
 
@@ -305,6 +314,44 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
         ).verify();
   }
 
+  @Test
+  public void testGetCases_returnData() throws Exception {
+    int page = 0;
+    int size = 20;
+    int providerId = 2000;
+
+    CaseSearchCriteria searchCriteria = buildCaseSearchCriteria();
+    CaseDetails caseDetails = buildCaseDetails();
+    String caseDetailsJson = objectMapper.writeValueAsString(caseDetails);
+
+    wiremock.stubFor(get(String.format("/cases?provider-id=%s&" +
+            "case-reference-number=%s&" +
+            "provider-case-reference=%s&" +
+            "case-status=%s&" +
+            "fee-earner-id=%s&" +
+            "office-id=%s&" +
+            "client-surname=%s&" +
+            "page=%s&" +
+            "size=%s",
+        providerId,
+        searchCriteria.getCaseReference(),
+        searchCriteria.getProviderCaseReference(),
+        searchCriteria.getStatus(),
+        searchCriteria.getFeeEarnerId(),
+        searchCriteria.getOfficeId(),
+        searchCriteria.getClientSurname(),
+        page,
+        size))
+        .willReturn(okJson(caseDetailsJson)));
+
+    CaseDetails response =
+        ebsApiClient.getCases(searchCriteria, providerId, page, size).block();
+
+    assertNotNull(response);
+    assertEquals(1, response.getContent().size());
+    assertEquals(caseDetailsJson, objectMapper.writeValueAsString(response));
+  }
+
   // You may need to build the AmendmentTypeLookupDetail for the test
   private AmendmentTypeLookupDetail buildAmendmentTypeLookupDetail() {
     final AmendmentTypeLookupDetail detail = new AmendmentTypeLookupDetail();
@@ -389,6 +436,29 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
                         .loginId("testUserName")
                 )
         );
+  }
+
+  private CaseDetails buildCaseDetails() {
+    return new CaseDetails()
+        .addContentItem(new CaseSummary()
+            .caseReferenceNumber("caseref1")
+            .providerCaseReferenceNumber("provcaseref")
+            .caseStatusDisplay("app")
+            .client(new BaseClient().firstName("firstname")
+                .surname("thesurname"))
+            .feeEarnerName("feeEarner")
+            .categoryOfLaw("CAT1"));
+  }
+
+  private CaseSearchCriteria buildCaseSearchCriteria() {
+    CaseSearchCriteria searchCriteria = new CaseSearchCriteria();
+    searchCriteria.setCaseReference("123");
+    searchCriteria.setProviderCaseReference("456");
+    searchCriteria.setStatus("caseStat");
+    searchCriteria.setFeeEarnerId(678);
+    searchCriteria.setOfficeId(345);
+    searchCriteria.setClientSurname("clientSurname");
+    return searchCriteria;
   }
 
 }
