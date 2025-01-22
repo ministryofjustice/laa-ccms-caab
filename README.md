@@ -233,11 +233,11 @@ To check the current Docker context, use:
 docker context show
 ```
 
-## Recreating frontend static resources (GDS & MoJ templates)
+## Recreating frontend static resources (CCMS stylesheets)
 
 > **_INFORMATION:_**  When cloning this project for the first time, you do not need
 > to run gulp as the static resources should already be created within the project.
-> This tool is just incase you wish to recreate them.
+> This tool is just in case you wish to recreate them.
 
 To provide a clean way of recreating the static resources, a gulp workflow has been implemented. This
 helps automate the creation of frontend static resources when new versions of frontend toolkits
@@ -247,8 +247,7 @@ browser performance for the end user.
 ### Prerequisites
 
 In order to download/recompile frontend static resources, you will need to have `npm` installed.
-This will be used to manage the GOVUK and MoJ frontends as a package manager. It will also be used to 
-download the dev dependencies required to compile the various resources.
+It will also be used to download the dev dependencies required to compile the various resources.
 
 With `npm` installed on your machine, you will need to ensure you have `gulp` installed on your
 system globally rather than at project level.
@@ -274,51 +273,13 @@ npm install
 
 Recreating the frontend resources can be done by just running gulp.
 
-There are three tasks defined in the `gulpfile.js`:
-
-| Task            | Description                                                        |
-|-----------------|--------------------------------------------------------------------|
-| default         | Runs all the below tasks                                           |
-| copyGOVUKAssets | Copies all the GOV UK Frontend assets from `node_modules`          |
-| copyMoJAssets   | Copies and compiles of the MoJ Frontend assets from `node_modules` |
-
-You can also view all the available tasks using the command:
-```shell
-# Whilst in the project directory
-gulp --tasks
-```
+There is just one task defined in `gulpfile.js` called `default`. When that task runs,
+it will re-compile all the `.scss` files within the project into minified stylesheets, which are 
+then stored in `src/main/resources/static/ccms`.
 
 To run the default task, you can just run gulp without any additional parameters:
 ```shell
 # Whilst in the project directory
-gulp
-```
-
-To run a specific task, define the name of the task:
-```shell
-# Whilst in the project directory
-gulp copyGOVUKAssets
-gulp copyMoJAssets
-```
-
-### Updating the various frontend toolkits
-
-To change which version of the toolkit is downloaded, check the file `./package.json`. From this
-file, change the
-version number to whichever version you require.
-
-- To check what versions are available for the GOV UK Frontend,
-  go [here](https://www.npmjs.com/package/govuk-frontend).
-- To check what versions are available for the MoJ UK Frontend,
-  go [here](https://www.npmjs.com/package/@ministryofjustice/frontend).
-
-If a version has been modified within this file, you will need to download the new version using
-`npm`, and then copy the new files to the Spring Boot resources folder using gulp as described above.
-
-```sh
-# Whilst in the project directory
-npm install
-# Runs the default task as described below
 gulp
 ```
 

@@ -27,7 +27,6 @@
                 <div class="govuk-grid-column-two-thirds">
                     <div th:replace="~{partials/forms :: textInput('forename', 'First name', 'govuk-input--width-20')}"></div>
                     <div th:replace="~{partials/forms :: textInput('surname', 'Surname at birth', 'govuk-input--width-20')}"></div>
-
                     <moj:datepicker
                             id="dob"
                             name="dateOfBirth"
@@ -36,7 +35,6 @@
                             th:errorMessage="${#fields.hasErrors('dateOfBirth') ? #fields.errors('dateOfBirth').getFirst() : ''}"
                             th:value="*{__${'dateOfBirth'}__}">
                     </moj:datepicker>
-
                     <div th:replace="~{partials/forms :: dropdown('gender', 'Gender (optional)', ${genders}, 'code', 'description', false)}"></div>
                     <div th:replace="~{partials/forms :: dropdown('uniqueIdentifierType', 'Unique identifier type (optional)', ${uniqueIdentifierTypes}, 'code', 'description', false)}"></div>
                     <div th:replace="~{partials/forms :: textInput('uniqueIdentifierValue', 'Unique identifier value (optional)', 'govuk-input--width-20')}"></div>

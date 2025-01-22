@@ -133,7 +133,7 @@ public class EditGeneralDetailsSectionController {
    */
   @PostMapping("/application/sections/correspondence-address")
   public String updateCorrespondenceDetails(
-      @RequestParam final String action,
+      @RequestParam(required = false) final String action,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @ModelAttribute("addressDetails") final AddressFormData addressDetails,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
