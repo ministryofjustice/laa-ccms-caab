@@ -17,6 +17,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataMonitoringDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
+import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -30,6 +31,8 @@ import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 public class ClientServiceTest {
   @Mock
   private SoaApiClient soaApiClient;
+  @Mock
+  private EbsApiClient ebsApiClient;
 
   @Mock
   private ClientDetailMapper clientDetailMapper;
@@ -86,12 +89,10 @@ public class ClientServiceTest {
   @Test
   void getClientStatus_ReturnsClientStatus_Successful() {
     String transactionId = "TRANS123";
-    String loginId = "user1";
-    String userType = "userType";
 
     TransactionStatus mockClientStatus = new TransactionStatus();
 
-    when(soaApiClient.getClientStatus(transactionId, loginId, userType))
+    when(ebsApiClient.getClientStatus(transactionId))
         .thenReturn(Mono.just(mockClientStatus));
 
     Mono<TransactionStatus> clientStatusMono =

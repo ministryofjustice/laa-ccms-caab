@@ -35,7 +35,6 @@ import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
-import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
 
 @ExtendWith(MockitoExtension.class)
@@ -275,60 +274,6 @@ class SoaApiClientTest {
         soaApiClient.getClient(clientReferenceNumber, loginId, userType);
 
     StepVerifier.create(clientDetailMono)
-        .verifyComplete();
-  }
-
-  @Test
-  void getClientStatus_Successful() {
-    String transactionId = "123";
-    String loginId = "user1";
-    String userType = "userType";
-    String expectedUri = "/clients/status/{transactionId}";
-
-    TransactionStatus mockTransactionStatus = new TransactionStatus();
-
-    when(soaApiWebClientMock.get()).thenReturn(requestHeadersUriMock);
-    when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(
-        requestHeadersMock);
-    when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
-        requestHeadersMock);
-    when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(
-        requestHeadersMock);
-    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(TransactionStatus.class)).thenReturn(Mono.just(mockTransactionStatus));
-
-    Mono<TransactionStatus> transactionStatusMono = soaApiClient.getClientStatus(transactionId, loginId, userType);
-
-    StepVerifier.create(transactionStatusMono)
-        .expectNextMatches(transactionStatus -> transactionStatus == mockTransactionStatus)
-        .verifyComplete();
-  }
-
-  @Test
-  void getClientStatus_Error() {
-    String transactionId = "123";
-    String loginId = "user1";
-    String userType = "userType";
-    String expectedUri = "/clients/status/{transactionId}";
-
-    when(soaApiWebClientMock.get()).thenReturn(requestHeadersUriMock);
-    when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(
-        requestHeadersMock);
-    when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
-        requestHeadersMock);
-    when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(
-        requestHeadersMock);
-    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(TransactionStatus.class)).thenReturn(Mono.error(
-        new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
-
-    when(apiClientErrorHandler.handleApiRetrieveError(
-        any(), eq("client transaction status"), eq("transaction id"), eq(transactionId)))
-        .thenReturn(Mono.empty());
-
-    Mono<TransactionStatus> transactionStatusMono = soaApiClient.getClientStatus(transactionId, loginId, userType);
-
-    StepVerifier.create(transactionStatusMono)
         .verifyComplete();
   }
 

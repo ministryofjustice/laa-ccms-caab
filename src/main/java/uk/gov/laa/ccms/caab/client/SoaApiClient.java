@@ -163,30 +163,6 @@ public class SoaApiClient {
   }
 
   /**
-   * Fetches the transaction status for a client create transaction.
-   *
-   * @param transactionId         The transaction id for the client create transaction in soa.
-   * @param loginId               The login identifier for the user.
-   * @param userType              Type of the user (e.g., admin, user).
-   * @return A Mono wrapping the TransactionStatus.
-   */
-  public Mono<TransactionStatus> getClientStatus(
-      final String transactionId,
-      final String loginId,
-      final String userType) {
-    return soaApiWebClient
-        .get()
-        .uri("/clients/status/{transactionId}", transactionId)
-        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
-        .header(SOA_GATEWAY_USER_ROLE, userType)
-        .retrieve()
-        .bodyToMono(TransactionStatus.class)
-        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
-            e, "client transaction status", "transaction id", transactionId));
-
-  }
-
-  /**
    * Creates a client based on a given client details.
    *
    * @param clientDetails         The client's details.
