@@ -59,7 +59,7 @@ public class ClientSubmissionsInProgressControllerTest {
     TransactionStatus clientStatus = new TransactionStatus();
     clientStatus.setReferenceNumber("123456");
 
-    when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
+    when(clientService.getClientStatus(anyString())).thenReturn(Mono.just(clientStatus));
 
     mockMvc.perform(
             get("/submissions/client-create")
@@ -77,7 +77,7 @@ public class ClientSubmissionsInProgressControllerTest {
 
     TransactionStatus clientStatus = new TransactionStatus();
 
-    when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
+    when(clientService.getClientStatus(anyString())).thenReturn(Mono.just(clientStatus));
 
     mockMvc.perform(
             get("/submissions/client-create")
@@ -95,7 +95,7 @@ public class ClientSubmissionsInProgressControllerTest {
 
     final TransactionStatus clientStatus = new TransactionStatus();
 
-    when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
+    when(clientService.getClientStatus(anyString())).thenReturn(Mono.just(clientStatus));
 
     when(submissionConstants.getMaxPollCount()).thenReturn(6);
 
@@ -118,7 +118,7 @@ public class ClientSubmissionsInProgressControllerTest {
 
     TransactionStatus clientStatus = new TransactionStatus();
 
-    when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
+    when(clientService.getClientStatus(anyString())).thenReturn(Mono.just(clientStatus));
 
     // Set the submission poll count at the threshold (6 in your current logic)
     int submissionPollCount = 6;
@@ -143,7 +143,7 @@ public class ClientSubmissionsInProgressControllerTest {
     final TransactionStatus clientStatus = new TransactionStatus();
     clientStatus.setReferenceNumber("123456");
 
-    when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
+    when(clientService.getClientStatus(anyString())).thenReturn(Mono.just(clientStatus));
     when(clientService.updateClientNames(anyString(), any(), any())).thenReturn(Mono.empty());
 
     mockMvc.perform(
@@ -165,7 +165,7 @@ public class ClientSubmissionsInProgressControllerTest {
 
     final TransactionStatus clientStatus = new TransactionStatus();
 
-    when(clientService.getClientStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(clientStatus));
+    when(clientService.getClientStatus(anyString())).thenReturn(Mono.just(clientStatus));
 
     mockMvc.perform(
             get("/submissions/client-update")

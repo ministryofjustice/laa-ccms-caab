@@ -23,8 +23,8 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
-import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
+import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class ClientServiceTest {
@@ -95,7 +95,7 @@ public class ClientServiceTest {
         .thenReturn(Mono.just(mockClientStatus));
 
     Mono<TransactionStatus> clientStatusMono =
-        clientService.getClientStatus(transactionId, loginId, userType);
+        clientService.getClientStatus(transactionId);
 
     StepVerifier.create(clientStatusMono)
         .expectNextMatches(clientStatus -> clientStatus == mockClientStatus)
