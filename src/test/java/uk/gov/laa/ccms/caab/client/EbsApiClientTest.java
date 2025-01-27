@@ -1610,8 +1610,6 @@ public class EbsApiClientTest {
     @DisplayName("Should return successfully")
     void getClientStatus_Successful() {
       String transactionId = "123";
-      String loginId = "user1";
-      String userType = "userType";
       String expectedUri = "/clients/status/{transactionId}";
 
       TransactionStatus mockTransactionStatus = new TransactionStatus();
@@ -1634,8 +1632,6 @@ public class EbsApiClientTest {
     @DisplayName("Should handle error")
     void getClientStatus_Error() {
       String transactionId = "123";
-      String loginId = "user1";
-      String userType = "userType";
       String expectedUri = "/clients/status/{transactionId}";
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
