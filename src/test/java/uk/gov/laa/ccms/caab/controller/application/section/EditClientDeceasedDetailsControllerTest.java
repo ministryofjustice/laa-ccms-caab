@@ -69,7 +69,7 @@ class EditClientDeceasedDetailsControllerTest {
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
-      errors.rejectValue("dodDay", "invalid.numeric", "Please enter a numeric value for the day.");
+      errors.rejectValue("dateOfDeath", "invalid.format", "Please enter the date of death");
       return null;
     }).when(clientDeceasedDetailsValidator).validate(any(), any());
 

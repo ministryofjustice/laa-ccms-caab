@@ -1,9 +1,12 @@
 package uk.gov.laa.ccms.caab.bean.validators.client;
 
+import static uk.gov.laa.ccms.caab.util.DateUtils.COMPONENT_DATE_PATTERN;
+
 import java.util.Date;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
+import org.springframework.validation.ValidationUtils;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
@@ -14,8 +17,6 @@ import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 @Component
 @Slf4j
 public class ClientDeceasedDetailsValidator extends AbstractValidator {
-
-  private static final String SOA_DATE_FORMAT = "dd/MM/yyyy";
 
   /**
    * Determines if the Validator supports the provided class.
@@ -46,27 +47,17 @@ public class ClientDeceasedDetailsValidator extends AbstractValidator {
   private void validateDateFieldFormats(
       ClientFormDataDeceasedDetails deceasedDetails, Errors errors) {
 
-    validateNumericField("dodDay", deceasedDetails.getDodDay(), "the day", errors);
-    validateNumericField("dodMonth", deceasedDetails.getDodMonth(), "the month", errors);
-    validateNumericField("dodYear", deceasedDetails.getDodYear(), "the year", errors);
+    String fieldName = "dateOfDeath";
+    ValidationUtils.rejectIfEmpty(errors, fieldName,
+        "required.dod", "Please complete 'date of death'");
 
-    if (!errors.hasErrors()) {
-      deceasedDetails.setDateOfDeath(
-          buildDateString(
-              deceasedDetails.getDodDay(),
-              deceasedDetails.getDodMonth(),
-              deceasedDetails.getDodYear()));
-
-      Date date = validateValidDateField(
-          deceasedDetails.getDateOfDeath(),
-          "dateOfDeath",
-          "date of death", SOA_DATE_FORMAT,  errors);
-      validateDateInPast(date, "dateOfDeath", "date of death", errors);
+    if (!deceasedDetails.getDateOfDeath().isBlank()) {
+      Date date =
+          validateValidDateField(deceasedDetails.getDateOfDeath(), fieldName, "date of death",
+              COMPONENT_DATE_PATTERN, errors);
+      if (!errors.hasErrors()) {
+        validateDateInPast(date, fieldName, "date of death", errors);
+      }
     }
-  }
-
-  private String buildDateString(String day, String month,
-      String year) {
-    return String.format("%s/%s/%s", day, month, year);
   }
 }

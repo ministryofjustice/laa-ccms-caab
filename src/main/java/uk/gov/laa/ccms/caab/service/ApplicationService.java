@@ -357,9 +357,7 @@ public class ApplicationService {
             applicationFormData.isDelegatedFunctions())
         .devolvedPowers(
             applicationFormData.isDelegatedFunctions(),
-            applicationFormData.getDelegatedFunctionUsedDay(),
-            applicationFormData.getDelegatedFunctionUsedMonth(),
-            applicationFormData.getDelegatedFunctionUsedYear())
+            applicationFormData.getDelegatedFunctionUsedDate())
         .build();
 
     // get case reference Number, category of law value, contractual devolved powers,
@@ -1073,9 +1071,7 @@ public class ApplicationService {
             applicationFormData.isDelegatedFunctions())
         .devolvedPowers(
             applicationFormData.isDelegatedFunctions(),
-            applicationFormData.getDelegatedFunctionUsedDay(),
-            applicationFormData.getDelegatedFunctionUsedMonth(),
-            applicationFormData.getDelegatedFunctionUsedYear())
+            applicationFormData.getDelegatedFunctionUsedDate())
         .devolvedPowersContractFlag(
             applicationFormData.getDevolvedPowersContractFlag())
         .build();
