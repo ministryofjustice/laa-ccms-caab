@@ -145,10 +145,7 @@ class SoaApiClientTest {
 
     clientSearchCriteria.setForename(firstName);
     clientSearchCriteria.setSurname(lastName);
-    clientSearchCriteria.setDobDay("1");
-    clientSearchCriteria.setDobMonth("1");
-    clientSearchCriteria.setDobYear("2000");
-
+    clientSearchCriteria.setDateOfBirth("1/1/2000");
     ClientDetails mockClientDetails = new ClientDetails();
 
     ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);

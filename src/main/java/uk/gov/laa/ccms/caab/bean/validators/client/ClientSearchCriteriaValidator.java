@@ -7,6 +7,7 @@ import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CASE_REF
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CASE_REFERENCE_NUMBER_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.HOME_OFFICE_NUMBER_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NATIONAL_INSURANCE_NUMBER_PATTERN;
+import static uk.gov.laa.ccms.caab.util.DateUtils.COMPONENT_DATE_PATTERN;
 
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
@@ -21,8 +22,8 @@ import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 public class ClientSearchCriteriaValidator extends AbstractValidator {
 
   private static final String GENERIC_UNIQUE_IDENTIFIER_ERROR =
-          "Your input for 'Unique Identifier Value' is in an incorrect format. "
-                  + "Please amend your entry.";
+      "Your input for 'Unique Identifier Value' is in an incorrect format. "
+          + "Please amend your entry.";
 
   /**
    * Determines if the Validator supports the provided class.
@@ -44,7 +45,7 @@ public class ClientSearchCriteriaValidator extends AbstractValidator {
    */
   public void validateForename(Object target, Errors errors) {
     ValidationUtils.rejectIfEmpty(errors, "forename",
-            "required.forename", "Please complete 'First name'.");
+        "required.forename", "Please complete 'First name'.");
   }
 
   /**
@@ -55,7 +56,7 @@ public class ClientSearchCriteriaValidator extends AbstractValidator {
    */
   public void validateSurnameAtBirth(Object target, Errors errors) {
     ValidationUtils.rejectIfEmpty(errors, "surname",
-            "required.surname", "Please complete 'Surname at birth'.");
+        "required.surname", "Please complete 'Surname at birth'.");
   }
 
   /**
@@ -65,28 +66,14 @@ public class ClientSearchCriteriaValidator extends AbstractValidator {
    * @param errors The Errors object to store validation errors.
    */
   public void validateDateOfBirth(Object target, Errors errors) {
-    ValidationUtils.rejectIfEmpty(errors, "dobDay",
-            "required.dob-day", "Please complete 'Date of birth' with a day.");
-    ValidationUtils.rejectIfEmpty(errors, "dobMonth",
-            "required.dob-month", "Please complete 'Date of birth' with a month.");
-    ValidationUtils.rejectIfEmpty(errors, "dobYear",
-            "required.dob-year", "Please complete 'Date of birth' with a year.");
+    ValidationUtils.rejectIfEmpty(errors, "dateOfBirth",
+        "required.dob", "Please complete 'Date of birth'");
 
     ClientSearchCriteria clientSearchCriteria = (ClientSearchCriteria) target;
 
-    if (!clientSearchCriteria.getDobDay().isBlank()) {
-      validateNumericField("dobDay", clientSearchCriteria.getDobDay(),
-          "the day", errors);
-    }
-
-    if (!clientSearchCriteria.getDobMonth().isBlank()) {
-      validateNumericField("dobMonth", clientSearchCriteria.getDobMonth(),
-          "the month", errors);
-    }
-
-    if (!clientSearchCriteria.getDobYear().isBlank()) {
-      validateNumericField("dobYear", clientSearchCriteria.getDobYear(),
-          "the year", errors);
+    if (!clientSearchCriteria.getDateOfBirth().isBlank()) {
+      validateValidDateField(clientSearchCriteria.getDateOfBirth(), "dateOfBirth", "Date of birth",
+          COMPONENT_DATE_PATTERN, errors);
     }
   }
 
@@ -101,29 +88,29 @@ public class ClientSearchCriteriaValidator extends AbstractValidator {
 
     if (clientSearchCriteria.getUniqueIdentifierType() != null) {
       if ((clientSearchCriteria.getUniqueIdentifierType()
-              == UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER)
-              && (!clientSearchCriteria.getUniqueIdentifierValue()
-              .matches(NATIONAL_INSURANCE_NUMBER_PATTERN))) {
+          == UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER)
+          && (!clientSearchCriteria.getUniqueIdentifierValue()
+          .matches(NATIONAL_INSURANCE_NUMBER_PATTERN))) {
         errors.rejectValue("uniqueIdentifierValue", "invalid.uniqueIdentifierValue",
-                "Your input for 'Unique Identifier Value' is not in the correct format. "
-                        + "The format for 'Unique Identifier Value' is AANNNNNNA, where A is "
-                        + "a letter and N is a number. Please amend your entry.");
+            "Your input for 'Unique Identifier Value' is not in the correct format. "
+                + "The format for 'Unique Identifier Value' is AANNNNNNA, where A is "
+                + "a letter and N is a number. Please amend your entry.");
 
       } else if ((clientSearchCriteria.getUniqueIdentifierType()
-              == UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE)
-              && (!clientSearchCriteria.getUniqueIdentifierValue()
-              .matches(HOME_OFFICE_NUMBER_PATTERN))) {
+          == UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE)
+          && (!clientSearchCriteria.getUniqueIdentifierValue()
+          .matches(HOME_OFFICE_NUMBER_PATTERN))) {
         errors.rejectValue("uniqueIdentifierValue", "invalid.uniqueIdentifierValue",
-                GENERIC_UNIQUE_IDENTIFIER_ERROR);
+            GENERIC_UNIQUE_IDENTIFIER_ERROR);
 
       } else if ((clientSearchCriteria.getUniqueIdentifierType()
-              == UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER)
-              && (!clientSearchCriteria.getUniqueIdentifierValue()
-              .matches(CASE_REFERENCE_NUMBER_PATTERN)
-              || clientSearchCriteria.getUniqueIdentifierValue()
-              .matches(CASE_REFERENCE_NUMBER_NEGATIVE_PATTERN))) {
+          == UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER)
+          && (!clientSearchCriteria.getUniqueIdentifierValue()
+          .matches(CASE_REFERENCE_NUMBER_PATTERN)
+          || clientSearchCriteria.getUniqueIdentifierValue()
+          .matches(CASE_REFERENCE_NUMBER_NEGATIVE_PATTERN))) {
         errors.rejectValue("uniqueIdentifierValue", "invalid.uniqueIdentifierValue",
-                GENERIC_UNIQUE_IDENTIFIER_ERROR);
+            GENERIC_UNIQUE_IDENTIFIER_ERROR);
       }
     }
   }
