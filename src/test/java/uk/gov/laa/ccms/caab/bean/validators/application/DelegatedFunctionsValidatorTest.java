@@ -26,41 +26,39 @@ class DelegatedFunctionsValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     applicationFormData =
         new ApplicationFormData(); // Assuming that the default constructor sets all fields to null.
     errors = new BeanPropertyBindingResult(applicationFormData, APPLICATION_FORM_DATA);
   }
 
   @Test
-  public void supports_ReturnsTrueForApplicationDetailsClass() {
+  void supports_ReturnsTrueForApplicationDetailsClass() {
     assertTrue(delegatedFunctionsValidator.supports(ApplicationFormData.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(delegatedFunctionsValidator.supports(Object.class));
   }
 
   @Test
-  public void validate_withoutDelegatedFunctions() {
+  void validate_withoutDelegatedFunctions() {
     delegatedFunctionsValidator.validate(applicationFormData, errors);
     assertFalse(errors.hasErrors());
   }
 
   @Test
-  public void validate_withDelegatedFunctions() {
+  void validate_withDelegatedFunctions() {
     applicationFormData.setDelegatedFunctions(true);
 
     delegatedFunctionsValidator.validate(applicationFormData, errors);
 
     assertTrue(errors.hasErrors());
-    assertNotNull(errors.getFieldError("delegatedFunctionUsedDay"));
-    assertEquals("invalid.numeric", errors.getFieldError("delegatedFunctionUsedDay").getCode());
-    assertNotNull(errors.getFieldError("delegatedFunctionUsedMonth"));
-    assertEquals("invalid.numeric", errors.getFieldError("delegatedFunctionUsedMonth").getCode());
-    assertNotNull(errors.getFieldError("delegatedFunctionUsedYear"));
-    assertEquals("invalid.numeric", errors.getFieldError("delegatedFunctionUsedYear").getCode());
+    assertNotNull(errors.getFieldError("delegatedFunctionUsedDate"));
+    assertEquals("required.delegatedFunctionUsedDate",
+        errors.getFieldError("delegatedFunctionUsedDate").getCode());
+
   }
 
 }

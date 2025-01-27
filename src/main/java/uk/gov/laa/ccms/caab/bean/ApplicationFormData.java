@@ -45,20 +45,9 @@ public class ApplicationFormData {
   private boolean delegatedFunctions = false;
 
   /**
-   * The day when delegated function was used.
+   * The date when delegated function was used.
    */
-  private String delegatedFunctionUsedDay;
-
-  /**
-   * The month when delegated function was used.
-   */
-  private String delegatedFunctionUsedMonth;
-
-  /**
-   * The year when delegated function was used.
-   */
-  private String delegatedFunctionUsedYear;
-
+  private String delegatedFunctionUsedDate;
   /**
    * The option for privacy notice agreement.
    */

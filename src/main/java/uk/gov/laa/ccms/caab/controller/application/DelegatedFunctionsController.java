@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -51,9 +52,7 @@ public class DelegatedFunctionsController {
     delegatedFunctionsValidator.validate(applicationFormData, bindingResult);
 
     if (!applicationFormData.isDelegatedFunctions()) {
-      applicationFormData.setDelegatedFunctionUsedDay(null);
-      applicationFormData.setDelegatedFunctionUsedMonth(null);
-      applicationFormData.setDelegatedFunctionUsedYear(null);
+      applicationFormData.setDelegatedFunctionUsedDate(null);
     }
 
     if (bindingResult.hasErrors()) {
