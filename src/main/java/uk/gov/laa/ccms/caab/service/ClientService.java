@@ -7,15 +7,16 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.caab.util.ReflectionUtils;
+import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
-import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 
 /**
  * Service class to handle Clients.
@@ -29,6 +30,7 @@ public class ClientService {
   private final CaabApiClient caabApiClient;
 
   private final ClientDetailMapper clientDetailsMapper;
+  private final EbsApiClient ebsApiClient;
 
   /**
    * Searches and retrieves client details based on provided search criteria.
@@ -67,19 +69,15 @@ public class ClientService {
   }
 
   /**
-   * Fetches the transaction status for a client create transaction.
+   * Fetches the transaction status for a client transaction.
    *
-   * @param transactionId         The transaction id for the client create transaction in soa.
-   * @param loginId               The login identifier for the user.
-   * @param userType              Type of the user (e.g., admin, user).
+   * @param transactionId         The transaction id for the client transaction in soa.
    * @return A Mono wrapping the TransactionStatus.
    */
   public Mono<TransactionStatus> getClientStatus(
-      final String transactionId,
-      final String loginId,
-      final String userType) {
-    log.debug("SOA Client Status to get using transaction Id: {}", transactionId);
-    return soaApiClient.getClientStatus(transactionId, loginId, userType);
+      final String transactionId) {
+    log.debug("EBS Client Status to get using transaction Id: {}", transactionId);
+    return ebsApiClient.getClientStatus(transactionId);
   }
 
   /**

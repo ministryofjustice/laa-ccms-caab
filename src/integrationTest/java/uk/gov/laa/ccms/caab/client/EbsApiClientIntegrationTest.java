@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import java.util.ArrayList;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +46,7 @@ import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
 
@@ -350,6 +352,23 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     assertNotNull(response);
     assertEquals(1, response.getContent().size());
     assertEquals(caseDetailsJson, objectMapper.writeValueAsString(response));
+  }
+
+  @Test
+  @DisplayName("Get client status should return data")
+  public void testGetClientStatus_returnData() throws JsonProcessingException {
+    // Given
+    TransactionStatus expected = new TransactionStatus().submissionStatus("Success").referenceNumber("123");
+    String transactionDetailsJson = objectMapper.writeValueAsString(expected);
+    String transactionId = "1234567890";
+    wiremock.stubFor(get(String.format("/clients/status/%s", transactionId)).willReturn(
+        okJson(transactionDetailsJson)
+    ));
+    // When
+    TransactionStatus response = ebsApiClient.getClientStatus(transactionId).block();
+    // Then
+    assertNotNull(response);
+    assertEquals(expected, response);
   }
 
   // You may need to build the AmendmentTypeLookupDetail for the test

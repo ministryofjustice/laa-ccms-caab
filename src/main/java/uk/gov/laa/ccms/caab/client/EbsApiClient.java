@@ -33,6 +33,7 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
+import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
 
@@ -827,6 +828,24 @@ public class EbsApiClient extends BaseApiClient {
         .bodyToMono(CaseDetails.class)
         .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
             e, "Cases", queryParams));
+  }
+
+  /**
+   * Fetches the transaction status for a client transaction.
+   *
+   * @param transactionId         The transaction id for the client transaction in soa.
+   * @return A Mono wrapping the TransactionStatus.
+   */
+  public Mono<TransactionStatus> getClientStatus(
+      final String transactionId) {
+    return webClient
+        .get()
+        .uri("/clients/status/{transactionId}", transactionId)
+        .retrieve()
+        .bodyToMono(TransactionStatus.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
+            e, "client transaction status", "transaction id", transactionId));
+
   }
 
   private static MultiValueMap<String, String> buildQueryParams(
