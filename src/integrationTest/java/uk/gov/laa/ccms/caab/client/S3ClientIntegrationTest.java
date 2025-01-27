@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.client;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
 
 import io.awspring.cloud.s3.S3Resource;
 import io.awspring.cloud.s3.S3Template;
@@ -13,15 +14,24 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.utility.DockerImageName;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
 
 @SpringBootTest
 public class S3ClientIntegrationTest extends AbstractIntegrationTest {
+
+  DockerImageName localstackImage = DockerImageName.parse("localstack/localstack:3.5.0");
+
+  @Rule
+  public LocalStackContainer localstack = new LocalStackContainer(localstackImage)
+      .withServices(S3);
 
   @Autowired
   private S3ApiClient s3ApiClient;
@@ -31,7 +41,6 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
 
   @Value("${laa.ccms.s3.buckets.document-bucket.name}")
   private String bucketName;
-
 
   @AfterEach
   void cleanup() {
