@@ -144,6 +144,7 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
+import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
@@ -2286,6 +2287,20 @@ class ApplicationServiceTest {
 
     assertEquals(application.getAppMode(), opponent.getAppMode());
     assertEquals(application.getAmendment(), opponent.getAmendment());
+  }
+
+  @Test
+  void testGetCaseStatus(){
+    // Given
+    String transactionId = "12345";
+    TransactionStatus expected = new TransactionStatus().submissionStatus("Success")
+        .referenceNumber("123");
+    when(ebsApiClient.getCaseStatus(transactionId)).thenReturn(Mono
+        .just(expected));
+    // When
+    Mono<TransactionStatus> result = ebsApiClient.getCaseStatus(transactionId);
+    // Then
+    assertEquals(expected, result.block());
   }
 
   private static ApplicationDetail getApplicationDetail() {
