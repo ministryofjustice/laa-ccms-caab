@@ -21,11 +21,11 @@
             <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
                 style="margin-top: 0; white-space: nowrap">Date assigned</th>
               <td class="govuk-table__cell govuk-!-font-size-15"
-                  th:text="${#temporals.format(notification.assignDate,'dd-MM-yyyy')}"></td>
+                  th:text="${#temporals.format(notification.assignDate,'dd/MM/yyyy')}"></td>
             <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
                 style="margin-top: 0; white-space: nowrap">Due date</th>
               <td class="govuk-table__cell govuk-!-font-size-15"
-                  th:text="${#temporals.format(notification.dueDate,'dd-MM-yyyy')}"></td>
+                  th:text="${#temporals.format(notification.dueDate,'dd/MMyyyy')}"></td>
             <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
                 style="margin-top: 0; white-space: nowrap">Status</th>
               <td class="govuk-table__cell govuk-!-font-size-15"
