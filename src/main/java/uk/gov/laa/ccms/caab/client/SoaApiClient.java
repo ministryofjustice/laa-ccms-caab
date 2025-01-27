@@ -28,7 +28,6 @@ import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestResponse;
-import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
 
 /**
@@ -262,29 +261,6 @@ public class SoaApiClient {
         .bodyToMono(CaseTransactionResponse.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiCreateError(
             e, "Cases"));
-  }
-
-  /**
-   * Retrieves the case status for a given transaction.
-   *
-   * @param transactionId the unique identifier of the transaction
-   * @param loginId the login ID of the user making the request
-   * @param userType the type of user making the request
-   * @return a {@link Mono} emitting the {@link TransactionStatus} of the case
-   */
-  public Mono<TransactionStatus> getCaseStatus(
-      final String transactionId,
-      final String loginId,
-      final String userType) {
-    return soaApiWebClient
-        .get()
-        .uri("/cases/status/{transactionId}", transactionId)
-        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
-        .header(SOA_GATEWAY_USER_ROLE, userType)
-        .retrieve()
-        .bodyToMono(TransactionStatus.class)
-        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
-            e, "case transaction status", "transaction id", transactionId));
   }
 
   /**
