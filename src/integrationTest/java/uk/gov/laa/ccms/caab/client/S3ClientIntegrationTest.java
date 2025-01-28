@@ -22,7 +22,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.Container.ExecResult;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -49,7 +48,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   @BeforeAll
   static void beforeEach() throws IOException, InterruptedException {
     // Creates bucket
-    ExecResult execResult = localstackContainer.execInContainer("awslocal",
+    localstackContainer.execInContainer("awslocal",
         "--endpoint-url=" + localstackContainer.getEndpointOverride(S3).toString(), "s3", "mb",
         "s3://" + BUCKET_NAME);
   }
