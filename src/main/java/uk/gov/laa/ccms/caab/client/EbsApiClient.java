@@ -833,7 +833,7 @@ public class EbsApiClient extends BaseApiClient {
   /**
    * Fetches the transaction status for a client transaction.
    *
-   * @param transactionId         The transaction id for the client transaction in SOA.
+   * @param transactionId         The transaction id for the client transaction in EBS.
    * @return A Mono wrapping the TransactionStatus.
    */
   public Mono<TransactionStatus> getClientStatus(
@@ -850,7 +850,7 @@ public class EbsApiClient extends BaseApiClient {
   /**
    * Fetches the transaction status for a case transaction.
    *
-   * @param transactionId         The transaction id for the case transaction in SOA.
+   * @param transactionId         The transaction id for the case transaction in EBS.
    * @return A Mono wrapping the TransactionStatus.
    */
   public Mono<TransactionStatus> getCaseStatus(
