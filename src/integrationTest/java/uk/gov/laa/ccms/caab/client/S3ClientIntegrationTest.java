@@ -18,10 +18,13 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.Container.ExecResult;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -33,6 +36,8 @@ import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
 public class S3ClientIntegrationTest extends AbstractIntegrationTest {
 
   public static final String BUCKET_NAME = "testbucket";
+
+  private static final Logger LOG = LoggerFactory.getLogger(S3ClientIntegrationTest.class);
 
   @Container
   static LocalStackContainer localstackContainer = new LocalStackContainer(
@@ -48,9 +53,11 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   @BeforeAll
   static void beforeEach() throws IOException, InterruptedException {
     // Creates bucket
-    localstackContainer.execInContainer("awslocal",
+    ExecResult execResult = localstackContainer.execInContainer("awslocal",
         "--endpoint-url=" + localstackContainer.getEndpointOverride(S3).toString(), "s3", "mb",
         "s3://" + BUCKET_NAME);
+    LOG.info("Output of execResult: {}", execResult.getStdout());
+    LOG.info("Error output of execResult: {}", execResult.getStderr());
   }
 
   @AfterAll
