@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_REFERENCE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -18,8 +17,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 
 /**
  * Controller for the add case submission into ebs.
@@ -54,9 +53,7 @@ public class CaseSubmissionController {
     model.addAttribute("submissionType", SUBMISSION_CREATE_CASE);
 
     final TransactionStatus caseStatus = applicationService.getCaseStatus(
-        transactionId,
-        user.getLoginId(),
-        user.getUserType()).block();
+        transactionId).block();
 
     if (caseStatus != null && StringUtils.hasText(caseStatus.getReferenceNumber())) {
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);

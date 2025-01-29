@@ -833,7 +833,7 @@ public class EbsApiClient extends BaseApiClient {
   /**
    * Fetches the transaction status for a client transaction.
    *
-   * @param transactionId         The transaction id for the client transaction in soa.
+   * @param transactionId         The transaction id for the client transaction in EBS.
    * @return A Mono wrapping the TransactionStatus.
    */
   public Mono<TransactionStatus> getClientStatus(
@@ -845,8 +845,25 @@ public class EbsApiClient extends BaseApiClient {
         .bodyToMono(TransactionStatus.class)
         .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
             e, "client transaction status", "transaction id", transactionId));
-
   }
+
+  /**
+   * Fetches the transaction status for a case transaction.
+   *
+   * @param transactionId         The transaction id for the case transaction in EBS.
+   * @return A Mono wrapping the TransactionStatus.
+   */
+  public Mono<TransactionStatus> getCaseStatus(
+      final String transactionId) {
+    return webClient
+        .get()
+        .uri("/cases/status/{transactionId}", transactionId)
+        .retrieve()
+        .bodyToMono(TransactionStatus.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
+            e, "case transaction status", "transaction id", transactionId));
+  }
+
 
   private static MultiValueMap<String, String> buildQueryParams(
       final NotificationSearchCriteria criteria, final Integer page, final Integer pageSize) {

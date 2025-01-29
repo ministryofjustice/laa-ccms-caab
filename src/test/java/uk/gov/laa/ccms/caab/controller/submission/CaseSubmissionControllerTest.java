@@ -2,8 +2,6 @@ package uk.gov.laa.ccms.caab.controller.submission;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,8 +32,8 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 
 @ExtendWith(SpringExtension.class)
 class CaseSubmissionControllerTest {
@@ -78,7 +76,7 @@ class CaseSubmissionControllerTest {
 
     final TransactionStatus mockStatus = new TransactionStatus();
     mockStatus.setReferenceNumber("ref123");
-    when(applicationService.getCaseStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(mockStatus));
+    when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
 
     mockMvc.perform(get("/submissions/case-create")
             .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
@@ -86,14 +84,14 @@ class CaseSubmissionControllerTest {
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/submissions/%s/confirmed".formatted(SUBMISSION_CREATE_CASE)));
 
-    verify(applicationService, times(1)).getCaseStatus(anyString(), anyString(), anyString());
+    verify(applicationService, times(1)).getCaseStatus(anyString());
   }
 
   @Test
   @DisplayName("Test addCaseSubmission - Case not confirmed, poll continues")
   void testAddCaseSubmission_CaseNotConfirmed() throws Exception {
     final TransactionStatus mockStatus = new TransactionStatus(); // No reference number set
-    when(applicationService.getCaseStatus(anyString(), anyString(), anyString())).thenReturn(Mono.just(mockStatus));
+    when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
 
     mockMvc.perform(get("/submissions/case-create")
             .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
@@ -101,7 +99,7 @@ class CaseSubmissionControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("submissions/submissionInProgress"));
 
-    verify(applicationService, times(1)).getCaseStatus(anyString(), anyString(), anyString());
+    verify(applicationService, times(1)).getCaseStatus(anyString());
     verify(session, times(0)).removeAttribute(SUBMISSION_TRANSACTION_ID);
   }
 

@@ -37,9 +37,9 @@ repositories {
 
 dependencies {
 
-	implementation 'uk.gov.laa.ccms.data:data-api:0.0.35'
+	implementation 'uk.gov.laa.ccms.data:data-api:0.0.36'
 
-	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.49-2f86945-SNAPSHOT'
+	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.49'
 
 	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.40'
 
@@ -87,8 +87,6 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.webjars.npm/govuk-frontend
 	implementation 'org.webjars.npm:govuk-frontend:5.7.1'
 	implementation 'org.webjars.npm:ministryofjustice__frontend:3.3.0'
-	//implementation 'org.webjars.npm:@ministryofjustice/frontend:3.0.3'
-
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
