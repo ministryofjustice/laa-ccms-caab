@@ -56,10 +56,9 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
     ExecResult execResult = localstackContainer.execInContainer("awslocal",
         "--endpoint-url=" + localstackContainer.getEndpointOverride(S3).toString(), "s3", "mb",
         "s3://" + BUCKET_NAME);
-    System.out.println("Output of execResult: " + execResult.getStdout());
-    System.out.println("Error output of execResult: " + execResult.getStderr());
-    LOG.info("Output of execResult: {}", execResult.getStdout());
-    LOG.info("Error output of execResult: {}", execResult.getStderr());
+    if(execResult.getExitCode() != 0){
+      throw new RuntimeException(execResult.getStdout());
+    }
   }
 
   @AfterAll
