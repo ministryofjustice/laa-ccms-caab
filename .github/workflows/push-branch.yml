@@ -40,15 +40,6 @@ jobs:
         with:
           arguments: jacocoTestCoverageVerification
 
-      - name: Integration Test Setup - Start LocalStack
-        uses: LocalStack/setup-localstack@v0.2.2
-        with:
-          image-tag: 'latest'
-          install-awslocal: 'true'
-
-      - name: Integration Test Setup - Create S3 Bucket
-        run: ./localstack/init-s3.sh
-
       - name: Integration Test
         uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629
         with:
