@@ -41,7 +41,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
 
   @Container
   static LocalStackContainer localstackContainer = new LocalStackContainer(
-      DockerImageName.parse("localstack/localstack:4.0.5")
+      DockerImageName.parse("localstack/localstack:4.0.3")
   ).withServices(LocalStackContainer.Service.S3);
 
   @Autowired
@@ -56,7 +56,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
     ExecResult execResult = localstackContainer.execInContainer("awslocal",
         "--endpoint-url=" + localstackContainer.getEndpointOverride(S3).toString(), "s3", "mb",
         "s3://" + BUCKET_NAME);
-    if(execResult.getExitCode() != 0){
+    if (execResult.getExitCode() != 0) {
       throw new RuntimeException(execResult.getStdout());
     }
   }
