@@ -41,7 +41,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
 
   @Container
   static LocalStackContainer localstackContainer = new LocalStackContainer(
-      DockerImageName.parse("localstack/localstack:latest")
+      DockerImageName.parse("localstack/localstack:4.0.5")
   ).withServices(LocalStackContainer.Service.S3);
 
   @Autowired
