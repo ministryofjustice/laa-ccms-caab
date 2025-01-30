@@ -16,7 +16,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.Container.ExecResult;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -41,7 +40,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
 
   @Container
   static LocalStackContainer localstackContainer = new LocalStackContainer(
-      DockerImageName.parse("localstack/localstack:4.0.3")
+      DockerImageName.parse("localstack/localstack:latest")
   ).withServices(LocalStackContainer.Service.S3);
 
   @Autowired
@@ -50,14 +49,22 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   @Autowired
   private S3Template s3Template;
 
-  @BeforeAll
-  static void beforeEach() throws IOException, InterruptedException {
+  /*@BeforeAll
+  static void beforeAll() throws IOException, InterruptedException {
     // Creates bucket
     ExecResult execResult = localstackContainer.execInContainer("awslocal",
         "--endpoint-url=" + localstackContainer.getEndpointOverride(S3).toString(), "s3", "mb",
         "s3://" + BUCKET_NAME);
     if (execResult.getExitCode() != 0) {
       throw new RuntimeException(execResult.getStdout());
+    }
+  }*/
+
+  @BeforeEach
+  void beforeEach(){
+    // Check if bucket exists, if not then create the bucket
+    if(!s3Template.bucketExists(BUCKET_NAME)){
+      s3Template.createBucket(BUCKET_NAME);
     }
   }
 
