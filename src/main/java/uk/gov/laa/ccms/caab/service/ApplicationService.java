@@ -118,6 +118,7 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
+import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.AssessmentResult;
 import uk.gov.laa.ccms.soa.gateway.model.Award;
@@ -131,7 +132,6 @@ import uk.gov.laa.ccms.soa.gateway.model.PriorAuthority;
 import uk.gov.laa.ccms.soa.gateway.model.PriorAuthorityAttribute;
 import uk.gov.laa.ccms.soa.gateway.model.ScopeLimitation;
 import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
-import uk.gov.laa.ccms.soa.gateway.model.TransactionStatus;
 
 /**
  * Service class to handle Applications.
@@ -1951,10 +1951,8 @@ public class ApplicationService {
   }
 
   public Mono<TransactionStatus> getCaseStatus(
-      final String transactionId,
-      final String loginId,
-      final String userType) {
+      final String transactionId) {
     log.debug("SOA Case Status to get using transaction Id: {}", transactionId);
-    return soaApiClient.getCaseStatus(transactionId, loginId, userType);
+    return ebsApiClient.getCaseStatus(transactionId);
   }
 }

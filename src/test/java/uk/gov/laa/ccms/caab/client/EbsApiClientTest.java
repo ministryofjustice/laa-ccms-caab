@@ -1651,4 +1651,54 @@ public class EbsApiClientTest {
           .verifyComplete();
     }
   }
+
+  @Nested
+  @DisplayName("getCaseStatus() Tests")
+  class GetCaseStatusTests {
+
+    @Test
+    @DisplayName("Should return successfully")
+    void getClientStatus_Successful() {
+      String transactionId = "123";
+      String expectedUri = "/cases/status/{transactionId}";
+
+      TransactionStatus mockTransactionStatus = new TransactionStatus();
+
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(
+          requestHeadersMock);
+      when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(TransactionStatus.class)).thenReturn(
+          Mono.just(mockTransactionStatus));
+
+      Mono<TransactionStatus> transactionStatusMono = ebsApiClient.getCaseStatus(transactionId);
+
+      StepVerifier.create(transactionStatusMono)
+          .expectNextMatches(transactionStatus -> transactionStatus == mockTransactionStatus)
+          .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("Should handle error")
+    void getClientStatus_Error() {
+      String transactionId = "123";
+      String expectedUri = "/cases/status/{transactionId}";
+
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(
+          requestHeadersMock);
+      when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(TransactionStatus.class)).thenReturn(Mono.error(
+          new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+
+      when(apiClientErrorHandler.handleApiRetrieveError(
+          any(), eq("case transaction status"), eq("transaction id"), eq(transactionId)))
+          .thenReturn(Mono.empty());
+
+      Mono<TransactionStatus> transactionStatusMono = ebsApiClient.getCaseStatus(transactionId);
+
+      StepVerifier.create(transactionStatusMono)
+          .verifyComplete();
+    }
+  }
 }
