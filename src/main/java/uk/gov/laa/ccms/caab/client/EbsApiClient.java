@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.client;
 
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -788,10 +789,11 @@ public class EbsApiClient extends BaseApiClient {
    */
   public Mono<Notifications> getNotifications(
       final NotificationSearchCriteria criteria,
+      final int providerId,
       final Integer page,
       final Integer pageSize) {
-    final MultiValueMap<String, String> queryParams = buildQueryParams(
-        criteria, page, pageSize);
+    final MultiValueMap<String, String> queryParams = buildQueryParams(criteria,
+        providerId, page, pageSize);
 
     return webClient
         .get()
@@ -859,6 +861,7 @@ public class EbsApiClient extends BaseApiClient {
         .get()
         .uri("/cases/status/{transactionId}", transactionId)
         .retrieve()
+        .onStatus(HttpStatusCode::is4xxClientError, response -> Mono.empty())
         .bodyToMono(TransactionStatus.class)
         .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
             e, "case transaction status", "transaction id", transactionId));
@@ -866,9 +869,11 @@ public class EbsApiClient extends BaseApiClient {
 
 
   private static MultiValueMap<String, String> buildQueryParams(
-      final NotificationSearchCriteria criteria, final Integer page, final Integer pageSize) {
+      final NotificationSearchCriteria criteria, final int providerId,
+      final Integer page, final Integer pageSize) {
     final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
 
+    addQueryParam(queryParams, "provider-id", providerId);
     addQueryParam(queryParams, "case-reference-number", criteria.getCaseReference());
     addQueryParam(queryParams, "provider-case-reference", criteria.getProviderCaseReference());
     addQueryParam(queryParams, "assigned-to-user-id", criteria.getAssignedToUserId());

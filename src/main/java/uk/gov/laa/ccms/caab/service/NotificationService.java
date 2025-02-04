@@ -66,10 +66,11 @@ public class NotificationService {
    * @param size           The size or number of records per page.
    * @return A Mono wrapping the notifications list based on search criteria.
    */
-  public Mono<Notifications> getNotifications(NotificationSearchCriteria searchCriteria,
+  public Mono<Notifications> getNotifications(final NotificationSearchCriteria searchCriteria,
+      final int providerId,
       final Integer page, final Integer size) {
     return ebsApiClient.getNotifications(
-        NotificationSearchUtil.prepareNotificationSearchCriteria(searchCriteria), page, size);
+        NotificationSearchUtil.prepareNotificationSearchCriteria(searchCriteria),providerId, page, size);
   }
 
   /**

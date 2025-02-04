@@ -69,7 +69,7 @@ public class NotificationsSearchResultsController {
     criteria.setSort(pageSort);
     Notifications notificationsResponse =
         notificationService
-            .getNotifications(criteria, page, size)
+            .getNotifications(criteria, user.getProvider().getId(), page, size)
             .block();
     List<Notification> notifications = Optional.ofNullable(
             notificationsResponse)
