@@ -4,9 +4,36 @@
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
 version: 2
+registries:
+  caab-api-github-packages:
+    type: maven-repository
+    url: https://maven.pkg.github.com/ministryofjustice/laa-ccms-caab-api
+    username: PhilDigitalJustice
+    password: ${{ secrets.REPO_TOKEN }}
+  assessment-api-github-packages:
+    type: maven-repository
+    url: https://maven.pkg.github.com/ministryofjustice/laa-ccms-caab-assessment-api
+    username: PhilDigitalJustice
+    password: ${{ secrets.REPO_TOKEN }}
+  ebs-api-github-packages:
+    type: maven-repository
+    url: https://maven.pkg.github.com/ministryofjustice/laa-ccms-data-api
+    username: PhilDigitalJustice
+    password: ${{ secrets.REPO_TOKEN }}
+  soa-api-github-packages:
+    type: maven-repository
+    url: https://maven.pkg.github.com/ministryofjustice/laa-ccms-soa-gateway-api
+    username: PhilDigitalJustice
+    password: ${{ secrets.REPO_TOKEN }}
+  spring-boot-common-github-packages:
+    type: maven-repository
+    url: https://maven.pkg.github.com/ministryofjustice/laa-ccms-spring-boot-common
+    username: PhilDigitalJustice
+    password: ${{ secrets.REPO_TOKEN }}
 updates:
   - package-ecosystem: "gradle" # See documentation for possible values
     directory: "/" # Location of package manifests
+    registries: "*"
     schedule:
       interval: "weekly"
     groups:
