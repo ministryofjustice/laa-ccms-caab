@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.client;
 
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -842,6 +843,7 @@ public class EbsApiClient extends BaseApiClient {
         .get()
         .uri("/clients/status/{transactionId}", transactionId)
         .retrieve()
+        .onStatus(HttpStatusCode::is4xxClientError, response -> Mono.empty())
         .bodyToMono(TransactionStatus.class)
         .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
             e, "client transaction status", "transaction id", transactionId));
@@ -859,6 +861,7 @@ public class EbsApiClient extends BaseApiClient {
         .get()
         .uri("/cases/status/{transactionId}", transactionId)
         .retrieve()
+        .onStatus(HttpStatusCode::is4xxClientError, response -> Mono.empty())
         .bodyToMono(TransactionStatus.class)
         .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
             e, "case transaction status", "transaction id", transactionId));
