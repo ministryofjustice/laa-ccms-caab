@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
@@ -165,7 +166,7 @@ class ActionsAndNotificationsControllerTest {
   void testNotificationsEndpointAndViewNameWhenNotificationTypeSet_Data() throws Exception {
     Notifications notificationsMock = getNotificationsMock();
 
-    Mockito.when(notificationService.getNotifications(any(), any(), any()))
+    Mockito.when(notificationService.getNotifications(any(), anyInt(), any(), any()))
         .thenReturn(Mono.just(notificationsMock));
 
     this.mockMvc.perform(
@@ -225,7 +226,7 @@ class ActionsAndNotificationsControllerTest {
     Notifications notificationsMock = new Notifications()
         .content(new ArrayList<>());
 
-    Mockito.when(notificationService.getNotifications(any(), any(), any()))
+    Mockito.when(notificationService.getNotifications(any(), anyInt(), any(), any()))
         .thenReturn(Mono.just(notificationsMock));
 
     this.mockMvc.perform(get("/notifications/search")

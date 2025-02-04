@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,6 +34,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.NotificationService;
+import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.Notification;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -60,7 +62,7 @@ class NotificationsSearchResultsControllerTest {
   void testGetSearchResults_returnsData() throws Exception {
     Notifications notificationsMock = getNotificationsMock();
 
-    when(notificationService.getNotifications(any(), any(), any()))
+    when(notificationService.getNotifications(any(), anyInt(), any(), any()))
         .thenReturn(Mono.just(notificationsMock));
 
     this.mockMvc.perform(get("/notifications/search-results")
@@ -77,7 +79,7 @@ class NotificationsSearchResultsControllerTest {
     Notifications notificationsMock = new Notifications()
         .content(new ArrayList<>());
 
-    when(notificationService.getNotifications(any(), any(), any()))
+    when(notificationService.getNotifications(any(), anyInt(), any(), any()))
         .thenReturn(Mono.just(notificationsMock));
 
     this.mockMvc.perform(get("/notifications/search-results")
@@ -96,7 +98,7 @@ class NotificationsSearchResultsControllerTest {
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
     flashMap.put(NOTIFICATION_SEARCH_CRITERIA, criteria);
-    when(notificationService.getNotifications(any(), any(), any()))
+    when(notificationService.getNotifications(any(), anyInt(), any(), any()))
         .thenReturn(Mono.empty());
 
     Exception exception = assertThrows(Exception.class, () ->
@@ -112,7 +114,7 @@ class NotificationsSearchResultsControllerTest {
   void testGetSearchResults_SortIsApplied() throws Exception {
     Notifications notificationsMock = getNotificationsMock();
 
-    when(notificationService.getNotifications(any(), any(), any()))
+    when(notificationService.getNotifications(any(), anyInt(), any(), any()))
         .thenReturn(Mono.just(notificationsMock));
 
     NotificationSearchCriteria searchCriteria = buildNotificationSearchCritieria();
@@ -129,7 +131,7 @@ class NotificationsSearchResultsControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("notifications/actions-and-notifications"));
 
-    verify(notificationService).getNotifications(criteriaArg.capture(), any(), any());
+    verify(notificationService).getNotifications(criteriaArg.capture(), anyInt(), any(), any());
 
     assertEquals("assignedDate,asc", criteriaArg.getValue().getSort());
   }
@@ -138,7 +140,7 @@ class NotificationsSearchResultsControllerTest {
   void testGetSearchResults_WhenSortCriteriaChanged_ResetPage() throws Exception {
     Notifications notificationsMock = getNotificationsMock();
 
-    when(notificationService.getNotifications(any(), any(), any()))
+    when(notificationService.getNotifications(any(), anyInt(), any(), any()))
         .thenReturn(Mono.just(notificationsMock));
 
     NotificationSearchCriteria searchCriteria = buildNotificationSearchCritieria();
@@ -154,7 +156,7 @@ class NotificationsSearchResultsControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("notifications/actions-and-notifications"));
 
-    verify(notificationService).getNotifications(any(), eq(0), eq(10));
+    verify(notificationService).getNotifications(any(), anyInt(), eq(0), eq(10));
   }
 
   private static Notifications getNotificationsMock() {
@@ -170,6 +172,7 @@ class NotificationsSearchResultsControllerTest {
 
   private static final UserDetail userDetails = new UserDetail()
       .userId(1)
+      .provider(new BaseProvider().id(10))
       .userType("testUserType")
       .loginId("testLoginId");
 

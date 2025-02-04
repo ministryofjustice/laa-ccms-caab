@@ -263,7 +263,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     int size = 10;
 
     wiremock.stubFor(
-        get(String.format("/notifications?assigned-to-user-id=%s&include-closed=%s&page=%s&" +
+        get(String.format("/notifications?provider-id=20&assigned-to-user-id=%s&include-closed=%s&page=%s&" +
                 "size=%s",
             criteria.getAssignedToUserId(),
             criteria.isIncludeClosed(),
@@ -271,7 +271,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
             size))
             .willReturn(okJson(notificationsJson)));
     Mono<Notifications> notificationsMono =
-        ebsApiClient.getNotifications(criteria, page, size);
+        ebsApiClient.getNotifications(criteria, 20, page, size);
     Notifications response = notificationsMono.block();
     assertEquals(notifications, response);
   }
