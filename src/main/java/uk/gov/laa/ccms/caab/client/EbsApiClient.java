@@ -844,6 +844,7 @@ public class EbsApiClient extends BaseApiClient {
         .get()
         .uri("/clients/status/{transactionId}", transactionId)
         .retrieve()
+        .onStatus(HttpStatusCode::is4xxClientError, response -> Mono.empty())
         .bodyToMono(TransactionStatus.class)
         .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
             e, "client transaction status", "transaction id", transactionId));
