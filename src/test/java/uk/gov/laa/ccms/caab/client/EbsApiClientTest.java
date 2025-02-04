@@ -1618,6 +1618,7 @@ public class EbsApiClientTest {
       when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(
           requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.onStatus(any(), any())).thenReturn(responseMock);
       when(responseMock.bodyToMono(TransactionStatus.class)).thenReturn(
           Mono.just(mockTransactionStatus));
 
@@ -1638,6 +1639,7 @@ public class EbsApiClientTest {
       when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(
           requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.onStatus(any(), any())).thenReturn(responseMock);
       when(responseMock.bodyToMono(TransactionStatus.class)).thenReturn(Mono.error(
           new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
@@ -1668,6 +1670,7 @@ public class EbsApiClientTest {
       when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(
           requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.onStatus(any(), any())).thenReturn(responseMock);
       when(responseMock.bodyToMono(TransactionStatus.class)).thenReturn(
           Mono.just(mockTransactionStatus));
 
@@ -1688,6 +1691,7 @@ public class EbsApiClientTest {
       when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(
           requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.onStatus(any(), any())).thenReturn(responseMock);
       when(responseMock.bodyToMono(TransactionStatus.class)).thenReturn(Mono.error(
           new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
