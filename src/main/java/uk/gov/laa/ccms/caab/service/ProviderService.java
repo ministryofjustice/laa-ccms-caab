@@ -162,10 +162,14 @@ public class ProviderService {
       final Integer officeId,
       final Integer feeEarnerId) {
 
+    if (feeEarnerId == null) {
+      return null;
+    }
+
     return getFeeEarnersByOffice(provider, officeId)
         .stream()
-        .filter(fe -> fe.getId().equals(feeEarnerId))
+        .filter(fe -> feeEarnerId.equals(fe.getId()))
         .findFirst()
-        .orElseThrow(() -> new CaabApplicationException("Error retrieving fee earner"));
+        .orElse(null);
   }
 }

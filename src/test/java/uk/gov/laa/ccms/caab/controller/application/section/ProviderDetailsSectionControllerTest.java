@@ -23,6 +23,8 @@ import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -126,13 +128,30 @@ public class ProviderDetailsSectionControllerTest {
     verifyNoInteractions(applicationService);
   }
 
-  @Test
-  public void testApplicationSummaryProviderDetailsPost_Successful() throws Exception {
+  @ParameterizedTest
+  @CsvSource(value = {
+      "123, 456, ref123, John Doe",
+      "123, 456, ref123, null",
+      "123, null, ref123, John Doe",
+      "123, 456, null, John Doe",
+      "null, 456, ref123, John Doe",
+      "null, null, null, null"
+  }, nullValues = "null")
+  public void testApplicationSummaryProviderDetailsPost_Successful(
+      final Integer feeEarnerId,
+      final Integer supervisorId,
+      final String providerCaseReference,
+      final String contactNameId) throws Exception {
+
     final String applicationId = "123";
     final ActiveCase activeCase = ActiveCase.builder().build();
     final UserDetail user = new UserDetail();
     final ApplicationFormData applicationFormData = new ApplicationFormData();
-    applicationFormData.setContactNameId("John Doe");
+
+    applicationFormData.setFeeEarnerId(feeEarnerId);
+    applicationFormData.setSupervisorId(supervisorId);
+    applicationFormData.setProviderCaseReference(providerCaseReference);
+    applicationFormData.setContactNameId(contactNameId);
 
     when(applicationService.getProviderDetailsFormData(applicationId)).thenReturn(applicationFormData);
 

@@ -41,7 +41,7 @@
             <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Middle name(s)', ${submissionSummary.client.basicDetails.middleNames})}"></div>
             <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('First name', ${submissionSummary.client.basicDetails.firstName})}"></div>
             <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Surname at birth', ${submissionSummary.client.basicDetails.surnameAtBirth})}"></div>
-            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Date of Birth', ${submissionSummary.client.basicDetails.dobDay + '/' + submissionSummary.client.basicDetails.dobMonth + '/' + submissionSummary.client.basicDetails.dobYear})}"></div>
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Date of Birth', ${submissionSummary.client.basicDetails.dateOfBirth})}"></div>
             <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Country of Origin', ${submissionSummary.clientLookups.countryOfOrigin.description})}"></div>
             <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('NI Number', ${submissionSummary.client.basicDetails.nationalInsuranceNumber})}"></div>
             <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Home Office Number', ${submissionSummary.client.basicDetails.homeOfficeNumber})}"></div>
