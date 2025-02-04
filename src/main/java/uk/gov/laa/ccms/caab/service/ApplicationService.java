@@ -1096,8 +1096,10 @@ public class ApplicationService {
         .map(providerData -> providerService.getProvider(providerData.getId()).block())
         .orElseThrow(() -> new CaabApplicationException("Error retrieving provider"));
 
+
     final ContactDetail feeEarner = providerService.getFeeEarnerByOfficeAndId(
         provider, applicationFormData.getOfficeId(), applicationFormData.getFeeEarnerId());
+
     final ContactDetail supervisor = providerService.getFeeEarnerByOfficeAndId(
         provider, applicationFormData.getOfficeId(), applicationFormData.getSupervisorId());
 
@@ -1114,12 +1116,12 @@ public class ApplicationService {
         .office(new IntDisplayValue()
             .id(applicationFormData.getOfficeId())
             .displayValue(applicationFormData.getOfficeName()))
-        .feeEarner(new StringDisplayValue()
+        .feeEarner(feeEarner != null ? new StringDisplayValue()
             .id(feeEarner.getId().toString())
-            .displayValue(feeEarner.getName()))
-        .supervisor(new StringDisplayValue()
+            .displayValue(feeEarner.getName()) : null)
+        .supervisor(supervisor != null ? new StringDisplayValue()
             .id(supervisor.getId().toString())
-            .displayValue(supervisor.getName()))
+            .displayValue(supervisor.getName()) : null)
         .providerContact(new StringDisplayValue()
             .id(contactName.getId().toString())
             .displayValue(contactName.getName()))
