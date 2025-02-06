@@ -33,26 +33,16 @@ registries:
 updates:
   - package-ecosystem: "gradle" # See documentation for possible values
     directory: "/" # Location of package manifests
+    registries: "*"
     schedule:
       interval: "weekly"
     groups:
       gradle-updates:
         patterns:
-          - "**" # Matches all Gradle dependencies
-  - package-ecosystem: "gradle"
-    directory: "/"
-    registries:
-      - caab-api-github-packages
-      - assessment-api-github-packages
-      - ebs-api-github-packages
-      - soa-api-github-packages
-      - spring-boot-common-github-packages
-    schedule:
-      interval: "weekly"
-    groups:
+          - "!uk.gov.laa.ccms.*" # All external Gradle dependencies
       internal-packages:
         patterns:
-          - "**"
+          - "uk.gov.laa.ccms.*" # All internal Gradle dependencies
   - package-ecosystem: "npm"
     directory: "/" # Location of package.json
     schedule:
