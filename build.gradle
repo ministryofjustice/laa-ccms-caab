@@ -41,9 +41,9 @@ dependencies {
 
 	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.49'
 
-	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.40'
+	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.41'
 
-	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.22'
+	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.25'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
