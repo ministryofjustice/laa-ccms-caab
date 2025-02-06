@@ -39,8 +39,10 @@ updates:
     groups:
       gradle-updates:
         patterns:
-          - "**" # Matches all Gradle dependencies
-
+          - "!uk.gov.laa.ccms.*" # All external Gradle dependencies
+      internal-packages:
+        patterns:
+          - "uk.gov.laa.ccms.*" # All internal Gradle dependencies
   - package-ecosystem: "npm"
     directory: "/" # Location of package.json
     schedule:
