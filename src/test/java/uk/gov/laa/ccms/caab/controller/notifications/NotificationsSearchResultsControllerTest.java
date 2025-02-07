@@ -33,7 +33,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.NotificationService;
-import uk.gov.laa.ccms.data.model.Notification;
+import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -160,7 +160,7 @@ class NotificationsSearchResultsControllerTest {
   private static Notifications getNotificationsMock() {
     return new Notifications()
         .addContentItem(
-            new Notification()
+            new NotificationInfo()
                 .user(new UserDetail()
                     .loginId("user1")
                     .userType("user1"))

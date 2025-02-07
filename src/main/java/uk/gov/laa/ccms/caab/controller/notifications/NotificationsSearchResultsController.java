@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.NotificationService;
-import uk.gov.laa.ccms.data.model.Notification;
+import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -71,7 +71,7 @@ public class NotificationsSearchResultsController {
         notificationService
             .getNotifications(criteria, page, size)
             .block();
-    List<Notification> notifications = Optional.ofNullable(
+    List<NotificationInfo> notifications = Optional.ofNullable(
             notificationsResponse)
         .map(Notifications::getContent)
         .orElseThrow(() -> new CaabApplicationException("Error retrieving notifications"));

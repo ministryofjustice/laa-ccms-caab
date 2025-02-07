@@ -69,7 +69,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.Document;
-import uk.gov.laa.ccms.data.model.Notification;
+import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -112,15 +112,16 @@ class ActionsAndNotificationsControllerTest {
         .addContentItem(buildNotification());
   }
 
-  private static Notification buildNotification() {
-    return new Notification()
+  private static NotificationInfo buildNotification() {
+    return new NotificationInfo()
         .user(new UserDetail()
             .loginId("user1")
             .userType("user1"))
         .notificationId("234")
-        .notificationType("N")
-        .attachedDocuments(buildAttachedDocuments())
-        .uploadedDocuments(buildUploadedDocuments());
+        .notificationType("N");
+        // TODO: Update after CCMSPUI-553
+        // .attachedDocuments(buildAttachedDocuments())
+        //.uploadedDocuments(buildUploadedDocuments());
   }
 
   private static List<Document> buildUploadedDocuments() {
@@ -509,7 +510,7 @@ class ActionsAndNotificationsControllerTest {
     when(notificationAttachmentUploadValidator.getMaxFileSize())
         .thenReturn(maxFileSize);
 
-    Notification notification = buildNotification();
+    NotificationInfo notification = buildNotification();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
 
@@ -548,7 +549,7 @@ class ActionsAndNotificationsControllerTest {
     when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
         .thenReturn(Mono.just(notificationAttachmentDetails));
 
-    Notification notification = buildNotification();
+    NotificationInfo notification = buildNotification();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
     flashMap.put("attachmentUploadFormData", attachmentUploadFormData);
@@ -590,7 +591,7 @@ class ActionsAndNotificationsControllerTest {
     when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
         .thenReturn(Mono.just(notificationAttachmentDetails));
 
-    Notification notification = buildNotification();
+    NotificationInfo notification = buildNotification();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
     flashMap.put("attachmentUploadFormData", attachmentUploadFormData);
@@ -636,7 +637,7 @@ class ActionsAndNotificationsControllerTest {
     when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
         .thenReturn(Mono.just(notificationAttachmentDetails));
 
-    Notification notification = buildNotification();
+    NotificationInfo notification = buildNotification();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
     flashMap.put("attachmentUploadFormData", attachmentUploadFormData);
@@ -658,7 +659,7 @@ class ActionsAndNotificationsControllerTest {
   void testGetProvideDocumentsOrEvidence_populatesDraftAttachments_andDisplaysPage()
       throws Exception {
 
-    Notification notification = buildNotification();
+    NotificationInfo notification = buildNotification();
 
     BaseNotificationAttachmentDetail baseNotificationAttachment =
         new BaseNotificationAttachmentDetail();
@@ -685,7 +686,8 @@ class ActionsAndNotificationsControllerTest {
     when(notificationService.getDraftNotificationAttachments(notification.getNotificationId(),
         userDetails.getUserId())).thenReturn(Mono.just(notificationAttachmentDetails));
     when(notificationService.getDraftDocumentLinks(List.of(baseNotificationAttachment))).thenReturn(draftDocumentLinks);
-    when(notificationService.getDocumentLinks(notification.getUploadedDocuments())).thenReturn(documentLinks);
+    // TODO: Update after CCMSPUI-553
+    // when(notificationService.getDocumentLinks(notification.getUploadedDocuments())).thenReturn(documentLinks);
     when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
         any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
         .thenReturn(new BaseNotificationAttachmentDetail());
@@ -707,14 +709,15 @@ class ActionsAndNotificationsControllerTest {
     verify(notificationService).getDraftNotificationAttachments(notification.getNotificationId(),
         userDetails.getUserId());
     verify(notificationService).getDraftDocumentLinks(List.of(baseNotificationAttachment));
-    verify(notificationService).getDocumentLinks(notification.getUploadedDocuments());
+    // TODO: Update after CCMSPUI-553
+    // verify(notificationService).getDocumentLinks(notification.getUploadedDocuments());
   }
 
   @Test
   void testPostProvideDocumentsOrEvidence_submitsDraftAttachments_andDisplaysPage()
       throws Exception {
 
-    Notification notification = buildNotification();
+    NotificationInfo notification = buildNotification();
 
     BaseNotificationAttachmentDetail baseNotificationAttachment =
         new BaseNotificationAttachmentDetail();
@@ -751,7 +754,7 @@ class ActionsAndNotificationsControllerTest {
   void testPostProvideDocumentsOrEvidence_noDocumentsToSubmit()
       throws Exception {
 
-    Notification notification = buildNotification();
+    NotificationInfo notification = buildNotification();
 
     NotificationAttachmentDetails notificationAttachmentDetails =
         new NotificationAttachmentDetails();
@@ -773,8 +776,9 @@ class ActionsAndNotificationsControllerTest {
     when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
         any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
         .thenReturn(new BaseNotificationAttachmentDetail());
-    /*when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification.getUploadedDocuments().getFirst(), "Test Document"))
-        .thenReturn(new BaseNotificationAttachmentDetail());*/
+    // TODO: Update after CCMSPUI-553
+    // when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification.getUploadedDocuments().getFirst(), "Test Document"))
+    //    .thenReturn(new BaseNotificationAttachmentDetail());*/
 
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
@@ -803,7 +807,8 @@ class ActionsAndNotificationsControllerTest {
     List<Document> documents = buildAttachedDocuments();
 
     when(notificationService.getDocumentLinks(documents)).thenReturn(Map.of("567", "doc-url"));
-    //when(notificationService.getDocumentLinks(documents)).thenReturn(Map.of("567", "doc-url"));
+    // TODO: Update after CCMSPUI-553
+    // when(notificationService.getDocumentLinks(documents)).thenReturn(Map.of("567", "doc-url"));
 
     mockMvc.perform(get("/notifications/234")
             .flashAttrs(flashMap))
