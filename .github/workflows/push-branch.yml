@@ -54,6 +54,7 @@ jobs:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       SNYK_ORG: legal-aid-agency
       SNYK_TEST_EXCLUDE: build
+      SNYK_TARGET_REFERENCE: main
 
     steps:
       - uses: actions/checkout@v3
@@ -65,7 +66,7 @@ jobs:
           export PATH="$HOME/.local/bin/:$PATH"
           npm install -g snyk-delta
       - name: Identify new vulnerabilities
-        run: ./snyk/snyk_delta_all_projects.sh --org=$SNYK_ORG --exclude=$SNYK_TEST_EXCLUDE
+        run: ./snyk/snyk_delta_all_projects.sh --org=$SNYK_ORG --exclude=$SNYK_TEST_EXCLUDE --target-reference=$SNYK_TARGET_REFERENCE
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
       - name: Run code test

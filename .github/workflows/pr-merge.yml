@@ -81,6 +81,7 @@ jobs:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       SNYK_ORG: legal-aid-agency
       SNYK_TEST_EXCLUDE: build
+      SNYK_TARGET_REFERENCE: main
       GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
 
     steps:
@@ -90,12 +91,12 @@ jobs:
         continue-on-error: true
         with:
           command: monitor
-          args: --org=$SNYK_ORG --all-projects --exclude=$SNYK_TEST_EXCLUDE
+          args: --org=$SNYK_ORG --all-projects --exclude=$SNYK_TEST_EXCLUDE --target-reference=$SNYK_TARGET_REFERENCE
       - name: Generate sarif Snyk report
         uses: snyk/actions/gradle@0.4.0
         continue-on-error: true
         with:
-          args: --org=$SNYK_ORG --all-projects --exclude=$SNYK_TEST_EXCLUDE --sarif-file-output=snyk-report.sarif
+          args: --org=$SNYK_ORG --all-projects --exclude=$SNYK_TEST_EXCLUDE --target-reference=$SNYK_TARGET_REFERENCE --sarif-file-output=snyk-report.sarif
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
       - name: Fix undefined values
