@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='ATT,EVID')}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='ATT,EVID,SUBNOT')}" xmlns:th="http://www.thymeleaf.org">
 <head>
   <title>LAA CCMS - Your actions / notifications</title>
 </head>
@@ -10,129 +10,146 @@
      class="govuk-back-link">Return to notification search results</a>
   </div>
   <div id="main-content">
-    <h1 class="govuk-heading-l">
-      <th:block th:text="${notification.subject}"/>
-    </h1>
-    <div class="govuk-grid-row">
-      <div class="govuk-grid-column-full">
-        <table class="govuk-table">
-          <thead class="govuk-table__head">
-          <tr class="govuk-table__row">
-            <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                style="margin-top: 0; white-space: nowrap">Date assigned</th>
-              <td class="govuk-table__cell govuk-!-font-size-15"
-                  th:text="${#temporals.format(notification.assignDate,'dd/MM/yyyy')}"></td>
-            <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                style="margin-top: 0; white-space: nowrap">Due date</th>
-              <td class="govuk-table__cell govuk-!-font-size-15"
-                  th:text="${#temporals.format(notification.dueDate,'dd/MMyyyy')}"></td>
-            <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                style="margin-top: 0; white-space: nowrap">Status</th>
-              <td class="govuk-table__cell govuk-!-font-size-15"
-                  th:text="${notification.status}"></td>
-            <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                style="margin-top: 0; white-space: nowrap">Assigned to</th>
-              <td class="govuk-table__cell govuk-!-font-size-15"
-                  th:text="${notification.user.loginId}"></td>
-          </tr>
-          </thead>
-        </table>
-      </div>
-    </div>
-    <div class="govuk-grid-row">
-      <div class="govuk-grid-column-full">
-        <table class="govuk-table">
-          <tr class="govuk-table__row">
-            <td class=govuk-table__cell colspan="8"
-                th:if="${#lists.isEmpty(notification.notes)}">
-              <br/>
-            </td>
-            <td class="govuk-table__cell" colspan="4">
-              <th:block th:each="note :  ${notification.notes}">
-                <p class="ccms-pre-formatted" th:utext="${note.message}"></p>
-              </th:block>
-            </td>
-          </tr>
-        </table>
-      </div>
-    </div>
-    <div class="govuk-grid-row">
-      <div class="govuk-grid-column-full">
-        <h1 class="govuk-heading-m">
-          Case Details
-        </h1>
-        <table class="govuk-table">
-          <thead class="govuk-table__head">
+    <form action="#" th:action="@{/notifications/{notification-id}(notification-id=${notification.notificationId})}" th:object="${notificationResponseFormData}" method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <h1 class="govuk-heading-l">
+        <th:block th:text="${notification.subject}"/>
+      </h1>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+          <table class="govuk-table">
+            <thead class="govuk-table__head">
             <tr class="govuk-table__row">
-              <th scope="col" class="govuk-table__header">LAA Ref</th>
-              <th scope="col" class="govuk-table__header">Provider ref</th>
-              <th scope="col" class="govuk-table__header">Client</th>
-              <th scope="col" class="govuk-table__header">Fee earner</th>
+              <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
+                  style="margin-top: 0; white-space: nowrap">Date assigned</th>
+                <td class="govuk-table__cell govuk-!-font-size-15"
+                    th:text="${#temporals.format(notification.assignDate,'dd/MM/yyyy')}"></td>
+              <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
+                  style="margin-top: 0; white-space: nowrap">Due date</th>
+                <td class="govuk-table__cell govuk-!-font-size-15"
+                    th:text="${#temporals.format(notification.dueDate,'dd/MMyyyy')}"></td>
+              <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
+                  style="margin-top: 0; white-space: nowrap">Status</th>
+                <td class="govuk-table__cell govuk-!-font-size-15"
+                    th:text="${notification.status}"></td>
+              <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
+                  style="margin-top: 0; white-space: nowrap">Assigned to</th>
+                <td class="govuk-table__cell govuk-!-font-size-15"
+                    th:text="${notification.user.loginId}"></td>
             </tr>
-          </thead>
-          <tbody class="govuk-table__body">
-            <tr class="govuk-table__row">
-              <td class="govuk-table__cell"
-                  th:text="${#strings.isEmpty(notification.caseReferenceNumber) ? 'None' :notification.caseReferenceNumber}"></td>
-              <td class="govuk-table__cell"
-                  th:text="${notification.providerCaseReferenceNumber}"></td>
-              <td class="govuk-table__cell" th:text="${notification.clientName}"></td>
-              <td class="govuk-table__cell" th:text="${notification.feeEarner}"></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <div class="govuk-grid-row">
-      <div class="govuk-grid-column-full">
-        <h1 class="govuk-heading-m">
-          Attachments
-        </h1>
-        <table class="govuk-table">
-          <thead class="govuk-table__head">
-          <tr class="govuk-table__row">
-            <th scope="col" class="govuk-table__header">Description</th>
-            <th scope="col" class="govuk-table__header govuk-!-width-one-quarter">Action</th>
-          </tr>
-          </thead>
-          <tbody class="govuk-table__body">
-          <tr class="govuk-table__row" th:each="attachment : ${notification.attachedDocuments}">
-            <td class="govuk-table__cell" th:text="${attachment.text}"></td>
-            <td th:if="${documentLinks.get(attachment.getDocumentId)} != null"
-                class="govuk-table__cell">
-              <div
-                  th:replace="~{partials/actions :: restrictedActionLink('Download', ${user.functions}, 'ATT', false, '', ${documentLinks.get(attachment.getDocumentId)}, true)}"></div>
-            </td>
-            <td th:if="${documentLinks.get(attachment.getDocumentId)} == null"
-                class="govuk-table__cell">
-              <div th:replace="~{partials/actions :: restrictedActionLink('Retrieve',
-              ${user.functions}, 'ATT', false, 'ccms-download-link', @{/notifications/{notification_id}/attachments/{attachment_id}/retrieve(notification_id=${notification.getNotificationId},attachment_id=${attachment.getDocumentId})}, true)}"></div>
-              <div
-                   style="visibility:hidden;display:inline-block"
-                   class="loader-small"></div>
-            </td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <div class="govuk-grid-row">
-      <div class="govuk-grid-column-one-third">
-        <div th:if="${#lists.contains(user.functions, 'EVID') and notification.evidenceAllowed}">
-          <p class="govuk-body govuk-!-text-align-left">
-          <div
-                  th:replace="~{partials/actions :: restrictedActionLink('Provide Documents or evidence', ${user.functions}, 'EVID', true, 'govuk-button--secondary', @{/notifications/{notification_id}/provide-documents-or-evidence(notification_id=${notification.getNotificationId})}, false)}">
-          </div>
-          </p>
+            </thead>
+          </table>
         </div>
-        <p class="govuk-body govuk-!-font-size-15-!-text-align-left">
-          <a class="govuk-back-link"
-             th:href="@{/notifications/search?notification_type=all}">
-            Back
-          </a>
-        </p>
       </div>
-    </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+          <table class="govuk-table">
+            <tr class="govuk-table__row">
+              <td class=govuk-table__cell colspan="8"
+                  th:if="${#lists.isEmpty(notification.notes)}">
+                <br/>
+              </td>
+              <td class="govuk-table__cell" colspan="4">
+                <th:block th:each="note :  ${notification.notes}">
+                  <p class="ccms-pre-formatted" th:utext="${note.message}"></p>
+                </th:block>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+          <h1 class="govuk-heading-m">
+            Case Details
+          </h1>
+          <table class="govuk-table">
+            <thead class="govuk-table__head">
+              <tr class="govuk-table__row">
+                <th scope="col" class="govuk-table__header">LAA Ref</th>
+                <th scope="col" class="govuk-table__header">Provider ref</th>
+                <th scope="col" class="govuk-table__header">Client</th>
+                <th scope="col" class="govuk-table__header">Fee earner</th>
+              </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+              <tr class="govuk-table__row">
+                <td class="govuk-table__cell"
+                    th:text="${#strings.isEmpty(notification.caseReferenceNumber) ? 'None' :notification.caseReferenceNumber}"></td>
+                <td class="govuk-table__cell"
+                    th:text="${notification.providerCaseReferenceNumber}"></td>
+                <td class="govuk-table__cell" th:text="${notification.clientName}"></td>
+                <td class="govuk-table__cell" th:text="${notification.feeEarner}"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+          <h1 class="govuk-heading-m">
+            Attachments
+          </h1>
+          <table class="govuk-table">
+            <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+              <th scope="col" class="govuk-table__header">Description</th>
+              <th scope="col" class="govuk-table__header govuk-!-width-one-quarter">Action</th>
+            </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+            <tr class="govuk-table__row" th:each="attachment : ${notification.attachedDocuments}">
+              <td class="govuk-table__cell" th:text="${attachment.text}"></td>
+              <td th:if="${documentLinks.get(attachment.getDocumentId)} != null"
+                  class="govuk-table__cell">
+                <div
+                    th:replace="~{partials/actions :: restrictedActionLink('Download', ${user.functions}, 'ATT', false, '', ${documentLinks.get(attachment.getDocumentId)}, true)}"></div>
+              </td>
+              <td th:if="${documentLinks.get(attachment.getDocumentId)} == null"
+                  class="govuk-table__cell">
+                <div th:replace="~{partials/actions :: restrictedActionLink('Retrieve',
+                ${user.functions}, 'ATT', false, 'ccms-download-link', @{/notifications/{notification_id}/attachments/{attachment_id}/retrieve(notification_id=${notification.getNotificationId},attachment_id=${attachment.getDocumentId})}, true)}"></div>
+                <div
+                     style="visibility:hidden;display:inline-block"
+                     class="loader-small"></div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="govuk-grid-row" th:if="${notification.notificationOpenIndicator}">
+        <div class="govuk-grid-column-full">
+          <h1 class="govuk-heading-m">
+            Notification Response
+          </h1>
+          <div th:replace="~{partials/forms :: simpleDropdown('action', 'Response', ${notification.availableResponses})}"></div>
+          <div th:if="${notification.notificationOpenIndicator and notification.notificationType != 'N'}">
+            <div th:replace="~{partials/forms :: largeTextInput('message', 'Message to LAA', 2000)}"></div>
+          </div>
+        </div>
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-one-third">
+          <div th:if="${#lists.contains(user.functions, 'EVID') and notification.evidenceAllowed}">
+            <p class="govuk-body govuk-!-text-align-left">
+            <div th:replace="~{partials/actions :: restrictedActionLink('Provide Documents or evidence', ${user.functions}, 'EVID', true, 'govuk-button--secondary', @{/notifications/{notification_id}/provide-documents-or-evidence(notification_id=${notification.getNotificationId})}, false)}">
+            </div>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="govuk-button-group">
+        <div th:if="${notification.notificationOpenIndicator}">
+          <div th:replace="~{partials/actions :: restrictedSubmitButton('Submit',
+                  ${user.functions}, 'SUBNOT')}"></div>
+        </div>
+        <a class="govuk-link"
+           th:href="@{/notifications/search?notification_type=all}"
+           th:text="#{site.back}">
+        </a>
+      </div>
+    </form>
   </div>
 </div>
 </body>

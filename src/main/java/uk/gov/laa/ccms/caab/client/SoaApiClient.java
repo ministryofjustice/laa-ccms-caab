@@ -24,6 +24,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
+import uk.gov.laa.ccms.soa.gateway.model.Notification;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestDetail;
@@ -518,5 +519,30 @@ public class SoaApiClient {
             e, "User", "loginId", userOptions.getUserLoginId()));
   }
 
+  /**
+   * Update a notification with a response in EBS.
+   *
+   * @param notification          The details of the notification response.
+   * @param loginId               The login identifier for the user.
+   * @param userType              Type of the user (e.g., admin, user).
+   * @return A Mono wrapping a {@link ClientTransactionResponse}.
+   */
+  public Mono<ClientTransactionResponse> updateNotification(
+      final String notificationId,
+      final Notification notification,
+      final String loginId,
+      final String userType) {
+    return soaApiWebClient
+        .put()
+        .uri("/notifications/{notification-id}", notificationId)
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(notification)
+        .retrieve()
+        .bodyToMono(ClientTransactionResponse.class)
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiUpdateError(
+            e, "Notification", "id", notificationId));
+  }
 
 }
