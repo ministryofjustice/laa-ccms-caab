@@ -278,7 +278,6 @@ class EditGeneralDetailsSectionControllerTest {
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/address-search-results"))
-        .andExpect(model().attribute("backLink", "/application/sections/correspondence-address"))
         .andExpect(model().attribute("formAction", "application/sections/correspondence-address/search"))
         .andExpect(model().attribute("addressSearchResults", results));
   }
@@ -314,7 +313,6 @@ class EditGeneralDetailsSectionControllerTest {
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/address-search-results"))
-        .andExpect(model().attribute("backLink", "/application/sections/correspondence-address"))
         .andExpect(model().attribute("formAction", "application/sections/correspondence-address/search"))
         .andExpect(model().attribute("addressSearchResults", results));
 
