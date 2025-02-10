@@ -53,7 +53,6 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.Notification;
-import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
@@ -189,21 +188,20 @@ public class ActionsAndNotificationsController {
       Model model,
       HttpSession session
   ) {
-    NotificationInfo found = notifications.getContent()
-        .stream()
-        .filter(notification -> notification.getNotificationId().equals(notificationId))
+
+    Notification notification = notificationService.getNotification(notificationId,
+        user.getProvider().getId())
+        .blockOptional().stream()
         .findFirst()
         .orElseThrow(() -> new CaabApplicationException(
             String.format("Notification with id %s not found", notificationId)));
 
-    // TODO: Add documents here
-    //Map<String, String> documentLinks =
-    //    notificationService.getDocumentLinks(found.getAttachedDocuments());
-    Map<String, String> CHANGE_TO_ABOVE = new HashMap<>();
+    Map<String, String> documentLinks =
+        notificationService.getDocumentLinks(notification.getAttachedDocuments());
 
-    model.addAttribute("documentLinks", CHANGE_TO_ABOVE);
-    model.addAttribute("notification", found);
-    session.setAttribute("notification", found);
+    model.addAttribute("documentLinks", documentLinks);
+    model.addAttribute("notification", notification);
+    session.setAttribute("notification", notification);
     return "notifications/notification";
   }
 

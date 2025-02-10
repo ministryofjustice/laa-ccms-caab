@@ -23,7 +23,7 @@ import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
-import uk.gov.laa.ccms.data.model.NotificationInfo;
+import uk.gov.laa.ccms.data.model.Notification;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
@@ -791,10 +791,11 @@ public class EbsApiClient extends BaseApiClient {
    */
   public Mono<Notifications> getNotifications(
       final NotificationSearchCriteria criteria,
+      final int providerId,
       final Integer page,
       final Integer pageSize) {
-    final MultiValueMap<String, String> queryParams = buildQueryParams(
-        criteria, page, pageSize);
+    final MultiValueMap<String, String> queryParams = buildQueryParams(criteria,
+        providerId, page, pageSize);
 
     return webClient
         .get()
@@ -807,8 +808,8 @@ public class EbsApiClient extends BaseApiClient {
             e, "Notifications", queryParams));
   }
 
-  public Mono<NotificationInfo> getNotification(
-      final long notificationId,
+  public Mono<Notification> getNotification(
+      final String notificationId,
       final int providerId) {
     final MultiValueMap<String, String> queryParams = buildQueryParams(providerId);
 
@@ -818,7 +819,7 @@ public class EbsApiClient extends BaseApiClient {
             .queryParams(queryParams)
             .build(notificationId))
         .retrieve()
-        .bodyToMono(NotificationInfo.class)
+        .bodyToMono(Notification.class)
         .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
             e, "Notifications", queryParams));
   }
@@ -892,9 +893,11 @@ public class EbsApiClient extends BaseApiClient {
   }
 
   private static MultiValueMap<String, String> buildQueryParams(
-      final NotificationSearchCriteria criteria, final Integer page, final Integer pageSize) {
+      final NotificationSearchCriteria criteria, final int providerId,
+      final Integer page, final Integer pageSize) {
     final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
 
+    addQueryParam(queryParams, "provider-id", providerId);
     addQueryParam(queryParams, "case-reference-number", criteria.getCaseReference());
     addQueryParam(queryParams, "provider-case-reference", criteria.getProviderCaseReference());
     addQueryParam(queryParams, "assigned-to-user-id", criteria.getAssignedToUserId());
