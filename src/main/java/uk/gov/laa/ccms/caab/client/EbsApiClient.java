@@ -808,6 +808,14 @@ public class EbsApiClient extends BaseApiClient {
             e, "Notifications", queryParams));
   }
 
+  /**
+   * Retrieves a notification from the API based on the provided notification ID and provider ID.
+   *
+   * @param notificationId the unique identifier of the notification to retrieve
+   * @param providerId the identifier of the provider associated with the notification
+   * @return a Mono emitting the {@link Notification} object if the retrieval is successful
+   *     or an error if it fails
+   */
   public Mono<Notification> getNotification(
       final String notificationId,
       final int providerId) {
