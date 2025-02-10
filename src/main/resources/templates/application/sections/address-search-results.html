@@ -6,14 +6,14 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{'/' + ${backLink}}" class="govuk-back-link">Cancel and return to address details</a>
+    <a th:href="@{/application/sections/correspondence-address}" class="govuk-back-link">Cancel and return to address details</a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{'/' + ${formAction}}" th:object="${addressSearch}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l">Edit your client</span>
+      <span class="govuk-caption-l">Correspondence address details</span>
       <h1 class="govuk-heading-l">
-        Client address search results
+        Address search results
       </h1>
       <p class="govuk-body-l" th:text="${'Your address check has found ' + #lists.size(addressSearchResults.content) + ' possible results. Please select the correct address for your client. If the address is not listed then cancel and return to address details and enter the address manually'}"></p>
       <div class="govuk-form-group">
