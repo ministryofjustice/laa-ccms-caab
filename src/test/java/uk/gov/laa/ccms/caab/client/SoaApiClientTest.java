@@ -33,6 +33,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
+import uk.gov.laa.ccms.soa.gateway.model.Notification;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
@@ -796,6 +797,82 @@ class SoaApiClientTest {
 
     StepVerifier.create(userUpdatedMono)
         .expectNext(mockUserUpdated)
+        .verifyComplete();
+  }
+
+  @Test
+  void updateNotification_Successful() {
+
+    String loginId = "user1";
+    String userType = "userType";
+    String expectedUri = "/notifications/{notification-id}";
+    String notificationId = "12345";
+
+    Notification notification = new Notification()
+        .userId(loginId)
+        .action("action")
+        .message("message");
+
+    ClientTransactionResponse mockNotificationUpdated = new ClientTransactionResponse();
+    mockNotificationUpdated.setTransactionId("123");
+
+    when(soaApiWebClientMock.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri, notificationId)).thenReturn(
+        requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
+        requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Role", userType)).thenReturn(
+        requestBodyMock);
+    when(requestBodyMock.contentType(any(MediaType.class))).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(Notification.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(ClientTransactionResponse.class)).thenReturn(Mono.just(mockNotificationUpdated));
+
+    Mono<ClientTransactionResponse> notificationUpdatedMono = soaApiClient.updateNotification(
+        notificationId, notification, loginId, userType);
+
+    StepVerifier.create(notificationUpdatedMono)
+        .expectNext(mockNotificationUpdated)
+        .verifyComplete();
+  }
+
+  @Test
+  void updateNotification_handlesError() {
+
+    String loginId = "user1";
+    String userType = "userType";
+    String expectedUri = "/notifications/{notification-id}";
+    String notificationId = "12345";
+
+    Notification notification = new Notification()
+        .userId(loginId)
+        .action("action")
+        .message("message");
+
+    ClientTransactionResponse mockNotificationUpdated = new ClientTransactionResponse();
+    mockNotificationUpdated.setTransactionId("123");
+
+    when(soaApiWebClientMock.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri, notificationId)).thenReturn(
+        requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
+        requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Role", userType)).thenReturn(
+        requestBodyMock);
+    when(requestBodyMock.contentType(any(MediaType.class))).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(Notification.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(ClientTransactionResponse.class)).thenReturn(Mono.error(
+        new WebClientResponseException(
+            HttpStatus.INTERNAL_SERVER_ERROR.value(), "", null, null, null)));
+
+    when(apiClientErrorHandler.handleApiUpdateError(
+        any(), eq("Notification"), eq("id"), eq(notificationId))).thenReturn(Mono.empty());
+
+    Mono<ClientTransactionResponse> notificationUpdatedMono = soaApiClient.updateNotification(
+        notificationId, notification, loginId, userType);
+
+    StepVerifier.create(notificationUpdatedMono)
         .verifyComplete();
   }
 

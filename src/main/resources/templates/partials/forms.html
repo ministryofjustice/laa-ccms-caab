@@ -29,6 +29,31 @@
   </select>
 </div>
 
+<!--
+  To display a dropdown for a list of strings that act as both value and display value.
+-->
+<div th:fragment="simpleDropdown(fieldId, formLabel, list)"
+     class="govuk-form-group"
+     th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
+
+  <label class="govuk-label" th:for="${fieldId}" th:text="${formLabel}">
+  </label>
+
+  <span th:if="${#fields.hasErrors(fieldId)}" th:errors="*{__${fieldId}__}" class="govuk-error-message"></span>
+
+  <select class="govuk-select"
+          data-module="govuk-select"
+          th:field="*{__${fieldId}__}"
+          th:errorclass="govuk-select--error"
+          th:id="${fieldId}"
+          th:name="${fieldId}">
+    <option value="">Please Select</option>
+    <option th:each="item : ${list}"
+            th:value="${item}"
+            th:text="${item}">
+    </option>
+  </select>
+</div>
 
 <div th:fragment="dropdownWithDisplayValue(fieldId, formLabel, list, itemValue, itemLabel)"
            class="govuk-form-group"

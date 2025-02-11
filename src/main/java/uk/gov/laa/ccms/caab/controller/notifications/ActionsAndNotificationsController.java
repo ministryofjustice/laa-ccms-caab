@@ -33,7 +33,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.notification.NotificationAttachmentUploadFormData;
+import uk.gov.laa.ccms.caab.bean.notification.NotificationResponseFormData;
 import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationAttachmentUploadValidator;
+import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationResponseValidator;
 import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationSearchValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.constants.SendBy;
@@ -75,6 +77,7 @@ public class ActionsAndNotificationsController {
   private final UserService userService;
   private final NotificationService notificationService;
   private final NotificationAttachmentUploadValidator attachmentUploadValidator;
+  private final NotificationResponseValidator notificationResponseValidator;
   private final AvScanService avScanService;
 
   public static final String STATUS_READY_TO_SUBMIT = "Ready to Submit";
@@ -179,6 +182,7 @@ public class ActionsAndNotificationsController {
    * @param notifications  the notifications response from the prior call to SOA.
    * @param notificationId the ID of the notification to retrieve.
    * @param model          the model.
+   * @param session        the session.
    * @return the notification display page or an error if not found.
    */
   @GetMapping("/notifications/{notification_id}")
@@ -198,9 +202,63 @@ public class ActionsAndNotificationsController {
         .orElseThrow(() -> new CaabApplicationException(
             String.format("Notification with id %s not found", notificationId)));
 
+    prepareNotificationPageModel(found, new NotificationResponseFormData(), model, session);
+
+    return "notifications/notification";
+  }
+
+  /**
+   * Submit a response to a notification.
+   *
+   * @param user           current user details.
+   * @param notification   the current notification.
+   * @param notificationId the ID of the notification to submit a response for.
+   * @param model          the model.
+   * @param session        the session.
+   * @return the notification display page or an error if not found.
+   */
+  @PostMapping("/notifications/{notification_id}")
+  public String submitNotificationResponse(
+      @ModelAttribute(USER_DETAILS) UserDetail user,
+      @SessionAttribute("notification") Notification notification,
+      @ModelAttribute(value = "notificationResponseFormData")
+        NotificationResponseFormData notificationResponseFormData,
+      @PathVariable(value = "notification_id") String notificationId,
+      BindingResult bindingResult,
+      Model model,
+      HttpSession session
+  ) {
+
+    notificationResponseValidator.validate(notificationResponseFormData, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      prepareNotificationPageModel(notification, notificationResponseFormData, model, session);
+      return "notifications/notification";
+    }
+
+    notificationService.submitNotificationResponse(
+        notificationId,
+        notificationResponseFormData.getAction(),
+        notificationResponseFormData.getMessage(),
+        user.getLoginId(),
+        user.getUserType()
+    ).blockOptional()
+        .orElseThrow(() -> new CaabApplicationException("Failed to submit notification response"));
+
+    prepareNotificationPageModel(notification, new NotificationResponseFormData(), model, session);
+
+    return "notifications/notification";
+  }
+
+  private void prepareNotificationPageModel(Notification notification,
+      NotificationResponseFormData notificationResponseFormData,
+      Model model,
+      HttpSession session) {
+
     Map<String, String> documentLinks =
         notificationService.getDocumentLinks(notification.getAttachedDocuments());
 
+    model.addAttribute("notificationResponseFormData", notificationResponseFormData);
     model.addAttribute("documentLinks", documentLinks);
     model.addAttribute(NOTIFICATION, notification);
     session.setAttribute(NOTIFICATION, notification);

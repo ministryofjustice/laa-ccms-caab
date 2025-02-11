@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,7 +51,9 @@ import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.notification.NotificationAttachmentUploadFormData;
+import uk.gov.laa.ccms.caab.bean.notification.NotificationResponseFormData;
 import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationAttachmentUploadValidator;
+import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationResponseValidator;
 import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationSearchValidator;
 import uk.gov.laa.ccms.caab.constants.SendBy;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -76,6 +79,7 @@ import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
+import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -103,6 +107,8 @@ class ActionsAndNotificationsControllerTest {
   private NotificationAttachmentMapper notificationAttachmentMapper;
   @Mock
   private NotificationAttachmentUploadValidator notificationAttachmentUploadValidator;
+  @Mock
+  private NotificationResponseValidator notificationResponseValidator;
   @Mock
   private AvScanService avScanService;
   @Autowired
@@ -753,9 +759,6 @@ class ActionsAndNotificationsControllerTest {
     when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
         any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
         .thenReturn(new BaseNotificationAttachmentDetail());
-    /*when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification
-    .getUploadedDocuments().getFirst(), "Test Document"))
-        .thenReturn(new BaseNotificationAttachmentDetail());*/
 
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
@@ -797,10 +800,6 @@ class ActionsAndNotificationsControllerTest {
     when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
         any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
         .thenReturn(new BaseNotificationAttachmentDetail());
-    // TODO: Update after CCMSPUI-553
-    // when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(notification
-    // .getUploadedDocuments().getFirst(), "Test Document"))
-    //    .thenReturn(new BaseNotificationAttachmentDetail());*/
 
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
@@ -840,6 +839,101 @@ class ActionsAndNotificationsControllerTest {
         .andExpect(
             model().attribute("documentLinks", hasEntry("567", "doc-url")))
         .andExpect(model().attributeExists("notification"));
+  }
+
+  @Test
+  void testSubmitNotificationResponse_success() throws Exception {
+    Map<String, Object> flashMap = new HashMap<>();
+
+    NotificationResponseFormData formData = new NotificationResponseFormData();
+    formData.setAction("action");
+    formData.setMessage("message");
+
+    flashMap.put("user", userDetails);
+    flashMap.put("notificationResponseFormData", formData);
+
+    Notification notification = buildNotification();
+
+    String notificationId = "12345";
+
+    when(notificationService.submitNotificationResponse(notificationId, formData.getAction(),
+        formData.getMessage(), userDetails.getLoginId(), userDetails.getUserType()))
+        .thenReturn(Mono.just(new ClientTransactionResponse()));
+
+    mockMvc.perform(post("/notifications/{notification-id}", notificationId)
+            .sessionAttr("user", userDetails)
+            .sessionAttr("notification", notification)
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("notifications/notification"));
+
+    verify(notificationService).submitNotificationResponse(notificationId, formData.getAction(),
+        formData.getMessage(), userDetails.getLoginId(), userDetails.getUserType());
+  }
+
+  @Test
+  void testSubmitNotificationResponse_throwsException_whenSubmitNotificationFails() {
+    Map<String, Object> flashMap = new HashMap<>();
+
+    NotificationResponseFormData formData = new NotificationResponseFormData();
+    formData.setAction("action");
+    formData.setMessage("message");
+
+    flashMap.put("user", userDetails);
+    flashMap.put("notificationResponseFormData", formData);
+
+    Notification notification = buildNotification();
+
+    String notificationId = "12345";
+
+    when(notificationService.submitNotificationResponse(notificationId, formData.getAction(),
+        formData.getMessage(), userDetails.getLoginId(), userDetails.getUserType()))
+        .thenReturn(Mono.empty());
+
+    Exception exception = assertThrows(Exception.class, () ->
+        mockMvc.perform(post("/notifications/{notification-id}", notificationId)
+            .sessionAttr("user", userDetails)
+            .sessionAttr("notification", notification)
+            .flashAttrs(flashMap))
+          .andExpect(status().isInternalServerError()));
+
+    assertInstanceOf(CaabApplicationException.class, exception.getCause());
+    assertEquals("Failed to submit notification response", exception.getCause().getMessage());
+  }
+
+  @Test
+  void testSubmitNotificationResponse_handlesValidationError() throws Exception {
+    Map<String, Object> flashMap = new HashMap<>();
+
+    NotificationResponseFormData formData = new NotificationResponseFormData();
+
+    flashMap.put("user", userDetails);
+    flashMap.put("notificationResponseFormData", formData);
+
+    Notification notification = buildNotification();
+
+    String notificationId = "12345";
+
+    doAnswer(invocation -> {
+      Errors errors = (Errors) invocation.getArguments()[1];
+
+      errors.rejectValue("action", "required.action",
+          "Please complete 'Notification response action'.");
+      return null;
+    }).when(notificationResponseValidator).validate(any(), any());
+
+    mockMvc.perform(post("/notifications/{notification-id}", notificationId)
+            .sessionAttr("user", userDetails)
+            .sessionAttr("notification", notification)
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(model().attributeHasFieldErrors("notificationResponseFormData", "action"))
+        .andExpect(view().name("notifications/notification"));
+
+    verify(notificationService, never()).submitNotificationResponse(
+        any(), any(), any(), any(), any());
   }
 
   private List<ContactDetail> buildFeeEarners() {

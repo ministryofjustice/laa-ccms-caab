@@ -212,8 +212,6 @@ public class EditGeneralDetailsSectionController {
     model.addAttribute(ADDRESS_SEARCH_RESULTS, addressResultsDisplay);
     model.addAttribute("formAction",
         "application/sections/correspondence-address/search");
-    model.addAttribute("backLink",
-        "/application/sections/correspondence-address");
 
     return "application/sections/address-search-results";
   }
@@ -244,8 +242,6 @@ public class EditGeneralDetailsSectionController {
       model.addAttribute(ADDRESS_SEARCH_RESULTS, addressResultsDisplay);
       model.addAttribute("formAction",
           "application/sections/correspondence-address/search");
-      model.addAttribute("backLink",
-          "/application/sections/correspondence-address");
       return "application/sections/address-search-results";
     }
 
@@ -346,6 +342,7 @@ public class EditGeneralDetailsSectionController {
             .orElse(null);
 
     model.addAttribute("currentLinkedCase", linkedCase);
+    model.addAttribute("linkedCaseId", linkedCaseId);
 
     populateLinkedCasesConfirmDropdowns(model);
 
@@ -374,6 +371,7 @@ public class EditGeneralDetailsSectionController {
 
     if (bindingResult.hasErrors()) {
       model.addAttribute("currentLinkedCase", linkedCase);
+      model.addAttribute("linkedCaseId", linkedCaseId);
       populateLinkedCasesConfirmDropdowns(model);
       return "application/sections/application-linked-case-confirm";
     }
