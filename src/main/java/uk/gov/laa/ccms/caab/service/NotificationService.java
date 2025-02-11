@@ -31,7 +31,6 @@ import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
-import uk.gov.laa.ccms.soa.gateway.model.Notification;
 
 /**
  * Service class to handle Notifications.
@@ -102,7 +101,8 @@ public class NotificationService {
   public Mono<ClientTransactionResponse>  submitNotificationResponse(String notificationId,
       String action, String message, String loginId, String userType) {
 
-    Notification notification = new Notification()
+    uk.gov.laa.ccms.soa.gateway.model.Notification notification =
+        new uk.gov.laa.ccms.soa.gateway.model.Notification()
         .userId(loginId)
         .action(action)
         .message(message);

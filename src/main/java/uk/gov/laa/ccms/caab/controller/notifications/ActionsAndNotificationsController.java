@@ -202,9 +202,8 @@ public class ActionsAndNotificationsController {
         .orElseThrow(() -> new CaabApplicationException(
             String.format("Notification with id %s not found", notificationId)));
 
-    prepareNotificationPageModel(found, new NotificationResponseFormData(), model, session);
-
-    return "notifications/notification";
+    return prepareNotificationPageModel(notification,
+        new NotificationResponseFormData(), model, session);
   }
 
   /**
@@ -245,12 +244,11 @@ public class ActionsAndNotificationsController {
     ).blockOptional()
         .orElseThrow(() -> new CaabApplicationException("Failed to submit notification response"));
 
-    prepareNotificationPageModel(notification, new NotificationResponseFormData(), model, session);
-
-    return "notifications/notification";
+    return prepareNotificationPageModel(notification,
+        new NotificationResponseFormData(), model, session);
   }
 
-  private void prepareNotificationPageModel(Notification notification,
+  private String prepareNotificationPageModel(Notification notification,
       NotificationResponseFormData notificationResponseFormData,
       Model model,
       HttpSession session) {
