@@ -142,8 +142,7 @@ public class ActionsAndNotificationsController {
       criteria.setUserType(user.getUserType());
       criteria.setAssignedToUserId(user.getLoginId());
       model.addAttribute(NOTIFICATION_SEARCH_CRITERIA, criteria);
-      String s = "search-results";
-      return "redirect:/notifications/" + s;
+      return "redirect:/notifications/search-results";
     }
 
     populateDropdowns(user, model, criteria);
@@ -197,8 +196,7 @@ public class ActionsAndNotificationsController {
 
     Notification notification = notificationService.getNotification(notificationId,
         user.getProvider().getId())
-        .blockOptional().stream()
-        .findFirst()
+        .blockOptional()
         .orElseThrow(() -> new CaabApplicationException(
             String.format("Notification with id %s not found", notificationId)));
 
