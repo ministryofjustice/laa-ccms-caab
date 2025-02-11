@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/notifications/search?notification_type=all}"
+    <a th:href="@{/notifications/search-results}"
      class="govuk-back-link">Return to notification search results</a>
   </div>
   <div id="main-content">
@@ -25,7 +25,7 @@
             <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
                 style="margin-top: 0; white-space: nowrap">Due date</th>
               <td class="govuk-table__cell govuk-!-font-size-15"
-                  th:text="${#temporals.format(notification.dueDate,'dd/MMyyyy')}"></td>
+                  th:text="${#temporals.format(notification.dueDate,'dd/MM/yyyy')}"></td>
             <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
                 style="margin-top: 0; white-space: nowrap">Status</th>
               <td class="govuk-table__cell govuk-!-font-size-15"
@@ -39,28 +39,26 @@
         </table>
       </div>
     </div>
-    <div class="govuk-grid-row">
+
+
+    <div class="govuk-grid-row" >
       <div class="govuk-grid-column-full">
-        <table class="govuk-table">
-          <tr class="govuk-table__row">
-            <td class=govuk-table__cell colspan="8"
-                th:if="${#lists.isEmpty(notification.notes)}">
-              <br/>
-            </td>
-            <td class="govuk-table__cell" colspan="4">
-              <th:block th:each="note :  ${notification.notes}">
-                <p class="ccms-pre-formatted" th:utext="${note.message}"></p>
-              </th:block>
-            </td>
-          </tr>
-        </table>
+        <h2 class="govuk-heading-m">Notes</h2>
+        <div class="govuk-inset-text" th:if="${#lists.isEmpty(notification.notes)}">
+          No notes attached to this notification.
+        </div>
+        <th:block th:each="note, idx : ${notification.notes}">
+          <p class="govuk-body govuk-!-font-weight-bold" th:text="|Note added on ${note.date}|"></p>
+          <p th:unless="${#lists.isEmpty(notification.notes)}" class="govuk-body ccms-pre-formatted"
+            th:id="|note-${idx.index}|" th:utext="${note.message}"></p>
+        </th:block>
       </div>
     </div>
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
-        <h1 class="govuk-heading-m">
+        <h2 class="govuk-heading-m">
           Case Details
-        </h1>
+        </h2>
         <table class="govuk-table">
           <thead class="govuk-table__head">
             <tr class="govuk-table__row">
@@ -85,9 +83,9 @@
     </div>
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
-        <h1 class="govuk-heading-m">
+        <h2 class="govuk-heading-m">
           Attachments
-        </h1>
+        </h2>
         <table class="govuk-table">
           <thead class="govuk-table__head">
           <tr class="govuk-table__row">
@@ -118,7 +116,7 @@
     </div>
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-one-third">
-        <div th:if="${#lists.contains(user.functions, 'EVID') and notification.evidenceAllowed}">
+        <div th:if="${#lists.contains(user.functions, 'EVID') and notification.evidenceAllowed == true}">
           <p class="govuk-body govuk-!-text-align-left">
           <div
                   th:replace="~{partials/actions :: restrictedActionLink('Provide Documents or evidence', ${user.functions}, 'EVID', true, 'govuk-button&#45;&#45;secondary', @{/notifications/{notification_id}/provide-documents-or-evidence(notification_id=${notification.getNotificationId})}, false)}">

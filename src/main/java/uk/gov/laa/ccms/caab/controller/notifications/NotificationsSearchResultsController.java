@@ -59,7 +59,7 @@ public class NotificationsSearchResultsController {
       @ModelAttribute(USER_DETAILS) UserDetail user,
       HttpServletRequest request,
       Model model) {
-    if (StringUtils.hasText(criteria.getAssignedToUserId())) {
+    if (!StringUtils.hasText(criteria.getAssignedToUserId())) {
       criteria.setAssignedToUserId(user.getLoginId());
     }
     if (!pageSort.equals(criteria.getSort())) {
