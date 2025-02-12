@@ -54,7 +54,7 @@ public class NotificationsSearchResultsController {
   public String notificationsSearchResults(
       @RequestParam(value = "page", defaultValue = "0") int page,
       @RequestParam(value = "size", defaultValue = "10") int size,
-      @RequestParam(value = "pageSort", defaultValue = "dateAssigned,asc") String pageSort,
+      @RequestParam(value = "pageSort", defaultValue = "date_assigned,asc") String pageSort,
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
       @ModelAttribute(USER_DETAILS) UserDetail user,
       HttpServletRequest request,
