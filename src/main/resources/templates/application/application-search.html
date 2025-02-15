@@ -9,7 +9,7 @@
         <a th:href="@{/home}" class="govuk-back-link">Return to Home</a>
     </div>
     <div id="main-content">
-        <th:block th:replace="~{application/partials/search-fragments :: searchCaseFormFragment(caption=${'Search for a case or application'},heading=${'Application search'},action=${'/application/search'},copyCase=${false})}"></th:block>
+        <th:block th:replace="~{application/partials/search-fragments :: searchCaseFormFragment(caption=#{application.search.caption},heading=#{application.search.heading},action=${'/application/search'},copyCase=${false})}"></th:block>
     </div>
 </div>
 </body>

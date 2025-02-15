@@ -9,18 +9,10 @@
         <a th:href="@{/application/search}" class="govuk-back-link">Return to Case and Application Search</a>
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l">Search for an application or case</span>
-        <h1 class="govuk-heading-l">
-            Application search - results
-        </h1>
-        <p class="govuk-body-l">
-            Your search has returned <span th:text="${caseResultsPage.totalElements}"></span> results.
-        </p>
-        <p class="govuk-body-l">
-            To view an application or case displayed in the results table, click on the
-            'LAA Application / Case Ref.' number. If the application or case you are searching for is
-            not shown, please review your search criteria and search again.
-        </p>
+        <span class="govuk-caption-l" th:text="#{application.search.results.caption}"></span>
+        <h1 class="govuk-heading-l" th:text="#{application.search.results.heading}"></h1>
+        <p class="govuk-body-l" th:text="#{application.search.results.returned(${caseResultsPage.totalElements})}"></p>
+        <p class="govuk-body-l" th:text="#{application.search.results.summary}"></p>
         <table class="govuk-table">
             <thead class="govuk-table__head">
                 <tr class="govuk-table__row">
