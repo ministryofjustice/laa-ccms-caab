@@ -25,12 +25,12 @@ import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
 import uk.gov.laa.ccms.caab.util.FileUtil;
 import uk.gov.laa.ccms.caab.util.NotificationSearchUtil;
+import uk.gov.laa.ccms.data.model.Notification;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
-import uk.gov.laa.ccms.soa.gateway.model.Notification;
 
 /**
  * Service class to handle Notifications.
@@ -57,6 +57,18 @@ public class NotificationService {
    */
   public Mono<NotificationSummary> getNotificationsSummary(String loginId) {
     return ebsApiClient.getUserNotificationSummary(loginId);
+  }
+
+  /**
+   * Retrieves notification information based on the given notification ID and provider ID.
+   *
+   * @param notificationId the unique identifier of the notification to retrieve
+   * @param providerId the unique identifier of the provider associated with the notification
+   * @return a Mono containing the NotificationInfo object, or an empty Mono if no
+   *     notification is found
+   */
+  public Mono<Notification> getNotification(final String notificationId, final int providerId) {
+    return ebsApiClient.getNotification(notificationId, providerId);
   }
 
   /**
@@ -89,7 +101,8 @@ public class NotificationService {
   public Mono<ClientTransactionResponse>  submitNotificationResponse(String notificationId,
       String action, String message, String loginId, String userType) {
 
-    Notification notification = new Notification()
+    uk.gov.laa.ccms.soa.gateway.model.Notification notification =
+        new uk.gov.laa.ccms.soa.gateway.model.Notification()
         .userId(loginId)
         .action(action)
         .message(message);

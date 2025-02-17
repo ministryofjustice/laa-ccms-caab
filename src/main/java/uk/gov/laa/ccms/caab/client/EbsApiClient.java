@@ -4,6 +4,7 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -22,6 +23,7 @@ import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.Notification;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
@@ -334,7 +336,7 @@ public class EbsApiClient extends BaseApiClient {
    * @param providerId the provider id.
    * @return A Mono containing the UserDetail or an error handler if an error occurs.
    */
-  public Mono<UserDetails> getUsers(final Integer providerId) {
+  public Mono<UserDetails> getUsers(final int providerId) {
     final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
     Optional.ofNullable(providerId)
         .ifPresent(param -> queryParams.add("provider-id", String.valueOf(param)));
@@ -807,6 +809,30 @@ public class EbsApiClient extends BaseApiClient {
   }
 
   /**
+   * Retrieves a notification from the API based on the provided notification ID and provider ID.
+   *
+   * @param notificationId the unique identifier of the notification to retrieve
+   * @param providerId the identifier of the provider associated with the notification
+   * @return a Mono emitting the {@link Notification} object if the retrieval is successful
+   *     or an error if it fails
+   */
+  public Mono<Notification> getNotification(
+      final String notificationId,
+      final int providerId) {
+    final MultiValueMap<String, String> queryParams = buildQueryParams(providerId);
+
+    return webClient
+        .get()
+        .uri(builder -> builder.path("/notifications/{notificationId}")
+            .queryParams(queryParams)
+            .build(notificationId))
+        .retrieve()
+        .bodyToMono(Notification.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
+            e, "Notifications", queryParams));
+  }
+
+  /**
    * Retrieves case details based on the specified search criteria, provider ID,
    * pagination parameters, and returns the results as a Mono of CaseDetails.
    *
@@ -868,6 +894,11 @@ public class EbsApiClient extends BaseApiClient {
             e, "case transaction status", "transaction id", transactionId));
   }
 
+  private static MultiValueMap<String, String> buildQueryParams(final int providerId) {
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    addQueryParam(queryParams, "provider-id", providerId);
+    return queryParams;
+  }
 
   private static MultiValueMap<String, String> buildQueryParams(
       final NotificationSearchCriteria criteria, final int providerId,

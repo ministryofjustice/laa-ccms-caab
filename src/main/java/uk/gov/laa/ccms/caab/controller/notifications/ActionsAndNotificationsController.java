@@ -69,6 +69,7 @@ import uk.gov.laa.ccms.soa.gateway.model.Document;
 @SessionAttributes(value = {NOTIFICATION_SEARCH_CRITERIA, NOTIFICATIONS_SEARCH_RESULTS})
 public class ActionsAndNotificationsController {
 
+  public static final String NOTIFICATION = "notification";
   private final LookupService lookupService;
   private final ProviderService providerService;
   private final NotificationSearchValidator notificationSearchValidator;
@@ -192,16 +193,15 @@ public class ActionsAndNotificationsController {
       Model model,
       HttpSession session
   ) {
-    Notification found = notifications.getContent()
-        .stream()
-        .filter(notification -> notification.getNotificationId().equals(notificationId))
-        .findFirst()
+
+    Notification notification = notificationService.getNotification(notificationId,
+        user.getProvider().getId())
+        .blockOptional()
         .orElseThrow(() -> new CaabApplicationException(
             String.format("Notification with id %s not found", notificationId)));
 
-    prepareNotificationPageModel(found, new NotificationResponseFormData(), model, session);
-
-    return "notifications/notification";
+    return prepareNotificationPageModel(notification,
+        new NotificationResponseFormData(), model, session);
   }
 
   /**
@@ -242,12 +242,11 @@ public class ActionsAndNotificationsController {
     ).blockOptional()
         .orElseThrow(() -> new CaabApplicationException("Failed to submit notification response"));
 
-    prepareNotificationPageModel(notification, new NotificationResponseFormData(), model, session);
-
-    return "notifications/notification";
+    return prepareNotificationPageModel(notification,
+        new NotificationResponseFormData(), model, session);
   }
 
-  private void prepareNotificationPageModel(Notification notification,
+  private String prepareNotificationPageModel(Notification notification,
       NotificationResponseFormData notificationResponseFormData,
       Model model,
       HttpSession session) {
@@ -257,8 +256,9 @@ public class ActionsAndNotificationsController {
 
     model.addAttribute("notificationResponseFormData", notificationResponseFormData);
     model.addAttribute("documentLinks", documentLinks);
-    model.addAttribute("notification", notification);
-    session.setAttribute("notification", notification);
+    model.addAttribute(NOTIFICATION, notification);
+    session.setAttribute(NOTIFICATION, notification);
+    return "notifications/notification";
   }
 
   /**
@@ -392,7 +392,7 @@ public class ActionsAndNotificationsController {
   public String provideDocumentsOrEvidence(
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @PathVariable(value = "notification_id") String notificationId,
-      @SessionAttribute("notification") Notification notification,
+      @SessionAttribute(NOTIFICATION) Notification notification,
       Model model) {
 
     populateModelWithNotificationAttachmentDetails(user, notificationId, notification, model);
@@ -411,7 +411,7 @@ public class ActionsAndNotificationsController {
   public String submitDraftNotificationAttachments(
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @PathVariable(value = "notification_id") String notificationId,
-      @SessionAttribute("notification") Notification notification,
+      @SessionAttribute(NOTIFICATION) Notification notification,
       Model model) {
 
     NotificationAttachmentDetails notificationAttachmentDetails =
@@ -446,7 +446,7 @@ public class ActionsAndNotificationsController {
   @GetMapping("/notifications/{notification_id}/attachments/upload")
   public String uploadNotificationAttachment(
       @ModelAttribute(USER_DETAILS) UserDetail user,
-      @SessionAttribute("notification") Notification notification,
+      @SessionAttribute(NOTIFICATION) Notification notification,
       @PathVariable(value = "notification_id") String notificationId,
       @RequestParam(value = "sendBy") SendBy sendBy,
       NotificationAttachmentUploadFormData attachmentUploadFormData,
@@ -472,7 +472,7 @@ public class ActionsAndNotificationsController {
   @PostMapping("/notifications/{notification_id}/attachments/upload")
   public String uploadNotificationAttachment(
       @ModelAttribute(USER_DETAILS) UserDetail user,
-      @SessionAttribute("notification") Notification notification,
+      @SessionAttribute(NOTIFICATION) Notification notification,
       @PathVariable(value = "notification_id") String notificationId,
       @ModelAttribute(value = "attachmentUploadFormData")
       NotificationAttachmentUploadFormData attachmentUploadFormData,
@@ -617,7 +617,7 @@ public class ActionsAndNotificationsController {
     documentLinks.putAll(notificationService.getDraftDocumentLinks(draftNotificationAttachments));
     documentLinks.putAll(notificationService.getDocumentLinks(notification.getUploadedDocuments()));
 
-    model.addAttribute("notification", notification);
+    model.addAttribute(NOTIFICATION, notification);
     model.addAttribute("notificationId", notificationId);
     model.addAttribute("notificationAttachments", allDocuments);
     model.addAttribute("documentLinks", documentLinks);

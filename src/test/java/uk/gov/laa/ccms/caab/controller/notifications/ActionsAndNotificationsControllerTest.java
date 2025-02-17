@@ -74,6 +74,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.Document;
 import uk.gov.laa.ccms.data.model.Notification;
+import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -116,7 +117,16 @@ class ActionsAndNotificationsControllerTest {
 
   private static Notifications getNotificationsMock() {
     return new Notifications()
-        .addContentItem(buildNotification());
+        .addContentItem(buildNotificationInfo());
+  }
+
+  private static NotificationInfo buildNotificationInfo() {
+    return new NotificationInfo()
+        .user(new UserDetail()
+            .loginId("user1")
+            .userType("user1"))
+        .notificationId("234")
+        .notificationType("N");
   }
 
   private static Notification buildNotification() {
@@ -222,7 +232,8 @@ class ActionsAndNotificationsControllerTest {
             .userType("type1")
             .loginId("login1"));
 
-    when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE)).thenReturn(Mono.just(notificationTypes));
+    when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE)).thenReturn(
+        Mono.just(notificationTypes));
     when(providerService.getProvider(userDetails.getProvider().getId()))
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
@@ -266,7 +277,8 @@ class ActionsAndNotificationsControllerTest {
             .userType("type1")
             .loginId("login1"));
 
-    when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE)).thenReturn(Mono.just(notificationTypes));
+    when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE)).thenReturn(
+        Mono.just(notificationTypes));
     when(providerService.getProvider(userDetails.getProvider().getId()))
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
@@ -313,7 +325,8 @@ class ActionsAndNotificationsControllerTest {
             .loginId("login1")
             .username("login1"));
 
-    when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE)).thenReturn(Mono.just(notificationTypes));
+    when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE)).thenReturn(
+        Mono.just(notificationTypes));
     when(providerService.getProvider(userDetails.getProvider().getId()))
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
@@ -342,13 +355,18 @@ class ActionsAndNotificationsControllerTest {
   @Test
   void testGetNotification() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+    Notification notification = buildNotification();
     Notifications notificationsMock = getNotificationsMock();
+
+    when(notificationService.getNotification("234", userDetails.getProvider().getId()))
+        .thenReturn(Mono.just(notification));
+
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
     flashMap.put("notificationSearchCriteria", criteria);
     flashMap.put("notificationsSearchResults", notificationsMock);
     mockMvc.perform(get("/notifications/234")
-        .flashAttrs(flashMap))
+            .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(model().attributeExists("notification"));
@@ -362,10 +380,11 @@ class ActionsAndNotificationsControllerTest {
     flashMap.put("user", userDetails);
     flashMap.put("notificationSearchCriteria", criteria);
     flashMap.put("notificationsSearchResults", notificationsMock);
-
+    when(notificationService.getNotification("123", userDetails.getProvider().getId()))
+        .thenReturn(Mono.empty());
     Exception exception = assertThrows(Exception.class, () ->
-            mockMvc.perform(get("/notifications/123")
-                .flashAttrs(flashMap)));
+        mockMvc.perform(get("/notifications/123")
+            .flashAttrs(flashMap)));
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals("Notification with id 123 not found", exception.getCause().getMessage());
 
@@ -435,7 +454,8 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testRemmoveNotificationAttachment_removesAttachment_andRedirectsToProvideDocumentsPage() throws Exception {
+  void testRemmoveNotificationAttachment_removesAttachment_andRedirectsToProvideDocumentsPage()
+      throws Exception {
 
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
@@ -481,8 +501,10 @@ class ActionsAndNotificationsControllerTest {
         new NotificationAttachmentUploadFormData();
     notificationAttachmentUploadFormData.setSendBy(SendBy.ELECTRONIC);
 
-    when(notificationService.getDraftNotificationAttachment(567)).thenReturn(Mono.just(notificationAttachmentDetail));
-    when(notificationAttachmentMapper.toNotificationAttachmentUploadFormData(notificationAttachmentDetail))
+    when(notificationService.getDraftNotificationAttachment(567)).thenReturn(
+        Mono.just(notificationAttachmentDetail));
+    when(notificationAttachmentMapper.toNotificationAttachmentUploadFormData(
+        notificationAttachmentDetail))
         .thenReturn(notificationAttachmentUploadFormData);
 
     mockMvc.perform(get("/notifications/234/attachments/567/edit")
@@ -500,7 +522,7 @@ class ActionsAndNotificationsControllerTest {
 
     CommonLookupValueDetail documentType = new CommonLookupValueDetail()
         .type(COMMON_VALUE_DOCUMENT_TYPES).code("TST_DOC").description(
-        "Test Document");
+            "Test Document");
 
     CommonLookupDetail documentTypes = new CommonLookupDetail();
     documentTypes
@@ -691,8 +713,10 @@ class ActionsAndNotificationsControllerTest {
 
     when(notificationService.getDraftNotificationAttachments(notification.getNotificationId(),
         userDetails.getUserId())).thenReturn(Mono.just(notificationAttachmentDetails));
-    when(notificationService.getDraftDocumentLinks(List.of(baseNotificationAttachment))).thenReturn(draftDocumentLinks);
-    when(notificationService.getDocumentLinks(notification.getUploadedDocuments())).thenReturn(documentLinks);
+    when(notificationService.getDraftDocumentLinks(List.of(baseNotificationAttachment))).thenReturn(
+        draftDocumentLinks);
+    when(notificationService.getDocumentLinks(notification.getUploadedDocuments())).thenReturn
+     (documentLinks);
     when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
         any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
         .thenReturn(new BaseNotificationAttachmentDetail());
@@ -796,6 +820,9 @@ class ActionsAndNotificationsControllerTest {
   void testGetNotification_populatesDocumentUrls() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Notifications notificationsMock = getNotificationsMock();
+    Notification notification = buildNotification();
+    when(notificationService.getNotification("234", userDetails.getProvider().getId()))
+        .thenReturn(Mono.just(notification));
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
     flashMap.put("notificationSearchCriteria", criteria);

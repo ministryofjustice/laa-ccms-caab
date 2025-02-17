@@ -35,7 +35,8 @@ import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
-import uk.gov.laa.ccms.data.model.Notification;
+import uk.gov.laa.ccms.data.model.BaseProvider;
+import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -67,7 +68,7 @@ class NotificationsSearchResultsControllerTest {
 
     this.mockMvc.perform(get("/notifications/search-results")
             .sessionAttr("user", userDetails)
-            .sessionAttr("notificationSearchCriteria", buildNotificationSearchCritieria())
+            .sessionAttr("notificationSearchCriteria", buildNotificationSearchCriteria())
         )
         .andDo(print())
         .andExpect(status().isOk())
@@ -84,7 +85,7 @@ class NotificationsSearchResultsControllerTest {
 
     this.mockMvc.perform(get("/notifications/search-results")
             .sessionAttr("user", userDetails)
-            .sessionAttr("notificationSearchCriteria", buildNotificationSearchCritieria()))
+            .sessionAttr("notificationSearchCriteria", buildNotificationSearchCriteria()))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("notifications/actions-and-notifications-no-results"));
@@ -92,7 +93,7 @@ class NotificationsSearchResultsControllerTest {
 
   @Test
   void testSearchResults_WithoutAssignedUser_AndNoContent_ThrowsException() {
-    NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+    NotificationSearchCriteria criteria = buildNotificationSearchCriteria();
     criteria.setAssignedToUserId("mildew@rot.com");
 
     Map<String, Object> flashMap = new HashMap<>();
@@ -117,7 +118,7 @@ class NotificationsSearchResultsControllerTest {
     when(notificationService.getNotifications(any(), anyInt(), any(), any()))
         .thenReturn(Mono.just(notificationsMock));
 
-    NotificationSearchCriteria searchCriteria = buildNotificationSearchCritieria();
+    NotificationSearchCriteria searchCriteria = buildNotificationSearchCriteria();
     searchCriteria.setSort("assignedDate,asc");
 
     ArgumentCaptor<NotificationSearchCriteria> criteriaArg =
@@ -143,7 +144,7 @@ class NotificationsSearchResultsControllerTest {
     when(notificationService.getNotifications(any(), anyInt(), any(), any()))
         .thenReturn(Mono.just(notificationsMock));
 
-    NotificationSearchCriteria searchCriteria = buildNotificationSearchCritieria();
+    NotificationSearchCriteria searchCriteria = buildNotificationSearchCriteria();
     searchCriteria.setSort("assignedDate,asc");
 
     this.mockMvc.perform(get("/notifications/search-results")
@@ -162,7 +163,7 @@ class NotificationsSearchResultsControllerTest {
   private static Notifications getNotificationsMock() {
     return new Notifications()
         .addContentItem(
-            new Notification()
+            new NotificationInfo()
                 .user(new UserDetail()
                     .loginId("user1")
                     .userType("user1"))
@@ -174,9 +175,10 @@ class NotificationsSearchResultsControllerTest {
       .userId(1)
       .provider(new BaseProvider().id(10))
       .userType("testUserType")
-      .loginId("testLoginId");
+      .loginId("testLoginId")
+      .provider(new BaseProvider().id(1));
 
-  private static NotificationSearchCriteria buildNotificationSearchCritieria() {
+  private static NotificationSearchCriteria buildNotificationSearchCriteria() {
     NotificationSearchCriteria criteria = new NotificationSearchCriteria();
     criteria.setNotificationToDate("12/12/2022");
     return criteria;

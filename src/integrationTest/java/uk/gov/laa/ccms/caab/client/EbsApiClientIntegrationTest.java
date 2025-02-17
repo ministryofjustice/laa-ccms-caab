@@ -41,7 +41,7 @@ import uk.gov.laa.ccms.data.model.CaseSummary;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
-import uk.gov.laa.ccms.data.model.Notification;
+import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
@@ -446,7 +446,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   private Notifications buildNotifications() {
     return new Notifications()
         .addContentItem(
-            new Notification()
+            new NotificationInfo()
                 .notificationType("N")
                 .user(
                     new UserDetail()
