@@ -115,6 +115,30 @@ class NotificationServiceTest {
   }
 
   @Test
+  void submitNotificationResponse_success() {
+    String notificationId = "12345";
+    String loginId = "loginId";
+    String userType = "userType";
+
+    uk.gov.laa.ccms.soa.gateway.model.Notification notificationResponse =
+        new uk.gov.laa.ccms.soa.gateway.model.Notification();
+    notificationResponse.setUserId(loginId);
+    notificationResponse.action("action");
+    notificationResponse.message("message");
+
+    when(soaApiClient.updateNotification(
+        notificationId, notificationResponse, loginId, userType))
+        .thenReturn(Mono.just(new ClientTransactionResponse()));
+
+    notificationService.submitNotificationResponse(
+        notificationId, notificationResponse.getAction(),
+        notificationResponse.getMessage(), loginId, userType).block();
+
+    verify(soaApiClient).updateNotification(
+        notificationId, notificationResponse, loginId, userType);
+  }
+
+  @Test
   void retrieveNotificationAttachment_checksS3() {
     String documentId = "documentId";
 

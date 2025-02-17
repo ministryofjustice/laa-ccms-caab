@@ -9,7 +9,7 @@
         <a th:href="@{/application/sections/linked-cases}" class="govuk-back-link">Return to linked cases summary</a>
     </div>
     <div id="main-content">
-      <th:block th:replace="~{application/partials/linked-cases :: confirmLinkedCase(action=${'/application/sections/linked-cases/'+ currentLinkedCase.id +'/confirm'})}"></th:block>
+      <th:block th:replace="~{application/partials/linked-cases :: confirmLinkedCase(action=${'/application/sections/linked-cases/'+ linkedCaseId +'/confirm'})}"></th:block>
     </div>
 </div>
 </body>

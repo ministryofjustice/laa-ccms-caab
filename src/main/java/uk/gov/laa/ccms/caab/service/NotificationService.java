@@ -27,8 +27,10 @@ import uk.gov.laa.ccms.caab.util.FileUtil;
 import uk.gov.laa.ccms.caab.util.NotificationSearchUtil;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.Notifications;
+import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
+import uk.gov.laa.ccms.soa.gateway.model.Notification;
 
 /**
  * Service class to handle Notifications.
@@ -72,6 +74,27 @@ public class NotificationService {
     return ebsApiClient.getNotifications(
         NotificationSearchUtil.prepareNotificationSearchCriteria(searchCriteria), providerId,
         page, size);
+  }
+
+  /**
+   * Submit a response to a notification.
+   *
+   * @param notificationId  The ID of the notification to submit a response for.
+   * @param action          The notification response action.
+   * @param message         The notification response message.
+   * @param loginId         The login identifier for the user.
+   * @param userType        Type of the user (e.g., admin, user).
+   * @return A Mono wrapping the UpdateNotification transaction id.
+   */
+  public Mono<ClientTransactionResponse>  submitNotificationResponse(String notificationId,
+      String action, String message, String loginId, String userType) {
+
+    Notification notification = new Notification()
+        .userId(loginId)
+        .action(action)
+        .message(message);
+
+    return soaApiClient.updateNotification(notificationId, notification, loginId, userType);
   }
 
   /**
@@ -421,6 +444,5 @@ public class NotificationService {
                 .collect(Collectors.toSet()))
         .block();
   }
-
 
 }
