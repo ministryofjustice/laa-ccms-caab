@@ -70,7 +70,8 @@ public class NotificationService {
       final int providerId,
       final Integer page, final Integer size) {
     return ebsApiClient.getNotifications(
-        NotificationSearchUtil.prepareNotificationSearchCriteria(searchCriteria),providerId, page, size);
+        NotificationSearchUtil.prepareNotificationSearchCriteria(searchCriteria), providerId,
+        page, size);
   }
 
   /**
