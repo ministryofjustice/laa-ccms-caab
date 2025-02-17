@@ -40,15 +40,15 @@
     <table class="govuk-table ccms-compact-table">
       <thead class="govuk-table__head">
       <tr class="govuk-table__row">
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dateAssigned','Date Assigned')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'notificationSubject','Subject')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dueDate','Due Date')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'userLoginId','Assigned To')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'status','Status')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'lscCaseRefReference','LAA Ref')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'providerCaseReference','Provider Ref')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'clientName','Client')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'feeEarner','Fee Earner')}"></th>
+        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'DATE_ASSIGNED','Date Assigned')}"></th>
+        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'SUBJECT','Subject')}"></th>
+        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'DUE_DATE','Due Date')}"></th>
+        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'USER_LOGIN_ID','Assigned To')}"></th>
+        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'STATUS','Status')}"></th>
+        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'LSC_CASE_REF_REFERENCE','LAA Ref')}"></th>
+        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'PROVIDER_CASE_REFERENCE','Provider Ref')}"></th>
+        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'CLIENT_NAME','Client')}"></th>
+        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'FEE_EARNER','Fee Earner')}"></th>
       </tr>
       </thead>
       <tbody class="govuk-table__body">

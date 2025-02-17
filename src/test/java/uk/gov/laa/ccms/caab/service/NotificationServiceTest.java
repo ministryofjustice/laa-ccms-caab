@@ -33,7 +33,7 @@ import uk.gov.laa.ccms.caab.mapper.NotificationAttachmentMapper;
 import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
-import uk.gov.laa.ccms.data.model.Notification;
+import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -90,7 +90,7 @@ class NotificationServiceTest {
     Notifications notificationsMock = new Notifications();
     notificationsMock
         .addContentItem(
-            new Notification()
+            new NotificationInfo()
                 .user(new UserDetail()
                     .loginId("user1")
                     .userType("user1"))
@@ -103,10 +103,10 @@ class NotificationServiceTest {
 
     criteria.setLoginId("user1");
     criteria.setUserType("user1");
-    when(ebsApiClient.getNotifications(criteria, 1, 10))
+    when(ebsApiClient.getNotifications(criteria, 10,1, 10))
         .thenReturn(Mono.just(notificationsMock));
     Mono<Notifications> notificationsMono = notificationService.getNotifications(criteria,
-        1, 10);
+        10, 1, 10);
 
     StepVerifier.create(notificationsMono)
         .expectNextMatches(notifications ->

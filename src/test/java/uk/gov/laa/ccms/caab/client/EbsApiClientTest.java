@@ -40,6 +40,7 @@ import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.Notification;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
@@ -194,6 +195,66 @@ public class EbsApiClientTest {
   }
 
   @Nested
+  @DisplayName("getNotification() Tests")
+  class GetNotificationTests{
+
+    @Test
+    @DisplayName("Should return successfully")
+    void getNotification_successful() {
+      // Given
+      String  notificationId = "123";
+      int providerId = 456;
+      String expectedUri = String.format("/notifications/%s?provider-id=%s", notificationId, providerId);
+      ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+      Notification notificationInfo = new Notification().notificationId("123").providerFirmId("456");
+      when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(Notification.class)).thenReturn(
+          Mono.just(notificationInfo));
+      // When
+      Mono<Notification> notificationMono = ebsApiClient.getNotification(notificationId,
+          providerId);
+      // Then
+      StepVerifier.create(notificationMono)
+          .expectNextMatches(notification -> notification == notificationInfo)
+          .verifyComplete();
+      Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+      URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+      assertEquals(expectedUri, actualUri.toString());
+    }
+
+    @Test
+    @DisplayName("Should handle error")
+    void getNotification_handlesError(){
+      // Given
+      String notificationId = "123";
+      int providerId = 456;
+      String expectedUri = String.format("/notifications/%s?provider-id=%s", notificationId, providerId);
+      ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+      when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(Notification.class)).thenReturn(
+          Mono.error(
+              new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+      when(
+          apiClientErrorHandler.handleApiRetrieveError(any(), eq("Notifications"),
+              any())).thenReturn(
+          Mono.empty());
+      // When
+      Mono<Notification> notificationMono = ebsApiClient.getNotification(notificationId,
+          providerId);
+      // Then
+      StepVerifier.create(notificationMono)
+          .verifyComplete();
+      Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+      URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+      assertEquals(expectedUri, actualUri.toString());
+    }
+  }
+
+  @Nested
   @DisplayName("getNotifications() Tests")
   class GetNotificationsTests {
 
@@ -207,7 +268,7 @@ public class EbsApiClientTest {
       criteria.setUserType("testUserType");
       int page = 10, size = 10;
       String expectedUri = String.format(
-          "/notifications?assigned-to-user-id=%s&include-closed=%s&page=%s&" +
+          "/notifications?provider-id=100&assigned-to-user-id=%s&include-closed=%s&page=%s&" +
               "size=%s",
           criteria.getAssignedToUserId(),
           criteria.isIncludeClosed(),
@@ -226,7 +287,7 @@ public class EbsApiClientTest {
           Mono.just(notificationsObj));
       Mono<uk.gov.laa.ccms.data.model.Notifications> notificationsMono =
           ebsApiClient.getNotifications(
-              criteria, page,
+              criteria, 100, page,
               size);
 
       StepVerifier.create(notificationsMono)
@@ -247,7 +308,7 @@ public class EbsApiClientTest {
       criteria.setUserType("testUserType");
       int page = 10, size = 10;
       String expectedUri = String.format(
-          "/notifications?assigned-to-user-id=%s&include-closed=%s&page=%s&" +
+          "/notifications?provider-id=100&assigned-to-user-id=%s&include-closed=%s&page=%s&" +
               "size=%s",
           criteria.getAssignedToUserId(),
           criteria.isIncludeClosed(),
@@ -268,13 +329,12 @@ public class EbsApiClientTest {
           Mono.empty());
 
       Mono<Notifications> notificationsMono =
-          ebsApiClient.getNotifications(criteria, page, size);
+          ebsApiClient.getNotifications(criteria, 100, page, size);
 
       StepVerifier.create(notificationsMono)
           .verifyComplete();
       Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
       URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
-      assertEquals(expectedUri, actualUri.toString());
       assertEquals(expectedUri, actualUri.toString());
     }
 

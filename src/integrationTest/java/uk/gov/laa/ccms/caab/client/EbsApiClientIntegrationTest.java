@@ -41,7 +41,7 @@ import uk.gov.laa.ccms.data.model.CaseSummary;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
-import uk.gov.laa.ccms.data.model.Notification;
+import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
@@ -263,7 +263,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     int size = 10;
 
     wiremock.stubFor(
-        get(String.format("/notifications?assigned-to-user-id=%s&include-closed=%s&page=%s&" +
+        get(String.format("/notifications?provider-id=250&assigned-to-user-id=%s&include-closed=%s&page=%s&" +
                 "size=%s",
             criteria.getAssignedToUserId(),
             criteria.isIncludeClosed(),
@@ -271,7 +271,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
             size))
             .willReturn(okJson(notificationsJson)));
     Mono<Notifications> notificationsMono =
-        ebsApiClient.getNotifications(criteria, page, size);
+        ebsApiClient.getNotifications(criteria, 250, page, size);
     Notifications response = notificationsMono.block();
     assertEquals(notifications, response);
   }
@@ -446,7 +446,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   private Notifications buildNotifications() {
     return new Notifications()
         .addContentItem(
-            new Notification()
+            new NotificationInfo()
                 .notificationType("N")
                 .user(
                     new UserDetail()

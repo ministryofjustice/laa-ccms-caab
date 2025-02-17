@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.NotificationService;
-import uk.gov.laa.ccms.data.model.Notification;
+import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -54,12 +54,12 @@ public class NotificationsSearchResultsController {
   public String notificationsSearchResults(
       @RequestParam(value = "page", defaultValue = "0") int page,
       @RequestParam(value = "size", defaultValue = "10") int size,
-      @RequestParam(value = "pageSort", defaultValue = "dateAssigned,asc") String pageSort,
+      @RequestParam(value = "pageSort", defaultValue = "date_assigned,asc") String pageSort,
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
       @ModelAttribute(USER_DETAILS) UserDetail user,
       HttpServletRequest request,
       Model model) {
-    if (StringUtils.hasText(criteria.getAssignedToUserId())) {
+    if (!StringUtils.hasText(criteria.getAssignedToUserId())) {
       criteria.setAssignedToUserId(user.getLoginId());
     }
     if (!pageSort.equals(criteria.getSort())) {
@@ -69,9 +69,9 @@ public class NotificationsSearchResultsController {
     criteria.setSort(pageSort);
     Notifications notificationsResponse =
         notificationService
-            .getNotifications(criteria, page, size)
+            .getNotifications(criteria, user.getProvider().getId(), page, size)
             .block();
-    List<Notification> notifications = Optional.ofNullable(
+    List<NotificationInfo> notifications = Optional.ofNullable(
             notificationsResponse)
         .map(Notifications::getContent)
         .orElseThrow(() -> new CaabApplicationException("Error retrieving notifications"));
