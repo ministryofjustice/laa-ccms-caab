@@ -268,7 +268,7 @@ public class EbsApiClientTest {
       criteria.setUserType("testUserType");
       int page = 10, size = 10;
       String expectedUri = String.format(
-          "/notifications?provider-id=100&assigned-to-user-id=%s&include-closed=%s&page=%s&" +
+          "/notifications?provider-id=1&assigned-to-user-id=%s&include-closed=%s&page=%s&" +
               "size=%s",
           criteria.getAssignedToUserId(),
           criteria.isIncludeClosed(),
@@ -287,7 +287,7 @@ public class EbsApiClientTest {
           Mono.just(notificationsObj));
       Mono<uk.gov.laa.ccms.data.model.Notifications> notificationsMono =
           ebsApiClient.getNotifications(
-              criteria, 100, page,
+              criteria, 1, page,
               size);
 
       StepVerifier.create(notificationsMono)
@@ -308,7 +308,7 @@ public class EbsApiClientTest {
       criteria.setUserType("testUserType");
       int page = 10, size = 10;
       String expectedUri = String.format(
-          "/notifications?provider-id=100&assigned-to-user-id=%s&include-closed=%s&page=%s&" +
+          "/notifications?provider-id=1&assigned-to-user-id=%s&include-closed=%s&page=%s&" +
               "size=%s",
           criteria.getAssignedToUserId(),
           criteria.isIncludeClosed(),
@@ -329,7 +329,7 @@ public class EbsApiClientTest {
           Mono.empty());
 
       Mono<Notifications> notificationsMono =
-          ebsApiClient.getNotifications(criteria, 100, page, size);
+          ebsApiClient.getNotifications(criteria, 1, page, size);
 
       StepVerifier.create(notificationsMono)
           .verifyComplete();

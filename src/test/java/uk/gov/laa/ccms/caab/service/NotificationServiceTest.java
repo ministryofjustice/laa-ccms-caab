@@ -103,7 +103,7 @@ class NotificationServiceTest {
 
     criteria.setLoginId("user1");
     criteria.setUserType("user1");
-    when(ebsApiClient.getNotifications(criteria, 10,1, 10))
+    when(ebsApiClient.getNotifications(criteria, 10, 1, 10))
         .thenReturn(Mono.just(notificationsMock));
     Mono<Notifications> notificationsMono = notificationService.getNotifications(criteria,
         10, 1, 10);

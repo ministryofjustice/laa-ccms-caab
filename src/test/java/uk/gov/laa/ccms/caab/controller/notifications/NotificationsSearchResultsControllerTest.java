@@ -35,6 +35,7 @@ import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
+import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -172,6 +173,7 @@ class NotificationsSearchResultsControllerTest {
 
   private static final UserDetail userDetails = new UserDetail()
       .userId(1)
+      .provider(new BaseProvider().id(10))
       .userType("testUserType")
       .loginId("testLoginId")
       .provider(new BaseProvider().id(1));
