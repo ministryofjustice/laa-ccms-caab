@@ -1,5 +1,9 @@
 package uk.gov.laa.ccms.caab.client;
 
+import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER;
+import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE;
+import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER;
+
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
@@ -9,6 +13,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
@@ -17,6 +22,7 @@ import uk.gov.laa.ccms.data.model.CaseDetails;
 import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
+import uk.gov.laa.ccms.data.model.ClientDetails;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
@@ -876,6 +882,55 @@ public class EbsApiClient extends BaseApiClient {
         .bodyToMono(TransactionStatus.class)
         .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
             e, "client transaction status", "transaction id", transactionId));
+  }
+
+  /**
+   * Searches and retrieves client details based on provided search criteria.
+   *
+   * @param clientSearchCriteria The search criteria to use when fetching clients.
+   * @param page                 The page number for pagination.
+   * @param size                 The size or number of records per page.
+   * @return A Mono wrapping the ClientDetails.
+   */
+  public Mono<ClientDetails> getClients(
+      final ClientSearchCriteria clientSearchCriteria,
+      final Integer page,
+      final Integer size) {
+
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    Optional.ofNullable(clientSearchCriteria.getForename())
+        .ifPresent(forename -> queryParams.add("first-name", forename));
+    Optional.ofNullable(clientSearchCriteria.getSurname())
+        .ifPresent(surname -> queryParams.add("surname", surname));
+    Optional.ofNullable(clientSearchCriteria.getDoB())
+        .ifPresent(dateOfBirth -> queryParams.add("date-of-birth", dateOfBirth));
+    Optional.ofNullable(clientSearchCriteria.getUniqueIdentifier(
+            UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE))
+        .ifPresent(homeOfficeReference -> queryParams.add(
+            "home-office-reference", homeOfficeReference));
+    Optional.ofNullable(clientSearchCriteria.getUniqueIdentifier(
+            UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER))
+        .ifPresent(nationalInsuranceNumber -> queryParams.add(
+            "national-insurance_number", nationalInsuranceNumber));
+    Optional.ofNullable(clientSearchCriteria.getUniqueIdentifier(
+            UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER))
+        .ifPresent(caseReferenceNumber -> queryParams.add(
+            "case-reference-number", caseReferenceNumber));
+    Optional.ofNullable(page)
+        .ifPresent(param -> queryParams.add("page", String.valueOf(param)));
+    Optional.ofNullable(size)
+        .ifPresent(param -> queryParams.add("size", String.valueOf(param)));
+
+    return webClient
+        .get()
+        .uri(builder -> builder.path("/clients")
+            .queryParams(queryParams)
+            .build())
+        .retrieve()
+        .bodyToMono(ClientDetails.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
+            e, "Clients", queryParams));
+
   }
 
   /**

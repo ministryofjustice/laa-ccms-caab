@@ -24,8 +24,8 @@ import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
+import uk.gov.laa.ccms.data.model.ClientDetails;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 
 /**
  * Controller responsible for managing the search operations related to clients.
@@ -67,8 +67,6 @@ public class ClientSearchResultsController {
           Model model) {
     ClientDetails clientSearchResults = clientService.getClients(
             clientSearchCriteria,
-            user.getLoginId(),
-            user.getUserType(),
             page,
             size).block();
 

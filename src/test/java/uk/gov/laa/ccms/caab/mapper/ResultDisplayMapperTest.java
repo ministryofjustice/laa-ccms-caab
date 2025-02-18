@@ -19,11 +19,11 @@ import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.OrganisationResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
+import uk.gov.laa.ccms.data.model.ClientDetails;
+import uk.gov.laa.ccms.data.model.ClientSummary;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientSummary;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationSummary;
@@ -49,7 +49,7 @@ class ResultDisplayMapperTest {
     final AddressDetail address = new AddressDetail().postalCode("12345");
 
     final ClientDetailDetails details = new ClientDetailDetails().name(name).address(address);
-    clientDetail = new uk.gov.laa.ccms.soa.gateway.model.ClientDetail().details(details);
+    clientDetail = new uk.gov.laa.ccms.soa.gateway.model.ClientDetail() .details(details);
 
     clientSummary = new ClientSummary()
         .clientReferenceNumber("client123")

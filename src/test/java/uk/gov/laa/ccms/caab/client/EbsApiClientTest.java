@@ -26,6 +26,7 @@ import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
@@ -34,6 +35,7 @@ import uk.gov.laa.ccms.data.model.BaseUser;
 import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
+import uk.gov.laa.ccms.data.model.ClientDetails;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
@@ -1661,7 +1663,7 @@ public class EbsApiClientTest {
       verify(responseMock).bodyToMono(CaseReferenceSummary.class);
     }
   }
-
+  
   @Nested
   @DisplayName("getClientStatus() Tests")
   class GetClientStatusTests {
@@ -1713,7 +1715,54 @@ public class EbsApiClientTest {
           .verifyComplete();
     }
   }
+  
+  @Nested
+  @DisplayName("getClients() Tests")
+  class GetClientsTests {
+    
+    @Test
+    @DisplayName("Should return successfully")
+    void getClients_Successful() {
+      String expectedUri = "/clients?first-name=John&surname=Doe&date-of-birth=2000-01-01&page=0&size=10";
 
+      ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
+      String firstName = "John";
+      String lastName = "Doe";
+
+      int page = 0;
+      int size = 10;
+
+      clientSearchCriteria.setForename(firstName);
+      clientSearchCriteria.setSurname(lastName);
+      clientSearchCriteria.setDateOfBirth("1/1/2000");
+      ClientDetails mockClientDetails = new ClientDetails();
+
+      ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+      when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(ClientDetails.class)).thenReturn(Mono.just(mockClientDetails));
+
+      Mono<ClientDetails> clientDetailsMono =
+          ebsApiClient.getClients(clientSearchCriteria, page, size);
+
+      StepVerifier.create(clientDetailsMono)
+          .expectNextMatches(clientDetails -> clientDetails == mockClientDetails)
+          .verifyComplete();
+
+      Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+      URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+
+      verify(webClientMock).get();
+      verify(requestHeadersUriMock).uri(uriCaptor.capture());
+      verify(requestHeadersMock).retrieve();
+      verify(responseMock).bodyToMono(ClientDetails.class);
+
+      assertEquals(expectedUri, actualUri.toString());
+    }
+  }
+  
   @Nested
   @DisplayName("getCaseStatus() Tests")
   class GetCaseStatusTests {
