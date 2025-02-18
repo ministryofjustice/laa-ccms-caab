@@ -472,9 +472,6 @@ public class EditProceedingsAndCostsSectionController {
 
     if (action.equals(ACTION_ADD)) {
       proceedingFlow.setAmended(Boolean.TRUE);
-      //set the proceeding description to the proceeding type display value
-      proceedingTypeDetails.setProceedingDescription(
-          proceedingTypeDetails.getProceedingTypeDisplayValue());
     } else {
       final ProceedingFlowFormData oldProceedingFlow =
           (ProceedingFlowFormData) session.getAttribute(PROCEEDING_FLOW_FORM_DATA_OLD);
@@ -515,7 +512,8 @@ public class EditProceedingsAndCostsSectionController {
         new uk.gov.laa.ccms.data.model.ProceedingDetail()
         .amendmentOnly(application.getAmendment())
         .matterType(matterType)
-        .categoryOfLawCode(application.getCategoryOfLaw().getId());
+        .categoryOfLawCode(application.getCategoryOfLaw().getId())
+        .enabled(Boolean.TRUE);
 
     final Boolean larScopeFlag = application.getLarScopeFlag();
     final String applicationType = application.getApplicationType().getId();

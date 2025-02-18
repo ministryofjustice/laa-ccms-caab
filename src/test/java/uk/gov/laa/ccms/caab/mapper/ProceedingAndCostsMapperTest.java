@@ -53,6 +53,7 @@ class ProceedingAndCostsMapperTest {
     final ProceedingFormDataProceedingDetails proceedingDetails = new ProceedingFormDataProceedingDetails();
     proceedingDetails.setProceedingType("PT001");
     proceedingDetails.setProceedingTypeDisplayValue("ProceedingDetail Type 1");
+    proceedingDetails.setProceedingDescription("Description");
     proceedingDetails.setLarScope("Scope");
 
     final ProceedingFormDataFurtherDetails furtherDetails = new ProceedingFormDataFurtherDetails();
@@ -80,7 +81,7 @@ class ProceedingAndCostsMapperTest {
     assertEquals(matterTypeDetails.getMatterTypeDisplayValue(), proceeding.getMatterType().getDisplayValue());
     assertEquals(proceedingDetails.getProceedingType(), proceeding.getProceedingType().getId());
     assertEquals(proceedingDetails.getProceedingTypeDisplayValue(), proceeding.getProceedingType().getDisplayValue());
-    assertEquals(proceedingDetails.getProceedingTypeDisplayValue(), proceeding.getDescription());
+    assertEquals(proceedingDetails.getProceedingDescription(), proceeding.getDescription());
     assertEquals(proceedingDetails.getLarScope(), proceeding.getLarScope());
     assertEquals(furtherDetails.getClientInvolvementType(), proceeding.getClientInvolvement().getId());
     assertEquals(furtherDetails.getClientInvolvementTypeDisplayValue(), proceeding.getClientInvolvement().getDisplayValue());
