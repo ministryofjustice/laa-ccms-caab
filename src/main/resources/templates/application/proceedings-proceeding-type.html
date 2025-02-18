@@ -45,14 +45,17 @@
                             this.options[this.selectedIndex].text;
                          document.getElementById('orderTypeRequired').value =
                             this.options[this.selectedIndex].getAttribute('order-type-required');
+                          document.getElementById('proceedingDescription').value =
+                            this.options[this.selectedIndex].getAttribute('proceeding-description');
                          document.getElementById('larScope').value =
                             this.options[this.selectedIndex].getAttribute('lar-scope');|">
           <option value="">Please Select</option>
           <option th:each="item : ${proceedingTypes}"
                   th:value="${item['code']}"
-                  th:text="${item['description']}"
+                  th:text="${item['name']}"
+                  th:proceeding-description="${item['description']}"
                   th:order-type-required="${item['orderTypeRequired']}"
-                  th:lar-scope="${item['larScope']}">>
+                  th:lar-scope="${item['larScope']}">
           </option>
         </select>
       </div>

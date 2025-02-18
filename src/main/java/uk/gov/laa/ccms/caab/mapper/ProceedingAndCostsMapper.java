@@ -40,7 +40,7 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "proceedingType.displayValue",
       source = "proceedingFlowFormData.proceedingDetails.proceedingTypeDisplayValue")
   @Mapping(target = "description",
-      source = "proceedingFlowFormData.proceedingDetails.proceedingTypeDisplayValue")
+      source = "proceedingFlowFormData.proceedingDetails.proceedingDescription")
   @Mapping(target = "larScope",
       source = "proceedingFlowFormData.proceedingDetails.larScope")
   @Mapping(target = "clientInvolvement.id",

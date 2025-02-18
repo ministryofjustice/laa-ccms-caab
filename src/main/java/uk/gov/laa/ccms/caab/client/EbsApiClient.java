@@ -386,6 +386,8 @@ public class EbsApiClient extends BaseApiClient {
         .ifPresent(type -> queryParams.add("matter-type", type));
     Optional.ofNullable(searchCriteria.getAmendmentOnly())
         .ifPresent(param -> queryParams.add("amendment-only", String.valueOf(param)));
+    Optional.ofNullable(searchCriteria.getEnabled())
+        .ifPresent(param -> queryParams.add("enabled", String.valueOf(param)));
     Optional.ofNullable(larScopeFlag)
         .ifPresent(param -> queryParams.add("lar-scope-flag", String.valueOf(param)));
     Optional.ofNullable(applicationType)
