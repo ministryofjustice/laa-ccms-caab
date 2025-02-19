@@ -49,7 +49,7 @@ class ResultDisplayMapperTest {
     final AddressDetail address = new AddressDetail().postalCode("12345");
 
     final ClientDetailDetails details = new ClientDetailDetails().name(name).address(address);
-    clientDetail = new uk.gov.laa.ccms.soa.gateway.model.ClientDetail() .details(details);
+    clientDetail = new uk.gov.laa.ccms.soa.gateway.model.ClientDetail().details(details);
 
     clientSummary = new ClientSummary()
         .clientReferenceNumber("client123")
