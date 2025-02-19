@@ -11,16 +11,10 @@
     <a th:href="@{/application/proceedings-and-costs}" class="govuk-back-link">Cancel and return to proceedings and costs</a>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/proceedings/{action}/confirm(action=${proceedingFlow.action})}" th:object="${scopeLimitationFormData}" method="post">
-      <span class="govuk-caption-l">Add/edit proceeding</span>
-      <h1 class="govuk-heading-l">
-        Proceeding details - Step 4 of 4
-      </h1>
-      <p class="govuk-body-l">
-        Please review the information below and, if required, update the scope limitations for this
-        Proceeding. You can add, edit or remove existing scope limitations, but at least one scope
-        limitation must exist to complete this Proceeding.
-      </p>
+    <form action="#" th:action="@{/application/proceedings/{action}/confirm(action=${proceedingFlow.action})}" th:object="${scopeDelegatedFunctionsApplyFormData}" method="post">
+      <span class="govuk-caption-l" th:text="#{proceedings.confirm.caption}"></span>
+      <h1 class="govuk-heading-l" th:text="#{proceedings.confirm.title}"></h1>
+      <p class="govuk-body-l" th:text="#{proceedings.confirm.text}"></p>
       <p class="govuk-body">
         <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
             Matter type
@@ -65,7 +59,8 @@
         <tr class="govuk-table__row">
           <th scope="col" class="govuk-table__header">Scope limitation</th>
           <th scope="col" class="govuk-table__header">Scope limitation wording</th>
-          <th scope="col" class="govuk-table__header" th:if="${isSubstantiveDevolvedPowersApp}">Delegated Functions Apply</th>
+          <th scope="col" class="govuk-table__header" th:if="${isSubstantiveDevolvedPowersApp}"
+              th:text="#{proceedings.summary.delegatedFunctionsApply}"></th>
           <th scope="col" class="govuk-table__header">Action</th>
         </tr>
         </thead>
@@ -80,11 +75,13 @@
           <td class="govuk-table__cell" th:text="${scopeLimitation.scopeLimitationWording}"></td>
           <td class="govuk-table__cell" th:if="${isSubstantiveDevolvedPowersApp}">
             <div class="govuk-checkboxes__item govuk-checkboxes--small">
-              <input  type="hidden" th:field="*{scopeLimitationDataList[__${rowStat.index}__].id}" th:value="${scopeLimitation.id}"/>
+              <input  type="hidden" th:field="*{scopeLimitationDataList[__${rowStat.index}__].id}"
+                      th:value="${scopeLimitation.id}"/>
               <input type="checkbox" class="govuk-checkboxes__input" id="delegatedInd"
-                     th:name="'scopeLimitationDataList[' + ${rowStat.index} + '].delegatedFuncApplyInd'" th:checked="*{scopeLimitationDataList[__${rowStat.index}__]?.delegatedFuncApplyInd}">
+                     th:name="'scopeLimitationDataList[' + ${rowStat.index} + '].delegatedFuncApplyInd'"
+                     th:checked="*{scopeLimitationDataList[__${rowStat.index}__]?.delegatedFuncApplyInd}">
               <label class="govuk-label govuk-checkboxes__label" for="delegatedInd">
-                <span class="govuk-visually-hidden">Select Delegated Functions Apply</span>
+                <span class="govuk-visually-hidden" th:text="#{proceedings.confirm.delegatedFunctionsApply}"></span>
               </label>
             </div>
           </td>
