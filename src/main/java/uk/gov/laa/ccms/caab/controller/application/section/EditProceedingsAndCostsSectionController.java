@@ -831,12 +831,14 @@ public class EditProceedingsAndCostsSectionController {
       @SessionAttribute(APPLICATION_PROCEEDINGS) final List<ProceedingDetail> proceedings,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @PathVariable("action") final String action,
-      @ModelAttribute(SCOPE_LIMITATION_FORM_DATA) final ScopeLimitationDataWrapper scopeLimitationFormData,
+      @ModelAttribute(SCOPE_LIMITATION_FORM_DATA)
+      final ScopeLimitationDataWrapper scopeLimitationFormData,
       final HttpSession session) {
 
     // update delegatedFuncApplyInd flag
     for (ScopeLimitationDetail scopeLimitationDetail : scopeLimitations) {
-      for (ScopeLimitationData scopeLimitationData : scopeLimitationFormData.scopeLimitationDataList()) {
+      for (ScopeLimitationData scopeLimitationData :
+          scopeLimitationFormData.scopeLimitationDataList()) {
         if (scopeLimitationDetail.getId().equals(scopeLimitationData.id())) {
           scopeLimitationDetail.getDelegatedFuncApplyInd()
               .setFlag(scopeLimitationData.delegatedFuncApplyInd());
