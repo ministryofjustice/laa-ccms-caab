@@ -228,6 +228,9 @@ class EditProceedingsAndCostsSectionControllerTest {
         final String applicationId = "testApplicationId";
         final Integer proceedingId = 1;
         final ApplicationDetail application = new ApplicationDetail();
+        ApplicationType applicationType = new ApplicationType();
+        applicationType.setId("SUBDP");
+        application.setApplicationType(applicationType);
         final List<ProceedingDetail> proceedings = Collections.singletonList(new ProceedingDetail()
             .id(proceedingId)
             .typeOfOrder(new StringDisplayValue().id("orderType")));
@@ -650,6 +653,9 @@ class EditProceedingsAndCostsSectionControllerTest {
     public void testProceedingsActionConfirmFromSummaryPage() throws Exception {
         final String action = "edit";
         final ApplicationDetail application = new ApplicationDetail();
+        ApplicationType applicationType = new ApplicationType();
+        applicationType.setId("SUBDP");
+        application.setApplicationType(applicationType);
         final ProceedingDetail proceeding = new ProceedingDetail()
             .id(1)
             .typeOfOrder(new StringDisplayValue().id("orderType").displayValue("Order Type Description"));
