@@ -1,11 +1,13 @@
 package uk.gov.laa.ccms.caab.advice;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
+import uk.gov.laa.ccms.caab.constants.SessionConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 /**
@@ -25,10 +27,10 @@ public class GlobalExceptionHandler {
    * @return The name of the error view to be displayed.
    */
   @ExceptionHandler(value = {EbsApiClientException.class})
-  public String handleDataApiClientException(EbsApiClientException e, Model model) {
+  public String handleDataApiClientException(EbsApiClientException e,  HttpSession session, Model model) {
     // This exception is thrown when there's a low-level, resource-specific error,
     // such as an I/O error, Log the error details
-    return generalErrorView(model, e);
+    return generalErrorView(model, session, e);
   }
 
   /**
@@ -40,8 +42,8 @@ public class GlobalExceptionHandler {
    * @return The name of the error view to be displayed.
    */
   @ExceptionHandler(value = {CaabApplicationException.class})
-  public String handleCaabApplicationException(CaabApplicationException e, Model model) {
-    return generalErrorView(model, e);
+  public String handleCaabApplicationException(CaabApplicationException e,  HttpSession session, Model model) {
+    return generalErrorView(model, session, e);
   }
 
   /**
@@ -55,12 +57,15 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(value = {ServletRequestBindingException.class})
   public String handleServletRequestBindingException(
       ServletRequestBindingException e,
+      HttpSession session,
       Model model) {
-    return generalErrorView(model, e);
+    return generalErrorView(model, session, e);
   }
 
-  private String generalErrorView(Model model, Exception e) {
+  private String generalErrorView(Model model, HttpSession session, Exception e) {
     log.error("{} caught by GlobalExceptionHandler", e.getClass().getName(), e);
+    model.addAttribute(SessionConstants.USER_DETAILS,
+        session.getAttribute(SessionConstants.USER_DETAILS));
     model.addAttribute("error", e.getLocalizedMessage());
     model.addAttribute("errorTime", System.currentTimeMillis());
     return "error";

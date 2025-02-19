@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.advice;
 
 import static org.mockito.Mockito.verify;
 
+import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,6 +23,9 @@ public class GlobalExceptionHandlerTest {
   @Mock
   private Model model;
 
+  @Mock
+  private HttpSession session;
+
   @InjectMocks
   private GlobalExceptionHandler globalExceptionHandler;
 
@@ -30,7 +34,7 @@ public class GlobalExceptionHandlerTest {
     final String errorMsg = "Test Exception";
     EbsApiClientException e = new EbsApiClientException(errorMsg);
 
-    globalExceptionHandler.handleDataApiClientException(e, model);
+    globalExceptionHandler.handleDataApiClientException(e, session, model);
 
     verify(model).addAttribute("error", errorMsg);
   }
@@ -40,7 +44,7 @@ public class GlobalExceptionHandlerTest {
     final String errorMsg = "Test Exception";
     CaabApplicationException e = new CaabApplicationException(errorMsg);
 
-    globalExceptionHandler.handleCaabApplicationException(e, model);
+    globalExceptionHandler.handleCaabApplicationException(e, session, model);
 
     verify(model).addAttribute("error", errorMsg);
   }
@@ -50,7 +54,7 @@ public class GlobalExceptionHandlerTest {
     final String errorMsg = "Test Exception";
     ServletRequestBindingException e = new ServletRequestBindingException(errorMsg);
 
-    globalExceptionHandler.handleServletRequestBindingException(e, model);
+    globalExceptionHandler.handleServletRequestBindingException(e, session, model);
 
     verify(model).addAttribute("error", errorMsg);
   }
