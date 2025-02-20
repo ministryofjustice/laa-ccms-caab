@@ -335,7 +335,7 @@ Please ensure this matches the command used by the [pr-merge](.github/workflows/
 workflow to maintain consistency.
 
 ```shell
-snyk monitor --org=legal-aid-agency --all-projects --exclude=build
+snyk monitor --org=legal-aid-agency --all-projects --exclude=build --target-reference=main
 ```
 
 You should then see the new vulnerability in the LAA Dashboard, otherwise it is a new

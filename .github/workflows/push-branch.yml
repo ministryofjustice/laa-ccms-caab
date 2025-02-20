@@ -28,24 +28,45 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Build with Gradle
-        uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629
-        with:
-          arguments: build
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build & test
+        run: ./gradlew build
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
 
-      - name: Test
-        uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629
-        with:
-          arguments: jacocoTestCoverageVerification
+      - name: Test coverage verification
+        run: ./gradlew jacocoTestCoverageVerification
 
-      - name: Integration Test
-        uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629
-        with:
-          arguments: integrationTest
+      - name: Integration test
+        run: ./gradlew integrationTest
         env:
           AWS_REGION: eu-west-2
+
+      - name: Upload checkstyle report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkstyle-report
+          path: build/reports/checkstyle
+          retention-days: 14
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: build/reports/tests
+          retention-days: 14
+
+      - name: Upload jacoco coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage-report
+          path: build/reports/jacoco
+          retention-days: 14
 
   vulnerability-scan:
     runs-on: ubuntu-22.04
@@ -54,6 +75,7 @@ jobs:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       SNYK_ORG: legal-aid-agency
       SNYK_TEST_EXCLUDE: build
+      SNYK_TARGET_REFERENCE: main
 
     steps:
       - uses: actions/checkout@v3
@@ -65,7 +87,7 @@ jobs:
           export PATH="$HOME/.local/bin/:$PATH"
           npm install -g snyk-delta
       - name: Identify new vulnerabilities
-        run: ./snyk/snyk_delta_all_projects.sh --org=$SNYK_ORG --exclude=$SNYK_TEST_EXCLUDE
+        run: ./snyk/snyk_delta_all_projects.sh --org=$SNYK_ORG --exclude=$SNYK_TEST_EXCLUDE --target-reference=$SNYK_TARGET_REFERENCE
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
       - name: Run code test

@@ -45,12 +45,21 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Build with Gradle
-        uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629
-        with:
-          arguments: build
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build & test
+        run: ./gradlew build
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+
+      - name: Test coverage verification
+        run: ./gradlew jacocoTestCoverageVerification
+
+      - name: Integration test
+        run: ./gradlew integrationTest
+        env:
+          AWS_REGION: eu-west-2
 
       - name: upload jarfile
         uses: actions/upload-artifact@v4
@@ -58,17 +67,29 @@ jobs:
           name: caab-jar
           path: build/libs/laa-ccms-caab-0.0.1-SNAPSHOT.jar
 
-      - name: Test
-        uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629
+      - name: Upload checkstyle report
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          arguments: jacocoTestCoverageVerification
+          name: checkstyle-report
+          path: build/reports/checkstyle
+          retention-days: 14
 
-      - name: Integration Test
-        uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          arguments: integrationTest
-        env:
-          AWS_REGION: eu-west-2
+          name: test-report
+          path: build/reports/tests
+          retention-days: 14
+
+      - name: Upload jacoco coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage-report
+          path: build/reports/jacoco
+          retention-days: 14
 
   vulnerability-report:
     if: github.event.pull_request.merged == true
@@ -81,6 +102,7 @@ jobs:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       SNYK_ORG: legal-aid-agency
       SNYK_TEST_EXCLUDE: build
+      SNYK_TARGET_REFERENCE: main
       GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
 
     steps:
@@ -90,12 +112,12 @@ jobs:
         continue-on-error: true
         with:
           command: monitor
-          args: --org=$SNYK_ORG --all-projects --exclude=$SNYK_TEST_EXCLUDE
+          args: --org=$SNYK_ORG --all-projects --exclude=$SNYK_TEST_EXCLUDE --target-reference=$SNYK_TARGET_REFERENCE
       - name: Generate sarif Snyk report
         uses: snyk/actions/gradle@0.4.0
         continue-on-error: true
         with:
-          args: --org=$SNYK_ORG --all-projects --exclude=$SNYK_TEST_EXCLUDE --sarif-file-output=snyk-report.sarif
+          args: --org=$SNYK_ORG --all-projects --exclude=$SNYK_TEST_EXCLUDE --target-reference=$SNYK_TARGET_REFERENCE --sarif-file-output=snyk-report.sarif
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
       - name: Fix undefined values

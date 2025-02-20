@@ -38,8 +38,8 @@ updates:
       interval: "weekly"
     groups:
       gradle-updates:
-        patterns:
-          - "!uk.gov.laa.ccms.*" # All external Gradle dependencies
+        exclude-patterns:
+          - "uk.gov.laa.ccms.*"
       internal-packages:
         patterns:
           - "uk.gov.laa.ccms.*" # All internal Gradle dependencies
@@ -51,3 +51,11 @@ updates:
       npm-updates:
         patterns:
           - "**" # Matches all NPM packages
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "**"
