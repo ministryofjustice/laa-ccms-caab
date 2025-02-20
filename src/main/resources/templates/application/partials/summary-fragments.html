@@ -48,17 +48,16 @@
 
 <tr th:fragment="meritsAssessmentFragment" class="govuk-table__row">
   <td class="govuk-table__cell" th:if="${summary.meritsAssessment.enabled}">
-    <a th:href="@{/assessments?assessment=merits&invoked-from=CCMS_CA01}" class="govuk-link">Merits assessment</a>
+    <a th:href="@{/assessments?assessment=merits&invoked-from=CCMS_CA01}" class="govuk-link" th:text="#{application.section.merits}"></a>
   </td>
-  <td class="govuk-table__cell" th:unless="${summary.meritsAssessment.enabled}">
-    Merits assessment
+  <td class="govuk-table__cell" th:unless="${summary.meritsAssessment.enabled}" th:text="#{application.section.merits}">
   </td>
   <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.meritsAssessment.status})}"></td>
   <td class="govuk-table__cell" th:text="${#dates.format(summary.meritsAssessment.lastSaved, 'dd/MM/yyyy')}"></td>
   <td class="govuk-table__cell" th:text="${summary.meritsAssessment.lastSavedBy}"></td>
   <th:block th:if="${summary.meritsAssessment.status} == 'In Progress'">
     <td class="govuk-table__cell">
-      <a th:href="@{/assessments/merits/remove}" class="govuk-link">Delete  </a>
+      <a th:href="@{/assessments/merits/remove}" class="govuk-link" th:text="#{site.delete}"></a>
     </td>
   </th:block>
   <th:block th:unless="${summary.meritsAssessment.status} == 'In Progress'">
@@ -68,17 +67,15 @@
 
 <tr th:fragment="meansAssessmentFragment" class="govuk-table__row">
   <td class="govuk-table__cell" th:if="${summary.meansAssessment.enabled}">
-    <a th:href="@{/assessments?assessment=means&invoked-from=CCMS_CA01}" class="govuk-link">Means assessment</a>
+    <a th:href="@{/assessments?assessment=means&invoked-from=CCMS_CA01}" class="govuk-link" th:text="#{application.section.means}"></a>
   </td>
-  <td class="govuk-table__cell" th:unless="${summary.meansAssessment.enabled}">
-    Means assessment
-  </td>
+  <td class="govuk-table__cell" th:unless="${summary.meansAssessment.enabled}" th:text="#{application.section.means}"></td>
   <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.meansAssessment.status})}"></td>
   <td class="govuk-table__cell" th:text="${#dates.format(summary.meansAssessment.lastSaved, 'dd/MM/yyyy')}"></td>
   <td class="govuk-table__cell" th:text="${summary.meansAssessment.lastSavedBy}"></td>
   <th:block th:if="${summary.meansAssessment.status} == 'In Progress'">
     <td class="govuk-table__cell">
-      <a th:href="@{/assessments/means/remove}" class="govuk-link">Delete  </a>
+      <a th:href="@{/assessments/means/remove}" class="govuk-link" th:text="#{site.delete}"></a>
     </td>
   </th:block>
   <th:block th:unless="${summary.meansAssessment.status} == 'In Progress'">
