@@ -79,6 +79,9 @@
 
           <div
               th:replace="~{partials/forms :: textInput('providerCaseReference', #{client.notifications.search.caseInformation.providerCaseReference.label}, 'govuk-input--width-20')}"></div>
+          <govuk:details
+                         th:summaryText="#{client.notifications.search.caseInformation.laaApplicationCaseReferenceHelp.summaryText}"
+                         th:text="#{client.notifications.search.caseInformation.laaApplicationCaseReferenceHelp.text}"/>
           <div
               th:replace="~{partials/forms :: textInput('caseReference', #{client.notifications.search.caseInformation.laaApplicationCaseReference.label}, 'govuk-input--width-20')}"></div>
           <div
