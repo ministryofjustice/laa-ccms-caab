@@ -163,7 +163,7 @@ public class ProviderRequestsController {
    * also filters based on user function codes
    *
    * @param model The model for the view.
-   * @param userDetail
+   * @param userDetail Logged-in user details.
    */
   protected void populateProviderRequestTypes(final Model model, UserDetail userDetail) {
 

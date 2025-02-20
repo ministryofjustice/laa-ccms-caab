@@ -176,7 +176,7 @@ class ProviderRequestsControllerTest {
     when(lookupService.getProviderRequestTypes(eq(false), isNull()))
         .thenReturn(Mono.just(new ProviderRequestTypeLookupDetail()));
 
-    mockMvc.perform(get("/provider-requests/types"))
+    mockMvc.perform(get("/provider-requests/types").sessionAttr(USER_DETAILS, userDetails))
         .andExpect(status().isOk())
         .andExpect(view().name("requests/provider-request-type"))
         .andExpect(model().attributeExists("providerRequestTypeDetails"))
@@ -197,6 +197,7 @@ class ProviderRequestsControllerTest {
         .thenReturn(Mono.just(new ProviderRequestTypeLookupDetail()));
 
     mockMvc.perform(post("/provider-requests/types")
+            .sessionAttr(USER_DETAILS, userDetails)
             .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
             .flashAttr("providerRequestTypeDetails", providerRequestTypeDetails))
         .andExpect(status().is3xxRedirection())
@@ -221,6 +222,7 @@ class ProviderRequestsControllerTest {
         .thenReturn(Mono.just(new ProviderRequestTypeLookupDetail()));
 
     mockMvc.perform(post("/provider-requests/types")
+            .sessionAttr(USER_DETAILS, userDetails)
             .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
         .flashAttr("providerRequestTypeDetails", providerRequestTypeDetails))
         .andExpect(status().isOk())
@@ -245,7 +247,8 @@ class ProviderRequestsControllerTest {
     when(lookupService.getProviderRequestTypes(eq(false), isNull()))
         .thenReturn(Mono.just(mockDetail));
 
-    mockMvc.perform(get("/provider-requests/types"))
+    mockMvc.perform(get("/provider-requests/types")
+            .sessionAttr(USER_DETAILS, userDetails))
         .andExpect(status().isOk())
         .andExpect(model().attributeExists("providerRequestTypes"))
         .andExpect(model().attribute("providerRequestTypes", List.of(mockRequestType)));
@@ -292,7 +295,8 @@ class ProviderRequestsControllerTest {
     when(lookupService.getProviderRequestTypes(eq(false), isNull()))
         .thenReturn(Mono.just(new ProviderRequestTypeLookupDetail()));
 
-    mockMvc.perform(get("/provider-requests/types"))
+    mockMvc.perform(get("/provider-requests/types")
+            .sessionAttr(USER_DETAILS, userDetails))
         .andExpect(status().isOk())
         .andExpect(model().attributeExists("providerRequestTypes"))
         .andExpect(model().attribute("providerRequestTypes", Collections.emptyList()));
