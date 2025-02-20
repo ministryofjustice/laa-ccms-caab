@@ -78,9 +78,11 @@
                 <td class="govuk-table__cell"
                     th:if="${#strings.isEmpty(notification.caseReferenceNumber)}">None</td>
                 <td class="govuk-table__cell"
-                    th:unless="${#strings.isEmpty(notification.caseReferenceNumber)}"
-                    th:text="${notification.caseReferenceNumber}"
-                    th:href="@{/application/{case-reference-number}/view(case-reference-number=${notification.caseReferenceNumber})}"></td>
+                    th:unless="${#strings.isEmpty(notification.caseReferenceNumber)}">
+                  <a th:href="@{/application/{case-reference-number}/view(case-reference-number=${notification.caseReferenceNumber})}"
+                     th:text="${notification.caseReferenceNumber}"
+                     class="govuk-link govuk-link--no-visited-state"></a>
+                </td>
                 <td class="govuk-table__cell"
                     th:text="${notification.providerCaseReferenceNumber}"></td>
                 <td class="govuk-table__cell" th:text="${notification.clientName}"></td>
