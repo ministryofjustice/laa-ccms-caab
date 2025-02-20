@@ -167,13 +167,16 @@ public class ProviderRequestsController {
    */
   protected void populateProviderRequestTypes(final Model model, UserDetail userDetail) {
 
-    List<String> functions = userDetail.getFunctions();
+    List<String> functions = Optional.ofNullable(userDetail.getFunctions())
+        .orElse(Collections.emptyList());
+
     final List<ProviderRequestTypeLookupValueDetail> providerRequestTypes = Optional.ofNullable(
             lookupService.getProviderRequestTypes(false, null)
                 .map(ProviderRequestTypeLookupDetail::getContent)
                 .flatMapMany(Flux::fromIterable)
-                .filter(it -> it.getAccessFunctionCode() == null
-                    || functions == null || functions.contains(it.getAccessFunctionCode()))
+                .filter(
+                    it -> it.getAccessFunctionCode() == null
+                        || functions.contains(it.getAccessFunctionCode()))
                 .collectList()
                 .block())
         .orElse(Collections.emptyList());
