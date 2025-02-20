@@ -2,7 +2,7 @@
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-    <title>LAA CCMS - Abandon application</title>
+    <title th:text="#{service.name} + ' - ' + #{application.abandon}"></title>
 </head>
 <body>
 <div class="govuk-width-container">

@@ -1,35 +1,29 @@
-<h1 class="govuk-heading-l">
-  Delegated functions
-</h1>
-<p class="govuk-body-l">
-  If you have exercised delegated functions in a Special Children Act matter, please select 'no' to use of
-  delegated functions here. You will be asked to confirm the details of the exercise of the delegated
-  functions in the merits assessment.
-</p>
+<h1 class="govuk-heading-l" th:text="#{application.delegatedFunctions.heading}"></h1>
+<p class="govuk-body-l" th:text="#{application.delegatedFunctions.leadParagraph}"></p>
 <div class="govuk-grid-row">
   <div class="govuk-grid-column-two-thirds">
     <div class="govuk-form-group">
       <fieldset class="govuk-fieldset">
         <legend class="govuk-fieldset__legend">
-          <h2 class="govuk-fieldset__heading">
-            Are delegated functions used?
-          </h2>
-          <div id="delegated-functions-hint" class="govuk-hint">
-            In a matter which is not a Special Children Act or Illegal Migration Act
-          </div>
+          <h2 class="govuk-fieldset__heading"
+              th:text="#{application.delegatedFunctions.initialQuestion}"></h2>
+          <div id="delegated-functions-hint" class="govuk-hint"
+               th:text="#{application.delegatedFunctions.hint}"></div>
         </legend>
         <div class="govuk-radios govuk-radios--inline" data-module="govuk-radios">
           <div class="govuk-radios__item">
-            <input class="govuk-radios__input" id="delegatedFunctions-yes" name="delegatedFunctions" type="radio" value="true" th:checked="${applicationFormData.delegatedFunctions}">
-            <label class="govuk-label govuk-radios__label" for="delegatedFunctions-yes">
-              Yes
-            </label>
+            <input class="govuk-radios__input" id="delegatedFunctions-yes"
+                   name="delegatedFunctions" type="radio" value="true"
+                   th:checked="${applicationFormData.delegatedFunctions}">
+            <label class="govuk-label govuk-radios__label" for="delegatedFunctions-yes"
+                   th:text="#{site.yes}"></label>
           </div>
           <div class="govuk-radios__item">
-            <input class="govuk-radios__input" id="delegatedFunctions-no" name="delegatedFunctions" type="radio" value="false" th:checked="${!applicationFormData.delegatedFunctions}">
-            <label class="govuk-label govuk-radios__label" for="delegatedFunctions-no">
-              No
-            </label>
+            <input class="govuk-radios__input" id="delegatedFunctions-no" name="delegatedFunctions"
+                   type="radio" value="false"
+                   th:checked="${!applicationFormData.delegatedFunctions}">
+            <label class="govuk-label govuk-radios__label" for="delegatedFunctions-no"
+                   th:text="#{site.no}"></label>
           </div>
         </div>
       </fieldset>
@@ -38,8 +32,8 @@
     <moj:datepicker
             id="delegated-function-used"
             name="delegatedFunctionUsedDate"
-            th:label="#{select.delegatedFunctions.date.label}"
-            th:hint="#{select.delegatedFunctions.date.hint}"
+            th:label="#{application.delegatedFunctions.dateQuestion}"
+            th:hint="#{hint.date}"
             th:value="*{__${'delegatedFunctionUsedDate'}__}"
             th:errorMessage="${#fields.hasErrors('delegatedFunctionUsedDate') ? #fields.errors('delegatedFunctionUsedDate').getFirst() : ''}">
     </moj:datepicker>
