@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestDetailsFormData;
@@ -107,6 +108,7 @@ public class ProviderRequestsController {
   public String getRequestType(
       @ModelAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
       final ProviderRequestFlowFormData providerRequestFlow,
+      @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       final Model model) {
 
     //reset the details data, so new document id and form details are created
@@ -116,7 +118,7 @@ public class ProviderRequestsController {
     model.addAttribute("providerRequestTypeDetails",
         providerRequestFlow.getRequestTypeFormData());
 
-    populateProviderRequestTypes(model);
+    populateProviderRequestTypes(model, userDetail);
 
     return "requests/provider-request-type";
   }
@@ -137,13 +139,14 @@ public class ProviderRequestsController {
       final ProviderRequestFlowFormData providerRequestFlow,
       @ModelAttribute("providerRequestTypeDetails")
       final ProviderRequestTypeFormData providerRequestTypeDetails,
+      @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       final Model model,
       final BindingResult bindingResult) {
 
     providerRequestTypeValidator.validate(providerRequestTypeDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {
-      populateProviderRequestTypes(model);
+      populateProviderRequestTypes(model, userDetail);
       model.addAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow);
       model.addAttribute("providerRequestTypeDetails", providerRequestTypeDetails);
       return "requests/provider-request-type";
@@ -157,16 +160,23 @@ public class ProviderRequestsController {
 
   /**
    * Populates dropdown options for provider request types form.
+   * also filters based on user function codes
    *
    * @param model The model for the view.
+   * @param userDetail
    */
-  protected void populateProviderRequestTypes(final Model model) {
+  protected void populateProviderRequestTypes(final Model model, UserDetail userDetail) {
+
+    List<String> functions = userDetail.getFunctions();
     final List<ProviderRequestTypeLookupValueDetail> providerRequestTypes = Optional.ofNullable(
-            lookupService.getProviderRequestTypes(false, null).block())
-        .map(ProviderRequestTypeLookupDetail::getContent)
+            lookupService.getProviderRequestTypes(false, null)
+                .map(ProviderRequestTypeLookupDetail::getContent)
+                .flatMapMany(Flux::fromIterable)
+                .filter(it -> it.getAccessFunctionCode() == null
+                    || functions == null || functions.contains(it.getAccessFunctionCode()))
+                .collectList()
+                .block())
         .orElse(Collections.emptyList());
-    
-    //todo pass in user and filter on user function codes
 
     model.addAttribute("providerRequestTypes",
         providerRequestTypes);

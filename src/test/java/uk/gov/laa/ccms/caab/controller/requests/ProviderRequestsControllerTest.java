@@ -254,6 +254,39 @@ class ProviderRequestsControllerTest {
   }
 
   @Test
+  @DisplayName("Should populate provider request types in the model based on user function codes")
+  void testPopulateProviderRequestTypesBasedOnUserFunctionCodes() throws Exception {
+    final ProviderRequestTypeLookupValueDetail mockRequestType1 =
+        new ProviderRequestTypeLookupValueDetail();
+    mockRequestType1.setName("test1");
+    mockRequestType1.setAccessFunctionCode("BU");
+
+    final ProviderRequestTypeLookupValueDetail mockRequestType2 =
+        new ProviderRequestTypeLookupValueDetail();
+    mockRequestType2.setName("test2");
+    mockRequestType2.setAccessFunctionCode("CR");
+
+    final ProviderRequestTypeLookupValueDetail mockRequestType3 =
+        new ProviderRequestTypeLookupValueDetail();
+    mockRequestType3.setName("test3");
+
+    final ProviderRequestTypeLookupDetail mockDetail = new ProviderRequestTypeLookupDetail();
+    mockDetail.setContent(List.of(mockRequestType1, mockRequestType2, mockRequestType3));
+
+    when(lookupService.getProviderRequestTypes(eq(false), isNull()))
+        .thenReturn(Mono.just(mockDetail));
+
+    mockMvc.perform(get("/provider-requests/types").sessionAttr(USER_DETAILS,
+            userDetails.addFunctionsItem("CR")))
+        .andExpect(status().isOk())
+        .andExpect(model().attributeExists("providerRequestTypes"))
+        .andExpect(
+            model().attribute("providerRequestTypes", List.of(mockRequestType2, mockRequestType3)));
+
+    verify(lookupService).getProviderRequestTypes(eq(false), isNull());
+  }
+
+  @Test
   @DisplayName("Should handle empty provider request types in the model")
   void testPopulateProviderRequestTypes_Empty() throws Exception {
     when(lookupService.getProviderRequestTypes(eq(false), isNull()))
