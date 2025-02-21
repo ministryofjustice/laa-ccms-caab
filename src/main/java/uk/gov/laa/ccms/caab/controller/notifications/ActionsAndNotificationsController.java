@@ -70,6 +70,8 @@ import uk.gov.laa.ccms.soa.gateway.model.Document;
 public class ActionsAndNotificationsController {
 
   public static final String NOTIFICATION = "notification";
+  public static final String NOTIFICATION_ID = "notification_id";
+  public static final String ATTACHMENT_ID = "attachment_id";
   private final LookupService lookupService;
   private final ProviderService providerService;
   private final NotificationSearchValidator notificationSearchValidator;
@@ -189,7 +191,7 @@ public class ActionsAndNotificationsController {
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
       @ModelAttribute(NOTIFICATIONS_SEARCH_RESULTS) Notifications notifications,
-      @PathVariable(value = "notification_id") String notificationId,
+      @PathVariable(NOTIFICATION_ID) String notificationId,
       Model model,
       HttpSession session
   ) {
@@ -217,10 +219,10 @@ public class ActionsAndNotificationsController {
   @PostMapping("/notifications/{notification_id}")
   public String submitNotificationResponse(
       @ModelAttribute(USER_DETAILS) UserDetail user,
-      @SessionAttribute("notification") Notification notification,
+      @SessionAttribute(NOTIFICATION) Notification notification,
       @ModelAttribute(value = "notificationResponseFormData")
         NotificationResponseFormData notificationResponseFormData,
-      @PathVariable(value = "notification_id") String notificationId,
+      @PathVariable(NOTIFICATION_ID) String notificationId,
       BindingResult bindingResult,
       Model model,
       HttpSession session
@@ -272,8 +274,8 @@ public class ActionsAndNotificationsController {
   @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/retrieve")
   public String retrieveNotificationAttachment(
       @ModelAttribute(USER_DETAILS) UserDetail user,
-      @PathVariable(value = "notification_id") String notificationId,
-      @PathVariable(value = "attachment_id") String attachmentId,
+      @PathVariable(NOTIFICATION_ID) String notificationId,
+      @PathVariable(ATTACHMENT_ID) String attachmentId,
       HttpServletRequest request) {
 
     String redirectUrl = "redirect:/notifications/%s".formatted(notificationId);
@@ -300,8 +302,8 @@ public class ActionsAndNotificationsController {
   @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/retrieveDraft")
   public String retrieveDraftNotificationAttachment(
       @ModelAttribute(USER_DETAILS) UserDetail user,
-      @PathVariable(value = "notification_id") String notificationId,
-      @PathVariable(value = "attachment_id") Integer attachmentId) {
+      @PathVariable(NOTIFICATION_ID) String notificationId,
+      @PathVariable(ATTACHMENT_ID) Integer attachmentId) {
 
     notificationService.retrieveDraftNotificationAttachment(String.valueOf(attachmentId),
         user.getLoginId(),
@@ -322,8 +324,8 @@ public class ActionsAndNotificationsController {
   @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/retrieveCoverSheet")
   public String retrieveCoverSheet(
       @ModelAttribute(USER_DETAILS) UserDetail user,
-      @PathVariable(value = "notification_id") String notificationId,
-      @PathVariable(value = "attachment_id") Integer attachmentId) {
+      @PathVariable(NOTIFICATION_ID) String notificationId,
+      @PathVariable(ATTACHMENT_ID) Integer attachmentId) {
 
     notificationService.retrieveCoverSheet(String.valueOf(attachmentId),
         user.getLoginId(),
@@ -343,8 +345,8 @@ public class ActionsAndNotificationsController {
   @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/remove")
   public String removeDraftNotificationAttachment(
       @ModelAttribute(USER_DETAILS) UserDetail user,
-      @PathVariable(value = "notification_id") String notificationId,
-      @PathVariable(value = "attachment_id") Integer attachmentId) {
+      @PathVariable(NOTIFICATION_ID) String notificationId,
+      @PathVariable(ATTACHMENT_ID) Integer attachmentId) {
 
     notificationService.removeDraftNotificationAttachment(notificationId, attachmentId,
         user.getLoginId(), user.getUserId());
@@ -362,8 +364,8 @@ public class ActionsAndNotificationsController {
   @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/edit")
   public String editDraftNotificationAttachment(
       @ModelAttribute(USER_DETAILS) UserDetail user,
-      @PathVariable(value = "notification_id") String notificationId,
-      @PathVariable(value = "attachment_id") Integer attachmentId,
+      @PathVariable(NOTIFICATION_ID) String notificationId,
+      @PathVariable(ATTACHMENT_ID) Integer attachmentId,
       RedirectAttributes redirectAttributes) {
 
     NotificationAttachmentDetail notificationAttachment =
@@ -391,7 +393,7 @@ public class ActionsAndNotificationsController {
   @GetMapping("/notifications/{notification_id}/provide-documents-or-evidence")
   public String provideDocumentsOrEvidence(
       @ModelAttribute(USER_DETAILS) UserDetail user,
-      @PathVariable(value = "notification_id") String notificationId,
+      @PathVariable(NOTIFICATION_ID) String notificationId,
       @SessionAttribute(NOTIFICATION) Notification notification,
       Model model) {
 
@@ -410,8 +412,9 @@ public class ActionsAndNotificationsController {
   @PostMapping("/notifications/{notification_id}/provide-documents-or-evidence")
   public String submitDraftNotificationAttachments(
       @ModelAttribute(USER_DETAILS) UserDetail user,
-      @PathVariable(value = "notification_id") String notificationId,
+      @PathVariable(NOTIFICATION_ID) String notificationId,
       @SessionAttribute(NOTIFICATION) Notification notification,
+      HttpSession session,
       Model model) {
 
     NotificationAttachmentDetails notificationAttachmentDetails =
@@ -430,7 +433,23 @@ public class ActionsAndNotificationsController {
     notificationService.submitNotificationAttachments(notificationId, user.getLoginId(),
         user.getUserType(), user.getUserId());
 
-    return "redirect:/notifications/%s/provide-documents-or-evidence".formatted(notificationId);
+    return "redirect:/submissions/notification-attachments/confirmed";
+  }
+
+  /**
+   * Submission confirmation for notification attachments.
+   *
+   * @param user           the currently logged-in user.
+   * @param notificationId the ID of the notification.
+   * @return a redirect to the provide documents or evidence page.
+   */
+  @PostMapping("/submissions/notification-attachments/confirmed")
+  public String notificationAttachmentsSubmitted(
+      @ModelAttribute(USER_DETAILS) UserDetail user,
+      @SessionAttribute(NOTIFICATION) Notification notification) {
+
+    return "redirect:/notifications/%s/provide-documents-or-evidence"
+        .formatted(notification.getNotificationId());
   }
 
   /**
@@ -447,7 +466,7 @@ public class ActionsAndNotificationsController {
   public String uploadNotificationAttachment(
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @SessionAttribute(NOTIFICATION) Notification notification,
-      @PathVariable(value = "notification_id") String notificationId,
+      @PathVariable(NOTIFICATION_ID) String notificationId,
       @RequestParam(value = "sendBy") SendBy sendBy,
       NotificationAttachmentUploadFormData attachmentUploadFormData,
       Model model) {
@@ -473,7 +492,7 @@ public class ActionsAndNotificationsController {
   public String uploadNotificationAttachment(
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @SessionAttribute(NOTIFICATION) Notification notification,
-      @PathVariable(value = "notification_id") String notificationId,
+      @PathVariable(NOTIFICATION_ID) String notificationId,
       @ModelAttribute(value = "attachmentUploadFormData")
       NotificationAttachmentUploadFormData attachmentUploadFormData,
       BindingResult bindingResult,
