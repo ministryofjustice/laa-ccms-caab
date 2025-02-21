@@ -1,45 +1,48 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='ATT,EVID,SUBNOT')}" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title>LAA CCMS - Your actions / notifications</title>
+  <title th:text="|#{service.name} - #{notifications.heading}|"/>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
     <a th:href="@{/notifications/search-results}"
-     class="govuk-back-link">Return to notification search results</a>
+     class="govuk-back-link" th:text="#{notifications.goBack}"/>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/notifications/{notification-id}(notification-id=${notification.notificationId})}" th:object="${notificationResponseFormData}" method="post">
+    <form th:action="@{/notifications/{notification-id}(notification-id=${notification.notificationId})}" th:object="${notificationResponseFormData}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <h1 class="govuk-heading-l">
         <th:block th:text="${notification.subject}"/>
       </h1>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
+
+          <div class="moj-scrdddollable-pane">
           <table class="govuk-table">
             <thead class="govuk-table__head">
             <tr class="govuk-table__row">
               <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                  style="margin-top: 0; white-space: nowrap">Date assigned</th>
+                  style="margin-top: 0; white-space: nowrap" th:text="#{notifications.dateAssigned}"/>
                 <td class="govuk-table__cell govuk-!-font-size-15"
                     th:text="${#temporals.format(notification.assignDate,'dd/MM/yyyy')}"></td>
               <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                  style="margin-top: 0; white-space: nowrap">Due date</th>
+                  style="margin-top: 0; white-space: nowrap" th:text="#{notifications.dueDate}"/>
                 <td class="govuk-table__cell govuk-!-font-size-15"
                     th:text="${#temporals.format(notification.dueDate,'dd/MM/yyyy')}"></td>
             <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                style="margin-top: 0; white-space: nowrap">Status</th>
+                style="margin-top: 0; white-space: nowrap" th:text="#{notifications.status}"/>
               <td class="govuk-table__cell govuk-!-font-size-15"
                   th:text="${notification.status}"></td>
             <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                style="margin-top: 0; white-space: nowrap">Assigned to</th>
+                style="margin-top: 0; white-space: nowrap" th:text="#{notifications.assignedTo}"/>
               <td class="govuk-table__cell govuk-!-font-size-15"
                   th:text="${notification.user.loginId}"></td>
           </tr>
           </thead>
         </table>
-      </div>
+          </div>
+        </div>
     </div>
 
 
@@ -47,13 +50,12 @@
       <div class="govuk-grid-column-full">
         <h2 class="govuk-heading-m">Notes</h2>
         <div class="govuk-inset-text" th:if="${#lists.isEmpty(notification.notes)}">
-          No notes attached to this notification.
+          <th:block th:text="#{notifications.noNotesAttached}"/>
         </div>
         <th:block th:each="note, idx : ${notification.notes}" th:with="formattedDate=${#temporals.format(note.date,'dd MMMM yyyy')},
               formattedTime=${#temporals.format(note.date,'HH:mm')}">
-          <p class="govuk-body govuk-!-font-weight-bold">
-            Note added on [[${formattedDate}]] at [[${formattedTime}]].
-          </p>
+          <p class="govuk-body govuk-!-font-weight-bold"
+            th:text="#{notifications.noteTitle(${formattedDate}, ${formattedTime})}"/>
           <p th:unless="${#lists.isEmpty(notification.notes)}" class="govuk-body ccms-pre-formatted"
             th:id="|note-${idx.index}|" th:utext="${note.message}"></p>
         </th:block>
@@ -61,26 +63,28 @@
       </div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
-          <h2 class="govuk-heading-m">
-            Case details
-          </h2>
+          <h2 class="govuk-heading-m" th:text="#{notifications.subHeading.caseDetails}"/>
           <table class="govuk-table">
             <thead class="govuk-table__head">
               <tr class="govuk-table__row">
-                <th scope="col" class="govuk-table__header">LAA Ref</th>
-                <th scope="col" class="govuk-table__header">Provider ref</th>
-                <th scope="col" class="govuk-table__header">Client</th>
-                <th scope="col" class="govuk-table__header">Fee earner</th>
+                <th scope="col" class="govuk-table__header"
+                    th:text="#{notifications.laaRef}"/>
+                <th scope="col" class="govuk-table__header"
+                    th:text="#{notifications.providerRef}"/>
+                <th scope="col" class="govuk-table__header"
+                    th:text="#{notifications.client}"/>
+                <th scope="col" class="govuk-table__header"
+                    th:text="#{notifications.feeEarner}"/>
               </tr>
             </thead>
             <tbody class="govuk-table__body">
               <tr class="govuk-table__row">
                 <td class="govuk-table__cell"
-                    th:text="${#strings.isEmpty(notification.caseReferenceNumber) ? 'None' :notification.caseReferenceNumber}"></td>
+                    th:text="${#strings.isEmpty(notification.caseReferenceNumber) ? 'None' :notification.caseReferenceNumber}"/>
                 <td class="govuk-table__cell"
-                    th:text="${notification.providerCaseReferenceNumber}"></td>
-                <td class="govuk-table__cell" th:text="${notification.clientName}"></td>
-                <td class="govuk-table__cell" th:text="${notification.feeEarner}"></td>
+                    th:text="${notification.providerCaseReferenceNumber}"/>
+                <td class="govuk-table__cell" th:text="${notification.clientName}"/>
+                <td class="govuk-table__cell" th:text="${notification.feeEarner}"/>
               </tr>
             </tbody>
           </table>
@@ -88,14 +92,13 @@
       </div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
-          <h2 class="govuk-heading-m">
-            Attachments
-          </h2>
+          <h2 class="govuk-heading-m" th:text="#{notifications.subHeading.attachments}"/>
           <table class="govuk-table">
             <thead class="govuk-table__head">
             <tr class="govuk-table__row">
-              <th scope="col" class="govuk-table__header">Description</th>
-              <th scope="col" class="govuk-table__header govuk-!-width-one-quarter">Action</th>
+              <th scope="col" class="govuk-table__header" th:text="#{site.description}"/>
+              <th scope="col" class="govuk-table__header govuk-!-width-one-quarter"
+                  th:text="#{site.action}"/>
             </tr>
             </thead>
             <tbody class="govuk-table__body">
@@ -121,9 +124,7 @@
       </div>
       <div class="govuk-grid-row" th:if="${notification.notificationOpenIndicator}">
         <div class="govuk-grid-column-full">
-          <h1 class="govuk-heading-m">
-            Notification Response
-          </h1>
+          <h2 class="govuk-heading-m" th:text="#{notifications.subHeading.notificationResponse}"/>
           <div th:replace="~{partials/forms :: simpleDropdown('action', 'Response', ${notification.availableResponses})}"></div>
           <div th:if="${notification.notificationOpenIndicator and notification.notificationType != 'N'}">
             <div th:replace="~{partials/forms :: largeTextInput('message', 'Message to LAA', 2000)}"></div>

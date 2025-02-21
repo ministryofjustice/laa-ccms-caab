@@ -11,6 +11,20 @@ correctly. They are:
 - [laa-ccms-caab-saml-mock](https://github.com/ministryofjustice/laa-ccms-caab-saml-mock)
 - [laa-ccms-caab-db](https://github.com/ministryofjustice/laa-ccms-provider-ui-database)
 
+### Quick setup
+
+This application only depends on 4 docker containers being run:
+- SAML Mock
+- Wiremock
+- ClamAV
+- LocalStack
+
+You can find more information about each of those services below, but if you want to quickly get
+started, the below command will start all 4 of these containers.
+```shell
+docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-saml-mock laa-ccms-caab-wiremock laa-ccms-caab-clam-av laa-ccms-caab-localstack
+```
+
 ## Set up laa-ccms-caab-saml-mock
 
 This step requires maven to be installed on your machine. You can
