@@ -414,7 +414,6 @@ public class ActionsAndNotificationsController {
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @PathVariable(NOTIFICATION_ID) String notificationId,
       @SessionAttribute(NOTIFICATION) Notification notification,
-      HttpSession session,
       Model model) {
 
     NotificationAttachmentDetails notificationAttachmentDetails =
