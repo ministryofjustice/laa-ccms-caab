@@ -440,6 +440,7 @@ public class ActionsAndNotificationsController {
    * Submission confirmation for notification attachments.
    *
    * @param user           the currently logged-in user.
+   * @param notification   the notification.
    * @return a redirect to the provide documents or evidence page.
    */
   @PostMapping("/submissions/notification-attachments/confirmed")
