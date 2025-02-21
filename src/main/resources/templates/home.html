@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"
-      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'home'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='YCA,NOT,CA,PRC')}" xmlns:th="http://www.thymeleaf.org">
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'home'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='YCA,NOT,CA,PRNC')}" xmlns:th="http://www.thymeleaf.org">
     <head>
         <title>Homepage</title>
     </head>
@@ -70,7 +70,7 @@
 
             <p class="govuk-body">For non case related queries please create a general request.</p>
 
-            <div th:replace="~{partials/actions :: restrictedActionLink('Create general request', ${user.functions}, 'PRC', true, 'govuk-button--secondary', @{/provider-requests/types}, false)}"></div>
+            <div th:replace="~{partials/actions :: restrictedActionLink('Create general request', ${user.functions}, 'PRNC', true, 'govuk-button--secondary', @{/provider-requests/types}, false)}"></div>
 
         </div>
     </body>
