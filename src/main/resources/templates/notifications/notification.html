@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='ATT,EVID,SUBNOT')}" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title th:text="|#{service.name} - #{notifications.heading}|"/>
+  <title th:text="|#{service.name} - ${notification.subject}|"/>
 </head>
 <body>
 <div class="govuk-width-container">
