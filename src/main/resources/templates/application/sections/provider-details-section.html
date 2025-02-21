@@ -23,10 +23,10 @@
             <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{office}"></span>
             <span th:text="*{officeName}"></span>
           </p>
-          <div th:replace="~{partials/forms :: dropdown('feeEarnerId', #{application.providerDetails.select.feeEarner.label}, ${feeEarners}, 'id', 'name', false)}"></div>
-          <div th:replace="~{partials/forms :: dropdown('supervisorId', #{application.providerDetails.select.supervisor.label}, ${feeEarners}, 'id', 'name', false)}"></div>
-          <div th:replace="~{partials/forms :: textInput('providerCaseReference', #{application.providerDetails.select.providerRef.label}, 'govuk-input--width-20')}"></div>
-          <div th:replace="~{partials/forms :: dropdown('contactNameId', #{application.providerDetails.select.contactName.label}, ${contactNames}, 'id', 'name', false)}"></div>
+          <div th:replace="~{partials/forms :: dropdown('feeEarnerId', #{optional(#{provider.feeEarner.detailed})}, ${feeEarners}, 'id', 'name', false)}"></div>
+          <div th:replace="~{partials/forms :: dropdown('supervisorId', #{optional(#{provider.supervisor})}, ${feeEarners}, 'id', 'name', false)}"></div>
+          <div th:replace="~{partials/forms :: textInput('providerCaseReference', #{optional(#{provider.providerRef})}, 'govuk-input--width-20')}"></div>
+          <div th:replace="~{partials/forms :: dropdown('contactNameId', #{provider.contactName}, ${contactNames}, 'id', 'name', false)}"></div>
           <govuk:button type="submit" th:text="#{site.confirm}"/>
         </div>
       </div>

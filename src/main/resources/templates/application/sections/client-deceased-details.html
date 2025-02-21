@@ -27,7 +27,7 @@
               id="dod"
               name="dateOfDeath"
               th:label="#{client.deceased.dod.label}"
-              th:hint="#{client.deceased.dod.hint}"
+              th:hint="#{hint.date}"
               th:errorMessage="${#fields.hasErrors('dateOfDeath') ? #fields.errors('dateOfDeath').getFirst() : ''}"
               th:value="*{__${'dateOfDeath'}__}">
       </moj:datepicker>
