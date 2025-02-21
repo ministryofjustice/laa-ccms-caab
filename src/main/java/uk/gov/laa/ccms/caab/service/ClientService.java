@@ -12,10 +12,10 @@ import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.caab.util.ReflectionUtils;
+import uk.gov.laa.ccms.data.model.ClientDetails;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 /**
@@ -36,20 +36,16 @@ public class ClientService {
    * Searches and retrieves client details based on provided search criteria.
    *
    * @param clientSearchCriteria  The search criteria to use when fetching clients.
-   * @param loginId               The login identifier for the user.
-   * @param userType              Type of the user (e.g., admin, user).
    * @param page                  The page number for pagination.
    * @param size                  The size or number of records per page.
    * @return A Mono wrapping the ClientDetails.
    */
   public Mono<ClientDetails> getClients(
       final ClientSearchCriteria clientSearchCriteria,
-      final String loginId,
-      final String userType,
       final Integer page,
       final Integer size) {
-    log.debug("SOA Clients to get using criteria: {}", clientSearchCriteria);
-    return soaApiClient.getClients(clientSearchCriteria, loginId, userType, page, size);
+    log.debug("EBS Clients to get using criteria: {}", clientSearchCriteria);
+    return ebsApiClient.getClients(clientSearchCriteria, page, size);
   }
 
   /**

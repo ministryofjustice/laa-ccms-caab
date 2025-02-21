@@ -29,8 +29,8 @@ import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ClientResultsDisplay;
 import uk.gov.laa.ccms.caab.service.ClientService;
+import uk.gov.laa.ccms.data.model.ClientDetails;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -69,7 +69,7 @@ public class ClientSearchResultsControllerTest {
     ClientDetails clientDetails = new ClientDetails();
     clientDetails.setTotalElements(0);
 
-    when(clientService.getClients(any(), any(), any(), any(), any())).thenReturn(
+    when(clientService.getClients(any(), any(), any())).thenReturn(
         Mono.just(clientDetails));
 
     this.mockMvc.perform(get("/application/client/results")
@@ -85,7 +85,7 @@ public class ClientSearchResultsControllerTest {
     clientDetails.setContent(new ArrayList<>());
     clientDetails.setTotalElements(300);
 
-    when(clientService.getClients(any(), any(), any(), any(), any())).thenReturn(
+    when(clientService.getClients(any(), any(), any())).thenReturn(
         Mono.just(clientDetails));
 
     this.mockMvc.perform(get("/application/client/results")
@@ -101,7 +101,7 @@ public class ClientSearchResultsControllerTest {
     clientDetails.setContent(new ArrayList<>());
     clientDetails.setTotalElements(100);
 
-    when(clientService.getClients(any(), any(), any(), any(), any())).thenReturn(
+    when(clientService.getClients(any(), any(), any())).thenReturn(
         Mono.just(clientDetails));
 
     this.mockMvc.perform(get("/application/client/results")
@@ -122,7 +122,7 @@ public class ClientSearchResultsControllerTest {
 
   @Test
   public void testClientSearchResults_NullResults() throws Exception {
-    when(clientService.getClients(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
+    when(clientService.getClients(any(), any(), any())).thenReturn(Mono.empty());
 
     this.mockMvc.perform(get("/application/client/results")
             .sessionAttr("user", user)
@@ -137,7 +137,7 @@ public class ClientSearchResultsControllerTest {
     clientDetails.setContent(new ArrayList<>());
     clientDetails.setTotalElements(0);
 
-    when(clientService.getClients(any(), any(), any(), any(), any())).thenReturn(
+    when(clientService.getClients(any(), any(), any())).thenReturn(
         Mono.just(clientDetails));
 
     this.mockMvc.perform(get("/application/client/results")

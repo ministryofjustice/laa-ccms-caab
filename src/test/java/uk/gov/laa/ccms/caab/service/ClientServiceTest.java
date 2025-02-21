@@ -20,11 +20,11 @@ import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
+import uk.gov.laa.ccms.data.model.ClientDetails;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 @ExtendWith(MockitoExtension.class)
@@ -62,8 +62,6 @@ public class ClientServiceTest {
   @Test
   void getClients_ReturnsClientDetails_Successful() {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
-    String loginId = "user1";
-    String userType = "userType";
     String firstName = "John";
     String lastName = "Doe";
 
@@ -73,13 +71,14 @@ public class ClientServiceTest {
     clientSearchCriteria.setForename(firstName);
     clientSearchCriteria.setSurname(lastName);
 
-    ClientDetails mockClientDetails = new ClientDetails();
+    ClientDetails mockClientDetails =
+        new ClientDetails();
 
-    when(soaApiClient.getClients(clientSearchCriteria, loginId, userType, page, size))
+    when(ebsApiClient.getClients(clientSearchCriteria, page, size))
         .thenReturn(Mono.just(mockClientDetails));
 
     Mono<ClientDetails> clientDetailsMono =
-        clientService.getClients(clientSearchCriteria, loginId, userType, page, size);
+        clientService.getClients(clientSearchCriteria, page, size);
 
     StepVerifier.create(clientDetailsMono)
         .expectNextMatches(clientDetails -> clientDetails == mockClientDetails)

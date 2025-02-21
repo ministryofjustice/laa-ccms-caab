@@ -1,9 +1,5 @@
 package uk.gov.laa.ccms.caab.client;
 
-import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER;
-import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE;
-import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER;
-
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,13 +9,11 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
@@ -81,61 +75,6 @@ public class SoaApiClient {
         .bodyToMono(ContractDetails.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
             e, "Contract details", queryParams));
-  }
-
-  /**
-   * Searches and retrieves client details based on provided search criteria.
-   *
-   * @param clientSearchCriteria The search criteria to use when fetching clients.
-   * @param loginId              The login identifier for the user.
-   * @param userType             Type of the user (e.g., admin, user).
-   * @param page                 The page number for pagination.
-   * @param size                 The size or number of records per page.
-   * @return A Mono wrapping the ClientDetails.
-   */
-  public Mono<ClientDetails> getClients(
-      final ClientSearchCriteria clientSearchCriteria,
-      final String loginId,
-      final String userType,
-      final Integer page,
-      final Integer size) {
-
-    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
-    Optional.ofNullable(clientSearchCriteria.getForename())
-        .ifPresent(forename -> queryParams.add("first-name", forename));
-    Optional.ofNullable(clientSearchCriteria.getSurname())
-        .ifPresent(surname -> queryParams.add("surname", surname));
-    Optional.ofNullable(clientSearchCriteria.getDoB())
-        .ifPresent(dateOfBirth -> queryParams.add("date-of-birth", dateOfBirth));
-    Optional.ofNullable(clientSearchCriteria.getUniqueIdentifier(
-        UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE))
-        .ifPresent(homeOfficeReference -> queryParams.add(
-            "home-office-reference", homeOfficeReference));
-    Optional.ofNullable(clientSearchCriteria.getUniqueIdentifier(
-        UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER))
-        .ifPresent(nationalInsuranceNumber -> queryParams.add(
-            "national-insurance_number", nationalInsuranceNumber));
-    Optional.ofNullable(clientSearchCriteria.getUniqueIdentifier(
-        UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER))
-        .ifPresent(caseReferenceNumber -> queryParams.add(
-            CASE_REFERENCE_NUMBER, caseReferenceNumber));
-    Optional.ofNullable(page)
-        .ifPresent(param -> queryParams.add("page", String.valueOf(param)));
-    Optional.ofNullable(size)
-        .ifPresent(param -> queryParams.add("size", String.valueOf(param)));
-
-    return soaApiWebClient
-        .get()
-        .uri(builder -> builder.path("/clients")
-            .queryParams(queryParams)
-            .build())
-        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
-        .header(SOA_GATEWAY_USER_ROLE, userType)
-        .retrieve()
-        .bodyToMono(ClientDetails.class)
-        .onErrorResume(e -> soaApiClientErrorHandler.handleApiRetrieveError(
-            e, "Clients", queryParams));
-
   }
 
   /**
