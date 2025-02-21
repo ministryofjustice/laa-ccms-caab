@@ -20,7 +20,7 @@
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
           <p class="govuk-body">
-            <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{office}"></span>
+            <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{provider.office}"></span>
             <span th:text="*{officeName}"></span>
           </p>
           <div th:replace="~{partials/forms :: dropdown('feeEarnerId', #{optional(#{provider.feeEarner.detailed})}, ${feeEarners}, 'id', 'name', false)}"></div>
