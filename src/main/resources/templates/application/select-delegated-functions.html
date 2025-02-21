@@ -8,12 +8,12 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/home}" class="govuk-back-link">Cancel and return to Home</a>
+        <a th:href="@{/home}" class="govuk-back-link" th:text="#{site.cancelAndReturnToHome}"></a>
     </div>
     <div id="main-content">
         <form action="#" th:action="@{/application/delegated-functions}" th:object="${applicationFormData}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <span class="govuk-caption-l">About your application</span>
+            <span class="govuk-caption-l" th:text="#{application.about}"></span>
             <div th:replace="~{application/partials/delegated-functions}"></div>
         </form>
     </div>

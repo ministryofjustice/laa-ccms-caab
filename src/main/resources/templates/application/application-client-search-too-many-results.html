@@ -6,16 +6,12 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/client/search}" class="govuk-back-link">Return to client search</a>
+        <a th:href="@{/application/client/search}" class="govuk-back-link" th:text="#{site.returnToClientSearch}"></a>
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l">About your application</span>
-        <h1 class="govuk-heading-l">
-            Client search - too many results
-        </h1>
-        <p class="govuk-body-l">
-            Please return to refine your search criteria and try again.
-        </p>
+        <span class="govuk-caption-l" th:text="#{application.about}"></span>
+        <h1 class="govuk-heading-l" th:text="#{application.clientSearch.results.tooMany}"></h1>
+        <p class="govuk-body-l" th:text="#{application.clientSearch.results.tooMany.leadParagraph}"></p>
     </div>
 </div>
 </body>

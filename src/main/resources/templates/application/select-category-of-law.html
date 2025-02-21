@@ -7,28 +7,30 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/home}" class="govuk-back-link">Cancel and return to Home</a>
+        <a th:href="@{/home}" class="govuk-back-link" th:text="#{site.cancelAndReturnToHome}"></a>
     </div>
     <div id="main-content">
         <form action="#" th:action="@{/application/category-of-law}" th:object="${applicationFormData}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <span class="govuk-caption-l">About your application</span>
-            <h1 class="govuk-heading-l">
-                Category of Law
-            </h1>
+            <span class="govuk-caption-l" th:text="#{application.about}"></span>
+            <h1 class="govuk-heading-l" th:text="#{application.categoryOfLaw}"></h1>
             <div class="govuk-body-l" th:if="${applicationFormData.exceptionalFunding}">
-                Please select the relevant Category of Law or click
-                <a class="govuk-link govuk-link--no-visited-state" th:href="@{/application/category-of-law}">revert to standard application</a>
-                if you do not wish to apply for exceptional case funding.
+                <span th:text="#{application.categoryOfLaw.leadParagraph.start}"></span>
+                <a class="govuk-link govuk-link--no-visited-state" th:href="@{/application/category-of-law}">
+                    <span th:text="#{application.categoryOfLaw.leadParagraph.revertLink}"></span>
+                </a>
+                <span th:text="#{application.categoryOfLaw.leadParagraph.revertMessage}"></span>
             </div>
             <div class="govuk-body-l" th:unless="${applicationFormData.exceptionalFunding}">
-                Please select the relevant Category of Law or click
-                <a class="govuk-link govuk-link--no-visited-state" th:href="@{/application/category-of-law?exceptional_funding=true}">Exceptional Funding</a>
-                if you wish to apply for exceptional case funding.
+                <span th:text="#{application.categoryOfLaw.leadParagraph.start}"></span>
+                <a class="govuk-link govuk-link--no-visited-state" th:href="@{/application/category-of-law?exceptional_funding=true}">
+                    <span th:text="#{application.categoryOfLaw.leadParagraph.exceptionalLink}"></span>
+                </a>
+                <span th:text="#{application.categoryOfLaw.leadParagraph.exceptionalMessage}"></span>
             </div>
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
-                    <div th:replace="~{partials/forms :: dropdown('categoryOfLawId', 'Which Category Of Law applies to this application?', ${categoriesOfLaw}, 'code', 'matterTypeDescription', true)}"></div>
+                    <div th:replace="~{partials/forms :: dropdown('categoryOfLawId', #{application.categoryOfLaw.select.category.label}, ${categoriesOfLaw}, 'code', 'matterTypeDescription', true)}"></div>
                     <govuk:button type="submit" th:text="#{site.continue}"/>
                 </div>
             </div>

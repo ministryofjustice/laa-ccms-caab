@@ -9,23 +9,19 @@
     <div id="breadcrumbs" style="padding-top: 40px;">
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l">About your application</span>
-        <h1 class="govuk-heading-l">
-            Client confirmation
-        </h1>
-        <p class="govuk-body">Please confirm you have selected the correct client record before you proceed as this will
-            create your new application</p>
-        <!-- Add the form element -->
+        <span class="govuk-caption-l" th:text="#{application.about}"></span>
+        <h1 class="govuk-heading-l" th:text="#{application.clientConfirm}"></h1>
+        <p class="govuk-body" th:text="#{application.clientConfirm.leadParagraph}"></p>
         <form action="#" th:action="@{/application/client/confirmed}" method="post">
             <input type="hidden" name="confirmedClientReference" th:value="${clientReferenceNumber}" />
             <table class="govuk-table">
                 <caption class="govuk-table__caption govuk-table__caption--m">Client search results</caption>
                 <thead class="govuk-table__head">
                 <tr class="govuk-table__row">
-                    <th scope="col" class="govuk-table__header">First name</th>
-                    <th scope="col" class="govuk-table__header">Surname</th>
-                    <th scope="col" class="govuk-table__header">Surname at birth</th>
-                    <th scope="col" class="govuk-table__header">Postcode (district)</th>
+                    <th scope="col" class="govuk-table__header" th:text="#{person.firstName}"></th>
+                    <th scope="col" class="govuk-table__header" th:text="#{person.surname}"></th>
+                    <th scope="col" class="govuk-table__header" th:text="#{person.surnameAtBirth}"></th>
+                    <th scope="col" class="govuk-table__header" th:text="#{address.postcodeDistrict}"></th>
                 </tr>
                 </thead>
                 <tbody class="govuk-table__body">
@@ -38,7 +34,6 @@
                 </tbody>
             </table>
             <div class="govuk-button-group">
-                <!-- Change the anchor tag to a button -->
                 <govuk:button type="submit" th:text="#{site.confirm}"/>
                 <govuk:button classes="govuk-button--secondary"
                               th:text="#{site.cancel}"
