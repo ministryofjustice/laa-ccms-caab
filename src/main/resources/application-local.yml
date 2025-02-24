@@ -78,6 +78,8 @@ av:
 
 laa:
   ccms:
+    footer:
+      research-panel-link: ""
     s3:
       buckets:
         document-bucket:
