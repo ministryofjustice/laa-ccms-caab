@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/home}" class="govuk-back-link">Cancel and return to Home</a>
+    <a th:href="@{/home}" class="govuk-back-link" th:text="#{site.cancelAndReturnToHome}"></a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/provider-requests/details}" th:object="${providerRequestDetails}" method="post" enctype="multipart/form-data">
@@ -55,7 +55,7 @@
                         th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
                         th:errorclass="govuk-select--error"
                         th:attr="onchange=|document.getElementById('dynamicOptions[${option.code}].fieldValueDisplayValue').value = this.options[this.selectedIndex].text;|">
-                  <option value="">Please Select</option>
+                  <option value="" th:text="#{site.select}"></option>
                   <option th:each="item : ${__${option.code}__}"
                           th:value="${item['code']}"
                           th:text="${item['description']}">
