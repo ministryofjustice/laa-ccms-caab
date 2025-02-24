@@ -64,6 +64,8 @@ server:
 
 laa:
   ccms:
+    footer:
+      research-panel-link: ${RESEARCH_PANEL_LINK}
     s3:
       buckets:
         document-bucket:
