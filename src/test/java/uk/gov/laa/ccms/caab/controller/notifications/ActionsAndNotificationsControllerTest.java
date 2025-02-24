@@ -740,7 +740,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testPostProvideDocumentsOrEvidence_submitsDraftAttachments_andDisplaysPage()
+  void testPostProvideDocumentsOrEvidence_submitsDraftAttachments_andRedirectsToSubmissionConfirmation()
       throws Exception {
 
     Notification notification = buildNotification();
@@ -768,10 +768,27 @@ class ActionsAndNotificationsControllerTest {
             .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/notifications/234/provide-documents-or-evidence"));
+        .andExpect(redirectedUrl("/submissions/notification-attachments/confirmed"));
 
     verify(notificationService).submitNotificationAttachments(notification.getNotificationId(),
         userDetails.getLoginId(), userDetails.getUserType(), userDetails.getUserId());
+  }
+
+  @Test
+  void testPostNotificationAttachmentsSubmissionConfirmed_redirectsToProvideDocumentsOrEvidencePage()
+      throws Exception {
+
+    Notification notification = buildNotification();
+
+    Map<String, Object> flashMap = new HashMap<>();
+    flashMap.put("user", userDetails);
+
+    mockMvc.perform(post("/submissions/notification-attachments/confirmed")
+            .sessionAttr("notification", notification)
+            .flashAttrs(flashMap))
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/notifications/234/provide-documents-or-evidence"));
   }
 
   @Test
