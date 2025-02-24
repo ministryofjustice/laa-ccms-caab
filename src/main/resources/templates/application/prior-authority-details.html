@@ -57,7 +57,7 @@
                         th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
                         th:errorclass="govuk-select--error"
                         th:attr="onchange=|document.getElementById('dynamicOptions[${option.code}].fieldValueDisplayValue').value = this.options[this.selectedIndex].text;|">
-                  <option value="" th:text="#{select.default}"></option>
+                  <option value="" th:text="#{site.select}"></option>
                   <option th:each="item : ${__${option.code}__}"
                           th:value="${item['code']}"
                           th:text="${item['description']}">
