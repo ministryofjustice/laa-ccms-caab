@@ -3,7 +3,7 @@
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-  <title>LAA CCMS - Create application</title>
+  <title th:text="#{service.name} + ' - ' + #{application.create}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -57,7 +57,7 @@
                         th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
                         th:errorclass="govuk-select--error"
                         th:attr="onchange=|document.getElementById('dynamicOptions[${option.code}].fieldValueDisplayValue').value = this.options[this.selectedIndex].text;|">
-                  <option value="">Please Select</option>
+                  <option value="" th:text="#{site.select}"></option>
                   <option th:each="item : ${__${option.code}__}"
                           th:value="${item['code']}"
                           th:text="${item['description']}">

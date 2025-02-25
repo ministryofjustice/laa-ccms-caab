@@ -1,28 +1,28 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
     <head>
-        <title>LAA CCMS - Start new application</title>
+        <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
     </head>
     <body>
       <div class="govuk-width-container">
       <div id="breadcrumbs">
-          <a th:href="@{/home}" class="govuk-back-link">Cancel and return to Home</a>
+          <a th:href="@{/home}" class="govuk-back-link" th:text="#{site.cancelAndReturnToHome}"></a>
       </div>
         <div id="main-content">
             <form action="#" th:action="@{/application/office}" th:object="${applicationFormData}" method="post">
               <div th:replace="~{partials/error-summary :: error-summary}"></div>
-              <span class="govuk-caption-l">About your application</span>
-              <h1 class="govuk-heading-l">
-                Select office
-              </h1>
+              <span class="govuk-caption-l" th:text="#{application.about}"></span>
+              <h1 class="govuk-heading-l" th:text="#{application.selectOffice}"></h1>
               <div class="govuk-body-l">
-                  Please select the office where the application will be held. Alternatively, click
-                  <a class="govuk-link govuk-link--no-visited-state" th:href="@{/application/copy-case/search}">Copy case </a>
-                  to start a new application from an existing one.
+                <span th:text="#{application.selectOffice.leadParagraph.start}"></span>
+                <a class="govuk-link govuk-link--no-visited-state" th:href="@{/application/copy-case/search}">
+                  <span th:text="#{application.selectOffice.leadParagraph.copyCase}"></span>
+                </a>
+                <span th:text="#{application.selectOffice.leadParagraph.end}"></span>
               </div>
               <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
-                    <div th:replace="~{partials/forms :: dropdown('officeId', 'Which office will hold this application?', ${offices}, 'id', 'name', true)}"></div>
+                    <div th:replace="~{partials/forms :: dropdown('officeId', #{application.selectOffice.select.office.label}, ${offices}, 'id', 'name', true)}"></div>
                     <govuk:button type="submit" th:text="#{site.continue}"/>
                 </div>
               </div>

@@ -1,79 +1,100 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title>LAA CCMS - Create application</title>
+    <title th:text="#{service.name} + ' - ' + #{application.create}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
-  <div id="breadcrumbs">
-    <a th:href="@{/application/proceedings-and-costs}" class="govuk-back-link">Return to proceedings and costs</a>
-  </div>
-  <div id="main-content">
-    <span class="govuk-caption-l">Create application</span>
-    <h1 class="govuk-heading-l">
-      Proceeding detail overview
-    </h1>
-    <p class="govuk-body-l">
-      Please view below the information that you have entered for this proceeding. If you wish to
-      change any of these details please click on one of the edit links below. Please note that
-      these details may not be changed once the certificate is revoked or discharged, when the
-      office no longer schedule authorisation to carry out work in the category of law of the case
-      or when an outcome for the proceeding has been specified.
-    </p>
-    <div class="govuk-summary-card">
-      <div class="govuk-summary-card__title-wrapper">
-        <h2 class="govuk-summary-card__title">Proceeding details</h2>
-        <ul class="govuk-summary-card__actions">
-          <li class="govuk-summary-card__action">
-            <a class="govuk-link" th:href="@{/application/proceedings/edit/matter-type}">
-              Edit Proceeding details
-            </a>
-          </li>
-        </ul>
-      </div>
-      <div class="govuk-summary-card__content">
-        <dl class="govuk-summary-list">
-          <div th:replace="~{this :: summaryListDisplay('Matter type', ${proceeding.matterType.displayValue})}"></div>
-          <div th:replace="~{this :: summaryListDisplay('Proceeding', ${proceeding.proceedingType.displayValue})}"></div>
-          <div th:replace="~{this :: summaryListDisplay('Proceeding description', ${proceeding.description})}"></div>
-          <div th:replace="~{this :: summaryListDisplay('Client involvement type', ${proceeding.clientInvolvement.displayValue})}"></div>
-          <div th:replace="~{this :: summaryListDisplay('Form of civil legal service', ${proceeding.levelOfService.displayValue})}"></div>
-          <th:block th:if="${proceeding.typeOfOrder.id}">
-            <div th:replace="~{this :: summaryListDisplay('Type of order', ${orderTypeDisplayValue})}"></div>
-          </th:block>
-        </dl>
-      </div>
+    <div id="breadcrumbs">
+        <a th:href="@{/application/proceedings-and-costs}" class="govuk-back-link">Return to proceedings and costs</a>
     </div>
-    <div class="govuk-summary-card">
-      <div class="govuk-summary-card__title-wrapper">
-        <h2 class="govuk-summary-card__title">Scope limitations</h2>
-        <ul class="govuk-summary-card__actions">
-          <li class="govuk-summary-card__action">
-            <a class="govuk-link" th:href="@{/application/proceedings/edit/confirm}">
-              Edit Scope Limitations
-            </a>
-          </li>
-        </ul>
-      </div>
-      <div class="govuk-summary-card__content">
-        <dl class="govuk-summary-list">
-          <th:block th:each="scopeLimitation : ${proceeding.scopeLimitations}" th:unless="${proceeding.scopeLimitations.isEmpty()}">
-            <div th:replace="~{this :: summaryListDisplay(${scopeLimitation.scopeLimitation.displayValue}, ${scopeLimitation.scopeLimitationWording})}"></div>
-          </th:block>
-        </dl>
-      </div>
+    <div id="main-content">
+        <span class="govuk-caption-l" th:text="#{proceedings.summary.caption}"></span>
+        <h1 class="govuk-heading-l" th:text="#{proceedings.summary.title}"></h1>
+        <p class="govuk-body-l" th:text="#{proceedings.summary.text}"></p>
+        <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper">
+                <h2 class="govuk-summary-card__title">Proceeding details</h2>
+                <ul class="govuk-summary-card__actions">
+                    <li class="govuk-summary-card__action">
+                        <a class="govuk-link" th:href="@{/application/proceedings/edit/matter-type}"
+                           th:text="#{proceedings.summary.editProceedingDetails}">
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="govuk-summary-card__content">
+                <dl class="govuk-summary-list">
+                    <div th:replace="~{this :: summaryListDisplay('Matter type', ${proceeding.matterType.displayValue})}"></div>
+                    <div th:replace="~{this :: summaryListDisplay('Proceeding', ${proceeding.proceedingType.displayValue})}"></div>
+                    <div th:replace="~{this :: summaryListDisplay('Proceeding description', ${proceeding.description})}"></div>
+                    <div th:replace="~{this :: summaryListDisplay('Client involvement type', ${proceeding.clientInvolvement.displayValue})}"></div>
+                    <div th:replace="~{this :: summaryListDisplay('Form of civil legal service', ${proceeding.levelOfService.displayValue})}"></div>
+                    <th:block th:if="${proceeding.typeOfOrder.id}">
+                        <div th:replace="~{this :: summaryListDisplay('Type of order', ${orderTypeDisplayValue})}"></div>
+                    </th:block>
+                </dl>
+            </div>
+        </div>
+        <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper">
+                <h2 class="govuk-summary-card__title">Scope limitations</h2>
+                <ul class="govuk-summary-card__actions">
+                    <li class="govuk-summary-card__action">
+                        <a class="govuk-link" th:href="@{/application/proceedings/edit/confirm}"
+                           th:text="#{proceedings.summary.editScopeLimitations}">
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="govuk-summary-card__content">
+                <th:block th:unless="${proceeding.scopeLimitations.isEmpty()}">
+                    <table class="govuk-table">
+                        <thead class="govuk-table__head">
+                        <tr class="govuk-table__row">
+                            <th scope="col" class="govuk-table__header">Scope limitation</th>
+                            <th scope="col" class="govuk-table__header">Scope limitation wording</th>
+                            <th scope="col" class="govuk-table__header" th:if="${isSubstantiveDevolvedPowersApp}"
+                                th:text="#{proceedings.summary.delegatedFunctionsApply}">
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody class="govuk-table__body">
+                        <tr class="govuk-table__row" th:each="scopeLimitation : ${proceeding.scopeLimitations}">
+                            <td class="govuk-table__cell">
+                                <p class="govuk-body" th:text="${scopeLimitation.scopeLimitation.displayValue}"></p>
+                            </td>
+                            <td class="govuk-table__cell" th:text="${scopeLimitation.scopeLimitationWording}"></td>
+                            <td class="govuk-table__cell"
+                                th:if="${isSubstantiveDevolvedPowersApp && scopeLimitation.delegatedFuncApplyInd.flag}">
+                                <img id="delegatedInd" class="govuk-!-padding-left-2 govuk-!-padding-right-2"
+                                     th:src="@{/assets/ccms/tick.gif}" alt="tick">
+                                <label class="govuk-label govuk-checkboxes__label" for="delegatedInd">
+                                    <span class="govuk-visually-hidden"
+                                          th:text="#{proceedings.summary.delegatedFunctionsApply}"></span>
+                                </label>
+                            </td>
+                            <td class="govuk-table__cell"
+                                th:if="${isSubstantiveDevolvedPowersApp && !scopeLimitation.delegatedFuncApplyInd.flag}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </th:block>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 </body>
 </html>
 
 <!--Simple fragment for repeated summary list rows -->
 <div class="govuk-summary-list__row" th:fragment="summaryListDisplay(label, value)">
-  <dt class="govuk-summary-list__key"
-      th:text="${label}">
-  </dt>
-  <dd class="govuk-summary-list__value"
-      th:text="${value}">
-  </dd>
+    <dt class="govuk-summary-list__key"
+        th:text="${label}">
+    </dt>
+    <dd class="govuk-summary-list__value"
+        th:text="${value}">
+    </dd>
 </div>

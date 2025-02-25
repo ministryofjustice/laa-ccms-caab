@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EMERGENCY_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_ORDER_TYPE;
@@ -47,6 +48,10 @@ import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataFurtherDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
+// CHECKSTYLE:OFF
+import uk.gov.laa.ccms.caab.bean.scopelimitation.ProceedingScopeLimitationsDelegatedFunctionsApplyFormData;
+// CHECKSTYLE:ON
+import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationDelegatedFunctionApplyFormData;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails;
 import uk.gov.laa.ccms.caab.bean.validators.costs.CostDetailsValidator;
@@ -102,6 +107,9 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @SuppressWarnings("unchecked")
 public class EditProceedingsAndCostsSectionController {
 
+  public static final String IS_SUBSTANTIVE_DEVOLVED_POWERS_APP = "isSubstantiveDevolvedPowersApp";
+  public static final String SCOPE_DELEGATED_FUNCTIONS_APPLY_FORM_DATA =
+      "scopeDelegatedFunctionsApplyFormData";
   //services
   private final ApplicationService applicationService;
   private final LookupService lookupService;
@@ -272,6 +280,8 @@ public class EditProceedingsAndCostsSectionController {
     }
 
     model.addAttribute(CURRENT_PROCEEDING, proceeding);
+    model.addAttribute(IS_SUBSTANTIVE_DEVOLVED_POWERS_APP,
+        application.getApplicationType().getId().equals(APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS));
 
     //default cost limitations
     applicationService.prepareProceedingSummary(applicationId, application, user);
@@ -763,6 +773,22 @@ public class EditProceedingsAndCostsSectionController {
     }
 
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+    model.addAttribute(IS_SUBSTANTIVE_DEVOLVED_POWERS_APP,
+        application.getApplicationType().getId().equals(APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS));
+
+    List<ScopeLimitationDetail> scopeLimitationDetails =
+        (List<ScopeLimitationDetail>) model.getAttribute(PROCEEDING_SCOPE_LIMITATIONS);
+
+    List<ScopeLimitationDelegatedFunctionApplyFormData> scopeLimitationDataList =
+        Optional.ofNullable(scopeLimitationDetails)
+            .orElseGet(Collections::emptyList)
+            .stream()
+            .map(detail -> new ScopeLimitationDelegatedFunctionApplyFormData(detail.getId(),
+                detail.getDelegatedFuncApplyInd().getFlag()))
+            .toList();
+
+    model.addAttribute(SCOPE_DELEGATED_FUNCTIONS_APPLY_FORM_DATA,
+        new ProceedingScopeLimitationsDelegatedFunctionsApplyFormData(scopeLimitationDataList));
 
     return "application/proceedings-confirm";
   }
@@ -809,7 +835,20 @@ public class EditProceedingsAndCostsSectionController {
       @SessionAttribute(APPLICATION_PROCEEDINGS) final List<ProceedingDetail> proceedings,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @PathVariable("action") final String action,
+      @ModelAttribute(SCOPE_DELEGATED_FUNCTIONS_APPLY_FORM_DATA)
+      final ProceedingScopeLimitationsDelegatedFunctionsApplyFormData scopeLimitationFormData,
       final HttpSession session) {
+
+    // update delegatedFuncApplyInd flag
+    for (ScopeLimitationDetail scopeLimitationDetail : scopeLimitations) {
+      for (ScopeLimitationDelegatedFunctionApplyFormData scopeLimitationData :
+          scopeLimitationFormData.scopeLimitationDataList()) {
+        if (scopeLimitationDetail.getId().equals(scopeLimitationData.id())) {
+          scopeLimitationDetail.getDelegatedFuncApplyInd()
+              .setFlag(scopeLimitationData.delegatedFuncApplyInd());
+        }
+      }
+    }
 
     //get proceeding cost limitation
     final BigDecimal costLimitation = applicationService.getProceedingCostLimitation(

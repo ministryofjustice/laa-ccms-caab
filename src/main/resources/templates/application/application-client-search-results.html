@@ -2,34 +2,27 @@
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-    <title>LAA CCMS - Start new application</title>
+    <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/client/search}" class="govuk-back-link">Return to client search</a>
+        <a th:href="@{/application/client/search}" class="govuk-back-link" th:text="#{site.returnToClientSearch}"></a>
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l">About your application</span>
-        <h1 class="govuk-heading-l">
-            Client search - results
-        </h1>
-        <p class="govuk-body-l">
-            To create an application for any of the records below click 'Use this record' at the right of the panel on
-            the relevant record line. Where none of the results are associated with your client then please either
-            refine your search or register a new client by clicking the 'Register new client' button at the bottom of
-            the page.
-        </p>
+        <span class="govuk-caption-l" th:text="#{application.about}"></span>
+        <h1 class="govuk-heading-l" th:text="#{application.clientSearch.results}"></h1>
+        <p class="govuk-body-l" th:text="#{application.clientSearch.results.leadParagraph}"></p>
         <table class="govuk-table">
-            <caption class="govuk-table__caption govuk-table__caption--m">Client search results</caption>
+            <caption class="govuk-table__caption govuk-table__caption--m" th:text="#{application.clientSearch.results.caption}"></caption>
             <thead class="govuk-table__head">
             <tr class="govuk-table__row">
-                <th scope="col" class="govuk-table__header">First name</th>
-                <th scope="col" class="govuk-table__header">Surname</th>
-                <th scope="col" class="govuk-table__header">Surname at birth</th>
-                <th scope="col" class="govuk-table__header">Postcode (district)</th>
+                <th scope="col" class="govuk-table__header" th:text="#{person.firstName}"></th>
+                <th scope="col" class="govuk-table__header" th:text="#{person.surname}"></th>
+                <th scope="col" class="govuk-table__header" th:text="#{person.surnameAtBirth}"></th>
+                <th scope="col" class="govuk-table__header" th:text="#{address.postcodeDistrict}"></th>
                 <th scope="col" class="govuk-table__header">LAA ref result</th>
-                <th scope="col" class="govuk-table__header">Action</th>
+                <th scope="col" class="govuk-table__header" th:text="#{site.action}"></th>
             </tr>
             </thead>
             <tbody class="govuk-table__body">
@@ -40,19 +33,16 @@
                 <td class="govuk-table__cell" th:text="${client.getPostCodeDistrict()}"></td>
                 <td class="govuk-table__cell" th:text="${client.clientReferenceNumber}"></td>
                 <td class="govuk-table__cell">
-                    <a th:href="@{/application/client/{id}/confirm(id=${client.clientReferenceNumber})}" class="govuk-link">Use this record</a>
+                    <a th:href="@{/application/client/{id}/confirm(id=${client.clientReferenceNumber})}" class="govuk-link" th:text="#{site.useThisRecord}"></a>
                 </td>
             </tr>
             </tbody>
         </table>
         <nav th:replace="~{partials/pagination :: pagination(page=${clientSearchResults})}"></nav>
         <form action="#" th:action="@{/application/client/results}" method="post">
-            <h2 class="govuk-heading-m">
-                Register new client
-            </h2>
-            <p class="govuk-body">If your search has not returned the client you were looking for, you can register a new
-                client by clicking the 'Register new client' button.</p>
-            <govuk:button type="submit" th:text="#{client.register}"/>
+            <h2 class="govuk-heading-m" th:text="#{application.clientRegister}"></h2>
+            <p class="govuk-body" th:text="#{application.clientRegister.paragraph}"></p>
+            <govuk:button type="submit" th:text="#{application.clientRegister}"/>
         </form>
     </div>
 </div>

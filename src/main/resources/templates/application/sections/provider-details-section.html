@@ -1,40 +1,33 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-  <title>LAA CCMS - Create application</title>
+  <title th:text="#{service.name} + ' - ' + #{application.create}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections}" class="govuk-back-link">Cancel and return to create application</a>
+    <a th:href="@{/application/sections}" class="govuk-back-link" th:text="#{site.cancelAndReturnToApplication}"></a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/application/sections/provider-details}" th:object="${applicationFormData}" method="post">
       <input type="hidden" th:field="*{officeId}" th:value="${applicationFormData.officeId}" />
       <input type="hidden" th:field="*{officeName}" th:value="${applicationFormData.officeName}" />
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l">Create application</span>
-      <h1 class="govuk-heading-l">
-        Provider details
-      </h1>
-      <div class="govuk-body-l">
-        Please enter the details in the fields provided.
-      </div>
+      <span class="govuk-caption-l" th:text="#{application.create}"></span>
+      <h1 class="govuk-heading-l" th:text="#{application.section.providerDetails}"></h1>
+      <div class="govuk-body-l"th:text="#{application.providerDetails.leadParagraph}"></div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
           <p class="govuk-body">
-            <span  class="govuk-!-font-weight-bold govuk-!-padding-right-2">
-                Office
-            </span>
+            <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{provider.office}"></span>
             <span th:text="*{officeName}"></span>
           </p>
-          <div th:replace="~{partials/forms :: dropdown('feeEarnerId', 'Name of solicitor or Fellow of the Institute of Legal Executives instructed (optional)', ${feeEarners}, 'id', 'name', false)}"></div>
-          <div th:replace="~{partials/forms :: dropdown('supervisorId', 'Supervisor (optional)', ${feeEarners}, 'id', 'name', false)}"></div>
-          <div th:replace="~{partials/forms :: textInput('providerCaseReference', 'Provider case reference (optional)', 'govuk-input--width-20')}"></div>
-          <div th:replace="~{partials/forms :: dropdown('contactNameId', 'Contact name', ${contactNames}, 'id', 'name', false)}"></div>
-          <button class="govuk-button" data-module="govuk-button">
-            Confirm
-          </button>
+          <div th:replace="~{partials/forms :: dropdown('feeEarnerId', #{optional(#{provider.feeEarner.detailed})}, ${feeEarners}, 'id', 'name', false)}"></div>
+          <div th:replace="~{partials/forms :: dropdown('supervisorId', #{optional(#{provider.supervisor})}, ${feeEarners}, 'id', 'name', false)}"></div>
+          <div th:replace="~{partials/forms :: textInput('providerCaseReference', #{optional(#{provider.providerRef})}, 'govuk-input--width-20')}"></div>
+          <div th:replace="~{partials/forms :: dropdown('contactNameId', #{provider.contactName}, ${contactNames}, 'id', 'name', false)}"></div>
+          <govuk:button type="submit" th:text="#{site.confirm}"/>
         </div>
       </div>
     </form>

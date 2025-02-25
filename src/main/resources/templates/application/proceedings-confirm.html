@@ -3,7 +3,7 @@
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-  <title>LAA CCMS - Create application</title>
+  <title th:text="#{service.name} + ' - ' + #{application.create}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -11,16 +11,10 @@
     <a th:href="@{/application/proceedings-and-costs}" class="govuk-back-link">Cancel and return to proceedings and costs</a>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/proceedings/{action}/confirm(action=${proceedingFlow.action})}" method="post">
-      <span class="govuk-caption-l">Add/edit proceeding</span>
-      <h1 class="govuk-heading-l">
-        Proceeding details - Step 4 of 4
-      </h1>
-      <p class="govuk-body-l">
-        Please review the information below and, if required, update the scope limitations for this
-        Proceeding. You can add, edit or remove existing scope limitations, but at least one scope
-        limitation must exist to complete this Proceeding.
-      </p>
+    <form action="#" th:action="@{/application/proceedings/{action}/confirm(action=${proceedingFlow.action})}" th:object="${scopeDelegatedFunctionsApplyFormData}" method="post">
+      <span class="govuk-caption-l" th:text="#{proceedings.confirm.caption}"></span>
+      <h1 class="govuk-heading-l" th:text="#{proceedings.confirm.title}"></h1>
+      <p class="govuk-body-l" th:text="#{proceedings.confirm.text}"></p>
       <p class="govuk-body">
         <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
             Matter type
@@ -65,10 +59,12 @@
         <tr class="govuk-table__row">
           <th scope="col" class="govuk-table__header">Scope limitation</th>
           <th scope="col" class="govuk-table__header">Scope limitation wording</th>
+          <th scope="col" class="govuk-table__header" th:if="${isSubstantiveDevolvedPowersApp}"
+              th:text="#{proceedings.summary.delegatedFunctionsApply}"></th>
           <th scope="col" class="govuk-table__header">Action</th>
         </tr>
         </thead>
-        <tbody class="govuk-table__body">
+        <tbody class="govuk-table__body" th:unless="${scopeLimitations.isEmpty()}">
         <tr class="govuk-table__row" th:each="scopeLimitation, rowStat : ${scopeLimitations}">
           <td class="govuk-table__cell">
             <a th:if="${proceedingFlow.action} == 'add'" th:href="@{/application/proceedings/scope-limitations/{scopeLimitationId}/edit(scopeLimitationId=${rowStat.index})}"
@@ -77,6 +73,18 @@
                class="govuk-link" th:text="${scopeLimitation.scopeLimitation.displayValue}"></a>
           </td>
           <td class="govuk-table__cell" th:text="${scopeLimitation.scopeLimitationWording}"></td>
+          <td class="govuk-table__cell" th:if="${isSubstantiveDevolvedPowersApp}">
+            <div class="govuk-checkboxes__item govuk-checkboxes--small">
+              <input  type="hidden" th:field="*{scopeLimitationDataList[__${rowStat.index}__].id}"
+                      th:value="${scopeLimitation.id}"/>
+              <input type="checkbox" class="govuk-checkboxes__input" id="delegatedInd"
+                     th:name="'scopeLimitationDataList[' + ${rowStat.index} + '].delegatedFuncApplyInd'"
+                     th:checked="*{scopeLimitationDataList[__${rowStat.index}__]?.delegatedFuncApplyInd}">
+              <label class="govuk-label govuk-checkboxes__label" for="delegatedInd">
+                <span class="govuk-visually-hidden" th:text="#{proceedings.confirm.delegatedFunctionsApply}"></span>
+              </label>
+            </div>
+          </td>
           <td class="govuk-table__cell">
             <th:block th:if="${scopeLimitations.size()} > 1 ">
               <a th:if="${proceedingFlow.action} == 'add'" th:href="@{/application/proceedings/scope-limitations/{scopeLimitationId}/remove(scopeLimitationId=${rowStat.index})}"

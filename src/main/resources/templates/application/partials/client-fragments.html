@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <title>LAA CCMS - Start new application</title>
+  <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
 </head>
 <body>
 <!--Client summary fragment-->
@@ -187,8 +187,8 @@
       <div th:replace="~{partials/forms :: textInput('nationalInsuranceNumber', 'National Insurance Number (optional)', 'govuk-input--width-20')}"></div>
 
       <govuk:details classes="govuk-!-margin-top-2"
-                     th:summaryText="#{client.basic.insurance.summaryText}"
-                     th:text="#{client.basic.insurance.text}"/>
+                     th:summaryText="#{details.nsi}"
+                     th:text="#{details.nsi.text}"/>
     </div>
 
     <!-- Show paragraph if homeOfficeNumber exists -->
@@ -205,8 +205,8 @@
       <div th:replace="~{partials/forms :: textInput('homeOfficeNumber', 'Home Office Number (optional)', 'govuk-input--width-20')}"></div>
 
       <govuk:details classes="govuk-!-margin-top-2"
-                     th:summaryText="#{client.basic.homeOffice.summaryText}"
-                     th:text="#{client.basic.homeOffice.text}"/>
+                     th:summaryText="#{details.homeOffice}"
+                     th:text="#{details.homeOffice.text}"/>
     </div>
 
     <!-- Show paragraph if gender exists -->
@@ -258,10 +258,10 @@
       </fieldset>
     </div>
     <div class="govuk-form-group">
-      <govuk:details th:summaryText="#{client.details.higherProfile.summaryText}"
-                     th:text="#{client.details.higherProfile.text}"/>
-        <govuk:details th:summaryText="#{client.details.mentalIncapacity.summaryText}"
-                       th:text="#{client.details.mentalIncapacity.text}"/>
+      <govuk:details th:summaryText="#{details.highProfileClient}"
+                     th:text="#{details.highProfileClient.text}"/>
+        <govuk:details th:summaryText="#{details.mentalIncapacity}"
+                       th:text="#{details.mentalIncapacity.text}"/>
     </div>
   </div>
 </div>
@@ -349,15 +349,15 @@
                th:value="*{password}">
         <br>
         <govuk:details classes="govuk-!-margin-top-2"
-                       th:summaryText="#{client.contract.passwordHelp.summaryText }"
-                       th:text="#{client.contract.passwordHelp.text }"/>
+                       th:summaryText="#{details.password}"
+                       th:text="#{details.password.text }"/>
       </div>
       <div class="govuk-form-group">
         <div th:replace="~{partials/forms :: textInput('passwordReminder', 'Password reminder', 'govuk-input--width-20')}"></div>
 
         <govuk:details classes="govuk-!-margin-top-2"
-                       th:summaryText="#{client.contract.passwordReminder.summaryText }"
-                       th:text="#{client.contract.passwordReminder.text }"/>
+                       th:summaryText="#{details.passwordReminder}"
+                       th:text="#{details.passwordReminder.text }"/>
       </div>
     </div>
   </div>
@@ -533,8 +533,8 @@
       <div th:replace="~{partials/forms :: dropdown('ethnicOrigin', 'Which ethnicity would your client describe themselves as being?', ${ethnicOrigins}, 'code', 'description', false)}"></div>
 
       <govuk:details classes="govuk-!-margin-top-2"
-                     th:summaryText="#{client.monitoring.ethnic.summaryText}"
-                     th:text="#{client.monitoring.ethnic.text}"/>
+                     th:summaryText="#{details.ethnicMonitoring}"
+                     th:text="#{details.ethnicMonitoring.text}"/>
     </div>
     <div class="govuk-form-group">
       <h2 class="govuk-heading-m">
@@ -543,8 +543,8 @@
       <div th:replace="~{partials/forms :: dropdown('disability', 'Would your client describe themselves as being disabled?', ${disabilities}, 'code', 'description', false)}"></div>
 
       <govuk:details classes="govuk-!-margin-top-2"
-                     th:summaryText="#{client.monitoring.disability.summaryText}"
-                     th:text="#{client.monitoring.disability.text}"/>
+                     th:summaryText="#{details.disabilityMonitoring}"
+                     th:text="#{details.disabilityMonitoring.text}"/>
     </div>
     <div class="govuk-form-group">
       <h2 class="govuk-heading-m">
@@ -564,8 +564,8 @@
               </textarea>
       </fieldset>
 
-      <govuk:details th:summaryText="#{client.monitoring.specialConsiderations.summaryText}"
-                     th:text="#{client.monitoring.specialConsiderations.text}"/>
+      <govuk:details th:summaryText="#{details.specialConsiderations}"
+                     th:text="#{details.specialConsiderations.text}"/>
     </div>
   </div>
 </div>

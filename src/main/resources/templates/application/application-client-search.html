@@ -3,44 +3,37 @@
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org" xmlns:moj="http://www.thymeleaf.org">
 <head>
-    <title>LAA CCMS - Start new application</title>
+    <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/home}" class="govuk-back-link">Cancel and return to Home</a>
+        <a th:href="@{/home}" class="govuk-back-link" th:text="#{site.cancelAndReturnToHome}"></a>
     </div>
     <div id="main-content">
         <form action="#" th:action="@{/application/client/search}" th:object="${clientSearchCriteria}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <span class="govuk-caption-l">About your application</span>
-            <h1 class="govuk-heading-l">
-                Client search
-            </h1>
-            <p class="govuk-body-l">
-                To find a client registered within the LAA system, please enter any or all of the details for that
-                client in the fields below. The more details entered, the better the match. If your search returns more
-                than 100 results, you will be asked to refine your search instead of displaying all the results. This is
-                to ensure that you use the correct client record in your new application.
-            </p>
+            <span class="govuk-caption-l" th:text="#{application.about}"></span>
+            <h1 class="govuk-heading-l" th:text="#{application.clientSearch}"></h1>
+            <p class="govuk-body-l" th:text="#{application.clientSearch.leadParagraph}"></p>
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
-                    <div th:replace="~{partials/forms :: textInput('forename', 'First name', 'govuk-input--width-20')}"></div>
-                    <div th:replace="~{partials/forms :: textInput('surname', 'Surname at birth', 'govuk-input--width-20')}"></div>
+                    <div th:replace="~{partials/forms :: textInput('forename', #{person.firstName}, 'govuk-input--width-20')}"></div>
+                    <div th:replace="~{partials/forms :: textInput('surname', #{person.surnameAtBirth}, 'govuk-input--width-20')}"></div>
                     <moj:datepicker
                             id="dob"
                             name="dateOfBirth"
-                            th:label="#{client.search.dob.label}"
-                            th:hint="#{client.search.dob.hint}"
+                            th:label="#{person.dob}"
+                            th:hint="#{hint.date}"
                             th:errorMessage="${#fields.hasErrors('dateOfBirth') ? #fields.errors('dateOfBirth').getFirst() : ''}"
                             th:value="*{__${'dateOfBirth'}__}">
                     </moj:datepicker>
-                    <div th:replace="~{partials/forms :: dropdown('gender', 'Gender (optional)', ${genders}, 'code', 'description', false)}"></div>
-                    <div th:replace="~{partials/forms :: dropdown('uniqueIdentifierType', 'Unique identifier type (optional)', ${uniqueIdentifierTypes}, 'code', 'description', false)}"></div>
-                    <div th:replace="~{partials/forms :: textInput('uniqueIdentifierValue', 'Unique identifier value (optional)', 'govuk-input--width-20')}"></div>
+                    <div th:replace="~{partials/forms :: dropdown('gender', #{optional(#{person.gender})}, ${genders}, 'code', 'description', false)}"></div>
+                    <div th:replace="~{partials/forms :: dropdown('uniqueIdentifierType', #{optional(#{person.uniqueIdentifierType})}, ${uniqueIdentifierTypes}, 'code', 'description', false)}"></div>
+                    <div th:replace="~{partials/forms :: textInput('uniqueIdentifierValue', #{optional(#{person.uniqueIdentifier})}, 'govuk-input--width-20')}"></div>
                     <div class="govuk-form-group">
-                        <govuk:details th:summaryText="#{client.search.summaryText}"
-                                       th:text="#{client.search.text}"/>
+                        <govuk:details th:summaryText="#{details.uniqueIdentifier}"
+                                       th:text="#{details.uniqueIdentifier.text}"/>
                     </div>
                     <govuk:button type="submit" th:text="#{site.search}"/>
                 </div>

@@ -2,24 +2,19 @@
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-    <title>LAA CCMS - Start new application</title>
+    <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/client/search}" class="govuk-back-link">Return to client search</a>
+        <a th:href="@{/application/client/search}" class="govuk-back-link" th:text="#{site.returnToClientSearch}"></a>
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l">About your application</span>
-        <h1 class="govuk-heading-l">
-            Client search - no results
-        </h1>
-        <p class="govuk-body-l">
-            Please return to amend your search criteria and try again or register a new client by clicking the 'Register
-            new client' button.
-        </p>
+        <span class="govuk-caption-l" th:text="#{application.about}"></span>
+        <h1 class="govuk-heading-l" th:text="#{application.clientSearch.results.noResults}"></h1>
+        <p class="govuk-body-l" th:text="#{application.clientSearch.results.noResults.leadParagraph}"></p>
         <form action="#" th:action="@{/application/client/results}" method="post">
-            <govuk:button type="submit" th:text="#{client.register}"/>
+            <govuk:button type="submit" th:text="#{application.clientRegister}"/>
         </form>
     </div>
 </div>
