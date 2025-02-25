@@ -23,4 +23,19 @@ public class ClientFormDataContactDetails extends AbstractClientFormData {
   private boolean telephoneWorkPresent = false;
   private boolean telephoneMobilePresent = false;
 
+  public void setTelephoneHome(String telephoneHome) {
+    this.telephoneHome = telephoneHome;
+    this.telephoneHomePresent = (telephoneHome != null && !telephoneHome.isEmpty());
+  }
+
+  public void setTelephoneWork(String telephoneWork) {
+    this.telephoneWork = telephoneWork;
+    this.telephoneWorkPresent = (telephoneWork != null && !telephoneWork.isEmpty());
+  }
+
+  public void setTelephoneMobile(String telephoneMobile) {
+    this.telephoneMobile = telephoneMobile;
+    this.telephoneMobilePresent = (telephoneMobile != null && !telephoneMobile.isEmpty());
+  }
+
 }
