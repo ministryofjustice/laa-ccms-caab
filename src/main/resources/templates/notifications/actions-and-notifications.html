@@ -24,8 +24,10 @@
        th:text="#{notifications.search.results.refineSearch}"
        data-module="govuk-button"/>
 
-    <div class="moj-scrollable-pane">
+    <div class="moj-scrollable-pane govuk-!-padding-top-4">
       <table class="govuk-table ccms-compact-table">
+        <caption class="govuk-table__caption govuk-table__caption--m"
+                 th:text="#{notifications.search.results.tableCaption}"/>
         <thead class="govuk-table__head">
         <tr class="govuk-table__row">
           <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'DATE_ASSIGNED',
