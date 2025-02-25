@@ -30,23 +30,23 @@
                  th:text="#{notifications.search.results.tableCaption}"/>
         <thead class="govuk-table__head">
         <tr class="govuk-table__row">
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'DATE_ASSIGNED',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dateAssigned',
           #{notifications.dateAssigned})}"></th>
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'SUBJECT',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'subject',
           #{notifications.subject})}"></th>
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'DUE_DATE',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dueDate',
           #{notifications.dueDate})}"></th>
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'USER_LOGIN_ID',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'userLoginId',
           #{notifications.assignedTo})}"></th>
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'STATUS',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'status',
           #{notifications.status})}"></th>
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'LSC_CASE_REF_REFERENCE',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'lscCaseRefReference',
           #{notifications.laaRef})}"></th>
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'PROVIDER_CASE_REFERENCE',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'providerCaseReference',
           #{notifications.providerRef})}"></th>
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'CLIENT_NAME',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'clientName',
           #{notifications.client})}"></th>
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'FEE_EARNER',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'feeEarner',
           #{notifications.feeEarner})}"></th>
         </tr>
         </thead>

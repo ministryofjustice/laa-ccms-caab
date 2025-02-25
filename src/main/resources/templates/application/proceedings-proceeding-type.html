@@ -49,7 +49,7 @@
                             this.options[this.selectedIndex].getAttribute('proceeding-description');
                          document.getElementById('larScope').value =
                             this.options[this.selectedIndex].getAttribute('lar-scope');|">
-          <option value="" th:text="#{select.default}"></option>
+          <option value="" th:text="#{site.select}"></option>
           <option th:each="item : ${proceedingTypes}"
                   th:value="${item['code']}"
                   th:text="${item['name']}"

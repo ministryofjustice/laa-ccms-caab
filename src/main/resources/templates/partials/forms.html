@@ -21,7 +21,7 @@
           th:errorclass="govuk-select--error"
           th:id="${fieldId}"
           th:name="${fieldId}">
-    <option value="" th:text="#{select.default}"></option>
+    <option value="" th:text="#{site.select}"></option>
     <option th:each="item : ${list}"
             th:value="${item[itemValue]}"
             th:text="${item[itemLabel]}">
@@ -47,7 +47,7 @@
           th:errorclass="govuk-select--error"
           th:id="${fieldId}"
           th:name="${fieldId}">
-    <option value="" th:text="#{select.default}"></option>
+    <option value="" th:text="#{site.select}"></option>
     <option th:each="item : ${list}"
             th:value="${item}"
             th:text="${item}">
@@ -73,7 +73,7 @@
           th:id="${fieldId}"
           th:name="${fieldId}"
           th:attr="onchange=|document.getElementById('${fieldId}DisplayValue').value = this.options[this.selectedIndex].text;|">
-    <option value="" th:text="#{select.default}"></option>
+    <option value="" th:text="#{site.select}"></option>
     <option th:each="item : ${list}"
             th:value="${item[itemValue]}"
             th:text="${item[itemLabel]}">
