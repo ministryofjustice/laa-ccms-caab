@@ -19,4 +19,8 @@ public class ClientFormDataContactDetails extends AbstractClientFormData {
   private String correspondenceMethod;
   private String correspondenceLanguage;
 
+  private boolean telephoneHomePresent = false;
+  private boolean telephoneWorkPresent = false;
+  private boolean telephoneMobilePresent = false;
+
 }
