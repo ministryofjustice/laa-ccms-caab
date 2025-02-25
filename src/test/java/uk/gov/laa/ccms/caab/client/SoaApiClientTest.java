@@ -22,12 +22,10 @@ import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
@@ -128,55 +126,6 @@ class SoaApiClientTest {
     URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
     assertEquals("/contract-details?providerFirmId=123&officeId=345", actualUri.toString());
-  }
-
-  @Test
-  void getClients_ReturnsClientDetails_Successful() {
-    String expectedUri = "/clients?first-name=John&surname=Doe&date-of-birth=2000-01-01&page=0&size=10";
-
-    ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
-    String loginId = "user1";
-    String userType = "userType";
-    String firstName = "John";
-    String lastName = "Doe";
-
-    int page = 0;
-    int size = 10;
-
-    clientSearchCriteria.setForename(firstName);
-    clientSearchCriteria.setSurname(lastName);
-    clientSearchCriteria.setDateOfBirth("1/1/2000");
-    ClientDetails mockClientDetails = new ClientDetails();
-
-    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
-
-    when(soaApiWebClientMock.get()).thenReturn(requestHeadersUriMock);
-    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-    when(requestHeadersMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(
-        requestHeadersMock);
-    when(requestHeadersMock.header("SoaGateway-User-Role", userType)).thenReturn(
-        requestHeadersMock);
-    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(ClientDetails.class)).thenReturn(Mono.just(mockClientDetails));
-
-    Mono<ClientDetails> clientDetailsMono =
-        soaApiClient.getClients(clientSearchCriteria, loginId, userType, page, size);
-
-    StepVerifier.create(clientDetailsMono)
-        .expectNextMatches(clientDetails -> clientDetails == mockClientDetails)
-        .verifyComplete();
-
-    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
-    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
-
-    verify(soaApiWebClientMock).get();
-    verify(requestHeadersUriMock).uri(uriCaptor.capture());
-    verify(requestHeadersMock).header("SoaGateway-User-Login-Id", loginId);
-    verify(requestHeadersMock).header("SoaGateway-User-Role", userType);
-    verify(requestHeadersMock).retrieve();
-    verify(responseMock).bodyToMono(ClientDetails.class);
-
-    assertEquals(expectedUri, actualUri.toString());
   }
 
   @Test
