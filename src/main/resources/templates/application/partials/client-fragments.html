@@ -354,7 +354,7 @@
             </div>
             <div class="govuk-checkboxes__conditional govuk-checkboxes__conditional--hidden"
                  id="conditional-contact-telephoneHome">
-              <div th:replace="~{partials/forms :: textInput('telephoneHome', '', 'govuk-!-width-one-third')}">
+              <div th:replace="~{partials/forms :: textInput(fieldId = 'telephoneHome', label ='Telephone home', inputClass = 'govuk-!-width-one-third', hideLabel = true)}">
               </div>
             </div>
             <div class="govuk-checkboxes__item">
@@ -366,7 +366,7 @@
               </label>
             </div>
             <div class="govuk-checkboxes__conditional govuk-checkboxes__conditional--hidden" id="conditional-contact-2">
-              <div th:replace="~{partials/forms :: textInput('telephoneWork', '', 'govuk-!-width-one-third')}">
+              <div th:replace="~{partials/forms :: textInput(fieldId ='telephoneWork', label ='Telephone work', inputClass ='govuk-!-width-one-third', hideLabel = true)}">
               </div>
             </div>
             <div class="govuk-checkboxes__item">
@@ -378,7 +378,7 @@
               </label>
             </div>
             <div class="govuk-checkboxes__conditional govuk-checkboxes__conditional--hidden" id="conditional-contact-3">
-              <div th:replace="~{partials/forms :: textInput('telephoneMobile', '', 'govuk-!-width-one-third')}">
+              <div th:replace="~{partials/forms :: textInput(fieldId ='telephoneMobile', label ='Mobile', inputClass ='govuk-!-width-one-third', hideLabel = true)}">
               </div>
             </div>
           </div>
