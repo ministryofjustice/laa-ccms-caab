@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections/correspondence-address}" class="govuk-back-link">Cancel and return to address details</a>
+    <a th:href="@{/application/sections/correspondence-address}" class="govuk-back-link"th:text="#{site.cancelAndReturnToAddress}"></a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{'/' + ${formAction}}" th:object="${addressSearch}" method="post">

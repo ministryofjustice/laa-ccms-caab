@@ -7,7 +7,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections}" class="govuk-back-link">Cancel and return to create application</a>
+    <a th:href="@{/application/sections}" class="govuk-back-link" th:text="#{site.cancelAndReturnToApplication}"></a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/assessments/{assessment}/remove(assessment=${assessment})}" method="post">

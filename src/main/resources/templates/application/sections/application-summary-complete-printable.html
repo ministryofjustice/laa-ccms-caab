@@ -42,8 +42,8 @@
         <h2 class="govuk-heading-m">Client details</h2>
         <h3 class="govuk-heading-s">Basic client details</h3>
         <dl class="govuk-summary-list">
-          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Title', ${submissionSummary.clientLookups.contactTitle.description})}"></div>
-          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Surname', ${submissionSummary.client.basicDetails.surname})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{person.title}, ${submissionSummary.clientLookups.contactTitle.description})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{person.surname}, ${submissionSummary.client.basicDetails.surname})}"></div>
           <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Middle name(s)', ${submissionSummary.client.basicDetails.middleNames})}"></div>
           <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('First name', ${submissionSummary.client.basicDetails.firstName})}"></div>
           <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Surname at birth', ${submissionSummary.client.basicDetails.surnameAtBirth})}"></div>
@@ -152,8 +152,8 @@
           <h3 class="govuk-heading-s" th:text="${opponent.type}"></h3>
           <div th:if="${opponent.type == 'Individual'}">
             <dl class="govuk-summary-list">
-              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Title', ${opponent.title})}"></div>
-              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Surname', ${opponent.surname})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{person.title}, ${opponent.title})}"></div>
+              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{person.surname}, ${opponent.surname})}"></div>
               <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('First Name', ${opponent.firstName})}"></div>
               <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Middle Name(s)', ${opponent.middleNames})}"></div>
               <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Date of Birth', ${opponent.dateOfBirth})}"></div>
