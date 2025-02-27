@@ -13,7 +13,7 @@ correctly. They are:
 
 ### Quick setup
 
-This application only depends on 4 docker containers being run:
+This application only depends on 4 docker containers being run when running locally:
 - SAML Mock
 - Wiremock
 - ClamAV
@@ -24,6 +24,12 @@ started, the below command will start all 4 of these containers.
 ```shell
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-saml-mock laa-ccms-caab-wiremock laa-ccms-caab-clam-av laa-ccms-caab-localstack
 ```
+
+If you wish to use the API's running in the DEV environment, you can make use of the `secret` profile
+by placing the `application-secret.yml` file in `./src/main/resources/`. 
+
+A `application-secret.yml` file can be provided by another developer on 
+the [team](https://github.com/orgs/ministryofjustice/teams/laa-ccms-devs).
 
 ## Set up laa-ccms-caab-saml-mock
 
