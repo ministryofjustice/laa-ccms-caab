@@ -113,9 +113,7 @@
             </th:block>
           </th:block>
 
-          <div th:replace="~{partials/forms :: largeTextInput('additionalInformation', (*{additionalInformationLabel}) + ' (optional) ', 8000)}"></div>
-
-
+          <div th:replace="~{partials/forms :: largeTextInput('additionalInformation', *{additionalInformationLabel} + (*{isAdditionalInformationPromptRequired} ? '' : ' (optional)'), 8000)}"></div>
 
         </div>
       </div>
