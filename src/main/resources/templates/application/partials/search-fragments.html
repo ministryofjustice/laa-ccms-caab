@@ -44,13 +44,13 @@
 
 <th:block th:fragment="tooManyResultsFragment">
   <span class="govuk-caption-l" th:text="${caption}">Application search</span>
-  <h1 class="govuk-heading-l">
-    Application search - too many results
-  </h1>
-  <p class="govuk-body-l">
-    Your search has returned too many results.
-  </p>
-  <p class="govuk-body-l">
-    Please return to refine your search criteria and try again.
-  </p>
+  <h1 class="govuk-heading-l"
+      id="page-heading"
+      th:text="#{application.generalDetails.linkCase.search.noResults.title}"/>
+  <p class="govuk-body-l"
+     id="line-1"
+     th:text="#{application.generalDetails.linkCase.search.noResults.line1}"/>
+  <p class="govuk-body-l"
+     id="line-2"
+     th:text="#{application.generalDetails.linkCase.search.noResults.line2}"/>
 </th:block>

@@ -5,37 +5,29 @@
     <input type="hidden" id="categoryOfLaw" name="categoryOfLaw" th:value="*{categoryOfLaw}">
     <input type="hidden" id="feeEarner" name="feeEarner" th:value="*{feeEarner}">
     <input type="hidden" id="status" name="status" th:value="*{status}">
-    <span class="govuk-caption-l">Create application</span>
-    <h1 class="govuk-heading-l">
-      Link case
-    </h1>
-    <p class="govuk-body-l">
-      Please answer the following questions concerning the application / case you are linking
-      to your application.
-    </p>
+    <span class="govuk-caption-l" th:text="#{application.generalDetails.linkCase.caption}"/>
+    <h1 class="govuk-heading-l" th:text="#{application.generalDetails.linkCase.title}"/>
+
+    <p class="govuk-body-l" th:text="#{application.generalDetails.linkCase.line1}"/>
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-two-thirds">
         <p class="govuk-body">
-                <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
-                    Client name
-                </span>
-          <span th:text="${currentLinkedCase.clientFirstName + ' ' + currentLinkedCase.clientSurname}"></span>
-          <input type="hidden" id="clientFirstName" name="clientFirstName" th:value="*{clientFirstName}">
-          <input type="hidden" id="clientSurname" name="clientSurname" th:value="*{clientSurname}">
-          <input type="hidden" id="clientReferenceNumber" name="clientReferenceNumber" th:value="*{clientReferenceNumber}">
+          <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{application.generalDetails.linkCase.clientName}"/>
+          <span id="client-name-value" th:text="${currentLinkedCase.clientFirstName + ' ' + currentLinkedCase.clientSurname}"/>
+          <input type="hidden" id="clientFirstName" name="clientFirstName" th:value="*{clientFirstName}"/>
+          <input type="hidden" id="clientSurname" name="clientSurname" th:value="*{clientSurname}"/>
+          <input type="hidden" id="clientReferenceNumber" name="clientReferenceNumber" th:value="*{clientReferenceNumber}"/>
         </p>
         <p class="govuk-body">
-                <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
-                    LAA application / case reference
-                </span>
-          <span th:text="*{lscCaseReference}"></span>
+        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2"
+          th:text="#{application.generalDetails.linkCase.laaCaseReference}"/>
+          <span id="laa-case-reference-value" th:text="*{lscCaseReference}"/>
           <input type="hidden" id="lscCaseReference" name="lscCaseReference" th:value="*{lscCaseReference}">
         </p>
-        <div th:replace="~{partials/forms :: dropdown('relationToCase', 'How is this application / case related to your application?', ${caseLinkOptions}, 'code', 'description', false)}"></div>
+        <div th:replace="~{partials/forms :: dropdown('relationToCase', #{application.generalDetails.linkCase.howCaseRelated.label},
+          ${caseLinkOptions}, 'code', 'description', false)}"/>
         <div class="govuk-button-group">
-          <button type="submit" class="govuk-button" data-module="govuk-button">
-            Next
-          </button>
+          <button type="submit" class="govuk-button" data-module="govuk-button" th:text="#{site.next}"/>
         </div>
       </div>
     </div>
