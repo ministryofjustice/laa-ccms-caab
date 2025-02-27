@@ -3,7 +3,7 @@
             data-module="govuk-header">
     <div class="govuk-header__container govuk-width-container">
         <div class="govuk-header__logo">
-            <a href="#" class="govuk-header__link govuk-header__link--homepage">
+            <a th:href="@{/home}" class="govuk-header__link govuk-header__link--homepage">
                   <span class="govuk-header__logotype">
                         <img th:src="@{/webjars/ministryofjustice__frontend/moj/assets/images/moj-logotype-crest-2024.png}"
                              class="govuk-header__logotype-crown-fallback-image" width="36"
@@ -60,7 +60,9 @@
                         </li>
                         <li class="govuk-service-navigation__item"
                             th:classappend="${pageCategory == 'help'} ? 'govuk-service-navigation__item--active'">
-                            <a class="govuk-service-navigation__link" href="#TODO"
+                            <a class="govuk-service-navigation__link" href="https://legalaidlearning.justice.gov.uk/civil/"
+                               target="_blank"
+                               rel="noopener noreferrer"
                                th:attr="aria-current=${pageCategory == 'help' ? 'true' : null}">
                                 Help
                             </a>
