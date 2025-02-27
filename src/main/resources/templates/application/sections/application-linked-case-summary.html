@@ -6,63 +6,75 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/sections/correspondence-address}" class="govuk-back-link">Return to edit correspondence address</a>
+        <a th:href="@{/application/sections/correspondence-address}" class="govuk-back-link"
+            th:text="#{application.generalDetails.linkedCasesSummary.goBack}"/>
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l">Create application</span>
-        <h1 class="govuk-heading-l">
-            Linked cases summary
-        </h1>
-        <p class="govuk-body-l">
-            If you have any application / case that you wish to link to this application please
-            click 'Link an Application / Case'.  If you do not have any cases to link then please
-            click on the 'Confirm' button. Please ensure the applications/cases for all parties
-            being represented are linked. CCMS quickguides are available regarding linking cases.
-        </p>
+        <span class="govuk-caption-l" th:text="#{application.generalDetails.linkedCasesSummary.caption}"/>
+        <h1 class="govuk-heading-l" th:text="#{application.generalDetails.linkedCasesSummary.title}"/>
+        <p class="govuk-body-l" th:text="#{application.generalDetails.linkedCasesSummary.line1}"/>
         <table class="govuk-table">
-            <caption class="govuk-table__caption govuk-table__caption--m">Linked cases</caption>
+            <caption class="govuk-table__caption govuk-table__caption--m"
+                th:text="#{application.generalDetails.linkedCasesSummary.table.caption}"/>
             <thead class="govuk-table__head">
                 <tr class="govuk-table__row">
-                    <th scope="col" class="govuk-table__header">LAA Application / Case Ref.</th>
-                    <th scope="col" class="govuk-table__header">Client name</th>
-                    <th scope="col" class="govuk-table__header">Provider Case Ref</th>
-                    <th scope="col" class="govuk-table__header">Category of Law</th>
-                    <th scope="col" class="govuk-table__header">Fee Earner</th>
-                    <th scope="col" class="govuk-table__header">Status</th>
-                    <th scope="col" class="govuk-table__header">Action</th>
+                    <th scope="col" class="govuk-table__header"
+                        th:text="#{application.generalDetails.linkedCase.laaCaseReference}"/>
+                    <th scope="col" class="govuk-table__header"
+                        th:text="#{application.generalDetails.linkedCase.clientName}"/>
+                    <th scope="col" class="govuk-table__header"
+                        th:text="#{application.generalDetails.linkedCase.providerCaseReference}"/>
+                    <th scope="col" class="govuk-table__header"
+                        th:text="#{application.generalDetails.linkedCase.categoryOfLaw}"/>
+                    <th scope="col" class="govuk-table__header"
+                        th:text="#{application.generalDetails.linkedCase.feeEarner}"/>
+                    <th scope="col" class="govuk-table__header"
+                        th:text="#{application.generalDetails.linkedCase.status}"/>
+                    <th scope="col" class="govuk-table__header"
+                        th:text="#{application.generalDetails.linkedCase.action}"/>
                 </tr>
             </thead>
             <tbody class="govuk-table__body">
                 <tr class="govuk-table__row" th:each="linkedCase : ${linkedCases.content}" th:unless="${linkedCases.content.isEmpty()}">
                     <td class="govuk-table__cell">
                         <a th:href="@{/application/sections/linked-cases/{id}/confirm(id=${linkedCase.id})}"
-                           class="govuk-link" th:text="${linkedCase.lscCaseReference}"></a>
+                           class="govuk-link" th:text="${linkedCase.lscCaseReference}"/>
                     </td>
-                    <td class="govuk-table__cell" th:text="${linkedCase.clientFirstName + ' ' + linkedCase.clientSurname}"></td>
-                    <td class="govuk-table__cell" th:text="${linkedCase.providerCaseReference}"></td>
-                    <td class="govuk-table__cell" th:text="${linkedCase.categoryOfLaw}"></td>
-                    <td class="govuk-table__cell" th:text="${linkedCase.feeEarner}"></td>
-                    <td class="govuk-table__cell" th:text="${linkedCase.status}"></td>
+                    <td class="govuk-table__cell"
+                        th:id="|client-name-${idx.index}|"
+                        th:text="${linkedCase.clientFirstName + ' ' + linkedCase.clientSurname}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|provider-case-reference-${idx.index}|"
+                        th:text="${linkedCase.providerCaseReference}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|category-of-law-${idx.index}|"
+                        th:text="${linkedCase.categoryOfLaw}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|fee-earner-${idx.index}|"
+                        th:text="${linkedCase.feeEarner}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|status-${idx.index}|"
+                        th:text="${linkedCase.status}"/>
                     <td class="govuk-table__cell">
-                        <a th:href="@{/application/sections/linked-cases/{id}/remove(id=${linkedCase.id})}"
-                           class="govuk-link" th:text="${'Remove'}"></a>
+                        <a th:id="|remove-linked-case-${idx.index}|"
+                            th:href="@{/application/sections/linked-cases/{id}/remove(id=${linkedCase.id})}"
+                           class="govuk-link" th:text="#{site.remove}"/>
                     </td>
                 </tr>
                 <tr class="govuk-table__row" th:if="${linkedCases.content.isEmpty()}">
-                    <td class="govuk-table__cell" colspan="7">None</td>
+                    <td class="govuk-table__cell" colspan="7" th:text="#{site.none}"/>
                 </tr>
             </tbody>
         </table>
         <a class="govuk-button govuk-button--secondary"
+           id="link-a-case-button"
            data-module="govuk-button"
-           th:href="@{/application/sections/linked-cases/search}">
-          Link an Application / Case
-        </a>
+           th:text="#{application.generalDetails.linkedCasesSummary.linkACaseButton}"
+           th:href="@{/application/sections/linked-cases/search}"/>
         <div class="govuk-button-group">
             <a class="govuk-button"
-               th:href="@{/application/sections}">
-                Confirm
-            </a>
+               th:href="@{/application/sections}"
+                th:text="#{site.confirm}"/>
         </div>
     </div>
 </div>
