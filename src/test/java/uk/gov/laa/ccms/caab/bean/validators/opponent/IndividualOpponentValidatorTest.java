@@ -66,12 +66,8 @@ class IndividualOpponentValidatorTest {
     opponentFormData.setDateOfBirthMandatory(true);
 
     validator.validate(opponentFormData, errors);
-    assertEquals(3, errors.getErrorCount());
-
-    // Should be a required error for each date component.
-    assertEquals(1, errors.getFieldErrors("dobDay").size());
-    assertEquals(1, errors.getFieldErrors("dobMonth").size());
-    assertEquals(1, errors.getFieldErrors("dobYear").size());
+    assertEquals(1, errors.getErrorCount());
+    assertEquals(1, errors.getFieldErrors("dateOfBirth").size());
   }
 
   @ParameterizedTest
@@ -97,9 +93,8 @@ class IndividualOpponentValidatorTest {
       final String telephoneWork,
       final String telephoneMobile,
       final String faxNumber,
-      final String dobDay,
-      final String dobMonth,
-      final String dobYear,
+      final String dateOfBirth,
+      final boolean dateOfBirthMandatory,
       final String errorFieldName,
       final Integer errorCount) {
     opponentFormData.setRelationshipToCase(relationshipToCase);
@@ -124,9 +119,8 @@ class IndividualOpponentValidatorTest {
     opponentFormData.setTelephoneWork(telephoneWork);
     opponentFormData.setTelephoneMobile(telephoneMobile);
     opponentFormData.setFaxNumber(faxNumber);
-    opponentFormData.setDobDay(dobDay);
-    opponentFormData.setDobMonth(dobMonth);
-    opponentFormData.setDobYear(dobYear);
+    opponentFormData.setDateOfBirth(dateOfBirth);
+    opponentFormData.setDateOfBirthMandatory(dateOfBirthMandatory);
 
     validator.validate(opponentFormData, errors);
     assertTrue(errors.hasErrors());

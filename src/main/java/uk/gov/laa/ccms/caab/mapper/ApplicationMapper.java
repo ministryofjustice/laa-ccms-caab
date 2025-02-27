@@ -111,6 +111,7 @@ public interface ApplicationMapper {
   ApplicationDetails toApplicationDetails(Page<BaseApplicationDetail> applicationPage);
 
   @Mapping(target = "id", ignore = true)
+  @Mapping(target = "amendment", ignore = true)
   @Mapping(target = "status", source = "caseStatusDisplay")
   @Mapping(target = "providerDetails", source = ".")
   @Mapping(target = "client.reference", source = "client.clientReferenceNumber")
