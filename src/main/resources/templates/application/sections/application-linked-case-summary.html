@@ -7,31 +7,31 @@
 <div class="govuk-width-container">
     <div id="breadcrumbs">
         <a th:href="@{/application/sections/correspondence-address}" class="govuk-back-link"
-            th:text="#{application.generalDetails.linkedCasesSummary.goBack}"/>
+            th:text="#{application.generalDetails.linkCase.summary.goBack}"/>
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l" th:text="#{application.generalDetails.linkedCasesSummary.caption}"/>
-        <h1 class="govuk-heading-l" th:text="#{application.generalDetails.linkedCasesSummary.title}"/>
-        <p class="govuk-body-l" th:text="#{application.generalDetails.linkedCasesSummary.line1}"/>
+        <span class="govuk-caption-l" th:text="#{application.generalDetails.linkCase.summary.caption}"/>
+        <h1 class="govuk-heading-l" th:text="#{application.generalDetails.linkCase.summary.title}"/>
+        <p class="govuk-body-l" th:text="#{application.generalDetails.linkCase.summary.line1}"/>
         <table class="govuk-table">
             <caption class="govuk-table__caption govuk-table__caption--m"
-                th:text="#{application.generalDetails.linkedCasesSummary.table.caption}"/>
+                th:text="#{application.generalDetails.linkCase.summary.table.caption}"/>
             <thead class="govuk-table__head">
                 <tr class="govuk-table__row">
                     <th scope="col" class="govuk-table__header"
-                        th:text="#{application.generalDetails.linkedCase.laaCaseReference}"/>
+                        th:text="#{application.generalDetails.linkCase.laaCaseReference}"/>
                     <th scope="col" class="govuk-table__header"
-                        th:text="#{application.generalDetails.linkedCase.clientName}"/>
+                        th:text="#{application.generalDetails.linkCase.clientName}"/>
                     <th scope="col" class="govuk-table__header"
-                        th:text="#{application.generalDetails.linkedCase.providerCaseReference}"/>
+                        th:text="#{application.generalDetails.linkCase.providerCaseReference}"/>
                     <th scope="col" class="govuk-table__header"
-                        th:text="#{application.generalDetails.linkedCase.categoryOfLaw}"/>
+                        th:text="#{application.generalDetails.linkCase.categoryOfLaw}"/>
                     <th scope="col" class="govuk-table__header"
-                        th:text="#{application.generalDetails.linkedCase.feeEarner}"/>
+                        th:text="#{application.generalDetails.linkCase.feeEarner}"/>
                     <th scope="col" class="govuk-table__header"
-                        th:text="#{application.generalDetails.linkedCase.status}"/>
+                        th:text="#{application.generalDetails.linkCase.status}"/>
                     <th scope="col" class="govuk-table__header"
-                        th:text="#{application.generalDetails.linkedCase.action}"/>
+                        th:text="#{application.generalDetails.linkCase.action}"/>
                 </tr>
             </thead>
             <tbody class="govuk-table__body">
@@ -69,7 +69,7 @@
         <a class="govuk-button govuk-button--secondary"
            id="link-a-case-button"
            data-module="govuk-button"
-           th:text="#{application.generalDetails.linkedCasesSummary.linkACaseButton}"
+           th:text="#{application.generalDetails.linkCase.summary.linkACaseButton}"
            th:href="@{/application/sections/linked-cases/search}"/>
         <div class="govuk-button-group">
             <a class="govuk-button"

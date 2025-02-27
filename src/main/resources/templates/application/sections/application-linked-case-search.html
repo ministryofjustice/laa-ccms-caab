@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title th:text="|#{service.name} - #{application.generalDetails.linkedCasesSummary.search.title}|"/>
+  <title th:text="|#{service.name} - #{application.generalDetails.linkCase.summary.search.title}|"/>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
     <a th:href="@{/application/sections/linked-cases}" class="govuk-back-link"
-      th:text="#{application.generalDetails.linkedCasesSummary.search.goBack}"/>
+      th:text="#{application.generalDetails.linkCase.summary.search.goBack}"/>
   </div>
   <div id="main-content">
     <th:block th:replace="~{application/partials/search-fragments :: searchCaseFormFragment(
-      caption=#{application.generalDetails.linkedCasesSummary.search.caption},
-      heading=#{application.generalDetails.linkedCasesSummary.search.title},
+      caption=#{application.generalDetails.linkCase.summary.search.caption},
+      heading=#{application.generalDetails.linkCase.summary.search.title},
       action=${'/application/sections/linked-cases/search'},
       copyCase=${false})}">
     </th:block>
