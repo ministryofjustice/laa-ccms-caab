@@ -301,12 +301,8 @@
       <div class="govuk-form-group"
            th:classappend="${globalErrorCodes!=null && #lists.contains(globalErrorCodes, 'required.telephones')} ? 'govuk-form-group--error' : ''">
         <fieldset class="govuk-fieldset" aria-describedby="contact-hint">
-          <label class="govuk-label">
-            Contact telephone number
-          </label>
-          <div id="contact-hint-test" class="govuk-hint">
-            Select at least one contact telephone number
-          </div>
+          <label class="govuk-label" th:text="#{client.contact.telephone}"></label>
+          <div id="contact-hint-test" class="govuk-hint" th:text="#{client.contact.telephone.hint}"></div>
           <p id="countries-error" class="govuk-error-message"
              th:each="err : ${#fields.detailedErrors()}"
              th:if="${err.code == 'required.telephones'}"
@@ -318,43 +314,37 @@
               <input class="govuk-checkboxes__input govuk-input--width-20" id="contact"
                      th:checked="${contactDetails.telephoneHomePresent}" th:name="telephoneHomePresent" type="checkbox"
                      data-aria-controls="conditional-contact-telephoneHome">
-              <label class="govuk-label govuk-checkboxes__label" for="contact">
-                Telephone home
-              </label>
+              <label class="govuk-label govuk-checkboxes__label" for="contact" th:text="#{contact.phoneHome}"></label>
             </div>
             <div class="govuk-checkboxes__conditional govuk-checkboxes__conditional--hidden"
                  id="conditional-contact-telephoneHome">
-              <div th:replace="~{partials/forms :: textInput(fieldId = 'telephoneHome', label ='Telephone home', inputClass = 'govuk-!-width-one-third', hideLabel = true)}">
+              <div th:replace="~{partials/forms :: textInput(fieldId = 'telephoneHome', label = #{contact.phoneHome}, inputClass = 'govuk-!-width-one-third', hideLabel = true)}">
               </div>
             </div>
             <div class="govuk-checkboxes__item">
               <input class="govuk-checkboxes__input" id="contact-2" type="checkbox"
                      th:checked="${contactDetails.telephoneWorkPresent}" th:name="telephoneWorkPresent"
                      data-aria-controls="conditional-contact-2">
-              <label class="govuk-label govuk-checkboxes__label" for="contact-2">
-                Telephone work
-              </label>
+              <label class="govuk-label govuk-checkboxes__label" for="contact-2" th:text="#{contact.phoneWork}"></label>
             </div>
             <div class="govuk-checkboxes__conditional govuk-checkboxes__conditional--hidden" id="conditional-contact-2">
-              <div th:replace="~{partials/forms :: textInput(fieldId ='telephoneWork', label ='Telephone work', inputClass ='govuk-!-width-one-third', hideLabel = true)}">
+              <div th:replace="~{partials/forms :: textInput(fieldId ='telephoneWork', label = #{contact.phoneWork}, inputClass ='govuk-!-width-one-third', hideLabel = true)}">
               </div>
             </div>
             <div class="govuk-checkboxes__item">
               <input class="govuk-checkboxes__input" id="contact-3" type="checkbox"
                      th:checked="${contactDetails.telephoneMobilePresent}" th:name="telephoneMobilePresent"
                      data-aria-controls="conditional-contact-3">
-              <label class="govuk-label govuk-checkboxes__label" for="contact-3">
-                Mobile
-              </label>
+              <label class="govuk-label govuk-checkboxes__label" for="contact-3" th:text="#{contact.phoneMobile}"></label>
             </div>
             <div class="govuk-checkboxes__conditional govuk-checkboxes__conditional--hidden" id="conditional-contact-3">
-              <div th:replace="~{partials/forms :: textInput(fieldId ='telephoneMobile', label ='Mobile', inputClass ='govuk-!-width-one-third', hideLabel = true)}">
+              <div th:replace="~{partials/forms :: textInput(fieldId ='telephoneMobile', label = #{contact.phoneMobile}, inputClass ='govuk-!-width-one-third', hideLabel = true)}">
               </div>
             </div>
           </div>
         </fieldset>
       </div>
-      <div th:replace="~{partials/forms :: textInput('emailAddress', 'E-mail address (optional)', 'govuk-input--width-20')}"></div>
+      <div th:replace="~{partials/forms :: textInput('emailAddress', #{site.optional(#{contact.email})}, 'govuk-input--width-20')}"></div>
     </div>
   </div>
   <div class="govuk-grid-row">
