@@ -6,29 +6,30 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections/correspondence-address}" class="govuk-back-link">Cancel and return to address details</a>
+    <a th:href="@{/application/sections/correspondence-address}" class="govuk-back-link"
+      th:text="#{application.generalDetails.correspondenceAddress.searchResults.goBack}"/>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{'/' + ${formAction}}" th:object="${addressSearch}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l">Correspondence address details</span>
-      <h1 class="govuk-heading-l">
-        Address search results
-      </h1>
-      <p class="govuk-body-l" th:text="${'Your address check has found ' + #lists.size(addressSearchResults.content) + ' possible results. Please select the correct address for your client. If the address is not listed then cancel and return to address details and enter the address manually'}"></p>
+      <span class="govuk-caption-l"
+          th:text="#{application.generalDetails.correspondenceAddress.searchResults.caption}"/>
+      <h1 class="govuk-heading-l"
+          th:text="#{application.generalDetails.correspondenceAddress.searchResults.title}"/>
+      <p class="govuk-body" th:text="#{application.generalDetails.correspondenceAddress.searchResults.line1(${#lists.size(addressSearchResults.content)})}"/>
+      <p class="govuk-body" th:text="#{application.generalDetails.correspondenceAddress.searchResults.line2}"/>
       <div class="govuk-form-group">
         <fieldset class="govuk-fieldset" aria-describedby="address-hint">
           <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
-            <h1 class="govuk-fieldset__heading">
-              What is the correct address for your client?
-            </h1>
+            <legend class="govuk-fieldset__legend govuk-fieldset__legend--m"
+                th:text="#{application.generalDetails.correspondenceAddress.searchResults.whatIsTheCorrectAddress}"/>
           </legend>
-          <div id="address-hint" class="govuk-hint">
-            Select one option.
-          </div>
+          <div id="address-hint" class="govuk-hint" th:text="#{site.selectOne}"/>
           <div class="govuk-radios" data-module="govuk-radios">
-            <div class="govuk-radios__item" th:each="result : ${addressSearchResults.content}">
-              <input class="govuk-radios__input" th:id="${result.uprn}" name="uprn" type="radio" th:value="${result.uprn}">
+            <div class="govuk-radios__item" th:each="result, idx : ${addressSearchResults.content}">
+              <input class="govuk-radios__input" name="uprn" type="radio"
+                     th:id="|search-result-${idx.index}|"
+                     th:value="${result.uprn}">
               <label class="govuk-label govuk-radios__label"
                      th:for="${result.uprn}"
                      th:text="${result.fullAddress}">
@@ -40,9 +41,7 @@
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
           <div class="govuk-button-group">
-            <button type="submit" class="govuk-button" data-module="govuk-button">
-              Confirm
-            </button>
+            <button type="submit" class="govuk-button" data-module="govuk-button" th:text="#{site.confirm}"/>
           </div>
         </div>
       </div>
