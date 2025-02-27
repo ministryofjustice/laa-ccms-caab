@@ -35,14 +35,15 @@
 </th:block>
 
 <th:block th:fragment="noResultsFragment">
-  <span class="govuk-caption-l">Search for a case or application to link to your application</span>
-  <h1 class="govuk-heading-l">
-    Linked case search - no results
-  </h1>
-  <p class="govuk-body-l">
-    Your search has returned 0 results.
-  </p>
-  <p class="govuk-body-l">
-    Please return to amend your search criteria and try again.
-  </p>
+  <span class="govuk-caption-l"
+        th:text="#{application.generalDetails.linkCase.search.caption}"/>
+  <h1 class="govuk-heading-l"
+      id="page-heading"
+      th:text="#{application.generalDetails.linkCase.search.noResults.title}"/>
+  <p class="govuk-body-l"
+     id="line-1"
+     th:text="#{application.generalDetails.linkCase.search.noResults.line1}"/>
+  <p class="govuk-body-l"
+     id="line-2"
+     th:text="#{application.generalDetails.linkCase.search.noResults.line2}"/>
 </th:block>

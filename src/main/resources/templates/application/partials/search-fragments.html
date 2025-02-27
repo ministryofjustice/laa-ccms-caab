@@ -21,7 +21,7 @@
 </th:block>
 
 <th:block th:fragment="noResultsFragment">
-  <span class="govuk-caption-l" th:text="${caption}">Application search</span>
+  <span class="govuk-caption-l" th:text="${caption}"/>
   <h1 class="govuk-heading-l">
     Application search - no results
   </h1>
@@ -37,14 +37,14 @@
 </th:block>
 
 <th:block th:fragment="tooManyResultsFragment">
-  <span class="govuk-caption-l" th:text="${caption}">Application search</span>
+  <span class="govuk-caption-l" th:text="${caption}"/>
   <h1 class="govuk-heading-l"
       id="page-heading"
-      th:text="#{application.generalDetails.linkCase.search.noResults.title}"/>
+      th:text="#{application.generalDetails.linkCase.search.tooManyResults.title}"/>
   <p class="govuk-body-l"
      id="line-1"
-     th:text="#{application.generalDetails.linkCase.search.noResults.line1}"/>
+     th:text="#{application.generalDetails.linkCase.search.tooManyResults.line1}"/>
   <p class="govuk-body-l"
      id="line-2"
-     th:text="#{application.generalDetails.linkCase.search.noResults.line2}"/>
+     th:text="#{application.generalDetails.linkCase.search.tooManyResults.line2}"/>
 </th:block>
