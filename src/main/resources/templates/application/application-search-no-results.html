@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
+    <title th:text="#{service.name} + ' - ' + #{application.search}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -9,7 +9,7 @@
         <a th:href="@{/application/search}" class="govuk-back-link" th:text="#{site.returnToCaseApplicationSearch}"></a>
     </div>
     <div id="main-content">
-        <th:block th:replace="~{application/partials/search-fragments :: noResultsFragment(caption=${'Search for a case or application'})}"></th:block>
+        <th:block th:replace="~{application/partials/search-fragments :: noResultsFragment(caption=#{application.search.caption},heading=#{application.search.heading})}"></th:block>
     </div>
 </div>
 </body>
