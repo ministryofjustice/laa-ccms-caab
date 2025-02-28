@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.INTERNAT
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NUMERIC_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.TELEPHONE_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.UK_POSTCODE;
+import static uk.gov.laa.ccms.caab.util.DateUtils.COMPONENT_DATE_PATTERN;
 
 import java.math.BigDecimal;
 import java.text.ParsePosition;
@@ -17,7 +18,9 @@ import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
+import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
+import uk.gov.laa.ccms.caab.bean.common.Individual;
 
 /**
  * Abstract validator used for all form validation.
@@ -230,6 +233,25 @@ public abstract class AbstractValidator implements Validator {
         String.format(GENERIC_MISSING_DATE_FIELDS_FORMAT, displayName));
   }
 
+  /**
+   * Validates the date of birth of the {@link Individual}.
+   *
+   * @param target The object to be validated.
+   * @param errors The Errors object to store validation errors.
+   */
+  public void validateDateOfBirth(Object target, Errors errors, boolean required) {
+    if (required) {
+      ValidationUtils.rejectIfEmpty(errors, "dateOfBirth",
+          "required.dob", "Please complete 'Date of birth'");
+    }
+
+    Individual individual = (Individual) target;
+
+    if (!(individual.getDateOfBirth() == null) && !individual.getDateOfBirth().isBlank()) {
+      validateValidDateField(individual.getDateOfBirth(), "dateOfBirth", "Date of birth",
+          COMPONENT_DATE_PATTERN, errors);
+    }
+  }
 
   protected void validateFromBeforeToDates(final Date fromDate, final String fieldName,
       final Date toDate, Errors errors) {

@@ -35,9 +35,12 @@
           </div>
 
           <th:block th:each="option : ${providerRequestDynamicForm.dataItems}">
-            <div class="govuk-form-group" th:classappend="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')} ? 'govuk-form-group--error' : ''">
+            <div class="govuk-form-group"
+                 th:unless="${option.type == 'DAT'}"
+                 th:classappend="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')} ? 'govuk-form-group--error' : ''">
 
-              <label class="govuk-label" th:for="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+              <label class="govuk-label"
+                     th:for="'dynamicOptions[' + ${option.code} + '].fieldValue'"
                      th:text="${option.label} + (${option.mandatoryFlag} ? '' : ' (optional)')">
               </label>
 
@@ -97,21 +100,17 @@
                        maxlength="10"
                        th:errorclass="govuk-select--error">
               </th:block>
-              <th:block th:if="${option.type == 'DAT'}">
-                <div class="moj-datepicker" data-module="moj-date-picker">
-                    <div id="'dynamicOptions[' + ${option.code} + '].fieldValue-info'" class="govuk-hint">
-                      For example, 17/5/2024.
-                    </div>
-                    <input class="govuk-input moj-js-datepicker-input"
-                           th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                           th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                           type="text"
-                           aria-describedby="'dynamicOptions[' + ${option.code} + '].fieldValue-info'"
-                           autocomplete="off"
-                           th:errorclass="govuk-select--error">
-                </div>
-              </th:block>
             </div>
+            <th:block th:if="${option.type == 'DAT'}">
+              <moj:datepicker
+                  th:id="'dynamicOptions[__${option.code}__].fieldValue'"
+                  th:name="'dynamicOptions[__${option.code}__].fieldValue'"
+                  th:label="${option.mandatoryFlag} ? ${option.label} : #{site.optional(${option.label})}"
+                  th:hint="#{site.dateHint}"
+                  th:value="*{dynamicOptions[__${option.code}__].fieldValue}"
+                  th:errorMessage="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue') ? #fields.errors('dynamicOptions[__${option.code}__].fieldValue').getFirst() : ''}">
+              </moj:datepicker>
+            </th:block>
           </th:block>
 
           <div th:replace="~{partials/forms :: largeTextInput('additionalInformation', (*{additionalInformationLabel}) + ' (optional) ', 8000)}"></div>

@@ -28,7 +28,7 @@ class ClientSearchCriteriaTest {
     clientSearchCriteria.setDateOfBirth("01/02/1990");
 
     // Get the formatted date of birth
-    String dateOfBirth = clientSearchCriteria.getDoB();
+    String dateOfBirth = clientSearchCriteria.getFormattedDateOfBirth();
 
     // Check the result
     assertEquals("1990-02-01", dateOfBirth);
@@ -42,7 +42,7 @@ class ClientSearchCriteriaTest {
     clientSearchCriteria.setDateOfBirth(dobDay);
 
     Assertions.assertThrows(CaabApplicationException.class, () -> {
-      clientSearchCriteria.getDoB();
+      clientSearchCriteria.getFormattedDateOfBirth();
     });
   }
 

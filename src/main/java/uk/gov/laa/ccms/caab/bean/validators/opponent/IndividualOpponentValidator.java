@@ -47,16 +47,9 @@ public class IndividualOpponentValidator extends AbstractOpponentValidator {
         "Middle name(s)", false, CHARACTER_SET_C, errors);
 
     final boolean dateMandatory = opponentFormData.isDateOfBirthMandatory()
-        || StringUtils.hasText(opponentFormData.getDobDay())
-        || StringUtils.hasText(opponentFormData.getDobMonth())
-        || StringUtils.hasText(opponentFormData.getDobYear());
+        || StringUtils.hasText(opponentFormData.getDateOfBirth());
 
-    validateDateComponent("dobDay", opponentFormData.getDobDay(),
-        "Date of birth (day)", dateMandatory, errors);
-    validateDateComponent("dobMonth", opponentFormData.getDobMonth(),
-        "Date of birth (month)", dateMandatory, errors);
-    validateDateComponent("dobYear", opponentFormData.getDobYear(),
-        "Date of birth (year)", dateMandatory, errors);
+    validateDateOfBirth(target, errors, dateMandatory);
 
     validateRequiredField("relationshipToCase", opponentFormData.getRelationshipToCase(),
         "Relationship to case", errors);

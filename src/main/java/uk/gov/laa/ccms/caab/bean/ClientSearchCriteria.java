@@ -3,14 +3,13 @@ package uk.gov.laa.ccms.caab.bean;
 
 import java.io.Serializable;
 import lombok.Data;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
-import uk.gov.laa.ccms.caab.util.DateUtils;
+import uk.gov.laa.ccms.caab.bean.common.Individual;
 
 /**
  * Represents the details used for client search.
  */
 @Data
-public class ClientSearchCriteria implements Serializable {
+public class ClientSearchCriteria implements Serializable, Individual {
 
   /**
    * The forename of the client.
@@ -26,6 +25,7 @@ public class ClientSearchCriteria implements Serializable {
    * The day of birth of the client.
    */
   String dateOfBirth;
+
   /**
    * The gender of the client.
    */
@@ -40,20 +40,6 @@ public class ClientSearchCriteria implements Serializable {
    * The value of the unique identifier for the client.
    */
   String uniqueIdentifierValue;
-
-  /**
-   * Retrieves the formatted date of birth based on the day, month, and year values.
-   *
-   * @return The formatted date of birth (yyyy-MM-dd), or null if the date components are not valid
-   *         integers.
-   */
-  public String getDoB() {
-    try {
-      return DateUtils.convertToDateString(dateOfBirth);
-    } catch (Exception e) {
-      throw new CaabApplicationException("Unable to format date of birth", e);
-    }
-  }
 
   /**
    * Retrieves the unique identifier value based on the matching type.

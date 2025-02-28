@@ -69,7 +69,7 @@
     <div th:replace="~{partials/forms :: textInput('surname', #{person.surname}, 'govuk-input--width-20')}"></div>
     <div th:replace="~{partials/forms :: textInput('firstName', 'First name', 'govuk-input--width-20')}"></div>
     <div th:replace="~{partials/forms :: textInput('middleNames', #{site.optional(#{person.middleName})}, 'govuk-input--width-20')}"></div>
-    <div th:replace="~{partials/forms :: dateOfBirth('dobDay', 'dobMonth', 'dobYear', 'Date of birth (optional)')}"></div>
+    <div th:replace="~{partials/forms :: dateOfBirth(false)}"></div>
     <div th:replace="~{partials/forms :: dropdown('relationshipToCase', 'Relationship to case', ${relationshipsToCase}, 'code', 'description', false)}"></div>
     <div th:replace="~{partials/forms :: dropdown('relationshipToClient', 'Relationship to client', ${relationshipsToClient}, 'code', 'description', false)}"></div>
     <div th:replace="~{partials/forms :: textInput('nationalInsuranceNumber', 'National Insurance Number (optional)', 'govuk-input--width-20')}"></div>
