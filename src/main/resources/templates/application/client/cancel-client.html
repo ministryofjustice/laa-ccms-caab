@@ -9,15 +9,9 @@
     <div id="breadcrumbs"></div>
     <div id="main-content" style="padding-top: 40px;">
         <form action="#" th:action="@{/application/client/details/cancel}" method="post">
-            <span class="govuk-caption-l">About your client</span>
-            <h1 class="govuk-heading-l">
-                Are you sure you want to cancel?
-            </h1>
-            <p class="govuk-body-l">
-                Are you sure you want to cancel the registration of this client? Please click
-                <span class="govuk-!-font-weight-bold">'Confirm'</span> to cancel the registration,
-                otherwise click <span class="govuk-!-font-weight-bold">'Back'</span>  to go back and
-                continue registering this new client.
+            <span class="govuk-caption-l" th:text="#{client.about}"></span>
+            <h1 class="govuk-heading-l" th:text="#{client.cancel}"></h1>
+            <p class="govuk-body-l" th:text="#{client.cancel.leadParagraph}">
             </p>
             <div class="govuk-button-group">
                 <govuk:button type="submit" th:text="#{site.confirm}"/>

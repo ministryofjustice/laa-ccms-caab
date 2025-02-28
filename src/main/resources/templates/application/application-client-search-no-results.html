@@ -11,10 +11,10 @@
     </div>
     <div id="main-content">
         <span class="govuk-caption-l" th:text="#{application.about}"></span>
-        <h1 class="govuk-heading-l" th:text="#{application.clientSearch.results.noResults}"></h1>
-        <p class="govuk-body-l" th:text="#{application.clientSearch.results.noResults.leadParagraph}"></p>
+        <h1 class="govuk-heading-l" th:text="#{site.noResults(#{client.search})}"></h1>
+        <p class="govuk-body-l" th:text="#{client.search.results.noResults.leadParagraph}"></p>
         <form action="#" th:action="@{/application/client/results}" method="post">
-            <govuk:button type="submit" th:text="#{application.clientRegister}"/>
+            <govuk:button type="submit" th:text="#{client.register}"/>
         </form>
     </div>
 </div>

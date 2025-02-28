@@ -10,8 +10,8 @@
     </div>
     <div id="main-content">
         <span class="govuk-caption-l" th:text="#{application.about}"></span>
-        <h1 class="govuk-heading-l" th:text="#{application.clientSearch.results.tooMany}"></h1>
-        <p class="govuk-body-l" th:text="#{application.clientSearch.results.tooMany.leadParagraph}"></p>
+        <h1 class="govuk-heading-l" th:text="#{site.tooManyResults(#{client.search})}"></h1>
+        <p class="govuk-body-l" th:text="#{client.search.results.tooMany.leadParagraph}"></p>
     </div>
 </div>
 </body>

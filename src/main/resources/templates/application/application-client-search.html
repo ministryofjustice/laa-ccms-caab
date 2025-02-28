@@ -14,8 +14,8 @@
         <form action="#" th:action="@{/application/client/search}" th:object="${clientSearchCriteria}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l" th:text="#{application.about}"></span>
-            <h1 class="govuk-heading-l" th:text="#{application.clientSearch}"></h1>
-            <p class="govuk-body-l" th:text="#{application.clientSearch.leadParagraph}"></p>
+            <h1 class="govuk-heading-l" th:text="#{client.search}"></h1>
+            <p class="govuk-body-l" th:text="#{client.search.leadParagraph}"></p>
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
                     <div th:replace="~{partials/forms :: textInput('forename', #{person.firstName}, 'govuk-input--width-20')}"></div>
@@ -24,13 +24,13 @@
                             id="dob"
                             name="dateOfBirth"
                             th:label="#{person.dob}"
-                            th:hint="#{hint.date}"
+                            th:hint="#{site.dateHint}"
                             th:errorMessage="${#fields.hasErrors('dateOfBirth') ? #fields.errors('dateOfBirth').getFirst() : ''}"
                             th:value="*{__${'dateOfBirth'}__}">
                     </moj:datepicker>
-                    <div th:replace="~{partials/forms :: dropdown('gender', #{optional(#{person.gender})}, ${genders}, 'code', 'description', false)}"></div>
-                    <div th:replace="~{partials/forms :: dropdown('uniqueIdentifierType', #{optional(#{person.uniqueIdentifierType})}, ${uniqueIdentifierTypes}, 'code', 'description', false)}"></div>
-                    <div th:replace="~{partials/forms :: textInput('uniqueIdentifierValue', #{optional(#{person.uniqueIdentifier})}, 'govuk-input--width-20')}"></div>
+                    <div th:replace="~{partials/forms :: dropdown('gender', #{site.optional(#{person.gender})}, ${genders}, 'code', 'description', false)}"></div>
+                    <div th:replace="~{partials/forms :: dropdown('uniqueIdentifierType', #{site.optional(#{person.uniqueIdentifierType})}, ${uniqueIdentifierTypes}, 'code', 'description', false)}"></div>
+                    <div th:replace="~{partials/forms :: textInput('uniqueIdentifierValue', #{site.optional(#{person.uniqueIdentifier})}, 'govuk-input--width-20')}"></div>
                     <div class="govuk-form-group">
                         <govuk:details th:summaryText="#{details.uniqueIdentifier}"
                                        th:text="#{details.uniqueIdentifier.text}"/>
