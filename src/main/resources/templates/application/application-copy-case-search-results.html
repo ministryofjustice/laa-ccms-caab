@@ -1,35 +1,27 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
+    <title th:text="#{service.name} + ' - ' + #{application.search}"/>
 </head>
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/copy-case/search}" class="govuk-back-link" th:text="#{site.returnToCaseApplicationSearch}"></a>
+        <a th:href="@{/application/copy-case/search}" class="govuk-back-link" th:text="#{site.returnToCaseApplicationSearch}"/>
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l">Copy an existing case</span>
-        <h1 class="govuk-heading-l">
-            Application search - results
-        </h1>
-        <p class="govuk-body-l">
-            Your search has returned <span th:text="${caseResultsPage.totalElements}"></span> results.
-        </p>
-        <p class="govuk-body-l">
-            To select an application or case displayed in the results table, click on the
-            'LAA Application / Case Ref.' number. If the application or case you are searching for is
-            not shown, please review your search criteria and search again.
-        </p>
+        <span class="govuk-caption-l" th:text="#{application.search.copy.caption}"></span>
+        <h1 class="govuk-heading-l" th:text="#{application.search.results.heading}"></h1>
+        <p class="govuk-body-l" th:text="#{application.search.results.returned(${caseResultsPage.totalElements})}"></p>
+        <p class="govuk-body-l" th:text="#{application.search.results.summary}"></p>
         <table class="govuk-table">
             <thead class="govuk-table__head">
                 <tr class="govuk-table__row">
-                    <th scope="col" class="govuk-table__header">LAA Application / Case Ref.</th>
-                    <th scope="col" class="govuk-table__header">Provider Case Ref</th>
-                    <th scope="col" class="govuk-table__header">Client name</th>
-                    <th scope="col" class="govuk-table__header">Category of Law</th>
-                    <th scope="col" class="govuk-table__header">Fee Earner</th>
-                    <th scope="col" class="govuk-table__header">Status</th>
+                    <th scope="col" class="govuk-table__header" th:text="#{common.laaRef}"/>
+                    <th scope="col" class="govuk-table__header" th:text="#{common.providerRef}"/>
+                    <th scope="col" class="govuk-table__header" th:text="#{application.search.clientName}"/>
+                    <th scope="col" class="govuk-table__header" th:text="#{application.categoryOfLaw}"/>
+                    <th scope="col" class="govuk-table__header" th:text="#{common.feeEarner}"/>
+                    <th scope="col" class="govuk-table__header" th:text="#{common.status}"/>
                 </tr>
             </thead>
             <tbody class="govuk-table__body">

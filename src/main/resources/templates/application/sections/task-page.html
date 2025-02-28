@@ -31,9 +31,9 @@
             <tbody class="govuk-table__body">
             <tr class="govuk-table__row">
               <td class="govuk-table__cell" th:if="${summary.applicationType.enabled}">
-                <a th:href="@{/application/sections/application-type}" class="govuk-link govuk-link--no-visited-state" th:text="#{application.section.applicationType}"></a>
+                <a th:href="@{/application/sections/application-type}" class="govuk-link govuk-link--no-visited-state" th:text="#{application.type}"></a>
               </td>
-              <td class="govuk-table__cell" th:unless="${summary.applicationType.enabled}" th:text="#{application.section.applicationType}">
+              <td class="govuk-table__cell" th:unless="${summary.applicationType.enabled}" th:text="#{application.type}">
               <td class="govuk-table__cell" th:text="${summary.applicationType.description}"></td>
               <td class="govuk-table__cell" th:text="${#dates.format(summary.applicationType.lastSaved, 'dd/MM/yyyy')}"></td>
               <td class="govuk-table__cell" th:text="${summary.applicationType.lastSavedBy}"></td>
@@ -47,7 +47,7 @@
               <td class="govuk-table__cell"></td>
             </tr>
             <tr class="govuk-table__row">
-              <td class="govuk-table__cell"><a th:href="@{/application/sections/client/details/summary}" class="govuk-link govuk-link--no-visited-state" th:text="#{application.section.clientDetails}"></a></td>
+              <td class="govuk-table__cell"><a th:href="@{/application/sections/client/details/summary}" class="govuk-link govuk-link--no-visited-state" th:text="#{client.details}"></a></td>
               <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.client.status})}"></td>
               <td class="govuk-table__cell"></td>
               <td class="govuk-table__cell"></td>

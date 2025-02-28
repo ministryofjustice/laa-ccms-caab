@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
+    <title th:text="#{service.name} + ' - ' + #{application.start}"/>
 </head>
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/home}" class="govuk-back-link" th:text="#{site.returnToHome}"></a>
+        <a th:href="@{/home}" class="govuk-back-link" th:text="#{site.returnToHome}"/>
     </div>
     <div id="main-content">
-        <th:block th:replace="~{application/partials/search-fragments :: searchCaseFormFragment(caption=${'Copy an existing case'},heading=${'Application search'},action=${'/application/copy-case/search'},copyCase=${true})}"></th:block>
+        <th:block th:replace="~{application/partials/search-fragments :: searchCaseFormFragment(caption=#{application.search.copy.caption},heading=#{application.search.copy.heading},action=${'/application/copy-case/search'},copyCase=${true})}"/>
     </div>
 </div>
 </body>
