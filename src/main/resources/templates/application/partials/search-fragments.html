@@ -14,9 +14,7 @@
         <div th:unless="${copyCase}">
           <th:block th:replace="~{partials/forms :: dropdown('status', #{common.status}, ${statuses}, 'code', 'description', false)}"></th:block>
         </div>
-        <button class="govuk-button" data-module="govuk-button">
-          Search
-        </button>
+        <button class="govuk-button" data-module="govuk-button" th:text="#{site.search}"></button>
       </div>
     </div>
   </form>
