@@ -86,6 +86,11 @@ public class ProviderRequestDetailsValidator extends FileUploadValidator {
       }
     }
 
+    if (Boolean.TRUE.equals(formData.getIsAdditionalInformationPromptRequired())) {
+      validateRequiredField("additionalInformation", formData.getAdditionalInformation(),
+          formData.getAdditionalInformationLabel(), errors);
+    }
+
     validateFieldMaxLength("additionalInformation", formData.getAdditionalInformation(),
         8000,  formData.getAdditionalInformationLabel(), errors);
 

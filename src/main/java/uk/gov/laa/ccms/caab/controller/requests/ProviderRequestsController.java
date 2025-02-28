@@ -455,6 +455,9 @@ public class ProviderRequestsController {
         dynamicForm.getClaimUploadPrompt());
     providerRequestDetailsForm.setAdditionalInformationLabel(
         dynamicForm.getAdditionalInformationPrompt());
+    //This field is to make the additional information prompt mandatory
+    providerRequestDetailsForm.setIsAdditionalInformationPromptRequired(
+        !dynamicForm.getIsClaimUploadEnabled() && dynamicForm.getDataItems().isEmpty());
 
     if (providerRequestDetailsForm.getDynamicOptions().isEmpty()) {
       providerRequestsMapper.populateProviderRequestDetailsForm(

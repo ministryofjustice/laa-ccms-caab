@@ -41,7 +41,7 @@
 
               <label class="govuk-label"
                      th:for="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                     th:text="${option.label} + (${option.mandatoryFlag} ? '' : ' (optional)')">
+                     th:text="(${option.mandatoryFlag} ? ${option.label} : #{optional(${option.label})})">
               </label>
 
               <span th:if="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')}"
@@ -113,9 +113,8 @@
             </th:block>
           </th:block>
 
-          <div th:replace="~{partials/forms :: largeTextInput('additionalInformation', (*{additionalInformationLabel}) + ' (optional) ', 8000)}"></div>
-
-
+          <div th:replace="~{partials/forms :: largeTextInput('additionalInformation', (*{isAdditionalInformationPromptRequired} ? *{additionalInformationLabel} : #{optional(*{additionalInformationLabel})}), 8000)}">
+          </div>
 
         </div>
       </div>
