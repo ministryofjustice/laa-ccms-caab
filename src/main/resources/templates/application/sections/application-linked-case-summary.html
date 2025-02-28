@@ -13,7 +13,10 @@
         <span class="govuk-caption-l" th:text="#{application.create}"/>
         <h1 class="govuk-heading-l" th:text="#{application.generalDetails.linkCase.summary.title}"/>
         <p class="govuk-body-l" th:text="#{application.generalDetails.linkCase.summary.line1}"/>
-        <table class="govuk-table">
+        <div class="govuk-inset-text" th:if="${#lists.isEmpty(linkedCases.content)}"
+             id="no-linked-cases-message"
+            th:text="#{application.generalDetails.linkCase.summary.noCases}"/>
+        <table class="govuk-table" th:unless="${#lists.isEmpty(linkedCases.content)}">
             <caption class="govuk-table__caption govuk-table__caption--m"
                 th:text="#{application.generalDetails.linkCase.summary.table.caption}"/>
             <thead class="govuk-table__head">
@@ -35,7 +38,7 @@
                 </tr>
             </thead>
             <tbody class="govuk-table__body">
-                <tr class="govuk-table__row" th:each="linkedCase, idx : ${linkedCases.content}" th:unless="${linkedCases.content.isEmpty()}">
+                <tr class="govuk-table__row" th:each="linkedCase, idx : ${linkedCases.content}">
                     <td class="govuk-table__cell">
                         <a th:id="|lsc-case-reference-${idx.index}|"
                             th:href="@{/application/sections/linked-cases/{id}/confirm(id=${linkedCase.id})}"
@@ -61,9 +64,6 @@
                             th:href="@{/application/sections/linked-cases/{id}/remove(id=${linkedCase.id})}"
                            class="govuk-link" th:text="#{site.remove}"/>
                     </td>
-                </tr>
-                <tr class="govuk-table__row" th:if="${linkedCases.content.isEmpty()}">
-                    <td class="govuk-table__cell" colspan="7" th:text="#{site.none}"/>
                 </tr>
             </tbody>
         </table>

@@ -25,7 +25,7 @@
                 th:text="#{application.generalDetails.correspondenceAddress.searchResults.whatIsTheCorrectAddress}"/>
           </legend>
           <div id="address-hint" class="govuk-hint" th:text="#{site.selectOne}"/>
-          <div class="govuk-radios" data-module="govuk-radios">
+          <div class="govuk-radios" data-module="govuk-radios" id="search-results">
             <div class="govuk-radios__item" th:each="result, idx : ${addressSearchResults.content}">
               <input class="govuk-radios__input" name="uprn" type="radio"
                      th:id="|search-result-${idx.index}|"
