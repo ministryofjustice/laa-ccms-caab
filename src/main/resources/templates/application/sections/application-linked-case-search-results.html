@@ -1,34 +1,41 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>LAA CCMS - Search for an application</title>
+    <title th:text="|#{service.name} - #{notifications.search.heading}|"/>
 </head>
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/sections/linked-cases/search}" class="govuk-back-link">Return to linked case search</a>
+        <a th:href="@{/application/sections/linked-cases/search}" class="govuk-back-link"
+        th:text="#{application.generalDetails.linkCase.search.goBack}"/>
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l">Search for an application or case</span>
-        <h1 class="govuk-heading-l">
-            Linked case search - results
-        </h1>
-        <p class="govuk-body-l">
-            Your search has returned <span th:text="${caseResultsPage.totalElements}"></span> results.
-        </p>
-        <p class="govuk-body-l">
-            To link an application/case displayed in the results table, click 'Link case' for the relevant record.
-        </p>
+        <span class="govuk-caption-l"
+            th:text="#{application.generalDetails.linkCase.search.results.caption}"/>
+        <h1 class="govuk-heading-l"
+            th:text="#{application.generalDetails.linkCase.search.results.title}"/>
+        <p class="govuk-body-l"
+            th:text="#{application.search.results.returned(${caseResultsPage.totalElements})}"/>
+        <p class="govuk-body-l"
+            th:text="#{application.generalDetails.linkCase.search.results.line1}"/>
+
         <table class="govuk-table">
             <thead class="govuk-table__head">
                 <tr class="govuk-table__row">
-                    <th scope="col" class="govuk-table__header">LAA Application / Case Ref.</th>
-                    <th scope="col" class="govuk-table__header">Provider Case Ref</th>
-                    <th scope="col" class="govuk-table__header">Client name</th>
-                    <th scope="col" class="govuk-table__header">Category of Law</th>
-                    <th scope="col" class="govuk-table__header">Fee Earner</th>
-                    <th scope="col" class="govuk-table__header">Status</th>
-                    <th scope="col" class="govuk-table__header">Action</th>
+                    <th scope="col" class="govuk-table__header"
+                        th:text="#{application.generalDetails.linkCase.laaCaseReference}"/>
+                    <th scope="col" class="govuk-table__header"
+                        th:text="#{application.generalDetails.linkCase.providerCaseReference}"/>
+                    <th scope="col" class="govuk-table__header"
+                        th:text="#{application.generalDetails.linkCase.clientName}"/>
+                    <th scope="col" class="govuk-table__header"
+                        th:text="#{application.generalDetails.linkCase.categoryOfLaw}"/>
+                    <th scope="col" class="govuk-table__header"
+                        th:text="#{application.generalDetails.linkCase.feeEarner}"/>
+                    <th scope="col" class="govuk-table__header"
+                        th:text="#{application.generalDetails.linkCase.status}"/>
+                    <th scope="col" class="govuk-table__header"
+                        th:text="#{application.generalDetails.linkCase.action}"/>
 
                 </tr>
             </thead>
