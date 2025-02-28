@@ -34,42 +34,42 @@
                 <a th:href="@{/application/sections/application-type}" class="govuk-link govuk-link--no-visited-state" th:text="#{application.section.applicationType}"></a>
               </td>
               <td class="govuk-table__cell" th:unless="${summary.applicationType.enabled}" th:text="#{application.section.applicationType}">
-              <td class="govuk-table__cell" th:text="${summary.applicationType.description}"></td>
+              <td class="govuk-table__cell" id="application-type-description" th:text="${summary.applicationType.description}"></td>
               <td class="govuk-table__cell" th:text="${#dates.format(summary.applicationType.lastSaved, 'dd/MM/yyyy')}"></td>
               <td class="govuk-table__cell" th:text="${summary.applicationType.lastSavedBy}"></td>
               <td class="govuk-table__cell"></td>
             </tr>
             <tr class="govuk-table__row">
               <td class="govuk-table__cell"><a th:href="@{/application/sections/provider-details}" class="govuk-link govuk-link--no-visited-state" th:text="#{application.section.providerDetails}"></a></td>
-              <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.provider.status})}"></td>
+              <td class="govuk-table__cell" id="provider-details-status" th:insert="~{application/partials/status-tag :: statusTag(${summary.provider.status})}"></td>
               <td class="govuk-table__cell" th:text="${#dates.format(summary.provider.lastSaved, 'dd/MM/yyyy')}"></td>
               <td class="govuk-table__cell" th:text="${summary.provider.lastSavedBy}"></td>
               <td class="govuk-table__cell"></td>
             </tr>
             <tr class="govuk-table__row">
               <td class="govuk-table__cell"><a th:href="@{/application/sections/client/details/summary}" class="govuk-link govuk-link--no-visited-state" th:text="#{application.section.clientDetails}"></a></td>
-              <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.client.status})}"></td>
+              <td class="govuk-table__cell" id="client-details-status" th:insert="~{application/partials/status-tag :: statusTag(${summary.client.status})}"></td>
               <td class="govuk-table__cell"></td>
               <td class="govuk-table__cell"></td>
               <td class="govuk-table__cell"></td>
             </tr>
             <tr class="govuk-table__row">
               <td class="govuk-table__cell"><a th:href="@{/application/sections/correspondence-address}" class="govuk-link govuk-link--no-visited-state" th:text="#{application.section.generalDetails}"></a></td>
-              <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.generalDetails.status})}"></td>
+              <td class="govuk-table__cell" id="general-details-status" th:insert="~{application/partials/status-tag :: statusTag(${summary.generalDetails.status})}"></td>
               <td class="govuk-table__cell" th:text="${#dates.format(summary.generalDetails.lastSaved, 'dd/MM/yyyy')}"></td>
               <td class="govuk-table__cell" th:text="${summary.generalDetails.lastSavedBy}"></td>
               <td class="govuk-table__cell"></td>
             </tr>
             <tr class="govuk-table__row">
               <td class="govuk-table__cell"><a th:href="@{/application/proceedings-and-costs}" class="govuk-link govuk-link--no-visited-state" th:text="#{application.section.proceedingsCosts}"></a></td>
-              <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.proceedingsAndCosts.status})}"></td>
+              <td class="govuk-table__cell" id="proceedings-and-costs-status" th:insert="~{application/partials/status-tag :: statusTag(${summary.proceedingsAndCosts.status})}"></td>
               <td class="govuk-table__cell" th:text="${#dates.format(summary.proceedingsAndCosts.lastSaved, 'dd/MM/yyyy')}"></td>
               <td class="govuk-table__cell" th:text="${summary.proceedingsAndCosts.lastSavedBy}"></td>
               <td class="govuk-table__cell"></td>
             </tr>
             <tr class="govuk-table__row">
               <td class="govuk-table__cell"><a th:href="@{/application/sections/opponents}" class="govuk-link govuk-link--no-visited-state" th:text="#{application.section.opponents}"></a></td>
-              <td class="govuk-table__cell" th:insert="~{application/partials/status-tag :: statusTag(${summary.opponentsAndOtherParties.status})}"></td>
+              <td class="govuk-table__cell" id="opponents-status" th:insert="~{application/partials/status-tag :: statusTag(${summary.opponentsAndOtherParties.status})}"></td>
               <td class="govuk-table__cell" th:text="${#dates.format(summary.opponentsAndOtherParties.lastSaved, 'dd/MM/yyyy')}"></td>
               <td class="govuk-table__cell" th:text="${summary.opponentsAndOtherParties.lastSavedBy}"></td>
               <td class="govuk-table__cell"></td>

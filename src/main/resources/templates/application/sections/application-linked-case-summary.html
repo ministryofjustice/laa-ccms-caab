@@ -35,9 +35,10 @@
                 </tr>
             </thead>
             <tbody class="govuk-table__body">
-                <tr class="govuk-table__row" th:each="linkedCase : ${linkedCases.content}" th:unless="${linkedCases.content.isEmpty()}">
+                <tr class="govuk-table__row" th:each="linkedCase, idx : ${linkedCases.content}" th:unless="${linkedCases.content.isEmpty()}">
                     <td class="govuk-table__cell">
-                        <a th:href="@{/application/sections/linked-cases/{id}/confirm(id=${linkedCase.id})}"
+                        <a th:id="|lsc-case-reference-${idx.index}|"
+                            th:href="@{/application/sections/linked-cases/{id}/confirm(id=${linkedCase.id})}"
                            class="govuk-link" th:text="${linkedCase.lscCaseReference}"/>
                     </td>
                     <td class="govuk-table__cell"
