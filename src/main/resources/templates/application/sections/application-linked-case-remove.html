@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
+    <title th:text="#{service.name} + ' - ' + #{application.generalDetails.linkCase.remove.title(${linkedCase.lscCaseReference})}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -9,24 +9,19 @@
     <div id="main-content" style="padding-top: 40px;">
         <form action="#"
               th:action="@{/application/sections/linked-cases/{id}/remove(id=${linkedCase.id})}" method="post">
-        <span class="govuk-caption-l">Create application</span>
-        <h1 class="govuk-heading-l">
-            Remove LAA application/case reference: <span th:text="${linkedCase.lscCaseReference}"></span>
-        </h1>
-        <p class="govuk-body-l">
-            Are you sure you want to remove the linked case LAA application/case reference:
-            <span th:text="${linkedCase.lscCaseReference}"></span>?  Please click 'Confirm' to
-            remove this information otherwise click 'Cancel' to go back.
-        </p>
+        <span class="govuk-caption-l" th:text="#{application.create}"/>
+        <h1 class="govuk-heading-l"
+            th:text="#{application.generalDetails.linkCase.remove.title(${linkedCase.lscCaseReference})}"/>
+        <p class="govuk-body-l"
+            th:text="#{application.generalDetails.linkCase.remove.line1(${linkedCase.lscCaseReference})}"/>
         <div class="govuk-button-group">
-            <button type="submit" class="govuk-button" data-module="govuk-button">
-                Confirm
-            </button>
+            <button type="submit" class="govuk-button" data-module="govuk-button"
+                th:text="#{site.confirm}"/>
             <a class="govuk-button govuk-button--secondary"
+               id="cancel-button"
                data-module="govuk-button"
-               th:href="@{/application/sections/linked-cases}">
-                Cancel
-            </a>
+               th:href="@{/application/sections/linked-cases}"
+                th:text="#{site.cancel}"/>
         </div>
         </form>
     </div>
