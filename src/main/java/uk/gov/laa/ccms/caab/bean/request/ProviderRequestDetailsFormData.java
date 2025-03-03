@@ -28,6 +28,8 @@ public class ProviderRequestDetailsFormData extends FileUploadFormData {
 
   private String additionalInformation;
 
+  private Boolean isAdditionalInformationPromptRequired;
+
   private Integer documentIdToDelete;
 
   private UUID documentSessionId;
