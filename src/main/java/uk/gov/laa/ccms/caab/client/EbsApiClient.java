@@ -826,8 +826,9 @@ public class EbsApiClient extends BaseApiClient {
    */
   public Mono<Notification> getNotification(
       final String notificationId,
+      final int userId,
       final int providerId) {
-    final MultiValueMap<String, String> queryParams = buildQueryParams(providerId);
+    final MultiValueMap<String, String> queryParams = buildQueryParams(userId, providerId);
 
     return webClient
         .get()
@@ -951,8 +952,9 @@ public class EbsApiClient extends BaseApiClient {
             e, "case transaction status", "transaction id", transactionId));
   }
 
-  private static MultiValueMap<String, String> buildQueryParams(final int providerId) {
+  private static MultiValueMap<String, String> buildQueryParams(final int userId, final int providerId) {
     final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    addQueryParam(queryParams, "user-id", userId);
     addQueryParam(queryParams, "provider-id", providerId);
     return queryParams;
   }
