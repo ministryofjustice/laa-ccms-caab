@@ -1,7 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title>LAA CCMS - Your actions / notifications</title>
+  <meta charset="UTF-8">
+  <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -9,66 +12,63 @@
     <a th:href="@{/home}" class="govuk-back-link" th:text="#{site.returnToHome}"></a>
   </div>
   <div id="main-content">
-    <h1 class="govuk-heading-l">
-      Your actions / notifications
-    </h1>
-    <p class="govuk-body-l">
-      Your search has returned <span th:text="${notificationsSearchResults.totalElements}"></span>
-      results.
-      To select one of the records that has been returned, click on the
-      subject title. If the results shown do not include the actions or
-      notifications you are looking for, please review your search criteria
-      using the Refine search button at the top of the results table.
-    </p>
-    <div class="moj-page-header-actions">
-      <div class="moj-page-header-actions__title">
-        <h3 class="govuk-heading-m">Your actions /
-          notifications</h3>
-      </div>
-      <div class="moj-page-header-actions__actions">
-        <div class="moj-button-group moj-button-group--inline">
-          <a class="govuk-button moj-button-menu__item govuk-button--secondary moj-page-header-actions__action"
-             role="button"
-             th:href="@{/notifications/search}" data-module="govuk-button">
-            Refine search
-          </a>
-        </div>
-      </div>
+
+    <h1 class="govuk-heading-l" th:text="#{notifications.search.results.heading}"/>
+
+    <p class="govuk-body-l"
+       th:text="#{notifications.search.results.totalNotificationsIntroduction(${notificationsSearchResults.totalElements})}"/>
+
+    <a class="govuk-button moj-button-menu__item govuk-button--secondary moj-page-header-actions__action"
+       role="button"
+       th:href="@{/notifications/search}"
+       th:text="#{notifications.search.results.refineSearch}"
+       data-module="govuk-button"/>
+
+    <div class="moj-scrollable-pane govuk-!-padding-top-4">
+      <table class="govuk-table ccms-compact-table">
+        <caption class="govuk-table__caption govuk-table__caption--m"
+                 th:text="#{notifications.search.results.tableCaption}"/>
+        <thead class="govuk-table__head">
+        <tr class="govuk-table__row">
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dateAssigned',
+          #{notifications.dateAssigned})}"></th>
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'subject',
+          #{notifications.subject})}"></th>
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dueDate',
+          #{notifications.dueDate})}"></th>
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'userLoginId',
+          #{notifications.assignedTo})}"></th>
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'status',
+          #{notifications.status})}"></th>
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'lscCaseRefReference',
+          #{notifications.laaRef})}"></th>
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'providerCaseReference',
+          #{notifications.providerRef})}"></th>
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'clientName',
+          #{notifications.client})}"></th>
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'feeEarner',
+          #{notifications.feeEarner})}"></th>
+        </tr>
+        </thead>
+        <tbody class="govuk-table__body">
+        <tr class="govuk-table__row" th:each="notification : ${notificationsSearchResults.content}">
+          <td class="govuk-table__cell"
+              th:text="${#temporals.format(notification?.assignDate,'dd/MM/yyyy')}"></td>
+          <td class="govuk-table__cell"><a
+              th:href="@{/notifications/{notification_id}(notification_id=${notification.notificationId})}"
+              th:text="${notification.subject}"></a></td>
+          <td class="govuk-table__cell"
+              th:text="${#temporals.format(notification.dueDate,'dd/MM/yyyy')}"></td>
+          <td class="govuk-table__cell" th:text="${notification.user.loginId}"></td>
+          <td class="govuk-table__cell" th:text="${notification.status}"></td>
+          <td class="govuk-table__cell" th:text="${notification.caseReferenceNumber}"></td>
+          <td class="govuk-table__cell" th:text="${notification.providerCaseReferenceNumber}"></td>
+          <td class="govuk-table__cell" th:text="${notification.clientName}"></td>
+          <td class="govuk-table__cell" th:text="${notification.feeEarner}"></td>
+        </tr>
+        </tbody>
+      </table>
     </div>
-
-
-    <table class="govuk-table ccms-compact-table">
-      <thead class="govuk-table__head">
-      <tr class="govuk-table__row">
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dateAssigned','Date Assigned')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'subject','Subject')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dueDate','Due Date')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'userLoginId','Assigned To')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'status','Status')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'lscCaseRefReference','LAA Ref')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'providerCaseReference','Provider Ref')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'clientName','Client')}"></th>
-        <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'feeEarner','Fee Earner')}"></th>
-      </tr>
-      </thead>
-      <tbody class="govuk-table__body">
-      <tr class="govuk-table__row" th:each="notification : ${notificationsSearchResults.content}">
-        <td class="govuk-table__cell"
-            th:text="${#temporals.format(notification?.assignDate,'dd/MM/yyyy')}"></td>
-        <td class="govuk-table__cell"><a
-            th:href="@{/notifications/{notification_id}(notification_id=${notification.notificationId})}"
-            th:text="${notification.subject}"></a></td>
-        <td class="govuk-table__cell"
-            th:text="${#temporals.format(notification.dueDate,'dd/MM/yyyy')}"></td>
-        <td class="govuk-table__cell" th:text="${notification.user.loginId}"></td>
-        <td class="govuk-table__cell" th:text="${notification.status}"></td>
-        <td class="govuk-table__cell" th:text="${notification.caseReferenceNumber}"></td>
-        <td class="govuk-table__cell" th:text="${notification.providerCaseReferenceNumber}"></td>
-        <td class="govuk-table__cell" th:text="${notification.clientName}"></td>
-        <td class="govuk-table__cell" th:text="${notification.feeEarner}"></td>
-      </tr>
-      </tbody>
-    </table>
     <nav
         th:replace="~{partials/pagination :: pagination(page=${notificationsSearchResults})}"></nav>
   </div>
