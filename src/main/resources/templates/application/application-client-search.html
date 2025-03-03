@@ -21,9 +21,9 @@
                     <div th:replace="~{partials/forms :: textInput('forename', #{person.firstName}, 'govuk-input--width-20')}"></div>
                     <div th:replace="~{partials/forms :: textInput('surname', #{person.surnameAtBirth}, 'govuk-input--width-20')}"></div>
                     <div th:replace="~{partials/forms :: dateOfBirth(true)}"></div>
-                    <div th:replace="~{partials/forms :: dropdown('gender', #{optional(#{person.gender})}, ${genders}, 'code', 'description', false)}"></div>
-                    <div th:replace="~{partials/forms :: dropdown('uniqueIdentifierType', #{optional(#{person.uniqueIdentifierType})}, ${uniqueIdentifierTypes}, 'code', 'description', false)}"></div>
-                    <div th:replace="~{partials/forms :: textInput('uniqueIdentifierValue', #{optional(#{person.uniqueIdentifier})}, 'govuk-input--width-20')}"></div>
+                    <div th:replace="~{partials/forms :: dropdown('gender', #{site.optional(#{person.gender})}, ${genders}, 'code', 'description', false)}"></div>
+                    <div th:replace="~{partials/forms :: dropdown('uniqueIdentifierType', #{site.optional(#{person.uniqueIdentifierType})}, ${uniqueIdentifierTypes}, 'code', 'description', false)}"></div>
+                    <div th:replace="~{partials/forms :: textInput('uniqueIdentifierValue', #{site.optional(#{person.uniqueIdentifier})}, 'govuk-input--width-20')}"></div>
                     <div class="govuk-form-group">
                         <govuk:details th:summaryText="#{details.uniqueIdentifier}"
                                        th:text="#{details.uniqueIdentifier.text}"/>
