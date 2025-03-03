@@ -107,6 +107,7 @@ class ProviderRequestsMapperTest {
     requestDetails.setClaimUploadLabel("Test Label");
     requestDetails.setAdditionalInformationLabel("Additional Info");
     requestDetails.setClaimUploadEnabled(true);
+    requestDetails.setIsAdditionalInformationPromptRequired(true);
 
     providerRequestFlowFormData.setRequestDetailsFormData(requestDetails);
 
@@ -115,6 +116,7 @@ class ProviderRequestsMapperTest {
     assertEquals("Test Label", providerRequestDetails.getClaimUploadLabel(), "Claim upload label should match");
     assertEquals("Additional Info", providerRequestDetails.getAdditionalInformationLabel(), "Additional information label should match");
     assertTrue(providerRequestDetails.isClaimUploadEnabled(), "Claim upload enabled flag should match");
+    assertTrue(providerRequestDetails.getIsAdditionalInformationPromptRequired(), "IsAdditionalInformationPromptRequired flag should match");
 
     assertNull(providerRequestDetails.getAdditionalInformation(), "Additional information should be ignored");
     assertNull(providerRequestDetails.getFile(), "File should be ignored");
