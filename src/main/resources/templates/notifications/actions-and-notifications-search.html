@@ -59,11 +59,12 @@
           <div
                   th:replace="~{partials/forms :: textInput('providerCaseReference', #{notifications.search.caseInformation.providerCaseReference.label}, 'govuk-input--width-20')}"></div>
 
-          <div
-                  th:replace="~{partials/forms :: textInput('caseReference', #{notifications.search.caseInformation.laaApplicationCaseReference.label}, 'govuk-input--width-20')}"></div>
           <govuk:details
               th:summaryText="#{notifications.search.caseInformation.laaApplicationCaseReferenceHelp.summaryText}"
               th:text="#{notifications.search.caseInformation.laaApplicationCaseReferenceHelp.text}"/>
+          <div
+                  th:replace="~{partials/forms :: textInput('caseReference', #{notifications.search.caseInformation.laaApplicationCaseReference.label}, 'govuk-input--width-20')}"></div>
+
           <div
                   th:replace="~{partials/forms :: textInput('clientSurname', #{notifications.search.caseInformation.clientSurname.label}, 'govuk-input--width-20')}"></div>
 
