@@ -8,35 +8,24 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections/client/details/summary}" class="govuk-back-link">Cancel and return to amend client</a>
+    <a th:href="@{/application/sections/client/details/summary}" class="govuk-back-link" th:text="#{site.cancelAndReturnToAmendClient}"></a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/application/sections/client/details/deceased}" th:object="${deceasedDetails}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l">Edit your client</span>
-      <h1 class="govuk-heading-l">
-        Client deceased
-      </h1>
-      <p class="govuk-body-l">
-        You are about to register your client as deceased. To do this, please enter the date of
-        death, and click 'Confirm', otherwise click 'Cancel and return to amend client' to return
-        to the summary page
-      </p>
-
+      <span class="govuk-caption-l" th:text="#{client.edit}"></span>
+      <h1 class="govuk-heading-l" th:text="#{client.deceased}"></h1>
+      <p class="govuk-body-l" th:text="#{client.deceased.leadParagraph}"></p>
       <moj:datepicker
               id="dod"
               name="dateOfDeath"
-              th:label="#{client.deceased.dod.label}"
-              th:hint="#{hint.date}"
+              th:label="#{client.deceased.question}"
+              th:hint="#{site.dateHint}"
               th:errorMessage="${#fields.hasErrors('dateOfDeath') ? #fields.errors('dateOfDeath').getFirst() : ''}"
               th:value="*{__${'dateOfDeath'}__}">
       </moj:datepicker>
 
-      <p class="govuk-body">
-        Once this amendment is submitted, this and any related cases will be referred to the LAA who
-        will discharge the case. All other possible activity on this case will thereafter be
-        suspended.
-      </p>
+      <p class="govuk-body" th:text="#{client.deceased.text1}"></p>
       <div class="govuk-button-group">
         <govuk:button type="submit" th:text="#{site.confirm}"/>
       </div>

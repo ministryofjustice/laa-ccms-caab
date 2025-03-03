@@ -7,18 +7,14 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/client/details/cancel}" class="govuk-back-link">Cancel and return to client search</a>
+        <a th:href="@{/application/client/details/cancel}" class="govuk-back-link" th:text="#{site.cancelAndReturnToClientSearch}"></a>
     </div>
     <div id="main-content">
         <form action="#" th:action="@{/application/client/details/contact}" th:object="${contactDetails}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <span class="govuk-caption-l">About your client</span>
-            <h1 class="govuk-heading-l">
-                Client contact details
-            </h1>
-            <p class="govuk-body-l">
-                Please enter the contact details for your client in the fields provided. When you have finished, click 'Next' to continue.
-            </p>
+            <span class="govuk-caption-l" th:text="#{client.about}"></span>
+            <h1 class="govuk-heading-l" th:text="#{client.contact}"></h1>
+            <p class="govuk-body-l" th:text="#{client.contact.leadParagraph}"></p>
             <div th:replace="~{application/partials/client-fragments :: clientContactFragment}"></div>
             <div class="govuk-button-group">
                 <govuk:button type="submit" th:text="#{site.next}"/>

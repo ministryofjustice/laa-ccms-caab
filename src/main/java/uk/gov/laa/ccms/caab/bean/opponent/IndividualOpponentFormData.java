@@ -2,18 +2,16 @@ package uk.gov.laa.ccms.caab.bean.opponent;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
 
-import java.time.LocalDate;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.springframework.util.StringUtils;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.bean.common.Individual;
 
 /**
  * Represents the individual opponent details stored during opponent creation/edit flows.
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class IndividualOpponentFormData extends AbstractOpponentFormData {
+public class IndividualOpponentFormData extends AbstractOpponentFormData implements Individual {
 
   public IndividualOpponentFormData() {
     setType(OPPONENT_TYPE_INDIVIDUAL);
@@ -40,20 +38,9 @@ public class IndividualOpponentFormData extends AbstractOpponentFormData {
   private String surname;
 
   /**
-   * The day of birth of an individual opponent.
+   * The date of birth of an individual opponent.
    */
-  private String dobDay;
-
-  /**
-   * The month of birth of an individual opponent.
-   */
-  private String dobMonth;
-
-  /**
-   * The year of birth of an individual opponent.
-   */
-  private String dobYear;
-
+  private String dateOfBirth;
 
   /**
    * The national insurance number of an individual opponent.
@@ -85,30 +72,4 @@ public class IndividualOpponentFormData extends AbstractOpponentFormData {
    */
   private boolean dateOfBirthMandatory;
 
-  /**
-   * Retrieves the formatted date of birth based on the day, month, and year values.
-   *
-   * @return The formatted date of birth (yyyy-MM-dd), or null if the date components are not valid
-   *         integers.
-   */
-  public LocalDate getDateOfBirth() {
-    LocalDate dateOfBirth = null;
-
-    if (StringUtils.hasText(dobYear)
-        && StringUtils.hasText(dobMonth)
-        && StringUtils.hasText(dobDay)) {
-      try {
-        int year = Integer.parseInt(dobYear);
-        int month = Integer.parseInt(dobMonth);
-        int day = Integer.parseInt(dobDay);
-
-        dateOfBirth = LocalDate.of(year, month, day);
-      } catch (NumberFormatException e) {
-        // Handle the exception if any of the dobYear, dobMonth, or dobDay is not a valid integer
-        throw new CaabApplicationException("Unable to format date of birth", e);
-      }
-    }
-
-    return dateOfBirth;
-  }
 }

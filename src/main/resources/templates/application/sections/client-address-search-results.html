@@ -6,26 +6,20 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/sections/client/details/address}" class="govuk-back-link">Cancel and return to address details</a>
+        <a th:href="@{/application/sections/client/details/address}" class="govuk-back-link" th:text="#{site.cancelAndReturnToAddress}"></a>
     </div>
     <div id="main-content">
         <form action="#" th:action="@{/application/sections/client/details/address/search}" th:object="${addressSearch}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <span class="govuk-caption-l">Edit your client</span>
-            <h1 class="govuk-heading-l">
-                Client address search results
-            </h1>
-            <p class="govuk-body-l" th:text="${'Your address check has found ' + #lists.size(addressSearchResults.content) + ' possible results. Please select the correct address for your client. If the address is not listed then cancel and return to address details and enter the address manually'}"></p>
+            <span class="govuk-caption-l" th:text="#{client.edit}"></span>
+            <h1 class="govuk-heading-l" th:text="#{client.address.search}"></h1>
+            <p class="govuk-body-l" th:text="#{client.address.search.returned(#lists.size(addressSearchResults.content))}"></p>
             <div class="govuk-form-group">
                 <fieldset class="govuk-fieldset" aria-describedby="address-hint">
                     <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
-                        <h1 class="govuk-fieldset__heading">
-                            What is the correct address for your client?
-                        </h1>
+                    <h2 class="govuk-fieldset__heading" th:text="#{client.address.search.question}"></h2>
                     </legend>
-                    <div id="address-hint" class="govuk-hint">
-                        Select one option.
-                    </div>
+                    <div id="address-hint" class="govuk-hint" th:text="#{client.address.search.question.hint}"></div>
                     <div class="govuk-radios" data-module="govuk-radios">
                         <div class="govuk-radios__item" th:each="result : ${addressSearchResults.content}">
                             <input class="govuk-radios__input" th:id="${result.uprn}" name="uprn" type="radio" th:value="${result.uprn}">
@@ -40,9 +34,7 @@
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
                     <div class="govuk-button-group">
-                        <button type="submit" class="govuk-button" data-module="govuk-button">
-                            Confirm
-                        </button>
+                        <govuk:button type="submit" th:text="#{site.confirm}"/>
                     </div>
                 </div>
             </div>

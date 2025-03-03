@@ -4,7 +4,7 @@
       xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html"
       xmlns:govuk="http://www.thymeleaf.org">
 <head>
-  <title th:text="|#{service.name} - #{notifications.search.heading}|"/>
+  <title th:text="|#{service.name} - #{notifications.heading}|"/>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -18,7 +18,7 @@
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
 
       <span class="govuk-caption-l" th:text="#{notifications.search.subHeading}"/>
-      <h1 class="govuk-heading-l" th:text="#{notifications.search.heading}"/>
+      <h1 class="govuk-heading-l" th:text="#{notifications.heading}"/>
       <div class="govuk-body-l" th:text="#{notifications.search.leadParagraph}"/>
 
       <div class="govuk-grid-row">
@@ -36,54 +36,35 @@
           <govuk:details classes="govuk-!-margin-top-2"
                          th:summaryText="#{notifications.search.notificationDates.datesHelp.summaryText}"
                          th:text="#{notifications.search.notificationDates.datesHelp.text}"/>
-          <div class="govuk-form-group"
-               th:classappend="${#fields.hasErrors('notificationFromDate')} ? 'govuk-form-group--error' : ''">
-            <div class="moj-datepicker" data-module="moj-date-picker">
-              <label class="govuk-label" for="notification-from-date-field-value"
-                     th:text="#{notifications.search.notificationDates.from.label}"/>
-              <div id="notification-from-date-hint" class="govuk-hint"
-                   th:text="#{notifications.search.notificationDates.from.hintText}"/>
-              <span th:if="${#fields.hasErrors('notificationFromDate')}"
-                    th:errors="*{notificationFromDate}" class="govuk-error-message"></span>
-              <input class="govuk-input moj-js-datepicker-input"
-                     id="notification-from-date-field-value"
-                     th:field="*{notificationFromDate}"
-                     type="text"
-                     aria-describedby="notification-from-date-hint"
-                     autocomplete="off"
-                     th:errorclass="govuk-select--error">
-            </div>
-          </div>
-          <div class="govuk-form-group"
-               th:classappend="${#fields.hasErrors('notificationToDate')} ? 'govuk-form-group--error' : ''">
-            <div class="moj-datepicker" data-module="moj-date-picker">
-              <label class="govuk-label" for="notification-to-date-field-value"
-                     th:text="#{notifications.search.notificationDates.to.label}"/>
-              <div id="notification-to-date-hint" class="govuk-hint"
-                   th:text="#{notifications.search.notificationDates.to.hintText}"/>
-              <span th:if="${#fields.hasErrors('notificationToDate')}"
-                    th:errors="*{notificationToDate}" class="govuk-error-message"></span>
-
-              <input class="govuk-input moj-js-datepicker-input"
-                     id="notification-to-date-field-value"
-                     th:field="*{notificationToDate}"
-                     type="text"
-                     aria-describedby="notification-from-date-hint"
-                     autocomplete="off"
-                     th:errorclass="govuk-select--error">
-            </div>
-          </div>
+          <moj:datepicker
+              id="notification-from-date-field-value"
+              name="notificationFromDate"
+              th:label="#{notifications.search.notificationDates.from.label}"
+              th:hint="#{notifications.search.notificationDates.from.hintText}"
+              th:value="*{__${'notificationFromDate'}__}"
+              th:errorMessage="${#fields.hasErrors('notificationFromDate') ? #fields.errors('notificationFromDate').getFirst() : ''}">
+          </moj:datepicker>
+          <moj:datepicker
+              id="notification-to-date-field-value"
+              name="notificationToDate"
+              th:label="#{notifications.search.notificationDates.to.label}"
+              th:hint="#{notifications.search.notificationDates.to.hintText}"
+              th:value="*{__${'notificationToDate'}__}"
+              th:errorMessage="${#fields.hasErrors('notificationToDate') ? #fields.errors('notificationToDate').getFirst() : ''}">
+          </moj:datepicker>
 
           <h2 class="govuk-heading-m"
               th:text="#{notifications.search.caseInformation.heading}"/>
 
           <div
                   th:replace="~{partials/forms :: textInput('providerCaseReference', #{notifications.search.caseInformation.providerCaseReference.label}, 'govuk-input--width-20')}"></div>
+
           <govuk:details
-                  th:summaryText="#{notifications.search.caseInformation.laaApplicationCaseReferenceHelp.summaryText}"
-                  th:text="#{notifications.search.caseInformation.laaApplicationCaseReferenceHelp.text}"/>
+              th:summaryText="#{notifications.search.caseInformation.laaApplicationCaseReferenceHelp.summaryText}"
+              th:text="#{notifications.search.caseInformation.laaApplicationCaseReferenceHelp.text}"/>
           <div
                   th:replace="~{partials/forms :: textInput('caseReference', #{notifications.search.caseInformation.laaApplicationCaseReference.label}, 'govuk-input--width-20')}"></div>
+
           <div
                   th:replace="~{partials/forms :: textInput('clientSurname', #{notifications.search.caseInformation.clientSurname.label}, 'govuk-input--width-20')}"></div>
 

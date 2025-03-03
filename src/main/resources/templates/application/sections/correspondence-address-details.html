@@ -6,8 +6,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections}" class="govuk-back-link"
-      th:text="#{application.generalDetails.correspondenceAddress.goBack}"/>
+    <a th:href="@{/application/sections}" class="govuk-back-link" th:text="#{site.cancelAndReturnToApplication}"></a>
   </div>
   <div id="main-content">
     <form th:action="@{/application/sections/correspondence-address}" th:object="${addressDetails}" method="post">

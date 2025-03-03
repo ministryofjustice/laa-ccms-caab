@@ -902,7 +902,7 @@ public class EbsApiClient extends BaseApiClient {
         .ifPresent(forename -> queryParams.add("first-name", forename));
     Optional.ofNullable(clientSearchCriteria.getSurname())
         .ifPresent(surname -> queryParams.add("surname", surname));
-    Optional.ofNullable(clientSearchCriteria.getDoB())
+    Optional.ofNullable(clientSearchCriteria.getFormattedDateOfBirth())
         .ifPresent(dateOfBirth -> queryParams.add("date-of-birth", dateOfBirth));
     Optional.ofNullable(clientSearchCriteria.getUniqueIdentifier(
             UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE))
