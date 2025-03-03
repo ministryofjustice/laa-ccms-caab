@@ -68,7 +68,8 @@ public class NotificationService {
    * @return a Mono containing the NotificationInfo object, or an empty Mono if no
    *     notification is found
    */
-  public Mono<Notification> getNotification(final String notificationId, final int userId, final int providerId) {
+  public Mono<Notification> getNotification(final String notificationId, final int userId,
+      final int providerId) {
     return ebsApiClient.getNotification(notificationId, userId, providerId);
   }
 

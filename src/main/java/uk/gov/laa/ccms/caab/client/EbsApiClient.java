@@ -952,7 +952,8 @@ public class EbsApiClient extends BaseApiClient {
             e, "case transaction status", "transaction id", transactionId));
   }
 
-  private static MultiValueMap<String, String> buildQueryParams(final int userId, final int providerId) {
+  private static MultiValueMap<String, String> buildQueryParams(final int userId,
+      final int providerId) {
     final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
     addQueryParam(queryParams, "user-id", userId);
     addQueryParam(queryParams, "provider-id", providerId);
