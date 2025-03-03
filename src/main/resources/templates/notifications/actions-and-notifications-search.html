@@ -27,9 +27,9 @@
           <h2 class="govuk-heading-m"
               th:text="#{notifications.search.responsibilityInformation.heading}"/>
           <div
-                  th:replace="~{partials/forms :: dropdown('assignedToUserId', #{notifications.search.responsibilityInformation.assignedTo.label}, ${users}, 'loginId', 'loginId', false)}"></div>
+                  th:replace="~{partials/forms :: dropdown('assignedToUserId', #{common.assignedTo}, ${users}, 'loginId', 'loginId', false)}"></div>
           <div
-                  th:replace="~{partials/forms :: dropdown('feeEarnerId', #{notifications.search.responsibilityInformation.feeEarner.label}, ${feeEarners}, 'id', 'name', false)}"></div>
+                  th:replace="~{partials/forms :: dropdown('feeEarnerId', #{common.feeEarner}, ${feeEarners}, 'id', 'name', false)}"></div>
 
           <h2 class="govuk-heading-m"
               th:text="#{notifications.search.notificationDates.heading}"/>
@@ -57,13 +57,13 @@
               th:text="#{notifications.search.caseInformation.heading}"/>
 
           <div
-                  th:replace="~{partials/forms :: textInput('providerCaseReference', #{notifications.search.caseInformation.providerCaseReference.label}, 'govuk-input--width-20')}"></div>
+                  th:replace="~{partials/forms :: textInput('providerCaseReference', #{common.providerRef}, 'govuk-input--width-20')}"></div>
 
           <govuk:details
               th:summaryText="#{notifications.search.caseInformation.laaApplicationCaseReferenceHelp.summaryText}"
               th:text="#{notifications.search.caseInformation.laaApplicationCaseReferenceHelp.text}"/>
           <div
-                  th:replace="~{partials/forms :: textInput('caseReference', #{notifications.search.caseInformation.laaApplicationCaseReference.label}, 'govuk-input--width-20')}"></div>
+                  th:replace="~{partials/forms :: textInput('caseReference', #{common.laaRef}, 'govuk-input--width-20')}"></div>
 
           <div
                   th:replace="~{partials/forms :: textInput('clientSurname', #{common.clientSurname}, 'govuk-input--width-20')}"></div>
