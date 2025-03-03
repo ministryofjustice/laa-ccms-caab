@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org"
+      xmlns:govuk="http://www.thymeleaf.org">
 <head>
   <title th:text="#{service.name} + ' - ' + #{application.create}"></title>
 </head>
@@ -32,10 +33,9 @@
             #{address.postcode},
             'govuk-input--width-20')}"/>
           <div class="govuk-form-group">
-            <button id="find-address-button" type="submit"
-                    name="action" value="find_address" class="govuk-button govuk-button--secondary"
-                    data-module="govuk-button"
-                    th:text="#{address.find}"/>
+            <govuk:button id="find-address-button" classes="govuk-button--secondary"
+                          th:text="#{address.find}"
+                          th:href="@{/application/sections/linked-cases/search}"/>
           </div>
           <th:block th:replace="~{partials/forms :: textInput('careOf',
             #{address.careOf},
@@ -57,6 +57,9 @@
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
           <div class="govuk-button-group">
+            <govuk:button id="next-button"
+                          value="next"
+                          th:text="#{site.next}"/>
             <button type="submit" name="action" value="next" class="govuk-button"
                     data-module="govuk-button" th:text="#{site.next}"/>
           </div>

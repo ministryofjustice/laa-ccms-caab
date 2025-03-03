@@ -1,3 +1,7 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <th:block th:fragment="confirmLinkedCase">
   <form action="#" th:action="@{${action}}" th:object="${currentLinkedCase}" method="post">
     <div th:replace="~{partials/error-summary :: error-summary}"></div>
@@ -27,7 +31,7 @@
         <div th:replace="~{partials/forms :: dropdown('relationToCase', #{application.generalDetails.linkCase.howCaseRelated.label},
           ${caseLinkOptions}, 'code', 'description', false)}"/>
         <div class="govuk-button-group">
-          <button type="submit" class="govuk-button" data-module="govuk-button" th:text="#{site.next}"/>
+          <govuk:button th:text="#{site.next}"/>
         </div>
       </div>
     </div>
@@ -47,3 +51,5 @@
      id="line-2"
      th:text="#{application.generalDetails.linkCase.search.noResults.line2}"/>
 </th:block>
+
+</html>

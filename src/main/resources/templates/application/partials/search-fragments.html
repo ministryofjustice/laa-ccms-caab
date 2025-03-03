@@ -1,3 +1,7 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <th:block th:fragment="searchCaseFormFragment">
   <form th:action="@{${action}}" th:object="${caseSearchCriteria}" method="post">
     <div th:replace="~{partials/error-summary :: error-summary}"></div>
@@ -14,7 +18,7 @@
         <div th:unless="${copyCase}">
           <th:block th:replace="~{partials/forms :: dropdown('status', #{site.status}, ${statuses}, 'code', 'description', false)}"/>
         </div>
-        <button class="govuk-button" data-module="govuk-button" th:text="#{site.search}"/>
+        <govuk:button th:text="#{site.search}"/>
       </div>
     </div>
   </form>
@@ -48,3 +52,5 @@
      id="line-2"
      th:text="#{application.generalDetails.linkCase.search.tooManyResults.line2}"/>
 </th:block>
+
+</html>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:govuk="http://www.thymeleaf.org" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <title th:text="#{service.name} + ' - ' + #{application.generalDetails.linkCase.remove.title(${linkedCase.lscCaseReference})}"></title>
 </head>
@@ -15,13 +15,10 @@
         <p class="govuk-body-l"
             th:text="#{application.generalDetails.linkCase.remove.line1(${linkedCase.lscCaseReference})}"/>
         <div class="govuk-button-group">
-            <button type="submit" class="govuk-button" data-module="govuk-button"
-                th:text="#{site.confirm}"/>
-            <a class="govuk-button govuk-button--secondary"
-               id="cancel-button"
-               data-module="govuk-button"
-               th:href="@{/application/sections/linked-cases}"
-                th:text="#{site.cancel}"/>
+            <govuk:button type="submit" th:text="#{site.confirm}"/>
+            <govuk:button classes="govuk-button--secondary"
+                          th:text="#{site.cancel}"
+                          th:href="@{/application/sections/linked-cases}"/>
         </div>
         </form>
     </div>
