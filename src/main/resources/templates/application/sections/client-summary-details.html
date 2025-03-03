@@ -8,24 +8,15 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections}" class="govuk-back-link">Cancel and return to create application</a>
+    <a th:href="@{/application/sections}" class="govuk-back-link" th:text="#{site.cancelAndReturnToApplication}"></a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/application/sections/client/details/summary}" th:object="${clientFlowFormData}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l">Edit your client</span>
-      <h1 class="govuk-heading-l">
-        Summary of client information
-      </h1>
-      <p class="govuk-body-l">
-        To amend your client details click on the edit link relevant to the section you wish to
-        change (for example, to edit 'Basic Details', click the 'Edit Basic Details link'. You will
-        then be taken to the appropriate amendment page.
-        <span class="govuk-!-font-weight-bold">
-          Once changed, please confirm your changes, after which you will return to this page. Once
-          happy with all your changes, click 'Submit Amendments'. Your changes will not be
-          registered in the system until you have done this.
-        </span>
+      <span class="govuk-caption-l" th:text="#{client.edit}"></span>
+      <h1 class="govuk-heading-l" th:text="#{client.summary}"></h1>
+      <p class="govuk-body-l" th:text="#{client.summary.edit.leadParagraph}">
+        <span class="govuk-!-font-weight-bold" th:text="#{client.summary.edit.leadParagraph.bold}"></span>
       </p>
       <div th:replace="~{application/partials/client-fragments :: clientSummaryFragment}"></div>
       <div class="govuk-button-group">

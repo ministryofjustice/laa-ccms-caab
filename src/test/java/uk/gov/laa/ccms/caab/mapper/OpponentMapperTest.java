@@ -9,8 +9,6 @@ import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildOrganisationDetail;
 
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Date;
 import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
@@ -99,7 +97,7 @@ public class OpponentMapperTest {
     assertEquals(opponentFormData.getFirstName(), result.getFirstName());
     assertEquals(opponentFormData.getMiddleNames(), result.getMiddleNames());
     assertEquals(opponentFormData.getSurname(), result.getSurname());
-    assertEquals(opponentFormData.getDateOfBirth(), LocalDate.ofInstant(result.getDateOfBirth().toInstant(), ZoneId.systemDefault()));
+    assertEquals(opponentFormData.getDateOfBirth(), new SimpleDateFormat("d/M/yyyy").format(result.getDateOfBirth()));
     assertEquals(opponentFormData.getNationalInsuranceNumber(), result.getNationalInsuranceNumber());
     assertEquals(opponentFormData.getLegalAided(), result.getLegalAided());
     assertEquals(opponentFormData.getCertificateNumber(), result.getCertificateNumber());
@@ -205,9 +203,8 @@ public class OpponentMapperTest {
     assertEquals(opponent.getMiddleNames(), orgResult.getMiddleNames());
     assertEquals(opponent.getSurname(), orgResult.getSurname());
 
-    assertEquals(new SimpleDateFormat( "dd" ).format( opponent.getDateOfBirth() ), orgResult.getDobDay());
-    assertEquals(new SimpleDateFormat( "MM" ).format( opponent.getDateOfBirth() ), orgResult.getDobMonth());
-    assertEquals(new SimpleDateFormat( "yyyy" ).format( opponent.getDateOfBirth() ), orgResult.getDobYear());
+    assertEquals(new SimpleDateFormat("d/M/yyyy").format(opponent.getDateOfBirth()),
+        orgResult.getDateOfBirth());
 
     assertEquals(opponent.getPartyId(), orgResult.getPartyId());
     assertEquals(opponent.getRelationshipToCase(), orgResult.getRelationshipToCase());
@@ -263,9 +260,7 @@ public class OpponentMapperTest {
     opponentFormData.setMiddleNames("themiddles");
     opponentFormData.setSurname("thesurname");
     opponentFormData.setNationalInsuranceNumber("nino");
-    opponentFormData.setDobDay("1");
-    opponentFormData.setDobMonth("10");
-    opponentFormData.setDobYear("2024");
+    opponentFormData.setDateOfBirth("1/10/2024");
     opponentFormData.setLegalAided(true);
     opponentFormData.setCertificateNumber("128376");
 

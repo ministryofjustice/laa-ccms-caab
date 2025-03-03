@@ -7,7 +7,6 @@ import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CASE_REF
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CASE_REFERENCE_NUMBER_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.HOME_OFFICE_NUMBER_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NATIONAL_INSURANCE_NUMBER_PATTERN;
-import static uk.gov.laa.ccms.caab.util.DateUtils.COMPONENT_DATE_PATTERN;
 
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
@@ -60,24 +59,6 @@ public class ClientSearchCriteriaValidator extends AbstractValidator {
   }
 
   /**
-   * Validates the date of birth in the {@link ClientSearchCriteria}.
-   *
-   * @param target The object to be validated.
-   * @param errors The Errors object to store validation errors.
-   */
-  public void validateDateOfBirth(Object target, Errors errors) {
-    ValidationUtils.rejectIfEmpty(errors, "dateOfBirth",
-        "required.dob", "Please complete 'Date of birth'");
-
-    ClientSearchCriteria clientSearchCriteria = (ClientSearchCriteria) target;
-
-    if (!clientSearchCriteria.getDateOfBirth().isBlank()) {
-      validateValidDateField(clientSearchCriteria.getDateOfBirth(), "dateOfBirth", "Date of birth",
-          COMPONENT_DATE_PATTERN, errors);
-    }
-  }
-
-  /**
    * Validates the unique identifier type and value in the {@link ClientSearchCriteria}.
    *
    * @param target The object to be validated.
@@ -125,7 +106,7 @@ public class ClientSearchCriteriaValidator extends AbstractValidator {
   public void validate(Object target, Errors errors) {
     validateForename(target, errors);
     validateSurnameAtBirth(target, errors);
-    validateDateOfBirth(target, errors);
+    validateDateOfBirth(target, errors, true);
     validateUniqueIdentifierType(target, errors);
   }
 }

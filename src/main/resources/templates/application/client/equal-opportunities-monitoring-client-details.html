@@ -7,18 +7,14 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-      <a th:href="@{/application/client/details/cancel}" class="govuk-back-link">Cancel and return to client search</a>
+      <a th:href="@{/application/client/details/cancel}" class="govuk-back-link" th:text="#{site.cancelAndReturnToClientSearch}"></a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/application/client/details/equal-opportunities-monitoring}" th:object="${monitoringDetails}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l">About your client</span>
-      <h1 class="govuk-heading-l">
-          Equal opportunities monitoring
-      </h1>
-      <p class="govuk-body-l">
-          Please provide information to reflect how your client would describe themselves.
-      </p>
+      <span class="govuk-caption-l" th:text="#{client.about}"></span>
+      <h1 class="govuk-heading-l" th:text="#{client.opportunities}"></h1>
+      <p class="govuk-body-l" th:text="#{client.opportunities.leadParagraph}"></p>
       <div th:replace="~{application/partials/client-fragments :: clientMonitoringFragment}"></div>
       <div class="govuk-button-group">
         <govuk:button type="submit" th:text="#{site.next}"/>

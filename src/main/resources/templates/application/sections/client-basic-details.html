@@ -8,27 +8,20 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections/client/details/summary}" class="govuk-back-link">Cancel and return to amend client</a>
+    <a th:href="@{/application/sections/client/details/summary}"
+       class="govuk-back-link"
+       th:text="#{site.cancelAndReturnToAmendClient}"></a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/application/sections/client/details/basic}" th:object="${basicDetails}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l">Edit your client</span>
-      <h1 class="govuk-heading-l">
-        Basic client details
-      </h1>
-      <p class="govuk-body-l">
-        Please make the relevant amendments to your client's details in the provided fields. Once
-        you are happy with your changes, click '<span class="govuk-!-font-weight-bold">
-        Confirm</span>' to return to the summary page. This will only save your amendments for this
-        session. Please submit your changes by clicking the '<span class="govuk-!-font-weight-bold">
-        Submit Amendments</span>' button on the summary page.
-      </p>
+      <span class="govuk-caption-l" th:text="#{client.edit}"></span>
+      <h1 class="govuk-heading-l" th:text="#{client.basic}"></h1>
+      <p class="govuk-body-l" th:text="#{client.basic.edit.leadParagraph}"></p>
       <div th:replace="~{application/partials/client-fragments :: clientBasicFragment}"></div>
       <div class="govuk-button-group">
-        <button type="submit" class="govuk-button" data-module="govuk-button">
-          Confirm
-        </button>
+        <button type="submit" class="govuk-button"
+                data-module="govuk-button" th:text="#{site.confirm}"></button>
       </div>
     </form>
   </div>

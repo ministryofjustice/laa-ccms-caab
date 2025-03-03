@@ -71,14 +71,14 @@ class ClientSearchCriteriaValidatorTest {
   @Test
   void testValidateDateOfBirth_Valid() {
     clientSearchCriteria.setDateOfBirth("01/12/1990");
-    validator.validateDateOfBirth(clientSearchCriteria, errors);
+    validator.validateDateOfBirth(clientSearchCriteria, errors, true);
     assertFalse(errors.hasErrors());
   }
 
   @Test
   void testValidateDateOfBirth_Invalid() {
     clientSearchCriteria.setDateOfBirth("");
-    validator.validateDateOfBirth(clientSearchCriteria, errors);
+    validator.validateDateOfBirth(clientSearchCriteria, errors, true);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("dateOfBirth"));
     assertEquals("required.dob", errors.getFieldError("dateOfBirth").getCode());
@@ -93,7 +93,7 @@ class ClientSearchCriteriaValidatorTest {
   void testValidateDateOfBirth_InvalidNumeric(String dobDay, String field) {
     clientSearchCriteria.setDateOfBirth(dobDay);
 
-    validator.validateDateOfBirth(clientSearchCriteria, errors);
+    validator.validateDateOfBirth(clientSearchCriteria, errors, true);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError(field));
     assertEquals("invalid.format", errors.getFieldError(field).getCode());

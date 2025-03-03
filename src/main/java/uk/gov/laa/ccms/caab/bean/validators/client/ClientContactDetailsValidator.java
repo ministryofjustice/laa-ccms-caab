@@ -36,21 +36,26 @@ public class ClientContactDetailsValidator extends AbstractValidator {
    */
   private void validateTelephones(ClientFormDataContactDetails contactDetails, Errors errors) {
     // At least one telephone number should be provided
-    if (!StringUtils.hasText(contactDetails.getTelephoneHome())
-        && !StringUtils.hasText(contactDetails.getTelephoneWork())
-        && !StringUtils.hasText(contactDetails.getTelephoneMobile())) {
-
+    if (!contactDetails.isTelephoneHomePresent()
+        && !contactDetails.isTelephoneWorkPresent()
+        && !contactDetails.isTelephoneMobilePresent()) {
       errors.reject("required.telephones",
           "Please provide at least one contact telephone number.");
     }
 
     // Validate each telephone number for non-numeric characters and minimum length
-    validateTelephoneField("telephoneHome",
-        contactDetails.getTelephoneHome(), "Telephone Home", errors);
-    validateTelephoneField("telephoneWork",
-        contactDetails.getTelephoneWork(), "Telephone Work", errors);
-    validateTelephoneField("telephoneMobile",
-        contactDetails.getTelephoneMobile(), "Mobile", errors);
+    if (contactDetails.isTelephoneHomePresent()) {
+      validateTelephoneField("telephoneHome",
+          contactDetails.getTelephoneHome(), "Telephone Home", errors);
+    }
+    if (contactDetails.isTelephoneWorkPresent()) {
+      validateTelephoneField("telephoneWork",
+          contactDetails.getTelephoneWork(), "Telephone Work", errors);
+    }
+    if (contactDetails.isTelephoneMobilePresent()) {
+      validateTelephoneField("telephoneMobile",
+          contactDetails.getTelephoneMobile(), "Mobile", errors);
+    }
   }
 
   /**
@@ -71,6 +76,9 @@ public class ClientContactDetailsValidator extends AbstractValidator {
         errors.rejectValue(field, "length." + field, "Your input for '"
             + displayValue + "' must contain at least 8 characters. Please amend your entry.");
       }
+    } else {
+      errors.rejectValue(field, "invalid." + field, "Please enter '"
+          + displayValue + "'");
     }
   }
 

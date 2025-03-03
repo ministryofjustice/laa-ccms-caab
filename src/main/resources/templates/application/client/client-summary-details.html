@@ -7,22 +7,17 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/client/search}" class="govuk-back-link">Cancel and return to client search</a>
+        <a th:href="@{/application/client/search}" class="govuk-back-link" th:text="#{site.cancelAndReturnToClientSearch}"></a>
     </div>
     <div id="main-content">
         <form action="#" th:action="@{/application/client/details/summary}" th:object="${clientFlowFormData}" method="post">
-            <span class="govuk-caption-l">About your client</span>
-            <h1 class="govuk-heading-l">
-                Summary of client information
+            <span class="govuk-caption-l" th:text="#{client.about}"></span>
+            <h1 class="govuk-heading-l" th:text="#{client.summary}">
             </h1>
-            <p class="govuk-body-l">
-                You are about to create a new client record, after which you may go back and edit
-                any details that change, or request deletion of the record from the LAA. Please
-                check the summary details are correct before registration.
-            </p>
+            <p class="govuk-body-l"  th:text="#{client.summary.leadParagraph}"></p>
             <div th:replace="~{application/partials/client-fragments :: clientSummaryFragment}"></div>
             <div class="govuk-button-group">
-                <govuk:button type="submit" th:text="#{site.clientSubmit}"/>
+                <govuk:button type="submit" th:text="#{client.submit}"/>
                 <govuk:button classes="govuk-button--secondary"
                               th:text="#{site.back}"
                               th:href="@{/application/client/details/equal-opportunities-monitoring}"/>
