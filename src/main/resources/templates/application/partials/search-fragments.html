@@ -12,7 +12,7 @@
         <div th:replace="~{partials/forms :: dropdown('feeEarnerId', #{application.search.filter.feeEarnerId}, ${feeEarners}, 'id', 'name', false)}"/>
         <div th:replace="~{partials/forms :: dropdown('officeId', #{application.search.filter.officeId}, ${offices}, 'id', 'name', false)}"/>
         <div th:unless="${copyCase}">
-          <th:block th:replace="~{partials/forms :: dropdown('status', #{application.search.filter.status}, ${statuses}, 'code', 'description', false)}"/>
+          <th:block th:replace="~{partials/forms :: dropdown('status', #{site.status}, ${statuses}, 'code', 'description', false)}"/>
         </div>
         <button class="govuk-button" data-module="govuk-button" th:text="#{site.search}"/>
       </div>
