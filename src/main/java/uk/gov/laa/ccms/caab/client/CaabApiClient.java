@@ -325,7 +325,7 @@ public class CaabApiClient {
       final String loginId) {
     return caabApiWebClient
         .post()
-        .uri("applications/{applicationId}/linked-cases",
+        .uri("/applications/{applicationId}/linked-cases",
             applicationId)
         .header("Caab-User-Login-Id", loginId)
         .contentType(MediaType.APPLICATION_JSON)
