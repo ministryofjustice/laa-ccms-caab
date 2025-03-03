@@ -13,7 +13,7 @@ import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 @Component
 public class ClientContactDetailsValidator extends AbstractValidator {
 
-  private static String CORRESPONDENCE_EMAIL = "E-mail";
+  private static final String CORRESPONDENCE_EMAIL = "E-mail";
 
   /**
    * Determines if the Validator supports the provided class.
@@ -104,13 +104,13 @@ public class ClientContactDetailsValidator extends AbstractValidator {
    */
   private void validatePasswordNeedsReminder(
       ClientFormDataContactDetails contactDetails, Errors errors) {
-    if (StringUtils.hasText(contactDetails.getPassword())) {
-      if (contactDetails.getPassword().equalsIgnoreCase(contactDetails.getPasswordReminder())) {
-        errors.rejectValue("password", "same.passwordReminder",
-            "Your password reminder cannot be the same as your password. "
-                + "Please amend your entry.");
-      }
+    if (StringUtils.hasText(contactDetails.getPassword())
+        && contactDetails.getPassword().equalsIgnoreCase(contactDetails.getPasswordReminder())) {
+      errors.rejectValue("password", "same.passwordReminder",
+          "Your password reminder cannot be the same as your password. "
+              + "Please amend your entry.");
     }
+
   }
 
   /**
@@ -131,7 +131,7 @@ public class ClientContactDetailsValidator extends AbstractValidator {
     validatePasswordNeedsReminder(contactDetails, errors);
     validateEmailField(contactDetails, errors);
 
-    if (!contactDetails.getVulnerableClient()) {
+    if (Boolean.FALSE.equals(contactDetails.getVulnerableClient())) {
       validateTelephones(contactDetails, errors);
       validateRequiredField("correspondenceMethod", contactDetails.getCorrespondenceMethod(),
           "Correspondence method", errors);

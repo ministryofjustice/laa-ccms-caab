@@ -391,7 +391,7 @@ public class CaabApiClientTest {
     final String applicationId = "app123";
     final LinkedCaseDetail linkedCaseData = new LinkedCaseDetail(); // Populate this with test data as needed
     final String loginId = "user789";
-    final String expectedUri = "applications/{applicationId}/linked-cases";
+    final String expectedUri = "/applications/{applicationId}/linked-cases";
 
     when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
     when(requestBodyUriMock.uri(expectedUri, applicationId)).thenReturn(requestBodyMock);
