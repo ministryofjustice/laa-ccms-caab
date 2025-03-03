@@ -4,7 +4,7 @@
       xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
+  <title th:text="#{service.name} + ' - ' + #{notifications.search.results.heading}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -16,7 +16,7 @@
     <h1 class="govuk-heading-l" th:text="#{notifications.search.results.heading}"/>
 
     <p class="govuk-body-l"
-       th:text="#{notifications.search.results.totalNotificationsIntroduction(${notificationsSearchResults.totalElements})}"/>
+       th:text="#{notifications.search.results.leadParagraph(${notificationsSearchResults.totalElements})}"/>
 
     <a class="govuk-button moj-button-menu__item govuk-button--secondary moj-page-header-actions__action"
        role="button"
