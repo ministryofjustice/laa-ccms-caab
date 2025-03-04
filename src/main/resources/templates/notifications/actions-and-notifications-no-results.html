@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title>LAA CCMS - Your actions / notifications</title>
+  <title th:text="#{service.name} + ' - ' + #{notifications.search.results.heading}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -9,25 +9,16 @@
     <a th:href="@{/home}" class="govuk-back-link" th:text="#{site.returnToHome}"></a>
   </div>
   <div id="main-content">
-    <h1 class="govuk-heading-l">
-      Your actions / notifications
-    </h1>
-    <p class="govuk-body-l">
-      Your search has returned <span th:text="0"></span> results.
-      If the results shown do not include the actions or
-      notifications you are looking for, please review your search criteria
-      using the Refine search button.
-    </p>
+    <h1 class="govuk-heading-l" th:text="#{notifications.search.results.heading}"/>
+    <p class="govuk-body-l"
+    th:text="#{notifications.search.noResults.leadParagraph}"/>
     <p class="govuk-body govuk-!-text-align-right">
       <a class="govuk-button govuk-button--secondary"
          data-module="govuk-button"
-         th:href="@{/notifications/search}">
-        Refine search
-      </a>
+         th:href="@{/notifications/search}"
+          th:text="#{notifications.search.results.refineSearch}"/>
     </p>
-    <p class="govuk-body-l">
-      There are no actions or notifications that match the specified search criteria
-    </p>
+    <p class="govuk-body-l" th:text="#{notifications.search.noResults.line2}"/>
   </div>
 </div>
 </body>

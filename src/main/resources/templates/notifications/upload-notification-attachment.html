@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title>Provide Documents or Evidence</title>
+  <title th:text="|#{service.name} - #{notifications.documents.heading}|"/>
 </head>
 <body>
 
@@ -9,40 +9,45 @@
   <div id="breadcrumbs">
     <a
         th:href="@{/notifications/{notification_id}/provide-documents-or-evidence(notification_id=${notificationId})}"
-       class="govuk-back-link">Return to Provide Documents or Evidence</a>
+       class="govuk-back-link"
+        th:text="#{notifications.documents.send.goBack}"/>
   </div>
   <div id="main-content">
     <form
         action="#" method="post"
         th:action="@{/notifications/{notification_id}/attachments/upload(notification_id=${notificationId})}" th:object="${attachmentUploadFormData}" enctype="multipart/form-data">
-      <h1 class="govuk-heading-l">Upload <span
-          th:text="*{sendBy.code} == 'P' ? 'Postal' : 'Electronic'"></span> Documents or
-        Evidence</h1>
+      <h1 class="govuk-heading-l">
+        <th:block th:if="*{sendBy.code == 'P'}" th:text="#{notifications.documents.send.postal.heading}"/>
+        <th:block th:if="*{sendBy.code == 'E'}" th:text="#{notifications.documents.send.electronic.heading}"/>
+      </h1>
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <div th:if="(*{sendBy.code}) == 'E'" class="govuk-warning-text">
         <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
         <strong class="govuk-warning-text__text">
-          <span class="govuk-visually-hidden">Warning</span>
-          We can only accept <span th:text="${validExtensions}"/> files that are less than <span th:text="${maxFileSize}"/>.
+          <span class="govuk-visually-hidden" th:text="#{validation.warning}"/>
+          <th:block th:text="#{notifications.documents.send.validation.extensionSize(${validExtensions}, ${maxFileSize})}"/>
         </strong>
       </div>
       <p class="govuk-body-l">
-        Please provide details of the document you will be <span
-          th:text="*{sendBy.code} == 'P' ? 'posting' : 'uploading'"></span>.
+        <th:block th:if="*{sendBy.code == 'P'}" th:text="#{notifications.documents.send.postal.line1}"/>
+        <th:block th:if="*{sendBy.code == 'E'}" th:text="#{notifications.documents.send.electronic.line1}"/>
       </p>
       <p class="govuk-body-m">
-        <b>Send by</b> <span
-          th:text="*{sendBy.code} == 'P' ? 'Post' : 'Electronic Upload'"></span>
+        <b th:text="#{notifications.documents.send.sendBy}"/>
+        <span th:text="*{sendBy.code} == 'P'
+            ? #{notifications.documents.send.post}
+            : #{notifications.documents.send.electronicUpload}"/>
       </p>
-      <div th:if="*{sendBy.code} == 'E'" class="govuk-form-group"
+      <div th:if="*{sendBy.code == 'E'}" class="govuk-form-group"
            th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
-        <label class="govuk-label" for="file">
-          Choose file
-        </label>
+        <label class="govuk-label" for="file" th:text="#{notifications.documents.send.chooseFile}"/>
         <input class="govuk-file-upload" id="file" name="file" type="file">
       </div>
-      <div th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', 'Document Type', ${documentTypes}, 'code', 'description')}"></div>
-      <div th:replace="~{partials/forms :: largeTextInput('documentDescription', 'Document description', 255)}"></div>
+      <th:block th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType',
+        #{notifications.documents.documentType},
+        ${documentTypes}, 'code', 'description')}"/>
+      <th:block th:replace="~{partials/forms :: largeTextInput('documentDescription',
+        #{notifications.documents.documentDescription}, 255)}"/>
 
       <input type="hidden" th:id="sendBy" th:name="sendBy"
              th:value="*{sendBy}">
@@ -57,9 +62,8 @@
       <input type="hidden" th:id="number" th:name="number"
              th:value="*{number}">
 
-      <button type="submit" class="govuk-button" data-module="govuk-button">
-        Upload
-      </button>
+      <button type="submit" class="govuk-button" data-module="govuk-button"
+        th:text="#{notifications.documents.send.upload}"/>
     </form>
 
   </div>
