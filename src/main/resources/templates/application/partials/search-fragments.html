@@ -16,7 +16,7 @@
         <div th:replace="~{partials/forms :: dropdown('feeEarnerId', #{common.feeEarner}, ${feeEarners}, 'id', 'name', false)}"/>
         <div th:replace="~{partials/forms :: dropdown('officeId', #{common.office}, ${offices}, 'id', 'name', false)}"/>
         <div th:unless="${copyCase}">
-          <th:block th:replace="~{partials/forms :: dropdown('status', #{site.status}, ${statuses}, 'code', 'description', false)}"/>
+          <th:block th:replace="~{partials/forms :: dropdown('status', #{common.status}, ${statuses}, 'code', 'description', false)}"/>
         </div>
         <govuk:button th:text="#{site.search}"/>
       </div>
