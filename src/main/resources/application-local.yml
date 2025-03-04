@@ -78,6 +78,7 @@ av:
 
 laa:
   ccms:
+    enabled-features: "amendments"
     footer:
       research-panel-link: ""
     s3:

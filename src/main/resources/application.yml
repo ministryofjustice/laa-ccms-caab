@@ -64,6 +64,7 @@ server:
 
 laa:
   ccms:
+    enabled-features: ${ENABLED_FEATURES}
     footer:
       research-panel-link: ${RESEARCH_PANEL_LINK}
     s3:
