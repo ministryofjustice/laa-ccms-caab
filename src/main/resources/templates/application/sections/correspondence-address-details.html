@@ -1,55 +1,71 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:govuk="http://www.thymeleaf.org">
 <head>
   <title th:text="#{service.name} + ' - ' + #{application.create}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections}" class="govuk-back-link" th:text="#{site.cancelAndReturnToApplication}"></a>
+    <a th:href="@{/application/sections}" class="govuk-back-link"
+       th:text="#{site.cancelAndReturnToApplication}"></a>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/sections/correspondence-address}" th:object="${addressDetails}" method="post">
+    <form th:action="@{/application/sections/correspondence-address}" th:object="${addressDetails}"
+          method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l">Create application</span>
-      <h1 class="govuk-heading-l">
-        Correspondence address
-      </h1>
-      <p class="govuk-body-l">
-        Please enter the correspondence address for your client on this case below.  You may select
-        Client Address or Provider's Address as the Preferred Address, in which case no further
-        details are required.  Otherwise, please complete the address details. The 'Find address'
-        button is only valid for UK addresses.  For non-UK addresses please manually enter the
-        details.
-      </p>
-      <p class="govuk-body-l">
-        If you would like to use another address as 'Correspondence Address' please indicate which
-        address you prefer.
-      </p>
+      <span class="govuk-caption-l" th:text="#{application.create}"/>
+      <h1 class="govuk-heading-l"
+          th:text="#{application.generalDetails.correspondenceAddress.title}"/>
+
+      <p class="govuk-body-l" th:text="#{application.generalDetails.correspondenceAddress.line1}"/>
+      <p class="govuk-body-l" th:text="#{application.generalDetails.correspondenceAddress.line2}"/>
+
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
-          <div th:replace="~{partials/forms :: dropdown('preferredAddress', 'Preferred address', ${caseAddressOptions}, 'code', 'description', false)}"></div>
-          <div th:replace="~{partials/forms :: dropdown('country', 'Country', ${countries}, 'code', 'description', false)}"></div>
-          <div th:replace="~{partials/forms :: textInput('houseNameNumber', 'House name / number', 'govuk-input--width-20')}"></div>
-          <div th:replace="~{partials/forms :: textInput('postcode', 'Postcode', 'govuk-input--width-20')}"></div>
+          <th:block th:replace="~{partials/forms :: dropdown('preferredAddress',
+            #{address.preferred},
+            ${caseAddressOptions}, 'code', 'description', false)}"/>
+          <th:block th:replace="~{partials/forms :: dropdown('country',
+            #{address.country},
+            ${countries}, 'code', 'description', false)}"/>
+          <th:block th:replace="~{partials/forms :: textInput('houseNameNumber',
+            #{address.house},
+            'govuk-input--width-20')}"/>
+          <th:block th:replace="~{partials/forms :: textInput('postcode',
+            #{address.postcode},
+            'govuk-input--width-20')}"/>
           <div class="govuk-form-group">
-            <button type="submit" name="action" value="find_address" class="govuk-button govuk-button--secondary" data-module="govuk-button">
-              Find address
-            </button>
+            <button type="submit" name="action" id='find-address-button'
+                    value="find_address" class="govuk-button govuk-button--secondary"
+                    data-module="govuk-button"
+                    th:text="#{address.find}"/>
           </div>
-          <div th:replace="~{partials/forms :: textInput('careOf', 'C/O', 'govuk-input--width-20')}"></div>
-          <div th:replace="~{partials/forms :: textInput('addressLine1', 'Address line 1', 'govuk-input--width-20')}"></div>
-          <div th:replace="~{partials/forms :: textInput('addressLine2', 'Address line 2 ', 'govuk-input--width-20')}"></div>
-          <div th:replace="~{partials/forms :: textInput('cityTown', 'City / Town', 'govuk-input--width-20')}"></div>
-          <div th:replace="~{partials/forms :: textInput('county', 'County ', 'govuk-input--width-20')}"></div>
+          <th:block th:replace="~{partials/forms :: textInput('careOf',
+            #{address.careOf},
+            'govuk-input--width-20')}"/>
+          <th:block th:replace="~{partials/forms :: textInput('addressLine1',
+            #{address.address1},
+            'govuk-input--width-20')}"/>
+          <th:block th:replace="~{partials/forms :: textInput('addressLine2',
+            #{address.address2},
+            'govuk-input--width-20')}"/>
+          <th:block th:replace="~{partials/forms :: textInput('cityTown',
+            #{address.city},
+            'govuk-input--width-20')}"/>
+          <th:block th:replace="~{partials/forms :: textInput('county',
+            #{address.county},
+            'govuk-input--width-20')}"/>
         </div>
       </div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
           <div class="govuk-button-group">
-            <button type="submit" name="action" value="next" class="govuk-button" data-module="govuk-button">
-              Next
-            </button>
+            <govuk:button id="next-button"
+                          value="next"
+                          th:text="#{site.next}"/>
           </div>
         </div>
       </div>

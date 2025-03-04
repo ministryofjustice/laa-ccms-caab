@@ -4,7 +4,7 @@
       This page contains one or more errors or warnings
     </h2>
     <div class="govuk-error-summary__body">
-      <ul class="govuk-list govuk-error-summary__list">
+      <ul class="govuk-list govuk-error-summary__list" id="error-summary-list">
         <li th:each="error : ${#fields.detailedErrors()}">
           <a th:href="${'#' + error.fieldName}" th:text="${error.message}" />
         </li>
