@@ -14,7 +14,7 @@
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l" th:text="#{client.about}"></span>
             <h1 class="govuk-heading-l" th:text="#{client.address.search}"></h1>
-            <p class="govuk-body-l" th:text="#{client.address.search.returned(#lists.size(addressSearchResults.content))}"></p>
+            <p class="govuk-body-l" th:text="${#messages.msg('client.address.search.returned', #lists.size(addressSearchResults.content))}"></p>
             <div class="govuk-form-group">
                 <fieldset class="govuk-fieldset" aria-describedby="address-hint">
                     <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
