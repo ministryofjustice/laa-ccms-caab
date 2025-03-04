@@ -205,8 +205,9 @@ public class EbsApiClientTest {
     void getNotification_successful() {
       // Given
       String  notificationId = "123";
+      int userId = 876;
       int providerId = 456;
-      String expectedUri = String.format("/notifications/%s?provider-id=%s", notificationId, providerId);
+      String expectedUri = String.format("/notifications/%s?user-id=%s&provider-id=%s", notificationId, userId, providerId);
       ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
@@ -216,6 +217,7 @@ public class EbsApiClientTest {
           Mono.just(notificationInfo));
       // When
       Mono<Notification> notificationMono = ebsApiClient.getNotification(notificationId,
+          userId,
           providerId);
       // Then
       StepVerifier.create(notificationMono)
@@ -231,8 +233,9 @@ public class EbsApiClientTest {
     void getNotification_handlesError(){
       // Given
       String notificationId = "123";
+      int userId = 876;
       int providerId = 456;
-      String expectedUri = String.format("/notifications/%s?provider-id=%s", notificationId, providerId);
+      String expectedUri = String.format("/notifications/%s?user-id=%s&provider-id=%s", notificationId, userId, providerId);
       ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
@@ -246,6 +249,7 @@ public class EbsApiClientTest {
           Mono.empty());
       // When
       Mono<Notification> notificationMono = ebsApiClient.getNotification(notificationId,
+          userId,
           providerId);
       // Then
       StepVerifier.create(notificationMono)

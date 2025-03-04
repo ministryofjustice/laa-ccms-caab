@@ -197,6 +197,7 @@ public class ActionsAndNotificationsController {
   ) {
 
     Notification notification = notificationService.getNotification(notificationId,
+        user.getUserId(),
         user.getProvider().getId())
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException(
