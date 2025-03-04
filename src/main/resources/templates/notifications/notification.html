@@ -48,7 +48,7 @@
 
     <div class="govuk-grid-row" >
       <div class="govuk-grid-column-full">
-        <h2 class="govuk-heading-m">Notes</h2>
+        <h2 class="govuk-heading-m" th:text="#{notifications.subHeading.notes}"/>
         <div class="govuk-inset-text" th:if="${#lists.isEmpty(notification.notes)}">
           <th:block th:text="#{notifications.noNotesAttached}"/>
         </div>
