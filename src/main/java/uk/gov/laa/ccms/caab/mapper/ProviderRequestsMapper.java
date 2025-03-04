@@ -89,6 +89,9 @@ public interface ProviderRequestsMapper {
       source = "providerRequestFlowFormData.requestDetailsFormData.claimUploadEnabled")
   @Mapping(target = "documentSessionId",
       source = "providerRequestFlowFormData.requestDetailsFormData.documentSessionId")
+  @Mapping(target = "isAdditionalInformationPromptRequired",
+      source = "providerRequestFlowFormData.requestDetailsFormData."
+          + "isAdditionalInformationPromptRequired")
   void toProviderRequestDetailsFormData(
       @MappingTarget ProviderRequestDetailsFormData providerRequestDetails,
       ProviderRequestFlowFormData providerRequestFlowFormData);

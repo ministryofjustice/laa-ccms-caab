@@ -63,12 +63,14 @@ public class NotificationService {
    * Retrieves notification information based on the given notification ID and provider ID.
    *
    * @param notificationId the unique identifier of the notification to retrieve
+   * @param userId the unique identifier of the user assigned to the notification
    * @param providerId the unique identifier of the provider associated with the notification
    * @return a Mono containing the NotificationInfo object, or an empty Mono if no
    *     notification is found
    */
-  public Mono<Notification> getNotification(final String notificationId, final int providerId) {
-    return ebsApiClient.getNotification(notificationId, providerId);
+  public Mono<Notification> getNotification(final String notificationId, final int userId,
+      final int providerId) {
+    return ebsApiClient.getNotification(notificationId, userId, providerId);
   }
 
   /**

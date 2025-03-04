@@ -7,14 +7,14 @@
     <div th:replace="~{partials/error-summary :: error-summary}"></div>
     <span class="govuk-caption-l" th:text="${caption}"/>
     <h1 class="govuk-heading-l" th:text="${heading}"/>
-    <div class="govuk-body-l" th:text="#{application.search.filter.line1}"/>
+    <div class="govuk-body-l" th:text="#{search.leadParagraph('case or application')}"/>
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-two-thirds">
-        <div th:replace="~{partials/forms :: textInput('caseReference', #{application.search.filter.caseReference}, 'govuk-input--width-20')}"/>
-        <div th:replace="~{partials/forms :: textInput('clientSurname', #{application.search.filter.clientSurname}, 'govuk-input--width-20')}"/>
-        <div th:replace="~{partials/forms :: textInput('providerCaseReference', #{application.search.filter.providerCaseReference}, 'govuk-input--width-20')}"/>
-        <div th:replace="~{partials/forms :: dropdown('feeEarnerId', #{application.search.filter.feeEarnerId}, ${feeEarners}, 'id', 'name', false)}"/>
-        <div th:replace="~{partials/forms :: dropdown('officeId', #{application.search.filter.officeId}, ${offices}, 'id', 'name', false)}"/>
+        <div th:replace="~{partials/forms :: textInput('caseReference', #{common.laaRef}, 'govuk-input--width-20')}"/>
+        <div th:replace="~{partials/forms :: textInput('clientSurname', #{common.clientSurname}, 'govuk-input--width-20')}"/>
+        <div th:replace="~{partials/forms :: textInput('providerCaseReference', #{common.providerRef}, 'govuk-input--width-20')}"/>
+        <div th:replace="~{partials/forms :: dropdown('feeEarnerId', #{common.feeEarner}, ${feeEarners}, 'id', 'name', false)}"/>
+        <div th:replace="~{partials/forms :: dropdown('officeId', #{common.office}, ${offices}, 'id', 'name', false)}"/>
         <div th:unless="${copyCase}">
           <th:block th:replace="~{partials/forms :: dropdown('status', #{site.status}, ${statuses}, 'code', 'description', false)}"/>
         </div>
@@ -26,31 +26,17 @@
 
 <th:block th:fragment="noResultsFragment">
   <span class="govuk-caption-l" th:text="${caption}"/>
-  <h1 class="govuk-heading-l">
-    Application search - no results
-  </h1>
-  <p class="govuk-body-l">
-    Your search has returned 0 results.
-  </p>
-  <p class="govuk-body-l">
-    Please return to amend your search criteria and try again or start a new application by clicking the <span class="govuk-!-font-weight-bold">'New application'</span> button.
-  </p>
-  <a class="govuk-button" data-module="govuk-button" th:href="@{/application/office}">
-    New application
-  </a>
+  <h1 class="govuk-heading-l" th:text="#{site.noResults(${heading})}"></h1>
+  <p class="govuk-body-l" th:text="#{application.search.results.returned('0')}"></p>
+  <p class="govuk-body-l" th:utext="#{application.search.results.amend}"></p>
+  <a class="govuk-button" data-module="govuk-button" th:href="@{/application/office}" th:text="#{application.new}"></a>
 </th:block>
 
 <th:block th:fragment="tooManyResultsFragment">
-  <span class="govuk-caption-l" th:text="${caption}"/>
-  <h1 class="govuk-heading-l"
-      id="page-heading"
-      th:text="#{application.generalDetails.linkCase.search.tooManyResults.title}"/>
-  <p class="govuk-body-l"
-     id="line-1"
-     th:text="#{application.generalDetails.linkCase.search.tooManyResults.line1}"/>
-  <p class="govuk-body-l"
-     id="line-2"
-     th:text="#{application.generalDetails.linkCase.search.tooManyResults.line2}"/>
+  <span class="govuk-caption-l" th:text="${caption}">Application search</span>
+  <h1 class="govuk-heading-l" th:text="#{site.tooManyResults(${heading})}"></h1>
+  <p class="govuk-body-l" th:text="#{application.search.results.returned('too many')}"></p>
+  <p class="govuk-body-l" th:text="#{application.search.results.refine}"></p>
 </th:block>
 
 </html>

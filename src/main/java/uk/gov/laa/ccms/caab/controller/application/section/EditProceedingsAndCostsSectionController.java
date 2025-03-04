@@ -840,14 +840,16 @@ public class EditProceedingsAndCostsSectionController {
       final HttpSession session) {
 
     // update delegatedFuncApplyInd flag
-    for (ScopeLimitationDetail scopeLimitationDetail : scopeLimitations) {
-      for (ScopeLimitationDelegatedFunctionApplyFormData scopeLimitationData :
-          scopeLimitationFormData.scopeLimitationDataList()) {
-        if (scopeLimitationDetail.getId().equals(scopeLimitationData.id())) {
-          scopeLimitationDetail.getDelegatedFuncApplyInd()
-              .setFlag(scopeLimitationData.delegatedFuncApplyInd());
-        }
-      }
+    if (APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS.equals(application.getApplicationType().getId())) {
+      scopeLimitations.forEach(scopeLimitationDetail ->
+          scopeLimitationFormData.scopeLimitationDataList()
+              .stream()
+              .filter(scopeLimitationData ->
+                  scopeLimitationDetail.getId().equals(scopeLimitationData.id()))
+              .findFirst()
+              .ifPresent(scopeLimitationData ->
+                  scopeLimitationDetail.getDelegatedFuncApplyInd()
+                      .setFlag(scopeLimitationData.delegatedFuncApplyInd())));
     }
 
     //get proceeding cost limitation
@@ -1073,7 +1075,7 @@ public class EditProceedingsAndCostsSectionController {
                 ? result.getContent().stream()
                 .sorted(Comparator.comparing(
                     uk.gov.laa.ccms.data.model.ScopeLimitationDetail::getDescription))
-                .collect(Collectors.toList())
+                .toList()
                 : null)
         .orElse(Collections.emptyList());
 

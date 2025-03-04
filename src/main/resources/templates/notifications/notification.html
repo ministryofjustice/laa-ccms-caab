@@ -23,11 +23,11 @@
             <thead class="govuk-table__head">
             <tr class="govuk-table__row">
               <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                  style="margin-top: 0; white-space: nowrap" th:text="#{notifications.dateAssigned}"/>
+                  style="margin-top: 0; white-space: nowrap" th:text="#{common.dateAssigned}"/>
                 <td class="govuk-table__cell govuk-!-font-size-15"
                     th:text="${#temporals.format(notification.assignDate,'dd/MM/yyyy')}"></td>
               <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                  style="margin-top: 0; white-space: nowrap" th:text="#{notifications.dueDate}"/>
+                  style="margin-top: 0; white-space: nowrap" th:text="#{common.dueDate}"/>
                 <td class="govuk-table__cell govuk-!-font-size-15"
                     th:text="${#temporals.format(notification.dueDate,'dd/MM/yyyy')}"></td>
             <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
@@ -35,7 +35,7 @@
               <td class="govuk-table__cell govuk-!-font-size-15"
                   th:text="${notification.status}"></td>
             <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                style="margin-top: 0; white-space: nowrap" th:text="#{notifications.assignedTo}"/>
+                style="margin-top: 0; white-space: nowrap" th:text="#{common.assignedTo}"/>
               <td class="govuk-table__cell govuk-!-font-size-15"
                   th:text="${notification.user.loginId}"></td>
           </tr>
@@ -68,13 +68,13 @@
             <thead class="govuk-table__head">
               <tr class="govuk-table__row">
                 <th scope="col" class="govuk-table__header"
-                    th:text="#{notifications.laaRef}"/>
+                    th:text="#{common.laaRef}"/>
                 <th scope="col" class="govuk-table__header"
-                    th:text="#{notifications.providerRef}"/>
+                    th:text="#{common.providerRef}"/>
                 <th scope="col" class="govuk-table__header"
-                    th:text="#{notifications.client}"/>
+                    th:text="#{common.client}"/>
                 <th scope="col" class="govuk-table__header"
-                    th:text="#{notifications.feeEarner}"/>
+                    th:text="#{common.feeEarner}"/>
               </tr>
             </thead>
             <tbody class="govuk-table__body">
