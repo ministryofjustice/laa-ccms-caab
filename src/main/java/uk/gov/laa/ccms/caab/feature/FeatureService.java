@@ -35,7 +35,10 @@ public class FeatureService {
     Arrays.stream(Feature.values()).toList()
         .forEach(feature -> featureMap.put(feature.getName(), false));
 
-    List<String> features = Arrays.stream(enabledFeatures.split(FEATURE_DELIMITER)).toList();
+    List<String> features = Arrays.stream(enabledFeatures.split(FEATURE_DELIMITER))
+        .map(String::trim)
+        .toList();
+
     validateFeatures(features);
 
     features.forEach(feature -> featureMap.put(feature, true));
