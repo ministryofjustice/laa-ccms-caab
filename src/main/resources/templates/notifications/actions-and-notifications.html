@@ -13,7 +13,7 @@
   </div>
   <div id="main-content">
 
-    <h1 class="govuk-heading-l" th:text="#{notifications.search.results.heading}"/>
+    <h1 class="govuk-heading-l" th:text="#{notifications.heading}"/>
 
     <p class="govuk-body-l"
        th:text="#{notifications.search.results.totalNotificationsIntroduction(${notificationsSearchResults.totalElements})}"/>
@@ -27,27 +27,27 @@
     <div class="moj-scrollable-pane govuk-!-padding-top-4">
       <table class="govuk-table ccms-compact-table">
         <caption class="govuk-table__caption govuk-table__caption--m"
-                 th:text="#{notifications.search.results.tableCaption}"/>
+                 th:text="#{search.results}"/>
         <thead class="govuk-table__head">
         <tr class="govuk-table__row">
           <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dateAssigned',
-          #{notifications.dateAssigned})}"></th>
+          #{common.dateAssigned})}"></th>
           <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'subject',
-          #{notifications.subject})}"></th>
+          #{common.subject})}"></th>
           <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dueDate',
-          #{notifications.dueDate})}"></th>
+          #{common.dueDate})}"></th>
           <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'userLoginId',
-          #{notifications.assignedTo})}"></th>
+          #{common.assignedTo})}"></th>
           <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'status',
-          #{notifications.status})}"></th>
+          #{common.status})}"></th>
           <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'lscCaseRefReference',
-          #{notifications.laaRef})}"></th>
+          #{common.laaRef})}"></th>
           <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'providerCaseReference',
-          #{notifications.providerRef})}"></th>
+          #{common.providerRef})}"></th>
           <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'clientName',
-          #{notifications.client})}"></th>
+          #{common.client})}"></th>
           <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'feeEarner',
-          #{notifications.feeEarner})}"></th>
+          #{common.feeEarner})}"></th>
         </tr>
         </thead>
         <tbody class="govuk-table__body">
