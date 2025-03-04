@@ -6,10 +6,11 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections/linked-cases}" class="govuk-back-link">Return to linked cases summary</a>
+    <a th:href="@{/application/sections/linked-cases}" class="govuk-back-link"
+      th:text="#{application.generalDetails.linkCase.add.goBack}"/>
   </div>
   <div id="main-content">
-    <th:block th:replace="~{application/partials/linked-cases :: confirmLinkedCase(action=${'/application/sections/linked-cases/add'})}"></th:block>
+    <th:block th:replace="~{application/partials/linked-cases :: confirmLinkedCase(action=${'/application/sections/linked-cases/add'})}"/>
   </div>
 </div>
 </body>
