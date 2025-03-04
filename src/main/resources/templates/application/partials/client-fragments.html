@@ -476,6 +476,7 @@
       <div th:replace="~{partials/forms :: textInput('postcode', #{address.postcode}, 'govuk-input--width-20')}"></div>
       <div class="govuk-form-group">
         <govuk:button id="find-address-button"
+                      name="action"
                       classes="govuk-button--secondary"
                       value="find_address"
                       th:text="#{address.find}"/>
