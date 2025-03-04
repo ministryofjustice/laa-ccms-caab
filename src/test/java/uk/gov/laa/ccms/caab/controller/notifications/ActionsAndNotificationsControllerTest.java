@@ -358,7 +358,7 @@ class ActionsAndNotificationsControllerTest {
     Notification notification = buildNotification();
     Notifications notificationsMock = getNotificationsMock();
 
-    when(notificationService.getNotification("234", userDetails.getProvider().getId()))
+    when(notificationService.getNotification("234", userDetails.getUserId(), userDetails.getProvider().getId()))
         .thenReturn(Mono.just(notification));
 
     Map<String, Object> flashMap = new HashMap<>();
@@ -380,7 +380,7 @@ class ActionsAndNotificationsControllerTest {
     flashMap.put("user", userDetails);
     flashMap.put("notificationSearchCriteria", criteria);
     flashMap.put("notificationsSearchResults", notificationsMock);
-    when(notificationService.getNotification("123", userDetails.getProvider().getId()))
+    when(notificationService.getNotification("123", userDetails.getUserId(), userDetails.getProvider().getId()))
         .thenReturn(Mono.empty());
     Exception exception = assertThrows(Exception.class, () ->
         mockMvc.perform(get("/notifications/123")
@@ -838,7 +838,7 @@ class ActionsAndNotificationsControllerTest {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Notifications notificationsMock = getNotificationsMock();
     Notification notification = buildNotification();
-    when(notificationService.getNotification("234", userDetails.getProvider().getId()))
+    when(notificationService.getNotification("234", userDetails.getUserId(), userDetails.getProvider().getId()))
         .thenReturn(Mono.just(notification));
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
