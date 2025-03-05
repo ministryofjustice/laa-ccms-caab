@@ -69,7 +69,7 @@
                   th:replace="~{partials/forms :: textInput('clientSurname', #{common.clientSurname}, 'govuk-input--width-20')}"></div>
 
           <h2 class="govuk-heading-m"
-              th:text="#{notifications.search.notificationDetails.heading}"/>
+              th:text="#{notifications.subHeading.notificationDetails}"/>
 
           <div
                   th:replace="~{partials/forms :: dropdown('notificationType', #{notifications.search.notificationDetails.actionType.label}, ${notificationTypes}, 'code', 'description', false)}"></div>
