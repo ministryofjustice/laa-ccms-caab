@@ -1,44 +1,37 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.w3.org/1999/xhtml">
 <head>
-  <title>LAA CCMS - Provider request</title>
-
+  <title th:text="#{request.title}"></title>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/provider-requests/details}" class="govuk-back-link">Return to requests</a>
+    <a th:href="@{/provider-requests/details}" class="govuk-back-link" th:text="#{request.return}"></a>
   </div>
   <div id="main-content">
-    <h1 class="govuk-heading-l">
-      Upload a document
-    </h1>
-
+    <h1 class="govuk-heading-l" th:text="#{request.upload}"></h1>
     <form action="#" th:action="@{/provider-requests/documents}" method="post" th:object="${evidenceUploadForm}" enctype="multipart/form-data">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <div class="govuk-warning-text">
         <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
         <strong class="govuk-warning-text__text">
-          <span class="govuk-visually-hidden">Warning</span>
-          We can only accept <span th:text="${validExtensions}"/> files that are less than <span th:text="${maxFileSize}"/>.
+          <span class="govuk-visually-hidden" th:text="#{site.warning}"></span>
+          <span th:text="#{request.fileValidation(${validExtensions},${maxFileSize})}"></span>
         </strong>
       </div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
           <div class="govuk-form-group" th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
-            <label class="govuk-label" for="file">
-              Choose file
-            </label>
+            <label class="govuk-label" for="file" th:text="#{request.chooseFile}"></label>
             <input class="govuk-file-upload" id="file" name="file" type="file">
           </div>
-          <div th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', 'Document type', ${documentTypes}, 'code', 'description')}"></div>
-          <div th:replace="~{partials/forms :: largeTextInput('documentDescription', 'Document description (Optional)', 255)}"></div>
+          <div th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', #{document.type}, ${documentTypes}, 'code', 'description')}"></div>
+          <div th:replace="~{partials/forms :: largeTextInput('documentDescription', #{site.optional(#{document.description})}, 255)}"></div>
 
           <div class="govuk-button-group">
-            <button class="govuk-button" data-module="govuk-button">
-              Upload
-            </button>
-            <a class="govuk-link" th:href="@{/provider-requests/details}">
-              Back
+            <button class="govuk-button" data-module="govuk-button" th:text="#{site.upload}"></button>
+            <a class="govuk-link" th:href="@{/provider-requests/details}" th:text="#{site.back}">
             </a>
           </div>
         </div>

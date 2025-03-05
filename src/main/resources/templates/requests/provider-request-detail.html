@@ -12,13 +12,12 @@
   <div id="main-content">
     <form action="#" th:action="@{/provider-requests/details}" th:object="${providerRequestDetails}" method="post" enctype="multipart/form-data">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l">General request</span>
-      <h1 class="govuk-heading-l">
-        Request details
-      </h1>
+      <span class="govuk-caption-l" th:text="#{request.general}"></span>
+      <h1 class="govuk-heading-l" th:text="#{request.details}"></h1>
+
       <!--  For file upload, both true and false enable a different type of file upload. -->
       <div class="govuk-body-l"
-           th:text="'Please complete further details for your request and click \'Submit\'.' + (*{claimUploadEnabled} ? '' : ' If you have documents to upload, use the link below.')">
+           th:text="#{request.furtherDetails} + (*{claimUploadEnabled} ? '' : ' ' + #{request.documentsToUpload})">
       </div>
 
       <div class="govuk-grid-row">
