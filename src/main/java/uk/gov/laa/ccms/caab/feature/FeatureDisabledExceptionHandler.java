@@ -21,7 +21,6 @@ public class FeatureDisabledExceptionHandler implements HandlerExceptionResolver
       modelAndView.addObject(SessionConstants.USER_DETAILS,
           request.getSession().getAttribute(SessionConstants.USER_DETAILS));
       modelAndView.addObject("message", ex.getLocalizedMessage());
-      modelAndView.addObject("referer", request.getHeader("referer"));
       return modelAndView;
     }
 
