@@ -545,6 +545,9 @@ public class ClientDetailMapperTest {
     contactDetails.setTelephoneHome(telephoneHome);
     contactDetails.setTelephoneWork(telephoneWork);
     contactDetails.setTelephoneMobile(telephoneMobile);
+    contactDetails.setTelephoneHomePresent(true);
+    contactDetails.setTelephoneWorkPresent(true);
+    contactDetails.setTelephoneMobilePresent(true);
     contactDetails.setEmailAddress(emailAddress);
     contactDetails.setPassword(password);
     contactDetails.setPasswordReminder(passwordReminder);

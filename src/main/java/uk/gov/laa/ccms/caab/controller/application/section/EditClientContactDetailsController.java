@@ -78,6 +78,8 @@ public class EditClientContactDetailsController {
       Model model) {
 
     contactDetails.setPassword(clientFlowFormData.getContactDetails().getPassword());
+    // Cleanup mobile numbers if not selected in the UI.
+    contactDetails.clearUnsetPhoneNumbers();
     clientContactDetailsValidator.validate(contactDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {
