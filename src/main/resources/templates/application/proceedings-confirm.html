@@ -19,31 +19,31 @@
         <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
             Matter type
         </span>
-        <span th:text="${proceedingFlow.matterTypeDetails.matterTypeDisplayValue}"></span>
+        <span th:text="${proceedingFlow.matterTypeDetails.matterTypeDisplayValue}" id="matter-type-value"/>
       </p>
       <p class="govuk-body">
         <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
             Proceeding
         </span>
-        <span th:text="${proceedingFlow.proceedingDetails.proceedingTypeDisplayValue}"></span>
+        <span th:text="${proceedingFlow.proceedingDetails.proceedingTypeDisplayValue}" id="proceeding-value"/>
       </p>
       <p class="govuk-body">
         <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
             Proceeding description
         </span>
-        <span th:text="${proceedingFlow.proceedingDetails.proceedingDescription}"></span>
+        <span th:text="${proceedingFlow.proceedingDetails.proceedingDescription}"/>
       </p>
       <p class="govuk-body">
         <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
             Client involvement type
         </span>
-        <span th:text="${proceedingFlow.furtherDetails.clientInvolvementTypeDisplayValue}"></span>
+        <span th:text="${proceedingFlow.furtherDetails.clientInvolvementTypeDisplayValue}" id="client-involvement-type-value"/>
       </p>
       <p class="govuk-body">
         <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
             Form of civil legal service
         </span>
-        <span th:text="${proceedingFlow.furtherDetails.levelOfServiceDisplayValue}"></span>
+        <span th:text="${proceedingFlow.furtherDetails.levelOfServiceDisplayValue}" id="form-of-civil-legal-service-value"/>
       </p>
       <th:block th:if="${proceedingFlow.furtherDetails.typeOfOrder}">
         <p class="govuk-body">
