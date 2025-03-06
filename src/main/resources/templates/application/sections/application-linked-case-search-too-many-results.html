@@ -10,6 +10,7 @@
     </div>
     <div id="main-content">
         <th:block th:replace="~{application/partials/search-fragments :: tooManyResultsFragment(
+        heading=#{application.generalDetails.linkCase.summary.search.title},
         caption=#{application.generalDetails.linkCase.search.caption})}"></th:block>
     </div>
 </div>
