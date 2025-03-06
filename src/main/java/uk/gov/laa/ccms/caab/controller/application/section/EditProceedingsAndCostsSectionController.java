@@ -783,7 +783,7 @@ public class EditProceedingsAndCostsSectionController {
         Optional.ofNullable(scopeLimitationDetails)
             .orElseGet(Collections::emptyList)
             .stream()
-            .map(detail -> new ScopeLimitationDelegatedFunctionApplyFormData(detail.getId(),
+            .map(detail -> new ScopeLimitationDelegatedFunctionApplyFormData(detail.hashCode(),
                 detail.getDelegatedFuncApplyInd().getFlag()))
             .toList();
 
@@ -845,7 +845,7 @@ public class EditProceedingsAndCostsSectionController {
           scopeLimitationFormData.scopeLimitationDataList()
               .stream()
               .filter(scopeLimitationData ->
-                  scopeLimitationDetail.getId().equals(scopeLimitationData.id()))
+                  scopeLimitationData.id().equals(scopeLimitationDetail.hashCode()))
               .findFirst()
               .ifPresent(scopeLimitationData ->
                   scopeLimitationDetail.getDelegatedFuncApplyInd()
