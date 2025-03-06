@@ -1,11 +1,6 @@
 package uk.gov.laa.ccms.caab.feature;
 
-import jakarta.annotation.PostConstruct;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Service;
 
 /**
@@ -13,54 +8,14 @@ import org.springframework.stereotype.Service;
  * they have been enabled or not.
  */
 @Service
+@EnableConfigurationProperties(FeatureProperties.class)
 public class FeatureService {
 
-  private final String enabledFeatures;
-
-  private static final String FEATURE_DELIMITER = ",";
-
-  private final Map<String, Boolean> featureMap = new HashMap<>();
+  private final FeatureProperties featureProperties;
 
   private FeatureService(
-      @Value("${laa.ccms.enabled-features}") String enabledFeatures) {
-    this.enabledFeatures = enabledFeatures;
-  }
-
-  /**
-   * Initialise the enabled features.
-   */
-  @PostConstruct
-  public void init() {
-    // Disable all features by default
-    Arrays.stream(Feature.values()).toList()
-        .forEach(feature -> featureMap.put(feature.getName(), false));
-
-    List<String> features = Arrays.stream(enabledFeatures.split(FEATURE_DELIMITER))
-        .map(String::trim)
-        .toList();
-
-    validateFeatures(features);
-
-    features.forEach(feature -> featureMap.put(feature, true));
-  }
-
-  /**
-   * Validate whether a list of feature names are in the accepted list.
-   *
-   * @param features the list of feature names to validate.
-   */
-  private void validateFeatures(List<String> features) {
-    List<String> invalidFeatures = features.stream()
-        .filter(feature -> !feature.isBlank())
-        .filter(feature -> !featureMap.containsKey(feature))
-        .toList();
-
-    if (!invalidFeatures.isEmpty()) {
-      throw new IllegalArgumentException(
-          String.format("Invalid feature flags provided: %s. "
-                  + "Please only use accepted feature flags: %s",
-                  invalidFeatures, featureMap.keySet()));
-    }
+      FeatureProperties featureProperties) {
+    this.featureProperties = featureProperties;
   }
 
   /**
@@ -70,7 +25,11 @@ public class FeatureService {
    * @return true if enabled, false otherwise.
    */
   public boolean isEnabled(Feature feature) {
-    return featureMap.getOrDefault(feature.getName(), false);
+    return featureProperties.getFeatures().stream()
+        .filter(f -> f.getFeature().getName().equals(feature.getName()))
+        .findFirst()
+        .map(FeatureFlag::isEnabled)
+        .orElse(false);
   }
 
 }
