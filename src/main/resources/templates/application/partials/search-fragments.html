@@ -35,8 +35,8 @@
 <th:block th:fragment="tooManyResultsFragment">
   <span class="govuk-caption-l" th:text="${caption}">Application search</span>
   <h1 class="govuk-heading-l" th:text="#{site.tooManyResults(${heading})}"></h1>
-  <p class="govuk-body-l" th:text="#{application.search.results.returned('too many')}"></p>
-  <p class="govuk-body-l" th:text="#{application.search.results.refine}"></p>
+  <p class="govuk-body-l" id="line-1" th:text="#{application.search.results.returned('too many')}"></p>
+  <p class="govuk-body-l" id="line-2" th:text="#{application.search.results.refine}"></p>
 </th:block>
 
 </html>
