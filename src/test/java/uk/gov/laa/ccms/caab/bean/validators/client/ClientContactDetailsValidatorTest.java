@@ -164,6 +164,9 @@ class ClientContactDetailsValidatorTest {
     contactDetails1.setTelephoneHome("1111111111");
     contactDetails1.setTelephoneWork("2222222222");
     contactDetails1.setTelephoneMobile("3333333333");
+    contactDetails1.setTelephoneHomePresent(true);
+    contactDetails1.setTelephoneWorkPresent(true);
+    contactDetails1.setTelephoneMobilePresent(true);
     contactDetails1.setEmailAddress("test@test.com");
     contactDetails1.setPassword("password");
     contactDetails1.setPasswordReminder("reminder");
