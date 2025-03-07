@@ -78,7 +78,10 @@ av:
 
 laa:
   ccms:
-    enabled-features: amendments
+    pui-home-url: http://localhost:8080/civil/
+    features:
+      - feature: amendments
+        enabled: false
     footer:
       research-panel-link: ""
     s3:

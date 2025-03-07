@@ -27,14 +27,19 @@
             <tbody class="govuk-table__body">
                 <tr class="govuk-table__row" th:each="case , rowStat : ${caseResultsPage.content}">
                     <td class="govuk-table__cell">
-                        <a th:href="@{/application/{case-reference-number}/view(case-reference-number=${case.caseReferenceNumber})}"
-                           class="govuk-link" th:text="${case.caseReferenceNumber}"></a>
+                        <th:block
+                            th:if="${case.amendment != null && case.amendment && !amendmentsEnabled}"
+                            th:text="${case.caseReferenceNumber}"/>
+                        <a class="govuk-link"
+                           th:unless="${case.amendment != null && case.amendment && !amendmentsEnabled}"
+                           th:href="@{/application/{case-reference-number}/view(case-reference-number=${case.caseReferenceNumber})}"
+                           th:text="${case.caseReferenceNumber}"></a>
                     </td>
                     <td class="govuk-table__cell" th:text="${case.providerDetails.providerCaseReference}"></td>
                     <td class="govuk-table__cell" th:text="${case.client.firstName + ' ' + case.client.surname}"></td>
                     <td class="govuk-table__cell" th:text="${case.categoryOfLaw.displayValue}"></td>
                     <td class="govuk-table__cell" th:text="${case.providerDetails.feeEarner.displayValue}"></td>
-                    <td class="govuk-table__cell" th:text="${case.amendment != null && case.amendment ? #messages.msg('status.underAmendment') : case.status.displayValue}"></td>
+                    <td class="govuk-table__cell" th:text="${(case.amendment != null && case.amendment) && (caseSearchCriteria.status == null || caseSearchCriteria.status == 'UNSUBMITTED')? #messages.msg('status.underAmendment') : case.status.displayValue}"></td>
                 </tr>
             </tbody>
         </table>

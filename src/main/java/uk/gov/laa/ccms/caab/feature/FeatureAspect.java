@@ -25,11 +25,11 @@ public class FeatureAspect {
   private final FeatureService featureService;
 
   /**
-   * Checks the required feature has been enabled for methods annotated
-   * with {@link RequiresFeature}.
+   * Checks the required feature has been enabled for methods annotated with {@link
+   * RequiresFeature}.
    *
-   * @param joinPoint         the join point.
-   * @param requiresFeature   details of the feature required
+   * @param joinPoint the join point.
+   * @param requiresFeature details of the feature required
    */
   @Around("@annotation(requiresFeature)")
   public Object checkRequiredFeature(ProceedingJoinPoint joinPoint, RequiresFeature requiresFeature)
@@ -41,19 +41,17 @@ public class FeatureAspect {
     boolean conditionMet = isConditionMet(conditionExpression, joinPoint);
 
     if (conditionMet && !featureService.isEnabled(requiredFeature)) {
-      throw new FeatureDisabledException(String.format(
-          "Feature '%s' is not enabled.", requiredFeature.getName()));
+      throw new FeatureDisabledException(requiredFeature);
     }
     return joinPoint.proceed();
-
   }
 
   /**
    * Checks whether the required condition has been met.
    *
    * @param conditionExpression SpEL expression describing the required state of the method
-   *                            parameters to pass the condition.
-   * @param joinPoint           the aspect join point.
+   *     parameters to pass the condition.
+   * @param joinPoint the aspect join point.
    * @return true if the condition has been met, false otherwise.
    */
   private boolean isConditionMet(String conditionExpression, ProceedingJoinPoint joinPoint) {
@@ -68,14 +66,13 @@ public class FeatureAspect {
     Boolean result = parser.parseExpression(conditionExpression).getValue(context, Boolean.class);
 
     return Boolean.TRUE.equals(result);
-
   }
 
   /**
    * Retrieve the method parameters from the join point, in a map consisting of entries in the
    * format {parameter_name, parameter_value}.
    *
-   * @param joinPoint           the aspect join point.
+   * @param joinPoint the aspect join point.
    * @return the method parameters, including name and value.
    */
   private Map<String, Object> getMethodParameters(ProceedingJoinPoint joinPoint) {
@@ -87,8 +84,5 @@ public class FeatureAspect {
     return IntStream.range(0, args.length)
         .boxed()
         .collect(Collectors.toMap(i -> parameterNames[i], i -> args[i]));
-
   }
-
-
 }

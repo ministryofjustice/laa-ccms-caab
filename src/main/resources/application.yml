@@ -64,7 +64,10 @@ server:
 
 laa:
   ccms:
-    enabled-features: ${ENABLED_FEATURES}
+    pui-home-url: ${PUI_HOME_URL}
+    features:
+      - feature: amendments
+        enabled: ${AMENDMENTS_FEATURE_ENABLED}
     footer:
       research-panel-link: ${RESEARCH_PANEL_LINK}
     s3:

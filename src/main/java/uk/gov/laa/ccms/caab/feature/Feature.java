@@ -7,7 +7,6 @@ import lombok.Getter;
  */
 @Getter
 public enum Feature {
-
   AMENDMENTS("amendments");
 
   private final String name;
@@ -15,5 +14,4 @@ public enum Feature {
   Feature(String name) {
     this.name = name;
   }
-
 }

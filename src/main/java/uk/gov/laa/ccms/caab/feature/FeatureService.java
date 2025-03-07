@@ -1,21 +1,43 @@
 package uk.gov.laa.ccms.caab.feature;
 
+import java.util.Arrays;
+import java.util.function.Supplier;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Service;
 
 /**
- * Controller advice class responsible for controlling access to features depending on whether
- * they have been enabled or not.
+ * Controller advice class responsible for controlling access to features depending on whether they
+ * have been enabled or not.
  */
+@Slf4j
 @Service
 @EnableConfigurationProperties(FeatureProperties.class)
 public class FeatureService {
 
   private final FeatureProperties featureProperties;
 
-  private FeatureService(
-      FeatureProperties featureProperties) {
+  /**
+   * Construct the feature service.
+   *
+   * @param featureProperties the list of configured features and their status (enabled / disabled).
+   */
+  private FeatureService(FeatureProperties featureProperties) {
     this.featureProperties = featureProperties;
+    logFeatureInitialization();
+  }
+
+  /**
+   * Log the status of each feature.
+   */
+  private void logFeatureInitialization() {
+    Arrays.stream(Feature.values())
+        .forEach(
+            feature ->
+                log.info(
+                    "{} feature: {}",
+                    feature.getName(),
+                    isEnabled(feature) ? "enabled" : "disabled"));
   }
 
   /**
@@ -32,4 +54,17 @@ public class FeatureService {
         .orElse(false);
   }
 
+  /**
+   * Checks whether a given feature is disabled and a condition is met. If so, throw a {@link
+   * FeatureDisabledException} exception.
+   *
+   * @param feature The feature to check.
+   * @param conditionSupplier The condition to check.
+   */
+  public void featureRequired(Feature feature, Supplier<Boolean> conditionSupplier) {
+
+    if (!isEnabled(feature) && Boolean.TRUE.equals(conditionSupplier.get())) {
+      throw new FeatureDisabledException(feature);
+    }
+  }
 }

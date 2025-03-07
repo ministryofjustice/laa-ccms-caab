@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.constants.SessionConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
-import uk.gov.laa.ccms.caab.feature.FeatureDisabledException;
 
 /**
  * Controller advice class responsible for handling exceptions globally and providing appropriate
@@ -75,14 +74,5 @@ public class GlobalExceptionHandler {
     model.addAttribute("error", e.getLocalizedMessage());
     model.addAttribute("errorTime", System.currentTimeMillis());
     return "error";
-  }
-
-  @ExceptionHandler(value = {FeatureDisabledException.class})
-  public String handleFeatureDisabledException(EbsApiClientException e,
-      HttpSession session, Model model) {
-    model.addAttribute(SessionConstants.USER_DETAILS,
-        session.getAttribute(SessionConstants.USER_DETAILS));
-    model.addAttribute("message", e.getLocalizedMessage());
-    return "unsupported";
   }
 }
