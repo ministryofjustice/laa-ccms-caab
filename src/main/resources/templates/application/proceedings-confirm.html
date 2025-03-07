@@ -54,7 +54,7 @@
         </p>
       </th:block>
       <h2 class="govuk-heading-m">Scope limitations</h2>
-      <table class="govuk-table">
+      <table class="govuk-table" id="scope-limitations-table">
         <thead class="govuk-table__head">
         <tr class="govuk-table__row">
           <th scope="col" class="govuk-table__header">Scope limitation</th>
@@ -97,6 +97,7 @@
         </tbody>
       </table>
       <a class="govuk-button govuk-button--secondary"
+         id="add-scope-limitation-button"
          data-module="govuk-button"
          th:href="@{/application/proceedings/scope-limitations/add/details}">
         Add scope limitation
