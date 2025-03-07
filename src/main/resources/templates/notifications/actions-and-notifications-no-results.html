@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title th:text="#{service.name} + ' - ' + #{notifications.search.results.heading}"></title>
+  <title th:text="#{service.name} + ' - ' + #{notifications.heading}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -9,7 +9,7 @@
     <a th:href="@{/home}" class="govuk-back-link" th:text="#{site.returnToHome}"></a>
   </div>
   <div id="main-content">
-    <h1 class="govuk-heading-l" th:text="#{notifications.search.results.heading}"/>
+    <h1 class="govuk-heading-l" th:text="#{notifications.heading}"/>
     <p class="govuk-body-l"
     th:text="#{notifications.search.noResults.leadParagraph}"/>
     <p class="govuk-body govuk-!-text-align-right">
