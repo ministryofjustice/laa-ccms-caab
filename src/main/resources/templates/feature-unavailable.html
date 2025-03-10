@@ -14,12 +14,7 @@
     </div>
     <div class="govuk-grid-column-two-thirds">
       <p class="govuk-body" th:text="#{feature.unavailable.body(${feature})}"/>
-      <p class="govuk-body">
-        If you require this feature to proceed, please click <a class="govuk-link govuk-link--no-visited-state"
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                th:href="@{${puiHomeUrl}}">here</a> to continue in the previous version of CCMS.
-      </p>
+      <p class="govuk-body" th:utext="#{feature.unavailable.body.redirect(${puiHomeUrl})}"/>
     </div>
   </div>
 </div>
