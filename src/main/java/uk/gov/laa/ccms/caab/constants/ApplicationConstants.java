@@ -84,6 +84,11 @@ public class ApplicationConstants {
           APP_TYPE_EMERGENCY);
 
   /**
+   * The actual value for the status of an live application.
+   */
+  public static final String STATUS_LIVE_ACTUAL_VALUE = "LIVE";
+
+  /**
    * The actual value for the status of an unsubmitted application.
    */
   public static final String STATUS_UNSUBMITTED_ACTUAL_VALUE = "UNSUBMITTED";

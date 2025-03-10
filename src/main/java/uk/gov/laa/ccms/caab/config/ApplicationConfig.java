@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -165,6 +166,16 @@ public class ApplicationConfig implements WebMvcConfigurer {
     thymeleafViewResolver.setCharacterEncoding("UTF-8");
     thymeleafViewResolver.addStaticVariable("userRoleUtil", new UserRoleUtil());
     return thymeleafViewResolver;
+  }
+
+  /**
+   * Makes a {@link SpelExpressionParser} available to the application context for SpEL parsing.
+   *
+   * @return a {@link SpelExpressionParser}
+   */
+  @Bean
+  public SpelExpressionParser spelExpressionParser() {
+    return new SpelExpressionParser();
   }
 
   /**
