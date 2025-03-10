@@ -2,7 +2,7 @@
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns:moj="http://www.thymeleaf.org">
 <head>
-  <title>LAA CCMS - Provider request</title>
+  <title th:text="#{request.title}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -24,7 +24,7 @@
         <div class="govuk-grid-column-two-thirds">
 
           <dl class="govuk-body">
-            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Request type', ${providerRequestFlow.requestTypeFormData.providerRequestTypeDisplayValue})}"></div>
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{request.type}, ${providerRequestFlow.requestTypeFormData.providerRequestTypeDisplayValue})}"></div>
           </dl>
 
           <div class="govuk-form-group" th:if="*{claimUploadEnabled}" th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
@@ -122,13 +122,13 @@
         <div class="govuk-grid-column-full">
           <th:block th:unless="${documentsUploaded.isEmpty()}" class="govuk-form-group">
             <table class="govuk-table">
-              <caption class="govuk-table__caption govuk-table__caption--m">Documents</caption>
+              <caption class="govuk-table__caption govuk-table__caption--m" th:text="#{request.documents}"></caption>
               <thead class="govuk-table__head">
               <tr class="govuk-table__row">
-                <th scope="col" class="govuk-table__header">File</th>
-                <th scope="col" class="govuk-table__header">Type</th>
-                <th scope="col" class="govuk-table__header">Description</th>
-                <th scope="col" class="govuk-table__header">Date</th>
+                <th scope="col" class="govuk-table__header" th:text="#{site.file}"></th>
+                <th scope="col" class="govuk-table__header" th:text="#{site.type}"></th>
+                <th scope="col" class="govuk-table__header" th:text="#{site.description}"></th>
+                <th scope="col" class="govuk-table__header" th:text="#{site.date}"></th>
                 <th scope="col" class="govuk-table__header"></th>
               </tr>
               </thead>
@@ -142,40 +142,35 @@
                     <span th:text="${uploadedDoc.description}"></span>
                   </div>
                   <div>
-                    <span class="govuk-body moreLess">more</span>
+                    <span class="govuk-body moreLess" th:text="#{request.more}"></span>
                   </div>
                 </td>
                 <td class="govuk-table__cell" th:text="${#dates.format(uploadedDoc.auditTrail.created, 'dd/MM/yyyy')}"></td>
                 <td class="govuk-table__cell">
-                  <button type="submit" name="action" value="document_delete" class="govuk-body ccms-button-as-link" th:onclick="|document.getElementById('documentIdToDelete').value='${uploadedDoc.id}'; this.form.submit();|">
-                    Remove
-                  </button>
+                  <button type="submit" name="action" value="document_delete" class="govuk-body ccms-button-as-link" th:onclick="|document.getElementById('documentIdToDelete').value='${uploadedDoc.id}'; this.form.submit();|"
+                      th:text="#{site.remove}"></button>
                 </td>
               </tr>
               </tbody>
             </table>
-            <button type="submit" name="action" value="document_upload" class="govuk-button govuk-button--secondary">
-              Add another document
-            </button>
+            <button type="submit" name="action" value="document_upload" class="govuk-button govuk-button--secondary"
+                th:text="#{request.addAnotherDocument}"></button>
           </th:block>
-
-
 
           <th:block th:unless="*{claimUploadEnabled}" >
             <div th:if="${documentsUploaded.isEmpty()}" class="govuk-form-group">
               <table class="govuk-table">
-                <caption class="govuk-table__caption govuk-table__caption--m">Documents</caption>
+                <caption class="govuk-table__caption govuk-table__caption--m" th:text="#{request.documents}"></caption>
                 <thead class="govuk-table__head">
                 <tr class="govuk-table__row">
-                  <th scope="col" class="govuk-table__header">Documents</th>
+                  <th scope="col" class="govuk-table__header" th:text="#{request.documents}"></th>
                 </tr>
                 </thead>
                 <tbody class="govuk-table__body">
                 <tr class="govuk-table__row">
                   <th scope="row" class="govuk-table__cell">
-                    <button type="submit" name="action" value="document_upload" class="govuk-body ccms-button-as-link">
-                      Document upload
-                    </button>
+                    <button type="submit" name="action" value="document_upload" class="govuk-body ccms-button-as-link"
+                       th:text="#{request.documentUpload}"></button>
                   </th>
                 </tr>
                 </tbody>
@@ -184,12 +179,8 @@
           </th:block>
 
           <div class="govuk-button-group">
-            <button type="submit" name="action" value="submit" class="govuk-button" data-module="govuk-button">
-              Submit
-            </button>
-            <a class="govuk-link" th:href="@{/provider-requests/types}">
-              Back
-            </a>
+            <button type="submit" name="action" value="submit" class="govuk-button" data-module="govuk-button" th:text="#{site.submit}"></button>
+            <a class="govuk-link" th:href="@{/provider-requests/types}" th:text="#{site.back}"></a>
           </div>
         </div>
       </div>
