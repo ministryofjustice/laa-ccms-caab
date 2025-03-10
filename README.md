@@ -46,7 +46,11 @@ Feature flags can be used to enabled or disable access to certain features of th
 To enable a feature, or list of features, set the following application property:
 
 ```yaml
-laa.ccms.enabled-features: feature1, feature2
+laa:
+  ccms:
+    features:
+      - feature: amendments
+        enabled: true
 ```
 
 ### Creating a new feature flag
