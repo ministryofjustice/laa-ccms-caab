@@ -15,11 +15,14 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.beans.propertyeditors.StringTrimmerEditor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -78,6 +81,16 @@ public class OpponentsSectionController {
   @ModelAttribute(ORGANISATION_SEARCH_CRITERIA)
   public OrganisationSearchCriteria getOrganisationSearchCriteria() {
     return new OrganisationSearchCriteria();
+  }
+
+  /**
+   * This method registers a custom editor to automatically trim leading and trailing
+   * whitespace from String fields and convert empty strings to null.
+   * This method is executed before binding request parameters to the model attributes.
+   */
+  @InitBinder
+  public void initBinder(WebDataBinder binder) {
+    binder.registerCustomEditor(String.class, new StringTrimmerEditor(true));
   }
 
   /**
@@ -402,8 +415,8 @@ public class OpponentsSectionController {
 
     model.addAttribute(CURRENT_OPPONENT, currentOpponent);
 
-    if (currentOpponent instanceof OrganisationOpponentFormData) {
-      if (Boolean.TRUE.equals(((OrganisationOpponentFormData) currentOpponent).getShared())) {
+    if (currentOpponent instanceof OrganisationOpponentFormData organisationOpponentFormData) {
+      if (Boolean.TRUE.equals(organisationOpponentFormData.getShared())) {
         populateConfirmSharedOrganisationDropdowns(model);
 
         return "application/opponents/opponents-organisation-shared-edit";
@@ -437,12 +450,12 @@ public class OpponentsSectionController {
       final BindingResult bindingResult,
       final Model model) {
 
-    if (currentOpponent instanceof OrganisationOpponentFormData) {
+    if (currentOpponent instanceof OrganisationOpponentFormData organisationOpponentFormData) {
       // Validate organisation opponent
       organisationOpponentValidator.validate(currentOpponent, bindingResult);
 
       if (bindingResult.hasErrors()) {
-        if (Boolean.TRUE.equals(((OrganisationOpponentFormData) currentOpponent).getShared())) {
+        if (Boolean.TRUE.equals(organisationOpponentFormData.getShared())) {
           populateConfirmSharedOrganisationDropdowns(model);
           return "application/opponents/opponents-organisation-shared-edit";
         } else {
