@@ -192,7 +192,7 @@ public class ApplicationService {
 
     final List<BaseApplicationDetail> searchResults = new ArrayList<>();
 
-    // Only search for SOA Cases if the user hasn't selected status 'UNSUBMITTED'.
+    // Only search for EBS Cases if the user hasn't selected status 'UNSUBMITTED'.
     if (!STATUS_UNSUBMITTED_ACTUAL_VALUE.equals(caseSearchCriteria.getStatus())) {
       // Set page and size to min and max respectively. Because we are combining 2 searches
       // we will have to return all records for pagination by the caller.
@@ -213,6 +213,11 @@ public class ApplicationService {
           .toList());
     }
 
+    // We need to fetch all TDS applications regardless of status to check for amendments.
+    // Temporarily remove case status from search criteria.
+    String caseStatus = caseSearchCriteria.getStatus();
+    caseSearchCriteria.setStatus(null);
+
     // Now retrieve applications from the Transient Data Store
     final List<BaseApplicationDetail> tdsApplications = this.getTdsApplications(
         caseSearchCriteria,
@@ -220,16 +225,34 @@ public class ApplicationService {
         0,
         searchConstants.getMaxSearchResultsCases()).getContent();
 
+    // Re-add the original case status to the search criteria to retain for pre-poulation
+    // of the search form.
+    caseSearchCriteria.setStatus(caseStatus);
+
     /*
      * TODO: Exclude (and remove) any Pending Applications where the SOA
      *  transaction has now completed.
      */
     // tdsApplications = pollPendingApplications(tdsApplications, data, ccmsUser);
 
-    // Remove any duplicates (remove the TDS applications as they are amendments, keep the cases)
-    tdsApplications.removeIf(
-        app -> searchResults.stream().anyMatch(
-                soaCase -> soaCase.getCaseReferenceNumber().equals(app.getCaseReferenceNumber())));
+    // Handle amendments: where there is a duplicate case from EBS + TDS, set the EBS amendment
+    // flag to true, and remove the TDS application from the results.
+    searchResults.stream()
+        .filter(ebsCase -> tdsApplications.stream().anyMatch(
+          amendment -> amendment.getCaseReferenceNumber().equals(ebsCase.getCaseReferenceNumber()))
+        )
+        .forEach(ebsCase -> {
+          ebsCase.setAmendment(true);
+          tdsApplications.removeIf(app ->
+              app.getCaseReferenceNumber().equals(ebsCase.getCaseReferenceNumber()));
+        });
+
+    // Clear TDS results unless case status search criteria was 'UNSUBMITTED', 'Draft' or unset
+    if (caseSearchCriteria.getStatus() != null
+        && !STATUS_UNSUBMITTED_ACTUAL_VALUE.equals(caseSearchCriteria.getStatus())
+        && !STATUS_DRAFT.equals(caseSearchCriteria.getStatus())) {
+      tdsApplications.clear();
+    }
 
     // Now add the remaining TDS applications into the list
     searchResults.addAll(tdsApplications);
@@ -1008,7 +1031,7 @@ public class ApplicationService {
     final LinkedCaseDetail linkedCase = resultDisplayMapper.toLinkedCase(data);
     caabApiClient.updateLinkedCase(
         linkedCaseId,
-        linkedCase, 
+        linkedCase,
         user.getLoginId()).block();
   }
 

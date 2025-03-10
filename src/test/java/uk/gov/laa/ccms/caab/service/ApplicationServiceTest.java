@@ -244,7 +244,7 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void getCases_DraftStatusQueriesSOAAndTDS() {
+  void getCases_DraftStatusQueriesEBSAndTDS() {
     final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     caseSearchCriteria.setCaseReference("123");
     caseSearchCriteria.setProviderCaseReference("456");

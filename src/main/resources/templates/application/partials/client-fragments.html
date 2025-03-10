@@ -391,10 +391,10 @@
   <div class="govuk-grid-row" th:if="*{vulnerableClient}">
     <div class="govuk-grid-column-two-thirds">
       <p class="govuk-body" th:text="#{client.address.vulnerable.leadParagraph}"></p>
-      <h2 class="govuk-heading-m" th:value="#{address.main}"></h2>
+      <h2 class="govuk-heading-m" th:text="#{address.main}"></h2>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-one-half">
-          <p class="govuk-body" th:value="#{address.country}"></p>
+          <p class="govuk-body" th:text="#{address.country}"></p>
         </div>
         <div class="govuk-grid-column-one-half">
           <p class="govuk-body" th:value="#{site.na}" th:text="#{site.na}"></p>
@@ -402,7 +402,7 @@
       </div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-one-half">
-          <p class="govuk-body" th:value="#{address.house}"></p>
+          <p class="govuk-body" th:text="#{address.house}"></p>
         </div>
         <div class="govuk-grid-column-one-half">
           <p class="govuk-body" th:value="#{site.na}" th:text="#{site.na}"></p>
@@ -410,7 +410,7 @@
       </div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-one-half">
-          <p class="govuk-body" th:value="#{address.postcode}"></p>
+          <p class="govuk-body" th:text="#{address.postcode}"></p>
         </div>
         <div class="govuk-grid-column-one-half">
           <p class="govuk-body" th:value="#{site.na}" th:text="#{site.na}"></p>
@@ -418,7 +418,7 @@
       </div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-one-half">
-          <p class="govuk-body" th:value="#{address.address1}"></p>
+          <p class="govuk-body" th:text="#{address.address1}"></p>
         </div>
         <div class="govuk-grid-column-one-half">
           <p class="govuk-body" th:value="#{site.na}" th:text="#{site.na}"></p>
@@ -426,7 +426,7 @@
       </div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-one-half">
-          <p class="govuk-body" th:value="#{address.address2}"></p>
+          <p class="govuk-body" th:text="#{address.address2}"></p>
         </div>
         <div class="govuk-grid-column-one-half">
           <p class="govuk-body" th:value="#{site.na}" th:text="#{site.na}"></p>
@@ -434,7 +434,7 @@
       </div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-one-half">
-          <p class="govuk-body" th:value="#{address.city}"></p>
+          <p class="govuk-body" th:text="#{address.city}"></p>
         </div>
         <div class="govuk-grid-column-one-half">
           <p class="govuk-body" th:value="#{site.na}" th:text="#{site.na}"></p>
@@ -442,7 +442,7 @@
       </div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-one-half">
-          <p class="govuk-body" th:value="#{address.county}"></p>
+          <p class="govuk-body" th:text="#{address.county}"></p>
         </div>
         <div class="govuk-grid-column-one-half">
           <p class="govuk-body" th:value="#{site.na}" th:text="#{site.na}"></p>
@@ -475,11 +475,11 @@
       <div th:replace="~{partials/forms :: textInput('houseNameNumber', #{address.house}, 'govuk-input--width-20')}"></div>
       <div th:replace="~{partials/forms :: textInput('postcode', #{address.postcode}, 'govuk-input--width-20')}"></div>
       <div class="govuk-form-group">
-        <button type="submit" name="action" value="find_address"
-                class="govuk-button govuk-button--secondary"
-                data-module="govuk-button"
-                th:text="#{address.find}">
-        </button>
+        <govuk:button id="find-address-button"
+                      name="action"
+                      classes="govuk-button--secondary"
+                      value="find_address"
+                      th:text="#{address.find}"/>
       </div>
       <div th:replace="~{partials/forms :: textInput('addressLine1', #{address.address1}, 'govuk-input--width-20')}"></div>
       <div th:replace="~{partials/forms :: textInput('addressLine2', #{site.optional(#{address.address2})}, 'govuk-input--width-20')}"></div>

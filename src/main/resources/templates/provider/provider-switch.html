@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-  <title>LAA CCMS - Your firm</title>
+  <title th:text="|#{service.name} - #{yourFirm.heading}|"/>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -12,19 +13,13 @@
     <form action="#" th:action="@{/provider-switch}" th:object="${providerFirmFormData}"
           method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <h1 class="govuk-heading-l">
-        Your firm
-      </h1>
-      <p class="govuk-body-l">
-        Please select the firm that you wish to do work for. Note that selecting a firm will filter
-        your view of notifications to those belonging to the selected firm.
-      </p>
+      <h1 class="govuk-heading-l" th:text="#{yourFirm.heading}"/>
+      <p class="govuk-body-l" th:text="#{yourFirm.leadParagraph}"/>
       <div
-        th:replace="~{partials/forms :: dropdown('providerFirmId', 'Available firms', ${providerFirms}, 'id', 'name', true)}"></div>
+        th:replace="~{partials/forms :: dropdown('providerFirmId', #{yourFirm.availableFirms},
+          ${providerFirms}, 'id', 'name', true)}"></div>
       <div class="govuk-button-group">
-        <button type="submit" class="govuk-button" data-module="govuk-button">
-          Confirm
-        </button>
+        <govuk:button id="confirm-button" type="submit" th:text="#{site.confirm}"/>
       </div>
     </form>
   </div>

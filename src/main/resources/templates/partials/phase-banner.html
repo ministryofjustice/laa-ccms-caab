@@ -1,5 +1,5 @@
 <div th:fragment="phase-banner" class="govuk-phase-banner"
-     th:style="${activeCase} ? 'background: #dee0e2;'">
+     th:style="${activeCase} ? 'background: #dee0e2;'" xmlns:sec="http://www.w3.org/1999/xhtml">
   <div class="govuk-width-container">
 
     <div class="govuk-grid-row">
@@ -14,25 +14,26 @@
         </p>
       </div>
       <div th:class="${activeCase} ? 'govuk-grid-column-one-half' : 'govuk-grid-column-full'">
-        <p class="govuk-body govuk-!-font-size-14 govuk-!-text-align-right"
+        <p class="govuk-body govuk-!-font-size-14"
            style="margin-bottom: 0; white-space: nowrap">
-                <span class="govuk-!-padding-left-2">
-                    Logged in as:
-                </span>
+          <span class="govuk-!-padding-left-2" th:text="|#{site.phase.loggedInAs}:|"/>
           <span class="govuk-!-font-weight-bold govuk-!-padding-right-2"
-                sec:authentication="name"></span>
+                sec:authentication="name"/>
           <span th:if="${pageCategory == 'home'}">
-                    On Behalf of:
+                    <th:block th:text="|#{site.phase.onBehalfOf}:|"/>
                     <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
-                        <a th:if="${#lists.size(user.firms) > 1}" th:href="@{/provider-switch}"
-                           th:text="${user.provider.name}"></a>
+                        <a th:if="${#lists.size(user.firms) > 1}"
+                           id="switch-provider-link"
+                           class="govuk-link govuk-link--no-visited-state"
+                           th:href="@{/provider-switch}"
+                           th:text="${user.provider.name}"/>
                         <span th:if="${#lists.size(user.firms) <= 1}"
-                              th:text="${user.provider.name}"></span>
+                              th:text="${user.provider.name}"/>
                     </span>
                 </span>
-          <a th:href="@{/logout}" class="govuk-!-text-align-right govuk-!-padding-right-2">
-            Logout
-          </a>
+          <a th:href="@{/logout}" class="govuk-!-text-align-right govuk-!-padding-right-2 govuk-link--no-visited-state"
+             style="float: right"
+            th:text="#{site.phase.logout}"/>
         </p>
       </div>
     </div>

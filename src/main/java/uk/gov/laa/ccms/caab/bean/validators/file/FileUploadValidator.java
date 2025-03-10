@@ -24,18 +24,21 @@ public abstract class FileUploadValidator extends AbstractValidator {
    * The error message for the required file field.
    */
   protected static final String FILE_REQUIRED_ERROR = "Please select a file to upload";
+  protected static final String FILE_REQUIRED_ERROR_CODE = "validation.error.selectAFile";
 
   /**
    * The error message for an invalid file extension.
    */
   protected static final String INVALID_EXTENSION_ERROR =
-      "Invalid file extension.  We can only accept %s files.";
+      "Invalid file extension. We can only accept %s files";
+  protected static final String INVALID_EXTENSION_ERROR_CODE = "validation.error.invalidExtension";
 
   /**
    * The error message for an invalid file extension.
    */
   public static final String MAX_FILESIZE_ERROR =
       "File is too large. The file must be less than %s";
+  protected static final String MAX_FILESIZE_ERROR_CODE = "validation.error.maxFileSize";
 
   /**
    * The maximum length of the document description text area.
@@ -63,12 +66,13 @@ public abstract class FileUploadValidator extends AbstractValidator {
 
     if (fileUploadFormData.getFile() == null
         || fileUploadFormData.getFile().isEmpty()) {
-      errors.rejectValue("file", "required.file", FILE_REQUIRED_ERROR);
+      errors.rejectValue("file", FILE_REQUIRED_ERROR_CODE, FILE_REQUIRED_ERROR);
     } else {
       fileUploadFormData.setFileExtension(getFileExtension(fileUploadFormData.getFile()));
 
       if (!isValidExtension(fileUploadFormData.getFileExtension())) {
-        errors.rejectValue("file", "invalid.extension",
+        errors.rejectValue("file", INVALID_EXTENSION_ERROR_CODE,
+            new String[]{getCommaDelimitedString(validExtensions)},
             String.format(INVALID_EXTENSION_ERROR, getCommaDelimitedString(validExtensions)));
       } else {
         validateFileSize(fileUploadFormData, errors);
@@ -125,7 +129,7 @@ public abstract class FileUploadValidator extends AbstractValidator {
    * @param errors the Errors object to store validation errors.
    */
   public void rejectFileSize(Errors errors) {
-    errors.rejectValue("file", "max.filesize.exceeded",
+    errors.rejectValue("file", MAX_FILESIZE_ERROR_CODE, new String[]{maxFileSize},
         String.format(MAX_FILESIZE_ERROR, maxFileSize));
   }
 

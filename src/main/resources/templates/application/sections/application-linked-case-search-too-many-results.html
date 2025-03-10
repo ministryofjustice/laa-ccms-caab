@@ -9,7 +9,9 @@
         <a th:href="@{/application/sections/linked-cases/search}" class="govuk-back-link">Return to linked case search</a>
     </div>
     <div id="main-content">
-        <th:block th:replace="~{application/partials/search-fragments :: tooManyResultsFragment(caption=${'Search for a case or application to link to your application'})}"></th:block>
+        <th:block th:replace="~{application/partials/search-fragments :: tooManyResultsFragment(
+        heading=#{application.generalDetails.linkCase.summary.search.title},
+        caption=#{application.generalDetails.linkCase.search.caption})}"></th:block>
     </div>
 </div>
 </body>

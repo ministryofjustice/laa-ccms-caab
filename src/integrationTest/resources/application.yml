@@ -44,6 +44,10 @@ laa:
   ccms:
     footer:
       research-panel-link: ""
+    pui-home-url: http://localhost:8080/civil/
+    features:
+      - feature: amendments
+        enabled: true
     s3:
       buckets:
         document-bucket:

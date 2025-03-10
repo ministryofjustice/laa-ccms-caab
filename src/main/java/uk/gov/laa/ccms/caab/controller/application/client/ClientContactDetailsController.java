@@ -82,6 +82,8 @@ public class ClientContactDetailsController {
       BindingResult bindingResult,
       Model model) {
 
+    // Cleanup mobile numbers if not selected in the UI.
+    contactDetails.clearUnsetPhoneNumbers();
     clientContactDetailsValidator.validate(contactDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {

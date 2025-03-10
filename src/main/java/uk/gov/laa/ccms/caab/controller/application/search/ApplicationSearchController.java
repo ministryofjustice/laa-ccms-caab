@@ -31,6 +31,8 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
+import uk.gov.laa.ccms.caab.feature.Feature;
+import uk.gov.laa.ccms.caab.feature.FeatureService;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
@@ -41,7 +43,6 @@ import uk.gov.laa.ccms.caab.util.PaginationUtil;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-
 
 /**
  * Controller responsible for managing the searching of applications and cases.
@@ -54,6 +55,8 @@ import uk.gov.laa.ccms.data.model.UserDetail;
     CASE_SEARCH_RESULTS})
 public class ApplicationSearchController {
   private final ProviderService providerService;
+
+  private final FeatureService featureService;
 
   private final LookupService lookupService;
 
@@ -161,6 +164,7 @@ public class ApplicationSearchController {
 
     model.addAttribute(CURRENT_URL,  request.getRequestURL().toString());
     model.addAttribute(CASE_RESULTS_PAGE, applicationDetails);
+    model.addAttribute("amendmentsEnabled", featureService.isEnabled(Feature.AMENDMENTS));
     return "application/application-search-results";
   }
 
@@ -186,6 +190,9 @@ public class ApplicationSearchController {
             .findFirst()
             .orElseThrow(() -> new CaabApplicationException(
                 String.format("Invalid case reference: %s", caseReferenceNumber)));
+
+    featureService.featureRequired(Feature.AMENDMENTS,
+        () -> Boolean.TRUE.equals(selectedApplication.getAmendment()));
 
     //
     // TODO: Spike CCLS-2120 to investigate poll and cleanup of pending submissions.

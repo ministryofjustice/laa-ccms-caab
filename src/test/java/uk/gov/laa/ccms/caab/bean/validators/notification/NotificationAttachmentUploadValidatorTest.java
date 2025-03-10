@@ -85,7 +85,7 @@ public class NotificationAttachmentUploadValidatorTest {
     validator.validate(notificationAttachmentUploadFormData, errors);
     assertEquals(1, errors.getErrorCount());
     assertNotNull(errors.getFieldError("file"));
-    assertEquals("invalid.extension", errors.getFieldError("file").getCode());
+    assertEquals("validation.error.invalidExtension", errors.getFieldError("file").getCode());
   }
 
   @Test
@@ -100,7 +100,7 @@ public class NotificationAttachmentUploadValidatorTest {
     validator.validate(notificationAttachmentUploadFormData, errors);
     assertEquals(1, errors.getErrorCount());
     assertNotNull(errors.getFieldError("file"));
-    assertEquals("max.filesize.exceeded", errors.getFieldError("file").getCode());
+    assertEquals("validation.error.maxFileSize", errors.getFieldError("file").getCode());
   }
 
   @Test

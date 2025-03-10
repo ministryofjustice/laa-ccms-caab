@@ -44,6 +44,7 @@ import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValida
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
+import uk.gov.laa.ccms.caab.feature.FeatureService;
 import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
@@ -65,6 +66,9 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class ApplicationSearchControllerTest {
   @Mock
   private CaseSearchCriteriaValidator validator;
+
+  @Mock
+  private FeatureService featureService;
 
   @Mock
   private ProviderService providerService;
@@ -100,6 +104,7 @@ public class ApplicationSearchControllerTest {
     this.user = buildUser();
 
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(200);
+    when(featureService.isEnabled(any())).thenReturn(true);
   }
 
   @Test
