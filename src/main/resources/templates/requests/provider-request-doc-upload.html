@@ -3,7 +3,7 @@
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.w3.org/1999/xhtml">
 <head>
-  <title th:text="#{request.title}"></title>
+  <title th:text="|#{service.name} - #{request.title}|"/>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">

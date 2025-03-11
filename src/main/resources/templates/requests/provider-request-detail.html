@@ -2,7 +2,7 @@
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns:moj="http://www.thymeleaf.org">
 <head>
-  <title th:text="#{request.title}"></title>
+  <title th:text="|#{service.name} - #{request.title}|"/>
 </head>
 <body>
 <div class="govuk-width-container">
