@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="#{feature.unavailable.title(${feature})}"/>
+</head>
+<body>
+<div id="breadcrumbs" style="padding-top: 40px;"></div>
+<div id="main-content">
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-full">
+      <h1 class="govuk-heading-l">
+        <span th:text="#{feature.unavailable.heading}"></span>
+      </h1>
+    </div>
+    <div class="govuk-grid-column-two-thirds">
+      <p class="govuk-body" th:text="#{feature.unavailable.body(${feature})}"/>
+      <p class="govuk-body" th:utext="#{feature.unavailable.body.redirect(${puiHomeUrl})}"/>
+    </div>
+  </div>
+</div>
+</body>
+</html>

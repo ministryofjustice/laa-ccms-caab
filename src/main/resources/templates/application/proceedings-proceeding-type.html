@@ -30,7 +30,7 @@
            th:classappend="${#fields.hasErrors('proceedingType')} ? 'govuk-form-group--error' : ''">
         <label class="govuk-label" th:for="'proceedingType'" th:text="'Proceeding'">
         </label>
-        <span th:if="${#fields.hasErrors('proceedingType')}" th:errors="*{'proceedingType'}" class="govuk-error-message"></span>
+        <span th:if="${#fields.hasErrors('proceedingType')}" th:errors="*{proceedingType}" class="govuk-error-message"></span>
         <input type="hidden" th:id="proceedingTypeDisplayValue" th:name="proceedingTypeDisplayValue" th:value="*{proceedingTypeDisplayValue}">
         <input type="hidden" th:id="orderTypeRequired" th:name="orderTypeRequired" th:value="*{orderTypeRequired}">
         <input type="hidden" th:id="larScope" th:name="larScope" th:value="*{larScope}">
