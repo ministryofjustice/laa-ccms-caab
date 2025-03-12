@@ -128,7 +128,7 @@
       </div>
       <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="prior-authority" aria-labelledby="tab_prior-authority">
         <h2 class="govuk-heading-l">Prior authorities</h2>
-        <table class="govuk-table">
+        <table class="govuk-table" id="prior-authorities-table">
           <thead class="govuk-table__head">
           <tr class="govuk-table__row">
             <th scope="col" class="govuk-table__header">Prior authority</th>
@@ -160,6 +160,7 @@
           </tbody>
         </table>
         <govuk:button classes="govuk-button--secondary"
+                      id="add-prior-authority-link"
                       th:text="#{proceedings.priorAuthority}"
                       th:href="@{/application/prior-authorities/add/type}"/>
       </div>
