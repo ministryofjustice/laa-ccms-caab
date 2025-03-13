@@ -1,9 +1,12 @@
 <!--Simple fragment for repeated summary list rows -->
-<div class="govuk-summary-list__row" th:fragment="summaryListDisplay(label, value)">
+<div class="govuk-summary-list__row" th:fragment="summaryListDisplay(label, value)"
+  th:with="idPrefix=${#strings.toLowerCase(#strings.replace(label, ' ', '-'))}">
   <dt class="govuk-summary-list__key"
+      th:id="|${idPrefix}-label|"
       th:text="${label}">
   </dt>
   <dd class="govuk-summary-list__value"
+      th:id="|${idPrefix}-value|"
       th:text="${value}">
   </dd>
 </div>
