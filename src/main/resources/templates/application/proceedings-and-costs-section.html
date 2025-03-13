@@ -116,12 +116,16 @@
           <tbody class="govuk-table__body">
           <tr class="govuk-table__row">
             <td class="govuk-table__cell">
-              <a th:href="@{/application/case-costs}" class="govuk-link">
+              <a th:href="@{/application/case-costs}" id="case-cost-limitation-link" class="govuk-link">
                 Case cost limitation
               </a>
             </td>
-            <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(costs.requestedCostLimitation)}"></td>
-            <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(costs.grantedCostLimitation)}"></td>
+            <td class="govuk-table__cell"
+                id="case-cost-requested-amount-value"
+                th:text="${#numbers.formatCurrency(costs.requestedCostLimitation)}"></td>
+            <td class="govuk-table__cell"
+                id="case-cost-granted-amount-value"
+                th:text="${#numbers.formatCurrency(costs.grantedCostLimitation)}"></td>
           </tr>
           </tbody>
         </table>
