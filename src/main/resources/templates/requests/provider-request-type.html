@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title>LAA CCMS - Provider request</title>
+  <title th:text="|#{service.name} - #{request.title}|"/>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -11,23 +11,15 @@
   <div id="main-content">
     <form action="#" th:action="@{/provider-requests/types}" th:object="${providerRequestTypeDetails}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l">General request</span>
-      <h1 class="govuk-heading-l">
-        Request type
-      </h1>
-      <div class="govuk-body-l">
-        Please select your request type and click 'Next' to continue.
-      </div>
+      <span class="govuk-caption-l" th:text="#{request.general}"></span>
+      <h1 class="govuk-heading-l" th:text="#{request.type}"></h1>
+      <div class="govuk-body-l" th:text="#{request.select}"></div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
-          <div th:replace="~{partials/forms :: dropdownWithDisplayValue('providerRequestType', 'Request type', ${providerRequestTypes}, 'type', 'name')}"></div>
+          <div th:replace="~{partials/forms :: dropdownWithDisplayValue('providerRequestType', #{request.type}, ${providerRequestTypes}, 'type', 'name')}"></div>
           <div class="govuk-button-group">
-            <button class="govuk-button" data-module="govuk-button">
-              Next
-            </button>
-            <a class="govuk-link" th:href="@{/home}">
-              Back
-            </a>
+            <button class="govuk-button" data-module="govuk-button" th:text="#{site.next}"></button>
+            <a class="govuk-link" th:href="@{/home}" th:text="#{site.back}"></a>
           </div>
         </div>
       </div>

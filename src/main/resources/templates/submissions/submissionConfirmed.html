@@ -9,16 +9,10 @@
   <div id="main-content" style="padding-top: 40px;">
     <form action="#"
           th:action="@{/submissions/{submissionType}/confirmed(submissionType=${submissionType})}" method="post">
-      <h1 class="govuk-heading-l">
-        Submission confirmation
-      </h1>
-      <p class="govuk-body-l">
-        Your data has been successfully processed. Please click 'Next' to continue.
-      </p>
+      <h1 class="govuk-heading-l" th:text="#{submission.confirmation}"></h1>
+      <p class="govuk-body-l" th:text="#{submission.successfullyProcessed}"></p>
       <div class="govuk-button-group">
-        <button type="submit" class="govuk-button" data-module="govuk-button">
-          Next
-        </button>
+        <button type="submit" class="govuk-button" data-module="govuk-button" th:text="#{site.next}"></button>
       </div>
     </form>
   </div>
