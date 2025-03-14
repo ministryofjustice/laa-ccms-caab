@@ -141,7 +141,7 @@ public abstract class AbstractValidator implements Validator {
       String displayValue, Errors errors) {
 
     if (fieldValue == null || fieldValue.length() > maxLength) {
-      errors.rejectValue(field, "length.exceeds.max",
+      errors.rejectValue(field, "length.exceeds.max", new Object[] {maxLength, displayValue},
           String.format(GENERIC_MAX_LENGTH, maxLength, displayValue));
     }
   }
