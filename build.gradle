@@ -1,6 +1,6 @@
 plugins {
 	id 'net.researchgate.release' version '3.1.0'
-	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.28'
+	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.29'
 }
 
 subprojects {
@@ -36,6 +36,29 @@ repositories {
 }
 
 dependencies {
+
+	/**
+	 * Vulnerabilities - Transitive dependency overrides (remove when bumped in parent library)
+	 */
+	constraints {
+		// Production dependencies
+		implementation('org.bouncycastle:bcprov-jdk18on:1.80') {
+			because("Fixes CVE-2024-30172, CVE-2024-30171, CVE-2023-33202," +
+					"CVE-2024-29857, CVE-2023-33201." +
+					"Parent: org.springframework.security:spring-security-saml2-service-provider")
+		}
+		implementation('com.google.guava:guava:32.0.0-jre') {
+			because("Fixes CVE-2023-2976." +
+					"Parent: org.springframework.security:spring-security-saml2-service-provider")
+		}
+
+		// Test dependencies
+		testImplementation('org.apache.commons:commons-compress:1.27.1') {
+			because("Fixes CVE-2024-25710, CVE-2024-26308." +
+					"Parent: org.testcontainers:testcontainers-bom")
+		}
+
+	}
 
 	implementation 'uk.gov.laa.ccms.data:data-api:0.0.42'
 
@@ -77,6 +100,7 @@ dependencies {
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 	implementation 'org.springframework.security:spring-security-saml2-service-provider'
 
+
 	implementation 'uk.gov.laa.ccms.springboot:laa-ccms-spring-boot-starter-govuk-dialect'
 
 	//ClamAV virus scan
@@ -95,7 +119,7 @@ dependencies {
 
 	integrationTestImplementation 'org.wiremock:wiremock-standalone:3.3.1'
 
-	testImplementation platform('org.testcontainers:testcontainers-bom:1.20.4')
+	testImplementation platform('org.testcontainers:testcontainers-bom:1.20.6')
 	testImplementation 'org.testcontainers:testcontainers'
 	testImplementation 'org.testcontainers:junit-jupiter'
 	testImplementation 'org.testcontainers:localstack:1.20.4'

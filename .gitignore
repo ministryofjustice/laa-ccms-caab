@@ -102,6 +102,7 @@ htmlReport/
 localstack/
 !localstack/init-s3.sh
 /src/main/resources/application-secret.yml
+/src/main/resources/application-uat.yml
 
 # Snyk
 .dccache
