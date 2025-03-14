@@ -100,7 +100,6 @@ dependencies {
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 	implementation 'org.springframework.security:spring-security-saml2-service-provider'
 
-
 	implementation 'uk.gov.laa.ccms.springboot:laa-ccms-spring-boot-starter-govuk-dialect'
 
 	//ClamAV virus scan
