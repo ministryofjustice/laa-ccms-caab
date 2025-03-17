@@ -15,6 +15,8 @@ portal:
   logoutUrl: ${PORTAL_URL}/oam/server/logout?end_url=${PORTAL_URL}/LAALogin/pages/Logout.jsp
 
 spring:
+  application:
+    name: laa-ccms-caab
   security:
     saml2:
       relyingparty:
@@ -27,8 +29,8 @@ spring:
                 url: ${PORTAL_URL}/oamfed/idp/initiatesso?providerid=${spring.security.saml2.relyingparty.registration.idp.entity-id}
             signing:
               credentials:
-                private-key: ${SAML_PRIVATE_KEY}
-                certificate: ${SAML_CERTIFICATE}
+                private-key-location: ${SAML_PRIVATE_KEY}
+                certificate-location: ${SAML_CERTIFICATE}
 
   thymeleaf: # Thymeleaf
     cache: false
