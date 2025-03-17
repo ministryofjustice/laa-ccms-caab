@@ -32,7 +32,7 @@
       </div>
 
       <div th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', 'Document type', ${evidenceTypes}, 'code', 'description')}"></div>
-      <div th:replace="~{partials/forms :: largeTextInput('documentDescription', 'Document description (Maximum 255 characters allowed)')}"></div>
+      <div th:replace="~{partials/forms :: largeTextInput('documentDescription', 'Document description', 255)}"></div>
 
       <div class="govuk-form-group" th:classappend="${#fields.hasErrors('evidenceTypes')} ? 'govuk-form-group--error' : ''">
         <fieldset class="govuk-fieldset">
