@@ -1,8 +1,7 @@
 package uk.gov.laa.ccms.caab.bean;
 
-import java.io.Serializable;
-
 import jakarta.validation.constraints.Size;
+import java.io.Serializable;
 import lombok.Data;
 
 /**

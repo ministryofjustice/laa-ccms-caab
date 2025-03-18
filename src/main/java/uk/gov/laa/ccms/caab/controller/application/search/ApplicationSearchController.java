@@ -1,7 +1,11 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.*;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -15,7 +19,14 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
@@ -108,7 +119,7 @@ public class ApplicationSearchController {
    */
   @PostMapping("/application/search")
   public String applicationSearch(
-      @ModelAttribute(USER_DETAILS) UserDetail user,
+      @SessionAttribute(USER_DETAILS) UserDetail user,
       @Validated @ModelAttribute(CASE_SEARCH_CRITERIA) final CaseSearchCriteria caseSearchCriteria,
       BindingResult bindingResult, Model model,
       final RedirectAttributes redirectAttributes) {
