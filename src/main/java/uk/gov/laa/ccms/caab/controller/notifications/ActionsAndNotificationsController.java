@@ -22,13 +22,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.SessionAttribute;
-import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
@@ -92,6 +88,11 @@ public class ActionsAndNotificationsController {
   @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA)
   public NotificationSearchCriteria notificationSearchCriteria() {
     return new NotificationSearchCriteria();
+  }
+
+  @InitBinder(NOTIFICATION_SEARCH_CRITERIA)
+  protected void initBinder(WebDataBinder binder) {
+    binder.addValidators(notificationSearchValidator);
   }
 
   /**
@@ -163,10 +164,9 @@ public class ActionsAndNotificationsController {
   @PostMapping("/notifications/search")
   public String notificationsSearch(
       @ModelAttribute(USER_DETAILS) UserDetail user,
-      @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
-      Model model, BindingResult bindingResult) {
+      @Validated @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
+      BindingResult bindingResult, Model model) {
 
-    notificationSearchValidator.validate(criteria, bindingResult);
     if (bindingResult.hasErrors()) {
       populateDropdowns(user, model, criteria);
       return "notifications/actions-and-notifications-search";

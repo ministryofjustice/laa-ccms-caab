@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.bean;
 
 import java.io.Serializable;
+
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
@@ -12,6 +14,7 @@ public class CaseSearchCriteria implements Serializable {
   /**
    * The LAA Application/Case Reference.
    */
+  @Size(max = 35)
   private String caseReference;
 
   /**
@@ -22,11 +25,13 @@ public class CaseSearchCriteria implements Serializable {
   /**
    * The client surname.
    */
+  @Size(max = 35)
   private String clientSurname;
 
   /**
    * The provider case reference.
    */
+  @Size(max = 35)
   private String providerCaseReference;
 
   /**
