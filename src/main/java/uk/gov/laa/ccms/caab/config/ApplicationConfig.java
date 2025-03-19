@@ -97,8 +97,8 @@ public class ApplicationConfig implements WebMvcConfigurer {
    * @return A WebClient instance configured for the Ebs API URL.
    */
   @Bean("ebsApiWebClient")
-  WebClient ebsApiWebClient() {
-    return createWebClient(ebsApiProperties);
+  WebClient ebsApiWebClient(WebClient.Builder builder) {
+    return createWebClient(ebsApiProperties, builder);
   }
 
   /**
@@ -107,8 +107,8 @@ public class ApplicationConfig implements WebMvcConfigurer {
    * @return A WebClient instance configured for the SOA API URL.
    */
   @Bean("soaApiWebClient")
-  WebClient soaApiWebClient() {
-    return createWebClient(soaApiProperties);
+  WebClient soaApiWebClient(WebClient.Builder builder) {
+    return createWebClient(soaApiProperties, builder);
   }
 
   /**
@@ -117,8 +117,8 @@ public class ApplicationConfig implements WebMvcConfigurer {
    * @return A WebClient instance configured for the CAAB API URL.
    */
   @Bean("caabApiWebClient")
-  WebClient caabApiWebClient() {
-    return createWebClient(caabApiProperties);
+  WebClient caabApiWebClient(WebClient.Builder builder) {
+    return createWebClient(caabApiProperties, builder);
   }
 
   /**
@@ -127,8 +127,8 @@ public class ApplicationConfig implements WebMvcConfigurer {
    * @return A WebClient instance configured for the Assessment API URL.
    */
   @Bean("assessmentApiWebClient")
-  WebClient assessmentApiWebClient() {
-    return createWebClient(assessmentApiProperties);
+  WebClient assessmentApiWebClient(WebClient.Builder builder) {
+    return createWebClient(assessmentApiProperties, builder);
   }
 
   /**
@@ -190,12 +190,12 @@ public class ApplicationConfig implements WebMvcConfigurer {
     return localeResolver;
   }
 
-  private WebClient createWebClient(final ApiProperties apiProperties) {
+  private WebClient createWebClient(final ApiProperties apiProperties, WebClient.Builder builder) {
     final int size = 16 * 1024 * 1024;
     final ExchangeStrategies strategies = ExchangeStrategies.builder()
         .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(size))
         .build();
-    return WebClient.builder()
+    return builder
         .baseUrl(apiProperties.getUrl())
         .defaultHeader(HttpHeaders.AUTHORIZATION, apiProperties.getAccessToken())
         .exchangeStrategies(strategies)

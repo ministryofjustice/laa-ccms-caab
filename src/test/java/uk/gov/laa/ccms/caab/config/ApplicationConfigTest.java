@@ -16,7 +16,7 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(classes = ApplicationConfig.class)
+@SpringBootTest(classes = {ApplicationConfig.class, TestConfig.class})
 @TestPropertySource(properties = {
     "laa.ccms.ebs-api.url=http://mockUrl",
     "laa.ccms.soa-api.url=http://mockUrl",
