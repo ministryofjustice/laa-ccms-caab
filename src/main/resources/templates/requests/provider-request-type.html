@@ -19,7 +19,6 @@
           <div th:replace="~{partials/forms :: dropdownWithDisplayValue('providerRequestType', #{request.type}, ${providerRequestTypes}, 'type', 'name')}"></div>
           <div class="govuk-button-group">
             <button class="govuk-button" data-module="govuk-button" th:text="#{site.next}"></button>
-            <a class="govuk-link" th:href="@{/home}" th:text="#{site.back}"></a>
           </div>
         </div>
       </div>

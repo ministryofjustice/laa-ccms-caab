@@ -54,9 +54,9 @@
         <tr class="govuk-table__row" th:each="notification : ${notificationsSearchResults.content}">
           <td class="govuk-table__cell"
               th:text="${#temporals.format(notification?.assignDate,'dd/MM/yyyy')}"></td>
-          <td class="govuk-table__cell"><a
+          <td class="govuk-table__cell"><a class="govuk-link--no-visited-state govuk-link--no-underline"
               th:href="@{/notifications/{notification_id}(notification_id=${notification.notificationId})}"
-              th:text="${notification.subject}"></a></td>
+              th:text="${#strings.capitalize(#strings.toLowerCase(notification.subject))}"></a></td>
           <td class="govuk-table__cell"
               th:text="${#temporals.format(notification.dueDate,'dd/MM/yyyy')}"></td>
           <td class="govuk-table__cell" th:text="${notification.user.loginId}"></td>

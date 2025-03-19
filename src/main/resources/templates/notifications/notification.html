@@ -13,7 +13,7 @@
     <form th:action="@{/notifications/{notification-id}(notification-id=${notification.notificationId})}" th:object="${notificationResponseFormData}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <h1 class="govuk-heading-l">
-        <th:block th:text="${notification.subject}"/>
+        <th:block th:text="${#strings.capitalize(#strings.toLowerCase(notification.subject))}"/>
       </h1>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
