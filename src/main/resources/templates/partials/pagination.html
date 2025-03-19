@@ -51,11 +51,20 @@
   </div>
 </nav>
 
-<th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-    style="margin-top: 0; white-space: nowrap" th:fragment="sorting(page, field, label)">
-  <a th:href="@{${currentUrl}
+<th scope="col"
+    class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
+    style="margin-top: 0; white-space: nowrap"
+    th:fragment="sorting(page, field, label)">
+  <a class="govuk-link--no-underline govuk-link--no-visited-state"
+     th:href="@{${currentUrl}
                 + '?page=' + ${page.number} + '&size=' + ${page.size}
                 + '&pageSort=' + ${field} + ',' + ${sortField == field && sortDirection == 'asc' ? 'desc' : 'asc'}}">[[${label}]]&nbsp;<!--
-    --><span th:if="${sortField == field}" th:utext="${sortDirection == 'asc' || sortDirection == '' ? '&#x25b2;' : '&#x25bc;'}">
-    </span><span th:if="${sortField != field}" th:utext="${'&#x25b6;'}"></span></a>
+    -->
+    <span th:if="${sortField == field}"
+          th:utext="${sortDirection == 'asc' || sortDirection == '' ? '&#x25b2;' : '&#x25bc;'}">
+    </span>
+    <span th:if="${sortField != field}"
+          th:utext="${'&#x25b6;'}">
+    </span>
+  </a>
 </th>
