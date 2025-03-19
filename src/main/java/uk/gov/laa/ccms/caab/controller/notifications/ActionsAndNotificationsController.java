@@ -22,7 +22,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -94,6 +97,11 @@ public class ActionsAndNotificationsController {
     return new NotificationSearchCriteria();
   }
 
+  @InitBinder(NOTIFICATION_SEARCH_CRITERIA)
+  protected void initBinder(WebDataBinder binder) {
+    binder.addValidators(notificationSearchValidator);
+  }
+
   /**
    * Endpoint to return the user to the Notifications Search Results.
    *
@@ -163,10 +171,9 @@ public class ActionsAndNotificationsController {
   @PostMapping("/notifications/search")
   public String notificationsSearch(
       @ModelAttribute(USER_DETAILS) UserDetail user,
-      @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
-      Model model, BindingResult bindingResult) {
+      @Validated @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
+      BindingResult bindingResult, Model model) {
 
-    notificationSearchValidator.validate(criteria, bindingResult);
     if (bindingResult.hasErrors()) {
       populateDropdowns(user, model, criteria);
       return "notifications/actions-and-notifications-search";

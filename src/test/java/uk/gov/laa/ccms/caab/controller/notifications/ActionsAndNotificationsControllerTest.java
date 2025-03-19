@@ -176,6 +176,7 @@ class ActionsAndNotificationsControllerTest {
   @BeforeEach
   void setUp() {
     mockMvc = standaloneSetup(actionsAndNotificationsController).build();
+    when(notificationSearchValidator.supports(any())).thenReturn(true);
   }
 
   @Test
