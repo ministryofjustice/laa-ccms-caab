@@ -439,7 +439,9 @@ class ApplicationSubmissionControllerTest {
         .andExpect(view().name("application/application-validation-error-correction"))
         .andExpect(model().attributeExists("providerDetailsErrors"))
         .andExpect(model().attributeExists("generalDetailsErrors"))
-        .andExpect(model().attributeExists("proceedingsErrors"));
+        .andExpect(model().attributeExists("proceedingsErrors"))
+        .andExpect(model().attributeExists("generalDetailsFormData"))
+        .andExpect(model().attributeExists("providerDetailsFormData"));
 
     verify(applicationService).getMonoProviderDetailsFormData(applicationId);
     verify(applicationService).getMonoCorrespondenceAddressFormData(applicationId);

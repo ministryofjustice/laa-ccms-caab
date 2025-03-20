@@ -176,70 +176,53 @@ public class ApplicationSubmissionController {
    */
   @GetMapping("/application/validate")
   public Mono<String> applicationValidate(
-      @SessionAttribute(APPLICATION_ID) final String applicationId,
-      final Model model
-  ) {
-    // Fetch data reactively
-    final Mono<ApplicationFormData> providerDetailsMono =
-        applicationService.getMonoProviderDetailsFormData(applicationId);
-    final Mono<AddressFormData> generalDetailsMono =
-        applicationService.getMonoCorrespondenceAddressFormData(applicationId);
-    final Mono<ApplicationDetail> applicationMono =
-        applicationService.getApplication(applicationId);
-    final Mono<List<AbstractOpponentFormData>> opponentsMono = Mono.fromCallable(() ->
-            applicationService.getOpponents(applicationId))
-        .subscribeOn(Schedulers.boundedElastic());
-
-    // Combine all Monos in a reactive manner using Mono.zip
-    return Mono.zip(providerDetailsMono, generalDetailsMono, applicationMono, opponentsMono)
+      @SessionAttribute(APPLICATION_ID) final String applicationId, final Model model) {
+    return Mono.zip(
+            applicationService.getMonoProviderDetailsFormData(applicationId),
+            applicationService.getMonoCorrespondenceAddressFormData(applicationId),
+            applicationService.getApplication(applicationId),
+            Mono.fromCallable(() -> applicationService.getOpponents(applicationId))
+                .subscribeOn(Schedulers.boundedElastic())
+        )
         .flatMap(tuple -> {
-          final ApplicationFormData providerDetailsFormData = tuple.getT1();
-          final AddressFormData generalDetailsFormData = tuple.getT2();
-          final ApplicationDetail application = tuple.getT3();
-          final List<AbstractOpponentFormData> opponents = tuple.getT4();
+          ApplicationFormData providerDetails = tuple.getT1();
+          AddressFormData generalDetails = tuple.getT2();
+          ApplicationDetail application = tuple.getT3();
+          List<AbstractOpponentFormData> opponents = tuple.getT4();
 
-          boolean validationFailed = false;
+          boolean hasErrors =
+              processValidations(providerDetails, generalDetails, application, opponents, model);
 
-          // Validate Provider Details
-          if (validateAndAddErrors(
-              providerDetailsFormData,
-              providerDetailsValidator, model, "providerDetailsErrors")) {
-            validationFailed = true;
-          }
-
-          // Validate General Details
-          if (validateAndAddErrors(
-              generalDetailsFormData,
-              correspondenceAddressValidator, model, "generalDetailsErrors")) {
-            validationFailed = true;
-          }
-
-          // Validate Proceedings - Now returns a reactive Mono<Boolean>
-          final Mono<Boolean> proceedingsValidationMono =
-              application.getProceedings() != null && !application.getProceedings().isEmpty()
-              ? validateProceedings(application.getProceedings(), model)
-              : Mono.just(false);
-
-          // Validate Opponents
-          if (validateOpponents(opponents, model)) {
-            validationFailed = true;
-          }
-
-          // Validate Prior Authorities
-          if (validatePriorAuthorities(application.getPriorAuthorities(), model)) {
-            validationFailed = true;
-          }
-
-          final boolean finalValidationFailed = validationFailed;
-          // Wait for the proceedings validation to complete
-          return proceedingsValidationMono.map(proceedingsValidationFailed -> {
-            if (proceedingsValidationFailed || finalValidationFailed) {
-              return "application/application-validation-error-correction";
-            } else {
-              return "redirect:/application/summary";
-            }
-          });
+          return validateProceedings(application.getProceedings(), model)
+              .map(proceedingsFailed -> hasErrors || proceedingsFailed
+                  ? "application/application-validation-error-correction"
+                  : "redirect:/application/summary");
         });
+  }
+
+  private boolean processValidations(
+      ApplicationFormData providerDetails,
+      AddressFormData generalDetails,
+      ApplicationDetail application,
+      List<AbstractOpponentFormData> opponents,
+      Model model
+  ) {
+    boolean hasErrors = false;
+
+    if (validateAndAddErrors(providerDetails, providerDetailsValidator, model,
+        "providerDetailsErrors")) {
+      model.addAttribute("providerDetailsFormData", providerDetails);
+      hasErrors = true;
+    }
+    if (validateAndAddErrors(generalDetails, correspondenceAddressValidator, model,
+        "generalDetailsErrors")) {
+      model.addAttribute("generalDetailsFormData", generalDetails);
+      hasErrors = true;
+    }
+    hasErrors |= validateOpponents(opponents, model);
+    hasErrors |= validatePriorAuthorities(application.getPriorAuthorities(), model);
+
+    return hasErrors;
   }
 
   /**
@@ -264,7 +247,7 @@ public class ApplicationSubmissionController {
       final List<String> errors = bindingResult.getAllErrors()
           .stream()
           .map(ObjectError::getDefaultMessage)
-          .collect(Collectors.toList());
+          .toList();
       model.addAttribute(errorAttribute, errors);
       return true;
     }
