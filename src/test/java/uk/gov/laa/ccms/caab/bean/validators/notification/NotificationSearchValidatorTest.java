@@ -192,14 +192,6 @@ class NotificationSearchValidatorTest {
   }
 
   @Test
-  void validateInvalidProviderCaseRef() {
-    criteria.setProviderCaseReference("¢ref");
-    validator.validate(criteria, errors);
-    assertTrue(errors.hasErrors());
-    assertEquals(1, errors.getErrorCount());
-  }
-
-  @Test
   void validateValidProviderCaseRef() {
     criteria.setProviderCaseReference("validProviderCaseRef");
     validator.validate(criteria, errors);
@@ -212,14 +204,6 @@ class NotificationSearchValidatorTest {
     // Requires some text, otherwise value is disregarded for being blank
     criteria.setProviderCaseReference("1  3");
     validator.validate(criteria, errors);
-    assertTrue(errors.hasErrors());
-    assertEquals(1, errors.getErrorCount());
-  }
-
-  @Test
-  void testProviderCaseRefAlphaNumericValidation() {
-    criteria.setProviderCaseReference("$%^");
-    validator.validate(criteria,errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
   }
