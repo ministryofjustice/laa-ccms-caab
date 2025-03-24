@@ -105,12 +105,7 @@ public class CaseSearchCriteriaValidator extends AbstractValidator {
   private void validateProviderCaseRef(String providerCaseReference, Errors errors) {
     if (StringUtils.hasText(providerCaseReference)) {
       //check no double spaces
-      if (!providerCaseReference.matches(ALPHA_NUMERIC_SLASH_SPACE_STRING)) {
-        errors.rejectValue("providerCaseReference", "invalid.providerCaseReference-char",
-                "Your input for 'Provider case reference' contains an "
-                        + "invalid character. Please amend your entry using numbers, "
-                        + "letters and spaces only");
-      } else if (providerCaseReference.matches(DOUBLE_SPACE)) {
+      if (providerCaseReference.matches(DOUBLE_SPACE)) {
         errors.rejectValue("providerCaseReference", "invalid.providerCaseReference-char",
                 "Your input for 'Provider case reference'"
                         + " contains double spaces. Please amend your entry.");
