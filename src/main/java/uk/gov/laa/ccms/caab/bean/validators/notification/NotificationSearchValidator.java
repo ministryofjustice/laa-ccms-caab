@@ -1,5 +1,12 @@
 package uk.gov.laa.ccms.caab.bean.validators.notification;
 
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.ALPHA_NUMERIC_SLASH_SPACE_STRING;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CHARACTER_SET_C;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.DOUBLE_SPACE;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.FIRST_CHARACTER_MUST_BE_ALPHA;
+
+import java.time.LocalDate;
+import java.util.Date;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -7,11 +14,6 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
-
-import java.time.LocalDate;
-import java.util.Date;
-
-import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.*;
 
 /**
  * Validator component responsible for validating
