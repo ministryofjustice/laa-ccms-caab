@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.bean;
 
 
+import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 import lombok.Data;
 import uk.gov.laa.ccms.caab.bean.common.Individual;
@@ -14,11 +15,13 @@ public class ClientSearchCriteria implements Serializable, Individual {
   /**
    * The forename of the client.
    */
+  @Size(max = 35)
   String forename;
 
   /**
    * The surname of the client.
    */
+  @Size(max = 35)
   String surname;
 
   /**
@@ -39,6 +42,7 @@ public class ClientSearchCriteria implements Serializable, Individual {
   /**
    * The value of the unique identifier for the client.
    */
+  @Size(max = 35)
   String uniqueIdentifierValue;
 
   /**
