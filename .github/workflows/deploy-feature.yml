@@ -1,0 +1,76 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
+
+name: Deploy feature
+
+on:
+  push:
+    branches:
+      - 'feature-dev/**'
+      - 'feature-test/**'
+
+permissions:
+  contents: read
+
+jobs:
+  define-feature-version:
+    runs-on: ubuntu-latest
+    outputs:
+      feature_version: ${{ steps.get-feature-version.outputs.feature_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ministryofjustice/laa-ccms-common-workflows/.github/actions/remove-prefix@story/ccmspui-35-common-workflows
+        id: get-feature-name
+        with:
+          string: ${{ github.ref_name }}
+          prefix: 'feature-*/'
+      - name: Get feature version
+        id: get-feature-version
+        run: |
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          echo "feature_version=${{ steps.get-feature-name.outputs.result }}-${COMMIT_HASH}-SNAPSHOT" >> $GITHUB_OUTPUT
+          echo "Feature version: ${{ steps.get-feature-name.outputs.result }}-${COMMIT_HASH}-SNAPSHOT"
+
+  build:
+    needs: [ define-feature-version ]
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/gradle-build-and-publish.yml@story/ccmspui-35-common-workflows
+    permissions:
+      contents: read
+      packages: write
+    with:
+      integration_test_task: "integrationTest"
+      publish_package: 'false'
+      override_version: ${{ needs.define-feature-version.outputs.feature_version }}
+    secrets:
+      gh_token: ${{ secrets.GITHUB_TOKEN }}
+
+  ecr-publish-image:
+    needs: [ build ]
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@story/ccmspui-35-common-workflows
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      image_version: ${{ format('{0}-{1}', vars.IMAGE_PREFIX, needs.build.outputs.published_artifact_version) }}
+    secrets:
+      gh_token: ${{ secrets.GITHUB_TOKEN }}
+      ecr_repository: ${{ vars.ECR_REPOSITORY }}
+      ecr_region: ${{ vars.ECR_REGION }}
+      ecr_role_to_assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}
+
+  update-helm-chart:
+    needs: [ ecr-publish-image ]
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/update-helm-chart.yml@story/ccmspui-35-common-workflows
+    with:
+      helm_charts_repository: 'laa-ccms-caab-helm-charts'
+      helm_charts_branch: 'development'
+      service_name: 'laa-ccms-caab-service'
+      subchart_name: 'laa-ccms-caab-ui'
+      application_version: ${{ needs.ecr-publish-image.outputs.published_image_version }}
+      feature_branch: ${{ github.ref_name }}
+    secrets:
+      gh_token: ${{ secrets.REPO_TOKEN }}
