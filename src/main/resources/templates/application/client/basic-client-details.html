@@ -19,9 +19,6 @@
             <div th:replace="~{application/partials/client-fragments :: clientBasicFragment}"></div>
             <div class="govuk-button-group">
                 <govuk:button type="submit" th:text="#{site.next}"/>
-                <govuk:button classes="govuk-button--secondary"
-                              th:text="#{site.back}"
-                              th:href="@{/application/client/details/cancel}"/>
             </div>
         </form>
     </div>
