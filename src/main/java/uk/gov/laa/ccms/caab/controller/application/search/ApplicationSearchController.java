@@ -9,6 +9,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -185,7 +186,8 @@ public class ApplicationSearchController {
   public String applicationCaseView(
       @PathVariable("case-reference-number") final String caseReferenceNumber,
       @SessionAttribute(CASE_SEARCH_RESULTS) final List<BaseApplicationDetail> caseSearchResults,
-      HttpSession session) {
+      HttpSession session,
+      Principal principal) {
 
     // First ensure that the supplied caseReferenceNumber refers to an
     // application/case from the search results in the session.

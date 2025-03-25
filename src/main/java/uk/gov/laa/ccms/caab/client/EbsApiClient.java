@@ -953,7 +953,9 @@ public class EbsApiClient extends BaseApiClient {
     queryParams.add("client-first-name", clientFirstName);
     return ebsApiWebClient
         .get()
-        .uri(builder -> builder.path("/cases/{case-reference-number}").build(caseReferenceNumber))
+        .uri(builder -> builder.path("/cases/{case-reference-number}")
+            .queryParams(queryParams)
+            .build(caseReferenceNumber))
         .retrieve()
         .bodyToMono(CaseDetail.class)
         .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
