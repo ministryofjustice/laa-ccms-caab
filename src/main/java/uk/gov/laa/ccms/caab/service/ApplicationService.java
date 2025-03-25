@@ -28,12 +28,11 @@ import static uk.gov.laa.ccms.caab.util.OpponentUtil.getPartyName;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
-import java.time.ZoneOffset;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1361,10 +1360,9 @@ public class ApplicationService {
             ebsApplicationDetails.getApplicationAmendmentType())
             || APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS.equalsIgnoreCase(
             ebsApplicationDetails.getApplicationAmendmentType());
-    Pair<Boolean, Date> devolvedPowersInfo = Pair.of(
+    Pair<Boolean, LocalDate> devolvedPowersInfo = Pair.of(
         isDevolvedPowers,
-        isDevolvedPowers ? Date.from(ebsApplicationDetails.getDevolvedPowersDate().atStartOfDay().toInstant(
-            ZoneOffset.UTC)) : null);
+        isDevolvedPowers ? ebsApplicationDetails.getDevolvedPowersDate() : null);
 
     // Calculate the CurrentProviderBilledAmount for the Application's Costs.
     BigDecimal currentProviderBilledAmount = BigDecimal.ZERO;
@@ -1972,9 +1970,13 @@ public class ApplicationService {
         .build();
 
 
-    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail caseToSubmit = applicationMapper.toCaseDetail(caseMappingContext);
+    final CaseDetail caseToSubmit =
+        applicationMapper.toEbsCaseDetail(caseMappingContext);
 
-    return soaApiClient.createCase(user.getLoginId(), user.getUserType(), caseToSubmit)
+    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail soaCaseToSubmit =
+        applicationMapper.toSoaCaseDetail(caseToSubmit);
+
+    return soaApiClient.createCase(user.getLoginId(), user.getUserType(), soaCaseToSubmit)
         .block();
 
   }

@@ -1,7 +1,7 @@
 package uk.gov.laa.ccms.caab.mapper.context;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
@@ -90,9 +90,9 @@ public class ApplicationMappingContext {
 
   /**
    * A flag to indicate whether devolved powers are in use for this Case,
-   * together with the Date that the powers were used.
+   * together with the LocalDate that the powers were used.
    */
-  Pair<Boolean, Date> devolvedPowers;
+  Pair<Boolean, LocalDate> devolvedPowers;
 
   /**
    * A calculation of currentProviderBilledAmount - totalProviderAmount.

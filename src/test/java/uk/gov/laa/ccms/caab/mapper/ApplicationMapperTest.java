@@ -18,31 +18,33 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildBaseApplication;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildAddressDetail;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildAssessmentResult;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildBaseClient;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCaseDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCaseSummary;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCostAward;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCostLimitation;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildFinancialAward;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildLandAward;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildLinkedCase;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildOtherAssetAward;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildOtherPartyOrganisation;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildOtherPartyPerson;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildPriorAuthority;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildPriorAuthorityDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildPriorAuthorityTypeDetail;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildProceedingDetail;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildRecovery;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildScopeLimitation;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildTimeRelatedAward;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildAddressDetail;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildAssessmentResult;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildBaseClient;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCaseDetail;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCostAward;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildCostLimitation;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildFinancialAward;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildLandAward;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildLinkedCase;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildOtherAssetAward;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildOtherPartyOrganisation;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildOtherPartyPerson;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildPriorAuthority;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildProceedingDetail;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildRecovery;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildScopeLimitation;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildTimeRelatedAward;
 
+import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -87,34 +89,36 @@ import uk.gov.laa.ccms.caab.model.ReferenceDataItemDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
+import uk.gov.laa.ccms.data.model.Award;
+import uk.gov.laa.ccms.data.model.BaseClient;
+import uk.gov.laa.ccms.data.model.CaseDetail;
+import uk.gov.laa.ccms.data.model.CaseDoc;
 import uk.gov.laa.ccms.data.model.CaseSummary;
+import uk.gov.laa.ccms.data.model.CategoryOfLaw;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CostLimitation;
+import uk.gov.laa.ccms.data.model.LinkedCase;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
+import uk.gov.laa.ccms.data.model.OpaAttribute;
+import uk.gov.laa.ccms.data.model.OtherParty;
+import uk.gov.laa.ccms.data.model.OtherPartyOrganisation;
+import uk.gov.laa.ccms.data.model.OtherPartyPerson;
+import uk.gov.laa.ccms.data.model.OutcomeDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthority;
+import uk.gov.laa.ccms.data.model.PriorAuthorityAttribute;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
+import uk.gov.laa.ccms.data.model.Proceeding;
+import uk.gov.laa.ccms.data.model.RecordHistory;
+import uk.gov.laa.ccms.data.model.Recovery;
+import uk.gov.laa.ccms.data.model.ScopeLimitation;
 import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
+import uk.gov.laa.ccms.data.model.SubmittedApplicationDetails;
+import uk.gov.laa.ccms.data.model.TimeRelatedAward;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.Award;
-import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
-import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
-import uk.gov.laa.ccms.soa.gateway.model.CaseDoc;
-import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
-import uk.gov.laa.ccms.soa.gateway.model.CostLimitation;
-import uk.gov.laa.ccms.soa.gateway.model.LinkedCase;
-import uk.gov.laa.ccms.soa.gateway.model.OpaAttribute;
-import uk.gov.laa.ccms.soa.gateway.model.OtherParty;
-import uk.gov.laa.ccms.soa.gateway.model.OtherPartyOrganisation;
-import uk.gov.laa.ccms.soa.gateway.model.OtherPartyPerson;
-import uk.gov.laa.ccms.soa.gateway.model.OutcomeDetail;
-import uk.gov.laa.ccms.soa.gateway.model.PriorAuthority;
-import uk.gov.laa.ccms.soa.gateway.model.PriorAuthorityAttribute;
-import uk.gov.laa.ccms.soa.gateway.model.RecordHistory;
-import uk.gov.laa.ccms.soa.gateway.model.Recovery;
-import uk.gov.laa.ccms.soa.gateway.model.ScopeLimitation;
-import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
-import uk.gov.laa.ccms.soa.gateway.model.TimeRelatedAward;
 
-public class ApplicationMapperTest {
+@DisplayName("Application mapper test")
+class ApplicationMapperTest {
 
   private final ApplicationMapper applicationMapper = new ApplicationMapperImpl() {
   };
@@ -123,28 +127,28 @@ public class ApplicationMapperTest {
 
   @Test
   void testToApplicationDetailDevolvedPowers() {
-    CaseDetail soaCaseDetail = buildCaseDetail(APP_TYPE_EMERGENCY_DEVOLVED_POWERS);
+    CaseDetail ebsCaseDetail = buildCaseDetail(APP_TYPE_EMERGENCY_DEVOLVED_POWERS);
     ApplicationMappingContext applicationMappingContext =
         buildApplicationMappingContext(
-            soaCaseDetail,
+            ebsCaseDetail,
             true,
-            soaCaseDetail.getApplicationDetails().getDevolvedPowersDate());
+            ebsCaseDetail.getApplicationDetails().getDevolvedPowersDate());
     ApplicationDetail result = applicationMapper.toApplicationDetail(applicationMappingContext);
 
     assertNotNull(result);
-    assertEquals(soaCaseDetail.getCaseReferenceNumber(), result.getCaseReferenceNumber());
+    assertEquals(ebsCaseDetail.getCaseReferenceNumber(), result.getCaseReferenceNumber());
     assertEquals(applicationMappingContext.getCertificate().getCode(),
         result.getCertificate().getId());
     assertEquals(applicationMappingContext.getCertificate().getDescription(),
         result.getCertificate().getDisplayValue());
-    assertEquals(soaCaseDetail.getApplicationDetails().getApplicationAmendmentType(),
+    assertEquals(ebsCaseDetail.getApplicationDetails().getApplicationAmendmentType(),
         result.getApplicationType().getId());
     assertEquals(applicationMappingContext.getApplicationType().getDescription(),
         result.getApplicationType().getDisplayValue());
-    assertEquals(soaCaseDetail.getRecordHistory().getDateCreated(),
+    assertEquals(ebsCaseDetail.getRecordHistory().getDateCreated(),
         result.getDateCreated());
     assertEquals(
-        soaCaseDetail.getApplicationDetails().getProviderDetails().getProviderCaseReferenceNumber(),
+        ebsCaseDetail.getApplicationDetails().getProviderDetails().getProviderCaseReferenceNumber(),
         result.getProviderDetails().getProviderCaseReference());
     assertEquals(
         applicationMappingContext.getProviderDetail().getId(),
@@ -153,12 +157,12 @@ public class ApplicationMapperTest {
         applicationMappingContext.getProviderDetail().getName(),
         result.getProviderDetails().getProvider().getDisplayValue());
     assertEquals(
-        soaCaseDetail.getApplicationDetails().getProviderDetails()
-            .getContactUserId().getUserLoginId(),
+        ebsCaseDetail.getApplicationDetails().getProviderDetails()
+            .getContactUserId().getLoginId(),
         result.getProviderDetails().getProviderContact().getId());
     assertEquals(
-        soaCaseDetail.getApplicationDetails().getProviderDetails()
-            .getContactUserId().getUserName(),
+        ebsCaseDetail.getApplicationDetails().getProviderDetails()
+            .getContactUserId().getUsername(),
         result.getProviderDetails().getProviderContact().getDisplayValue());
     assertEquals(applicationMappingContext.getProviderOffice().getId(),
         result.getProviderDetails().getOffice().getId());
@@ -175,40 +179,40 @@ public class ApplicationMapperTest {
     assertNotNull(result.getCorrespondenceAddress());  // Detail tested in specific test case
     assertNotNull(result.getClient()); // Detail tested in specific test case
     assertEquals(
-        soaCaseDetail.getApplicationDetails().getCategoryOfLaw().getCategoryOfLawCode(),
+        ebsCaseDetail.getApplicationDetails().getCategoryOfLaw().getCategoryOfLawCode(),
         result.getCategoryOfLaw().getId());
     assertEquals(
-        soaCaseDetail.getApplicationDetails().getCategoryOfLaw().getCategoryOfLawDescription(),
+        ebsCaseDetail.getApplicationDetails().getCategoryOfLaw().getCategoryOfLawDescription(),
         result.getCategoryOfLaw().getDisplayValue());
     assertEquals(
-        soaCaseDetail.getApplicationDetails().getCategoryOfLaw().getGrantedAmount(),
+        ebsCaseDetail.getApplicationDetails().getCategoryOfLaw().getGrantedAmount(),
         result.getCosts().getGrantedCostLimitation());
     assertEquals(
-        soaCaseDetail.getApplicationDetails().getCategoryOfLaw().getRequestedAmount(),
+        ebsCaseDetail.getApplicationDetails().getCategoryOfLaw().getRequestedAmount(),
         result.getCosts().getRequestedCostLimitation());
     assertEquals(
-        soaCaseDetail.getApplicationDetails().getCategoryOfLaw().getCategoryOfLawCode(),
+        ebsCaseDetail.getApplicationDetails().getCategoryOfLaw().getCategoryOfLawCode(),
         result.getCategoryOfLaw().getId());
     assertNull(result.getCosts().getDefaultCostLimitation());
     assertNotNull(result.getCosts().getCostEntries()); // Detail tested in specific test case
     assertEquals(
-        soaCaseDetail.getApplicationDetails().getCategoryOfLaw().getCostLimitations().size(),
+        ebsCaseDetail.getApplicationDetails().getCategoryOfLaw().getCostLimitations().size(),
         result.getCosts().getCostEntries().size());
     assertNull(result.getCosts().getAuditTrail());
     assertEquals(
-        soaCaseDetail.getApplicationDetails().getLarDetails().isLarScopeFlag(),
+        ebsCaseDetail.getApplicationDetails().getLarDetails().getLarScopeFlag(),
         result.getLarScopeFlag());
     assertEquals(
-        soaCaseDetail.getCaseStatus().getActualCaseStatus(),
+        ebsCaseDetail.getCaseStatus().getActualCaseStatus(),
         result.getStatus().getId());
     assertEquals(
-        soaCaseDetail.getCaseStatus().getDisplayCaseStatus(),
+        ebsCaseDetail.getCaseStatus().getDisplayCaseStatus(),
         result.getStatus().getDisplayValue());
     assertEquals(
-        soaCaseDetail.getAvailableFunctions(),
+        ebsCaseDetail.getAvailableFunctions(),
         result.getAvailableFunctions());
     assertTrue(result.getApplicationType().getDevolvedPowers().getUsed());
-    assertEquals(soaCaseDetail.getApplicationDetails().getDevolvedPowersDate(),
+    assertEquals(ebsCaseDetail.getApplicationDetails().getDevolvedPowersDate(),
         result.getApplicationType().getDevolvedPowers().getDateUsed());
     assertNotNull(result.getCorrespondenceAddress());
     assertNotNull(result.getMeansAssessment());
@@ -243,7 +247,7 @@ public class ApplicationMapperTest {
             buildCaseDetail(APP_TYPE_EMERGENCY),
             false,
             null);
-    SubmittedApplicationDetails soaApplicationDetails =
+    uk.gov.laa.ccms.data.model.@Valid SubmittedApplicationDetails soaApplicationDetails =
         applicationMappingContext.getEbsCaseDetail().getApplicationDetails();
 
     AddressDetail result = applicationMapper.toCorrespondenceAddress(applicationMappingContext);
@@ -269,46 +273,46 @@ public class ApplicationMapperTest {
 
     @Test
   void testToCostEntry() {
-    CostLimitation soaCostLimitation = buildCostLimitation("");
+    CostLimitation ebsCostLimitation = buildCostLimitation("");
 
-    CostEntryDetail result = applicationMapper.toCostEntry(soaCostLimitation);
+    CostEntryDetail result = applicationMapper.toCostEntry(ebsCostLimitation);
 
     assertNotNull(result);
-    assertEquals(soaCostLimitation.getBillingProviderId(), result.getLscResourceId());
-    assertEquals(soaCostLimitation.getPaidToDate(), result.getAmountBilled());
-    assertEquals(soaCostLimitation.getAmount(), result.getRequestedCosts());
-    assertEquals(soaCostLimitation.getBillingProviderName(), result.getResourceName());
-    assertEquals(soaCostLimitation.getCostLimitId(), result.getEbsId());
-    assertEquals(soaCostLimitation.getCostCategory(), result.getCostCategory());
+    assertEquals(ebsCostLimitation.getBillingProviderId(), result.getLscResourceId());
+    assertEquals(ebsCostLimitation.getPaidToDate(), result.getAmountBilled());
+    assertEquals(ebsCostLimitation.getAmount(), result.getRequestedCosts());
+    assertEquals(ebsCostLimitation.getBillingProviderName(), result.getResourceName());
+    assertEquals(ebsCostLimitation.getCostLimitId(), result.getEbsId());
+    assertEquals(ebsCostLimitation.getCostCategory(), result.getCostCategory());
     assertFalse(result.getNewEntry());
     assertTrue(result.getSubmitted()); // Defaults to true in caab-api model
   }
 
   @Test
   void testToProceeding() {
-    uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail soaProceeding =
+    uk.gov.laa.ccms.data.model.Proceeding ebsProceeding =
         buildProceedingDetail(STATUS_DRAFT);
     ProceedingMappingContext proceedingMappingContext =
-        buildProceedingMappingContext(soaProceeding);
+        buildProceedingMappingContext(ebsProceeding);
 
     ProceedingDetail result = applicationMapper.toProceeding(proceedingMappingContext);
 
     assertNotNull(result);
     assertFalse(result.getEdited());
-    assertEquals(soaProceeding.getAvailableFunctions(),
+    assertEquals(ebsProceeding.getAvailableFunctions(),
         result.getAvailableFunctions());
-    assertEquals(soaProceeding.getStage(),
+    assertEquals(ebsProceeding.getStage(),
         result.getStage());
-    assertEquals(soaProceeding.getDateGranted(),
+    assertEquals(ebsProceeding.getDateGranted(),
         result.getDateGranted());
-    assertEquals(soaProceeding.getDateCostsValid(),
+    assertEquals(ebsProceeding.getDateCostsValid(),
         result.getDateCostsValid());
-    assertEquals(soaProceeding.getAvailableFunctions(),
+    assertEquals(ebsProceeding.getAvailableFunctions(),
         result.getAvailableFunctions());
 
-    assertEquals(soaProceeding.getProceedingCaseId(),
+    assertEquals(ebsProceeding.getProceedingCaseId(),
         result.getEbsId());
-    assertEquals(soaProceeding.isLeadProceedingIndicator(),
+    assertEquals(ebsProceeding.getLeadProceedingIndicator(),
         result.getLeadProceedingInd());
     assertEquals(proceedingMappingContext.getMatterType().getCode(),
         result.getMatterType().getId());
@@ -318,7 +322,7 @@ public class ApplicationMapperTest {
         result.getProceedingType().getId());
     assertEquals(proceedingMappingContext.getProceedingLookup().getName(),
         result.getProceedingType().getDisplayValue());
-    assertEquals(soaProceeding.getProceedingDescription(),
+    assertEquals(ebsProceeding.getProceedingDescription(),
         result.getDescription());
     assertEquals(proceedingMappingContext.getProceedingLookup().getLarScope(),
         result.getLarScope());
@@ -334,7 +338,7 @@ public class ApplicationMapperTest {
         result.getStatus().getId());
     assertEquals(proceedingMappingContext.getProceedingStatusLookup().getDescription(),
         result.getStatus().getDisplayValue());
-    assertEquals(soaProceeding.getOrderType(),
+    assertEquals(ebsProceeding.getOrderType(),
         result.getTypeOfOrder().getId());
 
     assertNotNull(result.getScopeLimitations());
@@ -368,7 +372,7 @@ public class ApplicationMapperTest {
         result.getScopeLimitation().getDisplayValue());
     assertEquals(soaScopeLimitation.getScopeLimitationWording(),
         result.getScopeLimitationWording());
-    assertEquals(soaScopeLimitation.isDelegatedFunctionsApply(),
+    assertEquals(soaScopeLimitation.getDelegatedFunctionsApply(),
         result.getDelegatedFuncApplyInd().getFlag());
     assertNull(result.getDefaultInd());
     assertNull(result.getNonDefaultWordingReqd());
@@ -377,21 +381,21 @@ public class ApplicationMapperTest {
 
   @Test
   void testToProceedingOutcome() {
-    uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail soaProceeding =
+    uk.gov.laa.ccms.data.model.Proceeding ebsProceeding =
         buildProceedingDetail(STATUS_DRAFT);
     ProceedingMappingContext proceedingMappingContext =
-        buildProceedingMappingContext(soaProceeding);
-    OutcomeDetail soaOutcomeDetail = soaProceeding.getOutcome();
+        buildProceedingMappingContext(ebsProceeding);
+    OutcomeDetail soaOutcomeDetail = ebsProceeding.getOutcome();
 
     ProceedingOutcomeDetail result = applicationMapper.toProceedingOutcome(proceedingMappingContext);
 
     assertNotNull(result);
-    assertEquals(soaProceeding.getProceedingDescription(), result.getDescription());
+    assertEquals(ebsProceeding.getProceedingDescription(), result.getDescription());
     assertEquals(proceedingMappingContext.getMatterType().getCode(),
         result.getMatterType().getId());
     assertEquals(proceedingMappingContext.getMatterType().getDescription(),
         result.getMatterType().getDisplayValue());
-    assertEquals(soaProceeding.getProceedingCaseId(), result.getProceedingCaseId());
+    assertEquals(ebsProceeding.getProceedingCaseId(), result.getProceedingCaseId());
     assertEquals(proceedingMappingContext.getProceedingLookup().getCode(),
         result.getProceedingType().getId());
     assertEquals(proceedingMappingContext.getProceedingLookup().getName(),
@@ -417,7 +421,7 @@ public class ApplicationMapperTest {
 
   @Test
   void testMapMostRecentAssessment_SingleAssessment() {
-    uk.gov.laa.ccms.soa.gateway.model.AssessmentResult soaAssessmentResult =
+    uk.gov.laa.ccms.data.model.AssessmentResult soaAssessmentResult =
         buildAssessmentResult("");
 
     AssessmentResult result = applicationMapper.toAssessmentResult(soaAssessmentResult);
@@ -481,7 +485,7 @@ public class ApplicationMapperTest {
 
   @Test
   void testToAddress() {
-    uk.gov.laa.ccms.soa.gateway.model.AddressDetail soaAddress = buildAddressDetail("");
+    uk.gov.laa.ccms.data.model.AddressDetail soaAddress = buildAddressDetail("");
 
     AddressDetail result = applicationMapper.toAddress(soaAddress);
     assertNotNull(result);
@@ -517,13 +521,13 @@ public class ApplicationMapperTest {
     assertNotNull(result);
     assertEquals(OPPONENT_TYPE_INDIVIDUAL, result.getType());
     assertEquals(soaOtherParty.getOtherPartyId(), result.getEbsId());
-    assertEquals(soaOtherParty.getPerson().isCourtOrderedMeansAssesment(),
+    assertEquals(soaOtherParty.getPerson().getCourtOrderedMeansAssessment(),
         result.getCourtOrderedMeansAssessment());
-    assertEquals(soaOtherParty.getPerson().getOrganizationAddress(),
+    assertEquals(soaOtherParty.getPerson().getOrganisationAddress(),
         result.getEmployerAddress());
-    assertEquals(soaOtherParty.getPerson().getOrganizationName(),
+    assertEquals(soaOtherParty.getPerson().getOrganisationName(),
         result.getEmployerName());
-    assertEquals(soaOtherParty.getPerson().isPartyLegalAidedInd(),
+    assertEquals(soaOtherParty.getPerson().getPartyLegalAidedInd(),
         result.getLegalAided());
     assertEquals(soaOtherParty.getPerson().getNiNumber(),
         result.getNationalInsuranceNumber());
@@ -535,7 +539,7 @@ public class ApplicationMapperTest {
         result.getTelephoneMobile());
     assertEquals(soaOtherParty.getPerson().getContactDetails().getFax(),
         result.getFaxNumber());
-    assertEquals(soaOtherParty.getPerson().isPublicFundingAppliedInd(),
+    assertEquals(soaOtherParty.getPerson().getPublicFundingAppliedInd(),
         result.getPublicFundingApplied());
     assertFalse(result.getDeleteInd());
 
@@ -583,9 +587,9 @@ public class ApplicationMapperTest {
     assertNotNull(result);
     assertEquals(OPPONENT_TYPE_ORGANISATION, result.getType());
     assertEquals(soaOtherParty.getOtherPartyId(), result.getEbsId());
-    assertEquals(soaOtherParty.getOrganisation().getOrganizationName(),
+    assertEquals(soaOtherParty.getOrganisation().getOrganisationName(),
         result.getOrganisationName());
-    assertEquals(soaOtherParty.getOrganisation().getOrganizationType(),
+    assertEquals(soaOtherParty.getOrganisation().getOrganisationType(),
         result.getOrganisationType());
     assertEquals(soaOtherParty.getOrganisation().getContactName(),
         result.getContactNameRole());
@@ -601,7 +605,7 @@ public class ApplicationMapperTest {
         result.getRelationshipToCase());
     assertFalse(result.getDeleteInd());
 
-    assertEquals(soaOtherParty.getOrganisation().isCurrentlyTrading(),
+    assertEquals(soaOtherParty.getOrganisation().getCurrentlyTrading(),
         result.getCurrentlyTrading());
     assertEquals(soaOtherParty.getOrganisation().getOtherInformation(),
         result.getOtherInformation());
@@ -693,7 +697,7 @@ public class ApplicationMapperTest {
         result.getOtherDetails());
     assertEquals(soaCaseDetail.getDischargeStatus().getReason(),
         result.getDischargeReason());
-    assertEquals(soaCaseDetail.getDischargeStatus().isClientContinuePvtInd(),
+    assertEquals(soaCaseDetail.getDischargeStatus().getClientContinuePvtInd(),
         result.getClientContinueInd());
   }
 
@@ -744,7 +748,7 @@ public class ApplicationMapperTest {
     assertEquals(soaRecovery.getOfferedAmount().getConditionsOfOffer(),
         result.getConditionsOfOffer());
     assertEquals(soaRecovery.getOfferedAmount().getConditionsOfOffer(), result.getOfferDetails());
-    assertEquals(soaRecovery.isLeaveOfCourtReqdInd(), result.getLeaveOfCourtRequiredInd());
+    assertEquals(soaRecovery.getLeaveOfCourtReqdInd(), result.getLeaveOfCourtRequiredInd());
     assertNull(result.getAwardType()); // Populated by a specific award mapper method
     assertNull(result.getDescription()); // Populated by a specific award mapper method
 
@@ -794,8 +798,8 @@ public class ApplicationMapperTest {
         result.getLiableParties().size());
 
     // Like for like mappings
-    assertEquals(soaAward.isDeleteAllowed(), result.getDeleteAllowed());
-    assertEquals(soaAward.isUpdateAllowed(), result.getUpdateAllowed());
+    assertEquals(soaAward.getDeleteAllowed(), result.getDeleteAllowed());
+    assertEquals(soaAward.getUpdateAllowed(), result.getUpdateAllowed());
     assertEquals(soaAward.getCostAward().getServiceAddress().getAddressLine1(),
         result.getAddressLine1());
     assertEquals(soaAward.getCostAward().getServiceAddress().getAddressLine2(),
@@ -855,8 +859,8 @@ public class ApplicationMapperTest {
         result.getLiableParties().size());
 
     // Like for like mappings
-    assertEquals(soaAward.isDeleteAllowed(), result.getDeleteAllowed());
-    assertEquals(soaAward.isUpdateAllowed(), result.getUpdateAllowed());
+    assertEquals(soaAward.getDeleteAllowed(), result.getDeleteAllowed());
+    assertEquals(soaAward.getUpdateAllowed(), result.getUpdateAllowed());
     assertEquals(soaAward.getFinancialAward().getServiceAddress().getAddressLine1(),
         result.getAddressLine1());
     assertEquals(soaAward.getFinancialAward().getServiceAddress().getAddressLine2(),
@@ -904,8 +908,8 @@ public class ApplicationMapperTest {
         result.getLiableParties().size());
 
     // Like for like mappings
-    assertEquals(soaAward.isDeleteAllowed(), result.getDeleteAllowed());
-    assertEquals(soaAward.isUpdateAllowed(), result.getUpdateAllowed());
+    assertEquals(soaAward.getDeleteAllowed(), result.getDeleteAllowed());
+    assertEquals(soaAward.getUpdateAllowed(), result.getUpdateAllowed());
     assertEquals(soaAward.getLandAward().getDescription(), result.getDescription());
     assertEquals(soaAward.getLandAward().getTitleNo(), result.getTitleNumber());
     assertEquals(soaAward.getLandAward().getPropertyAddress().getAddressLine1(),
@@ -961,8 +965,8 @@ public class ApplicationMapperTest {
         result.getLiableParties().size());
 
     // Like for like mappings
-    assertEquals(soaAward.isDeleteAllowed(), result.getDeleteAllowed());
-    assertEquals(soaAward.isUpdateAllowed(), result.getUpdateAllowed());
+    assertEquals(soaAward.getDeleteAllowed(), result.getDeleteAllowed());
+    assertEquals(soaAward.getUpdateAllowed(), result.getUpdateAllowed());
     assertEquals(soaAward.getOtherAsset().getDescription(), result.getDescription());
     assertEquals(soaAward.getOtherAsset().getAwardedBy(), result.getAwardedBy());
     assertEquals(soaAward.getOtherAsset().getAwardedAmount(), result.getAwardedAmount());
@@ -1020,17 +1024,17 @@ public class ApplicationMapperTest {
   }
 
   private ApplicationMappingContext buildApplicationMappingContext(
-      CaseDetail soaCase,
+      uk.gov.laa.ccms.data.model.CaseDetail ebsCaseDetail,
       Boolean devolvedPowers,
-      Date devolvedPowersDate) {
+      LocalDate devolvedPowersDate) {
     return ApplicationMappingContext.builder()
-        .ebsCaseDetail(soaCase)
+        .ebsCaseDetail(ebsCaseDetail)
         .applicationType(new CommonLookupValueDetail()
             .code("apptypecode")
             .description("apptypedesc"))
         .amendmentProceedingsInEbs(Collections.singletonList(
-            buildProceedingMappingContext(soaCase.getApplicationDetails().getProceedings().get(0))))
-        .caseOutcome(buildCaseOutcomeMappingContext(soaCase))
+            buildProceedingMappingContext(ebsCaseDetail.getApplicationDetails().getProceedings().get(0))))
+        .caseOutcome(buildCaseOutcomeMappingContext(ebsCaseDetail))
         .caseWithOnlyDraftProceedings(Boolean.TRUE)
         .certificate(new CommonLookupValueDetail()
             .code("certcode")
@@ -1043,12 +1047,12 @@ public class ApplicationMapperTest {
         .supervisorContact(new uk.gov.laa.ccms.data.model.ContactDetail()
             .id(101)
             .name("supName"))
-        .meansAssessment(soaCase.getApplicationDetails().getMeansAssesments().get(0))
-        .meritsAssessment(soaCase.getApplicationDetails().getMeritsAssesments().get(0))
+        .meansAssessment(ebsCaseDetail.getApplicationDetails().getMeansAssessments().get(0))
+        .meritsAssessment(ebsCaseDetail.getApplicationDetails().getMeritsAssessments().get(0))
         .priorAuthorities(Collections.singletonList(buildPriorAuthorityMappingContext(
-            soaCase.getPriorAuthorities().get(0))))
+            ebsCaseDetail.getPriorAuthorities().get(0))))
         .proceedings(Collections.singletonList(
-            buildProceedingMappingContext(soaCase.getApplicationDetails().getProceedings().get(0))))
+            buildProceedingMappingContext(ebsCaseDetail.getApplicationDetails().getProceedings().get(0))))
         .providerDetail(new uk.gov.laa.ccms.data.model.ProviderDetail()
             .id(1)
             .name("provname"))
@@ -1057,9 +1061,9 @@ public class ApplicationMapperTest {
   }
 
   private ProceedingMappingContext buildProceedingMappingContext(
-      uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail soaProceeding) {
+      Proceeding ebsProceeding) {
     return ProceedingMappingContext.builder()
-        .ebsProceeding(soaProceeding)
+        .ebsProceeding(ebsProceeding)
         .clientInvolvement(new CommonLookupValueDetail()
             .code("clientInv")
             .description("clientDesc"))
@@ -1119,7 +1123,7 @@ public class ApplicationMapperTest {
 
   @Test
   @DisplayName("Test toCaseDetail with valid CaseMappingContext")
-  void testToCaseDetail_Valid() {
+  void testToSoaCaseDetail_Valid() {
     final ApplicationDetail applicationDetail = buildApplicationDetail(1, false, new Date());
     final LinkedCaseDetail linkedCaseDetail = new LinkedCaseDetail().lscCaseReference("LC123").relationToCase("Related");
     final PriorAuthorityDetail priorAuthorityDetail = new PriorAuthorityDetail().summary("Test Prior Authority");
@@ -1132,7 +1136,7 @@ public class ApplicationMapperTest {
         .caseDocs(Collections.singletonList(caseDocDetail))
         .build();
 
-    final CaseDetail result = applicationMapper.toCaseDetail(context);
+    final CaseDetail result = applicationMapper.toEbsCaseDetail(context);
 
     assertNotNull(result);
     assertEquals(applicationDetail.getCaseReferenceNumber(), result.getCaseReferenceNumber());
@@ -1151,8 +1155,8 @@ public class ApplicationMapperTest {
 
   @Test
   @DisplayName("Test toCaseDetail with null CaseMappingContext")
-  void testToCaseDetail_Null() {
-    assertNull(applicationMapper.toCaseDetail(null));
+  void testToSoaCaseDetail_Null() {
+    assertNull(applicationMapper.toSoaCaseDetail(null));
   }
 
 
@@ -1311,7 +1315,7 @@ public class ApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaProviderDetail with valid ApplicationProviderDetails")
-  void testToSoaProviderDetail_Valid() {
+  void testToEbsProviderDetail_Valid() {
     final StringDisplayValue providerContact = new StringDisplayValue();
     providerContact.setId("user123");
 
@@ -1323,10 +1327,10 @@ public class ApplicationMapperTest {
     providerDetails.supervisor(new StringDisplayValue().id("300"));
     providerDetails.feeEarner(new StringDisplayValue().id("400"));
 
-    final uk.gov.laa.ccms.soa.gateway.model.ProviderDetail result = applicationMapper.toSoaProviderDetail(providerDetails);
+    final uk.gov.laa.ccms.data.model.ProviderDetails result = applicationMapper.toEbsProviderDetail(providerDetails);
 
     assertNotNull(result);
-    assertEquals("user123", result.getContactUserId().getUserLoginId());
+    assertEquals("user123", result.getContactUserId().getLoginId());
     assertEquals("CASE123", result.getProviderCaseReferenceNumber());
     assertEquals("100", result.getProviderFirmId());
     assertEquals("200", result.getProviderOfficeId());
@@ -1336,8 +1340,8 @@ public class ApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaProviderDetail with null ApplicationProviderDetails")
-  void testToSoaProviderDetail_Null() {
-    assertNull(applicationMapper.toSoaProviderDetail(null));
+  void testToEbsProviderDetail_Null() {
+    assertNull(applicationMapper.toEbsProviderDetail(null));
   }
 
 
@@ -1403,7 +1407,7 @@ public class ApplicationMapperTest {
     addressDetail.setCountry("Test Country");
     addressDetail.setCounty("Test County");
 
-    final uk.gov.laa.ccms.soa.gateway.model.AddressDetail result = applicationMapper.toSoaAddressDetail(addressDetail);
+    final uk.gov.laa.ccms.data.model.AddressDetail result = applicationMapper.toSoaAddressDetail(addressDetail);
 
     assertNotNull(result);
     assertEquals("123", result.getAddressId());
@@ -1425,7 +1429,7 @@ public class ApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaProceedingDetail with valid ProceedingDetail")
-  void testToSoaProceedingDetail_Valid() {
+  void testToEbsProceedingDetail_Valid() {
     final ProceedingDetail proceedingDetail = new ProceedingDetail();
     proceedingDetail.setId(123);
     proceedingDetail.setStatus(new StringDisplayValue().id("Status"));
@@ -1440,12 +1444,12 @@ public class ApplicationMapperTest {
     proceedingDetail.setDateDevolvedPowersUsed(new Date());
     proceedingDetail.setDateGranted(new Date());
 
-    final uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail result = applicationMapper.toSoaProceedingDetail(proceedingDetail);
+    final uk.gov.laa.ccms.data.model.Proceeding result = applicationMapper.toEbsProceedingDetail(proceedingDetail);
 
     assertNotNull(result);
     assertEquals("P_123", result.getProceedingCaseId());
     assertEquals("Status", result.getStatus());
-    assertTrue(result.isLeadProceedingIndicator());
+    assertTrue(result.getLeadProceedingIndicator());
     assertEquals("Test Description", result.getProceedingDescription());
     assertEquals("Order", result.getOrderType());
     assertEquals("Matter", result.getMatterType());
@@ -1459,8 +1463,8 @@ public class ApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaProceedingDetail with null ProceedingDetail")
-  void testToSoaProceedingDetail_Null() {
-    assertNull(applicationMapper.toSoaProceedingDetail(null));
+  void testToEbsProceedingDetail_Null() {
+    assertNull(applicationMapper.toEbsProceedingDetail(null));
   }
 
   @Test
@@ -1476,7 +1480,7 @@ public class ApplicationMapperTest {
     assertNotNull(result);
     assertEquals("scopeId", result.getScopeLimitation());
     assertEquals("Scope Limitation Wording", result.getScopeLimitationWording());
-    assertTrue(result.isDelegatedFunctionsApply());
+    assertTrue(result.getDelegatedFunctionsApply());
   }
 
   @Test
@@ -1504,7 +1508,7 @@ public class ApplicationMapperTest {
     assertEquals("ClientRelInd", result.getPerson().getRelationToClient());
     assertEquals("CaseRelInd", result.getPerson().getRelationToCase());
     assertEquals("NI12345", result.getPerson().getNiNumber());
-    assertTrue(result.getPerson().isPartyLegalAidedInd());
+    assertTrue(result.getPerson().getPartyLegalAidedInd());
   }
 
   @Test
@@ -1524,8 +1528,8 @@ public class ApplicationMapperTest {
     assertNotNull(result.getOrganisation());
     assertEquals("ClientRelOrg", result.getOrganisation().getRelationToClient());
     assertEquals("CaseRelOrg", result.getOrganisation().getRelationToCase());
-    assertEquals("OrgName", result.getOrganisation().getOrganizationName());
-    assertEquals("Private", result.getOrganisation().getOrganizationType());
+    assertEquals("OrgName", result.getOrganisation().getOrganisationName());
+    assertEquals("Private", result.getOrganisation().getOrganisationType());
   }
 
   @Test
@@ -1553,7 +1557,7 @@ public class ApplicationMapperTest {
       "'TestClientRel', 'TestCaseRel', '123456', 'true', 'true', 'John Doe', 'Test Employer', 'Employer Address', '1000', '500', '1990-01-01', 'Employed', 'Cert123', 'Monthly', '2023-10-12', 'OtherInfo'",
       "'ClientRel2', 'CaseRel2', '987654', 'false', 'false', 'Jane Smith', 'Another Employer', 'Another Address', '2000', '1000', '1985-05-05', 'Unemployed', 'Cert456', 'Weekly', '2023-08-20', 'Info2'"
   })
-  void testToSoaPerson_Valid(final String relationToClient, final String relationToCase, final String niNumber, final boolean legalAided,
+  void testToEbsPerson_Valid(final String relationToClient, final String relationToCase, final String niNumber, final boolean legalAided,
                              final boolean courtOrderedMeansAssesment, final String contactName, final String employerName,
                              final String employerAddress, final String assessedIncome, final String assessedAssets, final String dateOfBirth,
                              final String employmentStatus, final String certificateNumber, final String assessedIncomeFrequency,
@@ -1581,17 +1585,17 @@ public class ApplicationMapperTest {
     opponentDetail.setOtherInformation(otherInformation);
 
     // Call the method under test
-    final OtherPartyPerson result = applicationMapper.toSoaPerson(opponentDetail);
+    final OtherPartyPerson result = applicationMapper.toEbsPerson(opponentDetail);
 
     assertNotNull(result);
     assertEquals(relationToClient, result.getRelationToClient());
     assertEquals(relationToCase, result.getRelationToCase());
     assertEquals(niNumber, result.getNiNumber());
-    assertEquals(legalAided, result.isPartyLegalAidedInd());
-    assertEquals(courtOrderedMeansAssesment, result.isCourtOrderedMeansAssesment());
+    assertEquals(legalAided, result.getPartyLegalAidedInd());
+    assertEquals(courtOrderedMeansAssesment, result.getCourtOrderedMeansAssessment());
     assertEquals(contactName, result.getContactName());
     assertEquals(employerName, result.getEmployersName());
-    assertEquals(employerAddress, result.getOrganizationAddress());
+    assertEquals(employerAddress, result.getOrganisationAddress());
     assertEquals(new BigDecimal(assessedIncome).setScale(2), result.getAssessedIncome());
     assertEquals(new BigDecimal(assessedAssets).setScale(2), result.getAssessedAssets());
     assertEquals(parsedDateOfBirth, result.getDateOfBirth());
@@ -1604,8 +1608,8 @@ public class ApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaPerson with null OpponentDetail")
-  void testToSoaPerson_NullOpponentDetail() {
-    assertNull(applicationMapper.toSoaPerson(null));
+  void testToEbsPerson_NullOpponentDetail() {
+    assertNull(applicationMapper.toEbsPerson(null));
   }
 
   @ParameterizedTest
@@ -1625,15 +1629,15 @@ public class ApplicationMapperTest {
     opponentDetail.setCurrentlyTrading(currentlyTrading);
     opponentDetail.setOtherInformation(otherInformation);
 
-    final OtherPartyOrganisation result = applicationMapper.toSoaOrganisation(opponentDetail);
+    final OtherPartyOrganisation result = applicationMapper.toEbsOrganisation(opponentDetail);
 
     assertNotNull(result);
     assertEquals(relationToClient, result.getRelationToClient());
     assertEquals(relationToCase, result.getRelationToCase());
-    assertEquals(organisationName, result.getOrganizationName());
-    assertEquals(organisationType, result.getOrganizationType());
+    assertEquals(organisationName, result.getOrganisationName());
+    assertEquals(organisationType, result.getOrganisationType());
     assertEquals(contactName, result.getContactName());
-    assertEquals(currentlyTrading, result.isCurrentlyTrading());
+    assertEquals(currentlyTrading, result.getCurrentlyTrading());
     assertEquals(otherInformation, result.getOtherInformation());
     assertNull(result.getAddress());
   }
@@ -1641,7 +1645,7 @@ public class ApplicationMapperTest {
   @Test
   @DisplayName("Test toSoaOrganisation with null OpponentDetail")
   void testToSoaOrganisation_NullOpponentDetail() {
-    assertNull(applicationMapper.toSoaOrganisation(null));
+    assertNull(applicationMapper.toEbsOrganisation(null));
   }
 
   @ParameterizedTest
@@ -1669,7 +1673,7 @@ public class ApplicationMapperTest {
     assertEquals(name, result.getAttribute());
     assertEquals(type, result.getResponseType());
     assertEquals(value, result.getResponseValue());
-    assertEquals(expectedUserDefinedInd, result.isUserDefinedInd());
+    assertEquals(expectedUserDefinedInd, result.getUserDefinedInd());
   }
 
   @Test
@@ -1696,7 +1700,7 @@ public class ApplicationMapperTest {
     final RecordHistory result = applicationMapper.toSoaRecordHistory(caseMappingContext);
 
     assertNotNull(result);
-    assertEquals("testLoginId", result.getLastUpdatedBy().getUserLoginId());
+    assertEquals("testLoginId", result.getLastUpdatedBy().getLoginId());
     assertEquals(testDate, result.getDateLastUpdated());
     assertEquals(testDate, result.getDateCreated());
   }
