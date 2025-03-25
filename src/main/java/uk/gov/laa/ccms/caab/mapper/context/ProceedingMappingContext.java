@@ -7,18 +7,23 @@ import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
+import uk.gov.laa.ccms.data.model.Proceeding;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
+import uk.gov.laa.ccms.data.model.ScopeLimitation;
 import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ScopeLimitation;
 
 /**
- * Class to hold a SOA ProceedingDetail together with all additional data needed to
+ * Class to hold a EBS ProceedingDetail together with all additional data needed to
  * perform a mapping to a CAAB ProceedingDetail.
  */
 @Builder
 @Data
 public class ProceedingMappingContext {
-  uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail soaProceeding;
+
+  /*
+   * Proceeding from EBS
+   */
+  Proceeding ebsProceeding;
 
   /*
    * Lookup of additional data for this proceeding.

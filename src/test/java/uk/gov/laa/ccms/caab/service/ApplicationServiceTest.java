@@ -1137,7 +1137,7 @@ class ApplicationServiceTest {
         soaPriorAuthority.getDetails().get(0).getValue());
 
     assertNotNull(result);
-    assertEquals(soaPriorAuthority, result.getSoaPriorAuthority());
+    assertEquals(soaPriorAuthority, result.getEbsPriorAuthority());
     assertNotNull(result.getPriorAuthorityTypeLookup());
     assertEquals(priorAuthorityTypeDetails.getContent().get(0),
         result.getPriorAuthorityTypeLookup());
@@ -1166,7 +1166,7 @@ class ApplicationServiceTest {
         soaPriorAuthority);
 
     assertNotNull(result);
-    assertEquals(soaPriorAuthority, result.getSoaPriorAuthority());
+    assertEquals(soaPriorAuthority, result.getEbsPriorAuthority());
     assertNotNull(result.getPriorAuthorityTypeLookup());
     assertEquals(priorAuthorityTypeDetails.getContent().get(0),
         result.getPriorAuthorityTypeLookup());
@@ -1338,7 +1338,7 @@ class ApplicationServiceTest {
 //    StepVerifier.create(proceedingMappingContextMono)
 //        .expectNextMatches(result -> {
           assertNotNull(result);
-          assertEquals(soaProceeding, result.getSoaProceeding());
+          assertEquals(soaProceeding, result.getEbsProceeding());
           assertEquals(clientInvLookup, result.getClientInvolvement());
           assertEquals(levelOfServiceLookup, result.getLevelOfService());
           assertEquals(matterTypeLookup, result.getMatterType());
@@ -1484,7 +1484,7 @@ class ApplicationServiceTest {
         applicationService.buildApplicationMappingContext(soaCase);
 
     assertNotNull(result);
-    assertEquals(soaCase, result.getSoaCaseDetail());
+    assertEquals(soaCase, result.getEbsCaseDetail());
     assertEquals(applicationTypeLookup, result.getApplicationType());
     assertEquals(providerDetail, result.getProviderDetail());
     assertEquals(providerDetail.getOffices().get(2), result.getProviderOffice());

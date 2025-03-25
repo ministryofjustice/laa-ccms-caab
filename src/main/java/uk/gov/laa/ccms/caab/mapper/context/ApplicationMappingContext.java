@@ -6,12 +6,12 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import org.apache.commons.lang3.tuple.Pair;
+import uk.gov.laa.ccms.data.model.AssessmentResult;
+import uk.gov.laa.ccms.data.model.CaseDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
-import uk.gov.laa.ccms.soa.gateway.model.AssessmentResult;
-import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 
 /**
  * Class to hold a SOA CaseDetail together with all additional data needed to
@@ -24,7 +24,7 @@ public class ApplicationMappingContext {
   /**
    * The CaseDetail which will be mapped to an ApplicationDetail.
    */
-  CaseDetail soaCaseDetail;
+  CaseDetail ebsCaseDetail;
 
   /**
    * Lookup of additional application type data for this Case.

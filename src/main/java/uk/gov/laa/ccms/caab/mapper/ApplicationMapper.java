@@ -125,26 +125,26 @@ public interface ApplicationMapper {
   @Mapping(target = "providerContact", ignore = true)
   ApplicationProviderDetails toApplicationProviderDetails(CaseSummary ebsCaseSummary);
 
-  @Mapping(target = ".", source = "soaCaseDetail")
+  @Mapping(target = ".", source = "ebsCaseDetail")
   @Mapping(target = "certificate", source = "certificate")
   @Mapping(target = "applicationType", source = "applicationMappingContext")
-  @Mapping(target = "dateCreated", source = "soaCaseDetail.recordHistory.dateCreated")
+  @Mapping(target = "dateCreated", source = "ebsCaseDetail.recordHistory.dateCreated")
   @Mapping(target = "providerDetails.providerCaseReference",
-      source = "soaCaseDetail.applicationDetails.providerDetails.providerCaseReferenceNumber")
+      source = "ebsCaseDetail.applicationDetails.providerDetails.providerCaseReferenceNumber")
   @Mapping(target = "providerDetails.provider", source = "providerDetail")
   @Mapping(target = "providerDetails.providerContact",
-      source = "soaCaseDetail.applicationDetails.providerDetails.contactUserId")
+      source = "ebsCaseDetail.applicationDetails.providerDetails.contactUserId")
   @Mapping(target = "providerDetails.office", source = "providerOffice")
   @Mapping(target = "providerDetails.supervisor", source = "supervisorContact")
   @Mapping(target = "providerDetails.feeEarner", source = "feeEarnerContact")
   @Mapping(target = "correspondenceAddress", source = "applicationMappingContext")
-  @Mapping(target = "client", source = "soaCaseDetail.applicationDetails.client")
-  @Mapping(target = "categoryOfLaw", source = "soaCaseDetail.applicationDetails.categoryOfLaw")
+  @Mapping(target = "client", source = "ebsCaseDetail.applicationDetails.client")
+  @Mapping(target = "categoryOfLaw", source = "ebsCaseDetail.applicationDetails.categoryOfLaw")
   @Mapping(target = "costs", source = "applicationMappingContext")
   @Mapping(target = "larScopeFlag",
-      source = "soaCaseDetail.applicationDetails.larDetails.larScopeFlag", defaultValue = "false")
-  @Mapping(target = "status", source = "soaCaseDetail.caseStatus")
-  @Mapping(target = "opponents", source = "soaCaseDetail.applicationDetails.otherParties")
+      source = "ebsCaseDetail.applicationDetails.larDetails.larScopeFlag", defaultValue = "false")
+  @Mapping(target = "status", source = "ebsCaseDetail.caseStatus")
+  @Mapping(target = "opponents", source = "ebsCaseDetail.applicationDetails.otherParties")
   @Mapping(target = "proceedings", source = "proceedings")
   @Mapping(target = "amendmentProceedingsInEbs", source = "amendmentProceedingsInEbs")
   @Mapping(target = "submitted", source = "caseWithOnlyDraftProceedings")
@@ -169,40 +169,40 @@ public interface ApplicationMapper {
   @Mapping(target = "allSectionsComplete", ignore = true)
   ApplicationDetail toApplicationDetail(ApplicationMappingContext applicationMappingContext);
 
-  @Mapping(target = "id", source = "soaCaseDetail.applicationDetails.applicationAmendmentType")
+  @Mapping(target = "id", source = "ebsCaseDetail.applicationDetails.applicationAmendmentType")
   @Mapping(target = "displayValue", source = "applicationType.description")
   @Mapping(target = "devolvedPowers", source = "devolvedPowers")
   ApplicationType toApplicationType(ApplicationMappingContext applicationMappingContext);
 
-  @Mapping(target = ".", source = "soaCaseDetail.applicationDetails.correspondenceAddress")
+  @Mapping(target = ".", source = "ebsCaseDetail.applicationDetails.correspondenceAddress")
   @Mapping(target = "careOf",
-      source = "soaCaseDetail.applicationDetails.correspondenceAddress.careOfName")
+      source = "ebsCaseDetail.applicationDetails.correspondenceAddress.careOfName")
   @Mapping(target = "houseNameOrNumber",
-      source = "soaCaseDetail.applicationDetails.correspondenceAddress.house")
+      source = "ebsCaseDetail.applicationDetails.correspondenceAddress.house")
   @Mapping(target = "postcode",
-      source = "soaCaseDetail.applicationDetails.correspondenceAddress.postalCode")
+      source = "ebsCaseDetail.applicationDetails.correspondenceAddress.postalCode")
   @Mapping(target = "noFixedAbode", constant = "false")
   @Mapping(target = "preferredAddress",
-      source = "soaCaseDetail.applicationDetails.preferredAddress")
+      source = "ebsCaseDetail.applicationDetails.preferredAddress")
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
   AddressDetail toCorrespondenceAddress(ApplicationMappingContext mappingContext);
 
 
   @Mapping(target = "edited", constant = "false")
-  @Mapping(target = ".", source = "soaProceeding")
-  @Mapping(target = "ebsId", source = "soaProceeding.proceedingCaseId")
-  @Mapping(target = "leadProceedingInd", source = "soaProceeding.leadProceedingIndicator")
+  @Mapping(target = ".", source = "ebsProceeding")
+  @Mapping(target = "ebsId", source = "ebsProceeding.proceedingCaseId")
+  @Mapping(target = "leadProceedingInd", source = "ebsProceeding.leadProceedingIndicator")
   @Mapping(target = "proceedingType", source = "proceedingLookup")
   @Mapping(target = "matterType", source = "matterType")
   @Mapping(target = "levelOfService", source = "levelOfService")
   @Mapping(target = "larScope", source = "proceedingLookup.larScope")
-  @Mapping(target = "description", source = "soaProceeding.proceedingDescription")
+  @Mapping(target = "description", source = "ebsProceeding.proceedingDescription")
   @Mapping(target = "status", source = "proceedingStatusLookup")
-  @Mapping(target = "typeOfOrder", source = "soaProceeding.orderType")
+  @Mapping(target = "typeOfOrder", source = "ebsProceeding.orderType")
   @Mapping(target = "costLimitation", source = "proceedingCostLimitation")
   @Mapping(target = "outcome", source = "proceedingContext",
-      conditionExpression = "java(proceedingContext.getSoaProceeding().getOutcome() != null)")
+      conditionExpression = "java(proceedingContext.getEbsProceeding().getOutcome() != null)")
   @Mapping(target = "scopeLimitations", source = "scopeLimitations")
   @Mapping(target = "defaultScopeLimitation", ignore = true)
   @Mapping(target = "grantedUsingDevolvedPowers", ignore = true)
@@ -214,12 +214,12 @@ public interface ApplicationMapper {
   ProceedingDetail toProceeding(ProceedingMappingContext proceedingContext);
 
   @Mapping(target = "grantedCostLimitation",
-      source = "soaCaseDetail.applicationDetails.categoryOfLaw.grantedAmount")
+      source = "ebsCaseDetail.applicationDetails.categoryOfLaw.grantedAmount")
   @Mapping(target = "requestedCostLimitation",
-      source = "soaCaseDetail.applicationDetails.categoryOfLaw.requestedAmount")
+      source = "ebsCaseDetail.applicationDetails.categoryOfLaw.requestedAmount")
   @Mapping(target = "defaultCostLimitation", ignore = true)
   @Mapping(target = "costEntries",
-      source = "soaCaseDetail.applicationDetails.categoryOfLaw.costLimitations")
+      source = "ebsCaseDetail.applicationDetails.categoryOfLaw.costLimitations")
   @Mapping(target = "currentProviderBilledAmount", source = "currentProviderBilledAmount")
   @Mapping(target = "auditTrail", ignore = true)
   CostStructureDetail toCostStructure(ApplicationMappingContext mappingContext);
@@ -246,21 +246,21 @@ public interface ApplicationMapper {
   ScopeLimitationDetail toScopeLimitation(
       Pair<ScopeLimitation, CommonLookupValueDetail> scopeLimitation);
 
-  @Mapping(target = "description", source = "soaProceeding.proceedingDescription")
-  @Mapping(target = "proceedingCaseId", source = "soaProceeding.proceedingCaseId")
+  @Mapping(target = "description", source = "ebsProceeding.proceedingDescription")
+  @Mapping(target = "proceedingCaseId", source = "ebsProceeding.proceedingCaseId")
   @Mapping(target = "proceedingType", source = "proceedingLookup")
-  @Mapping(target = "adrInfo", source = "soaProceeding.outcome.altAcceptanceReason")
-  @Mapping(target = "alternativeResolution", source = "soaProceeding.outcome.altDisputeResolution")
+  @Mapping(target = "adrInfo", source = "ebsProceeding.outcome.altAcceptanceReason")
+  @Mapping(target = "alternativeResolution", source = "ebsProceeding.outcome.altDisputeResolution")
   @Mapping(target = "courtCode", source = "courtLookup.code")
   @Mapping(target = "courtName", source = "courtLookup.description")
-  @Mapping(target = "dateOfFinalWork", source = "soaProceeding.outcome.finalWorkDate")
+  @Mapping(target = "dateOfFinalWork", source = "ebsProceeding.outcome.finalWorkDate")
   @Mapping(target = "dateOfIssue", ignore = true)
-  @Mapping(target = "resolutionMethod", source = "soaProceeding.outcome.resolutionMethod")
+  @Mapping(target = "resolutionMethod", source = "ebsProceeding.outcome.resolutionMethod")
   @Mapping(target = "result", source = "outcomeResultLookup")
-  @Mapping(target = "resultInfo", source = "soaProceeding.outcome.additionalResultInfo")
+  @Mapping(target = "resultInfo", source = "ebsProceeding.outcome.additionalResultInfo")
   @Mapping(target = "stageEnd", source = "stageEndLookup")
-  @Mapping(target = "widerBenefits", source = "soaProceeding.outcome.widerBenefits")
-  @Mapping(target = "outcomeCourtCaseNo", source = "soaProceeding.outcome.outcomeCourtCaseNumber")
+  @Mapping(target = "widerBenefits", source = "ebsProceeding.outcome.widerBenefits")
+  @Mapping(target = "outcomeCourtCaseNo", source = "ebsProceeding.outcome.outcomeCourtCaseNumber")
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
   ProceedingOutcomeDetail toProceedingOutcome(ProceedingMappingContext proceedingContext);
@@ -364,11 +364,11 @@ public interface ApplicationMapper {
   @Mapping(target = "id", ignore = true)
   LinkedCaseDetail toLinkedCase(LinkedCase soaLinkedCase);
 
-  @Mapping(target = "status", source = "soaPriorAuthority.decisionStatus")
-  @Mapping(target = "summary", source = "soaPriorAuthority.description")
+  @Mapping(target = "status", source = "ebsPriorAuthority.decisionStatus")
+  @Mapping(target = "summary", source = "ebsPriorAuthority.description")
   @Mapping(target = "type", source = "priorAuthorityTypeLookup")
-  @Mapping(target = "justification", source = "soaPriorAuthority.reasonForRequest")
-  @Mapping(target = "amountRequested", source = "soaPriorAuthority.requestAmount")
+  @Mapping(target = "justification", source = "ebsPriorAuthority.reasonForRequest")
+  @Mapping(target = "amountRequested", source = "ebsPriorAuthority.requestAmount")
   @Mapping(target = "valueRequired", source = "priorAuthorityTypeLookup.valueRequired")
   @Mapping(target = "ebsId", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)

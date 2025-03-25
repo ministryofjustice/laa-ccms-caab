@@ -5,12 +5,12 @@ import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthority;
 import uk.gov.laa.ccms.data.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
-import uk.gov.laa.ccms.soa.gateway.model.PriorAuthority;
 
 /**
- * Class to hold a SOA PriorAuthority together with all additional data needed to
+ * Class to hold a EBS PriorAuthority together with all additional data needed to
  * perform a mapping to a CAAB PriorAuthority.
  */
 @Builder
@@ -18,9 +18,9 @@ import uk.gov.laa.ccms.soa.gateway.model.PriorAuthority;
 public class PriorAuthorityMappingContext {
 
   /**
-   * The SOA Prior Authority to be mapped.
+   * The EBS Prior Authority to be mapped.
    */
-  PriorAuthority soaPriorAuthority;
+  PriorAuthority ebsPriorAuthority;
 
   /**
    * Lookup of Prior Authority Type display data.

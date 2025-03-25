@@ -244,7 +244,7 @@ public class ApplicationMapperTest {
             false,
             null);
     SubmittedApplicationDetails soaApplicationDetails =
-        applicationMappingContext.getSoaCaseDetail().getApplicationDetails();
+        applicationMappingContext.getEbsCaseDetail().getApplicationDetails();
 
     AddressDetail result = applicationMapper.toCorrespondenceAddress(applicationMappingContext);
 
@@ -1024,7 +1024,7 @@ public class ApplicationMapperTest {
       Boolean devolvedPowers,
       Date devolvedPowersDate) {
     return ApplicationMappingContext.builder()
-        .soaCaseDetail(soaCase)
+        .ebsCaseDetail(soaCase)
         .applicationType(new CommonLookupValueDetail()
             .code("apptypecode")
             .description("apptypedesc"))
@@ -1059,7 +1059,7 @@ public class ApplicationMapperTest {
   private ProceedingMappingContext buildProceedingMappingContext(
       uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail soaProceeding) {
     return ProceedingMappingContext.builder()
-        .soaProceeding(soaProceeding)
+        .ebsProceeding(soaProceeding)
         .clientInvolvement(new CommonLookupValueDetail()
             .code("clientInv")
             .description("clientDesc"))
@@ -1108,7 +1108,7 @@ public class ApplicationMapperTest {
   private PriorAuthorityMappingContext buildPriorAuthorityMappingContext(
       PriorAuthority soaPriorAuthority) {
     return PriorAuthorityMappingContext.builder()
-        .soaPriorAuthority(soaPriorAuthority)
+        .ebsPriorAuthority(soaPriorAuthority)
         .priorAuthorityTypeLookup(buildPriorAuthorityTypeDetail("dataType"))
         .items(Collections.singletonList(Pair.of(buildPriorAuthorityDetail("dataType"),
             new CommonLookupValueDetail()
