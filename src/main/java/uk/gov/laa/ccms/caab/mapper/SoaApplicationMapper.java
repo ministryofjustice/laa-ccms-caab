@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.mapper;
 
+
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_COST;
@@ -33,11 +34,11 @@ import org.springframework.data.domain.Page;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
-import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
-import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
-import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
-import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.SoaApplicationMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.SoaCaseOutcomeMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.SoaPriorAuthorityMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.SoaProceedingMappingContext;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
@@ -69,45 +70,44 @@ import uk.gov.laa.ccms.caab.model.ReferenceDataItemDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
-import uk.gov.laa.ccms.data.model.AssessmentScreen;
-import uk.gov.laa.ccms.data.model.Award;
-import uk.gov.laa.ccms.data.model.BaseClient;
-import uk.gov.laa.ccms.data.model.CaseDoc;
-import uk.gov.laa.ccms.data.model.CaseStatus;
 import uk.gov.laa.ccms.data.model.CaseSummary;
-import uk.gov.laa.ccms.data.model.CategoryOfLaw;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
-import uk.gov.laa.ccms.data.model.CostLimitation;
-import uk.gov.laa.ccms.data.model.LinkedCase;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
-import uk.gov.laa.ccms.data.model.OpaAttribute;
-import uk.gov.laa.ccms.data.model.OpaEntity;
-import uk.gov.laa.ccms.data.model.OpaGoal;
-import uk.gov.laa.ccms.data.model.OpaInstance;
-import uk.gov.laa.ccms.data.model.OtherParty;
-import uk.gov.laa.ccms.data.model.OtherPartyOrganisation;
-import uk.gov.laa.ccms.data.model.OtherPartyPerson;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
-import uk.gov.laa.ccms.data.model.PriorAuthority;
-import uk.gov.laa.ccms.data.model.PriorAuthorityAttribute;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
-import uk.gov.laa.ccms.data.model.Proceeding;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
-import uk.gov.laa.ccms.data.model.RecordHistory;
-import uk.gov.laa.ccms.data.model.Recovery;
-import uk.gov.laa.ccms.data.model.ScopeLimitation;
 import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
-import uk.gov.laa.ccms.data.model.SubmittedApplicationDetails;
-import uk.gov.laa.ccms.data.model.TimeRelatedAward;
-import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.AssessmentScreen;
+import uk.gov.laa.ccms.soa.gateway.model.Award;
+import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
+import uk.gov.laa.ccms.soa.gateway.model.CaseDoc;
+import uk.gov.laa.ccms.soa.gateway.model.CaseStatus;
+import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
+import uk.gov.laa.ccms.soa.gateway.model.CostLimitation;
+import uk.gov.laa.ccms.soa.gateway.model.LinkedCase;
+import uk.gov.laa.ccms.soa.gateway.model.OpaAttribute;
+import uk.gov.laa.ccms.soa.gateway.model.OpaEntity;
+import uk.gov.laa.ccms.soa.gateway.model.OpaGoal;
+import uk.gov.laa.ccms.soa.gateway.model.OpaInstance;
+import uk.gov.laa.ccms.soa.gateway.model.OtherParty;
+import uk.gov.laa.ccms.soa.gateway.model.OtherPartyOrganisation;
+import uk.gov.laa.ccms.soa.gateway.model.OtherPartyPerson;
+import uk.gov.laa.ccms.soa.gateway.model.PriorAuthority;
+import uk.gov.laa.ccms.soa.gateway.model.PriorAuthorityAttribute;
+import uk.gov.laa.ccms.soa.gateway.model.RecordHistory;
+import uk.gov.laa.ccms.soa.gateway.model.Recovery;
+import uk.gov.laa.ccms.soa.gateway.model.ScopeLimitation;
+import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
+import uk.gov.laa.ccms.soa.gateway.model.TimeRelatedAward;
+import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
 
 /**
  * Mapper class to convert a SoaApi Case into a CAAB ApplicationDetail.
  */
 @Mapper(componentModel = "spring")
-public interface ApplicationMapper {
+public interface SoaApplicationMapper {
 
   ApplicationDetails toApplicationDetails(Page<BaseApplicationDetail> applicationPage);
 
@@ -116,7 +116,7 @@ public interface ApplicationMapper {
   @Mapping(target = "status", source = "caseStatusDisplay")
   @Mapping(target = "providerDetails", source = ".")
   @Mapping(target = "client.reference", source = "client.clientReferenceNumber")
-  BaseApplicationDetail toBaseApplication(CaseSummary ebsCaseSummary);
+  BaseApplicationDetail toBaseApplication(CaseSummary soaCaseSummary);
 
   @Mapping(target = "providerCaseReference", source = "providerCaseReferenceNumber")
   @Mapping(target = "feeEarner.displayValue", source = "feeEarnerName")
@@ -124,28 +124,28 @@ public interface ApplicationMapper {
   @Mapping(target = "office", ignore = true)
   @Mapping(target = "supervisor", ignore = true)
   @Mapping(target = "providerContact", ignore = true)
-  ApplicationProviderDetails toApplicationProviderDetails(CaseSummary ebsCaseSummary);
+  ApplicationProviderDetails toApplicationProviderDetails(CaseSummary soaCaseSummary);
 
-  @Mapping(target = ".", source = "ebsCaseDetail")
+  @Mapping(target = ".", source = "soaCaseDetail")
   @Mapping(target = "certificate", source = "certificate")
   @Mapping(target = "applicationType", source = "applicationMappingContext")
-  @Mapping(target = "dateCreated", source = "ebsCaseDetail.recordHistory.dateCreated")
+  @Mapping(target = "dateCreated", source = "soaCaseDetail.recordHistory.dateCreated")
   @Mapping(target = "providerDetails.providerCaseReference",
-      source = "ebsCaseDetail.applicationDetails.providerDetails.providerCaseReferenceNumber")
+      source = "soaCaseDetail.applicationDetails.providerDetails.providerCaseReferenceNumber")
   @Mapping(target = "providerDetails.provider", source = "providerDetail")
   @Mapping(target = "providerDetails.providerContact",
-      source = "ebsCaseDetail.applicationDetails.providerDetails.contactUserId")
+      source = "soaCaseDetail.applicationDetails.providerDetails.contactUserId")
   @Mapping(target = "providerDetails.office", source = "providerOffice")
   @Mapping(target = "providerDetails.supervisor", source = "supervisorContact")
   @Mapping(target = "providerDetails.feeEarner", source = "feeEarnerContact")
   @Mapping(target = "correspondenceAddress", source = "applicationMappingContext")
-  @Mapping(target = "client", source = "ebsCaseDetail.applicationDetails.client")
-  @Mapping(target = "categoryOfLaw", source = "ebsCaseDetail.applicationDetails.categoryOfLaw")
+  @Mapping(target = "client", source = "soaCaseDetail.applicationDetails.client")
+  @Mapping(target = "categoryOfLaw", source = "soaCaseDetail.applicationDetails.categoryOfLaw")
   @Mapping(target = "costs", source = "applicationMappingContext")
   @Mapping(target = "larScopeFlag",
-      source = "ebsCaseDetail.applicationDetails.larDetails.larScopeFlag", defaultValue = "false")
-  @Mapping(target = "status", source = "ebsCaseDetail.caseStatus")
-  @Mapping(target = "opponents", source = "ebsCaseDetail.applicationDetails.otherParties")
+      source = "soaCaseDetail.applicationDetails.larDetails.larScopeFlag", defaultValue = "false")
+  @Mapping(target = "status", source = "soaCaseDetail.caseStatus")
+  @Mapping(target = "opponents", source = "soaCaseDetail.applicationDetails.otherParties")
   @Mapping(target = "proceedings", source = "proceedings")
   @Mapping(target = "amendmentProceedingsInEbs", source = "amendmentProceedingsInEbs")
   @Mapping(target = "submitted", source = "caseWithOnlyDraftProceedings")
@@ -168,42 +168,42 @@ public interface ApplicationMapper {
   @Mapping(target = "appMode", ignore = true)
   @Mapping(target = "amendment", ignore = true)
   @Mapping(target = "allSectionsComplete", ignore = true)
-  ApplicationDetail toApplicationDetail(ApplicationMappingContext applicationMappingContext);
+  ApplicationDetail toApplicationDetail(SoaApplicationMappingContext applicationMappingContext);
 
-  @Mapping(target = "id", source = "ebsCaseDetail.applicationDetails.applicationAmendmentType")
+  @Mapping(target = "id", source = "soaCaseDetail.applicationDetails.applicationAmendmentType")
   @Mapping(target = "displayValue", source = "applicationType.description")
   @Mapping(target = "devolvedPowers", source = "devolvedPowers")
-  ApplicationType toApplicationType(ApplicationMappingContext applicationMappingContext);
+  ApplicationType toApplicationType(SoaApplicationMappingContext applicationMappingContext);
 
-  @Mapping(target = ".", source = "ebsCaseDetail.applicationDetails.correspondenceAddress")
+  @Mapping(target = ".", source = "soaCaseDetail.applicationDetails.correspondenceAddress")
   @Mapping(target = "careOf",
-      source = "ebsCaseDetail.applicationDetails.correspondenceAddress.careOfName")
+      source = "soaCaseDetail.applicationDetails.correspondenceAddress.careOfName")
   @Mapping(target = "houseNameOrNumber",
-      source = "ebsCaseDetail.applicationDetails.correspondenceAddress.house")
+      source = "soaCaseDetail.applicationDetails.correspondenceAddress.house")
   @Mapping(target = "postcode",
-      source = "ebsCaseDetail.applicationDetails.correspondenceAddress.postalCode")
+      source = "soaCaseDetail.applicationDetails.correspondenceAddress.postalCode")
   @Mapping(target = "noFixedAbode", constant = "false")
   @Mapping(target = "preferredAddress",
-      source = "ebsCaseDetail.applicationDetails.preferredAddress")
+      source = "soaCaseDetail.applicationDetails.preferredAddress")
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
-  AddressDetail toCorrespondenceAddress(ApplicationMappingContext mappingContext);
+  AddressDetail toCorrespondenceAddress(SoaApplicationMappingContext mappingContext);
 
 
   @Mapping(target = "edited", constant = "false")
-  @Mapping(target = ".", source = "ebsProceeding")
-  @Mapping(target = "ebsId", source = "ebsProceeding.proceedingCaseId")
-  @Mapping(target = "leadProceedingInd", source = "ebsProceeding.leadProceedingIndicator")
+  @Mapping(target = ".", source = "soaProceeding")
+  @Mapping(target = "ebsId", source = "soaProceeding.proceedingCaseId")
+  @Mapping(target = "leadProceedingInd", source = "soaProceeding.leadProceedingIndicator")
   @Mapping(target = "proceedingType", source = "proceedingLookup")
   @Mapping(target = "matterType", source = "matterType")
   @Mapping(target = "levelOfService", source = "levelOfService")
   @Mapping(target = "larScope", source = "proceedingLookup.larScope")
-  @Mapping(target = "description", source = "ebsProceeding.proceedingDescription")
+  @Mapping(target = "description", source = "soaProceeding.proceedingDescription")
   @Mapping(target = "status", source = "proceedingStatusLookup")
-  @Mapping(target = "typeOfOrder", source = "ebsProceeding.orderType")
+  @Mapping(target = "typeOfOrder", source = "soaProceeding.orderType")
   @Mapping(target = "costLimitation", source = "proceedingCostLimitation")
   @Mapping(target = "outcome", source = "proceedingContext",
-      conditionExpression = "java(proceedingContext.getEbsProceeding().getOutcome() != null)")
+      conditionExpression = "java(proceedingContext.getSoaProceeding().getOutcome() != null)")
   @Mapping(target = "scopeLimitations", source = "scopeLimitations")
   @Mapping(target = "defaultScopeLimitation", ignore = true)
   @Mapping(target = "grantedUsingDevolvedPowers", ignore = true)
@@ -212,18 +212,18 @@ public interface ApplicationMapper {
   @Mapping(target = "deleteScopeLimitationFlag", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
   @Mapping(target = "id", ignore = true)
-  ProceedingDetail toProceeding(ProceedingMappingContext proceedingContext);
+  ProceedingDetail toProceeding(SoaProceedingMappingContext proceedingContext);
 
   @Mapping(target = "grantedCostLimitation",
-      source = "ebsCaseDetail.applicationDetails.categoryOfLaw.grantedAmount")
+      source = "soaCaseDetail.applicationDetails.categoryOfLaw.grantedAmount")
   @Mapping(target = "requestedCostLimitation",
-      source = "ebsCaseDetail.applicationDetails.categoryOfLaw.requestedAmount")
+      source = "soaCaseDetail.applicationDetails.categoryOfLaw.requestedAmount")
   @Mapping(target = "defaultCostLimitation", ignore = true)
   @Mapping(target = "costEntries",
-      source = "ebsCaseDetail.applicationDetails.categoryOfLaw.costLimitations")
+      source = "soaCaseDetail.applicationDetails.categoryOfLaw.costLimitations")
   @Mapping(target = "currentProviderBilledAmount", source = "currentProviderBilledAmount")
   @Mapping(target = "auditTrail", ignore = true)
-  CostStructureDetail toCostStructure(ApplicationMappingContext mappingContext);
+  CostStructureDetail toCostStructure(SoaApplicationMappingContext mappingContext);
 
   @Mapping(target = "lscResourceId", source = "billingProviderId")
   @Mapping(target = "amountBilled", source = "paidToDate")
@@ -247,27 +247,27 @@ public interface ApplicationMapper {
   ScopeLimitationDetail toScopeLimitation(
       Pair<ScopeLimitation, CommonLookupValueDetail> scopeLimitation);
 
-  @Mapping(target = "description", source = "ebsProceeding.proceedingDescription")
-  @Mapping(target = "proceedingCaseId", source = "ebsProceeding.proceedingCaseId")
+  @Mapping(target = "description", source = "soaProceeding.proceedingDescription")
+  @Mapping(target = "proceedingCaseId", source = "soaProceeding.proceedingCaseId")
   @Mapping(target = "proceedingType", source = "proceedingLookup")
-  @Mapping(target = "adrInfo", source = "ebsProceeding.outcome.altAcceptanceReason")
-  @Mapping(target = "alternativeResolution", source = "ebsProceeding.outcome.altDisputeResolution")
+  @Mapping(target = "adrInfo", source = "soaProceeding.outcome.altAcceptanceReason")
+  @Mapping(target = "alternativeResolution", source = "soaProceeding.outcome.altDisputeResolution")
   @Mapping(target = "courtCode", source = "courtLookup.code")
   @Mapping(target = "courtName", source = "courtLookup.description")
-  @Mapping(target = "dateOfFinalWork", source = "ebsProceeding.outcome.finalWorkDate")
+  @Mapping(target = "dateOfFinalWork", source = "soaProceeding.outcome.finalWorkDate")
   @Mapping(target = "dateOfIssue", ignore = true)
-  @Mapping(target = "resolutionMethod", source = "ebsProceeding.outcome.resolutionMethod")
+  @Mapping(target = "resolutionMethod", source = "soaProceeding.outcome.resolutionMethod")
   @Mapping(target = "result", source = "outcomeResultLookup")
-  @Mapping(target = "resultInfo", source = "ebsProceeding.outcome.additionalResultInfo")
+  @Mapping(target = "resultInfo", source = "soaProceeding.outcome.additionalResultInfo")
   @Mapping(target = "stageEnd", source = "stageEndLookup")
-  @Mapping(target = "widerBenefits", source = "ebsProceeding.outcome.widerBenefits")
-  @Mapping(target = "outcomeCourtCaseNo", source = "ebsProceeding.outcome.outcomeCourtCaseNumber")
+  @Mapping(target = "widerBenefits", source = "soaProceeding.outcome.widerBenefits")
+  @Mapping(target = "outcomeCourtCaseNo", source = "soaProceeding.outcome.outcomeCourtCaseNumber")
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
-  ProceedingOutcomeDetail toProceedingOutcome(ProceedingMappingContext proceedingContext);
+  ProceedingOutcomeDetail toProceedingOutcome(SoaProceedingMappingContext proceedingContext);
 
   AssessmentResult toAssessmentResult(
-      uk.gov.laa.ccms.data.model.AssessmentResult assessmentResult);
+      uk.gov.laa.ccms.soa.gateway.model.AssessmentResult assessmentResult);
 
   @Mapping(target = "careOf", source = "careOfName")
   @Mapping(target = "houseNameOrNumber", source = "house")
@@ -276,7 +276,7 @@ public interface ApplicationMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "preferredAddress", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
-  AddressDetail toAddress(uk.gov.laa.ccms.data.model.AddressDetail soaAddress);
+  AddressDetail toAddress(uk.gov.laa.ccms.soa.gateway.model.AddressDetail soaAddress);
 
   @Mapping(target = "reference", source = "clientReferenceNumber")
   ClientDetail toClient(BaseClient soaClient);
@@ -285,9 +285,9 @@ public interface ApplicationMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "ebsId", source = "otherPartyId")
   @Mapping(target = ".", source = "person")
-  @Mapping(target = "courtOrderedMeansAssessment", source = "person.courtOrderedMeansAssessment")
-  @Mapping(target = "employerAddress", source = "person.organisationAddress")
-  @Mapping(target = "employerName", source = "person.organisationName")
+  @Mapping(target = "courtOrderedMeansAssessment", source = "person.courtOrderedMeansAssesment")
+  @Mapping(target = "employerAddress", source = "person.organizationAddress")
+  @Mapping(target = "employerName", source = "person.organizationName")
   @Mapping(target = ".", source = "person.name")
   @Mapping(target = "middleNames", source = "person.name.middleName")
   @Mapping(target = "legalAided", source = "person.partyLegalAidedInd")
@@ -319,8 +319,8 @@ public interface ApplicationMapper {
   @Mapping(target = "ebsId", source = "otherPartyId")
   @Mapping(target = ".", source = "organisation")
   @Mapping(target = "address", source = "organisation.address")
-  @Mapping(target = "organisationName", source = "organisation.organisationName")
-  @Mapping(target = "organisationType", source = "organisation.organisationType")
+  @Mapping(target = "organisationName", source = "organisation.organizationName")
+  @Mapping(target = "organisationType", source = "organisation.organizationType")
   @Mapping(target = "contactNameRole", source = "organisation.contactName")
   @Mapping(target = "relationshipToCase", source = "organisation.relationToCase")
   @Mapping(target = "relationshipToClient", source = "organisation.relationToClient")
@@ -365,16 +365,16 @@ public interface ApplicationMapper {
   @Mapping(target = "id", ignore = true)
   LinkedCaseDetail toLinkedCase(LinkedCase soaLinkedCase);
 
-  @Mapping(target = "status", source = "ebsPriorAuthority.decisionStatus")
-  @Mapping(target = "summary", source = "ebsPriorAuthority.description")
+  @Mapping(target = "status", source = "soaPriorAuthority.decisionStatus")
+  @Mapping(target = "summary", source = "soaPriorAuthority.description")
   @Mapping(target = "type", source = "priorAuthorityTypeLookup")
-  @Mapping(target = "justification", source = "ebsPriorAuthority.reasonForRequest")
-  @Mapping(target = "amountRequested", source = "ebsPriorAuthority.requestAmount")
+  @Mapping(target = "justification", source = "soaPriorAuthority.reasonForRequest")
+  @Mapping(target = "amountRequested", source = "soaPriorAuthority.requestAmount")
   @Mapping(target = "valueRequired", source = "priorAuthorityTypeLookup.valueRequired")
   @Mapping(target = "ebsId", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
   @Mapping(target = "id", ignore = true)
-  PriorAuthorityDetail toPriorAuthority(PriorAuthorityMappingContext priorAuthorityMappingContext);
+  PriorAuthorityDetail toPriorAuthority(SoaPriorAuthorityMappingContext priorAuthorityMappingContext);
 
   @Mapping(target = "code.id", source = "key.code")
   @Mapping(target = "code.displayValue", source = "key.description")
@@ -400,7 +400,7 @@ public interface ApplicationMapper {
   @Mapping(target = "providerId", ignore = true)
   @Mapping(target = "opponentIds", ignore = true)
   @Mapping(target = "caseReferenceNumber", ignore = true)
-  CaseOutcomeDetail toCaseOutcome(CaseOutcomeMappingContext caseOutcome);
+  CaseOutcomeDetail toCaseOutcome(SoaCaseOutcomeMappingContext caseOutcome);
 
   @Mapping(target = "ebsId", source = "awardId")
   @Mapping(target = "awardType", constant = AWARD_TYPE_COST)
@@ -659,8 +659,8 @@ public interface ApplicationMapper {
   @Mapping(target = "displayValue", source = "name")
   StringDisplayValue toStringDisplayValue(ContactDetail contactDetail);
 
-  @Mapping(target = "id", source = "loginId")
-  @Mapping(target = "displayValue", source = "username")
+  @Mapping(target = "id", source = "userLoginId")
+  @Mapping(target = "displayValue", source = "userName")
   StringDisplayValue toStringDisplayValue(UserDetail userDetail);
 
   @Mapping(target = "id", source = "actualCaseStatus")
@@ -715,9 +715,7 @@ public interface ApplicationMapper {
   @Mapping(target = "dischargeStatus", ignore = true)
   @Mapping(target = "caseStatus", ignore = true)
   @Mapping(target = "availableFunctions", ignore = true)
-  uk.gov.laa.ccms.data.model.CaseDetail toEbsCaseDetail(CaseMappingContext context);
-
-  CaseDetail toSoaCaseDetail(uk.gov.laa.ccms.data.model.CaseDetail caseDetail);
+  CaseDetail toCaseDetail(CaseMappingContext context);
 
   @Mapping(target = "ccmsDocumentId", source = "registeredDocumentId")
   @Mapping(target = "documentSubject", source = "documentType.displayValue")
@@ -758,9 +756,9 @@ public interface ApplicationMapper {
   @Mapping(target = "proceedings", source = "tdsApplication.proceedings")
   @Mapping(target = "larDetails.larScopeFlag", source = "tdsApplication.larScopeFlag")
   @Mapping(target = "otherParties", source = "tdsApplication.opponents")
-  @Mapping(target = "meansAssessments", source = "meansAssessment",
+  @Mapping(target = "meansAssesments", source = "meansAssessment",
       qualifiedByName = "mapMeansAssessment")
-  @Mapping(target = "meritsAssessments", source = "meritsAssessment",
+  @Mapping(target = "meritsAssesments", source = "meritsAssessment",
       qualifiedByName = "mapMeritsAssessment")
   @Mapping(target = "devolvedPowersDate", source = "tdsApplication",
       qualifiedByName = "mapDevolvedPowersDate")
@@ -808,13 +806,13 @@ public interface ApplicationMapper {
   @Mapping(target = "providerCaseReferenceNumber", source = "providerCaseReference")
   @Mapping(target = "providerFirmId", source = "provider.id")
   @Mapping(target = "providerOfficeId", source = "office.id")
-  @Mapping(target = "contactUserId.loginId", source = "providerContact.id")
+  @Mapping(target = "contactUserId.userLoginId", source = "providerContact.id")
   @Mapping(target = "supervisorContactId", source = "supervisor.id")
   @Mapping(target = "feeEarnerContactId", source = "feeEarner.id")
   @Mapping(target = "contactDetails", ignore = true)
-  @Mapping(target = "contactUserId.username", ignore = true)
+  @Mapping(target = "contactUserId.userName", ignore = true)
   @Mapping(target = "contactUserId.userType", ignore = true)
-  uk.gov.laa.ccms.data.model.ProviderDetails toEbsProviderDetail(
+  uk.gov.laa.ccms.soa.gateway.model.ProviderDetail toSoaProviderDetail(
       ApplicationProviderDetails providerDetail);
 
   @Mapping(target = "categoryOfLawCode", source = "categoryOfLaw.id")
@@ -833,7 +831,7 @@ public interface ApplicationMapper {
   @Mapping(target = "addressLine4", ignore = true)
   @Mapping(target = "province", ignore = true)
   @Mapping(target = "state", ignore = true)
-  uk.gov.laa.ccms.data.model.AddressDetail toSoaAddressDetail(AddressDetail addressDetail);
+  uk.gov.laa.ccms.soa.gateway.model.AddressDetail toSoaAddressDetail(AddressDetail addressDetail);
 
   @Mapping(target = "proceedingCaseId", source = "id", qualifiedByName = "mapProceedingId")
   @Mapping(target = "status", source = "status.id")
@@ -850,7 +848,7 @@ public interface ApplicationMapper {
   @Mapping(target = "scopeLimitationApplied", ignore = true)
   @Mapping(target = "devolvedPowersInd", ignore = true)
   @Mapping(target = "availableFunctions", ignore = true)
-  Proceeding toEbsProceedingDetail(
+  uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail toSoaProceedingDetail(
       ProceedingDetail proceedingDetail);
 
   @Mapping(target = "scopeLimitation", source = "scopeLimitation.id")
@@ -872,10 +870,10 @@ public interface ApplicationMapper {
   @Mapping(target = "relationToCase", source = "relationshipToCase")
   @Mapping(target = "niNumber", source = "nationalInsuranceNumber")
   @Mapping(target = "partyLegalAidedInd", source = "legalAided")
-  @Mapping(target = "courtOrderedMeansAssessment", source = "courtOrderedMeansAssessment")
+  @Mapping(target = "courtOrderedMeansAssesment", source = "courtOrderedMeansAssessment")
   @Mapping(target = "contactName", source = "contactNameRole")
   @Mapping(target = "employersName", source = "employerName")
-  @Mapping(target = "organisationAddress", source = "employerAddress")
+  @Mapping(target = "organizationAddress", source = "employerAddress")
   @Mapping(target = "assessedIncome", source = "assessedIncome",
       qualifiedByName = "mapBigDecimalDefault")
   @Mapping(target = "assessedAssets", source = "assessedAssets",
@@ -883,8 +881,8 @@ public interface ApplicationMapper {
   @Mapping(target = "contactDetails", ignore = true)
   @Mapping(target = "address", ignore = true)
   @Mapping(target = "publicFundingAppliedInd", ignore = true)
-  @Mapping(target = "organisationName", ignore = true)
-  OtherPartyPerson toEbsPerson(OpponentDetail opponentDetail);
+  @Mapping(target = "organizationName", ignore = true)
+  OtherPartyPerson toSoaPerson(OpponentDetail opponentDetail);
 
   /**
    * Maps the provided {@link BigDecimal} to a scaled value with 2 decimal places.
@@ -902,15 +900,15 @@ public interface ApplicationMapper {
 
   @Mapping(target = "relationToClient", source = "relationshipToClient")
   @Mapping(target = "relationToCase", source = "relationshipToCase")
-  @Mapping(target = "organisationName", source = "organisationName")
-  @Mapping(target = "organisationType", source = "organisationType")
+  @Mapping(target = "organizationName", source = "organisationName")
+  @Mapping(target = "organizationType", source = "organisationType")
   @Mapping(target = "contactName", source = "contactNameRole")
   @Mapping(target = "contactDetails", ignore = true)
-  OtherPartyOrganisation toEbsOrganisation(OpponentDetail opponentDetail);
+  OtherPartyOrganisation toSoaOrganisation(OpponentDetail opponentDetail);
 
   /**
    * Maps the provided assessment details into the given
-   * {@link uk.gov.laa.ccms.data.model.AssessmentResult}. It organizes entity types,
+   * {@link uk.gov.laa.ccms.soa.gateway.model.AssessmentResult}. It organizes entity types,
    * entities, and their attributes into an assessment screen summary.
    *
    * @param assessmentResult the assessment result to which the mapped data will be added
@@ -918,7 +916,7 @@ public interface ApplicationMapper {
    */
   @Named("mapIntoAssessment")
   default void mapIntoAssessment(
-      final uk.gov.laa.ccms.data.model.AssessmentResult assessmentResult,
+      final uk.gov.laa.ccms.soa.gateway.model.AssessmentResult assessmentResult,
       final AssessmentDetail assessment) {
 
     final AssessmentScreen assessmentScreen = new AssessmentScreen()
@@ -966,35 +964,35 @@ public interface ApplicationMapper {
 
   /**
    * Maps the means assessment details into a list of
-   * {@link uk.gov.laa.ccms.data.model.AssessmentResult} using the goal attribute from the
+   * {@link uk.gov.laa.ccms.soa.gateway.model.AssessmentResult} using the goal attribute from the
    * means rule base.
    *
    * @param meansAssessment the means assessment details to be mapped
    * @return a list containing the mapped means assessment result
    */
   @Named("mapMeansAssessment")
-  default List<uk.gov.laa.ccms.data.model.AssessmentResult> mapMeansAssessment(
+  default List<uk.gov.laa.ccms.soa.gateway.model.AssessmentResult> mapMeansAssessment(
       final AssessmentDetail meansAssessment) {
     return mapAssessment(meansAssessment, AssessmentRulebase.MEANS.getGoalAttributeName());
   }
 
   /**
    * Maps the merits assessment details into a list of
-   * {@link uk.gov.laa.ccms.data.model.AssessmentResult} using the goal attribute from the
+   * {@link uk.gov.laa.ccms.soa.gateway.model.AssessmentResult} using the goal attribute from the
    * merits rule base.
    *
    * @param meritsAssessment the merits assessment details to be mapped
    * @return a list containing the mapped merits assessment result
    */
   @Named("mapMeritsAssessment")
-  default List<uk.gov.laa.ccms.data.model.AssessmentResult> mapMeritsAssessment(
+  default List<uk.gov.laa.ccms.soa.gateway.model.AssessmentResult> mapMeritsAssessment(
       final AssessmentDetail meritsAssessment) {
     return mapAssessment(meritsAssessment, AssessmentRulebase.MERITS.getGoalAttributeName());
   }
 
   /**
    * Maps the provided assessment details into a list of
-   * {@link uk.gov.laa.ccms.data.model.AssessmentResult}. An {@link OpaGoal} with the
+   * {@link uk.gov.laa.ccms.soa.gateway.model.AssessmentResult}. An {@link OpaGoal} with the
    * specified goal attribute is created and added to the result.
    *
    * @param assessmentDetail the assessment details to be mapped
@@ -1002,14 +1000,14 @@ public interface ApplicationMapper {
    * @return a list containing the mapped assessment result, or an empty list if the assessment
    *         detail is null
    */
-  default List<uk.gov.laa.ccms.data.model.AssessmentResult> mapAssessment(
+  default List<uk.gov.laa.ccms.soa.gateway.model.AssessmentResult> mapAssessment(
       final AssessmentDetail assessmentDetail, final String goalAttribute) {
     if (assessmentDetail == null) {
       return Collections.emptyList();
     }
 
-    final uk.gov.laa.ccms.data.model.AssessmentResult assessmentResult =
-        new uk.gov.laa.ccms.data.model.AssessmentResult();
+    final uk.gov.laa.ccms.soa.gateway.model.AssessmentResult assessmentResult =
+        new uk.gov.laa.ccms.soa.gateway.model.AssessmentResult();
 
     final OpaGoal opaGoal = new OpaGoal()
         .attribute(goalAttribute)
@@ -1036,8 +1034,8 @@ public interface ApplicationMapper {
   @Mapping(target = "dateCreated", source = "tdsApplication.auditTrail.created")
   @Mapping(target = "dateLastUpdated", source = "tdsApplication.auditTrail.lastSaved")
   @Mapping(target = "createdBy", ignore = true)
-  @Mapping(target = "lastUpdatedBy.loginId", source = "user.loginId")
-  @Mapping(target = "lastUpdatedBy.username", source = "user.username")
+  @Mapping(target = "lastUpdatedBy.userLoginId", source = "user.loginId")
+  @Mapping(target = "lastUpdatedBy.userName", source = "user.username")
   @Mapping(target = "lastUpdatedBy.userType", source = "user.userType")
   RecordHistory toSoaRecordHistory(CaseMappingContext context);
 
@@ -1071,7 +1069,7 @@ public interface ApplicationMapper {
       return null;
     }
     return opponentDetail.getType().equalsIgnoreCase(OPPONENT_TYPE_INDIVIDUAL)
-        ? toEbsPerson(opponentDetail)
+        ? toSoaPerson(opponentDetail)
         : null;
   }
 
@@ -1088,7 +1086,7 @@ public interface ApplicationMapper {
       return null;
     }
     return opponentDetail.getType().equalsIgnoreCase(OPPONENT_TYPE_ORGANISATION)
-        ? toEbsOrganisation(opponentDetail)
+        ? toSoaOrganisation(opponentDetail)
         : null;
   }
 

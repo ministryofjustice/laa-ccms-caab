@@ -3,18 +3,18 @@ package uk.gov.laa.ccms.caab.mapper.context;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
-import uk.gov.laa.ccms.data.model.Award;
-import uk.gov.laa.ccms.data.model.CaseDetail;
+import uk.gov.laa.ccms.soa.gateway.model.Award;
+import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 
 /**
  * Class to hold all data needed to perform a mapping to a CAAB CaseOutcome.
  */
 @Builder
 @Data
-public class CaseOutcomeMappingContext {
+public class SoaCaseOutcomeMappingContext {
 
   /**
-   * The EBS Case to extract attributes as part of the CaseOutcome mapping.
+   * The SOA Case to extract attributes as part of the CaseOutcome mapping.
    */
   CaseDetail soaCase;
 
@@ -39,9 +39,9 @@ public class CaseOutcomeMappingContext {
   List<Award> otherAssetAwards;
 
   /**
-   * A flat list of ProceedingMappingContext for all Proceedings in the Case.
+   * A flat list of SoaProceedingMappingContext for all Proceedings in the Case.
    * This will be used to map to ProceedingOutcomes.
    */
-  List<ProceedingMappingContext> proceedingOutcomes;
+  List<SoaProceedingMappingContext> proceedingOutcomes;
 
 }

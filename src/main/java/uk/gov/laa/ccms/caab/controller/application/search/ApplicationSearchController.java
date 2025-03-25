@@ -36,7 +36,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.feature.Feature;
 import uk.gov.laa.ccms.caab.feature.FeatureService;
-import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
@@ -65,7 +65,7 @@ public class ApplicationSearchController {
 
   private final ApplicationService applicationService;
 
-  private final ApplicationMapper applicationMapper;
+  private final EbsApplicationMapper applicationMapper;
 
   private final CaseSearchCriteriaValidator searchCriteriaValidator;
 
