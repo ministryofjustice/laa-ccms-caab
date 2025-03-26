@@ -448,7 +448,7 @@ published, the report for the main branch may become outdated when a new vulnera
 If you think this may be the case, simply re-run the `monitor` command against the `main` branch
 to update the report on the Snyk server, then re-run your pipeline.
 
-Please ensure this matches the command used by the [pr-merge](.github/workflows/pr-merge.yml)
+Please ensure this matches the command used by the [build-main](.github/workflows/build-main.yml)
 workflow to maintain consistency.
 
 ```shell
