@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   assemble:
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/gradle-build-and-publish.yml@story/ccmspui-35-common-workflows
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/gradle-build-and-publish.yml@v1
     permissions:
       contents: read
       packages: write
@@ -33,7 +33,7 @@ jobs:
 
   ecr-publish-image:
     needs: [ assemble ]
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@story/ccmspui-35-common-workflows
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@v1
     permissions:
       contents: read
       id-token: write
@@ -47,7 +47,7 @@ jobs:
 
   update-helm-chart:
     needs: [ ecr-publish-image ]
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/update-helm-chart.yml@story/ccmspui-35-common-workflows
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/update-helm-chart.yml@v1
     with:
       helm_charts_repository: 'laa-ccms-caab-helm-charts'
       helm_charts_branch: 'development'

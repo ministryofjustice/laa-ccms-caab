@@ -14,7 +14,7 @@ on:
 
 jobs:
   build:
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/gradle-build-and-publish.yml@story/ccmspui-35-common-workflows
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/gradle-build-and-publish.yml@v1
     permissions:
       contents: read
       packages: write
@@ -26,7 +26,7 @@ jobs:
       aws_region: 'eu-west-2'
 
   vulnerability-scan:
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/snyk-vulnerability-scan.yml@story/ccmspui-35-common-workflows
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/snyk-vulnerability-scan.yml@v1
     permissions:
       contents: read
     with:
