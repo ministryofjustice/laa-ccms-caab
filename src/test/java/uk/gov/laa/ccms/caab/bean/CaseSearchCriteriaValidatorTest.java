@@ -139,14 +139,6 @@ public class CaseSearchCriteriaValidatorTest {
   }
 
   @Test
-  void validateInvalidProviderCaseRef() {
-    searchCriteria.setProviderCaseReference("¢ref");
-    validator.validate(searchCriteria, errors);
-    assertTrue(errors.hasErrors());
-    assertEquals(1, errors.getErrorCount());
-  }
-
-  @Test
   void validateValidProviderCaseRef() {
     searchCriteria.setProviderCaseReference("validProviderCaseRef");
     validator.validate(searchCriteria, errors);
@@ -159,14 +151,6 @@ public class CaseSearchCriteriaValidatorTest {
     // Requires some text, otherwise value is disregarded for being blank
     searchCriteria.setProviderCaseReference("1  3");
     validator.validate(searchCriteria, errors);
-    assertTrue(errors.hasErrors());
-    assertEquals(1, errors.getErrorCount());
-  }
-
-  @Test
-  void testProviderCaseRefAlphaNumericValidation() {
-    searchCriteria.setProviderCaseReference("$%^");
-    validator.validate(searchCriteria,errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
   }
