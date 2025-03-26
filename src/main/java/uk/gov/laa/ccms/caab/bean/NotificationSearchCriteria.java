@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.bean;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.util.StringUtils;
@@ -38,15 +39,18 @@ public class NotificationSearchCriteria {
   /**
    * The LAA Application/Case Reference.
    */
+  @Size(max = 35)
   private String caseReference;
   /**
    * The client surname.
    */
+  @Size(max = 35)
   private String clientSurname;
 
   /**
    * The provider case reference.
    */
+  @Size(max = 35)
   private String providerCaseReference;
 
   /**

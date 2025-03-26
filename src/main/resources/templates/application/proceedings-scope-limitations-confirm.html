@@ -25,9 +25,6 @@
       </dl>
       <div class="govuk-button-group">
         <govuk:button type="submit" th:text="#{site.confirm}"/>
-        <govuk:button classes="govuk-button--secondary"
-                      th:href="@{/application/proceedings/scope-limitations/{action}/details(action=${scopeLimitationFlow.action})}"
-                      th:text="#{site.back}"/>
       </div>
     </form>
   </div>

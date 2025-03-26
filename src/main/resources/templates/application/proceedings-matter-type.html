@@ -23,11 +23,6 @@
       <div th:replace="~{partials/forms :: dropdownWithDisplayValue('matterType', 'Matter type', ${matterTypes}, 'matterType', 'description')}"></div>
       <div class="govuk-button-group">
         <govuk:button type="submit" th:text="#{site.next}"/>
-        <th:block th:if="${proceedingFlow.action == 'edit'}">
-          <govuk:button classes="govuk-button--secondary"
-                        th:text="#{site.back}"
-                        th:href="@{/application/proceedings/{proceeding-id}/summary(proceeding-id=${proceeding.id})}"/>
-        </th:block>
       </div>
     </form>
   </div>

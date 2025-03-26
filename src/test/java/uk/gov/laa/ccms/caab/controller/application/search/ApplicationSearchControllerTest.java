@@ -105,6 +105,7 @@ public class ApplicationSearchControllerTest {
 
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(200);
     when(featureService.isEnabled(any())).thenReturn(true);
+    when(validator.supports(any())).thenReturn(true);
   }
 
   @Test

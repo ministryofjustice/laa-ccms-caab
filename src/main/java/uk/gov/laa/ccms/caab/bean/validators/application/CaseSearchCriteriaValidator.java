@@ -1,5 +1,10 @@
 package uk.gov.laa.ccms.caab.bean.validators.application;
 
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.ALPHA_NUMERIC_SLASH_SPACE_STRING;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CHARACTER_SET_C;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.DOUBLE_SPACE;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.FIRST_CHARACTER_MUST_BE_ALPHA;
+
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
@@ -32,7 +37,14 @@ public class CaseSearchCriteriaValidator extends AbstractValidator {
    */
   @Override
   public void validate(Object target, Errors errors) {
+    CaseSearchCriteria searchCriteria = (CaseSearchCriteria) target;
     validateAtLeastOneSearchCriteria(target, errors);
+
+    if (!errors.hasErrors()) {
+      validateCaseRef(searchCriteria.getCaseReference(), errors);
+      validateClientSurname(searchCriteria.getClientSurname(), errors);
+      validateProviderCaseRef(searchCriteria.getProviderCaseReference(), errors);
+    }
   }
 
   /**
@@ -54,5 +66,50 @@ public class CaseSearchCriteriaValidator extends AbstractValidator {
               "You must provide at least one search criteria below. Please amend your entry.");
     }
 
+  }
+
+  private void validateCaseRef(final String caseRef, Errors errors) {
+    if (StringUtils.hasText(caseRef)) {
+      //check no double spaces
+      if (!caseRef.matches(ALPHA_NUMERIC_SLASH_SPACE_STRING)) {
+        errors.rejectValue("caseReference", "invalid.case-ref",
+                "Your input for 'LAA application / case reference' contains an "
+                        + "invalid character. Please amend your entry using numbers, "
+                        + "letters and spaces only");
+      } else if (caseRef.matches(DOUBLE_SPACE)) {
+        errors.rejectValue("caseReference", "invalid.case-ref",
+                "Your input for 'LAA application / case reference'"
+                        + " contains double spaces. Please amend your entry.");
+      }
+    }
+  }
+
+  private void validateClientSurname(String clientSurname, Errors errors) {
+    if (StringUtils.hasText(clientSurname)) {
+      if (!clientSurname.matches(FIRST_CHARACTER_MUST_BE_ALPHA)) {
+        errors.rejectValue("clientSurname", "invalid.surname",
+                "Your input for 'Client surname' is invalid. "
+                        + "The first character must be a letter. Please amend your entry.");
+      } else if (!clientSurname.matches(CHARACTER_SET_C)) {
+        errors.rejectValue("clientSurname", "invalid.surname-char",
+                "Your input for 'Client surname' contains an invalid character. "
+                        + "Please amend your entry.");
+      } else if (patternMatches(clientSurname, DOUBLE_SPACE)) {
+        errors.rejectValue("clientSurname", "invalid.surname",
+                "Your input for 'Client surname'"
+                        + " contains double spaces. Please amend your entry.");
+      }
+    }
+  }
+
+  private void validateProviderCaseRef(String providerCaseReference, Errors errors) {
+    if (StringUtils.hasText(providerCaseReference)) {
+      //check no double spaces
+      if (providerCaseReference.matches(DOUBLE_SPACE)) {
+        errors.rejectValue("providerCaseReference", "invalid.providerCaseReference-char",
+                "Your input for 'Provider case reference'"
+                        + " contains double spaces. Please amend your entry.");
+      }
+    }
   }
 }

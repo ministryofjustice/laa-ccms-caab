@@ -1,10 +1,5 @@
 package uk.gov.laa.ccms.caab.bean.validators.notification;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,6 +9,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 class NotificationSearchValidatorTest {
@@ -195,14 +192,6 @@ class NotificationSearchValidatorTest {
   }
 
   @Test
-  void validateInvalidProviderCaseRef() {
-    criteria.setProviderCaseReference("¢ref");
-    validator.validate(criteria, errors);
-    assertTrue(errors.hasErrors());
-    assertEquals(1, errors.getErrorCount());
-  }
-
-  @Test
   void validateValidProviderCaseRef() {
     criteria.setProviderCaseReference("validProviderCaseRef");
     validator.validate(criteria, errors);
@@ -210,4 +199,12 @@ class NotificationSearchValidatorTest {
     assertEquals(0, errors.getErrorCount());
   }
 
+  @Test
+  void testProviderCaseRefDoubleSpaceValidation() {
+    // Requires some text, otherwise value is disregarded for being blank
+    criteria.setProviderCaseReference("1  3");
+    validator.validate(criteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
 }

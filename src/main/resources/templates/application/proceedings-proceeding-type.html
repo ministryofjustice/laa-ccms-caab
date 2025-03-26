@@ -61,9 +61,6 @@
       </div>
       <div class="govuk-button-group">
         <govuk:button type="submit" th:text="#{site.next}"/>
-        <govuk:button classes="govuk-button--secondary"
-                      th:href="@{/application/proceedings/{action}/matter-type(action=${proceedingFlow.action})}"
-                      th:text="#{site.back}"/>
       </div>
     </form>
   </div>

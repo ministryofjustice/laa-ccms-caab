@@ -103,18 +103,8 @@
         Add scope limitation
       </a>
       <div class="govuk-button-group">
-        <th:block th:if="${proceedingFlow.editingScopeLimitations}">
-          <govuk:button type="submit" th:text="#{site.next}"/>
-          <govuk:button classes="govuk-button--secondary"
-                        th:text="#{site.back}"
-                        th:href="@{/application/proceedings/{proceeding-id}/summary(proceeding-id=${proceeding.id})}"/>
-        </th:block>
-        <th:block th:unless="${proceedingFlow.editingScopeLimitations}">
-          <govuk:button type="submit" th:text="#{site.confirm}"/>
-          <govuk:button classes="govuk-button--secondary"
-                        th:text="#{site.back}"
-                        th:href="@{/application/proceedings/{action}/further-details(action=${proceedingFlow.action})}"/>
-        </th:block>
+        <govuk:button type="submit"
+                      th:text="${proceedingFlow.editingScopeLimitations} ? #{site.next} : #{site.confirm}"/>
       </div>
     </form>
   </div>
