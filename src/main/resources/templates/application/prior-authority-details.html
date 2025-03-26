@@ -105,11 +105,6 @@
 
           <div class="govuk-button-group">
             <govuk:button type="submit" th:text="#{site.confirm}"/>
-            <th:block th:if="${priorAuthorityFlow.action} == 'add'">
-              <govuk:button classes="govuk-button--secondary"
-                            th:text="#{site.back}"
-                            th:href="@{/application/prior-authorities/add/type}"/>
-            </th:block>
           </div>
         </div>
       </div>

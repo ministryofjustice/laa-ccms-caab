@@ -18,9 +18,6 @@
             <div th:replace="~{application/partials/client-fragments :: clientContactFragment}"></div>
             <div class="govuk-button-group">
                 <govuk:button type="submit" th:text="#{site.next}"/>
-                <govuk:button classes="govuk-button--secondary"
-                              th:text="#{site.back}"
-                              th:href="@{/application/client/details/basic}"/>
             </div>
         </form>
     </div>
