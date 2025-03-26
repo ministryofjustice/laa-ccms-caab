@@ -11,6 +11,8 @@ on:
   push:
     branches-ignore:
       - main
+      - 'feature-dev/*'
+      - 'feature-test/*'
 
 jobs:
   build:
