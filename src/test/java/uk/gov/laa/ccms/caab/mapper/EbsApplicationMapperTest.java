@@ -45,6 +45,8 @@ import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -145,7 +147,7 @@ class EbsApplicationMapperTest {
         result.getApplicationType().getId());
     assertEquals(applicationMappingContext.getApplicationType().getDescription(),
         result.getApplicationType().getDisplayValue());
-    assertEquals(ebsCaseDetail.getRecordHistory().getDateCreated(),
+    assertEquals(toDate(ebsCaseDetail.getRecordHistory().getDateCreated()),
         result.getDateCreated());
     assertEquals(
         ebsCaseDetail.getApplicationDetails().getProviderDetails().getProviderCaseReferenceNumber(),
@@ -212,7 +214,7 @@ class EbsApplicationMapperTest {
         ebsCaseDetail.getAvailableFunctions(),
         result.getAvailableFunctions());
     assertTrue(result.getApplicationType().getDevolvedPowers().getUsed());
-    assertEquals(ebsCaseDetail.getApplicationDetails().getDevolvedPowersDate(),
+    assertEquals(toDate(ebsCaseDetail.getApplicationDetails().getDevolvedPowersDate()),
         result.getApplicationType().getDevolvedPowers().getDateUsed());
     assertNotNull(result.getCorrespondenceAddress());
     assertNotNull(result.getMeansAssessment());
@@ -303,9 +305,9 @@ class EbsApplicationMapperTest {
         result.getAvailableFunctions());
     assertEquals(ebsProceeding.getStage(),
         result.getStage());
-    assertEquals(ebsProceeding.getDateGranted(),
+    assertEquals(toDate(ebsProceeding.getDateGranted()),
         result.getDateGranted());
-    assertEquals(ebsProceeding.getDateCostsValid(),
+    assertEquals(toDate(ebsProceeding.getDateCostsValid()),
         result.getDateCostsValid());
     assertEquals(ebsProceeding.getAvailableFunctions(),
         result.getAvailableFunctions());
@@ -404,7 +406,7 @@ class EbsApplicationMapperTest {
     assertEquals(soaOutcomeDetail.getAltDisputeResolution(), result.getAlternativeResolution());
     assertEquals(proceedingMappingContext.getCourtLookup().getCode(), result.getCourtCode());
     assertEquals(proceedingMappingContext.getCourtLookup().getDescription(), result.getCourtName());
-    assertEquals(soaOutcomeDetail.getFinalWorkDate(), result.getDateOfFinalWork());
+    assertEquals(toDate(soaOutcomeDetail.getFinalWorkDate()), result.getDateOfFinalWork());
     assertNull(result.getDateOfIssue());
     assertEquals(soaOutcomeDetail.getResolutionMethod(), result.getResolutionMethod());
     assertEquals(proceedingMappingContext.getOutcomeResultLookup().getOutcomeResult(),
@@ -429,7 +431,7 @@ class EbsApplicationMapperTest {
     assertNotNull(result);
     assertEquals(soaAssessmentResult.getAssessmentId(),
         result.getAssessmentId());
-    assertEquals(soaAssessmentResult.getDate(),
+    assertEquals(toDate(soaAssessmentResult.getDate()),
         result.getDate());
     assertEquals(soaAssessmentResult.getAssessmentDetails().get(0).getCaption(),
         result.getAssessmentDetails().get(0).getCaption());
@@ -543,7 +545,7 @@ class EbsApplicationMapperTest {
         result.getPublicFundingApplied());
     assertFalse(result.getDeleteInd());
 
-    assertEquals(soaOtherParty.getPerson().getDateOfBirth(),
+    assertEquals(toDate(soaOtherParty.getPerson().getDateOfBirth()),
         result.getDateOfBirth());
     assertNotNull(result.getAddress()); // Detail tested elsewhere
     assertEquals(soaOtherParty.getPerson().getEmploymentStatus(),
@@ -556,7 +558,7 @@ class EbsApplicationMapperTest {
         result.getAssessedIncome());
     assertEquals(soaOtherParty.getPerson().getAssessedAssets(),
         result.getAssessedAssets());
-    assertEquals(soaOtherParty.getPerson().getAssessmentDate(),
+    assertEquals(toDate(soaOtherParty.getPerson().getAssessmentDate()),
         result.getAssessmentDate());
     assertEquals(soaOtherParty.getPerson().getOtherInformation(),
         result.getOtherInformation());
@@ -711,7 +713,7 @@ class EbsApplicationMapperTest {
 
     assertNotNull(result);
     assertEquals(timeRelatedAward.getDescription(), result.getDescription());
-    assertEquals(timeRelatedAward.getAwardDate(), result.getEffectiveDate());
+    assertEquals(toDate(timeRelatedAward.getAwardDate()), result.getEffectiveDate());
     assertEquals(timeRelatedAward.getAwardType(), result.getAwardType());
     assertEquals(timeRelatedAward.getAmount(), result.getAwardAmount());
     assertEquals(timeRelatedAward.getAwardTriggeringEvent(), result.getTriggeringEvent());
@@ -730,19 +732,19 @@ class EbsApplicationMapperTest {
         result.getClientAmountPaidToLsc());
     assertEquals(soaRecovery.getRecoveredAmount().getClient().getAmount(),
         result.getClientRecoveryAmount());
-    assertEquals(soaRecovery.getRecoveredAmount().getClient().getDateReceived(),
+    assertEquals(toDate(soaRecovery.getRecoveredAmount().getClient().getDateReceived()),
         result.getClientRecoveryDate());
     assertEquals(soaRecovery.getRecoveredAmount().getCourt().getPaidToLsc(),
         result.getCourtAmountPaidToLsc());
     assertEquals(soaRecovery.getRecoveredAmount().getCourt().getAmount(),
         result.getCourtRecoveryAmount());
-    assertEquals(soaRecovery.getRecoveredAmount().getCourt().getDateReceived(),
+    assertEquals(toDate(soaRecovery.getRecoveredAmount().getCourt().getDateReceived()),
         result.getCourtRecoveryDate());
     assertEquals(soaRecovery.getRecoveredAmount().getSolicitor().getPaidToLsc(),
         result.getSolicitorAmountPaidToLsc());
     assertEquals(soaRecovery.getRecoveredAmount().getSolicitor().getAmount(),
         result.getSolicitorRecoveryAmount());
-    assertEquals(soaRecovery.getRecoveredAmount().getSolicitor().getDateReceived(),
+    assertEquals(toDate(soaRecovery.getRecoveredAmount().getSolicitor().getDateReceived()),
         result.getSolicitorRecoveryDate());
     assertEquals(soaRecovery.getOfferedAmount().getAmount(), result.getOfferedAmount());
     assertEquals(soaRecovery.getOfferedAmount().getConditionsOfOffer(),
@@ -785,7 +787,7 @@ class EbsApplicationMapperTest {
     assertEquals(AWARD_TYPE_COST, result.getAwardType());
     assertEquals(AWARD_TYPE_COST_DESCRIPTION, result.getDescription());
     assertEquals(soaAward.getAwardType(), result.getAwardCode());
-    assertEquals(soaAward.getCostAward().getOrderDate(), result.getDateOfOrder());
+    assertEquals(toDate(soaAward.getCostAward().getOrderDate()), result.getDateOfOrder());
     assertEquals(soaAward.getCostAward().getPreCertificateAwardLsc(),
         result.getPreCertificateLscCost());
     assertEquals(soaAward.getCostAward().getPreCertificateAwardOth(),
@@ -810,11 +812,11 @@ class EbsApplicationMapperTest {
         result.getCertificateCostMarket());
     assertEquals(soaAward.getCostAward().getCourtAssessmentStatus(),
         result.getCourtAssessmentStatus());
-    assertEquals(soaAward.getCostAward().getOrderDateServed(),
+    assertEquals(toDate(soaAward.getCostAward().getOrderDateServed()),
         result.getOrderServedDate());
     assertEquals(soaAward.getCostAward().getInterestAwardedRate(),
         result.getInterestAwardedRate());
-    assertEquals(soaAward.getCostAward().getInterestAwardedStartDate(),
+    assertEquals(toDate(soaAward.getCostAward().getInterestAwardedStartDate()),
         result.getInterestStartDate());
     assertEquals(soaAward.getCostAward().getAwardedBy(),
         result.getAwardedBy());
@@ -844,10 +846,10 @@ class EbsApplicationMapperTest {
     assertEquals(AWARD_TYPE_FINANCIAL, result.getAwardType());
     assertEquals(AWARD_TYPE_FINANCIAL_DESCRIPTION, result.getDescription());
     assertEquals(soaAward.getAwardType(), result.getAwardCode());
-    assertEquals(soaAward.getFinancialAward().getOrderDate(), result.getDateOfOrder());
+    assertEquals(toDate(soaAward.getFinancialAward().getOrderDate()), result.getDateOfOrder());
     assertEquals(soaAward.getFinancialAward().getAmount(),
         result.getAwardAmount());
-    assertEquals(soaAward.getFinancialAward().getOrderDateServed(),
+    assertEquals(toDate(soaAward.getFinancialAward().getOrderDateServed()),
         result.getOrderServedDate());
     assertEquals(soaAward.getFinancialAward().getStatutoryChangeReason(),
         result.getStatutoryChargeExemptReason());
@@ -870,7 +872,7 @@ class EbsApplicationMapperTest {
     assertEquals(soaAward.getFinancialAward().getInterimAward().toString(),
         result.getInterimAward());
     assertEquals(soaAward.getFinancialAward().getAwardedBy(), result.getAwardedBy());
-    assertEquals(soaAward.getFinancialAward().getOrderDateServed(),
+    assertEquals(toDate(soaAward.getFinancialAward().getOrderDateServed()),
         result.getOrderServedDate());
     assertEquals(soaAward.getFinancialAward().getAwardJustifications(),
         result.getAwardJustifications());
@@ -894,13 +896,13 @@ class EbsApplicationMapperTest {
     assertNotNull(result);
     assertEquals(soaAward.getAwardType(), result.getAwardCode());
     assertEquals(soaAward.getAwardId(), result.getEbsId());
-    assertEquals(soaAward.getLandAward().getOrderDate(), result.getDateOfOrder());
+    assertEquals(toDate(soaAward.getLandAward().getOrderDate()), result.getDateOfOrder());
     assertEquals(AWARD_TYPE_LAND, result.getAwardType());
     assertEquals(soaAward.getLandAward().getValuation().getAmount(),
         result.getValuationAmount());
     assertEquals(soaAward.getLandAward().getValuation().getCriteria(),
         result.getValuationCriteria());
-    assertEquals(soaAward.getLandAward().getValuation().getDate(),
+    assertEquals(toDate(soaAward.getLandAward().getValuation().getDate()),
         result.getValuationDate());
     assertNotNull(result.getTimeRecovery());
     assertNotNull(result.getLiableParties());
@@ -950,14 +952,14 @@ class EbsApplicationMapperTest {
 
     assertNotNull(result);
     assertEquals(soaAward.getAwardId(), result.getEbsId());
-    assertEquals(soaAward.getOtherAsset().getOrderDate(), result.getDateOfOrder());
+    assertEquals(toDate(soaAward.getOtherAsset().getOrderDate()), result.getDateOfOrder());
     assertEquals(AWARD_TYPE_OTHER_ASSET, result.getAwardType());
     assertEquals(soaAward.getAwardType(), result.getAwardCode());
     assertEquals(soaAward.getOtherAsset().getValuation().getAmount(),
         result.getValuationAmount());
     assertEquals(soaAward.getOtherAsset().getValuation().getCriteria(),
         result.getValuationCriteria());
-    assertEquals(soaAward.getOtherAsset().getValuation().getDate(),
+    assertEquals(toDate(soaAward.getOtherAsset().getValuation().getDate()),
         result.getValuationDate());
     assertNotNull(result.getTimeRecovery());
     assertNotNull(result.getLiableParties());
@@ -1598,11 +1600,11 @@ class EbsApplicationMapperTest {
     assertEquals(employerAddress, result.getOrganisationAddress());
     assertEquals(new BigDecimal(assessedIncome).setScale(2), result.getAssessedIncome());
     assertEquals(new BigDecimal(assessedAssets).setScale(2), result.getAssessedAssets());
-    assertEquals(parsedDateOfBirth, result.getDateOfBirth());
+    assertEquals(toDate(parsedDateOfBirth), result.getDateOfBirth());
     assertEquals(employmentStatus, result.getEmploymentStatus());
     assertEquals(certificateNumber, result.getCertificateNumber());
     assertEquals(assessedIncomeFrequency, result.getAssessedIncomeFrequency());
-    assertEquals(parsedAssessmentDate, result.getAssessmentDate());
+    assertEquals(toDate(parsedAssessmentDate), result.getAssessmentDate());
     assertEquals(otherInformation, result.getOtherInformation());
   }
 
@@ -1701,8 +1703,8 @@ class EbsApplicationMapperTest {
 
     assertNotNull(result);
     assertEquals("testLoginId", result.getLastUpdatedBy().getLoginId());
-    assertEquals(testDate, result.getDateLastUpdated());
-    assertEquals(testDate, result.getDateCreated());
+    assertEquals(toLocalDateTime(testDate), result.getDateLastUpdated());
+    assertEquals(toLocalDateTime(testDate), result.getDateCreated());
   }
 
   @Test
@@ -1711,7 +1713,21 @@ class EbsApplicationMapperTest {
     assertNull( applicationMapper.toEbsRecordHistory(null));
   }
 
+  private LocalDateTime toLocalDateTime(Date date) {
+    return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+  }
 
+  private Date toDate(LocalDateTime localDateTime) {
+    return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
+  }
+
+  private Date toDate(LocalDate localDate) {
+    return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+  }
+
+  private LocalDate toDate(Date date) {
+    return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+  }
 
 
 }

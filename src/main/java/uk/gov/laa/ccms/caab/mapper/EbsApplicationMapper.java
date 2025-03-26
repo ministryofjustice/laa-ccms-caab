@@ -14,17 +14,21 @@ import static uk.gov.laa.ccms.caab.util.OpponentUtil.getAssessmentMappingId;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.lang3.tuple.Pair;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.BeanMapping;
+import org.mapstruct.Condition;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -696,7 +700,7 @@ public interface EbsApplicationMapper {
   @Mapping(target = "used", source = "key")
   @Mapping(target = "dateUsed", source = "value")
   @Mapping(target = "contractFlag", ignore = true)
-  DevolvedPowersDetail toDevolvedPowers(Pair<Boolean, Date> devolvedPowersInfo);
+  DevolvedPowersDetail toDevolvedPowers(Pair<Boolean, LocalDate> devolvedPowersInfo);
 
 
   @Mapping(target = ".", source = "tdsApplication")
@@ -1147,5 +1151,31 @@ public interface EbsApplicationMapper {
             ? toIndividualOpponent(otherParty) :
             toOrganisationOpponent(otherParty))
         .toList() : null;
+  }
+
+  default Date mapToDate(LocalDate localDate) {
+    if (Objects.isNull(localDate)) {
+      return null;
+    }
+    return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+  }
+
+  default LocalDate mapToLocalDate(Date date) {
+    if (Objects.isNull(date)) {
+      return null;
+    }
+    return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+  }
+
+  /**
+   * Ensures dates are not empty, which helps support mapping dates to instants only when
+   *     necessary.
+   *
+   * @param value The date which is currently being mapped.
+   * @return Returns true if the date is not null.
+   */
+  @Condition
+  default boolean isNotNull(LocalDate value) {
+    return value != null;
   }
 }

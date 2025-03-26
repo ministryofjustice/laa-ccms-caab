@@ -174,6 +174,7 @@ public class CopyCaseSearchController {
   @GetMapping("/application/copy-case/{case-reference-number}/confirm")
   public String selectCopyCaseReferenceNumber(
       @PathVariable("case-reference-number") String copyCaseReferenceNumber,
+      @RequestParam("case-client-first-name") String copyCaseClientFirstName,
       @SessionAttribute(CASE_SEARCH_RESULTS) List<BaseApplicationDetail> caseSearchResults,
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData) {
 
@@ -190,6 +191,7 @@ public class CopyCaseSearchController {
     // Store the selected caseReferenceNumber in the ApplicationDetails.
     // This will be used at the point the Application is created.
     applicationFormData.setCopyCaseReferenceNumber(copyCaseReferenceNumber);
+    applicationFormData.setCopyCaseClientFirstName(copyCaseClientFirstName);
     return "redirect:/application/client/search";
   }
 

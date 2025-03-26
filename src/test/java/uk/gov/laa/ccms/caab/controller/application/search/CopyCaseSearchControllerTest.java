@@ -242,7 +242,7 @@ public class CopyCaseSearchControllerTest {
   @Test
   public void testSelectCopyCaseReferenceNumber_InvalidCaseRef() {
     Exception exception = assertThrows(ServletException.class, () ->
-        this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm", "123")
+        this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm?case-client-first-name=John", "123")
             .sessionAttr(CASE_SEARCH_RESULTS, new ArrayList<BaseApplicationDetail>())
             .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())));
 
@@ -260,7 +260,7 @@ public class CopyCaseSearchControllerTest {
         List.of(new BaseApplicationDetail().caseReferenceNumber("123"));
 
     ApplicationFormData applicationFormData = new ApplicationFormData();
-    this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm", "123")
+    this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm?case-client-first-name=John", "123")
             .sessionAttr(CASE_SEARCH_RESULTS, caseSearchResults)
             .sessionAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andExpect(status().is3xxRedirection())

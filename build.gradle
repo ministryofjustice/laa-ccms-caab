@@ -60,7 +60,7 @@ dependencies {
 
 	}
 
-	implementation 'uk.gov.laa.ccms.data:data-api:0.0.46-c28a055-SNAPSHOT'
+	implementation 'uk.gov.laa.ccms.data:data-api:0.0.46-cd1d2bd-SNAPSHOT'
 
 	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.55'
 

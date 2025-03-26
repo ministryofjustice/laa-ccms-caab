@@ -284,23 +284,10 @@ public class ApplicationService {
    * Retrieve the full details of a Case.
    *
    * @param caseReferenceNumber The reference of the case to be retrieved.
-   * @param loginId             The login identifier for the user.
-   * @param userType            Type of the user (e.g., admin, user).
+   * @param providerId          The identifier for the provider.
+   * @param clientFirstName            The first name of the client.
    * @return A Mono wrapping the CaseDetails.
    */
-  public ApplicationDetail getCase(
-      final String caseReferenceNumber,
-      final String loginId,
-      final String userType) {
-    CaseDetail soaCase = Optional.ofNullable(
-            soaApiClient.getCase(caseReferenceNumber, loginId, userType).block())
-        .orElseThrow(() -> new CaabApplicationException(
-            String.format("Failed to retrieve SOA Case with ref: %s", caseReferenceNumber)));
-
-    return soaApplicationMapper.toApplicationDetail(soaApplicationMappingContextBuilder
-        .buildApplicationMappingContext(soaCase));
-  }
-
   public ApplicationDetail getCase(
       final String caseReferenceNumber,
       final long providerId,
@@ -310,7 +297,8 @@ public class ApplicationService {
         .orElseThrow(() -> new CaabApplicationException(
             String.format("Failed to retrieve EBS Case with ref: %s", caseReferenceNumber)));
 
-    return ebsApplicationMapper.toApplicationDetail(ebsApplicationMappingContextBuilder.buildApplicationMappingContext(ebsCase));
+    return ebsApplicationMapper.toApplicationDetail(ebsApplicationMappingContextBuilder
+        .buildApplicationMappingContext(ebsCase));
   }
 
   /**
@@ -338,12 +326,11 @@ public class ApplicationService {
     Mono<ApplicationDetail> applicationMono;
 
     if (StringUtils.hasText(applicationFormData.getCopyCaseReferenceNumber())) {
-      ApplicationDetail applicationToCopy = this.getCase(
-          applicationFormData.getCopyCaseReferenceNumber(),
-          user.getLoginId(),
-          user.getUserType());
+      ApplicationDetail ebsApplicationToCopy =
+          this.getCase(applicationFormData.getCopyCaseReferenceNumber(),
+          user.getProvider().getId(), applicationFormData.getCopyCaseClientFirstName());
 
-      applicationMono = copyApplication(applicationToCopy, clientDetail, user);
+      applicationMono = copyApplication(ebsApplicationToCopy, clientDetail, user);
     } else {
       applicationMono = buildNewApplication(applicationFormData, clientDetail, user);
     }
