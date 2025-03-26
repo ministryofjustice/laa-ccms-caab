@@ -377,7 +377,8 @@ public interface EbsApplicationMapper {
   @Mapping(target = "ebsId", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
   @Mapping(target = "id", ignore = true)
-  PriorAuthorityDetail toPriorAuthority(EbsPriorAuthorityMappingContext priorAuthorityMappingContext);
+  PriorAuthorityDetail toPriorAuthority(
+      EbsPriorAuthorityMappingContext priorAuthorityMappingContext);
 
   @Mapping(target = "code.id", source = "key.code")
   @Mapping(target = "code.displayValue", source = "key.description")
@@ -809,10 +810,14 @@ public interface EbsApplicationMapper {
   @Mapping(target = "providerCaseReferenceNumber", source = "providerCaseReference")
   @Mapping(target = "providerFirmId", source = "provider.id")
   @Mapping(target = "providerOfficeId", source = "office.id")
-  @Mapping(target = "contactUserId.loginId", source = "providerContact.id")
   @Mapping(target = "supervisorContactId", source = "supervisor.id")
   @Mapping(target = "feeEarnerContactId", source = "feeEarner.id")
   @Mapping(target = "contactDetails", ignore = true)
+  @Mapping(target = "contactUserId.loginId", source = "providerContact.id")
+  @Mapping(target = "contactUserId.provider", ignore = true)
+  @Mapping(target = "contactUserId.firms", ignore = true)
+  @Mapping(target = "contactUserId.functions", ignore = true)
+  @Mapping(target = "contactUserId.userId", ignore = true)
   @Mapping(target = "contactUserId.username", ignore = true)
   @Mapping(target = "contactUserId.userType", ignore = true)
   uk.gov.laa.ccms.data.model.ProviderDetails toEbsProviderDetail(
@@ -1153,6 +1158,14 @@ public interface EbsApplicationMapper {
         .toList() : null;
   }
 
+  /**
+   * Provides a null safe way to convert a {@link LocalDate} to a {@link Date} object.
+   *
+   * @param localDate to convert
+   *
+   * @return a {link @Date} with the same temporal value as passed argument, or null if the
+   *     argument is null.
+   */
   default Date mapToDate(LocalDate localDate) {
     if (Objects.isNull(localDate)) {
       return null;
@@ -1160,6 +1173,14 @@ public interface EbsApplicationMapper {
     return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
   }
 
+  /**
+   * Provides a null safe way to convert a {@link Date} to a {@link LocalDate} object.
+   *
+   * @param date to convert
+   *
+   * @return a {@link Date} with the same temporal value as passed argument, or null if the
+   *     argument is null.
+   */
   default LocalDate mapToLocalDate(Date date) {
     if (Objects.isNull(date)) {
       return null;

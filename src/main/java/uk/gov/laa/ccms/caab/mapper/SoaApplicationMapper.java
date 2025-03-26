@@ -374,7 +374,8 @@ public interface SoaApplicationMapper {
   @Mapping(target = "ebsId", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
   @Mapping(target = "id", ignore = true)
-  PriorAuthorityDetail toPriorAuthority(SoaPriorAuthorityMappingContext priorAuthorityMappingContext);
+  PriorAuthorityDetail toPriorAuthority(
+      SoaPriorAuthorityMappingContext priorAuthorityMappingContext);
 
   @Mapping(target = "code.id", source = "key.code")
   @Mapping(target = "code.displayValue", source = "key.description")

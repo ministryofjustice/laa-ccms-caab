@@ -210,7 +210,8 @@ public class ApplicationService {
     // flag to true, and remove the TDS application from the results.
     searchResults.stream()
         .filter(ebsCase -> tdsApplications.stream().anyMatch(
-            amendment -> amendment.getCaseReferenceNumber().equals(ebsCase.getCaseReferenceNumber()))
+            amendment
+                -> amendment.getCaseReferenceNumber().equals(ebsCase.getCaseReferenceNumber()))
         )
         .forEach(ebsCase -> {
           ebsCase.setAmendment(true);

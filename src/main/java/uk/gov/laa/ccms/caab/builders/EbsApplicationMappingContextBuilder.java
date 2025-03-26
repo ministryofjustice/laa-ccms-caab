@@ -65,6 +65,19 @@ import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
 import uk.gov.laa.ccms.data.model.SubmittedApplicationDetails;
 
+/**
+ * The {@link EbsApplicationMappingContextBuilder} class is responsible for building
+ *     a {@link EbsApplicationMappingContext} object.
+ *
+ * <p>Various look up services are used to build this object, such as:</p>
+ * <ul>
+ *    <li>{@link ProviderService}</li>
+ *    <li>{@link LookupService}</li>
+ *    <li>{@link EbsApiClient}</li>
+ * </ul>
+ *
+ * @author Jamie Briggs
+ **/
 @Service
 @RequiredArgsConstructor
 public class EbsApplicationMappingContextBuilder {
@@ -92,7 +105,8 @@ public class EbsApplicationMappingContextBuilder {
     final boolean caseWithOnlyDraftProceedings =
         ebsApplicationDetails.getProceedings() != null
             && ebsApplicationDetails.getProceedings().stream().allMatch(
-            proceedingDetail -> STATUS_DRAFT.equalsIgnoreCase(proceedingDetail.getStatus()));
+              proceedingDetail
+                  -> STATUS_DRAFT.equalsIgnoreCase(proceedingDetail.getStatus()));
 
     // Retrieve the full provider details
     final ProviderDetail providerDetail =
@@ -119,7 +133,8 @@ public class EbsApplicationMappingContextBuilder {
         ebsApplicationDetails.getApplicationAmendmentType() != null
             ? lookupService.getCommonValue(
                 COMMON_VALUE_APPLICATION_TYPE, ebsApplicationDetails.getApplicationAmendmentType())
-            .mapNotNull(commonLookupValueDetail -> commonLookupValueDetail
+            .mapNotNull(commonLookupValueDetail
+                -> commonLookupValueDetail
                 .orElse(certificateLookup))
             .blockOptional()
             .orElseThrow(() -> new CaabApplicationException(
@@ -264,7 +279,8 @@ public class EbsApplicationMappingContextBuilder {
                     lookupService.getCommonValue(
                         COMMON_VALUE_LEVEL_OF_SERVICE, ebsProceeding.getLevelOfService()),
                     lookupService.getCommonValue(
-                        COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES, ebsProceeding.getClientInvolvementType()))
+                        COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES,
+                        ebsProceeding.getClientInvolvementType()))
                 .block())
         .orElseThrow(() -> new CaabApplicationException(
             "Failed to retrieve lookup data for ProceedingDetail"));
@@ -346,7 +362,8 @@ public class EbsApplicationMappingContextBuilder {
       // Only include the emergency flag in the criteria if the app type is classified as emergency.
       uk.gov.laa.ccms.data.model.ScopeLimitationDetail searchCriteria =
           new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
-              .categoryOfLaw(ebsCase.getApplicationDetails().getCategoryOfLaw().getCategoryOfLawCode())
+              .categoryOfLaw(ebsCase.getApplicationDetails().getCategoryOfLaw()
+                  .getCategoryOfLawCode())
               .matterType(proceeding.getMatterType())
               .proceedingCode(proceeding.getProceedingType())
               .levelOfService(proceeding.getLevelOfService())

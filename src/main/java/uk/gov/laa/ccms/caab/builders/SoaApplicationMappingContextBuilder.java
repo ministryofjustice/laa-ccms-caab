@@ -63,6 +63,19 @@ import uk.gov.laa.ccms.soa.gateway.model.PriorAuthorityAttribute;
 import uk.gov.laa.ccms.soa.gateway.model.ScopeLimitation;
 import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
 
+/**
+ * The {@link SoaApplicationMappingContextBuilder} class is responsible for building
+ *     a {@link SoaApplicationMappingContext} object.
+ *
+ * <p>Various look up services are used to build this object, such as:</p>
+ * <ul>
+ *    <li>{@link ProviderService}</li>
+ *    <li>{@link LookupService}</li>
+ *    <li>{@link EbsApiClient}</li>
+ * </ul>
+ *
+ * @author Jamie Briggs
+ **/
 @Service
 @RequiredArgsConstructor
 public class SoaApplicationMappingContextBuilder {
@@ -90,7 +103,8 @@ public class SoaApplicationMappingContextBuilder {
     final boolean caseWithOnlyDraftProceedings =
         soaApplicationDetails.getProceedings() != null
             && soaApplicationDetails.getProceedings().stream().allMatch(
-            proceedingDetail -> STATUS_DRAFT.equalsIgnoreCase(proceedingDetail.getStatus()));
+              proceedingDetail
+                  -> STATUS_DRAFT.equalsIgnoreCase(proceedingDetail.getStatus()));
 
     // Retrieve the full provider details
     final ProviderDetail providerDetail =
@@ -262,7 +276,8 @@ public class SoaApplicationMappingContextBuilder {
                     lookupService.getCommonValue(
                         COMMON_VALUE_LEVEL_OF_SERVICE, soaProceeding.getLevelOfService()),
                     lookupService.getCommonValue(
-                        COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES, soaProceeding.getClientInvolvementType()))
+                        COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES,
+                        soaProceeding.getClientInvolvementType()))
                 .block())
         .orElseThrow(() -> new CaabApplicationException(
             "Failed to retrieve lookup data for ProceedingDetail"));
@@ -279,7 +294,8 @@ public class SoaApplicationMappingContextBuilder {
                 lookupService.getCommonValue(
                         COMMON_VALUE_SCOPE_LIMITATIONS,
                         scopeLimitation.getScopeLimitation())
-                    .map(commonLookupValueDetail -> commonLookupValueDetail
+                    .map(commonLookupValueDetail
+                        -> commonLookupValueDetail
                         .orElse(new CommonLookupValueDetail()
                             .code(scopeLimitation.getScopeLimitation())
                             .description(scopeLimitation.getScopeLimitation())))
@@ -344,7 +360,8 @@ public class SoaApplicationMappingContextBuilder {
       // Only include the emergency flag in the criteria if the app type is classified as emergency.
       uk.gov.laa.ccms.data.model.ScopeLimitationDetail searchCriteria =
           new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
-              .categoryOfLaw(soaCase.getApplicationDetails().getCategoryOfLaw().getCategoryOfLawCode())
+              .categoryOfLaw(soaCase.getApplicationDetails()
+                  .getCategoryOfLaw().getCategoryOfLawCode())
               .matterType(proceeding.getMatterType())
               .proceedingCode(proceeding.getProceedingType())
               .levelOfService(proceeding.getLevelOfService())
