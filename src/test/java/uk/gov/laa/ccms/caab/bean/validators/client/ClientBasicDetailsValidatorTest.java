@@ -109,6 +109,96 @@ class ClientBasicDetailsValidatorTest {
     assertEquals("required.maritalStatus", errors.getFieldError("maritalStatus").getCode());
   }
 
+  @Test
+  void validateInvalidMiddleNamesWithDoubleSpace() {
+    basicDetails = buildBasicDetails();
+    basicDetails.setMiddleNames("a  b");
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validateInvalidMiddleNamesFirstCharacterAlpha() {
+    basicDetails = buildBasicDetails();
+    basicDetails.setMiddleNames("1A ");
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validateInvalidMiddleNamesCharacterSetC() {
+    basicDetails = buildBasicDetails();
+    basicDetails.setMiddleNames("A1 ");
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validateInvalidSurnameWithDoubleSpace() {
+    basicDetails = buildBasicDetails();
+    basicDetails.setSurname("a  b");
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validateInvalidSurnameFirstCharacterAlpha() {
+    basicDetails = buildBasicDetails();
+    basicDetails.setSurname("1A ");
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validateInvalidSurnameCharacterSetC() {
+    basicDetails = buildBasicDetails();
+    basicDetails.setSurname("A1 ");
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validateInvalidNationalInsuranceNumber() {
+    basicDetails = buildBasicDetails();
+    basicDetails.setNationalInsuranceNumber("ABC123");
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validateValidNationalInsuranceNumber() {
+    basicDetails = buildBasicDetails();
+    basicDetails.setNationalInsuranceNumber("AA100000A");
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+    assertFalse(errors.hasErrors());
+    assertEquals(0, errors.getErrorCount());
+  }
+
+  @Test
+  void validateInvalidHomeOfficeNumber() {
+    basicDetails = buildBasicDetails();
+    basicDetails.setHomeOfficeNumber("1 $2 AS");
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validateValidHomeOfficeNumber() {
+    basicDetails = buildBasicDetails();
+    basicDetails.setHomeOfficeNumber("AA12356");
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+    assertFalse(errors.hasErrors());
+    assertEquals(0, errors.getErrorCount());
+  }
+
   private ClientFormDataBasicDetails buildBasicDetails(){
     ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
     basicDetails.setTitle("MR");

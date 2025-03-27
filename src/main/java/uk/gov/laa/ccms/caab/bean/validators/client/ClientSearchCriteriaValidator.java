@@ -5,10 +5,14 @@ import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQU
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CASE_REFERENCE_NUMBER_NEGATIVE_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CASE_REFERENCE_NUMBER_PATTERN;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CHARACTER_SET_C;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.DOUBLE_SPACE;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.FIRST_CHARACTER_MUST_BE_ALPHA;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.HOME_OFFICE_NUMBER_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NATIONAL_INSURANCE_NUMBER_PATTERN;
 
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
@@ -45,6 +49,25 @@ public class ClientSearchCriteriaValidator extends AbstractValidator {
   public void validateForename(Object target, Errors errors) {
     ValidationUtils.rejectIfEmpty(errors, "forename",
         "required.forename", "Please complete 'First name'.");
+
+    ClientSearchCriteria clientSearchCriteria = (ClientSearchCriteria) target;
+
+    String forename = clientSearchCriteria.getForename();
+    if (StringUtils.hasText(forename)) {
+      if (!forename.matches(FIRST_CHARACTER_MUST_BE_ALPHA)) {
+        errors.rejectValue("forename", "invalid.forename",
+            "Your input for 'First name' is invalid. "
+                + "The first character must be a letter. Please amend your entry.");
+      } else if (!forename.matches(CHARACTER_SET_C)) {
+        errors.rejectValue("forename", "invalid.forename-char",
+            "Your input for 'First name' contains an invalid character. "
+                + "Please amend your entry.");
+      } else if (patternMatches(forename, DOUBLE_SPACE)) {
+        errors.rejectValue("forename", "invalid.forename",
+            "Your input for 'First name'"
+                + " contains double spaces. Please amend your entry.");
+      }
+    }
   }
 
   /**
@@ -56,6 +79,25 @@ public class ClientSearchCriteriaValidator extends AbstractValidator {
   public void validateSurnameAtBirth(Object target, Errors errors) {
     ValidationUtils.rejectIfEmpty(errors, "surname",
         "required.surname", "Please complete 'Surname at birth'.");
+
+    ClientSearchCriteria clientSearchCriteria = (ClientSearchCriteria) target;
+
+    String surname = clientSearchCriteria.getSurname();
+    if (StringUtils.hasText(surname)) {
+      if (!surname.matches(FIRST_CHARACTER_MUST_BE_ALPHA)) {
+        errors.rejectValue("surname", "invalid.surname",
+            "Your input for 'Surname at birth' is invalid. "
+                + "The first character must be a letter. Please amend your entry.");
+      } else if (!surname.matches(CHARACTER_SET_C)) {
+        errors.rejectValue("surname", "invalid.surname-char",
+            "Your input for 'Surname at birth' contains an invalid character. "
+                + "Please amend your entry.");
+      } else if (patternMatches(surname, DOUBLE_SPACE)) {
+        errors.rejectValue("surname", "invalid.surname",
+            "Your input for 'Surname at birth'"
+                + " contains double spaces. Please amend your entry.");
+      }
+    }
   }
 
   /**
