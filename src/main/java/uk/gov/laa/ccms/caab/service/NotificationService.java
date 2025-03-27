@@ -266,31 +266,28 @@ public class NotificationService {
    * @param userType       Type of the user (e.g., admin, user).
    */
   public void submitNotificationAttachments(String notificationId, String loginId,
-      String userType, Integer providerId) {
+                                            String userType, Integer providerId) {
 
     // Get all notification attachments from TDS
+    Set<String> attachmentIds = getNotificationAttachmentIds(notificationId, providerId);
 
-    Set<String> notificationAttachmentIds = getNotificationAttachmentIds(notificationId,
-        providerId);
-
-    List<NotificationAttachmentDetail> notificationAttachmentDetails =
-        Flux.fromStream(notificationAttachmentIds.stream()
-                .map(Integer::parseInt)
-                .map(caabApiClient::getNotificationAttachment)).flatMap(mono -> mono).collectList()
+    List<NotificationAttachmentDetail> attachmentDetails =
+        Flux.fromIterable(attachmentIds)
+            .map(Integer::parseInt)
+            .flatMap(caabApiClient::getNotificationAttachment)
+            .collectList()
             .block();
 
-    if (notificationAttachmentDetails != null && !notificationAttachmentDetails.isEmpty()) {
-
-      Flux.fromStream(notificationAttachmentDetails.stream()
-              .map(notificationAttachmentMapper::toDocument)
-              .map(document -> soaApiClient.uploadDocument(document, notificationId,
-                  null, loginId,
-                  userType))).flatMap(mono -> mono).collectList()
+    if (attachmentDetails != null && !attachmentDetails.isEmpty()) {
+      Flux.fromIterable(attachmentDetails)
+          .map(notificationAttachmentMapper::toDocument)
+          .flatMap(document -> soaApiClient
+              .uploadDocument(document, notificationId, null, loginId, userType))
+          .collectList()
           .block();
 
       // Delete draft documents from TDS and S3
-      removeDraftNotificationAttachments(notificationId, providerId, notificationAttachmentIds,
-          loginId);
+      removeDraftNotificationAttachments(notificationId, providerId, attachmentIds, loginId);
     }
   }
 
