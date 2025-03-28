@@ -79,6 +79,7 @@ import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
@@ -1584,6 +1585,42 @@ class ApplicationServiceTest {
     Mono<TransactionStatus> result = ebsApiClient.getCaseStatus(transactionId);
     // Then
     assertEquals(expected, result.block());
+  }
+
+  @Test
+  @DisplayName("Should return case if present")
+  void shouldReturnCaseIfPresent(){
+    // Given
+    String caseRef = "12345";
+    long providerId = 123456789L;
+    String clientFirstName = "John";
+    CaseDetail caseDetails = new CaseDetail();
+    ApplicationDetail applicationDetail = new ApplicationDetail();
+
+    when(ebsApiClient.getCase(caseRef, providerId, clientFirstName))
+        .thenReturn(Mono.just(caseDetails));
+    EbsApplicationMappingContext ebsApplicationMappingContext = EbsApplicationMappingContext.builder().build();
+    when(ebsApplicationMappingContextBuilder.buildApplicationMappingContext(caseDetails))
+        .thenReturn(ebsApplicationMappingContext);
+    when(ebsApplicationMapper.toApplicationDetail(ebsApplicationMappingContext)).thenReturn(
+        applicationDetail);
+    // When
+    ApplicationDetail result = applicationService.getCase(caseRef, providerId, clientFirstName);
+    // Then
+    assertNotNull(result);
+    assertEquals(applicationDetail, result);
+  }
+
+  @Test
+  @DisplayName("Should throw exception if case not found")
+  void shouldThrowExceptionIfCaseNotFound(){
+    // Given
+    String caseRef = "12345";
+    long providerId = 123456789L;
+    String clientFirstName = "John";
+    when(ebsApiClient.getCase(caseRef, providerId, clientFirstName)).thenReturn(Mono.empty());
+    // When / Then
+    assertThrows(CaabApplicationException.class, () -> applicationService.getCase(caseRef, providerId, clientFirstName));
   }
 
   private static ApplicationDetail getApplicationDetail() {

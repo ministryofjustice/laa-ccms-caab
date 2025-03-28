@@ -946,8 +946,8 @@ public class EbsApiClient extends BaseApiClient {
    * @param clientFirstName The first name of the client associated to the case.
    * @return A {@link Mono} wrapping the {@link CaseDetail}.
    */
-  public Mono<CaseDetail> getCase(String caseReferenceNumber, Long providerId,
-      String clientFirstName) {
+  public Mono<CaseDetail> getCase(final String caseReferenceNumber, final long providerId,
+      final String clientFirstName) {
     final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
     queryParams.add("provider-id", String.valueOf(providerId));
     queryParams.add("client-first-name", clientFirstName);
