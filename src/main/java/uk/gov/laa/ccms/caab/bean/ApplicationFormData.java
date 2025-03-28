@@ -14,6 +14,11 @@ public class ApplicationFormData {
   private String copyCaseReferenceNumber;
 
   /**
+   * The case client first name for a Copy Case.
+   */
+  private String copyCaseClientFirstName;
+
+  /**
    * The ID of the office related to this application.
    */
   private Integer officeId;

@@ -43,7 +43,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
-import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
@@ -82,7 +82,7 @@ public class EditGeneralDetailsSectionController {
   private final CaseSearchCriteriaValidator searchCriteriaValidator;
 
   //Mappers
-  private final ApplicationMapper applicationMapper;
+  private final EbsApplicationMapper applicationMapper;
   private final ResultDisplayMapper resultDisplayMapper;
 
   private static final String ACTION_FIND_ADDRESS = "find_address";

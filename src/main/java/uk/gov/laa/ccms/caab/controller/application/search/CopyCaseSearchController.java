@@ -26,7 +26,7 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
-import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
@@ -53,7 +53,7 @@ public class CopyCaseSearchController {
 
   private final ApplicationService applicationService;
 
-  private final ApplicationMapper applicationMapper;
+  private final EbsApplicationMapper applicationMapper;
 
   private final CaseSearchCriteriaValidator searchCriteriaValidator;
 
@@ -174,6 +174,7 @@ public class CopyCaseSearchController {
   @GetMapping("/application/copy-case/{case-reference-number}/confirm")
   public String selectCopyCaseReferenceNumber(
       @PathVariable("case-reference-number") String copyCaseReferenceNumber,
+      @RequestParam("case-client-first-name") String copyCaseClientFirstName,
       @SessionAttribute(CASE_SEARCH_RESULTS) List<BaseApplicationDetail> caseSearchResults,
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData) {
 
@@ -190,6 +191,7 @@ public class CopyCaseSearchController {
     // Store the selected caseReferenceNumber in the ApplicationDetails.
     // This will be used at the point the Application is created.
     applicationFormData.setCopyCaseReferenceNumber(copyCaseReferenceNumber);
+    applicationFormData.setCopyCaseClientFirstName(copyCaseClientFirstName);
     return "redirect:/application/client/search";
   }
 
