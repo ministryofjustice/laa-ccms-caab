@@ -286,15 +286,15 @@ public class ApplicationService {
    *
    * @param caseReferenceNumber The reference of the case to be retrieved.
    * @param providerId          The identifier for the provider.
-   * @param clientFirstName            The first name of the client.
+   * @param userName            The username of the logged-in user.
    * @return A Mono wrapping the CaseDetails.
    */
   public ApplicationDetail getCase(
       final String caseReferenceNumber,
       final long providerId,
-      final String clientFirstName) {
+      final String userName) {
     uk.gov.laa.ccms.data.model.CaseDetail ebsCase = Optional.ofNullable(
-            ebsApiClient.getCase(caseReferenceNumber, providerId, clientFirstName).block())
+            ebsApiClient.getCase(caseReferenceNumber, providerId, userName).block())
         .orElseThrow(() -> new CaabApplicationException(
             String.format("Failed to retrieve EBS Case with ref: %s", caseReferenceNumber)));
 
@@ -329,7 +329,7 @@ public class ApplicationService {
     if (StringUtils.hasText(applicationFormData.getCopyCaseReferenceNumber())) {
       ApplicationDetail ebsApplicationToCopy =
           this.getCase(applicationFormData.getCopyCaseReferenceNumber(),
-          user.getProvider().getId(), applicationFormData.getCopyCaseClientFirstName());
+          user.getProvider().getId(), user.getUsername());
 
       applicationMono = copyApplication(ebsApplicationToCopy, clientDetail, user);
     } else {

@@ -483,11 +483,10 @@ class ApplicationServiceTest {
   @Test
   void createApplication_Copy_success() throws ParseException {
     String copyCaseReference = "1111";
-    String copyCaseClientFirstName = "John";
+    String userName = "John";
 
     ApplicationFormData applicationFormData = buildApplicationFormData();
     applicationFormData.setCopyCaseReferenceNumber(copyCaseReference);
-    applicationFormData.setCopyCaseClientFirstName(copyCaseClientFirstName);
     uk.gov.laa.ccms.soa.gateway.model.ClientDetail clientDetail = buildClientDetail();
     CaseReferenceSummary caseReferenceSummary = buildCaseReferenceSummary();
     UserDetail user = buildUserDetail();
@@ -501,7 +500,7 @@ class ApplicationServiceTest {
         ebsCase.getApplicationDetails().getProceedings().size() - 1);
 
     when(ebsApiClient.getCase(copyCaseReference, Long.valueOf(user.getProvider().getId()),
-        copyCaseClientFirstName)).thenReturn(Mono.just(ebsCase));
+        "testUser")).thenReturn(Mono.just(ebsCase));
 
     when(ebsApiClient.postAllocateNextCaseReference())
         .thenReturn(Mono.just(caseReferenceSummary));
@@ -1593,11 +1592,11 @@ class ApplicationServiceTest {
     // Given
     String caseRef = "12345";
     long providerId = 123456789L;
-    String clientFirstName = "John";
+    String userName = "John";
     CaseDetail caseDetails = new CaseDetail();
     ApplicationDetail applicationDetail = new ApplicationDetail();
 
-    when(ebsApiClient.getCase(caseRef, providerId, clientFirstName))
+    when(ebsApiClient.getCase(caseRef, providerId, userName))
         .thenReturn(Mono.just(caseDetails));
     EbsApplicationMappingContext ebsApplicationMappingContext = EbsApplicationMappingContext.builder().build();
     when(ebsApplicationMappingContextBuilder.buildApplicationMappingContext(caseDetails))
@@ -1605,7 +1604,7 @@ class ApplicationServiceTest {
     when(ebsApplicationMapper.toApplicationDetail(ebsApplicationMappingContext)).thenReturn(
         applicationDetail);
     // When
-    ApplicationDetail result = applicationService.getCase(caseRef, providerId, clientFirstName);
+    ApplicationDetail result = applicationService.getCase(caseRef, providerId, userName);
     // Then
     assertNotNull(result);
     assertEquals(applicationDetail, result);
@@ -1617,10 +1616,10 @@ class ApplicationServiceTest {
     // Given
     String caseRef = "12345";
     long providerId = 123456789L;
-    String clientFirstName = "John";
-    when(ebsApiClient.getCase(caseRef, providerId, clientFirstName)).thenReturn(Mono.empty());
+    String userName = "John";
+    when(ebsApiClient.getCase(caseRef, providerId, userName)).thenReturn(Mono.empty());
     // When / Then
-    assertThrows(CaabApplicationException.class, () -> applicationService.getCase(caseRef, providerId, clientFirstName));
+    assertThrows(CaabApplicationException.class, () -> applicationService.getCase(caseRef, providerId, userName));
   }
 
   private static ApplicationDetail getApplicationDetail() {

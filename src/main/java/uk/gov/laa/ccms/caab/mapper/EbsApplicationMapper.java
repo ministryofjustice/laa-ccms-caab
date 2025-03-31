@@ -15,6 +15,7 @@ import static uk.gov.laa.ccms.caab.util.OpponentUtil.getAssessmentMappingId;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Collections;
@@ -1174,6 +1175,21 @@ public interface EbsApplicationMapper {
   }
 
   /**
+   * Provides a null safe way to convert a {@link LocalDateTime} to a {@link Date} object.
+   *
+   * @param localDateTime to convert
+   *
+   * @return a {link @Date} with the same temporal value as passed argument, or null if the
+   *     argument is null.
+   */
+  default Date mapToDate(LocalDateTime localDateTime) {
+    if (Objects.isNull(localDateTime)) {
+      return null;
+    }
+    return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
+  }
+
+  /**
    * Provides a null safe way to convert a {@link Date} to a {@link LocalDate} object.
    *
    * @param date to convert
@@ -1186,6 +1202,21 @@ public interface EbsApplicationMapper {
       return null;
     }
     return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+  }
+
+  /**
+   * Provides a null safe way to convert a {@link Date} to a {@link LocalDateTime} object.
+   *
+   * @param date to convert
+   *
+   * @return a {@link Date} with the same temporal value as passed argument, or null if the
+   *     argument is null.
+   */
+  default LocalDateTime mapToLocalDateTime(Date date) {
+    if (Objects.isNull(date)) {
+      return null;
+    }
+    return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
   }
 
   /**
