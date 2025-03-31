@@ -7,6 +7,7 @@
   <a th:if="${#lists.contains(userRoles, actionRole)}"
      th:classappend="${(isButton ? 'govuk-button' : 'govuk-link') + ' ' + additionalClasses}"
      th:attrappend="data-module=${isButton ? 'govuk-button' : null}"
+     th:id="|${#strings.toLowerCase(#strings.replace(actionText, ' ', '-'))}-link|"
      th:text="${actionText}"
      th:href="${(#lists.contains(userRoles, actionRole)) ? url : null}">
   </a>
