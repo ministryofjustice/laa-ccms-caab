@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -109,55 +110,25 @@ class ClientBasicDetailsValidatorTest {
     assertEquals("required.maritalStatus", errors.getFieldError("maritalStatus").getCode());
   }
 
-  @Test
-  void validateInvalidMiddleNamesWithDoubleSpace() {
+  @ParameterizedTest
+  @CsvSource({"a  b",
+      "1A",
+      "A1"})
+  void validateInvalidMiddleNames(String middleNames) {
     basicDetails = buildBasicDetails();
-    basicDetails.setMiddleNames("a  b");
+    basicDetails.setMiddleNames(middleNames);
     clientBasicDetailsValidator.validate(basicDetails, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
   }
 
-  @Test
-  void validateInvalidMiddleNamesFirstCharacterAlpha() {
+  @ParameterizedTest
+  @CsvSource({"a  b",
+      "1A",
+      "A1"})
+  void validateInvalidSurname(String surname) {
     basicDetails = buildBasicDetails();
-    basicDetails.setMiddleNames("1A ");
-    clientBasicDetailsValidator.validate(basicDetails, errors);
-    assertTrue(errors.hasErrors());
-    assertEquals(1, errors.getErrorCount());
-  }
-
-  @Test
-  void validateInvalidMiddleNamesCharacterSetC() {
-    basicDetails = buildBasicDetails();
-    basicDetails.setMiddleNames("A1 ");
-    clientBasicDetailsValidator.validate(basicDetails, errors);
-    assertTrue(errors.hasErrors());
-    assertEquals(1, errors.getErrorCount());
-  }
-
-  @Test
-  void validateInvalidSurnameWithDoubleSpace() {
-    basicDetails = buildBasicDetails();
-    basicDetails.setSurname("a  b");
-    clientBasicDetailsValidator.validate(basicDetails, errors);
-    assertTrue(errors.hasErrors());
-    assertEquals(1, errors.getErrorCount());
-  }
-
-  @Test
-  void validateInvalidSurnameFirstCharacterAlpha() {
-    basicDetails = buildBasicDetails();
-    basicDetails.setSurname("1A ");
-    clientBasicDetailsValidator.validate(basicDetails, errors);
-    assertTrue(errors.hasErrors());
-    assertEquals(1, errors.getErrorCount());
-  }
-
-  @Test
-  void validateInvalidSurnameCharacterSetC() {
-    basicDetails = buildBasicDetails();
-    basicDetails.setSurname("A1 ");
+    basicDetails.setSurname(surname);
     clientBasicDetailsValidator.validate(basicDetails, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());

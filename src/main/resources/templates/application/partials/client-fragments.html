@@ -172,9 +172,7 @@
 
     <!-- Show paragraph if nationalInsuranceNumber exists and the field is not in error-->
     <p class="govuk-body" th:if="not ${#fields.hasErrors('nationalInsuranceNumber')} and *{clientFlowFormAction == 'create' && nationalInsuranceNumber != null && !nationalInsuranceNumber.isEmpty()}" >
-      <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
-          National Insurance Number
-      </span>
+      <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{person.nsi}"></span>
       <span th:text="*{nationalInsuranceNumber}"></span>
       <input type="hidden" id="nationalInsuranceNumber" name="nationalInsuranceNumber" th:value="*{nationalInsuranceNumber}">
     </p>
