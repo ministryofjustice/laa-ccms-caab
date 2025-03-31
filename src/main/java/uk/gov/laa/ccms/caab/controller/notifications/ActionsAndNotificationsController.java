@@ -446,17 +446,25 @@ public class ActionsAndNotificationsController {
   /**
    * Submission confirmation for notification attachments.
    *
-   * @param user           the currently logged-in user.
-   * @param notification   the notification.
+   * @param user         the currently logged-in user.
+   * @param notification the notification.
    * @return a redirect to the provide documents or evidence page.
    */
   @PostMapping("/submissions/notification-attachments/confirmed")
   public String notificationAttachmentsSubmitted(
       @ModelAttribute(USER_DETAILS) UserDetail user,
-      @SessionAttribute(NOTIFICATION) Notification notification) {
+      @SessionAttribute(NOTIFICATION) Notification notification, HttpSession session) {
 
-    return "redirect:/notifications/%s/provide-documents-or-evidence"
-        .formatted(notification.getNotificationId());
+    String notificationId = notification.getNotificationId();
+    Notification updatedNotification = notificationService
+        .getNotification(notificationId, user.getUserId(), user.getProvider().getId())
+        .blockOptional()
+        .orElseThrow(() -> new CaabApplicationException(
+            String.format("Notification with id %s not found",
+                notificationId)));
+    session.setAttribute(NOTIFICATION, updatedNotification);
+
+    return "redirect:/notifications/%s/provide-documents-or-evidence".formatted(notificationId);
   }
 
   /**

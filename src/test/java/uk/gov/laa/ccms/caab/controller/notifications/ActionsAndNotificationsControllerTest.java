@@ -783,6 +783,8 @@ class ActionsAndNotificationsControllerTest {
 
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
+    when(notificationService.getNotification("234", userDetails.getUserId(), userDetails.getProvider().getId()))
+        .thenReturn(Mono.just(notification));
 
     mockMvc.perform(post("/submissions/notification-attachments/confirmed")
             .sessionAttr("notification", notification)
