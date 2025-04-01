@@ -6,56 +6,34 @@
 </head>
 <body>
 <div class="govuk-width-container">
-  <div class="govuk-notification-banner" role="region" aria-labelledby="govuk-notification-banner-title" data-module="govuk-notification-banner">
-    <div class="govuk-notification-banner__header">
-      <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">
-        Important
-      </h2>
-    </div>
-    <div class="govuk-notification-banner__content">
-      <p class="govuk-notification-banner__heading">
-        You have 7 days left to send your application.
-        <a class="govuk-notification-banner__link" href="#">View application</a>.
-      </p>
-    </div>
-  </div>
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections}" class="govuk-back-link">Return to create application</a>
+    <a th:href="@{/application/sections}" class="govuk-back-link" th:text="#{site.returnToApplication}"/>
   </div>
   <div id="main-content">
-    <span class="govuk-caption-l">Create application</span>
-    <h1 class="govuk-heading-l">
-      Proceedings and costs
-    </h1>
-    <p class="govuk-body-l">
-      Please enter the proceeding details for this Application.  At least one proceeding must be
-      entered, you can add more proceedings by clicking on 'Add Proceeding'.
-      Once you have completed the proceedings, please review the Cost Limitations relating to the Case
-      in the Case costs tab.
-    </p>
+    <span class="govuk-caption-l" th:text="#{application.create}"/>
+    <h1 class="govuk-heading-l" th:text="#{application.proceedingsAndCosts.heading}"/>
+
+    <p class="govuk-body-l" th:text="#{application.proceedingsAndCosts.leadParagraph}"/>
+
+
     <div class="govuk-tabs" data-module="govuk-tabs">
-      <h2 class="govuk-tabs__title">
-        Proceedings, costs and prior authorities content
-      </h2>
+      <h2 class="govuk-tabs__title" th:text="#{application.proceedingsAndCosts.tabs.subHeading}"/>
       <ul class="govuk-tabs__list">
         <li class="govuk-tabs__list-item govuk-tabs__list-item--selected">
-          <a class="govuk-tabs__tab" href="#proceedings">
-            Proceedings
-          </a>
+          <a class="govuk-tabs__tab" href="#proceedings"
+             th:text="#{application.proceedingsAndCosts.subHeading.proceedings}"/>
         </li>
         <li class="govuk-tabs__list-item">
-          <a class="govuk-tabs__tab" href="#case-costs">
-            Case costs
-          </a>
+          <a class="govuk-tabs__tab" href="#case-costs"
+             th:text="#{application.proceedingsAndCosts.subHeading.caseCosts}"/>
         </li>
         <li class="govuk-tabs__list-item">
-          <a class="govuk-tabs__tab" href="#prior-authority">
-            Prior authorities
-          </a>
+          <a class="govuk-tabs__tab" href="#prior-authority"
+             th:text="#{application.proceedingsAndCosts.subHeading.priorAuthorities}"/>
         </li>
       </ul>
       <div class="govuk-tabs__panel" id="proceedings" aria-labelledby="tab_proceedings">
-        <h2 class="govuk-heading-l">Proceedings</h2>
+        <h2 class="govuk-heading-l" th:text="#{application.proceedingsAndCosts.subHeading.proceedings}">Proceedings</h2>
         <table class="govuk-table" id="proceedings-table">
           <thead class="govuk-table__head">
           <tr class="govuk-table__row">
@@ -104,7 +82,7 @@
             th:replace="~{partials/actions :: restrictedActionLink('Add proceeding', ${user.functions}, 'ADDPROC', true, 'govuk-button--secondary', @{/application/proceedings/add/matter-type}, false)}"></div>
       </div>
       <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="case-costs" aria-labelledby="tab_case-costs">
-        <h2 class="govuk-heading-l">Case costs</h2>
+        <h2 class="govuk-heading-l" th:text="#{application.proceedingsAndCosts.subHeading.caseCosts}"/>
         <table class="govuk-table">
           <thead class="govuk-table__head">
           <tr class="govuk-table__row">
@@ -131,7 +109,7 @@
         </table>
       </div>
       <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="prior-authority" aria-labelledby="tab_prior-authority">
-        <h2 class="govuk-heading-l">Prior authorities</h2>
+        <h2 class="govuk-heading-l" th:text="#{application.proceedingsAndCosts.subHeading.priorAuthorities}"/>
         <table class="govuk-table" id="prior-authorities-table">
           <thead class="govuk-table__head">
           <tr class="govuk-table__row">
