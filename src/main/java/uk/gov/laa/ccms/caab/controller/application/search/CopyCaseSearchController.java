@@ -174,7 +174,6 @@ public class CopyCaseSearchController {
   @GetMapping("/application/copy-case/{case-reference-number}/confirm")
   public String selectCopyCaseReferenceNumber(
       @PathVariable("case-reference-number") String copyCaseReferenceNumber,
-      @RequestParam("case-client-first-name") String copyCaseClientFirstName,
       @SessionAttribute(CASE_SEARCH_RESULTS) List<BaseApplicationDetail> caseSearchResults,
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData) {
 

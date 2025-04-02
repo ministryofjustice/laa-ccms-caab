@@ -939,7 +939,7 @@ public class EbsApiClient extends BaseApiClient {
 
   /**
    * Retrieves the full detail of a single case based on the provided case reference, provider
-   *     ID, and client first name.
+   *     ID, and provider username.
    *
    * @param caseReferenceNumber The reference number for the case to fetch.
    * @param providerId The provider ID who owns this case.

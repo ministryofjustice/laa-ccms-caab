@@ -249,28 +249,28 @@ class EbsApplicationMapperTest {
             buildCaseDetail(APP_TYPE_EMERGENCY),
             false,
             null);
-    uk.gov.laa.ccms.data.model.@Valid SubmittedApplicationDetails soaApplicationDetails =
+    uk.gov.laa.ccms.data.model.@Valid SubmittedApplicationDetails ebsApplicationDetails =
         applicationMappingContext.getEbsCaseDetail().getApplicationDetails();
 
     AddressDetail result = applicationMapper.toCorrespondenceAddress(applicationMappingContext);
 
     assertNotNull(result);
-    assertEquals(soaApplicationDetails.getCorrespondenceAddress().getAddressLine1(),
+    assertEquals(ebsApplicationDetails.getCorrespondenceAddress().getAddressLine1(),
         result.getAddressLine1());
-    assertEquals(soaApplicationDetails.getCorrespondenceAddress().getAddressLine2(),
+    assertEquals(ebsApplicationDetails.getCorrespondenceAddress().getAddressLine2(),
         result.getAddressLine2());
-    assertEquals(soaApplicationDetails.getCorrespondenceAddress().getCareOfName(),
+    assertEquals(ebsApplicationDetails.getCorrespondenceAddress().getCareOfName(),
         result.getCareOf());
-    assertEquals(soaApplicationDetails.getCorrespondenceAddress().getCity(),
+    assertEquals(ebsApplicationDetails.getCorrespondenceAddress().getCity(),
         result.getCity());
-    assertEquals(soaApplicationDetails.getCorrespondenceAddress().getCountry(),
+    assertEquals(ebsApplicationDetails.getCorrespondenceAddress().getCountry(),
         result.getCountry());
-    assertEquals(soaApplicationDetails.getCorrespondenceAddress().getCounty(),
+    assertEquals(ebsApplicationDetails.getCorrespondenceAddress().getCounty(),
         result.getCounty());
-    assertEquals(soaApplicationDetails.getCorrespondenceAddress().getHouse(),
+    assertEquals(ebsApplicationDetails.getCorrespondenceAddress().getHouse(),
         result.getHouseNameOrNumber());
     assertFalse(result.getNoFixedAbode());
-    assertEquals(soaApplicationDetails.getPreferredAddress(), result.getPreferredAddress());
+    assertEquals(ebsApplicationDetails.getPreferredAddress(), result.getPreferredAddress());
   }
 
     @Test
@@ -358,23 +358,23 @@ class EbsApplicationMapperTest {
 
   @Test
   void testToScopeLimitation() {
-    ScopeLimitation soaScopeLimitation = buildScopeLimitation("");
+    ScopeLimitation ebsScopeLimitation = buildScopeLimitation("");
     CommonLookupValueDetail scopeLimitationLookup = new CommonLookupValueDetail()
         .code("scopecode")
         .description("scopedesc");
 
     ScopeLimitationDetail result =
         applicationMapper.toScopeLimitation(
-            Pair.of(soaScopeLimitation, scopeLimitationLookup));
+            Pair.of(ebsScopeLimitation, scopeLimitationLookup));
 
     assertNotNull(result);
-    assertEquals(soaScopeLimitation.getScopeLimitationId(), result.getEbsId());
+    assertEquals(ebsScopeLimitation.getScopeLimitationId(), result.getEbsId());
     assertEquals(scopeLimitationLookup.getCode(), result.getScopeLimitation().getId());
     assertEquals(scopeLimitationLookup.getDescription(),
         result.getScopeLimitation().getDisplayValue());
-    assertEquals(soaScopeLimitation.getScopeLimitationWording(),
+    assertEquals(ebsScopeLimitation.getScopeLimitationWording(),
         result.getScopeLimitationWording());
-    assertEquals(soaScopeLimitation.getDelegatedFunctionsApply(),
+    assertEquals(ebsScopeLimitation.getDelegatedFunctionsApply(),
         result.getDelegatedFuncApplyInd().getFlag());
     assertNull(result.getDefaultInd());
     assertNull(result.getNonDefaultWordingReqd());
@@ -387,7 +387,7 @@ class EbsApplicationMapperTest {
         buildProceedingDetail(STATUS_DRAFT);
     EbsProceedingMappingContext proceedingMappingContext =
         buildProceedingMappingContext(ebsProceeding);
-    OutcomeDetail soaOutcomeDetail = ebsProceeding.getOutcome();
+    OutcomeDetail ebsOutcomeDetail = ebsProceeding.getOutcome();
 
     ProceedingOutcomeDetail result = applicationMapper.toProceedingOutcome(proceedingMappingContext);
 
@@ -402,264 +402,264 @@ class EbsApplicationMapperTest {
         result.getProceedingType().getId());
     assertEquals(proceedingMappingContext.getProceedingLookup().getName(),
         result.getProceedingType().getDisplayValue());
-    assertEquals(soaOutcomeDetail.getAltAcceptanceReason(), result.getAdrInfo());
-    assertEquals(soaOutcomeDetail.getAltDisputeResolution(), result.getAlternativeResolution());
+    assertEquals(ebsOutcomeDetail.getAltAcceptanceReason(), result.getAdrInfo());
+    assertEquals(ebsOutcomeDetail.getAltDisputeResolution(), result.getAlternativeResolution());
     assertEquals(proceedingMappingContext.getCourtLookup().getCode(), result.getCourtCode());
     assertEquals(proceedingMappingContext.getCourtLookup().getDescription(), result.getCourtName());
-    assertEquals(toDate(soaOutcomeDetail.getFinalWorkDate()), result.getDateOfFinalWork());
+    assertEquals(toDate(ebsOutcomeDetail.getFinalWorkDate()), result.getDateOfFinalWork());
     assertNull(result.getDateOfIssue());
-    assertEquals(soaOutcomeDetail.getResolutionMethod(), result.getResolutionMethod());
+    assertEquals(ebsOutcomeDetail.getResolutionMethod(), result.getResolutionMethod());
     assertEquals(proceedingMappingContext.getOutcomeResultLookup().getOutcomeResult(),
         result.getResult().getId());
     assertEquals(proceedingMappingContext.getOutcomeResultLookup().getOutcomeResultDescription(),
         result.getResult().getDisplayValue());
-    assertEquals(soaOutcomeDetail.getAdditionalResultInfo(), result.getResultInfo());
-    assertEquals(soaOutcomeDetail.getStageEnd(), result.getStageEnd().getId());
+    assertEquals(ebsOutcomeDetail.getAdditionalResultInfo(), result.getResultInfo());
+    assertEquals(ebsOutcomeDetail.getStageEnd(), result.getStageEnd().getId());
     assertEquals(proceedingMappingContext.getStageEndLookup().getDescription(),
         result.getStageEnd().getDisplayValue());
-    assertEquals(soaOutcomeDetail.getWiderBenefits(), result.getWiderBenefits());
-    assertEquals(soaOutcomeDetail.getOutcomeCourtCaseNumber(), result.getOutcomeCourtCaseNo());
+    assertEquals(ebsOutcomeDetail.getWiderBenefits(), result.getWiderBenefits());
+    assertEquals(ebsOutcomeDetail.getOutcomeCourtCaseNumber(), result.getOutcomeCourtCaseNo());
   }
 
   @Test
   void testMapMostRecentAssessment_SingleAssessment() {
-    uk.gov.laa.ccms.data.model.AssessmentResult soaAssessmentResult =
+    uk.gov.laa.ccms.data.model.AssessmentResult ebsAssessmentResult =
         buildAssessmentResult("");
 
-    AssessmentResult result = applicationMapper.toAssessmentResult(soaAssessmentResult);
+    AssessmentResult result = applicationMapper.toAssessmentResult(ebsAssessmentResult);
 
     assertNotNull(result);
-    assertEquals(soaAssessmentResult.getAssessmentId(),
+    assertEquals(ebsAssessmentResult.getAssessmentId(),
         result.getAssessmentId());
-    assertEquals(toDate(soaAssessmentResult.getDate()),
+    assertEquals(toDate(ebsAssessmentResult.getDate()),
         result.getDate());
-    assertEquals(soaAssessmentResult.getAssessmentDetails().get(0).getCaption(),
+    assertEquals(ebsAssessmentResult.getAssessmentDetails().get(0).getCaption(),
         result.getAssessmentDetails().get(0).getCaption());
-    assertEquals(soaAssessmentResult.getAssessmentDetails().get(0).getScreenName(),
+    assertEquals(ebsAssessmentResult.getAssessmentDetails().get(0).getScreenName(),
         result.getAssessmentDetails().get(0).getScreenName());
-    assertEquals(soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getCaption(),
+    assertEquals(ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getCaption(),
         result.getAssessmentDetails().get(0).getEntity().get(0).getCaption());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getEntityName(),
+        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getEntityName(),
         result.getAssessmentDetails().get(0).getEntity().get(0).getEntityName());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getSequenceNumber(),
+        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getSequenceNumber(),
         result.getAssessmentDetails().get(0).getEntity().get(0).getSequenceNumber());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
+        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
             .getCaption(),
         result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0).getCaption());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
+        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
             .getInstanceLabel(),
         result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
             .getInstanceLabel());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
+        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
             .getAttributes().get(0).getAttribute(),
         result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
             .getAttributes().get(0).getAttribute());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
+        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
             .getAttributes().get(0).getCaption(),
         result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
             .getAttributes().get(0).getCaption());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
+        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
             .getAttributes().get(0).getResponseText(),
         result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
             .getAttributes().get(0).getResponseText());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
+        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
             .getAttributes().get(0).getResponseType(),
         result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
             .getAttributes().get(0).getResponseType());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
+        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
             .getAttributes().get(0).getResponseValue(),
         result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
             .getAttributes().get(0).getResponseValue());
-    assertEquals(soaAssessmentResult.getResults().get(0).getAttribute(),
+    assertEquals(ebsAssessmentResult.getResults().get(0).getAttribute(),
         result.getResults().get(0).getAttribute());
-    assertEquals(soaAssessmentResult.getResults().get(0).getAttributeValue(),
+    assertEquals(ebsAssessmentResult.getResults().get(0).getAttributeValue(),
         result.getResults().get(0).getAttributeValue());
   }
 
   @Test
   void testToAddress() {
-    uk.gov.laa.ccms.data.model.AddressDetail soaAddress = buildAddressDetail("");
+    uk.gov.laa.ccms.data.model.AddressDetail ebsAddress = buildAddressDetail("");
 
-    AddressDetail result = applicationMapper.toAddress(soaAddress);
+    AddressDetail result = applicationMapper.toAddress(ebsAddress);
     assertNotNull(result);
-    assertEquals(soaAddress.getCareOfName(), result.getCareOf());
-    assertEquals(soaAddress.getHouse(), result.getHouseNameOrNumber());
-    assertEquals(soaAddress.getPostalCode(), result.getPostcode());
+    assertEquals(ebsAddress.getCareOfName(), result.getCareOf());
+    assertEquals(ebsAddress.getHouse(), result.getHouseNameOrNumber());
+    assertEquals(ebsAddress.getPostalCode(), result.getPostcode());
     assertFalse(result.getNoFixedAbode());
     assertNull(result.getPreferredAddress());
   }
 
   @Test
   void testToClient() {
-    BaseClient soaBaseClient = buildBaseClient();
+    BaseClient ebsBaseClient = buildBaseClient();
 
-    ClientDetail result = applicationMapper.toClient(soaBaseClient);
+    ClientDetail result = applicationMapper.toClient(ebsBaseClient);
 
     assertNotNull(result);
-    assertEquals(soaBaseClient.getClientReferenceNumber(),
+    assertEquals(ebsBaseClient.getClientReferenceNumber(),
         result.getReference());
 
-    assertEquals(soaBaseClient.getFirstName(),
+    assertEquals(ebsBaseClient.getFirstName(),
         result.getFirstName());
-    assertEquals(soaBaseClient.getSurname(),
+    assertEquals(ebsBaseClient.getSurname(),
         result.getSurname());
   }
 
   @Test
   void testToIndividualOpponent() {
-    OtherParty soaOtherParty = buildOtherPartyPerson();
+    OtherParty ebsOtherParty = buildOtherPartyPerson();
 
-    OpponentDetail result = applicationMapper.toIndividualOpponent(soaOtherParty);
+    OpponentDetail result = applicationMapper.toIndividualOpponent(ebsOtherParty);
 
     assertNotNull(result);
     assertEquals(OPPONENT_TYPE_INDIVIDUAL, result.getType());
-    assertEquals(soaOtherParty.getOtherPartyId(), result.getEbsId());
-    assertEquals(soaOtherParty.getPerson().getCourtOrderedMeansAssessment(),
+    assertEquals(ebsOtherParty.getOtherPartyId(), result.getEbsId());
+    assertEquals(ebsOtherParty.getPerson().getCourtOrderedMeansAssessment(),
         result.getCourtOrderedMeansAssessment());
-    assertEquals(soaOtherParty.getPerson().getOrganisationAddress(),
+    assertEquals(ebsOtherParty.getPerson().getOrganisationAddress(),
         result.getEmployerAddress());
-    assertEquals(soaOtherParty.getPerson().getOrganisationName(),
+    assertEquals(ebsOtherParty.getPerson().getOrganisationName(),
         result.getEmployerName());
-    assertEquals(soaOtherParty.getPerson().getPartyLegalAidedInd(),
+    assertEquals(ebsOtherParty.getPerson().getPartyLegalAidedInd(),
         result.getLegalAided());
-    assertEquals(soaOtherParty.getPerson().getNiNumber(),
+    assertEquals(ebsOtherParty.getPerson().getNiNumber(),
         result.getNationalInsuranceNumber());
-    assertEquals(soaOtherParty.getPerson().getRelationToCase(),
+    assertEquals(ebsOtherParty.getPerson().getRelationToCase(),
         result.getRelationshipToCase());
-    assertEquals(soaOtherParty.getPerson().getRelationToClient(),
+    assertEquals(ebsOtherParty.getPerson().getRelationToClient(),
         result.getRelationshipToClient());
-    assertEquals(soaOtherParty.getPerson().getContactDetails().getMobileNumber(),
+    assertEquals(ebsOtherParty.getPerson().getContactDetails().getMobileNumber(),
         result.getTelephoneMobile());
-    assertEquals(soaOtherParty.getPerson().getContactDetails().getFax(),
+    assertEquals(ebsOtherParty.getPerson().getContactDetails().getFax(),
         result.getFaxNumber());
-    assertEquals(soaOtherParty.getPerson().getPublicFundingAppliedInd(),
+    assertEquals(ebsOtherParty.getPerson().getPublicFundingAppliedInd(),
         result.getPublicFundingApplied());
     assertFalse(result.getDeleteInd());
 
-    assertEquals(toDate(soaOtherParty.getPerson().getDateOfBirth()),
+    assertEquals(toDate(ebsOtherParty.getPerson().getDateOfBirth()),
         result.getDateOfBirth());
     assertNotNull(result.getAddress()); // Detail tested elsewhere
-    assertEquals(soaOtherParty.getPerson().getEmploymentStatus(),
+    assertEquals(ebsOtherParty.getPerson().getEmploymentStatus(),
         result.getEmploymentStatus());
-    assertEquals(soaOtherParty.getPerson().getCertificateNumber(),
+    assertEquals(ebsOtherParty.getPerson().getCertificateNumber(),
         result.getCertificateNumber());
-    assertEquals(soaOtherParty.getPerson().getAssessedIncomeFrequency(),
+    assertEquals(ebsOtherParty.getPerson().getAssessedIncomeFrequency(),
         result.getAssessedIncomeFrequency());
-    assertEquals(soaOtherParty.getPerson().getAssessedIncome(),
+    assertEquals(ebsOtherParty.getPerson().getAssessedIncome(),
         result.getAssessedIncome());
-    assertEquals(soaOtherParty.getPerson().getAssessedAssets(),
+    assertEquals(ebsOtherParty.getPerson().getAssessedAssets(),
         result.getAssessedAssets());
-    assertEquals(toDate(soaOtherParty.getPerson().getAssessmentDate()),
+    assertEquals(toDate(ebsOtherParty.getPerson().getAssessmentDate()),
         result.getAssessmentDate());
-    assertEquals(soaOtherParty.getPerson().getOtherInformation(),
+    assertEquals(ebsOtherParty.getPerson().getOtherInformation(),
         result.getOtherInformation());
 
-    assertEquals(soaOtherParty.getPerson().getContactDetails().getTelephoneHome(),
+    assertEquals(ebsOtherParty.getPerson().getContactDetails().getTelephoneHome(),
         result.getTelephoneHome());
-    assertEquals(soaOtherParty.getPerson().getContactDetails().getTelephoneWork(),
+    assertEquals(ebsOtherParty.getPerson().getContactDetails().getTelephoneWork(),
         result.getTelephoneWork());
-    assertEquals(soaOtherParty.getPerson().getContactDetails().getEmailAddress(),
+    assertEquals(ebsOtherParty.getPerson().getContactDetails().getEmailAddress(),
         result.getEmailAddress());
 
-    assertEquals(soaOtherParty.getPerson().getName().getTitle(),
+    assertEquals(ebsOtherParty.getPerson().getName().getTitle(),
         result.getTitle());
-    assertEquals(soaOtherParty.getPerson().getName().getFirstName(),
+    assertEquals(ebsOtherParty.getPerson().getName().getFirstName(),
         result.getFirstName());
-    assertEquals(soaOtherParty.getPerson().getName().getSurname(),
+    assertEquals(ebsOtherParty.getPerson().getName().getSurname(),
         result.getSurname());
-    assertEquals(soaOtherParty.getPerson().getName().getMiddleName(),
+    assertEquals(ebsOtherParty.getPerson().getName().getMiddleName(),
         result.getMiddleNames());
   }
 
   @Test
   void testToOrganisationOpponent() {
-    OtherParty soaOtherParty = buildOtherPartyOrganisation();
+    OtherParty ebsOtherParty = buildOtherPartyOrganisation();
 
-    OpponentDetail result = applicationMapper.toOrganisationOpponent(soaOtherParty);
+    OpponentDetail result = applicationMapper.toOrganisationOpponent(ebsOtherParty);
 
     assertNotNull(result);
     assertEquals(OPPONENT_TYPE_ORGANISATION, result.getType());
-    assertEquals(soaOtherParty.getOtherPartyId(), result.getEbsId());
-    assertEquals(soaOtherParty.getOrganisation().getOrganisationName(),
+    assertEquals(ebsOtherParty.getOtherPartyId(), result.getEbsId());
+    assertEquals(ebsOtherParty.getOrganisation().getOrganisationName(),
         result.getOrganisationName());
-    assertEquals(soaOtherParty.getOrganisation().getOrganisationType(),
+    assertEquals(ebsOtherParty.getOrganisation().getOrganisationType(),
         result.getOrganisationType());
-    assertEquals(soaOtherParty.getOrganisation().getContactName(),
+    assertEquals(ebsOtherParty.getOrganisation().getContactName(),
         result.getContactNameRole());
-    assertEquals(soaOtherParty.getOrganisation().getRelationToCase(),
+    assertEquals(ebsOtherParty.getOrganisation().getRelationToCase(),
         result.getRelationshipToCase());
-    assertEquals(soaOtherParty.getOrganisation().getRelationToClient(),
+    assertEquals(ebsOtherParty.getOrganisation().getRelationToClient(),
         result.getRelationshipToClient());
-    assertEquals(soaOtherParty.getOrganisation().getContactDetails().getMobileNumber(),
+    assertEquals(ebsOtherParty.getOrganisation().getContactDetails().getMobileNumber(),
         result.getTelephoneMobile());
-    assertEquals(soaOtherParty.getOrganisation().getContactDetails().getFax(),
+    assertEquals(ebsOtherParty.getOrganisation().getContactDetails().getFax(),
         result.getFaxNumber());
-    assertEquals(soaOtherParty.getOrganisation().getRelationToCase(),
+    assertEquals(ebsOtherParty.getOrganisation().getRelationToCase(),
         result.getRelationshipToCase());
     assertFalse(result.getDeleteInd());
 
-    assertEquals(soaOtherParty.getOrganisation().getCurrentlyTrading(),
+    assertEquals(ebsOtherParty.getOrganisation().getCurrentlyTrading(),
         result.getCurrentlyTrading());
-    assertEquals(soaOtherParty.getOrganisation().getOtherInformation(),
+    assertEquals(ebsOtherParty.getOrganisation().getOtherInformation(),
         result.getOtherInformation());
     assertNotNull(result.getAddress()); // Detail tested elsewhere
-    assertEquals(soaOtherParty.getOrganisation().getContactDetails().getEmailAddress(),
+    assertEquals(ebsOtherParty.getOrganisation().getContactDetails().getEmailAddress(),
         result.getEmailAddress());
-    assertEquals(soaOtherParty.getOrganisation().getContactDetails().getTelephoneHome(),
+    assertEquals(ebsOtherParty.getOrganisation().getContactDetails().getTelephoneHome(),
         result.getTelephoneHome());
-    assertEquals(soaOtherParty.getOrganisation().getContactDetails().getTelephoneWork(),
+    assertEquals(ebsOtherParty.getOrganisation().getContactDetails().getTelephoneWork(),
         result.getTelephoneWork());
   }
 
 
   @Test
   void testToLinkedCase() {
-    LinkedCase soaLinkedCase = buildLinkedCase();
+    LinkedCase ebsLinkedCase = buildLinkedCase();
 
-    LinkedCaseDetail result = applicationMapper.toLinkedCase(soaLinkedCase);
+    LinkedCaseDetail result = applicationMapper.toLinkedCase(ebsLinkedCase);
 
     assertNotNull(result);
-    assertEquals(soaLinkedCase.getCaseReferenceNumber(), result.getLscCaseReference());
-    assertEquals(soaLinkedCase.getClient().getClientReferenceNumber(),
+    assertEquals(ebsLinkedCase.getCaseReferenceNumber(), result.getLscCaseReference());
+    assertEquals(ebsLinkedCase.getClient().getClientReferenceNumber(),
         result.getClient().getReference());
-    assertEquals(soaLinkedCase.getClient().getFirstName(),
+    assertEquals(ebsLinkedCase.getClient().getFirstName(),
         result.getClient().getFirstName());
-    assertEquals(soaLinkedCase.getClient().getSurname(),
+    assertEquals(ebsLinkedCase.getClient().getSurname(),
         result.getClient().getSurname());
-    assertEquals(soaLinkedCase.getCategoryOfLawDesc(), result.getCategoryOfLaw());
-    assertEquals(soaLinkedCase.getProviderReferenceNumber(), result.getProviderCaseReference());
-    assertEquals(soaLinkedCase.getFeeEarnerName(), result.getFeeEarner());
-    assertEquals(soaLinkedCase.getCaseStatus(), result.getStatus());
-    assertEquals(soaLinkedCase.getLinkType(), result.getRelationToCase());
+    assertEquals(ebsLinkedCase.getCategoryOfLawDesc(), result.getCategoryOfLaw());
+    assertEquals(ebsLinkedCase.getProviderReferenceNumber(), result.getProviderCaseReference());
+    assertEquals(ebsLinkedCase.getFeeEarnerName(), result.getFeeEarner());
+    assertEquals(ebsLinkedCase.getCaseStatus(), result.getStatus());
+    assertEquals(ebsLinkedCase.getLinkType(), result.getRelationToCase());
   }
 
   @Test
   void testToPriorAuthority() {
-   PriorAuthority soaPriorAuthority =
+   PriorAuthority ebsPriorAuthority =
         buildPriorAuthority();
     EbsPriorAuthorityMappingContext priorAuthorityMappingContext =
-        buildPriorAuthorityMappingContext(soaPriorAuthority);
+        buildPriorAuthorityMappingContext(ebsPriorAuthority);
     PriorAuthorityTypeDetail priorAuthorityTypeDetail =
         priorAuthorityMappingContext.getPriorAuthorityTypeLookup();
 
     PriorAuthorityDetail result = applicationMapper.toPriorAuthority(priorAuthorityMappingContext);
 
     assertNotNull(result);
-    assertEquals(soaPriorAuthority.getDecisionStatus(), result.getStatus());
-    assertEquals(soaPriorAuthority.getDescription(), result.getSummary());
+    assertEquals(ebsPriorAuthority.getDecisionStatus(), result.getStatus());
+    assertEquals(ebsPriorAuthority.getDescription(), result.getSummary());
     assertEquals(priorAuthorityTypeDetail.getCode(), result.getType().getId());
     assertEquals(priorAuthorityTypeDetail.getDescription(), result.getType().getDisplayValue());
-    assertEquals(soaPriorAuthority.getReasonForRequest(), result.getJustification());
-    assertEquals(soaPriorAuthority.getRequestAmount(), result.getAmountRequested());
+    assertEquals(ebsPriorAuthority.getReasonForRequest(), result.getJustification());
+    assertEquals(ebsPriorAuthority.getRequestAmount(), result.getAmountRequested());
     assertEquals(priorAuthorityTypeDetail.getValueRequired(), result.getValueRequired());
     assertNotNull(result.getItems());
     assertEquals(1, result.getItems().size()); // Detail tested elsewhere
@@ -684,22 +684,22 @@ class EbsApplicationMapperTest {
 
   @Test
   void testToCaseOutcome() {
-    CaseDetail soaCaseDetail = buildCaseDetail(APP_TYPE_EMERGENCY);
-    EbsCaseOutcomeMappingContext caseOutcomeMappingContext = buildCaseOutcomeMappingContext(soaCaseDetail);
+    CaseDetail ebsCaseDetail = buildCaseDetail(APP_TYPE_EMERGENCY);
+    EbsCaseOutcomeMappingContext caseOutcomeMappingContext = buildCaseOutcomeMappingContext(ebsCaseDetail);
 
     CaseOutcomeDetail result = applicationMapper.toCaseOutcome(caseOutcomeMappingContext);
 
     assertNotNull(result);
-    assertEquals(soaCaseDetail.getLegalHelpCosts(), result.getLegalCosts());
-    assertEquals(soaCaseDetail.getApplicationDetails().getLarDetails().getLegalHelpOfficeCode(),
+    assertEquals(ebsCaseDetail.getLegalHelpCosts(), result.getLegalCosts());
+    assertEquals(ebsCaseDetail.getApplicationDetails().getLarDetails().getLegalHelpOfficeCode(),
         result.getOfficeCode());
-    assertEquals(soaCaseDetail.getApplicationDetails().getLarDetails().getLegalHelpUfn(),
+    assertEquals(ebsCaseDetail.getApplicationDetails().getLarDetails().getLegalHelpUfn(),
         result.getUniqueFileNo());
-    assertEquals(soaCaseDetail.getDischargeStatus().getOtherDetails(),
+    assertEquals(ebsCaseDetail.getDischargeStatus().getOtherDetails(),
         result.getOtherDetails());
-    assertEquals(soaCaseDetail.getDischargeStatus().getReason(),
+    assertEquals(ebsCaseDetail.getDischargeStatus().getReason(),
         result.getDischargeReason());
-    assertEquals(soaCaseDetail.getDischargeStatus().getClientContinuePvtInd(),
+    assertEquals(ebsCaseDetail.getDischargeStatus().getClientContinuePvtInd(),
         result.getClientContinueInd());
   }
 
@@ -722,43 +722,43 @@ class EbsApplicationMapperTest {
 
   @Test
   void testToRecovery() {
-    Recovery soaRecovery = buildRecovery();
+    Recovery ebsRecovery = buildRecovery();
 
-    RecoveryDetail result = applicationMapper.toRecovery(soaRecovery);
+    RecoveryDetail result = applicationMapper.toRecovery(ebsRecovery);
 
     assertNotNull(result);
-    assertEquals(soaRecovery.getAwardValue(), result.getAwardAmount());
-    assertEquals(soaRecovery.getRecoveredAmount().getClient().getPaidToLsc(),
+    assertEquals(ebsRecovery.getAwardValue(), result.getAwardAmount());
+    assertEquals(ebsRecovery.getRecoveredAmount().getClient().getPaidToLsc(),
         result.getClientAmountPaidToLsc());
-    assertEquals(soaRecovery.getRecoveredAmount().getClient().getAmount(),
+    assertEquals(ebsRecovery.getRecoveredAmount().getClient().getAmount(),
         result.getClientRecoveryAmount());
-    assertEquals(toDate(soaRecovery.getRecoveredAmount().getClient().getDateReceived()),
+    assertEquals(toDate(ebsRecovery.getRecoveredAmount().getClient().getDateReceived()),
         result.getClientRecoveryDate());
-    assertEquals(soaRecovery.getRecoveredAmount().getCourt().getPaidToLsc(),
+    assertEquals(ebsRecovery.getRecoveredAmount().getCourt().getPaidToLsc(),
         result.getCourtAmountPaidToLsc());
-    assertEquals(soaRecovery.getRecoveredAmount().getCourt().getAmount(),
+    assertEquals(ebsRecovery.getRecoveredAmount().getCourt().getAmount(),
         result.getCourtRecoveryAmount());
-    assertEquals(toDate(soaRecovery.getRecoveredAmount().getCourt().getDateReceived()),
+    assertEquals(toDate(ebsRecovery.getRecoveredAmount().getCourt().getDateReceived()),
         result.getCourtRecoveryDate());
-    assertEquals(soaRecovery.getRecoveredAmount().getSolicitor().getPaidToLsc(),
+    assertEquals(ebsRecovery.getRecoveredAmount().getSolicitor().getPaidToLsc(),
         result.getSolicitorAmountPaidToLsc());
-    assertEquals(soaRecovery.getRecoveredAmount().getSolicitor().getAmount(),
+    assertEquals(ebsRecovery.getRecoveredAmount().getSolicitor().getAmount(),
         result.getSolicitorRecoveryAmount());
-    assertEquals(toDate(soaRecovery.getRecoveredAmount().getSolicitor().getDateReceived()),
+    assertEquals(toDate(ebsRecovery.getRecoveredAmount().getSolicitor().getDateReceived()),
         result.getSolicitorRecoveryDate());
-    assertEquals(soaRecovery.getOfferedAmount().getAmount(), result.getOfferedAmount());
-    assertEquals(soaRecovery.getOfferedAmount().getConditionsOfOffer(),
+    assertEquals(ebsRecovery.getOfferedAmount().getAmount(), result.getOfferedAmount());
+    assertEquals(ebsRecovery.getOfferedAmount().getConditionsOfOffer(),
         result.getConditionsOfOffer());
-    assertEquals(soaRecovery.getOfferedAmount().getConditionsOfOffer(), result.getOfferDetails());
-    assertEquals(soaRecovery.getLeaveOfCourtReqdInd(), result.getLeaveOfCourtRequiredInd());
+    assertEquals(ebsRecovery.getOfferedAmount().getConditionsOfOffer(), result.getOfferDetails());
+    assertEquals(ebsRecovery.getLeaveOfCourtReqdInd(), result.getLeaveOfCourtRequiredInd());
     assertNull(result.getAwardType()); // Populated by a specific award mapper method
     assertNull(result.getDescription()); // Populated by a specific award mapper method
 
     // From the afterMapping, the sum of recovered amounts
     assertEquals(
-        soaRecovery.getRecoveredAmount().getClient().getAmount()
-            .add(soaRecovery.getRecoveredAmount().getCourt().getAmount())
-            .add(soaRecovery.getRecoveredAmount().getSolicitor().getAmount()),
+        ebsRecovery.getRecoveredAmount().getClient().getAmount()
+            .add(ebsRecovery.getRecoveredAmount().getCourt().getAmount())
+            .add(ebsRecovery.getRecoveredAmount().getSolicitor().getAmount()),
         result.getRecoveredAmount());
     assertEquals(result.getAwardAmount().subtract(result.getRecoveredAmount()),
         result.getUnrecoveredAmount());
@@ -778,56 +778,56 @@ class EbsApplicationMapperTest {
 
   @Test
   void testToCostAward() {
-    Award soaAward = buildCostAward();
+    Award ebsAward = buildCostAward();
 
-    CostAwardDetail result = applicationMapper.toCostAward(soaAward);
+    CostAwardDetail result = applicationMapper.toCostAward(ebsAward);
 
     assertNotNull(result);
-    assertEquals(soaAward.getAwardId(), result.getEbsId());
+    assertEquals(ebsAward.getAwardId(), result.getEbsId());
     assertEquals(AWARD_TYPE_COST, result.getAwardType());
     assertEquals(AWARD_TYPE_COST_DESCRIPTION, result.getDescription());
-    assertEquals(soaAward.getAwardType(), result.getAwardCode());
-    assertEquals(toDate(soaAward.getCostAward().getOrderDate()), result.getDateOfOrder());
-    assertEquals(soaAward.getCostAward().getPreCertificateAwardLsc(),
+    assertEquals(ebsAward.getAwardType(), result.getAwardCode());
+    assertEquals(toDate(ebsAward.getCostAward().getOrderDate()), result.getDateOfOrder());
+    assertEquals(ebsAward.getCostAward().getPreCertificateAwardLsc(),
         result.getPreCertificateLscCost());
-    assertEquals(soaAward.getCostAward().getPreCertificateAwardOth(),
+    assertEquals(ebsAward.getCostAward().getPreCertificateAwardOth(),
         result.getPreCertificateOtherCost());
-    assertEquals(soaAward.getCostAward().getCertificateCostRateLsc(),
+    assertEquals(ebsAward.getCostAward().getCertificateCostRateLsc(),
         result.getCertificateCostLsc());
     assertNotNull(result.getRecovery()); // detail tested separately
     assertNotNull(result.getLiableParties()); // detail tested separately
-    assertEquals(soaAward.getCostAward().getLiableParties().size(),
+    assertEquals(ebsAward.getCostAward().getLiableParties().size(),
         result.getLiableParties().size());
 
     // Like for like mappings
-    assertEquals(soaAward.getDeleteAllowed(), result.getDeleteAllowed());
-    assertEquals(soaAward.getUpdateAllowed(), result.getUpdateAllowed());
-    assertEquals(soaAward.getCostAward().getServiceAddress().getAddressLine1(),
+    assertEquals(ebsAward.getDeleteAllowed(), result.getDeleteAllowed());
+    assertEquals(ebsAward.getUpdateAllowed(), result.getUpdateAllowed());
+    assertEquals(ebsAward.getCostAward().getServiceAddress().getAddressLine1(),
         result.getAddressLine1());
-    assertEquals(soaAward.getCostAward().getServiceAddress().getAddressLine2(),
+    assertEquals(ebsAward.getCostAward().getServiceAddress().getAddressLine2(),
         result.getAddressLine2());
-    assertEquals(soaAward.getCostAward().getServiceAddress().getAddressLine3(),
+    assertEquals(ebsAward.getCostAward().getServiceAddress().getAddressLine3(),
         result.getAddressLine3());
-    assertEquals(soaAward.getCostAward().getCertificateCostRateMarket(),
+    assertEquals(ebsAward.getCostAward().getCertificateCostRateMarket(),
         result.getCertificateCostMarket());
-    assertEquals(soaAward.getCostAward().getCourtAssessmentStatus(),
+    assertEquals(ebsAward.getCostAward().getCourtAssessmentStatus(),
         result.getCourtAssessmentStatus());
-    assertEquals(toDate(soaAward.getCostAward().getOrderDateServed()),
+    assertEquals(toDate(ebsAward.getCostAward().getOrderDateServed()),
         result.getOrderServedDate());
-    assertEquals(soaAward.getCostAward().getInterestAwardedRate(),
+    assertEquals(ebsAward.getCostAward().getInterestAwardedRate(),
         result.getInterestAwardedRate());
-    assertEquals(toDate(soaAward.getCostAward().getInterestAwardedStartDate()),
+    assertEquals(toDate(ebsAward.getCostAward().getInterestAwardedStartDate()),
         result.getInterestStartDate());
-    assertEquals(soaAward.getCostAward().getAwardedBy(),
+    assertEquals(ebsAward.getCostAward().getAwardedBy(),
         result.getAwardedBy());
 
-    assertEquals(soaAward.getCostAward().getOtherDetails(), result.getOtherDetails());
+    assertEquals(ebsAward.getCostAward().getOtherDetails(), result.getOtherDetails());
 
     // afterMapping
     assertEquals(AWARD_TYPE_COST, result.getRecovery().getAwardType());
     assertEquals(AWARD_TYPE_COST_DESCRIPTION, result.getRecovery().getDescription());
-    assertEquals(soaAward.getCostAward().getCertificateCostRateLsc()
-            .add(soaAward.getCostAward().getCertificateCostRateMarket()),
+    assertEquals(ebsAward.getCostAward().getCertificateCostRateLsc()
+            .add(ebsAward.getCostAward().getCertificateCostRateMarket()),
         result.getTotalCertCostsAwarded());
 
     // afterMapping (baseAward)
@@ -837,46 +837,46 @@ class EbsApplicationMapperTest {
 
   @Test
   void testToFinancialAward() {
-    Award soaAward = buildFinancialAward();
+    Award ebsAward = buildFinancialAward();
 
-    FinancialAwardDetail result = applicationMapper.toFinancialAward(soaAward);
+    FinancialAwardDetail result = applicationMapper.toFinancialAward(ebsAward);
 
     assertNotNull(result);
-    assertEquals(soaAward.getAwardId(), result.getEbsId());
+    assertEquals(ebsAward.getAwardId(), result.getEbsId());
     assertEquals(AWARD_TYPE_FINANCIAL, result.getAwardType());
     assertEquals(AWARD_TYPE_FINANCIAL_DESCRIPTION, result.getDescription());
-    assertEquals(soaAward.getAwardType(), result.getAwardCode());
-    assertEquals(toDate(soaAward.getFinancialAward().getOrderDate()), result.getDateOfOrder());
-    assertEquals(soaAward.getFinancialAward().getAmount(),
+    assertEquals(ebsAward.getAwardType(), result.getAwardCode());
+    assertEquals(toDate(ebsAward.getFinancialAward().getOrderDate()), result.getDateOfOrder());
+    assertEquals(ebsAward.getFinancialAward().getAmount(),
         result.getAwardAmount());
-    assertEquals(toDate(soaAward.getFinancialAward().getOrderDateServed()),
+    assertEquals(toDate(ebsAward.getFinancialAward().getOrderDateServed()),
         result.getOrderServedDate());
-    assertEquals(soaAward.getFinancialAward().getStatutoryChangeReason(),
+    assertEquals(ebsAward.getFinancialAward().getStatutoryChangeReason(),
         result.getStatutoryChargeExemptReason());
 
     assertNotNull(result.getRecovery()); // detail tested separately
 
     assertNotNull(result.getLiableParties());
-    assertEquals(soaAward.getFinancialAward().getLiableParties().size(),
+    assertEquals(ebsAward.getFinancialAward().getLiableParties().size(),
         result.getLiableParties().size());
 
     // Like for like mappings
-    assertEquals(soaAward.getDeleteAllowed(), result.getDeleteAllowed());
-    assertEquals(soaAward.getUpdateAllowed(), result.getUpdateAllowed());
-    assertEquals(soaAward.getFinancialAward().getServiceAddress().getAddressLine1(),
+    assertEquals(ebsAward.getDeleteAllowed(), result.getDeleteAllowed());
+    assertEquals(ebsAward.getUpdateAllowed(), result.getUpdateAllowed());
+    assertEquals(ebsAward.getFinancialAward().getServiceAddress().getAddressLine1(),
         result.getAddressLine1());
-    assertEquals(soaAward.getFinancialAward().getServiceAddress().getAddressLine2(),
+    assertEquals(ebsAward.getFinancialAward().getServiceAddress().getAddressLine2(),
         result.getAddressLine2());
-    assertEquals(soaAward.getFinancialAward().getServiceAddress().getAddressLine3(),
+    assertEquals(ebsAward.getFinancialAward().getServiceAddress().getAddressLine3(),
         result.getAddressLine3());
-    assertEquals(soaAward.getFinancialAward().getInterimAward().toString(),
+    assertEquals(ebsAward.getFinancialAward().getInterimAward().toString(),
         result.getInterimAward());
-    assertEquals(soaAward.getFinancialAward().getAwardedBy(), result.getAwardedBy());
-    assertEquals(toDate(soaAward.getFinancialAward().getOrderDateServed()),
+    assertEquals(ebsAward.getFinancialAward().getAwardedBy(), result.getAwardedBy());
+    assertEquals(toDate(ebsAward.getFinancialAward().getOrderDateServed()),
         result.getOrderServedDate());
-    assertEquals(soaAward.getFinancialAward().getAwardJustifications(),
+    assertEquals(ebsAward.getFinancialAward().getAwardJustifications(),
         result.getAwardJustifications());
-    assertEquals(soaAward.getFinancialAward().getOtherDetails(), result.getOtherDetails());
+    assertEquals(ebsAward.getFinancialAward().getOtherDetails(), result.getOtherDetails());
 
     // afterMapping
     assertEquals(AWARD_TYPE_FINANCIAL, result.getRecovery().getAwardType());
@@ -889,48 +889,48 @@ class EbsApplicationMapperTest {
 
   @Test
   void testToLandAward() {
-    Award soaAward = buildLandAward();
+    Award ebsAward = buildLandAward();
 
-    LandAwardDetail result = applicationMapper.toLandAward(soaAward);
+    LandAwardDetail result = applicationMapper.toLandAward(ebsAward);
 
     assertNotNull(result);
-    assertEquals(soaAward.getAwardType(), result.getAwardCode());
-    assertEquals(soaAward.getAwardId(), result.getEbsId());
-    assertEquals(toDate(soaAward.getLandAward().getOrderDate()), result.getDateOfOrder());
+    assertEquals(ebsAward.getAwardType(), result.getAwardCode());
+    assertEquals(ebsAward.getAwardId(), result.getEbsId());
+    assertEquals(toDate(ebsAward.getLandAward().getOrderDate()), result.getDateOfOrder());
     assertEquals(AWARD_TYPE_LAND, result.getAwardType());
-    assertEquals(soaAward.getLandAward().getValuation().getAmount(),
+    assertEquals(ebsAward.getLandAward().getValuation().getAmount(),
         result.getValuationAmount());
-    assertEquals(soaAward.getLandAward().getValuation().getCriteria(),
+    assertEquals(ebsAward.getLandAward().getValuation().getCriteria(),
         result.getValuationCriteria());
-    assertEquals(toDate(soaAward.getLandAward().getValuation().getDate()),
+    assertEquals(toDate(ebsAward.getLandAward().getValuation().getDate()),
         result.getValuationDate());
     assertNotNull(result.getTimeRecovery());
     assertNotNull(result.getLiableParties());
-    assertEquals(soaAward.getLandAward().getOtherProprietors().size(),
+    assertEquals(ebsAward.getLandAward().getOtherProprietors().size(),
         result.getLiableParties().size());
 
     // Like for like mappings
-    assertEquals(soaAward.getDeleteAllowed(), result.getDeleteAllowed());
-    assertEquals(soaAward.getUpdateAllowed(), result.getUpdateAllowed());
-    assertEquals(soaAward.getLandAward().getDescription(), result.getDescription());
-    assertEquals(soaAward.getLandAward().getTitleNo(), result.getTitleNumber());
-    assertEquals(soaAward.getLandAward().getPropertyAddress().getAddressLine1(),
+    assertEquals(ebsAward.getDeleteAllowed(), result.getDeleteAllowed());
+    assertEquals(ebsAward.getUpdateAllowed(), result.getUpdateAllowed());
+    assertEquals(ebsAward.getLandAward().getDescription(), result.getDescription());
+    assertEquals(ebsAward.getLandAward().getTitleNo(), result.getTitleNumber());
+    assertEquals(ebsAward.getLandAward().getPropertyAddress().getAddressLine1(),
         result.getAddressLine1());
-    assertEquals(soaAward.getLandAward().getPropertyAddress().getAddressLine2(),
+    assertEquals(ebsAward.getLandAward().getPropertyAddress().getAddressLine2(),
         result.getAddressLine2());
-    assertEquals(soaAward.getLandAward().getPropertyAddress().getAddressLine3(),
+    assertEquals(ebsAward.getLandAward().getPropertyAddress().getAddressLine3(),
         result.getAddressLine3());
-    assertEquals(soaAward.getLandAward().getDisputedPercentage(), result.getDisputedPercentage());
-    assertEquals(soaAward.getLandAward().getAwardedPercentage(), result.getAwardedPercentage());
-    assertEquals(soaAward.getLandAward().getMortgageAmountDue(), result.getMortgageAmountDue());
-    assertEquals(soaAward.getLandAward().getAwardedBy(), result.getAwardedBy());
-    assertEquals(soaAward.getLandAward().getRecovery(), result.getRecovery());
-    assertEquals(soaAward.getLandAward().getNoRecoveryDetails(), result.getNoRecoveryDetails());
-    assertEquals(soaAward.getLandAward().getStatChargeExemptReason(),
+    assertEquals(ebsAward.getLandAward().getDisputedPercentage(), result.getDisputedPercentage());
+    assertEquals(ebsAward.getLandAward().getAwardedPercentage(), result.getAwardedPercentage());
+    assertEquals(ebsAward.getLandAward().getMortgageAmountDue(), result.getMortgageAmountDue());
+    assertEquals(ebsAward.getLandAward().getAwardedBy(), result.getAwardedBy());
+    assertEquals(ebsAward.getLandAward().getRecovery(), result.getRecovery());
+    assertEquals(ebsAward.getLandAward().getNoRecoveryDetails(), result.getNoRecoveryDetails());
+    assertEquals(ebsAward.getLandAward().getStatChargeExemptReason(),
         result.getStatutoryChargeExemptReason());
-    assertEquals(soaAward.getLandAward().getLandChargeRegistration(),
+    assertEquals(ebsAward.getLandAward().getLandChargeRegistration(),
         result.getLandChargeRegistration());
-    assertEquals(soaAward.getLandAward().getRegistrationRef(),
+    assertEquals(ebsAward.getLandAward().getRegistrationRef(),
         result.getRegistrationReference());
 
     // afterMapping
@@ -946,41 +946,41 @@ class EbsApplicationMapperTest {
 
   @Test
   void testToOtherAssetAward() {
-    Award soaAward = buildOtherAssetAward();
+    Award ebsAward = buildOtherAssetAward();
 
-    OtherAssetAwardDetail result = applicationMapper.toOtherAssetAward(soaAward);
+    OtherAssetAwardDetail result = applicationMapper.toOtherAssetAward(ebsAward);
 
     assertNotNull(result);
-    assertEquals(soaAward.getAwardId(), result.getEbsId());
-    assertEquals(toDate(soaAward.getOtherAsset().getOrderDate()), result.getDateOfOrder());
+    assertEquals(ebsAward.getAwardId(), result.getEbsId());
+    assertEquals(toDate(ebsAward.getOtherAsset().getOrderDate()), result.getDateOfOrder());
     assertEquals(AWARD_TYPE_OTHER_ASSET, result.getAwardType());
-    assertEquals(soaAward.getAwardType(), result.getAwardCode());
-    assertEquals(soaAward.getOtherAsset().getValuation().getAmount(),
+    assertEquals(ebsAward.getAwardType(), result.getAwardCode());
+    assertEquals(ebsAward.getOtherAsset().getValuation().getAmount(),
         result.getValuationAmount());
-    assertEquals(soaAward.getOtherAsset().getValuation().getCriteria(),
+    assertEquals(ebsAward.getOtherAsset().getValuation().getCriteria(),
         result.getValuationCriteria());
-    assertEquals(toDate(soaAward.getOtherAsset().getValuation().getDate()),
+    assertEquals(toDate(ebsAward.getOtherAsset().getValuation().getDate()),
         result.getValuationDate());
     assertNotNull(result.getTimeRecovery());
     assertNotNull(result.getLiableParties());
-    assertEquals(soaAward.getOtherAsset().getHeldBy().size(),
+    assertEquals(ebsAward.getOtherAsset().getHeldBy().size(),
         result.getLiableParties().size());
 
     // Like for like mappings
-    assertEquals(soaAward.getDeleteAllowed(), result.getDeleteAllowed());
-    assertEquals(soaAward.getUpdateAllowed(), result.getUpdateAllowed());
-    assertEquals(soaAward.getOtherAsset().getDescription(), result.getDescription());
-    assertEquals(soaAward.getOtherAsset().getAwardedBy(), result.getAwardedBy());
-    assertEquals(soaAward.getOtherAsset().getAwardedAmount(), result.getAwardedAmount());
-    assertEquals(soaAward.getOtherAsset().getAwardedPercentage(), result.getAwardedPercentage());
-    assertEquals(soaAward.getOtherAsset().getRecoveredAmount(), result.getRecoveredAmount());
-    assertEquals(soaAward.getOtherAsset().getRecoveredPercentage(),
+    assertEquals(ebsAward.getDeleteAllowed(), result.getDeleteAllowed());
+    assertEquals(ebsAward.getUpdateAllowed(), result.getUpdateAllowed());
+    assertEquals(ebsAward.getOtherAsset().getDescription(), result.getDescription());
+    assertEquals(ebsAward.getOtherAsset().getAwardedBy(), result.getAwardedBy());
+    assertEquals(ebsAward.getOtherAsset().getAwardedAmount(), result.getAwardedAmount());
+    assertEquals(ebsAward.getOtherAsset().getAwardedPercentage(), result.getAwardedPercentage());
+    assertEquals(ebsAward.getOtherAsset().getRecoveredAmount(), result.getRecoveredAmount());
+    assertEquals(ebsAward.getOtherAsset().getRecoveredPercentage(),
         result.getRecoveredPercentage());
-    assertEquals(soaAward.getOtherAsset().getDisputedAmount(), result.getDisputedAmount());
-    assertEquals(soaAward.getOtherAsset().getDisputedPercentage(), result.getDisputedPercentage());
-    assertEquals(soaAward.getOtherAsset().getRecovery(), result.getRecovery());
-    assertEquals(soaAward.getOtherAsset().getNoRecoveryDetails(), result.getNoRecoveryDetails());
-    assertEquals(soaAward.getOtherAsset().getStatChargeExemptReason(),
+    assertEquals(ebsAward.getOtherAsset().getDisputedAmount(), result.getDisputedAmount());
+    assertEquals(ebsAward.getOtherAsset().getDisputedPercentage(), result.getDisputedPercentage());
+    assertEquals(ebsAward.getOtherAsset().getRecovery(), result.getRecovery());
+    assertEquals(ebsAward.getOtherAsset().getNoRecoveryDetails(), result.getNoRecoveryDetails());
+    assertEquals(ebsAward.getOtherAsset().getStatChargeExemptReason(),
         result.getStatutoryChargeExemptReason());
 
     // afterMapping
@@ -1009,20 +1009,20 @@ class EbsApplicationMapperTest {
 
   @Test
   public void testToBaseApplication() {
-    CaseSummary soaCaseSummary = buildCaseSummary();
+    CaseSummary ebsCaseSummary = buildCaseSummary();
 
-    BaseApplicationDetail result = applicationMapper.toBaseApplication(soaCaseSummary);
+    BaseApplicationDetail result = applicationMapper.toBaseApplication(ebsCaseSummary);
 
     assertNotNull(result);
-    assertEquals(soaCaseSummary.getCaseReferenceNumber(), result.getCaseReferenceNumber());
-    assertEquals(soaCaseSummary.getCaseStatusDisplay(), result.getStatus().getDisplayValue());
-    assertEquals(soaCaseSummary.getCategoryOfLaw(), result.getCategoryOfLaw().getDisplayValue());
-    assertEquals(soaCaseSummary.getClient().getClientReferenceNumber(), result.getClient().getReference());
-    assertEquals(soaCaseSummary.getClient().getFirstName(), result.getClient().getFirstName());
-    assertEquals(soaCaseSummary.getClient().getSurname(), result.getClient().getSurname());
+    assertEquals(ebsCaseSummary.getCaseReferenceNumber(), result.getCaseReferenceNumber());
+    assertEquals(ebsCaseSummary.getCaseStatusDisplay(), result.getStatus().getDisplayValue());
+    assertEquals(ebsCaseSummary.getCategoryOfLaw(), result.getCategoryOfLaw().getDisplayValue());
+    assertEquals(ebsCaseSummary.getClient().getClientReferenceNumber(), result.getClient().getReference());
+    assertEquals(ebsCaseSummary.getClient().getFirstName(), result.getClient().getFirstName());
+    assertEquals(ebsCaseSummary.getClient().getSurname(), result.getClient().getSurname());
     assertNotNull(result.getProviderDetails());
-    assertEquals(soaCaseSummary.getFeeEarnerName(), result.getProviderDetails().getFeeEarner().getDisplayValue());
-    assertEquals(soaCaseSummary.getProviderCaseReferenceNumber(), result.getProviderDetails().getProviderCaseReference());
+    assertEquals(ebsCaseSummary.getFeeEarnerName(), result.getProviderDetails().getFeeEarner().getDisplayValue());
+    assertEquals(ebsCaseSummary.getProviderCaseReferenceNumber(), result.getProviderDetails().getProviderCaseReference());
   }
 
   private EbsApplicationMappingContext buildApplicationMappingContext(
@@ -1099,22 +1099,22 @@ class EbsApplicationMapperTest {
         .build();
   }
 
-  private EbsCaseOutcomeMappingContext buildCaseOutcomeMappingContext(CaseDetail soaCase) {
+  private EbsCaseOutcomeMappingContext buildCaseOutcomeMappingContext(CaseDetail ebsCase) {
     return EbsCaseOutcomeMappingContext.builder()
-        .ebsCase(soaCase)
-        .costAwards(Collections.singletonList(soaCase.getAwards().get(0)))
-        .financialAwards(Collections.singletonList(soaCase.getAwards().get(1)))
-        .landAwards(Collections.singletonList(soaCase.getAwards().get(2)))
-        .otherAssetAwards(Collections.singletonList(soaCase.getAwards().get(3)))
+        .ebsCase(ebsCase)
+        .costAwards(Collections.singletonList(ebsCase.getAwards().get(0)))
+        .financialAwards(Collections.singletonList(ebsCase.getAwards().get(1)))
+        .landAwards(Collections.singletonList(ebsCase.getAwards().get(2)))
+        .otherAssetAwards(Collections.singletonList(ebsCase.getAwards().get(3)))
         .proceedingOutcomes(Collections.singletonList(buildProceedingMappingContext(
-            soaCase.getApplicationDetails().getProceedings().get(0))))
+            ebsCase.getApplicationDetails().getProceedings().get(0))))
         .build();
   }
 
   private EbsPriorAuthorityMappingContext buildPriorAuthorityMappingContext(
-      PriorAuthority soaPriorAuthority) {
+      PriorAuthority ebsPriorAuthority) {
     return EbsPriorAuthorityMappingContext.builder()
-        .ebsPriorAuthority(soaPriorAuthority)
+        .ebsPriorAuthority(ebsPriorAuthority)
         .priorAuthorityTypeLookup(buildPriorAuthorityTypeDetail("dataType"))
         .items(Collections.singletonList(Pair.of(buildPriorAuthorityDetail("dataType"),
             new CommonLookupValueDetail()
@@ -1125,7 +1125,7 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toCaseDetail with valid CaseMappingContext")
-  void testToSoaCaseDetail_Valid() {
+  void testToEbsCaseDetail_Valid() {
     final ApplicationDetail applicationDetail = buildApplicationDetail(1, false, new Date());
     final LinkedCaseDetail linkedCaseDetail = new LinkedCaseDetail().lscCaseReference("LC123").relationToCase("Related");
     final PriorAuthorityDetail priorAuthorityDetail = new PriorAuthorityDetail().summary("Test Prior Authority");
@@ -1157,14 +1157,14 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toCaseDetail with null CaseMappingContext")
-  void testToSoaCaseDetail_Null() {
+  void testToEbsCaseDetail_Null() {
     assertNull(applicationMapper.toEbsCaseDetail(null));
   }
 
 
   @Test
-  @DisplayName("Test toSoaCaseDoc with valid BaseEvidenceDocumentDetail")
-  void testToSoaCaseDoc_Valid() {
+  @DisplayName("Test toEbsCaseDoc with valid BaseEvidenceDocumentDetail")
+  void testToEbsCaseDoc_Valid() {
     final BaseEvidenceDocumentDetail evidenceDocumentDetail
         = new BaseEvidenceDocumentDetail()
         .documentType(new StringDisplayValue()
@@ -1179,14 +1179,14 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  @DisplayName("Test toSoaCaseDoc with null BaseEvidenceDocumentDetail")
-  void testToSoaCaseDoc_Null() {
+  @DisplayName("Test toEbsCaseDoc with null BaseEvidenceDocumentDetail")
+  void testToEbsCaseDoc_Null() {
     assertNull(applicationMapper.toEbsCaseDoc(null));
   }
 
   @Test
-  @DisplayName("Test toSoaPriorAuthority with valid PriorAuthorityDetail")
-  void testToSoaPriorAuthority_Valid() {
+  @DisplayName("Test toEbsPriorAuthority with valid PriorAuthorityDetail")
+  void testToEbsPriorAuthority_Valid() {
     final PriorAuthorityDetail priorAuthorityDetail = new PriorAuthorityDetail()
         .summary("Test Summary")
         .justification("Test Justification")
@@ -1208,15 +1208,15 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  @DisplayName("Test toSoaPriorAuthority with null PriorAuthorityDetail")
-  void testToSoaPriorAuthority_Null() {
+  @DisplayName("Test toEbsPriorAuthority with null PriorAuthorityDetail")
+  void testToEbsPriorAuthority_Null() {
     assertNull(applicationMapper.toEbsPriorAuthority(null));
   }
 
 
   @Test
-  @DisplayName("Test toSoaPriorAuthorityAttribute with valid ReferenceDataItemDetail")
-  void testToSoaPriorAuthorityAttribute_Valid() {
+  @DisplayName("Test toEbsPriorAuthorityAttribute with valid ReferenceDataItemDetail")
+  void testToEbsPriorAuthorityAttribute_Valid() {
     final ReferenceDataItemDetail referenceDataItemDetail = new ReferenceDataItemDetail()
         .code(new StringDisplayValue().id("AttributeName"))
         .value(new StringDisplayValue().id("AttributeValue"));
@@ -1229,15 +1229,15 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  @DisplayName("Test toSoaPriorAuthorityAttribute with null ReferenceDataItemDetail")
-  void testToSoaPriorAuthorityAttribute_Null() {
+  @DisplayName("Test toEbsPriorAuthorityAttribute with null ReferenceDataItemDetail")
+  void testToEbsPriorAuthorityAttribute_Null() {
     assertNull(applicationMapper.toEbsPriorAuthorityAttribute(null));
   }
 
 
   @Test
-  @DisplayName("Test toSoaLinkedCase with valid LinkedCaseDetail")
-  void testToSoaLinkedCase_Valid() {
+  @DisplayName("Test toEbsLinkedCase with valid LinkedCaseDetail")
+  void testToEbsLinkedCase_Valid() {
 
     final LinkedCaseDetail linkedCaseDetail = new LinkedCaseDetail()
         .lscCaseReference("LSC123")
@@ -1251,8 +1251,8 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  @DisplayName("Test toSoaLinkedCase with null LinkedCaseDetail")
-  void testToSoaLinkedCase_Null() {
+  @DisplayName("Test toEbsLinkedCase with null LinkedCaseDetail")
+  void testToEbsLinkedCase_Null() {
     assertNull(applicationMapper.toEbsLinkedCase(null));
   }
 
@@ -1316,7 +1316,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  @DisplayName("Test toSoaProviderDetail with valid ApplicationProviderDetails")
+  @DisplayName("Test toEbsProviderDetail with valid ApplicationProviderDetails")
   void testToEbsProviderDetail_Valid() {
     final StringDisplayValue providerContact = new StringDisplayValue();
     providerContact.setId("user123");
@@ -1341,7 +1341,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  @DisplayName("Test toSoaProviderDetail with null ApplicationProviderDetails")
+  @DisplayName("Test toEbsProviderDetail with null ApplicationProviderDetails")
   void testToEbsProviderDetail_Null() {
     assertNull(applicationMapper.toEbsProviderDetail(null));
   }
@@ -1353,8 +1353,8 @@ class EbsApplicationMapperTest {
       "'LAW124', 'Another Law Description', '', '500', '500'",    // Case with default amount (requested amount is null)
       "'LAW125', 'Third Law Description', '', '', ''"             // Case with no costs (null amounts)
   })
-  @DisplayName("Parameterized Test toSoaCategoryOfLaw with different ApplicationDetail inputs")
-  void testToSoaCategoryOfLaw_Parameterized(
+  @DisplayName("Parameterized Test toEbsCategoryOfLaw with different ApplicationDetail inputs")
+  void testToEbsCategoryOfLaw_Parameterized(
       final String lawCode,
       final String lawDescription,
       final String requestedCostStr,
@@ -1389,15 +1389,15 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  @DisplayName("Test toSoaCategoryOfLaw with null ApplicationDetail")
-  void testToSoaCategoryOfLaw_Null() {
+  @DisplayName("Test toEbsCategoryOfLaw with null ApplicationDetail")
+  void testToEbsCategoryOfLaw_Null() {
     assertNull(applicationMapper.toEbsCategoryOfLaw(null));
   }
 
 
   @Test
-  @DisplayName("Test toSoaAddressDetail with valid AddressDetail")
-  void testToSoaAddressDetail_Valid() {
+  @DisplayName("Test toEbsAddressDetail with valid AddressDetail")
+  void testToEbsAddressDetail_Valid() {
     final AddressDetail addressDetail = new AddressDetail();
     addressDetail.setId(123);
     addressDetail.setHouseNameOrNumber("1234 House");
@@ -1424,13 +1424,13 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  @DisplayName("Test toSoaAddressDetail with null AddressDetail")
-  void testToSoaAddressDetail_Null() {
+  @DisplayName("Test toEbsAddressDetail with null AddressDetail")
+  void testToEbsAddressDetail_Null() {
     assertNull(applicationMapper.toEbsAddressDetail(null));
   }
 
   @Test
-  @DisplayName("Test toSoaProceedingDetail with valid ProceedingDetail")
+  @DisplayName("Test toEbsProceedingDetail with valid ProceedingDetail")
   void testToEbsProceedingDetail_Valid() {
     final ProceedingDetail proceedingDetail = new ProceedingDetail();
     proceedingDetail.setId(123);
@@ -1464,14 +1464,14 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  @DisplayName("Test toSoaProceedingDetail with null ProceedingDetail")
+  @DisplayName("Test toEbsProceedingDetail with null ProceedingDetail")
   void testToEbsProceedingDetail_Null() {
     assertNull(applicationMapper.toEbsProceedingDetail(null));
   }
 
   @Test
-  @DisplayName("Test toSoaScopeLimitation with valid ScopeLimitationDetail")
-  void testToSoaScopeLimitation_Valid() {
+  @DisplayName("Test toEbsScopeLimitation with valid ScopeLimitationDetail")
+  void testToEbsScopeLimitation_Valid() {
     final ScopeLimitationDetail scopeLimitationDetail = new ScopeLimitationDetail();
     scopeLimitationDetail.setScopeLimitation(new StringDisplayValue().id("scopeId").displayValue("Scope Description"));
     scopeLimitationDetail.setScopeLimitationWording("Scope Limitation Wording");
@@ -1486,15 +1486,15 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  @DisplayName("Test toSoaScopeLimitation with null ScopeLimitationDetail")
-  void testToSoaScopeLimitation_Null() {
+  @DisplayName("Test toEbsScopeLimitation with null ScopeLimitationDetail")
+  void testToEbsScopeLimitation_Null() {
     assertNull(applicationMapper.toEbsScopeLimitation(null));
   }
 
 
   @Test
-  @DisplayName("Test toSoaOtherParty with individual type OpponentDetail")
-  void testToSoaOtherParty_Individual() {
+  @DisplayName("Test toEbsOtherParty with individual type OpponentDetail")
+  void testToEbsOtherParty_Individual() {
     final OpponentDetail opponentDetail = new OpponentDetail();
     opponentDetail.setType(OPPONENT_TYPE_INDIVIDUAL);
     opponentDetail.setRelationshipToClient("ClientRelInd");
@@ -1514,8 +1514,8 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  @DisplayName("Test toSoaOtherParty with organisation type OpponentDetail")
-  void testToSoaOtherParty_Organisation() {
+  @DisplayName("Test toEbsOtherParty with organisation type OpponentDetail")
+  void testToEbsOtherParty_Organisation() {
     final OpponentDetail opponentDetail = new OpponentDetail();
     opponentDetail.setType(OPPONENT_TYPE_ORGANISATION);
     opponentDetail.setRelationshipToClient("ClientRelOrg");
@@ -1535,8 +1535,8 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  @DisplayName("Test toSoaOtherParty with null or unknown type OpponentDetail")
-  void testToSoaOtherParty_NullOrUnknownType() {
+  @DisplayName("Test toEbsOtherParty with null or unknown type OpponentDetail")
+  void testToEbsOtherParty_NullOrUnknownType() {
     final OpponentDetail opponentDetail = new OpponentDetail();
     opponentDetail.setType(null);
 
@@ -1548,13 +1548,13 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  @DisplayName("Test toSoaOtherParty with null OpponentDetail")
-  void testToSoaOtherParty_Null() {
+  @DisplayName("Test toEbsOtherParty with null OpponentDetail")
+  void testToEbsOtherParty_Null() {
     assertNull(applicationMapper.toEbsOtherParty(null));
   }
 
   @ParameterizedTest
-  @DisplayName("Test toSoaPerson with valid OpponentDetail inputs")
+  @DisplayName("Test toEbsPerson with valid OpponentDetail inputs")
   @CsvSource({
       "'TestClientRel', 'TestCaseRel', '123456', 'true', 'true', 'John Doe', 'Test Employer', 'Employer Address', '1000', '500', '1990-01-01', 'Employed', 'Cert123', 'Monthly', '2023-10-12', 'OtherInfo'",
       "'ClientRel2', 'CaseRel2', '987654', 'false', 'false', 'Jane Smith', 'Another Employer', 'Another Address', '2000', '1000', '1985-05-05', 'Unemployed', 'Cert456', 'Weekly', '2023-08-20', 'Info2'"
@@ -1609,18 +1609,18 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  @DisplayName("Test toSoaPerson with null OpponentDetail")
+  @DisplayName("Test toEbsPerson with null OpponentDetail")
   void testToEbsPerson_NullOpponentDetail() {
     assertNull(applicationMapper.toEbsPerson(null));
   }
 
   @ParameterizedTest
-  @DisplayName("Test toSoaOrganisation with valid OpponentDetail inputs")
+  @DisplayName("Test toEbsOrganisation with valid OpponentDetail inputs")
   @CsvSource({
       "'ClientRelation', 'CaseRelation', 'OrgName', 'OrgType', 'ContactName', 'true', 'OtherInfo'",
       "'ClientRelation2', 'CaseRelation2', 'OrgName2', 'OrgType2', 'ContactName2', 'false', 'OtherInfo2'"
   })
-  void testToSoaOrganisation_Valid(final String relationToClient, final String relationToCase, final String organisationName, final String organisationType,
+  void testToEbsOrganisation_Valid(final String relationToClient, final String relationToCase, final String organisationName, final String organisationType,
                                    final String contactName, final boolean currentlyTrading, final String otherInformation) {
     final OpponentDetail opponentDetail = new OpponentDetail();
     opponentDetail.setRelationshipToClient(relationToClient);
@@ -1645,8 +1645,8 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  @DisplayName("Test toSoaOrganisation with null OpponentDetail")
-  void testToSoaOrganisation_NullOpponentDetail() {
+  @DisplayName("Test toEbsOrganisation with null OpponentDetail")
+  void testToEbsOrganisation_NullOpponentDetail() {
     assertNull(applicationMapper.toEbsOrganisation(null));
   }
 
@@ -1685,8 +1685,8 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  @DisplayName("Test toSoaRecordHistory with valid CaseMappingContext")
-  void testToSoaRecordHistory_ValidContext() {
+  @DisplayName("Test toEbsRecordHistory with valid CaseMappingContext")
+  void testToEbsRecordHistory_ValidContext() {
     final Date testDate = new Date();
     final ApplicationDetail application = buildApplicationDetail(1, false, testDate);
     application.getAuditTrail().created(testDate);
@@ -1708,8 +1708,8 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  @DisplayName("Test toSoaRecordHistory with null context")
-  void testToSoaRecordHistory_NullContext() {
+  @DisplayName("Test toEbsRecordHistory with null context")
+  void testToEbsRecordHistory_NullContext() {
     assertNull( applicationMapper.toEbsRecordHistory(null));
   }
 

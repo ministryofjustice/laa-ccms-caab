@@ -27,8 +27,7 @@
             <tbody class="govuk-table__body">
                 <tr class="govuk-table__row" th:each="case , rowStat : ${caseResultsPage.content}">
                     <td class="govuk-table__cell">
-                        <a th:href="@{/application/copy-case/{id}/confirm(id=${case.caseReferenceNumber},
-                            case-client-first-name=${case.client.firstName})}"
+                        <a th:href="@{/application/copy-case/{id}/confirm(id=${case.caseReferenceNumber})}"
                            class="govuk-link" th:text="${case.caseReferenceNumber}"></a>
                     </td>
                     <td class="govuk-table__cell" th:text="${case.providerDetails.providerCaseReference}"></td>
