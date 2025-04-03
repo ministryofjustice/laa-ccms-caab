@@ -1183,8 +1183,8 @@ public class AssessmentServiceTest {
       // Devolved type (DP) with missing date in application → true
       "DP, DP, , 15-03-2020, true"
   })
-  @DisplayName("checkAssessmentForApplicationTypeKeyChange - combined type and delegated date validation")
-  void testCheckAssessmentForApplicationTypeKeyChange_combinedLogic(
+  @DisplayName("applicationTypeMatches - combined type and delegated date validation")
+  void testapplicationTypeMatches_combinedLogic(
       final String applicationTypeCode,
       final String assessmentTypeCode,
       final String applicationDelegatedDate,
@@ -1228,7 +1228,7 @@ public class AssessmentServiceTest {
     final AssessmentDetail assessment = new AssessmentDetail()
         .entityTypes(List.of(globalType));
 
-    final boolean result = assessmentService.checkAssessmentForApplicationTypeKeyChange(application, assessment);
+    final boolean result = assessmentService.applicationTypeMatches(application, assessment);
 
     assertEquals(expected, result);
   }

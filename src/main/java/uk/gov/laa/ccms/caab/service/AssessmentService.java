@@ -333,7 +333,7 @@ public class AssessmentService {
       if (assessment != null) {
 
         //check for any application type attribute changes between assessment and application
-        if (checkAssessmentForApplicationTypeKeyChange(application, assessment)) {
+        if (applicationTypeMatches(application, assessment)) {
           return true;
         }
 
@@ -438,7 +438,7 @@ public class AssessmentService {
    * @param assessment the assessment data
    * @return true if any discrepancies are found; false otherwise
    */
-  protected boolean checkAssessmentForApplicationTypeKeyChange(
+  protected boolean applicationTypeMatches(
       final ApplicationDetail application, final AssessmentDetail assessment) {
 
     final List<AssessmentEntityDetail> globalEntities =
@@ -459,25 +459,27 @@ public class AssessmentService {
       final AssessmentAttributeDetail delegatedFunctionsAttribute =
           getAssessmentAttribute(globalEntity, DELEGATED_FUNCTIONS_DATE);
 
-      final DevolvedPowersDetail devolvedPowers =
-          application.getApplicationType().getDevolvedPowers();
-      final Date applicationDateUsed = (devolvedPowers != null)
-          ? devolvedPowers.getDateUsed() : null;
+      final Optional<DevolvedPowersDetail> devolvedPowers =
+          Optional.ofNullable(application.getApplicationType().getDevolvedPowers());
+      final Optional<Date> applicationDateUsed =
+          devolvedPowers.map(DevolvedPowersDetail::getDateUsed);
 
       if (delegatedFunctionsAttribute != null) {
         // If there is a delegatedFunctionsAttribute, check if it matches the application's date
         final SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
         try {
           final Date attributeDate = sdf.parse(delegatedFunctionsAttribute.getValue());
-          if (applicationDateUsed == null || !isSameDay(applicationDateUsed, attributeDate)) {
+          if (applicationDateUsed.isEmpty() || !isSameDay(applicationDateUsed.get(),
+              attributeDate)) {
             return true;
           }
-        } catch (ParseException e) {
+        } catch (final ParseException e) {
+          log.error("Error parsing delegated functions date", e);
           throw new RuntimeException(e);
         }
       } else {
         // If there's no delegatedFunctionsAttribute but the application has a date, return true
-        if (applicationDateUsed != null) {
+        if (applicationDateUsed.isPresent()) {
           return true;
         }
       }
