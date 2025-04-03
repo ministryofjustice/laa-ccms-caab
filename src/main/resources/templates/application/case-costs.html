@@ -8,50 +8,46 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/proceedings-and-costs#case-costs}" class="govuk-back-link">Cancel and return to proceedings and costs</a>
+    <a th:href="@{/application/proceedings-and-costs#case-costs}" class="govuk-back-link"
+      th:text="#{proceedings.cancelAndGoBack}"/>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/application/case-costs}" th:object="${costDetails}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l">Amend case costs</span>
-      <h1 class="govuk-heading-l">
-        Case costs
-      </h1>
-      <p class="govuk-body-l">
-        Please view the associated costs below. If you estimate that you will need a cost limitation
-        that is different to the default cost limitation figure, please enter the new figure and
-        click 'Confirm'.
-      </p>
+      <span class="govuk-caption-l" th:text="#{proceedings.caseCosts.caption}"/>
+      <h1 class="govuk-heading-l" th:text="#{proceedings.caseCosts.heading}"/>
+      <p class="govuk-body-l"
+        th:text="#{proceedings.caseCosts.leadParagraph}"/>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
-          <h2 class="govuk-heading-m">Case cost limitations</h2>
+          <h2 class="govuk-heading-m"
+            th:text="#{proceedings.caseCosts.subheading}"/>
           <table class="govuk-table">
             <thead class="govuk-table__head">
             <tr class="govuk-table__row">
-              <th scope="col" class="govuk-table__header">Cost limitation</th>
-              <th scope="col" class="govuk-table__header">Amount</th>
+              <th scope="col" class="govuk-table__header"
+                th:text="#{proceedings.caseCosts.costLimitation}"/>
+              <th scope="col" class="govuk-table__header"
+                th:text="#{proceedings.caseCosts.amount}"/>
             </tr>
             </thead>
             <tbody class="govuk-table__body">
             <tr class="govuk-table__row">
-              <td class="govuk-table__cell">
-                Default cost limitation
-              </td>
-              <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(costs.defaultCostLimitation)}"></td>
+              <td class="govuk-table__cell"
+                th:text="#{proceedings.caseCosts.defaultCostLimitation}"/>
+              <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(costs.defaultCostLimitation)}"/>
             </tr>
             <tr th:if="${application.amendment}" class="govuk-table__row">
-              <td class="govuk-table__cell">
-                Granted cost limitation
-              </td>
-              <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(costs.grantedCostLimitation)}"></td>
+              <td class="govuk-table__cell"
+                th:text="#{proceedings.caseCosts.grantedCostLimitation}"/>
+              <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(costs.grantedCostLimitation)}"/>
             </tr>
             </tbody>
           </table>
           <div class="govuk-form-group" th:classappend="${#fields.hasErrors('requestedCostLimitation')} ? 'govuk-form-group--error' : ''">
             <h2 class="govuk-label-wrapper">
-              <label class="govuk-label" for="requestedCostLimitation">
-                Requested cost limitation
-              </label>
+              <label class="govuk-label" for="requestedCostLimitation"
+                th:text="#{proceedings.caseCosts.requestedCostLimitation}"/>
               <span th:if="${#fields.hasErrors('requestedCostLimitation')}"
                     th:errors="*{requestedCostLimitation}"
                     class="govuk-error-message">

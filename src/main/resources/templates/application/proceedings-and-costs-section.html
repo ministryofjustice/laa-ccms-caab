@@ -25,11 +25,11 @@
         </li>
         <li class="govuk-tabs__list-item">
           <a class="govuk-tabs__tab" href="#case-costs"
-             th:text="#{proceedingsAndCosts.caseCosts.subHeading}"/>
+             th:text="#{proceedings.caseCosts.subHeading}"/>
         </li>
         <li class="govuk-tabs__list-item">
           <a class="govuk-tabs__tab" href="#prior-authority"
-             th:text="#{proceedingsAndCosts.priorAuthorities.subHeading}"/>
+             th:text="#{proceedings.priorAuthorities.subHeading}"/>
         </li>
       </ul>
       <div class="govuk-tabs__panel" id="proceedings" aria-labelledby="tab_proceedings">
@@ -86,20 +86,20 @@
           </tbody>
         </table>
         <th:block
-            th:replace="~{partials/actions :: restrictedActionLink(#{proceedingsAndCosts.button.addProceeding},
+            th:replace="~{partials/actions :: restrictedActionLink(#{proceedings.button.addProceeding},
             ${user.functions}, 'ADDPROC', true, 'govuk-button--secondary', @{/application/proceedings/add/matter-type}, false)}"/>
       </div>
       <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="case-costs" aria-labelledby="tab_case-costs">
-        <h2 class="govuk-heading-l" th:text="#{proceedingsAndCosts.caseCosts.subHeading}"/>
+        <h2 class="govuk-heading-l" th:text="#{proceedings.caseCosts.subHeading}"/>
         <table class="govuk-table">
           <thead class="govuk-table__head">
             <tr class="govuk-table__row">
               <th scope="col" class="govuk-table__header"
-                  th:text="#{proceedingsAndCosts.caseCosts.subHeading}"/>
+                  th:text="#{proceedings.caseCosts.subHeading}"/>
               <th scope="col" class="govuk-table__header"
-                  th:text="#{proceedingsAndCosts.caseCosts.table.requestedAmount}"/>
+                  th:text="#{proceedings.caseCosts.table.requestedAmount}"/>
               <th scope="col" class="govuk-table__header"
-                  th:text="#{proceedingsAndCosts.caseCosts.table.grantedAmount}"/>
+                  th:text="#{proceedings.caseCosts.table.grantedAmount}"/>
             </tr>
           </thead>
           <tbody class="govuk-table__body">
@@ -107,7 +107,7 @@
               <td class="govuk-table__cell">
                 <a th:href="@{/application/case-costs}" id="case-cost-limitation-link"
                    class="govuk-link"
-                   th:text="#{proceedingsAndCosts.caseCosts.link.caseCostLimitation}"/>
+                   th:text="#{proceedings.caseCosts.link.caseCostLimitation}"/>
               </td>
               <td class="govuk-table__cell"
                   id="case-cost-requested-amount-value"
@@ -120,16 +120,16 @@
         </table>
       </div>
       <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="prior-authority" aria-labelledby="tab_prior-authority">
-        <h2 class="govuk-heading-l" th:text="#{proceedingsAndCosts.priorAuthorities.subHeading}"/>
+        <h2 class="govuk-heading-l" th:text="#{proceedings.priorAuthorities.subHeading}"/>
         <table class="govuk-table" id="prior-authorities-table">
           <thead class="govuk-table__head">
           <tr class="govuk-table__row">
             <th scope="col" class="govuk-table__header"
-              th:text="#{proceedingsAndCosts.priorAuthorities.table.priorAuthority}"/>
+              th:text="#{proceedings.priorAuthorities.table.priorAuthority}"/>
             <th scope="col" class="govuk-table__header"
               th:text="#{site.type}"/>
             <th scope="col" class="govuk-table__header"
-              th:text="#{proceedingsAndCosts.priorAuthorities.table.amountRequested}"/>
+              th:text="#{proceedings.priorAuthorities.table.amountRequested}"/>
             <th scope="col" class="govuk-table__header"
               th:text="#{common.status}"/>
             <th scope="col" class="govuk-table__header"

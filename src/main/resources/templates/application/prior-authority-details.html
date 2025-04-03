@@ -3,54 +3,64 @@
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-  <title th:text="#{service.name} + ' - ' + #{application.create}"></title>
+  <title th:text="#{service.name} + ' - ' + #{application.create}"/>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/proceedings-and-costs#prior-authority}" class="govuk-back-link">Cancel and return to proceedings and costs</a>
+    <a th:href="@{/application/proceedings-and-costs#prior-authority}" class="govuk-back-link"
+      th:text="#{proceedings.cancelAndGoBack}"/>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/prior-authorities/{action}/details(action=${priorAuthorityFlow.action})}" th:object="${priorAuthorityDetails}" method="post">
+    <form action="#"
+          th:action="@{/application/prior-authorities/{action}/details(action=${priorAuthorityFlow.action})}"
+          th:object="${priorAuthorityDetails}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l">Add/edit prior authority</span>
-      <h1 class="govuk-heading-l">
-        Prior authority - Step 2 of 2
-      </h1>
-      <p class="govuk-body-l">
-        Please complete the details below for your prior authority request.
-      </p>
+      <span class="govuk-caption-l"
+        th:text="#{proceedings.addPriorAuthorities.caption}"/>
+      <h1 class="govuk-heading-l"
+        th:text="#{proceedings.addPriorAuthorities.step2.heading}"/>
+      <p class="govuk-body-l"
+         th:text="#{proceedings.addPriorAuthorities.step2.leadParagraph}"/>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
           <dl class="govuk-body">
-            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Prior authority type', ${priorAuthorityFlow.priorAuthorityTypeFormData.priorAuthorityTypeDisplayValue})}"></div>
+            <th:block th:replace="~{application/partials/summary-fragments :: summaryListDisplay(
+              #{proceedings.priorAuthorities.priorAuthorityType},
+              ${priorAuthorityFlow.priorAuthorityTypeFormData.priorAuthorityTypeDisplayValue})}"/>
           </dl>
 
-          <div th:replace="~{partials/forms :: textInput('summary', 'Summary', 'govuk-input--width-20')}"></div>
-          <div th:replace="~{partials/forms :: largeTextInput('justification', 'Justification', 8000)}"></div>
+          <th:block th:replace="~{partials/forms :: textInput('summary',
+            #{site.summary},
+            'govuk-input--width-20')}"/>
+          <th:block th:replace="~{partials/forms :: largeTextInput('justification',
+            #{proceedings.priorAuthorities.justification},
+            8000)}"/>
 
           <th:block th:if="*{valueRequired}">
-            <div th:replace="~{partials/forms :: currencyInput('amountRequested', 'Amount requested', '10')}"></div>
+            <th:block th:replace="~{partials/forms :: currencyInput('amountRequested',
+              #{proceedings.priorAuthorities.amountRequested},'10')}"/>
           </th:block>
 
           <th:block th:each="option : ${priorAuthorityDynamicForm.priorAuthorities}">
-            <div class="govuk-form-group" th:classappend="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')} ? 'govuk-form-group--error' : ''">
+            <div class="govuk-form-group"
+                 th:classappend="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')} ? 'govuk-form-group--error' : ''">
 
                 <th:block th:if="${option.mandatoryFlag}">
-                  <label class="govuk-label" th:for="'dynamicOptions[' + ${option.code} + '].fieldValue'" th:text="${option.description}">
-                  </label>
+                  <label class="govuk-label" th:for="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                     th:text="${option.description}"/>
                 </th:block>
                 <th:block th:unless="${option.mandatoryFlag}">
-                  <label class="govuk-label" th:for="'dynamicOptions[' + ${option.code} + '].fieldValue'" th:text="${option.description + ' (optional)'}">
-                  </label>
+                  <label class="govuk-label" th:for="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                     th:text="${option.description + ' (optional)'}"/>
                 </th:block>
                 <span th:if="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')}"
-                      th:errors="*{dynamicOptions[__${option.code}__].fieldValue}" class="govuk-error-message">
+                    th:errors="*{dynamicOptions[__${option.code}__].fieldValue}" class="govuk-error-message">
                 </span>
-              <th:block  th:if="${option.dataType == 'LOV'}">
+              <th:block th:if="${option.dataType == 'LOV'}">
                 <input type="hidden" th:id="'dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'"
-                       th:name="'dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'"
-                       th:value="*{dynamicOptions[__${option.code}__].fieldValueDisplayValue}">
+                   th:name="'dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'"
+                   th:value="*{dynamicOptions[__${option.code}__].fieldValueDisplayValue}"/>
                 <select class="govuk-select"
                         data-module="govuk-select"
                         th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
@@ -70,7 +80,7 @@
                        data-module="govuk-input"
                        th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
                        th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                       th:errorclass="govuk-select--error">
+                       th:errorclass="govuk-select--error"/>
               </th:block>
               <th:block th:if="${option.dataType == 'FTL'}">
                 <input class="govuk-input"
@@ -78,7 +88,7 @@
                        th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
                        type="text"
                        data-module="govuk-input"
-                       th:errorclass="govuk-select--error">
+                       th:errorclass="govuk-select--error"/>
               </th:block>
               <th:block th:if="${option.dataType == 'AMT'}">
                 <div class="govuk-input__wrapper">
@@ -87,7 +97,7 @@
                          th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
                          th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
                          type="text" spellcheck="false"
-                         th:errorclass="govuk-select--error">
+                         th:errorclass="govuk-select--error"/>
                 </div>
               </th:block>
               <th:block th:if="${option.dataType == 'INT'}">
@@ -97,7 +107,7 @@
                        type="text"
                        inputmode="numeric"
                        maxlength="10"
-                       th:errorclass="govuk-select--error">
+                       th:errorclass="govuk-select--error"/>
               </th:block>
 
             </div>
