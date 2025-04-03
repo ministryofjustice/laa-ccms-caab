@@ -18,7 +18,7 @@ jobs:
   build:
     uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/gradle-build-and-publish.yml@v1
     permissions:
-      contents: read
+      contents: write
       packages: write
     with:
       integration_test_task: "integrationTest"
