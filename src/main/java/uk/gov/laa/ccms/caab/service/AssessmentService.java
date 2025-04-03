@@ -1,8 +1,11 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static org.apache.commons.lang3.time.DateUtils.isSameDay;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROGRESS_STATUS_TYPES;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.APP_AMEND_TYPE;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.DELEGATED_FUNCTIONS_DATE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.REQUESTED_SCOPE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.GLOBAL;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.OPPONENT;
@@ -33,6 +36,8 @@ import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getProceedingByEbsId;
 import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getProceedingById;
 import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getRequestedScopeForAssessmentInput;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -66,6 +71,7 @@ import uk.gov.laa.ccms.caab.mapper.context.AssessmentMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
+import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryAttributeDisplay;
@@ -326,6 +332,11 @@ public class AssessmentService {
     if (!application.getAmendment()) {
       if (assessment != null) {
 
+        //check for any application type attribute changes between assessment and application
+        if (checkAssessmentForApplicationTypeKeyChange(application, assessment)) {
+          return true;
+        }
+
         final AssessmentEntityTypeDetail proceedingEntityType =
             getAssessmentEntityType(assessment, PROCEEDING);
 
@@ -416,6 +427,61 @@ public class AssessmentService {
       //}
     }
 
+    return false;
+  }
+
+  /**
+   * Checks if there are any discrepancies between the key data of the applications type details
+   * and their corresponding assessment records based on the specified assessment.
+   *
+   * @param application the application containing application type details to check
+   * @param assessment the assessment data
+   * @return true if any discrepancies are found; false otherwise
+   */
+  protected boolean checkAssessmentForApplicationTypeKeyChange(
+      final ApplicationDetail application, final AssessmentDetail assessment) {
+
+    final List<AssessmentEntityDetail> globalEntities =
+        getAssessmentEntitiesForEntityType(assessment, GLOBAL);
+
+    for (final AssessmentEntityDetail globalEntity : globalEntities) {
+
+      final AssessmentAttributeDetail applicationTypeAttribute =
+          getAssessmentAttribute(globalEntity, APP_AMEND_TYPE);
+
+      //check if the application type matches
+      if (applicationTypeAttribute != null
+          && !application.getApplicationType().getId()
+          .equalsIgnoreCase(applicationTypeAttribute.getValue())) {
+        return true;
+      }
+
+      final AssessmentAttributeDetail delegatedFunctionsAttribute =
+          getAssessmentAttribute(globalEntity, DELEGATED_FUNCTIONS_DATE);
+
+      final DevolvedPowersDetail devolvedPowers =
+          application.getApplicationType().getDevolvedPowers();
+      final Date applicationDateUsed = (devolvedPowers != null)
+          ? devolvedPowers.getDateUsed() : null;
+
+      if (delegatedFunctionsAttribute != null) {
+        // If there is a delegatedFunctionsAttribute, check if it matches the application's date
+        final SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+        try {
+          final Date attributeDate = sdf.parse(delegatedFunctionsAttribute.getValue());
+          if (applicationDateUsed == null || !isSameDay(applicationDateUsed, attributeDate)) {
+            return true;
+          }
+        } catch (ParseException e) {
+          throw new RuntimeException(e);
+        }
+      } else {
+        // If there's no delegatedFunctionsAttribute but the application has a date, return true
+        if (applicationDateUsed != null) {
+          return true;
+        }
+      }
+    }
     return false;
   }
 
@@ -1199,6 +1265,15 @@ public class AssessmentService {
     return summaryToDisplay;
   }
 
+  /**
+   * Creates a summary display entity from the given entity and adds it to the list if applicable.
+   *
+   * @param assessment the current assessment detail
+   * @param summaryEntitiesToDisplay the list to add created summary display entities to
+   * @param childSummaryLookups list of lookup values for potential child summary entities
+   * @param summaryEntityLookup the lookup data for the current summary entity
+   * @param entity the current assessment entity to process
+   */
   protected void createSummaryEntity(
       final AssessmentDetail assessment,
       final List<AssessmentSummaryEntityDisplay> summaryEntitiesToDisplay,
