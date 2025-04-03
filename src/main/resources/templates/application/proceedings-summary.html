@@ -2,6 +2,19 @@
 <html lang="en"
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org">
+<!--Simple fragment for repeated summary list rows. Placed before main content to avoid being
+  rendered unless specified.-->
+<div class="govuk-summary-list__row" th:fragment="summaryListDisplay(label, value)"
+     th:with="idPrefix=${#strings.toLowerCase(#strings.replace(label, ' ', '-'))}">
+  <dt class="govuk-summary-list__key"
+      th:id="|${idPrefix}-label|"
+      th:text="${label}">
+  </dt>
+  <dd class="govuk-summary-list__value"
+      th:id="|${idPrefix}-value|"
+      th:text="${value}">
+  </dd>
+</div>
 <head>
   <title th:text="#{service.name} + ' - ' + #{application.create}"></title>
 </head>
@@ -100,15 +113,3 @@
 </body>
 </html>
 
-<!--Simple fragment for repeated summary list rows -->
-<div class="govuk-summary-list__row" th:fragment="summaryListDisplay(label, value)"
-     th:with="idPrefix=${#strings.toLowerCase(#strings.replace(label, ' ', '-'))}">
-  <dt class="govuk-summary-list__key"
-      th:id="|${idPrefix}-label|"
-      th:text="${label}">
-  </dt>
-  <dd class="govuk-summary-list__value"
-      th:id="|${idPrefix}-value|"
-      th:text="${value}">
-  </dd>
-</div>
