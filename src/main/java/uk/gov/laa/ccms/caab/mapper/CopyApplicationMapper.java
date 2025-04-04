@@ -61,5 +61,7 @@ public interface CopyApplicationMapper {
   @Mapping(target = "amendment", constant = "false")
   @Mapping(target = "appMode", constant = "true")
   @Mapping(target = "award", constant = "false")
+  @Mapping(target = "address",
+      defaultExpression = "java(new uk.gov.laa.ccms.caab.model.AddressDetail())")
   OpponentDetail copyOpponent(OpponentDetail opponentToCopy);
 }
