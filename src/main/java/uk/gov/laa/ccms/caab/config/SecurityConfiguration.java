@@ -94,9 +94,10 @@ public class SecurityConfiguration {
             .hasAuthority(UserRole.SUBMIT_UPDATE_CLIENT.getCode())
           .requestMatchers(HttpMethod.POST,
               "/application/sections")
-            .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
+          .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
+          .requestMatchers("/actuator/**").permitAll()  // Ensure Actuator endpoints are excluded
           .anyRequest().authenticated())
-      .sessionManagement(sessionManagement -> sessionManagement
+        .sessionManagement(sessionManagement -> sessionManagement
           .invalidSessionStrategy(new SimpleRedirectInvalidSessionStrategy("/home")))
       .logout((logout) -> logout
           .addLogoutHandler((req, res, auth) -> {
