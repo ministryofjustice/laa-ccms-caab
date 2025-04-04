@@ -54,11 +54,11 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.data.domain.PageImpl;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
-import uk.gov.laa.ccms.caab.mapper.context.ApplicationMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
-import uk.gov.laa.ccms.caab.mapper.context.CaseOutcomeMappingContext;
-import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
-import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.SoaApplicationMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.SoaCaseOutcomeMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.SoaPriorAuthorityMappingContext;
+import uk.gov.laa.ccms.caab.mapper.context.SoaProceedingMappingContext;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
@@ -114,9 +114,10 @@ import uk.gov.laa.ccms.soa.gateway.model.ScopeLimitation;
 import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.TimeRelatedAward;
 
-public class ApplicationMapperTest {
+@DisplayName("SOA Application Mapper Test")
+class SoaApplicationMapperTest {
 
-  private final ApplicationMapper applicationMapper = new ApplicationMapperImpl() {
+  private final SoaApplicationMapper applicationMapper = new SoaApplicationMapperImpl() {
   };
 
   private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -124,7 +125,7 @@ public class ApplicationMapperTest {
   @Test
   void testToApplicationDetailDevolvedPowers() {
     CaseDetail soaCaseDetail = buildCaseDetail(APP_TYPE_EMERGENCY_DEVOLVED_POWERS);
-    ApplicationMappingContext applicationMappingContext =
+    SoaApplicationMappingContext applicationMappingContext =
         buildApplicationMappingContext(
             soaCaseDetail,
             true,
@@ -223,7 +224,7 @@ public class ApplicationMapperTest {
 
   @Test
   void testToApplicationDetailNonDevolvedPowers() {
-    ApplicationMappingContext applicationMappingContext =
+    SoaApplicationMappingContext applicationMappingContext =
         buildApplicationMappingContext(
             buildCaseDetail(APP_TYPE_EMERGENCY),
             false,
@@ -238,7 +239,7 @@ public class ApplicationMapperTest {
 
   @Test
   void testToCorrespondenceAddress() {
-    ApplicationMappingContext applicationMappingContext =
+    SoaApplicationMappingContext applicationMappingContext =
         buildApplicationMappingContext(
             buildCaseDetail(APP_TYPE_EMERGENCY),
             false,
@@ -267,7 +268,7 @@ public class ApplicationMapperTest {
     assertEquals(soaApplicationDetails.getPreferredAddress(), result.getPreferredAddress());
   }
 
-    @Test
+  @Test
   void testToCostEntry() {
     CostLimitation soaCostLimitation = buildCostLimitation("");
 
@@ -288,7 +289,7 @@ public class ApplicationMapperTest {
   void testToProceeding() {
     uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail soaProceeding =
         buildProceedingDetail(STATUS_DRAFT);
-    ProceedingMappingContext proceedingMappingContext =
+    SoaProceedingMappingContext proceedingMappingContext =
         buildProceedingMappingContext(soaProceeding);
 
     ProceedingDetail result = applicationMapper.toProceeding(proceedingMappingContext);
@@ -379,7 +380,7 @@ public class ApplicationMapperTest {
   void testToProceedingOutcome() {
     uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail soaProceeding =
         buildProceedingDetail(STATUS_DRAFT);
-    ProceedingMappingContext proceedingMappingContext =
+    SoaProceedingMappingContext proceedingMappingContext =
         buildProceedingMappingContext(soaProceeding);
     OutcomeDetail soaOutcomeDetail = soaProceeding.getOutcome();
 
@@ -638,9 +639,9 @@ public class ApplicationMapperTest {
 
   @Test
   void testToPriorAuthority() {
-   PriorAuthority soaPriorAuthority =
+    PriorAuthority soaPriorAuthority =
         buildPriorAuthority();
-    PriorAuthorityMappingContext priorAuthorityMappingContext =
+    SoaPriorAuthorityMappingContext priorAuthorityMappingContext =
         buildPriorAuthorityMappingContext(soaPriorAuthority);
     PriorAuthorityTypeDetail priorAuthorityTypeDetail =
         priorAuthorityMappingContext.getPriorAuthorityTypeLookup();
@@ -679,7 +680,7 @@ public class ApplicationMapperTest {
   @Test
   void testToCaseOutcome() {
     CaseDetail soaCaseDetail = buildCaseDetail(APP_TYPE_EMERGENCY);
-    CaseOutcomeMappingContext caseOutcomeMappingContext = buildCaseOutcomeMappingContext(soaCaseDetail);
+    SoaCaseOutcomeMappingContext caseOutcomeMappingContext = buildCaseOutcomeMappingContext(soaCaseDetail);
 
     CaseOutcomeDetail result = applicationMapper.toCaseOutcome(caseOutcomeMappingContext);
 
@@ -1019,11 +1020,11 @@ public class ApplicationMapperTest {
     assertEquals(soaCaseSummary.getProviderCaseReferenceNumber(), result.getProviderDetails().getProviderCaseReference());
   }
 
-  private ApplicationMappingContext buildApplicationMappingContext(
+  private SoaApplicationMappingContext buildApplicationMappingContext(
       CaseDetail soaCase,
       Boolean devolvedPowers,
       Date devolvedPowersDate) {
-    return ApplicationMappingContext.builder()
+    return SoaApplicationMappingContext.builder()
         .soaCaseDetail(soaCase)
         .applicationType(new CommonLookupValueDetail()
             .code("apptypecode")
@@ -1056,9 +1057,9 @@ public class ApplicationMapperTest {
         .build();
   }
 
-  private ProceedingMappingContext buildProceedingMappingContext(
+  private SoaProceedingMappingContext buildProceedingMappingContext(
       uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail soaProceeding) {
-    return ProceedingMappingContext.builder()
+    return SoaProceedingMappingContext.builder()
         .soaProceeding(soaProceeding)
         .clientInvolvement(new CommonLookupValueDetail()
             .code("clientInv")
@@ -1093,8 +1094,8 @@ public class ApplicationMapperTest {
         .build();
   }
 
-  private CaseOutcomeMappingContext buildCaseOutcomeMappingContext(CaseDetail soaCase) {
-    return CaseOutcomeMappingContext.builder()
+  private SoaCaseOutcomeMappingContext buildCaseOutcomeMappingContext(CaseDetail soaCase) {
+    return SoaCaseOutcomeMappingContext.builder()
         .soaCase(soaCase)
         .costAwards(Collections.singletonList(soaCase.getAwards().get(0)))
         .financialAwards(Collections.singletonList(soaCase.getAwards().get(1)))
@@ -1105,9 +1106,9 @@ public class ApplicationMapperTest {
         .build();
   }
 
-  private PriorAuthorityMappingContext buildPriorAuthorityMappingContext(
+  private SoaPriorAuthorityMappingContext buildPriorAuthorityMappingContext(
       PriorAuthority soaPriorAuthority) {
-    return PriorAuthorityMappingContext.builder()
+    return SoaPriorAuthorityMappingContext.builder()
         .soaPriorAuthority(soaPriorAuthority)
         .priorAuthorityTypeLookup(buildPriorAuthorityTypeDetail("dataType"))
         .items(Collections.singletonList(Pair.of(buildPriorAuthorityDetail("dataType"),
@@ -1554,10 +1555,10 @@ public class ApplicationMapperTest {
       "'ClientRel2', 'CaseRel2', '987654', 'false', 'false', 'Jane Smith', 'Another Employer', 'Another Address', '2000', '1000', '1985-05-05', 'Unemployed', 'Cert456', 'Weekly', '2023-08-20', 'Info2'"
   })
   void testToSoaPerson_Valid(final String relationToClient, final String relationToCase, final String niNumber, final boolean legalAided,
-                             final boolean courtOrderedMeansAssesment, final String contactName, final String employerName,
-                             final String employerAddress, final String assessedIncome, final String assessedAssets, final String dateOfBirth,
-                             final String employmentStatus, final String certificateNumber, final String assessedIncomeFrequency,
-                             final String assessmentDate, final String otherInformation) throws ParseException {
+      final boolean courtOrderedMeansAssesment, final String contactName, final String employerName,
+      final String employerAddress, final String assessedIncome, final String assessedAssets, final String dateOfBirth,
+      final String employmentStatus, final String certificateNumber, final String assessedIncomeFrequency,
+      final String assessmentDate, final String otherInformation) throws ParseException {
 
     final Date parsedDateOfBirth = dateFormat.parse(dateOfBirth);
     final Date parsedAssessmentDate = dateFormat.parse(assessmentDate);
@@ -1615,7 +1616,7 @@ public class ApplicationMapperTest {
       "'ClientRelation2', 'CaseRelation2', 'OrgName2', 'OrgType2', 'ContactName2', 'false', 'OtherInfo2'"
   })
   void testToSoaOrganisation_Valid(final String relationToClient, final String relationToCase, final String organisationName, final String organisationType,
-                                   final String contactName, final boolean currentlyTrading, final String otherInformation) {
+      final String contactName, final boolean currentlyTrading, final String otherInformation) {
     final OpponentDetail opponentDetail = new OpponentDetail();
     opponentDetail.setRelationshipToClient(relationToClient);
     opponentDetail.setRelationshipToCase(relationToCase);
@@ -1654,7 +1655,7 @@ public class ApplicationMapperTest {
       "'TestName', 'TestType', 'TestValue', 'nonIntermediate', true"
   })
   void testToOpaAttribute_Valid_userDefinedIndicator(final String name, final String type, final String value,
-                                final String inferencingType, final boolean expectedUserDefinedInd) {
+      final String inferencingType, final boolean expectedUserDefinedInd) {
     final AssessmentAttributeDetail assessmentAttributeDetail =
         new AssessmentAttributeDetail()
             .name(name)

@@ -45,7 +45,7 @@ import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.feature.FeatureService;
-import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -80,7 +80,7 @@ public class ApplicationSearchControllerTest {
   private ApplicationService applicationService;
 
   @Mock
-  private ApplicationMapper applicationMapper;
+  private EbsApplicationMapper applicationMapper;
 
   @Mock
   private SearchConstants searchConstants;

@@ -26,7 +26,7 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
-import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
@@ -53,7 +53,7 @@ public class CopyCaseSearchController {
 
   private final ApplicationService applicationService;
 
-  private final ApplicationMapper applicationMapper;
+  private final EbsApplicationMapper applicationMapper;
 
   private final CaseSearchCriteriaValidator searchCriteriaValidator;
 

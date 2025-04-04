@@ -19,7 +19,7 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
  */
 @Builder
 @Getter
-public class ApplicationMappingContext {
+public class SoaApplicationMappingContext {
 
   /**
    * The CaseDetail which will be mapped to an ApplicationDetail.
@@ -57,31 +57,31 @@ public class ApplicationMappingContext {
   ContactDetail feeEarnerContact;
 
   /**
-   * A subset of the Proceedings from the Case, wrapped by a ProceedingMappingContext
+   * A subset of the Proceedings from the Case, wrapped by a SoaProceedingMappingContext
    * with further lookup data.
    * A Proceeding is added to this list if its status is DRAFT,
    * AND all Proceedings in the Case are not at status DRAFT.
    */
-  List<ProceedingMappingContext> amendmentProceedingsInEbs;
+  List<SoaProceedingMappingContext> amendmentProceedingsInEbs;
 
   /**
-   * A subset of the Proceedings from the Case, wrapped by a ProceedingMappingContext
+   * A subset of the Proceedings from the Case, wrapped by a SoaProceedingMappingContext
    * containing all required lookup data for mapping.
    * A Proceeding is added to this list if either its status is not DRAFT,
    * OR all Proceedings in the Case are at status DRAFT.
    */
-  List<ProceedingMappingContext> proceedings;
+  List<SoaProceedingMappingContext> proceedings;
 
   /**
-   * The prior authorities for the Case, wrapped by a PriorAuthorityMappingContext
+   * The prior authorities for the Case, wrapped by a SoaPriorAuthorityMappingContext
    * containing all required lookup data for mapping.
    */
-  List<PriorAuthorityMappingContext> priorAuthorities;
+  List<SoaPriorAuthorityMappingContext> priorAuthorities;
 
   /**
    * All the required Case data to map to a CAAB CaseOutcome.
    */
-  CaseOutcomeMappingContext caseOutcome;
+  SoaCaseOutcomeMappingContext caseOutcome;
 
   /**
    * Flag to indicate if this Case only has Proceedings at status DRAFT.

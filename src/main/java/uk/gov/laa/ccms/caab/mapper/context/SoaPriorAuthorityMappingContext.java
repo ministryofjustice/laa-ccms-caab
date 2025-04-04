@@ -15,7 +15,7 @@ import uk.gov.laa.ccms.soa.gateway.model.PriorAuthority;
  */
 @Builder
 @Data
-public class PriorAuthorityMappingContext {
+public class SoaPriorAuthorityMappingContext {
 
   /**
    * The SOA Prior Authority to be mapped.
