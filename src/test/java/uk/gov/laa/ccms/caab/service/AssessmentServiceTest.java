@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.service;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -28,6 +27,7 @@ import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentEntitiesForE
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -54,14 +54,14 @@ import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryAttributeDisplay;
-import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryEntityDisplay;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
+import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryAttributeDisplay;
+import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryEntityDisplay;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryAttributeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -1165,6 +1165,74 @@ public class AssessmentServiceTest {
 
     assertEquals(expectedFormattedValue, result.getValue());
   }
+
+  @ParameterizedTest
+  @CsvSource({
+      // Matching applicationType + matching delegated date → false
+      "SUBDP, SUBDP, 15-03-2020, 15-03-2020, false",
+      // Matching applicationType + mismatching delegated date → true
+      "SUBDP, SUBDP, 15-03-2020, 01-01-2000, true",
+      // Matching applicationType + null delegated date in assessment → true
+      "SUBDP, SUBDP, 15-03-2020, , true",
+      // Matching applicationType + null delegated date in app → true
+      "SUBDP, SUBDP, , 15-03-2020, true",
+      // Mismatched applicationType → true
+      "SUBDP, DP, 15-03-2020, 15-03-2020, true",
+      // Non-devolved type (SUB) with no dates → false
+      "SUB, SUB, , , false",
+      // Devolved type (DP) with missing date in application → true
+      "DP, DP, , 15-03-2020, true"
+  })
+  @DisplayName("applicationTypeMatches - combined type and delegated date validation")
+  void testapplicationTypeMatches_combinedLogic(
+      final String applicationTypeCode,
+      final String assessmentTypeCode,
+      final String applicationDelegatedDate,
+      final String assessmentDelegatedDate,
+      final boolean expected) throws Exception {
+
+    final ApplicationDetail application = new ApplicationDetail();
+    final var applicationType = new uk.gov.laa.ccms.caab.model.ApplicationType();
+    applicationType.setId(applicationTypeCode);
+
+    if (applicationDelegatedDate != null) {
+      final var devolvedPowers = new uk.gov.laa.ccms.caab.model.DevolvedPowersDetail();
+      devolvedPowers.setDateUsed(new SimpleDateFormat("dd-MM-yyyy").parse(applicationDelegatedDate));
+      applicationType.setDevolvedPowers(devolvedPowers);
+    }
+
+    application.setApplicationType(applicationType);
+
+    final List<AssessmentAttributeDetail> attributes = new ArrayList<>();
+
+    // Add type attribute
+    attributes.add(new AssessmentAttributeDetail()
+        .name("APP_AMEND_TYPE")
+        .value(assessmentTypeCode));
+
+    // Add delegated date attribute if provided
+    if (assessmentDelegatedDate != null) {
+      attributes.add(new AssessmentAttributeDetail()
+          .name("DELEGATED_FUNCTIONS_DATE")
+          .value(assessmentDelegatedDate));
+    }
+
+    final AssessmentEntityDetail globalEntity = new AssessmentEntityDetail()
+        .name("GLOBAL")
+        .attributes(attributes);
+
+    final AssessmentEntityTypeDetail globalType = new AssessmentEntityTypeDetail()
+        .name("GLOBAL")
+        .entities(List.of(globalEntity));
+
+    final AssessmentDetail assessment = new AssessmentDetail()
+        .entityTypes(List.of(globalType));
+
+    final boolean result = assessmentService.applicationTypeMatches(application, assessment);
+
+    assertEquals(expected, result);
+  }
+
 
 
 
