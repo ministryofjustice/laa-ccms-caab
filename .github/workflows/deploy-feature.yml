@@ -47,6 +47,7 @@ jobs:
       override_version: ${{ needs.define-feature-version.outputs.feature_version }}
     secrets:
       gh_token: ${{ secrets.GITHUB_TOKEN }}
+      aws_region: 'eu-west-2'
 
   ecr-publish-image:
     needs: [ build ]
