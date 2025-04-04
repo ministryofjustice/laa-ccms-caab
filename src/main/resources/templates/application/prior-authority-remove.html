@@ -2,22 +2,19 @@
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-  <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
+  <title th:text="#{service.name} + ' - ' + #{application.start}"/>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/proceedings-and-costs#prior-authority}" class="govuk-back-link">Cancel and return to proceedings and costs</a>
+    <a th:href="@{/application/proceedings-and-costs#prior-authority}" class="govuk-back-link"
+      th:text="#{proceedings.cancelAndGoBack}"/>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/application/prior-authorities/{priorAuthorityId}/remove(priorAuthorityId=${priorAuthority.id})}" method="post">
-      <h1 class="govuk-heading-l">
-        Remove prior authority
-      </h1>
-      <p class="govuk-body-l">
-        Are you sure you want to delete this [[${priorAuthority.type.displayValue}]] Prior Authority? Please click 'Confirm' to delete
-        this information otherwise click 'Cancel and return to proceedings and costs' to go back.
-      </p>
+      <h1 class="govuk-heading-l" th:text="#{proceedings.priorAuthorities.remove.heading}"/>
+      <p class="govuk-body-l"
+         th:utext="#{proceedings.priorAuthorities.remove.leadParagraph(${#strings.toLowerCase(priorAuthority.type.displayValue)})}"/>
       <div class="govuk-button-group">
         <govuk:button type="submit" th:text="#{site.confirm}"/>
       </div>
