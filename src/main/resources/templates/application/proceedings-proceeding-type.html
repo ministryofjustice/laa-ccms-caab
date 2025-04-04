@@ -8,38 +8,38 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/proceedings-and-costs}" class="govuk-back-link">Cancel and return to Proceedings and costs</a>
+    <a th:href="@{/application/proceedings-and-costs}" class="govuk-back-link"
+       th:text="#{proceedings.cancelAndGoBack}"/>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/proceedings/{action}/proceeding-type(action=${proceedingFlow.action})}" th:object="${proceedingTypeDetails}" method="post">
+    <form action="#" th:action="@{/application/proceedings/{action}/proceeding-type(action=${proceedingFlow.action})}"
+          th:object="${proceedingTypeDetails}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l">Add/edit proceeding</span>
-      <h1 class="govuk-heading-l">
-        Proceeding details - Step 2 of 4
-      </h1>
-      <p class="govuk-body-l">
-        Please enter the proceeding details for your application.
-      </p>
+      <span class="govuk-caption-l" th:text="#{proceedings.addEdit.caption}"/>
+      <h1 class="govuk-heading-l"
+        th:text="#{proceedings.proceedingDetails.step2.heading}"/>
+      <p class="govuk-body-l" th:text="#{proceedings.proceedingDetails.leadParagraph}"/>
+
       <p class="govuk-body">
-        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
-            Matter type
-        </span>
-        <span th:text="${proceedingFlow.matterTypeDetails.matterTypeDisplayValue}" id="matter-type-value"/>
+        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2"
+          th:text="#{proceedings.proceedingDetails.matterType}"/>
+        <span th:text="${proceedingFlow.matterTypeDetails.matterTypeDisplayValue}"
+              id="matter-type-value"/>
       </p>
       <div class="govuk-form-group"
            th:classappend="${#fields.hasErrors('proceedingType')} ? 'govuk-form-group--error' : ''">
-        <label class="govuk-label" th:for="'proceedingType'" th:text="'Proceeding'">
-        </label>
-        <span th:if="${#fields.hasErrors('proceedingType')}" th:errors="*{proceedingType}" class="govuk-error-message"></span>
-        <input type="hidden" th:id="proceedingTypeDisplayValue" th:name="proceedingTypeDisplayValue" th:value="*{proceedingTypeDisplayValue}">
-        <input type="hidden" th:id="orderTypeRequired" th:name="orderTypeRequired" th:value="*{orderTypeRequired}">
-        <input type="hidden" th:id="larScope" th:name="larScope" th:value="*{larScope}">
-        <input type="hidden" th:id="proceedingDescription" th:name="proceedingDescription" th:value="*{proceedingDescription}">
+        <span th:if="${#fields.hasErrors('proceedingType')}" th:errors="*{proceedingType}" class="govuk-error-message"/>
+
+        <input type="hidden" th:id="proceedingTypeDisplayValue" th:name="proceedingTypeDisplayValue" th:value="*{proceedingTypeDisplayValue}"/>
+        <input type="hidden" th:id="orderTypeRequired" th:name="orderTypeRequired" th:value="*{orderTypeRequired}"/>
+        <input type="hidden" th:id="larScope" th:name="larScope" th:value="*{larScope}"/>
+        <input type="hidden" th:id="proceedingDescription" th:name="proceedingDescription" th:value="*{proceedingDescription}"/>
+        <label class="govuk-label" for="proceedingType" th:text="#{proceedings.proceedingDetails.proceeding}"/>
         <select class="govuk-select"
                 data-module="govuk-select"
                 th:field="*{__${'proceedingType'}__}"
                 th:errorclass="govuk-select--error"
-                th:id="proceedingType"
+                id="proceedingType"
                 th:name="proceedingType"
                 th:attr="onchange=|document.getElementById('proceedingTypeDisplayValue').value =
                             this.options[this.selectedIndex].text;

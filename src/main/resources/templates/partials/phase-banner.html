@@ -31,9 +31,10 @@
                               th:text="${user.provider.name}"/>
                     </span>
                 </span>
-          <a th:href="@{/logout}" class="govuk-!-text-align-right govuk-!-padding-right-2 govuk-link--no-visited-state"
-             style="float: right"
-            th:text="#{site.phase.logout}"/>
+            <a th:href="@{/logout}" class="govuk-link govuk-!-text-align-right govuk-!-padding-right-2
+               govuk-link--no-visited-state"
+               th:style="'float: right;' + (activeCase != false ? 'color: #003078;' : '')"
+               th:text="#{site.phase.logout}"/>
         </p>
       </div>
     </div>

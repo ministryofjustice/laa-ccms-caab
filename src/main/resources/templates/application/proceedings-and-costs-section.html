@@ -6,65 +6,49 @@
 </head>
 <body>
 <div class="govuk-width-container">
-  <div class="govuk-notification-banner" role="region" aria-labelledby="govuk-notification-banner-title" data-module="govuk-notification-banner">
-    <div class="govuk-notification-banner__header">
-      <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">
-        Important
-      </h2>
-    </div>
-    <div class="govuk-notification-banner__content">
-      <p class="govuk-notification-banner__heading">
-        You have 7 days left to send your application.
-        <a class="govuk-notification-banner__link" href="#">View application</a>.
-      </p>
-    </div>
-  </div>
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections}" class="govuk-back-link">Return to create application</a>
+    <a th:href="@{/application/sections}" class="govuk-back-link" th:text="#{site.returnToApplication}"/>
   </div>
   <div id="main-content">
-    <span class="govuk-caption-l">Create application</span>
-    <h1 class="govuk-heading-l">
-      Proceedings and costs
-    </h1>
-    <p class="govuk-body-l">
-      Please enter the proceeding details for this Application.  At least one proceeding must be
-      entered, you can add more proceedings by clicking on 'Add Proceeding'.
-      Once you have completed the proceedings, please review the Cost Limitations relating to the Case
-      in the Case costs tab.
-    </p>
+    <span class="govuk-caption-l" th:text="#{application.create}"/>
+    <h1 class="govuk-heading-l" th:text="#{application.section.proceedingsCosts}"/>
+
+    <p class="govuk-body-l" th:text="#{proceedingsAndCosts.leadParagraph}"/>
+
+
     <div class="govuk-tabs" data-module="govuk-tabs">
-      <h2 class="govuk-tabs__title">
-        Proceedings, costs and prior authorities content
-      </h2>
+      <h2 class="govuk-tabs__title" th:text="#{proceedingsAndCosts.tabs.subHeading}"/>
       <ul class="govuk-tabs__list">
         <li class="govuk-tabs__list-item govuk-tabs__list-item--selected">
-          <a class="govuk-tabs__tab" href="#proceedings">
-            Proceedings
-          </a>
+          <a class="govuk-tabs__tab" href="#proceedings"
+             th:text="#{proceedingsAndCosts.proceedings.subHeading}"/>
         </li>
         <li class="govuk-tabs__list-item">
-          <a class="govuk-tabs__tab" href="#case-costs">
-            Case costs
-          </a>
+          <a class="govuk-tabs__tab" href="#case-costs"
+             th:text="#{proceedings.caseCosts.subHeading}"/>
         </li>
         <li class="govuk-tabs__list-item">
-          <a class="govuk-tabs__tab" href="#prior-authority">
-            Prior authorities
-          </a>
+          <a class="govuk-tabs__tab" href="#prior-authority"
+             th:text="#{proceedings.priorAuthorities.subHeading}"/>
         </li>
       </ul>
       <div class="govuk-tabs__panel" id="proceedings" aria-labelledby="tab_proceedings">
-        <h2 class="govuk-heading-l">Proceedings</h2>
+        <h2 class="govuk-heading-l" th:text="#{proceedingsAndCosts.proceedings.subHeading}">Proceedings</h2>
         <table class="govuk-table" id="proceedings-table">
           <thead class="govuk-table__head">
           <tr class="govuk-table__row">
-            <th scope="col" class="govuk-table__header">Matter type</th>
-            <th scope="col" class="govuk-table__header">Proceeding</th>
-            <th scope="col" class="govuk-table__header">Form of civil legal service</th>
-            <th scope="col" class="govuk-table__header">Client involvement type</th>
-            <th scope="col" class="govuk-table__header">Lead</th>
-            <th scope="col" class="govuk-table__header">Action</th>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{proceedings.proceedingDetails.matterType}"/>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{proceedings.proceedingDetails.proceeding}"/>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{proceedings.proceedingDetails.formOfCivilLegalService}"/>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{proceedings.proceedingDetails.clientInvolvementType}"/>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{proceedings.proceedingDetails.lead}"/>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{site.action}"/>
           </tr>
           </thead>
           <tbody class="govuk-table__body">
@@ -73,9 +57,9 @@
               <div th:replace="~{partials/actions :: restrictedActionLink(${proceeding.matterType.displayValue},
               ${user.functions}, 'VIEWPROC', false, '', @{/application/proceedings/{id}/summary(id=${proceeding.id})}, true)}"></div>
             </td>
-            <td class="govuk-table__cell" th:text="${proceeding.proceedingType.displayValue}"></td>
-            <td class="govuk-table__cell" th:text="${proceeding.levelOfService.displayValue}"></td>
-            <td class="govuk-table__cell" th:text="${proceeding.clientInvolvement.displayValue}"></td>
+            <td class="govuk-table__cell" th:text="${proceeding.proceedingType.displayValue}"/>
+            <td class="govuk-table__cell" th:text="${proceeding.levelOfService.displayValue}"/>
+            <td class="govuk-table__cell" th:text="${proceeding.clientInvolvement.displayValue}"/>
 
             <th:block th:if="${proceeding.leadProceedingInd}">
               <td class="govuk-table__cell">
@@ -88,78 +72,87 @@
             <th:block th:unless="${proceeding.leadProceedingInd}">
               <td class="govuk-table__cell"></td>
               <td class="govuk-table__cell">
-                <div th:replace="~{partials/actions :: restrictedActionLink('Delete',
-              ${user.functions}, 'DELPROC', false, '', @{/application/proceedings/{id}/remove(id=${proceeding.id})}, true)}"></div>
+                <th:block th:replace="~{partials/actions :: restrictedActionLink(#{site.delete},
+              ${user.functions}, 'DELPROC', false, '', @{/application/proceedings/{id}/remove(id=${proceeding.id})}, true)}"/>
                  |
-                <a th:href="@{/application/proceedings/{id}/make-lead(id=${proceeding.id})}" class="govuk-link">Make lead</a>
+                <a th:href="@{/application/proceedings/{id}/make-lead(id=${proceeding.id})}" class="govuk-link"
+                  th:text="#{proceedings.proceedingDetails.link.makeLead}"/>
               </td>
             </th:block>
           </tr>
           <tr class="govuk-table__row" th:if="${proceedings.isEmpty()}">
-            <td class="govuk-table__cell" colspan="6">None</td>
+            <td class="govuk-table__cell" colspan="6" th:text="#{site.none}"/>
           </tr>
           </tbody>
         </table>
-        <div
-            th:replace="~{partials/actions :: restrictedActionLink('Add proceeding', ${user.functions}, 'ADDPROC', true, 'govuk-button--secondary', @{/application/proceedings/add/matter-type}, false)}"></div>
+        <th:block
+            th:replace="~{partials/actions :: restrictedActionLink(#{proceedings.button.addProceeding},
+            ${user.functions}, 'ADDPROC', true, 'govuk-button--secondary', @{/application/proceedings/add/matter-type}, false)}"/>
       </div>
       <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="case-costs" aria-labelledby="tab_case-costs">
-        <h2 class="govuk-heading-l">Case costs</h2>
+        <h2 class="govuk-heading-l" th:text="#{proceedings.caseCosts.subHeading}"/>
         <table class="govuk-table">
           <thead class="govuk-table__head">
-          <tr class="govuk-table__row">
-            <th scope="col" class="govuk-table__header">Case costs</th>
-            <th scope="col" class="govuk-table__header">Requested amount</th>
-            <th scope="col" class="govuk-table__header">Granted amount</th>
-          </tr>
+            <tr class="govuk-table__row">
+              <th scope="col" class="govuk-table__header"
+                  th:text="#{proceedings.caseCosts.subHeading}"/>
+              <th scope="col" class="govuk-table__header"
+                  th:text="#{proceedings.caseCosts.table.requestedAmount}"/>
+              <th scope="col" class="govuk-table__header"
+                  th:text="#{proceedings.caseCosts.table.grantedAmount}"/>
+            </tr>
           </thead>
           <tbody class="govuk-table__body">
-          <tr class="govuk-table__row">
-            <td class="govuk-table__cell">
-              <a th:href="@{/application/case-costs}" id="case-cost-limitation-link" class="govuk-link">
-                Case cost limitation
-              </a>
-            </td>
-            <td class="govuk-table__cell"
-                id="case-cost-requested-amount-value"
-                th:text="${#numbers.formatCurrency(costs.requestedCostLimitation)}"></td>
-            <td class="govuk-table__cell"
-                id="case-cost-granted-amount-value"
-                th:text="${#numbers.formatCurrency(costs.grantedCostLimitation)}"></td>
-          </tr>
+            <tr class="govuk-table__row">
+              <td class="govuk-table__cell">
+                <a th:href="@{/application/case-costs}" id="case-cost-limitation-link"
+                   class="govuk-link"
+                   th:text="#{proceedings.caseCosts.link.caseCostLimitation}"/>
+              </td>
+              <td class="govuk-table__cell"
+                  id="case-cost-requested-amount-value"
+                  th:text="${#numbers.formatCurrency(costs.requestedCostLimitation)}"/>
+              <td class="govuk-table__cell"
+                  id="case-cost-granted-amount-value"
+                  th:text="${#numbers.formatCurrency(costs.grantedCostLimitation)}"/>
+            </tr>
           </tbody>
         </table>
       </div>
       <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="prior-authority" aria-labelledby="tab_prior-authority">
-        <h2 class="govuk-heading-l">Prior authorities</h2>
+        <h2 class="govuk-heading-l" th:text="#{proceedings.priorAuthorities.subHeading}"/>
         <table class="govuk-table" id="prior-authorities-table">
           <thead class="govuk-table__head">
           <tr class="govuk-table__row">
-            <th scope="col" class="govuk-table__header">Prior authority</th>
-            <th scope="col" class="govuk-table__header">Type</th>
-            <th scope="col" class="govuk-table__header">Amount requested</th>
-            <th scope="col" class="govuk-table__header">Status</th>
-            <th scope="col" class="govuk-table__header">Action</th>
+            <th scope="col" class="govuk-table__header"
+              th:text="#{proceedings.priorAuthorities.table.priorAuthority}"/>
+            <th scope="col" class="govuk-table__header"
+              th:text="#{site.type}"/>
+            <th scope="col" class="govuk-table__header"
+              th:text="#{proceedings.priorAuthorities.table.amountRequested}"/>
+            <th scope="col" class="govuk-table__header"
+              th:text="#{common.status}"/>
+            <th scope="col" class="govuk-table__header"
+              th:text="#{site.action}"/>
           </tr>
           </thead>
           <tbody class="govuk-table__body">
-          <tr class="govuk-table__row" th:each="priorAuthority : ${priorAuthorities}" th:unless="${priorAuthorities.isEmpty()}">
+          <tr class="govuk-table__row" th:each="priorAuthority : ${priorAuthorities}"
+              th:unless="${priorAuthorities.isEmpty()}">
             <td class="govuk-table__cell">
               <a th:href="@{/application/prior-authorities/{id}/confirm(id=${priorAuthority.id})}"
-                 class="govuk-link" th:text="${priorAuthority.summary}">
-              </a>
+                 class="govuk-link" th:text="${priorAuthority.summary}"/>
             </td>
-            <td class="govuk-table__cell" th:text="${priorAuthority.type.displayValue}"></td>
-            <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(priorAuthority.amountRequested)}"></td>
-            <td class="govuk-table__cell" th:text="${priorAuthority.status}"></td>
+            <td class="govuk-table__cell" th:text="${priorAuthority.type.displayValue}"/>
+            <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(priorAuthority.amountRequested)}"/>
+            <td class="govuk-table__cell" th:text="${priorAuthority.status}"/>
             <td class="govuk-table__cell">
               <a th:href="@{/application/prior-authorities/{id}/remove(id=${priorAuthority.id})}"
-                 class="govuk-link" th:text="${'Delete'}">
-              </a>
+                 class="govuk-link" th:text="#{site.delete}"/>
             </td>
           </tr>
           <tr class="govuk-table__row" th:if="${priorAuthorities.isEmpty()}">
-            <td class="govuk-table__cell" colspan="5">None</td>
+            <td class="govuk-table__cell" colspan="5" th:text="#{site.none}"/>
           </tr>
           </tbody>
         </table>

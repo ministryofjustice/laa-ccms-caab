@@ -8,47 +8,53 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/proceedings-and-costs}" class="govuk-back-link">Cancel and return to proceedings and costs</a>
+    <a th:href="@{/application/proceedings-and-costs}" class="govuk-back-link"
+      th:text="#{proceedings.cancelAndGoBack}"/>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/proceedings/{action}/further-details(action=${proceedingFlow.action})}" th:object="${furtherDetails}" method="post">
-      <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l">Add/edit proceeding</span>
-      <h1 class="govuk-heading-l">
-        Proceeding details - Step 3 of 4
-      </h1>
-      <p class="govuk-body-l">
-        Please enter the proceeding details for your application.
-      </p>
+    <form action="#" th:action="@{/application/proceedings/{action}/further-details(action=${proceedingFlow.action})}"
+          th:object="${furtherDetails}" method="post">
+      <th:block th:replace="~{partials/error-summary :: error-summary}"/>
+      <span class="govuk-caption-l"
+        th:text="#{proceedings.addEdit.caption}"/>
+      <h1 class="govuk-heading-l"
+          th:text="#{proceedings.proceedingDetails.step3.heading}"/>
+      <p class="govuk-body-l" th:text="#{proceedings.proceedingDetails.leadParagraph}"/>
       <p class="govuk-body">
-        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
-            Matter type
-        </span>
+        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2"
+          th:text="#{proceedings.proceedingDetails.matterType}"/>
         <span th:text="${proceedingFlow.matterTypeDetails.matterTypeDisplayValue}" id="matter-type-value"/>
       </p>
       <p class="govuk-body">
-        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
-            Proceeding
-        </span>
+        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2"
+          th:text="#{proceedings.proceedingDetails.proceeding}"/>
         <span th:text="${proceedingFlow.proceedingDetails.proceedingTypeDisplayValue}" id="proceeding-value"/>
       </p>
       <p class="govuk-body">
-        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
-            Proceeding description
-        </span>
-        <span th:text="${proceedingFlow.proceedingDetails.proceedingDescription}"></span>
+        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2"
+          th:text="#{proceedings.proceedingDetails.proceedingDescription}"/>
+        <span th:text="${proceedingFlow.proceedingDetails.proceedingDescription}"/>
       </p>
-      <div th:replace="~{partials/forms :: dropdownWithDisplayValue('clientInvolvementType', 'Client involvement type', ${clientInvolvementTypes}, 'clientInvolvementType', 'clientInvolvementTypeName')}"></div>
-      <div th:replace="~{partials/forms :: dropdownWithDisplayValue('levelOfService', 'Form of Civil Legal Service', ${levelOfServiceTypes}, 'levelOfServiceCode', 'description')}"></div>
+      <th:block th:replace="~{partials/forms :: dropdownWithDisplayValue('clientInvolvementType',
+        #{proceedings.proceedingDetails.clientInvolvementType},
+        ${clientInvolvementTypes}, 'clientInvolvementType',
+        'clientInvolvementTypeName')}"/>
+      <th:block th:replace="~{partials/forms :: dropdownWithDisplayValue('levelOfService',
+        #{proceedings.proceedingDetails.formOfCivilLegalService},
+        ${levelOfServiceTypes},
+        'levelOfServiceCode', 'description')}"/>
       <th:block th:if="${orderTypes}">
-        <div th:replace="~{partials/forms :: dropdownWithDisplayValue('typeOfOrder', 'Type of order', ${orderTypes}, 'code', 'description')}"></div>
+        <th:block th:replace="~{partials/forms :: dropdownWithDisplayValue('typeOfOrder',
+          #{proceedings.proceedingDetails.typeOfOrder},
+          ${orderTypes},
+          'code', 'description')}"/>
 
         <govuk:details th:summaryText="#{proceedings.furtherDetails.summaryText}"
                        th:text="#{proceedings.furtherDetails.text}"/>
 
       </th:block>
       <div class="govuk-button-group">
-        <govuk:button type="submit" th:text="#{site.next}"/>>
+        <govuk:button type="submit" th:text="#{site.next}"/>
       </div>
     </form>
   </div>

@@ -8,19 +8,21 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/proceedings-and-costs}" class="govuk-back-link">Cancel and return to proceedings and costs</a>
+    <a th:href="@{/application/proceedings-and-costs}" class="govuk-back-link"
+      th:text="#{proceedings.cancelAndGoBack}"/>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/proceedings/{action}/matter-type(action=${proceedingFlow.action})}" th:object="${matterTypeDetails}" method="post">
+    <form action="#" th:action="@{/application/proceedings/{action}/matter-type(action=${proceedingFlow.action})}"
+          th:object="${matterTypeDetails}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l">Add/edit proceeding</span>
-      <h1 class="govuk-heading-l">
-        Proceeding details - Step 1 of 4
-      </h1>
-      <p class="govuk-body-l">
-        Please enter the proceeding details for your application.
-      </p>
-      <div th:replace="~{partials/forms :: dropdownWithDisplayValue('matterType', 'Matter type', ${matterTypes}, 'matterType', 'description')}"></div>
+      <span class="govuk-caption-l" th:text="#{proceedings.addEdit.caption}"/>
+      <h1 class="govuk-heading-l"
+        th:text="#{proceedings.proceedingDetails.step1.heading}"/>
+      <p class="govuk-body-l"
+        th:text="#{proceedings.proceedingDetails.leadParagraph}"/>
+
+      <th:block th:replace="~{partials/forms :: dropdownWithDisplayValue('matterType',
+       #{proceedings.proceedingDetails.matterType}, ${matterTypes}, 'matterType', 'description')}"/>
       <div class="govuk-button-group">
         <govuk:button type="submit" th:text="#{site.next}"/>
       </div>
