@@ -1,0 +1,62 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
+
+name: Deploy main
+
+on:
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: read
+
+jobs:
+  assemble:
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/gradle-build-and-publish.yml@v1
+    permissions:
+      contents: write
+      packages: write
+    with:
+      build_command: 'assemble'
+      publish_package: 'false'
+      junit_results: 'false'
+      junit_report: 'false'
+      checkstyle_report: 'false'
+      jacoco_coverage_report: 'false'
+    secrets:
+      gh_token: ${{ secrets.GITHUB_TOKEN }}
+
+  ecr-publish-image:
+    needs: [ assemble ]
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@v1
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      image_version: ${{ format('{0}-{1}', vars.IMAGE_PREFIX, needs.assemble.outputs.published_artifact_version) }}
+    secrets:
+      gh_token: ${{ secrets.GITHUB_TOKEN }}
+      ecr_repository: ${{ vars.ECR_REPOSITORY }}
+      ecr_region: ${{ vars.ECR_REGION }}
+      ecr_role_to_assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}
+
+  update-helm-chart:
+    needs: [ ecr-publish-image ]
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/update-helm-chart.yml@v1
+    with:
+      helm_charts_repository: 'laa-ccms-caab-helm-charts'
+      helm_charts_branch: 'development'
+      service_name: 'laa-ccms-caab-service'
+      subchart_name: 'laa-ccms-caab-ui'
+      application_version: ${{ needs.ecr-publish-image.outputs.published_image_version }}
+      github_bot_username: 'laa-ccms-caab-service'
+    secrets:
+      gh_token: ${{ secrets.GITHUB_TOKEN }}
+      github_app_id: ${{ vars.LAA_CCMS_CAAB_SERVICE_APP_ID }}
+      github_app_private_key: ${{ secrets.LAA_CCMS_CAAB_SERVICE_KEY }}
+      github_app_organisation: 'ministryofjustice'
