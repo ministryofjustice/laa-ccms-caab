@@ -457,3 +457,12 @@ snyk monitor --org=legal-aid-agency --all-projects --exclude=build --target-refe
 
 You should then see the new vulnerability in the LAA Dashboard, otherwise it is a new
 vulnerability introduced on the feature branch that needs to be resolved.
+
+## View metrics
+
+This project exposes Actuator endpoints, which are scraped by a Prometheus instance. For debugging,
+you can run a Prometheus instance locally within Docker:
+
+```shell
+docker-compose --compatibility -p laa-ccms-caab-development up -d laa-ccms-caab-prometheus
+```

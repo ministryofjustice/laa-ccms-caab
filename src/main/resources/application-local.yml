@@ -125,6 +125,10 @@ laa:
       opa:
         security:
           password: passw0rd
+    metrics:
+      mappings-exposed: true
+      env-exposed: true
+
 
 server:
   port: 8010
