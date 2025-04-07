@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.mapper;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.PROCEEDING_STATUS_UNCHANGED_DISPLAY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
@@ -11,6 +12,7 @@ import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildScopeLimitation;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
@@ -20,7 +22,7 @@ import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 
-public class CopyApplicationMapperTest {
+class CopyApplicationMapperTest {
 
   private final CopyApplicationMapper copyApplicationMapper = new CopyApplicationMapperImpl();
 
@@ -51,7 +53,8 @@ public class CopyApplicationMapperTest {
     Date date = new Date();
     ProceedingDetail expectedProceeding = buildProceeding(date, BigDecimal.ONE);
 
-    ProceedingDetail result = copyApplicationMapper.copyProceeding(buildProceeding(date, BigDecimal.ONE));
+    ProceedingDetail result =
+        copyApplicationMapper.copyProceeding(buildProceeding(date, BigDecimal.ONE));
 
     // Now update the expected proceeding to what the mapper should return
     applyProceedingMappingUpdates(expectedProceeding);
@@ -85,6 +88,16 @@ public class CopyApplicationMapperTest {
     assertEquals(expectedOpponent, result);
   }
 
+  @Test
+  @DisplayName("Should copy opponent with null address as empty address")
+  void testCopyOpponentIfAddressIsNull() {
+    Date date = new Date();
+    OpponentDetail opponentToCopy = buildOpponent(date);
+    opponentToCopy.setAddress(null);
+    OpponentDetail result = copyApplicationMapper.copyOpponent(opponentToCopy);
+    assertThat(result.getAddress()).isNotNull().hasAllNullFieldsOrProperties();
+  }
+
   private ApplicationDetail buildExpectedApplication(ApplicationDetail copyApplication) {
     return new ApplicationDetail()
         .applicationType(
@@ -94,7 +107,8 @@ public class CopyApplicationMapperTest {
                 .devolvedPowers(
                     new DevolvedPowersDetail()
                         .contractFlag("should remain unchanged")
-                        .dateUsed(copyApplication.getApplicationType().getDevolvedPowers().getDateUsed())
+                        .dateUsed(
+                            copyApplication.getApplicationType().getDevolvedPowers().getDateUsed())
                         .used(copyApplication.getApplicationType().getDevolvedPowers().getUsed())))
         .providerDetails(new ApplicationProviderDetails()
             .provider(copyApplication.getProviderDetails().getProvider())
@@ -112,7 +126,7 @@ public class CopyApplicationMapperTest {
         .proceedings(
             copyApplication.getProceedings().stream()
                 .map(this::applyProceedingMappingUpdates)
-                    .toList());
+                .toList());
   }
 
   private ProceedingDetail applyProceedingMappingUpdates(ProceedingDetail expectedProceeding) {
