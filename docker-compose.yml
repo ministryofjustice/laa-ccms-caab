@@ -69,6 +69,8 @@ services:
     container_name: laa-ccms-caab-prometheus
     image: bitnami/prometheus
     restart: unless-stopped
+    networks:
+      - local-prom
     ports:
       - "9090:9090"
     volumes:
@@ -81,5 +83,5 @@ volumes:
   prometheus:
 
 networks:
-  localprom:
+  local-prom:
     driver: bridge
