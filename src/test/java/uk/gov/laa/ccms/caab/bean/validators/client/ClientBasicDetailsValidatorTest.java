@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -107,6 +108,66 @@ class ClientBasicDetailsValidatorTest {
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("maritalStatus"));
     assertEquals("required.maritalStatus", errors.getFieldError("maritalStatus").getCode());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"a  b",
+      "1A",
+      "A1"})
+  void validateInvalidMiddleNames(String middleNames) {
+    basicDetails = buildBasicDetails();
+    basicDetails.setMiddleNames(middleNames);
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"a  b",
+      "1A",
+      "A1"})
+  void validateInvalidSurname(String surname) {
+    basicDetails = buildBasicDetails();
+    basicDetails.setSurname(surname);
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validateInvalidNationalInsuranceNumber() {
+    basicDetails = buildBasicDetails();
+    basicDetails.setNationalInsuranceNumber("ABC123");
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validateValidNationalInsuranceNumber() {
+    basicDetails = buildBasicDetails();
+    basicDetails.setNationalInsuranceNumber("AA100000A");
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+    assertFalse(errors.hasErrors());
+    assertEquals(0, errors.getErrorCount());
+  }
+
+  @Test
+  void validateInvalidHomeOfficeNumber() {
+    basicDetails = buildBasicDetails();
+    basicDetails.setHomeOfficeNumber("1 $2 AS");
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validateValidHomeOfficeNumber() {
+    basicDetails = buildBasicDetails();
+    basicDetails.setHomeOfficeNumber("AA12356");
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+    assertFalse(errors.hasErrors());
+    assertEquals(0, errors.getErrorCount());
   }
 
   private ClientFormDataBasicDetails buildBasicDetails(){

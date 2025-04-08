@@ -3,25 +3,26 @@
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-  <title th:text="#{service.name} + ' - ' + #{application.create}"></title>
+  <title th:text="#{service.name} + ' - ' + #{application.create}"/>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/proceedings/{action}/confirm(action=${proceedingFlow.action})}" class="govuk-back-link">Cancel and return to proceeding details</a>
+    <a th:href="@{/application/proceedings/{action}/confirm(action=${proceedingFlow.action})}" class="govuk-back-link"
+      th:text="#{proceedings.scopeLimitationDetails.cancelAndGoBack}"/>
   </div>
   <div id="main-content">
     <form th:action="@{/application/proceedings/scope-limitations/confirm}" method="post">
-      <span class="govuk-caption-l">Add scope limitation</span>
-      <h1 class="govuk-heading-l">
-        Scope limitation details
-      </h1>
-      <p class="govuk-body-l">
-        Please review the scope limitation wording and click 'Confirm' to continue.
-      </p>
+      <span class="govuk-caption-l" th:text="#{proceedings.scopeLimitationDetails.caption}"/>
+      <h1 class="govuk-heading-l"
+        th:text="#{proceedings.scopeLimitationDetails.heading}"/>
+      <p class="govuk-body-l" id="lead-paragraph"
+        th:text="#{proceedings.scopeLimitationDetails.confirm.leadParagraph}"/>
       <dl class="govuk-body">
-        <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Scope limitation', ${scopeLimitation.scopeLimitation.displayValue})}"></div>
-        <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Scope limitation wording', ${scopeLimitation.scopeLimitationWording})}"></div>
+        <th:block th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{proceedings.scopeLimitations.scopeLimitation},
+          ${scopeLimitation.scopeLimitation.displayValue})}"/>
+        <th:block th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{proceedings.scopeLimitations.scopeLimitationWording},
+          ${scopeLimitation.scopeLimitationWording})}"/>
       </dl>
       <div class="govuk-button-group">
         <govuk:button type="submit" th:text="#{site.confirm}"/>

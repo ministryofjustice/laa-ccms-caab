@@ -53,6 +53,31 @@ class ClientSearchCriteriaValidatorTest {
     assertEquals("required.forename", errors.getFieldError("forename").getCode());
   }
 
+
+  @Test
+  void validateInvalidForenameWithDoubleSpace() {
+    clientSearchCriteria.setForename("a  b");
+    validator.validateForename(clientSearchCriteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validateInvalidForenameFirstCharacterAlpha() {
+    clientSearchCriteria.setForename("1A ");
+    validator.validateForename(clientSearchCriteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validateInvalidForenameCharacterSetC() {
+    clientSearchCriteria.setForename("A1 ");
+    validator.validateForename(clientSearchCriteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
   @Test
   void testValidateSurnameAtBirth_Valid() {
     clientSearchCriteria.setSurname("Doe");
@@ -66,6 +91,30 @@ class ClientSearchCriteriaValidatorTest {
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("surname"));
     assertEquals("required.surname", errors.getFieldError("surname").getCode());
+  }
+
+  @Test
+  void validateInvalidSurnameAtBirthWithDoubleSpace() {
+    clientSearchCriteria.setSurname("a  b");
+    validator.validateSurnameAtBirth(clientSearchCriteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validateInvalidSurnameAtBirthFirstCharacterAlpha() {
+    clientSearchCriteria.setSurname("1A ");
+    validator.validateSurnameAtBirth(clientSearchCriteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validateInvalidSurnameAtBirthCharacterSetC() {
+    clientSearchCriteria.setSurname("A1 ");
+    validator.validateSurnameAtBirth(clientSearchCriteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
   }
 
   @Test

@@ -14,7 +14,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -87,7 +89,7 @@ public class ClientBasicDetailsController {
   public String clientDetailsBasic(
           @SessionAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
           @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
-          @ModelAttribute("basicDetails") ClientFormDataBasicDetails basicDetails,
+          @Validated @ModelAttribute("basicDetails") ClientFormDataBasicDetails basicDetails,
           BindingResult bindingResult,
           Model model) {
 
@@ -119,11 +121,19 @@ public class ClientBasicDetailsController {
     basicDetails.setSurnameAtBirth(clientSearchCriteria.getSurname());
     basicDetails.setDateOfBirth(clientSearchCriteria.getDateOfBirth());
 
-    basicDetails.setNationalInsuranceNumber(
-            clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER));
+    String nationalInsuranceNumber =
+        clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER);
 
-    basicDetails.setHomeOfficeNumber(
-            clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE));
+    if (StringUtils.hasText(nationalInsuranceNumber)) {
+      basicDetails.setNationalInsuranceNumber(nationalInsuranceNumber.toUpperCase());
+    }
+
+    String homeOfficeNumber =
+        clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE);
+
+    if (StringUtils.hasText(homeOfficeNumber)) {
+      basicDetails.setHomeOfficeNumber(homeOfficeNumber.toUpperCase());
+    }
 
     String searchCriteriaGender = clientSearchCriteria.getGender();
 

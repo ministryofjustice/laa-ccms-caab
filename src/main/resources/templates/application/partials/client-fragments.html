@@ -170,31 +170,31 @@
       <input type="hidden" id="countryOfOrigin" name="countryOfOrigin" th:value="*{countryOfOrigin}">
     </p>
 
-    <!-- Show paragraph if nationalInsuranceNumber exists -->
-    <p class="govuk-body" th:if="*{clientFlowFormAction == 'create' && nationalInsuranceNumber != null && !nationalInsuranceNumber.isEmpty()}" >
-      <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">
-          National Insurance Number
-      </span>
+    <!-- Show paragraph if nationalInsuranceNumber exists and the field is not in error-->
+    <p class="govuk-body" th:if="not ${#fields.hasErrors('nationalInsuranceNumber')} and *{clientFlowFormAction == 'create' && nationalInsuranceNumber != null && !nationalInsuranceNumber.isEmpty()}" >
+      <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{person.nsi}"></span>
       <span th:text="*{nationalInsuranceNumber}"></span>
       <input type="hidden" id="nationalInsuranceNumber" name="nationalInsuranceNumber" th:value="*{nationalInsuranceNumber}">
     </p>
 
-    <div class="govuk-form-group" th:if="*{clientFlowFormAction == 'edit' || nationalInsuranceNumber == null || nationalInsuranceNumber.isEmpty()}">
+    <!-- Show input field if nationalInsuranceNumber does not exist or if it has errors-->
+    <div class="govuk-form-group" th:if="${#fields.hasErrors('nationalInsuranceNumber')} or *{clientFlowFormAction == 'edit' || nationalInsuranceNumber == null || nationalInsuranceNumber.isEmpty()}">
       <div th:replace="~{partials/forms :: textInput('nationalInsuranceNumber', #{site.optional(#{person.nsi})}, 'govuk-input--width-20')}"></div>
-      <govuk:details classes="govuk-!-margin-top-2"
+
+    <govuk:details classes="govuk-!-margin-top-2"
                      th:summaryText="#{details.nsi}"
                      th:text="#{details.nsi.text}"/>
     </div>
 
     <!-- Show paragraph if homeOfficeNumber exists -->
-    <p class="govuk-body" th:if="*{clientFlowFormAction == 'create' && homeOfficeNumber != null && !homeOfficeNumber.isEmpty()}">
+    <p class="govuk-body" th:if="not ${#fields.hasErrors('homeOfficeNumber')} and *{clientFlowFormAction == 'create' && homeOfficeNumber != null && !homeOfficeNumber.isEmpty()}">
       <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{person.homeOfficeNumber}"></span>
       <span th:text="*{homeOfficeNumber}"></span>
       <input type="hidden" id="homeOfficeNumber" name="homeOfficeNumber" th:value="*{homeOfficeNumber}">
     </p>
 
     <!-- Show input field if homeOfficeNumber does not exist -->
-    <div class="govuk-form-group" th:if="*{clientFlowFormAction == 'edit' || homeOfficeNumber == null || homeOfficeNumber.isEmpty()}">
+    <div class="govuk-form-group" th:if="${#fields.hasErrors('homeOfficeNumber')} or *{clientFlowFormAction == 'edit' || homeOfficeNumber == null || homeOfficeNumber.isEmpty()}">
       <div th:replace="~{partials/forms :: textInput('homeOfficeNumber', #{site.optional(#{person.homeOfficeNumber})}, 'govuk-input--width-20')}"></div>
       <govuk:details classes="govuk-!-margin-top-2"
                      th:summaryText="#{details.homeOffice}"
