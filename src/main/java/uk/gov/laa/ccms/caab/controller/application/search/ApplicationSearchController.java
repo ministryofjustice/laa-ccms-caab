@@ -1,7 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
-import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -31,6 +31,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
+import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.feature.Feature;
@@ -225,6 +226,7 @@ public class ApplicationSearchController {
     } else {
       // TODO: CCMSPUI-478, CCMSPUI-476
       //  Set model attributes, redirect to case overview
+      session.setAttribute(CASE_REFERENCE_NUMBER, Integer.parseInt(caseReferenceNumber));
       return "redirect:/case/summary/todo";
     }
   }
