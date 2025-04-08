@@ -42,7 +42,6 @@ import uk.gov.laa.ccms.caab.builders.ApplicationSectionsBuilder;
 import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
 import uk.gov.laa.ccms.caab.builders.EbsApplicationMappingContextBuilder;
 import uk.gov.laa.ccms.caab.builders.InitialApplicationBuilder;
-import uk.gov.laa.ccms.caab.builders.SoaApplicationMappingContextBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
@@ -136,8 +135,6 @@ public class ApplicationService {
   private final OpponentMapper opponentMapper;
 
   private final SearchConstants searchConstants;
-
-  private final SoaApplicationMappingContextBuilder soaApplicationMappingContextBuilder;
 
   private final EbsApplicationMappingContextBuilder ebsApplicationMappingContextBuilder;
 
