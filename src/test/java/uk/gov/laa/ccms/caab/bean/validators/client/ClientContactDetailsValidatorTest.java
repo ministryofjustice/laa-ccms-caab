@@ -96,6 +96,22 @@ class ClientContactDetailsValidatorTest {
     assertEquals("required.emailAddress", errors.getFieldError("emailAddress").getCode());
   }
 
+  @Test
+  void validateInvalidEmailAddress() {
+    contactDetails.setEmailAddress("upanddown.mm");
+    clientContactDetailsValidator.validate(contactDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validateValidEmailAddress() {
+    contactDetails.setEmailAddress("harrysmith@gmail.com");
+    clientContactDetailsValidator.validate(contactDetails, errors);
+    assertFalse(errors.hasErrors());
+    assertEquals(0, errors.getErrorCount());
+  }
+
   @ParameterizedTest
   @NullAndEmptySource
   public void validate_validateTelephones(String telephone) {
