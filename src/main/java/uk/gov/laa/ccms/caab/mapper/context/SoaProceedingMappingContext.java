@@ -17,7 +17,11 @@ import uk.gov.laa.ccms.soa.gateway.model.ScopeLimitation;
  */
 @Builder
 @Data
-public class ProceedingMappingContext {
+public class SoaProceedingMappingContext {
+
+  /*
+   * Proceeding detail.
+   */
   uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail soaProceeding;
 
   /*

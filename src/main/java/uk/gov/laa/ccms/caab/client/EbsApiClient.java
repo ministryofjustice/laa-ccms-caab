@@ -18,6 +18,7 @@ import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.CaseDetail;
 import uk.gov.laa.ccms.data.model.CaseDetails;
 import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
@@ -55,11 +56,13 @@ import uk.gov.laa.ccms.data.model.UserDetails;
 public class EbsApiClient extends BaseApiClient {
 
   private final EbsApiClientErrorHandler ebsApiClientErrorHandler;
+  private final WebClient ebsApiWebClient;
 
   protected EbsApiClient(WebClient ebsApiWebClient,
       EbsApiClientErrorHandler ebsApiClientErrorHandler) {
     super(ebsApiWebClient);
     this.ebsApiClientErrorHandler = ebsApiClientErrorHandler;
+    this.ebsApiWebClient = ebsApiWebClient;
   }
 
   /**
@@ -932,6 +935,31 @@ public class EbsApiClient extends BaseApiClient {
         .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
             e, "Clients", queryParams));
 
+  }
+
+  /**
+   * Retrieves the full detail of a single case based on the provided case reference, provider
+   *     ID, and provider username.
+   *
+   * @param caseReferenceNumber The reference number for the case to fetch.
+   * @param providerId The provider ID who owns this case.
+   * @param userName The username of the logged in user.
+   * @return A {@link Mono} wrapping the {@link CaseDetail}.
+   */
+  public Mono<CaseDetail> getCase(final String caseReferenceNumber, final long providerId,
+      final String userName) {
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    queryParams.add("provider-id", String.valueOf(providerId));
+    queryParams.add("user-name", userName);
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/cases/{case-reference-number}")
+            .queryParams(queryParams)
+            .build(caseReferenceNumber))
+        .retrieve()
+        .bodyToMono(CaseDetail.class)
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
+            e, "Case detail", "case reference", caseReferenceNumber));
   }
 
   /**
