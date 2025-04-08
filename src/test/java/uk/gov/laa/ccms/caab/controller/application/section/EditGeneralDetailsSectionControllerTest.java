@@ -55,7 +55,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.CorrespondenceAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
-import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
@@ -104,7 +104,7 @@ class EditGeneralDetailsSectionControllerTest {
   private CorrespondenceAddressValidator correspondenceAddressValidator;
 
   @Mock
-  private ApplicationMapper applicationMapper;
+  private EbsApplicationMapper applicationMapper;
 
   @Mock
   private ResultDisplayMapper resultDisplayMapper;

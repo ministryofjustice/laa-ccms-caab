@@ -4,17 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestDetailsFormData;
-import uk.gov.laa.ccms.caab.bean.request.ProviderRequestFlowFormData;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestTypeFormData;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProviderRequestsMapper;
-import uk.gov.laa.ccms.caab.mapper.context.PriorAuthorityMappingContext;
-import uk.gov.laa.ccms.caab.mapper.context.ProceedingMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.ProviderRequestMappingContext;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestResponse;
 
 /**
  * Service class to handle Provider requests.
