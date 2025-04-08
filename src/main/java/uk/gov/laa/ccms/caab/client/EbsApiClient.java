@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.client;
 
+import org.apache.http.HttpStatus;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER;
@@ -953,13 +954,21 @@ public class EbsApiClient extends BaseApiClient {
     queryParams.add("user-name", userName);
     return ebsApiWebClient
         .get()
-        .uri(builder -> builder.path("/cases/{case-reference-number}")
-            .queryParams(queryParams)
-            .build(caseReferenceNumber))
+        .uri(
+            builder ->
+                builder
+                    .path("/cases/{case-reference-number}")
+                    .queryParams(queryParams)
+                    .build(caseReferenceNumber))
         .retrieve()
+        .onStatus(code -> code.value() == HttpStatus.SC_NOT_FOUND, response ->
+            ebsApiClientErrorHandler.handleNotFoundError(
+                response, "Case detail", "case reference", caseReferenceNumber))
         .bodyToMono(CaseDetail.class)
-        .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
-            e, "Case detail", "case reference", caseReferenceNumber));
+        .onErrorResume(
+            e ->
+                ebsApiClientErrorHandler.handleApiRetrieveError(
+                    e, "Case detail", "case reference", caseReferenceNumber));
   }
 
   /**

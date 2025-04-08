@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
+import org.springframework.http.HttpStatus;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
@@ -190,7 +191,12 @@ public class ApplicationSearchController {
       ebsCase =
           applicationService.getCase(
               caseReferenceNumber, userDetails.getProvider().getId(), userDetails.getUsername());
-    } catch (CaabApplicationException | EbsApiClientException e) {
+    } catch (EbsApiClientException e) {
+      if (!e.getHttpStatus().equals(HttpStatus.NOT_FOUND)) {
+        throw new CaabApplicationException(
+            "Failed to retrieve EBS case "
+                + caseReferenceNumber);
+      }
       log.debug("Case not found in EBS.", e);
     }
 
