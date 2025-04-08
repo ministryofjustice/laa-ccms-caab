@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.bean.validators.client;
 
-import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.ALPHA_NUMERIC_SLASH_SPACE_STRING;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.ALPHA_NUMERIC_SPACES_COMMAS;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.DOUBLE_SPACE;
 
 import org.springframework.stereotype.Component;
@@ -54,8 +54,8 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
 
     validateAddressLine1(addressDetails.getAddressLine1(), errors);
     validateAddressLine2(addressDetails.getAddressLine2(), errors);
-    validateAddressLine1(addressDetails.getCityTown(), errors);
-    validateAddressLine2(addressDetails.getCounty(), errors);
+    validateCityTown(addressDetails.getCityTown(), errors);
+    validateCounty(addressDetails.getCounty(), errors);
   }
 
   /**
@@ -67,7 +67,7 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
   private void validateAddressLine1(final String addressLine1, Errors errors) {
     if (StringUtils.hasText(addressLine1)) {
       //check no double spaces
-      if (!addressLine1.matches(ALPHA_NUMERIC_SLASH_SPACE_STRING)) {
+      if (!addressLine1.matches(ALPHA_NUMERIC_SPACES_COMMAS)) {
         errors.rejectValue("addressLine1", "invalid.addressLine1",
             "Your input for 'Address Line 1' contains an "
                 + "invalid character. Please amend your entry using numbers, "
@@ -89,7 +89,7 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
   private void validateAddressLine2(final String addressLine2, Errors errors) {
     if (StringUtils.hasText(addressLine2)) {
       //check no double spaces
-      if (!addressLine2.matches(ALPHA_NUMERIC_SLASH_SPACE_STRING)) {
+      if (!addressLine2.matches(ALPHA_NUMERIC_SPACES_COMMAS)) {
         errors.rejectValue("addressLine2", "invalid.addressLine2",
             "Your input for 'Address Line 2' contains an "
                 + "invalid character. Please amend your entry using numbers, "
@@ -111,7 +111,7 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
   private void validateCityTown(final String cityTown, Errors errors) {
     if (StringUtils.hasText(cityTown)) {
       //check no double spaces
-      if (!cityTown.matches(ALPHA_NUMERIC_SLASH_SPACE_STRING)) {
+      if (!cityTown.matches(ALPHA_NUMERIC_SPACES_COMMAS)) {
         errors.rejectValue("cityTown", "invalid.cityTown",
             "Your input for 'City /Town' contains an "
                 + "invalid character. Please amend your entry using numbers, "
@@ -133,7 +133,7 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
   private void validateCounty(final String county, Errors errors) {
     if (StringUtils.hasText(county)) {
       //check no double spaces
-      if (!county.matches(ALPHA_NUMERIC_SLASH_SPACE_STRING)) {
+      if (!county.matches(ALPHA_NUMERIC_SPACES_COMMAS)) {
         errors.rejectValue("county", "invalid.county",
             "Your input for 'County' contains an "
                 + "invalid character. Please amend your entry using numbers, "

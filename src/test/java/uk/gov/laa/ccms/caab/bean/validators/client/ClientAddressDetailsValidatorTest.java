@@ -171,4 +171,52 @@ class ClientAddressDetailsValidatorTest {
     addressDetails.setCityTown("CITY");
     return addressDetails;
   }
+
+  @ParameterizedTest
+  @CsvSource({
+      "12  The  Street",//Double Spaces
+      "12@The :Street"//Invalid Characters
+  })
+  void validate_InvalidAddressLine1Format(String addressLine1) {
+    addressDetails.setAddressLine1(addressLine1);
+    clientAddressDetailsValidator.validate(addressDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+      "12  The  Street",//Double Spaces
+      "12@The :Street"//Invalid Characters
+  })
+  void validate_InvalidAddressLine2Format(String addressLine2) {
+    addressDetails.setAddressLine2(addressLine2);
+    clientAddressDetailsValidator.validate(addressDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+      "South  Cardiff",//Double Spaces
+      "North:@Swansea;"//Invalid Characters
+  })
+  void validate_InvalidCityTownFormat(String cityTown) {
+    addressDetails.setCityTown(cityTown);
+    clientAddressDetailsValidator.validate(addressDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+      "Vale  of  Glamorgan",//Double Spaces
+      "Vale;of@Glamorgan:"//Invalid Characters
+  })
+  void validate_InvalidCountyFormat(String county) {
+    addressDetails.setCounty(county);
+    clientAddressDetailsValidator.validate(addressDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
 }
