@@ -59,7 +59,7 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
   }
 
   /**
-   * Validates the middleNames in the {@link ClientFormDataAddressDetails}.
+   * Validates the addressLine1 in the {@link ClientFormDataAddressDetails}.
    *
    * @param addressLine1 The string to be validated.
    * @param errors The Errors object to store validation errors.
@@ -81,7 +81,7 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
   }
 
   /**
-   * Validates the middleNames in the {@link ClientFormDataAddressDetails}.
+   * Validates the addressLine2 in the {@link ClientFormDataAddressDetails}.
    *
    * @param addressLine2 The string to be validated.
    * @param errors The Errors object to store validation errors.
@@ -103,7 +103,7 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
   }
 
   /**
-   * Validates the middleNames in the {@link ClientFormDataAddressDetails}.
+   * Validates the cityTown in the {@link ClientFormDataAddressDetails}.
    *
    * @param cityTown The string to be validated.
    * @param errors The Errors object to store validation errors.
@@ -125,7 +125,7 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
   }
 
   /**
-   * Validates the middleNames in the {@link ClientFormDataAddressDetails}.
+   * Validates the county in the {@link ClientFormDataAddressDetails}.
    *
    * @param county The string to be validated.
    * @param errors The Errors object to store validation errors.
