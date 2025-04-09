@@ -119,30 +119,6 @@ public abstract class AbstractApiClientErrorHandler {
   }
 
   /**
-   * Handles errors occurring during API retrieve operations for a specific resource.
-   *
-   * @param e the exception thrown during the API operation.
-   * @param resourceType the type of resource involved in the retrieve operation.
-   * @param resourceIdType the type of the resource ID.
-   * @param resourceId the ID of the resource.
-   * @param <T> the type of the response expected from the operation.
-   * @return a Mono error signaling the exception.
-   */
-  public  <T> Mono<T> handleApiRetrieveError(
-      final Throwable e,
-      final String resourceType,
-      final String resourceIdType,
-      final String resourceId) {
-    final String message = String.format(
-        "Failed to retrieve %s with %s: %s",
-        resourceType,
-        resourceIdType,
-        resourceId);
-    log.error(message, e);
-    return Mono.error(createException(message, e));
-  }
-
-  /**
    * Handles not found errors occurring during API retrieve operations for a specific resource.
    *
    * @param clientResponse the error response for the API operation.
@@ -165,6 +141,30 @@ public abstract class AbstractApiClientErrorHandler {
     log.error(message);
     return Mono.error(createException(message,
         HttpStatus.resolve(clientResponse.statusCode().value())));
+  }
+
+  /**
+   * Handles errors occurring during API retrieve operations for a specific resource.
+   *
+   * @param e the exception thrown during the API operation.
+   * @param resourceType the type of resource involved in the retrieve operation.
+   * @param resourceIdType the type of the resource ID.
+   * @param resourceId the ID of the resource.
+   * @param <T> the type of the response expected from the operation.
+   * @return a Mono error signaling the exception.
+   */
+  public  <T> Mono<T> handleApiRetrieveError(
+      final Throwable e,
+      final String resourceType,
+      final String resourceIdType,
+      final String resourceId) {
+    final String message = String.format(
+        "Failed to retrieve %s with %s: %s",
+        resourceType,
+        resourceIdType,
+        resourceId);
+    log.error(message, e);
+    return Mono.error(createException(message, e));
   }
 
   /**
