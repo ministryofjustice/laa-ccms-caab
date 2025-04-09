@@ -40,6 +40,7 @@ jobs:
       snyk_target_reference: 'main'
     secrets:
       gh_token: ${{ secrets.GITHUB_TOKEN }}
+      snyk_token: ${{ secrets.SNYK_TOKEN }}
   
     
       
