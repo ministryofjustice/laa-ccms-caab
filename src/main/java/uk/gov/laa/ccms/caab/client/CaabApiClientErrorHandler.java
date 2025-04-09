@@ -2,8 +2,8 @@ package uk.gov.laa.ccms.caab.client;
 
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 /**
  * Provides error-handling capabilities for the CAAB API client interactions.
@@ -12,8 +12,13 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 @Component
 public class CaabApiClientErrorHandler extends AbstractApiClientErrorHandler {
   @Override
-  public CaabApplicationException createException(final String message, final Throwable cause) {
-    return new CaabApplicationException(message, cause);
+  public CaabApiClientException createException(final String message, final Throwable cause) {
+    return new CaabApiClientException(message, cause);
+  }
+
+  @Override
+  public CaabApiClientException createException(String message, HttpStatus httpStatus) {
+    return new CaabApiClientException(message, httpStatus);
   }
 
 }

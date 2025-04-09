@@ -1,9 +1,15 @@
 package uk.gov.laa.ccms.caab.client;
 
+import lombok.Getter;
+import org.springframework.http.HttpStatus;
+
 /**
  * Custom exception class representing ebs-api client related exceptions.
  */
 public class EbsApiClientException extends RuntimeException {
+  @Getter
+  HttpStatus httpStatus;
+
   /**
    * Constructs a new exception with the specified detail message.
    *
@@ -21,5 +27,17 @@ public class EbsApiClientException extends RuntimeException {
    */
   public EbsApiClientException(String message, Throwable cause) {
     super(message, cause);
+  }
+
+  /**
+   * Constructs a new exception with the specified detail message and http status
+   * from the response.
+   *
+   * @param message the detail message
+   * @param httpStatus the http status of the response
+   */
+  public EbsApiClientException(String message, HttpStatus httpStatus) {
+    super(message);
+    this.httpStatus = httpStatus;
   }
 }

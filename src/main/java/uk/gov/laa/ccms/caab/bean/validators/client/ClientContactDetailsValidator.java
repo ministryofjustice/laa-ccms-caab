@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.bean.validators.client;
 
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.EMAIL_ADDRESS;
+
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
@@ -93,6 +95,9 @@ public class ClientContactDetailsValidator extends AbstractValidator {
         && CORRESPONDENCE_EMAIL.equalsIgnoreCase(contactDetails.getCorrespondenceMethod())) {
       errors.rejectValue("emailAddress", "required.emailAddress",
           "Please provide an email address, or select another correspondence method.");
+    } else {
+      validateFieldFormat("emailAddress", contactDetails.getEmailAddress(), EMAIL_ADDRESS,
+             "Email address", errors);
     }
   }
 

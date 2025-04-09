@@ -3,7 +3,9 @@ package uk.gov.laa.ccms.caab.client;
 
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import reactor.core.publisher.Mono;
 
 /**
@@ -20,6 +22,15 @@ public abstract class AbstractApiClientErrorHandler {
    * @return a new instance of RuntimeException.
    */
   protected abstract RuntimeException createException(final String message, final Throwable cause);
+
+  /**
+   * Abstract method used to create an exception with a specified message and http status code.
+   *
+   * @param message the detail message for the exception.
+   * @param httpStatus the http status of the response.
+   * @return a new instance of RuntimeException.
+   */
+  protected abstract RuntimeException createException(final String message, HttpStatus httpStatus);
 
   /**
    * Handles errors occurring during API create operations.
@@ -105,6 +116,31 @@ public abstract class AbstractApiClientErrorHandler {
         resourceId);
     log.error(message, e);
     return Mono.error(createException(message, e));
+  }
+
+  /**
+   * Handles not found errors occurring during API retrieve operations for a specific resource.
+   *
+   * @param clientResponse the error response for the API operation.
+   * @param resourceType the type of resource involved in the retrieve operation.
+   * @param resourceIdType the type of the resource ID.
+   * @param resourceId the ID of the resource.
+   * @param <T> the type of the response expected from the operation.
+   * @return a Mono error signaling the exception.
+   */
+  public  <T> Mono<T> handleNotFoundError(
+      final ClientResponse clientResponse,
+      final String resourceType,
+      final String resourceIdType,
+      final String resourceId) {
+    final String message = String.format(
+        "Not found: %s with %s: %s",
+        resourceType,
+        resourceIdType,
+        resourceId);
+    log.error(message);
+    return Mono.error(createException(message,
+        HttpStatus.resolve(clientResponse.statusCode().value())));
   }
 
   /**

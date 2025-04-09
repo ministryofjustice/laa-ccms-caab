@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
+import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,7 +46,8 @@ import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.feature.FeatureService;
-import uk.gov.laa.ccms.caab.mapper.ApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -80,7 +82,7 @@ public class ApplicationSearchControllerTest {
   private ApplicationService applicationService;
 
   @Mock
-  private ApplicationMapper applicationMapper;
+  private EbsApplicationMapper applicationMapper;
 
   @Mock
   private SearchConstants searchConstants;
@@ -237,38 +239,37 @@ public class ApplicationSearchControllerTest {
 
   @Test
   public void testSelectApplication_rejectsInvalidCaseReference() throws Exception {
-    final String selectedCaseRef = "3";
 
-    List<BaseApplicationDetail> caseSearchResults = List.of(
-        new BaseApplicationDetail().caseReferenceNumber("1"),
-        new BaseApplicationDetail().caseReferenceNumber("2"));
+    // No TDS applications
+    when(applicationService.getTdsApplications(any(), any(), any(), any()))
+        .thenReturn(new ApplicationDetails().content(Collections.emptyList()));
 
-    mockMvc.perform(get("/application/{case-reference-number}/view", selectedCaseRef)
-            .sessionAttr(USER_DETAILS, user)
-            .sessionAttr(CASE_SEARCH_RESULTS, caseSearchResults))
+    mockMvc.perform(get("/application/{case-reference-number}/view", "1")
+            .sessionAttr(USER_DETAILS, user))
         .andDo(print())
         .andExpect(result -> assertInstanceOf(CaabApplicationException.class,
             result.getResolvedException()));
   }
 
   @Test
-  public void testSelectApplication_unsubmittedApplication_redirectsToApplicationSummary() throws Exception {
+  public void testSelectApplication_unsubmittedApplication_redirectsToApplicationSummary()
+      throws Exception {
     final String selectedCaseRef = "1";
 
-    List<BaseApplicationDetail> caseSearchResults = List.of(
-        new BaseApplicationDetail()
-            .id(100)
+    // TDS application
+    ApplicationDetails applicationDetails = new ApplicationDetails()
+        .addContentItem(new BaseApplicationDetail()
+            .id(Integer.parseInt(selectedCaseRef))
             .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
-            .caseReferenceNumber("1"),
-        new BaseApplicationDetail()
-            .caseReferenceNumber("2")
-            .status(new StringDisplayValue().id("anotherstatus")));
+            .caseReferenceNumber(selectedCaseRef));
+
+    when(applicationService.getTdsApplications(any(), any(), any(), any()))
+        .thenReturn(applicationDetails);
 
     mockMvc.perform(get("/application/{case-reference-number}/view", selectedCaseRef)
-            .sessionAttr(USER_DETAILS, user)
-            .sessionAttr(CASE_SEARCH_RESULTS, caseSearchResults))
+            .sessionAttr(USER_DETAILS, user))
         .andDo(print())
-        .andExpect(request().sessionAttribute(APPLICATION_ID, caseSearchResults.get(0).getId()))
+        .andExpect(request().sessionAttribute(APPLICATION_ID, Integer.parseInt(selectedCaseRef)))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/sections"));
   }
@@ -277,20 +278,20 @@ public class ApplicationSearchControllerTest {
   public void testSelectApplication_otherStatus_redirectsToCaseSummary() throws Exception {
     final String selectedCaseRef = "2";
 
-    List<BaseApplicationDetail> caseSearchResults = List.of(
-        new BaseApplicationDetail()
-            .id(100)
-            .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
-            .caseReferenceNumber("1"),
-        new BaseApplicationDetail()
-            .caseReferenceNumber("2")
-            .status(new StringDisplayValue().id("anotherstatus")));
+    // EBS Case
+    ApplicationDetail applicationDetail = new ApplicationDetail()
+        .caseReferenceNumber(selectedCaseRef);
+
+    // No TDS applications
+    when(applicationService.getTdsApplications(any(), any(), any(), any()))
+        .thenReturn(new ApplicationDetails().content(Collections.emptyList()));
+
+    when(applicationService.getCase(any(), any(Long.class), any())).thenReturn(applicationDetail);
 
     mockMvc.perform(get("/application/{case-reference-number}/view", selectedCaseRef)
-            .sessionAttr(USER_DETAILS, user)
-            .sessionAttr(CASE_SEARCH_RESULTS, caseSearchResults))
+            .sessionAttr(USER_DETAILS, user))
         .andDo(print())
-        .andExpect(request().sessionAttribute(CASE_REFERENCE_NUMBER, caseSearchResults.get(1).getCaseReferenceNumber()))
+        .andExpect(request().sessionAttribute(CASE_REFERENCE_NUMBER, Integer.parseInt(selectedCaseRef)))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/case/summary/todo"));
   }
