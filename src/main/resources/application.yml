@@ -128,3 +128,16 @@ av:
     hostname: ${AV_API_HOSTNAME}
     port: ${AV_API_PORT}
     timeout: ${AV_API_TIMEOUT}
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+          - prometheus

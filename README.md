@@ -464,5 +464,5 @@ This project exposes Actuator endpoints, which are scraped by a Prometheus insta
 you can run a Prometheus instance locally within Docker:
 
 ```shell
-docker-compose --compatibility -p laa-ccms-caab-development up -d laa-ccms-caab-prometheus
+docker-compose --compatibility -p laa-ccms-caab-development up -d laa-ccms-caab-prometheus laa-ccms-caab-grafana
 ```

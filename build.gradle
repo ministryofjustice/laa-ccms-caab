@@ -1,6 +1,6 @@
 plugins {
 	id 'net.researchgate.release' version '3.1.0'
-	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.31-bca319f-SNAPSHOT'
+	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.30'
 }
 
 subprojects {
@@ -101,7 +101,10 @@ dependencies {
 	implementation 'org.springframework.security:spring-security-saml2-service-provider'
 
 	implementation 'uk.gov.laa.ccms.springboot:laa-ccms-spring-boot-starter-govuk-dialect'
-	implementation 'uk.gov.laa.ccms.springboot:laa-ccms-spring-boot-starter-metrics'
+
+	// Metrics
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'io.micrometer:micrometer-registry-prometheus'
 
 	//ClamAV virus scan
 	implementation 'fi.solita.clamav:clamav-client:1.0.1'

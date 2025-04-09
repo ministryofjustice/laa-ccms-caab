@@ -76,11 +76,25 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
 
+  laa-ccms-caab-grafana:
+    container_name: laa-ccms-caab-grafana
+    image: grafana/grafana-enterprise
+    restart: unless-stopped
+    networks:
+      - local-prom
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./localmetrics/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./localmetrics/dashboards:/var/lib/grafana/dashboards
+
 volumes:
   laa-ccms-caab-data:
   clam:
   wiremock:
   prometheus:
+  grafana-storage:
 
 networks:
   local-prom:
