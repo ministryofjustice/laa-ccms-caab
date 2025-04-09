@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
@@ -9,12 +8,12 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -33,11 +32,13 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
+import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.feature.Feature;
 import uk.gov.laa.ccms.caab.feature.FeatureService;
 import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
@@ -67,8 +68,6 @@ public class ApplicationSearchController {
   private final ApplicationService applicationService;
 
   private final EbsApplicationMapper applicationMapper;
-
-  private final CaseSearchCriteriaValidator searchCriteriaValidator;
 
   protected static final String CURRENT_URL = "currentUrl";
 
@@ -179,38 +178,61 @@ public class ApplicationSearchController {
    * Redirects to the correct endpoint to view a Case or Application.
    *
    * @param caseReferenceNumber The caseReferenceNumber of the application of case to view.
-   * @param caseSearchResults The full un-paginated search results list.
    * @return The appropriate redirect based on the type of application or case selected.
    */
   @GetMapping("/application/{case-reference-number}/view")
   public String applicationCaseView(
+      @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
       @PathVariable("case-reference-number") final String caseReferenceNumber,
-      @SessionAttribute(CASE_SEARCH_RESULTS) final List<BaseApplicationDetail> caseSearchResults,
-      HttpSession session,
-      Principal principal) {
+      HttpSession session) {
 
-    // First ensure that the supplied caseReferenceNumber refers to an
-    // application/case from the search results in the session.
-    final BaseApplicationDetail selectedApplication =
-        caseSearchResults.stream()
-            .filter(baseApplication -> baseApplication.getCaseReferenceNumber().equals(
-                caseReferenceNumber))
-            .findFirst()
-            .orElseThrow(() -> new CaabApplicationException(
-                String.format("Invalid case reference: %s", caseReferenceNumber)));
+    ApplicationDetail ebsCase = null;
+    try {
+      ebsCase =
+          applicationService.getCase(
+              caseReferenceNumber, userDetails.getProvider().getId(), userDetails.getUsername());
+    } catch (EbsApiClientException e) {
+      if (!e.getHttpStatus().equals(HttpStatus.NOT_FOUND)) {
+        throw new CaabApplicationException(
+            "Failed to retrieve EBS case "
+                + caseReferenceNumber);
+      }
+      log.debug("Case not found in EBS.", e);
+    }
+
+    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    caseSearchCriteria.setCaseReference(caseReferenceNumber);
+
+    BaseApplicationDetail tdsApplication =
+        applicationService.getTdsApplications(caseSearchCriteria, userDetails, 0, 1)
+            .getContent().stream().findFirst().orElse(null);
+
+    if (ebsCase == null && tdsApplication == null) {
+      throw new CaabApplicationException(
+          "Unable to find case in EBS or application in TDS with case reference "
+              + caseReferenceNumber);
+    }
+
+    // An amendment consists of a submitted case and a draft application (for amendments)
+    boolean isAmendment = (ebsCase != null) && (tdsApplication != null);
 
     featureService.featureRequired(Feature.AMENDMENTS,
-        () -> Boolean.TRUE.equals(selectedApplication.getAmendment()));
+        () -> isAmendment);
 
     //
-    // TODO: Spike CCLS-2120 to investigate poll and cleanup of pending submissions.
+    // TODO: Spike CCMSPUI-339 to investigate poll and cleanup of pending submissions.
     //
 
-    if (STATUS_UNSUBMITTED_ACTUAL_VALUE.equals(selectedApplication.getStatus().getId())) {
-      session.setAttribute(APPLICATION_ID, selectedApplication.getId());
+    // If there is not yet a case, this is an initial draft application.
+    boolean isDraftApplication = (ebsCase == null) && (tdsApplication != null);
+
+    if (isDraftApplication) {
+      session.setAttribute(APPLICATION_ID, tdsApplication.getId());
       return "redirect:/application/sections";
     } else {
-      session.setAttribute(CASE_REFERENCE_NUMBER, selectedApplication.getCaseReferenceNumber());
+      // TODO: CCMSPUI-478, CCMSPUI-476
+      //  Set model attributes, redirect to case overview
+      session.setAttribute(CASE_REFERENCE_NUMBER, Integer.parseInt(caseReferenceNumber));
       return "redirect:/case/summary/todo";
     }
   }

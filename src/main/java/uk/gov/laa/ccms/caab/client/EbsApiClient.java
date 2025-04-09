@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQU
 
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -957,6 +958,9 @@ public class EbsApiClient extends BaseApiClient {
             .queryParams(queryParams)
             .build(caseReferenceNumber))
         .retrieve()
+        .onStatus(code -> code.value() == HttpStatus.SC_NOT_FOUND, response ->
+            ebsApiClientErrorHandler.handleNotFoundError(
+                response, "Case detail", "case reference", caseReferenceNumber))
         .bodyToMono(CaseDetail.class)
         .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
             e, "Case detail", "case reference", caseReferenceNumber));

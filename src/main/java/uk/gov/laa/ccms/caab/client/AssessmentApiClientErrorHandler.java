@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.client;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 /**
@@ -12,5 +13,10 @@ public class AssessmentApiClientErrorHandler extends AbstractApiClientErrorHandl
   @Override
   public AssessmentApiClientException createException(final String message, final Throwable cause) {
     return new AssessmentApiClientException(message, cause);
+  }
+
+  @Override
+  public AssessmentApiClientException createException(String message, HttpStatus httpStatus) {
+    return new AssessmentApiClientException(message, httpStatus);
   }
 }
