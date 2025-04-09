@@ -51,6 +51,7 @@ public class SecurityConfiguration {
 
     return http
       .authorizeHttpRequests(authorize -> authorize
+          .requestMatchers("/actuator/**").permitAll()  // Ensure Actuator endpoints are excluded
           .requestMatchers(HttpMethod.GET,
               "/provider-requests/*")
             .hasAuthority(UserRole.CREATE_PROVIDER_REQUEST.getCode())
@@ -95,7 +96,6 @@ public class SecurityConfiguration {
           .requestMatchers(HttpMethod.POST,
               "/application/sections")
           .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
-          .requestMatchers("/actuator/**").permitAll()  // Ensure Actuator endpoints are excluded
           .anyRequest().authenticated())
         .sessionManagement(sessionManagement -> sessionManagement
           .invalidSessionStrategy(new SimpleRedirectInvalidSessionStrategy("/home")))
