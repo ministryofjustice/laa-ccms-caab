@@ -954,21 +954,16 @@ public class EbsApiClient extends BaseApiClient {
     queryParams.add("user-name", userName);
     return ebsApiWebClient
         .get()
-        .uri(
-            builder ->
-                builder
-                    .path("/cases/{case-reference-number}")
-                    .queryParams(queryParams)
-                    .build(caseReferenceNumber))
+        .uri(builder -> builder.path("/cases/{case-reference-number}")
+            .queryParams(queryParams)
+            .build(caseReferenceNumber))
         .retrieve()
         .onStatus(code -> code.value() == HttpStatus.SC_NOT_FOUND, response ->
             ebsApiClientErrorHandler.handleNotFoundError(
                 response, "Case detail", "case reference", caseReferenceNumber))
         .bodyToMono(CaseDetail.class)
-        .onErrorResume(
-            e ->
-                ebsApiClientErrorHandler.handleApiRetrieveError(
-                    e, "Case detail", "case reference", caseReferenceNumber));
+        .onErrorResume(e -> ebsApiClientErrorHandler.handleApiRetrieveError(
+            e, "Case detail", "case reference", caseReferenceNumber));
   }
 
   /**
