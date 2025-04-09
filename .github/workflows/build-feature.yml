@@ -28,6 +28,8 @@ jobs:
       github_app_id: ${{ vars.LAA_CCMS_CAAB_SERVICE_APP_ID }}
       github_app_private_key: ${{ secrets.LAA_CCMS_CAAB_SERVICE_KEY }}
       github_app_organisation: 'ministryofjustice'
+      github_app_repositories: |
+        ministryofjustice/laa-ccms-soa-gateway-api
       aws_region: 'eu-west-2'
 
   vulnerability-scan:
