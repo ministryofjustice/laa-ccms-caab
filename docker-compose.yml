@@ -11,27 +11,27 @@ services:
     ports:
       - 8081:8080
 
-  #laa-ccms-caab-db:
-  #  container_name: laa-ccms-caab-db
-  #  image: 902837325998.dkr.ecr.eu-west-2.amazonaws.com/laa-ccms-pui-oracle-database:latest
-  #  ports:
-  #    - "1521:1521"
-  #  environment:
-  #    - DB_SID=CCMSPUI
-  #    - DB_PASSWD=Password123!
-  #  volumes:
-  #    - laa-ccms-caab-data:/ORCL
+  laa-ccms-caab-db:
+    container_name: laa-ccms-caab-db
+    image: 902837325998.dkr.ecr.eu-west-2.amazonaws.com/laa-ccms-pui-oracle-database:latest
+    ports:
+      - "1521:1521"
+    environment:
+      - DB_SID=CCMSPUI
+      - DB_PASSWD=Password123!
+    volumes:
+      - laa-ccms-caab-data:/ORCL
 
-  #laa-ccms-caab-liquibase:
-  #  container_name: laa-ccms-caab-liquibase
-  #  image: caab-liquibase
-  #  volumes:
-  #    - ../laa-ccms-caab-db/sql:/migrations
-  #    - ../laa-ccms-caab-db/waitfor:/waitfor
-  #  depends_on:
-  #    - laa-ccms-caab-db
-  #  entrypoint: /bin/bash
-  #  command: [ "./waitfor/wait_for.sh" ]
+  laa-ccms-caab-liquibase:
+    container_name: laa-ccms-caab-liquibase
+    image: caab-liquibase
+    volumes:
+      - ../laa-ccms-caab-db/sql:/migrations
+      - ../laa-ccms-caab-db/waitfor:/waitfor
+    depends_on:
+      - laa-ccms-caab-db
+    entrypoint: /bin/bash
+    command: [ "./waitfor/wait_for.sh" ]
 
   laa-ccms-caab-wiremock:
     container_name: laa-ccms-caab-wiremock
@@ -76,18 +76,6 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
 
-  laa-ccms-caab-grafana:
-    container_name: laa-ccms-caab-grafana
-    image: grafana/grafana-enterprise
-    restart: unless-stopped
-    networks:
-      - local-prom
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana-storage:/var/lib/grafana
-      - ./localmetrics/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
-      - ./localmetrics/dashboards:/var/lib/grafana/dashboards
 
 volumes:
   laa-ccms-caab-data:
