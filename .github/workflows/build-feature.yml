@@ -31,6 +31,7 @@ jobs:
       github_app_repositories: |
         laa-ccms-data-api
         laa-ccms-soa-gateway-api
+        laa-ccms-spring-boot-common
       aws_region: 'eu-west-2'
 
   vulnerability-scan:
