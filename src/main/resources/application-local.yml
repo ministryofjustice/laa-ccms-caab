@@ -126,6 +126,7 @@ laa:
         security:
           password: passw0rd
 
+
 server:
   port: 8010
   servlet:

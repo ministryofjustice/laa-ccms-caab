@@ -65,7 +65,25 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "./localstack/init-s3.sh:/etc/localstack/init/ready.d/init-s3.sh"
 
+  laa-ccms-caab-prometheus:
+    container_name: laa-ccms-caab-prometheus
+    image: bitnami/prometheus
+    restart: unless-stopped
+    networks:
+      - local-prom
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+
 volumes:
   laa-ccms-caab-data:
   clam:
   wiremock:
+  prometheus:
+  grafana-storage:
+
+networks:
+  local-prom:
+    driver: bridge

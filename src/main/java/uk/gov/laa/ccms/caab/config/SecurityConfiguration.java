@@ -52,6 +52,11 @@ public class SecurityConfiguration {
     return http
       .authorizeHttpRequests(authorize -> authorize
           .requestMatchers(HttpMethod.GET,
+              "/actuator/prometheus",
+              "/actuator/health/**",
+              "/actuator/info",
+              "/actuator/metrics").permitAll()  // Ensure Actuator endpoints are excluded
+          .requestMatchers(HttpMethod.GET,
               "/provider-requests/*")
             .hasAuthority(UserRole.CREATE_PROVIDER_REQUEST.getCode())
           .requestMatchers(HttpMethod.GET,
@@ -94,9 +99,9 @@ public class SecurityConfiguration {
             .hasAuthority(UserRole.SUBMIT_UPDATE_CLIENT.getCode())
           .requestMatchers(HttpMethod.POST,
               "/application/sections")
-            .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
+          .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
           .anyRequest().authenticated())
-      .sessionManagement(sessionManagement -> sessionManagement
+        .sessionManagement(sessionManagement -> sessionManagement
           .invalidSessionStrategy(new SimpleRedirectInvalidSessionStrategy("/home")))
       .logout((logout) -> logout
           .addLogoutHandler((req, res, auth) -> {
