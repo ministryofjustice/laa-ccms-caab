@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.bean.opponent;
 
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
@@ -50,26 +51,31 @@ public abstract class AbstractOpponentFormData {
   /**
    * The opponent house name/number.
    */
+  @Size(max = 35)
   private String houseNameOrNumber;
 
   /**
    * The address line 1 for the opponent.
    */
+  @Size(max = 70)
   private String addressLine1;
 
   /**
    * The address line 2 for the opponent.
    */
+  @Size(max = 35)
   private String addressLine2;
 
   /**
    * The city for the opponent.
    */
+  @Size(max = 35)
   private String city;
 
   /**
    * The opponent's county.
    */
+  @Size(max = 35)
   private String county;
 
   /**
@@ -80,26 +86,31 @@ public abstract class AbstractOpponentFormData {
   /**
    * The postcode for the opponent.
    */
+  @Size(max = 15)
   private String postcode;
 
   /**
    * The work telephone number for the opponent.
    */
+  @Size(max = 15)
   private String telephoneWork;
 
   /**
    * The fax number for the opponent.
    */
+  @Size(max = 15)
   private String faxNumber;
 
   /**
    * The email address for the opponent.
    */
+  @Size(max = 200)
   private String emailAddress;
 
   /**
    * Any other information regarding the opponent.
    */
+  @Size(max = 2000)
   private String otherInformation;
 
   /**

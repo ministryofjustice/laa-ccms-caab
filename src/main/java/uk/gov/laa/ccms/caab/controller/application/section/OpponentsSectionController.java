@@ -20,6 +20,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
@@ -141,7 +142,8 @@ public class OpponentsSectionController {
    */
   @PostMapping("/application/opponents/organisation/search")
   public String organisationSearch(
-      @ModelAttribute(ORGANISATION_SEARCH_CRITERIA) OrganisationSearchCriteria searchCriteria,
+      @Validated @ModelAttribute(ORGANISATION_SEARCH_CRITERIA)
+      OrganisationSearchCriteria searchCriteria,
       BindingResult bindingResult,
       Model model) {
 
@@ -304,7 +306,7 @@ public class OpponentsSectionController {
    */
   @PostMapping("/application/opponents/organisation/create")
   public String createNewOrganisation(
-      @ModelAttribute(CURRENT_OPPONENT) final AbstractOpponentFormData opponentFormData,
+      @Validated @ModelAttribute(CURRENT_OPPONENT) final AbstractOpponentFormData opponentFormData,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final BindingResult bindingResult,

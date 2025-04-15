@@ -9,6 +9,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.ORGANISATION_SEARC
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -58,4 +60,45 @@ class OrganisationSearchCriteriaValidatorTest {
     assertEquals("required.name", errors.getFieldError("name").getCode());
   }
 
+  @ParameterizedTest
+  @CsvSource({
+      "South  Cardiff",//Double Spaces
+      "North:@Swansea;"//Invalid Characters
+  })
+  void validate_InvalidCityFormat(String city) {
+    searchCriteria.setName("Good Company");
+    searchCriteria.setCity(city);
+    organisationSearchCriteriaValidator.validate(searchCriteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validate_ValidCityFormat() {
+    searchCriteria.setName("Good Company");
+    searchCriteria.setCity("Bristol");
+    organisationSearchCriteriaValidator.validate(searchCriteria, errors);
+    assertFalse(errors.hasErrors());
+    assertEquals(0, errors.getErrorCount());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+      "My  Org",//Double Spaces
+      "The:@Company;"//Invalid Characters
+  })
+  void validate_InvalidNameFormat(String name) {
+    searchCriteria.setName(name);
+    organisationSearchCriteriaValidator.validate(searchCriteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  void validate_ValidNameFormat() {
+    searchCriteria.setName("Good Company");
+    organisationSearchCriteriaValidator.validate(searchCriteria, errors);
+    assertFalse(errors.hasErrors());
+    assertEquals(0, errors.getErrorCount());
+  }
 }
