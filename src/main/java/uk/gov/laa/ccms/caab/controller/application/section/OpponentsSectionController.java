@@ -306,9 +306,9 @@ public class OpponentsSectionController {
    */
   @PostMapping("/application/opponents/organisation/create")
   public String createNewOrganisation(
-      @Validated @ModelAttribute(CURRENT_OPPONENT) final AbstractOpponentFormData opponentFormData,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @Validated @ModelAttribute(CURRENT_OPPONENT) final AbstractOpponentFormData opponentFormData,
       final BindingResult bindingResult,
       final Model model) {
 
