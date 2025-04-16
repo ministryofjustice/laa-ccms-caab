@@ -1,15 +1,11 @@
 package uk.gov.laa.ccms.caab.client;
 
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 /**
  * Represents exceptions that may occur while interacting with the CAAB API microservice.
  */
-public class CaabApiClientException extends RuntimeException {
-  @Getter
-  HttpStatus httpStatus;
-
+public class CaabApiClientException extends ApiClientException {
   /**
    * Constructs a new CAAB API client exception with the specified detail message.
    *
@@ -38,7 +34,6 @@ public class CaabApiClientException extends RuntimeException {
    * @param httpStatus the http status of the response
    */
   public CaabApiClientException(String message, HttpStatus httpStatus) {
-    super(message);
-    this.httpStatus = httpStatus;
+    super(message, httpStatus);
   }
 }

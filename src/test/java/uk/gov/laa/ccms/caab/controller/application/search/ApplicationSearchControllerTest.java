@@ -255,11 +255,12 @@ public class ApplicationSearchControllerTest {
   public void testSelectApplication_unsubmittedApplication_redirectsToApplicationSummary()
       throws Exception {
     final String selectedCaseRef = "1";
+    final String appRef = "2";
 
     // TDS application
     ApplicationDetails applicationDetails = new ApplicationDetails()
         .addContentItem(new BaseApplicationDetail()
-            .id(Integer.parseInt(selectedCaseRef))
+            .id(Integer.parseInt(appRef))
             .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
             .caseReferenceNumber(selectedCaseRef));
 
@@ -269,7 +270,7 @@ public class ApplicationSearchControllerTest {
     mockMvc.perform(get("/application/{case-reference-number}/view", selectedCaseRef)
             .sessionAttr(USER_DETAILS, user))
         .andDo(print())
-        .andExpect(request().sessionAttribute(APPLICATION_ID, Integer.parseInt(selectedCaseRef)))
+        .andExpect(request().sessionAttribute(APPLICATION_ID, Integer.parseInt(appRef)))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/sections"));
   }
@@ -291,7 +292,7 @@ public class ApplicationSearchControllerTest {
     mockMvc.perform(get("/application/{case-reference-number}/view", selectedCaseRef)
             .sessionAttr(USER_DETAILS, user))
         .andDo(print())
-        .andExpect(request().sessionAttribute(CASE_REFERENCE_NUMBER, Integer.parseInt(selectedCaseRef)))
+        .andExpect(request().sessionAttribute(CASE_REFERENCE_NUMBER, selectedCaseRef))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/case/summary/todo"));
   }

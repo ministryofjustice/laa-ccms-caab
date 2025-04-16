@@ -158,6 +158,9 @@ public abstract class AbstractApiClientErrorHandler {
       final String resourceType,
       final String resourceIdType,
       final String resourceId) {
+    if (e instanceof ApiClientException) {
+      return Mono.error(e);
+    }
     final String message = String.format(
         "Failed to retrieve %s with %s: %s",
         resourceType,
