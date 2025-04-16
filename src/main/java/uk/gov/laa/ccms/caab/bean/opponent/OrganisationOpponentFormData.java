@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.bean.opponent;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_ORGANISATION;
+import static uk.gov.laa.ccms.caab.constants.CharacterLimitationConstants.DEFAULT_CHARACTER_SIZE;
+import static uk.gov.laa.ccms.caab.constants.CharacterLimitationConstants.ORGANISATION_NAME_CHARACTER_SIZE;
 
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -20,7 +22,7 @@ public class OrganisationOpponentFormData extends AbstractOpponentFormData {
   /**
    * The name of the organisation Opponent.
    */
-  @Size(max = 360)
+  @Size(max = ORGANISATION_NAME_CHARACTER_SIZE)
   private String organisationName;
 
   /**
@@ -41,7 +43,7 @@ public class OrganisationOpponentFormData extends AbstractOpponentFormData {
   /**
    * The contact name and role.
    */
-  @Size(max = 35)
+  @Size(max = DEFAULT_CHARACTER_SIZE)
   private String contactNameRole;
 
   /**
