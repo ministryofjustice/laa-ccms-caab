@@ -290,10 +290,8 @@ public class ApplicationService {
       final String caseReferenceNumber,
       final long providerId,
       final String userName) {
-    uk.gov.laa.ccms.data.model.CaseDetail ebsCase = Optional.ofNullable(
-            ebsApiClient.getCase(caseReferenceNumber, providerId, userName).block())
-        .orElseThrow(() -> new CaabApplicationException(
-            String.format("Failed to retrieve EBS Case with ref: %s", caseReferenceNumber)));
+    uk.gov.laa.ccms.data.model.CaseDetail ebsCase =
+        ebsApiClient.getCase(caseReferenceNumber, providerId, userName).block();
 
     return ebsApplicationMapper.toApplicationDetail(ebsApplicationMappingContextBuilder
         .buildApplicationMappingContext(ebsCase));
