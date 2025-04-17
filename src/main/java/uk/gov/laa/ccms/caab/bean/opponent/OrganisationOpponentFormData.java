@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.bean.opponent;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_ORGANISATION;
 
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -19,6 +20,7 @@ public class OrganisationOpponentFormData extends AbstractOpponentFormData {
   /**
    * The name of the organisation Opponent.
    */
+  @Size(max = 360)
   private String organisationName;
 
   /**
@@ -39,6 +41,7 @@ public class OrganisationOpponentFormData extends AbstractOpponentFormData {
   /**
    * The contact name and role.
    */
+  @Size(max = 35)
   private String contactNameRole;
 
   /**
