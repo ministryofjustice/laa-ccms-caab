@@ -353,9 +353,10 @@ public class OpponentsSectionController {
    */
   @PostMapping("/application/opponents/individual/create")
   public String createNewIndividual(
-      @ModelAttribute(CURRENT_OPPONENT) final IndividualOpponentFormData opponentFormData,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @Validated @ModelAttribute(CURRENT_OPPONENT)
+      final IndividualOpponentFormData opponentFormData,
       final BindingResult bindingResult,
       final Model model) {
 
