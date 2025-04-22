@@ -10,7 +10,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -81,10 +80,7 @@ class OrganisationSearchCriteriaValidatorTest {
   }
 
   @ParameterizedTest
-  @CsvSource({
-      "My  Org",//Double Spaces
-      "The:@Company;"//Invalid Characters
-  })
+  @ValueSource(strings = {"My  Org", "The:@Company;"})
   void validate_InvalidNameFormat(String name) {
     searchCriteria.setName(name);
     organisationSearchCriteriaValidator.validate(searchCriteria, errors);
