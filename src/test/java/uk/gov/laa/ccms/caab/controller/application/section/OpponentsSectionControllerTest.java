@@ -161,6 +161,36 @@ class OpponentsSectionControllerTest {
     }
 
     @Test
+    void organisationSearchPost_noValidationErrors_maxLengthsNotExceeded_displaysResults() throws Exception {
+        OrganisationSearchCriteria testOrganisationSearchCriteria = new OrganisationSearchCriteria();
+        testOrganisationSearchCriteria.setName("This Company Organisation Name less than 360 chars");
+        testOrganisationSearchCriteria.setCity("Short City Name");
+        testOrganisationSearchCriteria.setPostcode("SA5 7DF");
+
+        mockMvc.perform(post("/application/opponents/organisation/search")
+                .flashAttr(ORGANISATION_SEARCH_CRITERIA, testOrganisationSearchCriteria))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/opponents/organisation/search/results"));
+    }
+
+    @Test
+    void organisationSearchPost_validationErrors_maxLengthsExceeded_returnsToSearch() throws Exception {
+        OrganisationSearchCriteria testOrganisationSearchCriteria = new OrganisationSearchCriteria();
+        testOrganisationSearchCriteria.setCity("Too Long City Name Too Long City Name Too Long City Name Too Long City Name");
+        testOrganisationSearchCriteria.setPostcode("Too Long Postcode");
+
+        CommonLookupDetail orgTypes = new CommonLookupDetail()
+            .addContentItem(new CommonLookupValueDetail());
+        when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.just(orgTypes));
+
+        mockMvc.perform(post("/application/opponents/organisation/search")
+                .flashAttr(ORGANISATION_SEARCH_CRITERIA, testOrganisationSearchCriteria))
+            .andDo(print())
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/opponents/opponents-organisation-search"));
+    }
+
+    @Test
     void organisationSearchResultsGet_noResults_displaysNoResultsView() throws Exception {
         int page = 0;
         int size = 20;
