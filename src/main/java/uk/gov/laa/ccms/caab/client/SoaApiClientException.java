@@ -1,14 +1,11 @@
 package uk.gov.laa.ccms.caab.client;
 
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 /**
  * Exception class representing errors related to the SoaApiClient.
  */
-public class SoaApiClientException extends RuntimeException {
-  @Getter
-  HttpStatus httpStatus;
+public class SoaApiClientException extends ApiClientException {
 
   public SoaApiClientException(final String message) {
     super(message);
@@ -26,7 +23,6 @@ public class SoaApiClientException extends RuntimeException {
    * @param httpStatus the http status of the response
    */
   public SoaApiClientException(String message, HttpStatus httpStatus) {
-    super(message);
-    this.httpStatus = httpStatus;
+    super(message, httpStatus);
   }
 }

@@ -63,6 +63,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
@@ -76,10 +77,10 @@ import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
 import uk.gov.laa.ccms.caab.builders.EbsApplicationMappingContextBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
+import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
@@ -1617,9 +1618,11 @@ class ApplicationServiceTest {
     String caseRef = "12345";
     long providerId = 123456789L;
     String userName = "John";
-    when(ebsApiClient.getCase(caseRef, providerId, userName)).thenReturn(Mono.empty());
+    when(ebsApiClient.getCase(caseRef, providerId, userName))
+        .thenThrow(new EbsApiClientException("not found", HttpStatus.NOT_FOUND));
     // When / Then
-    assertThrows(CaabApplicationException.class, () -> applicationService.getCase(caseRef, providerId, userName));
+    assertThrows(EbsApiClientException.class,
+        () -> applicationService.getCase(caseRef, providerId, userName));
   }
 
   private static ApplicationDetail getApplicationDetail() {

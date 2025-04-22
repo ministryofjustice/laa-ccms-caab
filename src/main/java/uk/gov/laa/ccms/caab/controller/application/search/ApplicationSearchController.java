@@ -192,7 +192,7 @@ public class ApplicationSearchController {
           applicationService.getCase(
               caseReferenceNumber, userDetails.getProvider().getId(), userDetails.getUsername());
     } catch (EbsApiClientException e) {
-      if (!e.getHttpStatus().equals(HttpStatus.NOT_FOUND)) {
+      if (!e.hasHttpStatus(HttpStatus.NOT_FOUND)) {
         throw new CaabApplicationException(
             "Failed to retrieve EBS case "
                 + caseReferenceNumber);
@@ -232,7 +232,7 @@ public class ApplicationSearchController {
     } else {
       // TODO: CCMSPUI-478, CCMSPUI-476
       //  Set model attributes, redirect to case overview
-      session.setAttribute(CASE_REFERENCE_NUMBER, Integer.parseInt(caseReferenceNumber));
+      session.setAttribute(CASE_REFERENCE_NUMBER, caseReferenceNumber);
       return "redirect:/case/summary/todo";
     }
   }
