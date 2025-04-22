@@ -26,6 +26,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -176,8 +177,10 @@ class OpponentsSectionControllerTest {
     @Test
     void organisationSearchPost_validationErrors_maxLengthsExceeded_returnsToSearch() throws Exception {
         OrganisationSearchCriteria testOrganisationSearchCriteria = new OrganisationSearchCriteria();
-        testOrganisationSearchCriteria.setCity("Too Long City Name Too Long City Name Too Long City Name Too Long City Name");
-        testOrganisationSearchCriteria.setPostcode("Too Long Postcode");
+
+        testOrganisationSearchCriteria.setName(RandomStringUtils.insecure().nextAlphabetic(370));
+        testOrganisationSearchCriteria.setCity(RandomStringUtils.insecure().nextAlphabetic(36));
+        testOrganisationSearchCriteria.setPostcode(RandomStringUtils.insecure().nextAlphabetic(16));
 
         CommonLookupDetail orgTypes = new CommonLookupDetail()
             .addContentItem(new CommonLookupValueDetail());
@@ -187,6 +190,9 @@ class OpponentsSectionControllerTest {
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, testOrganisationSearchCriteria))
             .andDo(print())
             .andExpect(status().isOk())
+            .andExpect(model().attributeHasFieldErrors(ORGANISATION_SEARCH_CRITERIA, "name"))
+            .andExpect(model().attributeHasFieldErrors(ORGANISATION_SEARCH_CRITERIA, "city"))
+            .andExpect(model().attributeHasFieldErrors(ORGANISATION_SEARCH_CRITERIA, "postcode"))
             .andExpect(view().name("application/opponents/opponents-organisation-search"));
     }
 

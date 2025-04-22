@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -61,10 +62,7 @@ class OrganisationSearchCriteriaValidatorTest {
   }
 
   @ParameterizedTest
-  @CsvSource({
-      "South  Cardiff",//Double Spaces
-      "North:@Swansea;"//Invalid Characters
-  })
+  @ValueSource(strings = {"South  Cardiff", " North:@Swansea;"})
   void validate_InvalidCityFormat(String city) {
     searchCriteria.setName("Good Company");
     searchCriteria.setCity(city);
