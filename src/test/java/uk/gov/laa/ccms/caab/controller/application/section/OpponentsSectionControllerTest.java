@@ -26,6 +26,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -158,6 +159,41 @@ class OpponentsSectionControllerTest {
             .andExpect(status().isOk())
             .andExpect(view().name("application/opponents/opponents-organisation-search"));
 
+    }
+
+    @Test
+    void organisationSearchPost_noValidationErrors_maxLengthsNotExceeded_displaysResults() throws Exception {
+        OrganisationSearchCriteria testOrganisationSearchCriteria = new OrganisationSearchCriteria();
+        testOrganisationSearchCriteria.setName("This Company Organisation Name less than 360 chars");
+        testOrganisationSearchCriteria.setCity("Short City Name");
+        testOrganisationSearchCriteria.setPostcode("SA5 7DF");
+
+        mockMvc.perform(post("/application/opponents/organisation/search")
+                .flashAttr(ORGANISATION_SEARCH_CRITERIA, testOrganisationSearchCriteria))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/opponents/organisation/search/results"));
+    }
+
+    @Test
+    void organisationSearchPost_validationErrors_maxLengthsExceeded_returnsToSearch() throws Exception {
+        OrganisationSearchCriteria testOrganisationSearchCriteria = new OrganisationSearchCriteria();
+
+        testOrganisationSearchCriteria.setName(RandomStringUtils.insecure().nextAlphabetic(370));
+        testOrganisationSearchCriteria.setCity(RandomStringUtils.insecure().nextAlphabetic(36));
+        testOrganisationSearchCriteria.setPostcode(RandomStringUtils.insecure().nextAlphabetic(16));
+
+        CommonLookupDetail orgTypes = new CommonLookupDetail()
+            .addContentItem(new CommonLookupValueDetail());
+        when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.just(orgTypes));
+
+        mockMvc.perform(post("/application/opponents/organisation/search")
+                .flashAttr(ORGANISATION_SEARCH_CRITERIA, testOrganisationSearchCriteria))
+            .andDo(print())
+            .andExpect(status().isOk())
+            .andExpect(model().attributeHasFieldErrors(ORGANISATION_SEARCH_CRITERIA, "name"))
+            .andExpect(model().attributeHasFieldErrors(ORGANISATION_SEARCH_CRITERIA, "city"))
+            .andExpect(model().attributeHasFieldErrors(ORGANISATION_SEARCH_CRITERIA, "postcode"))
+            .andExpect(view().name("application/opponents/opponents-organisation-search"));
     }
 
     @Test
