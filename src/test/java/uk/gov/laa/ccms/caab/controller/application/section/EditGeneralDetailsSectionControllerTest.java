@@ -302,7 +302,7 @@ class EditGeneralDetailsSectionControllerTest {
 
     doAnswer(invocation -> {
       final Errors errors = (Errors) invocation.getArguments()[1];
-      errors.reject( "required.uprn", "Please select an address.");
+      errors.reject("required.uprn", "Please select an address.");
       return null;
     }).when(addressSearchValidator).validate(any(), any());
 
@@ -481,7 +481,7 @@ class EditGeneralDetailsSectionControllerTest {
     when(applicationService.getCases(any(), any())).thenReturn(Collections.emptyList());
 
     this.mockMvc.perform(post("/application/sections/linked-cases/search")
-            .sessionAttr(ACTIVE_CASE,  ActiveCase.builder().build())
+            .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
             .sessionAttr(USER_DETAILS, buildUserDetail())
             .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
             .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))

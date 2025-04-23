@@ -326,7 +326,7 @@ class ApplicationSubmissionControllerTest {
     final EvidenceDocumentDetails mockEvidenceDocDetails = mock(EvidenceDocumentDetails.class);
     when(evidenceService.getEvidenceDocumentsForCase(anyString(), eq(APPLICATION))).thenReturn(Mono.just(mockEvidenceDocDetails));
     doNothing().when(evidenceService).registerPreviouslyUploadedDocuments(any(), any());
-    when(evidenceService.uploadAndUpdateDocuments(any(), anyString(),eq(null), any())).thenReturn(Mono.empty());
+    when(evidenceService.uploadAndUpdateDocuments(any(), anyString(), eq(null), any())).thenReturn(Mono.empty());
 
     // Mock application service
     final ApplicationDetail mockApplicationDetail = mock(ApplicationDetail.class);

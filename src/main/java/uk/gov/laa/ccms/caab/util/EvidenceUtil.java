@@ -100,4 +100,7 @@ public class EvidenceUtil {
         .anyMatch(evidence -> Arrays.asList(evidence.getEvidenceDescriptions().split("\\^"))
             .contains(evidenceDescription));
   }
+
+  private EvidenceUtil() {
+  }
 }

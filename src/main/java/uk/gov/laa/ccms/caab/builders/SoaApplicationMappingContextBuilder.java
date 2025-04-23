@@ -48,9 +48,11 @@ import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.AssessmentResult;
@@ -254,7 +256,7 @@ public class SoaApplicationMappingContextBuilder {
 
   private AssessmentResult getMostRecentAssessment(final List<AssessmentResult> assessmentResults) {
     return assessmentResults != null ? assessmentResults.stream()
-        .max(Comparator.comparing(uk.gov.laa.ccms.soa.gateway.model.AssessmentResult::getDate,
+        .max(Comparator.comparing(AssessmentResult::getDate,
             Comparator.nullsFirst(Comparator.naturalOrder())))
         .orElse(null) : null;
   }
@@ -302,7 +304,7 @@ public class SoaApplicationMappingContextBuilder {
                     .block()))
             .toList();
 
-    final uk.gov.laa.ccms.data.model.ProceedingDetail proceedingLookup =
+    final ProceedingDetail proceedingLookup =
         lookupTuple.getT1();
 
     final CommonLookupValueDetail proceedingStatusLookup =
@@ -358,8 +360,8 @@ public class SoaApplicationMappingContextBuilder {
 
       // Build the scope limitation search criteria.
       // Only include the emergency flag in the criteria if the app type is classified as emergency.
-      uk.gov.laa.ccms.data.model.ScopeLimitationDetail searchCriteria =
-          new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+      ScopeLimitationDetail searchCriteria =
+          new ScopeLimitationDetail()
               .categoryOfLaw(soaCase.getApplicationDetails()
                   .getCategoryOfLaw().getCategoryOfLawCode())
               .matterType(proceeding.getMatterType())
@@ -513,17 +515,17 @@ public class SoaApplicationMappingContextBuilder {
                 soaPriorAuthority.getPriorAuthorityType())));
 
     // Build a Map of PriorAuthorityDetail keyed on code
-    Map<String, uk.gov.laa.ccms.data.model.PriorAuthorityDetail> priorAuthDetailMap =
+    Map<String, PriorAuthorityDetail> priorAuthDetailMap =
         priorAuthorityType.getPriorAuthorities().stream().collect(
-            Collectors.toMap(uk.gov.laa.ccms.data.model.PriorAuthorityDetail::getCode,
+            Collectors.toMap(PriorAuthorityDetail::getCode,
                 Function.identity()));
 
     // Build a List of priorAuthorityDetails paired with the common lookup for display info.
-    List<Pair<uk.gov.laa.ccms.data.model.PriorAuthorityDetail,
+    List<Pair<PriorAuthorityDetail,
         CommonLookupValueDetail>> priorAuthorityDetails =
         soaPriorAuthority.getDetails().stream()
             .map(priorAuthorityAttribute -> {
-              uk.gov.laa.ccms.data.model.PriorAuthorityDetail priorAuthorityDetail =
+              PriorAuthorityDetail priorAuthorityDetail =
                   priorAuthDetailMap.get(priorAuthorityAttribute.getName());
               return Pair.of(
                   priorAuthorityDetail,
@@ -539,7 +541,7 @@ public class SoaApplicationMappingContextBuilder {
   }
 
   private CommonLookupValueDetail getPriorAuthLookup(
-      final uk.gov.laa.ccms.data.model.PriorAuthorityDetail priorAuthorityDetail,
+      final PriorAuthorityDetail priorAuthorityDetail,
       final PriorAuthorityAttribute priorAuthorityAttribute) {
     String description;
 

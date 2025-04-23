@@ -170,7 +170,7 @@ class ClientBasicDetailsValidatorTest {
     assertEquals(0, errors.getErrorCount());
   }
 
-  private ClientFormDataBasicDetails buildBasicDetails(){
+  private ClientFormDataBasicDetails buildBasicDetails() {
     ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
     basicDetails.setTitle("MR");
     basicDetails.setSurname("TEST");

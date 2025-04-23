@@ -169,4 +169,7 @@ public class AssessmentModelUtils {
         .value(value);
   }
 
+  private AssessmentModelUtils() {
+  }
+
 }

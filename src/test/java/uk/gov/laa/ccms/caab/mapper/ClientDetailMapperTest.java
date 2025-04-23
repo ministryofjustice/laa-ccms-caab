@@ -68,10 +68,10 @@ class ClientDetailMapperTest {
   private final String disability = "TEST";
   private final String specialConsiderations = "TEST SPECIAL CONSIDERATIONS";
 
-  private String dateofBirth = "10/6/2000";
-  private String day = "10";
-  private String month = "6";
-  private String year = "2000";
+  private final String dateofBirth = "10/6/2000";
+  private final String day = "10";
+  private final String month = "6";
+  private final String year = "2000";
 
 
   @BeforeEach

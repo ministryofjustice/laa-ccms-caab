@@ -878,7 +878,7 @@ public class AssessmentService {
         providerId, referenceId, assessmentRulebase.getPrePopAssessmentName());
 
     // find or create an opa session
-    final boolean createdNewPrepopAssessment = (prepopAssessment.getId() == null);
+    final boolean createdNewPrepopAssessment = prepopAssessment.getId() == null;
 
     //used to populate the lookups for title for the opponent
     final List<AssessmentOpponentMappingContext>
@@ -1005,7 +1005,7 @@ public class AssessmentService {
       isMatching = dateOfLastChange.after(assessment.getAuditDetail().getLastSaved());
     }
 
-    return (isMatching || isProceedingsCountMismatch(application, assessment));
+    return isMatching || isProceedingsCountMismatch(application, assessment);
   }
 
   /**
@@ -1024,8 +1024,8 @@ public class AssessmentService {
     final List<AssessmentEntityDetail> proceedingEntities =
         getAssessmentEntitiesForEntityType(assessment, PROCEEDING);
 
-    return (application.getProceedings().size() != proceedingEntities.size()
-        || isAssessmentProceedingsMatchingApplication(application, assessment));
+    return application.getProceedings().size() != proceedingEntities.size()
+        || isAssessmentProceedingsMatchingApplication(application, assessment);
   }
 
   /**
@@ -1062,7 +1062,7 @@ public class AssessmentService {
       }
 
     }
-    return (isMatching || isApplicationProceedingsMatchingAssessment(application, assessment));
+    return isMatching || isApplicationProceedingsMatchingAssessment(application, assessment);
   }
 
   /**
@@ -1107,7 +1107,7 @@ public class AssessmentService {
         isMatching = true;
       }
     }
-    return (isMatching || isOpponentCountMatchingAssessments(application, assessment));
+    return isMatching || isOpponentCountMatchingAssessments(application, assessment);
   }
 
   /**

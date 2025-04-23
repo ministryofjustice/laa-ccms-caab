@@ -83,7 +83,7 @@ class ClientConfirmationControllerTest {
 
     this.mockMvc.perform(get("/application/client/" + clientReferenceNumber + "/confirm")
             .sessionAttr(USER_DETAILS,
-                user)) // using the constant USER_DETAILS for the session attribute name
+                user))// using the constant USER_DETAILS for the session attribute name
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-client-confirmation"))

@@ -74,8 +74,8 @@ public class CaabApiClient {
         .post()
         .uri("/applications")
         .header("Caab-User-Login-Id", loginId)
-        .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
-        .bodyValue(application) // Add the application details to the request body
+        .contentType(MediaType.APPLICATION_JSON)// Set the content type to JSON
+        .bodyValue(application)// Add the application details to the request body
         .exchangeToMono(CaabApiClient::getIdResponse)
         .onErrorResume(e -> caabApiClientErrorHandler
             .handleApiCreateError(e, RESOURCE_TYPE_APPLICATION));
@@ -396,7 +396,7 @@ public class CaabApiClient {
         .put()
         .uri("/applications/{id}/cost-structure", id)
         .header("Caab-User-Login-Id", loginId)
-        .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
+        .contentType(MediaType.APPLICATION_JSON)// Set the content type to JSON
         .bodyValue(costs)
         .retrieve()
         .bodyToMono(Void.class)
@@ -778,8 +778,8 @@ public class CaabApiClient {
         .post()
         .uri("/case-outcomes")
         .header("Caab-User-Login-Id", loginId)
-        .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
-        .bodyValue(caseOutcome) // Add the case outcome detail to the request body
+        .contentType(MediaType.APPLICATION_JSON)// Set the content type to JSON
+        .bodyValue(caseOutcome)// Add the case outcome detail to the request body
         .exchangeToMono(clientResponse -> {
           final HttpHeaders headers = clientResponse.headers().asHttpHeaders();
           final URI locationUri = headers.getLocation();

@@ -251,8 +251,7 @@ public class ContextToken {
     final StringBuilder sb = new StringBuilder();
     sb.append("caseId[").append(caseId).append("] ");
     sb.append("providerId[").append(providerId).append("] ");
-    sb.append("RuleBase[").append(
-        AssessmentRulebase.getPrePopAssessmentName(rulebaseId)).append("] ");
+    sb.append("RuleBase[").append(AssessmentRulebase.getPrePopAssessmentName(rulebaseId)).append("] ");
     return sb;
   }
 

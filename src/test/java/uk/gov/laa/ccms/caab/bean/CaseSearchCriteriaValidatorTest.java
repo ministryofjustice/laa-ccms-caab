@@ -93,7 +93,7 @@ class CaseSearchCriteriaValidatorTest {
   @Test
   void caseRefAlphaNumericValidation() {
     searchCriteria.setCaseReference("$%^");
-    validator.validate(searchCriteria,errors);
+    validator.validate(searchCriteria, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
   }

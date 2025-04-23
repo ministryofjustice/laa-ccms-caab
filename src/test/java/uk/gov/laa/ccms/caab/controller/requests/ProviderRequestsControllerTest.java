@@ -577,10 +577,10 @@ class ProviderRequestsControllerTest {
     mockMvc.perform(get("/provider-requests/documents"))
         .andExpect(status().isOk())
         .andExpect(view().name("requests/provider-request-doc-upload"))
-        .andExpect(model().attributeExists(EVIDENCE_UPLOAD_FORM_DATA)) // Check EvidenceUploadFormData is in the model
-        .andExpect(model().attributeExists("documentTypes")) // Check documentTypes dropdown
+        .andExpect(model().attributeExists(EVIDENCE_UPLOAD_FORM_DATA))// Check EvidenceUploadFormData is in the model
+        .andExpect(model().attributeExists("documentTypes"))// Check documentTypes dropdown
         .andExpect(model().attribute("documentTypes", List.of(new CommonLookupValueDetail().code("DOC1").description("Document Type 1"))))
-        .andExpect(model().attribute("validExtensions", "pdf or docx")) // Check valid file extensions
+        .andExpect(model().attribute("validExtensions", "pdf or docx"))// Check valid file extensions
         .andExpect(model().attribute("maxFileSize", maxFileSize)); // Check max file size
 
     // Verify interactions with mocks

@@ -695,9 +695,9 @@ class LookupServiceTest {
 
     StepVerifier.create(result)
         .expectNextMatches(map ->
-            map.size() == 2 &&
-                map.get("lookup1").equals(detail1) &&
-                map.get("lookup2").equals(detail2))
+            map.size() == 2
+                && map.get("lookup1").equals(detail1)
+                && map.get("lookup2").equals(detail2))
         .verifyComplete();
   }
 
@@ -733,10 +733,10 @@ class LookupServiceTest {
 
     StepVerifier.create(result)
         .expectNextMatches(context ->
-            context.getContactTitle().equals(mockContactTitle) &&
-                context.getOrganisationRelationshipsToCase().equals(mockOrganisationRelationshipsToCase) &&
-                context.getIndividualRelationshipsToCase().equals(mockIndividualRelationshipsToCase) &&
-                context.getRelationshipToClient().equals(mockRelationshipToClient)
+            context.getContactTitle().equals(mockContactTitle)
+                && context.getOrganisationRelationshipsToCase().equals(mockOrganisationRelationshipsToCase)
+                && context.getIndividualRelationshipsToCase().equals(mockIndividualRelationshipsToCase)
+                && context.getRelationshipToClient().equals(mockRelationshipToClient)
         )
         .verifyComplete();
   }

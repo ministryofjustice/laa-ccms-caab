@@ -37,4 +37,7 @@ public class ReflectionUtils {
       }
     }
   }
+
+  private ReflectionUtils() {
+  }
 }

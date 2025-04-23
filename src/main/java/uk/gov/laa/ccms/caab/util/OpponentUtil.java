@@ -204,4 +204,7 @@ public class OpponentUtil {
             .code(opponent.getRelationshipToClient())
             .description(opponent.getRelationshipToClient()));
   }
+
+  private OpponentUtil() {
+  }
 }

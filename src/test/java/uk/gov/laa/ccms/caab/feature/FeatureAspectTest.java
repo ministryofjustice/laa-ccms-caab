@@ -73,9 +73,9 @@ class FeatureAspectTest {
     when(featureService.isEnabled(Feature.AMENDMENTS)).thenReturn(true);
 
     ProceedingJoinPoint proceedingJoinPoint = mock(ProceedingJoinPoint.class);
-    when(proceedingJoinPoint.getArgs()).thenReturn(new Object[] {});
+    when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{});
     MethodSignature signature = mock(MethodSignature.class);
-    when(signature.getParameterNames()).thenReturn(new String[] {});
+    when(signature.getParameterNames()).thenReturn(new String[]{});
     when(proceedingJoinPoint.getSignature()).thenReturn(signature);
 
     Expression expression = mock(Expression.class);
@@ -99,9 +99,9 @@ class FeatureAspectTest {
     when(featureService.isEnabled(Feature.AMENDMENTS)).thenReturn(true);
 
     ProceedingJoinPoint proceedingJoinPoint = mock(ProceedingJoinPoint.class);
-    when(proceedingJoinPoint.getArgs()).thenReturn(new Object[] {});
+    when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{});
     MethodSignature signature = mock(MethodSignature.class);
-    when(signature.getParameterNames()).thenReturn(new String[] {});
+    when(signature.getParameterNames()).thenReturn(new String[]{});
     when(proceedingJoinPoint.getSignature()).thenReturn(signature);
 
     Expression expression = mock(Expression.class);
@@ -125,9 +125,9 @@ class FeatureAspectTest {
     when(featureService.isEnabled(Feature.AMENDMENTS)).thenReturn(false);
 
     ProceedingJoinPoint proceedingJoinPoint = mock(ProceedingJoinPoint.class);
-    when(proceedingJoinPoint.getArgs()).thenReturn(new Object[] {});
+    when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{});
     MethodSignature signature = mock(MethodSignature.class);
-    when(signature.getParameterNames()).thenReturn(new String[] {});
+    when(signature.getParameterNames()).thenReturn(new String[]{});
     when(proceedingJoinPoint.getSignature()).thenReturn(signature);
 
     Expression expression = mock(Expression.class);

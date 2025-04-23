@@ -38,4 +38,3 @@ public class OrganisationSearchCriteria implements Serializable {
   private String postcode;
 
 }
-

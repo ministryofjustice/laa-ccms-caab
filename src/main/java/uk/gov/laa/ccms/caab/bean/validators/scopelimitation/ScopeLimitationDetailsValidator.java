@@ -41,5 +41,3 @@ public class ScopeLimitationDetailsValidator extends AbstractValidator {
   }
 
 }
-
-

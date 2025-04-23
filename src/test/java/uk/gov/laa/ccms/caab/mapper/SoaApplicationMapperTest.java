@@ -61,6 +61,7 @@ import uk.gov.laa.ccms.caab.mapper.context.SoaPriorAuthorityMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.SoaProceedingMappingContext;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AssessmentResult;
@@ -89,9 +90,11 @@ import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.data.model.CaseSummary;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.Award;
@@ -993,7 +996,7 @@ class SoaApplicationMapperTest {
         buildBaseApplication(1),
         buildBaseApplication(2));
 
-    uk.gov.laa.ccms.caab.model.ApplicationDetails result =
+    ApplicationDetails result =
         applicationMapper.toApplicationDetails(new PageImpl<>(baseApplicationList));
 
     assertNotNull(result);
@@ -1038,10 +1041,10 @@ class SoaApplicationMapperTest {
             .description("certificate descr"))
         .currentProviderBilledAmount(BigDecimal.ONE)
         .devolvedPowers(Pair.of(devolvedPowers, devolvedPowersDate))
-        .feeEarnerContact(new uk.gov.laa.ccms.data.model.ContactDetail()
+        .feeEarnerContact(new ContactDetail()
             .id(100)
             .name("feeEarnerName"))
-        .supervisorContact(new uk.gov.laa.ccms.data.model.ContactDetail()
+        .supervisorContact(new ContactDetail()
             .id(101)
             .name("supName"))
         .meansAssessment(soaCase.getApplicationDetails().getMeansAssesments().getFirst())
@@ -1050,7 +1053,7 @@ class SoaApplicationMapperTest {
             soaCase.getPriorAuthorities().getFirst())))
         .proceedings(Collections.singletonList(
             buildProceedingMappingContext(soaCase.getApplicationDetails().getProceedings().getFirst())))
-        .providerDetail(new uk.gov.laa.ccms.data.model.ProviderDetail()
+        .providerDetail(new ProviderDetail()
             .id(1)
             .name("provname"))
         .providerOffice(new OfficeDetail().id(1000).name("offName"))
@@ -1705,7 +1708,7 @@ class SoaApplicationMapperTest {
   @Test
   @DisplayName("Test toSoaRecordHistory with null context")
   void toSoaRecordHistoryNullContext() {
-    assertNull( applicationMapper.toSoaRecordHistory(null));
+    assertNull(applicationMapper.toSoaRecordHistory(null));
   }
 
 

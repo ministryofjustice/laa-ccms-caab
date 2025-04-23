@@ -168,7 +168,7 @@ public class ApplicationSearchController {
     ApplicationDetails applicationDetails = applicationMapper.toApplicationDetails(
         PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), caseSearchResults));
 
-    model.addAttribute(CURRENT_URL,  request.getRequestURL().toString());
+    model.addAttribute(CURRENT_URL, request.getRequestURL().toString());
     model.addAttribute(CASE_RESULTS_PAGE, applicationDetails);
     model.addAttribute("amendmentsEnabled", featureService.isEnabled(Feature.AMENDMENTS));
     return "application/application-search-results";

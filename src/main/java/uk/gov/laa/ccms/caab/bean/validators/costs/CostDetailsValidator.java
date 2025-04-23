@@ -54,5 +54,3 @@ public class CostDetailsValidator extends AbstractValidator {
   }
 
 }
-
-

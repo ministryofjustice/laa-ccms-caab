@@ -113,4 +113,7 @@ public class DisplayUtil {
         .orElse(defaultDisplayValue);
   }
 
+  private DisplayUtil() {
+  }
+
 }

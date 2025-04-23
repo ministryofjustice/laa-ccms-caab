@@ -338,7 +338,7 @@ public class AssessmentUtil {
         formattedValue = attribute.getValue();
       }
     } else if ("BOOLEAN".equalsIgnoreCase(attribute.getType()) && attribute.getValue() != null) {
-      if (attribute.getValue().equalsIgnoreCase("true")) {
+      if ("true".equalsIgnoreCase(attribute.getValue())) {
         formattedValue = "Yes";
       } else {
         formattedValue = "No";
@@ -348,7 +348,7 @@ public class AssessmentUtil {
       if (formattedValue != null) {
         // Normalize newlines in the string
         String newline = System.lineSeparator();
-        newline = (newline != null ? newline : "\n");
+        newline = newline != null ? newline : "\n";
         formattedValue = formattedValue.replaceAll("(\r\n|\r|\n)", newline);
       }
     }
@@ -389,6 +389,9 @@ public class AssessmentUtil {
             .equalsIgnoreCase(assessmentRulebase.getName()))
         .findFirst()
         .orElseThrow(() -> new CaabApplicationException("Failed to retrieve assessment"));
+  }
+
+  private AssessmentUtil() {
   }
 
 }

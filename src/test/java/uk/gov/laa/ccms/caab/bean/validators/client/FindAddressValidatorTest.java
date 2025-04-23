@@ -100,19 +100,19 @@ class FindAddressValidatorTest {
     addressDetails = new ClientFormDataAddressDetails();
     addressDetails.setNoFixedAbode(true);
 
-    if (field.equals("country")) {
+    if ("country".equals(field)) {
       addressDetails.setCountry(value);
-    } else if (field.equals("houseNameNumber")) {
+    } else if ("houseNameNumber".equals(field)) {
       addressDetails.setHouseNameNumber(value);
-    } else if (field.equals("postcode")) {
+    } else if ("postcode".equals(field)) {
       addressDetails.setPostcode(value);
-    } else if (field.equals("addressLine1")) {
+    } else if ("addressLine1".equals(field)) {
       addressDetails.setAddressLine1(value);
-    } else if (field.equals("addressLine2")) {
+    } else if ("addressLine2".equals(field)) {
       addressDetails.setAddressLine2(value);
-    } else if (field.equals("cityTown")) {
+    } else if ("cityTown".equals(field)) {
       addressDetails.setCityTown(value);
-    } else if (field.equals("county")) {
+    } else if ("county".equals(field)) {
       addressDetails.setCounty(value);
     }
 

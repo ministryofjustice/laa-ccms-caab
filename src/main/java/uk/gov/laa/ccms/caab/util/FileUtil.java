@@ -43,7 +43,10 @@ public class FileUtil {
    * @return the full filename.
    */
   public static String getFilename(String name, String extension) {
-    return name + ((extension == null || extension.equals(name)) ? "" : "." + extension);
+    return name + (extension == null || extension.equals(name) ? "" : "." + extension);
+  }
+
+  private FileUtil() {
   }
 
 }

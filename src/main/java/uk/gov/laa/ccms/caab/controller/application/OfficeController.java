@@ -78,5 +78,3 @@ public class OfficeController {
     return "redirect:/application/category-of-law";
   }
 }
-
-

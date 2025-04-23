@@ -281,7 +281,7 @@ public class EditProceedingsAndCostsSectionController {
 
     model.addAttribute(CURRENT_PROCEEDING, proceeding);
     model.addAttribute(IS_SUBSTANTIVE_DEVOLVED_POWERS_APP,
-        application.getApplicationType().getId().equals(APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS));
+        APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS.equals(application.getApplicationType().getId()));
 
     //default cost limitations
     applicationService.prepareProceedingSummary(applicationId, application, user);
@@ -314,7 +314,7 @@ public class EditProceedingsAndCostsSectionController {
 
     populateMatterTypeDropdown(model, application.getCategoryOfLaw().getId());
 
-    if (action.equals(ACTION_ADD)) {
+    if (ACTION_ADD.equals(action)) {
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
 
       model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
@@ -375,7 +375,7 @@ public class EditProceedingsAndCostsSectionController {
     }
 
     //check if the data has been amended
-    if (action.equals(ACTION_ADD)) {
+    if (ACTION_ADD.equals(action)) {
       proceedingFlow.setAmended(Boolean.TRUE);
     } else {
       final ProceedingFlowFormData oldProceedingFlow =
@@ -480,7 +480,7 @@ public class EditProceedingsAndCostsSectionController {
       return "application/proceedings-proceeding-type";
     }
 
-    if (action.equals(ACTION_ADD)) {
+    if (ACTION_ADD.equals(action)) {
       proceedingFlow.setAmended(Boolean.TRUE);
     } else {
       final ProceedingFlowFormData oldProceedingFlow =
@@ -597,7 +597,7 @@ public class EditProceedingsAndCostsSectionController {
       return "application/proceedings-further-details";
     }
 
-    if (action.equals(ACTION_ADD)) {
+    if (ACTION_ADD.equals(action)) {
       proceedingFlow.setAmended(Boolean.TRUE);
     } else {
 
@@ -762,7 +762,7 @@ public class EditProceedingsAndCostsSectionController {
       // we do this last in case of errors
       proceedingFlow.setAmended(Boolean.FALSE);
     } else {
-      if (action.equals(ACTION_EDIT)) {
+      if (ACTION_EDIT.equals(action)) {
         final ProceedingDetail proceeding =
             (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
         model.addAttribute(PROCEEDING_SCOPE_LIMITATIONS, proceeding.getScopeLimitations());
@@ -774,7 +774,7 @@ public class EditProceedingsAndCostsSectionController {
 
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
     model.addAttribute(IS_SUBSTANTIVE_DEVOLVED_POWERS_APP,
-        application.getApplicationType().getId().equals(APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS));
+        APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS.equals(application.getApplicationType().getId()));
 
     List<ScopeLimitationDetail> scopeLimitationDetails =
         (List<ScopeLimitationDetail>) model.getAttribute(PROCEEDING_SCOPE_LIMITATIONS);
@@ -871,7 +871,7 @@ public class EditProceedingsAndCostsSectionController {
         .map(Object::toString)
         .orElse(null);
 
-    if (action.equals(ACTION_ADD)) {
+    if (ACTION_ADD.equals(action)) {
 
       final ProceedingDetail proceeding = proceedingAndCostsMapper.toProceeding(
           proceedingFlow,
@@ -935,7 +935,7 @@ public class EditProceedingsAndCostsSectionController {
 
     // we need to different logic based off if the proceeding has just been created in memory or is
     // being edited
-    if (proceedingFlow.getAction().equals(ACTION_ADD)) {
+    if (ACTION_ADD.equals(proceedingFlow.getAction())) {
       // we need to get the scope limitations from the session
       final List<ScopeLimitationDetail> scopeLimitations =
           (List<ScopeLimitationDetail>) session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS);
@@ -992,7 +992,7 @@ public class EditProceedingsAndCostsSectionController {
     ScopeLimitationFlowFormData scopeLimitationFlow =
         new ScopeLimitationFlowFormData(scopeLimitationAction);
 
-    if (scopeLimitationAction.equals(ACTION_EDIT)) {
+    if (ACTION_EDIT.equals(scopeLimitationAction)) {
       scopeLimitationFlow = (ScopeLimitationFlowFormData)
           session.getAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA);
     }
@@ -1188,7 +1188,7 @@ public class EditProceedingsAndCostsSectionController {
       final HttpSession session) {
 
 
-    if (proceedingFlow.getAction().equals(ACTION_ADD)) {
+    if (ACTION_ADD.equals(proceedingFlow.getAction())) {
       final List<ScopeLimitationDetail> scopeLimitations =
           (List<ScopeLimitationDetail>) session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS);
 
@@ -1277,7 +1277,7 @@ public class EditProceedingsAndCostsSectionController {
       final HttpSession session) {
 
     //remove the scope limitation from the session list
-    if (proceedingFlow.getAction().equals(ACTION_ADD)) {
+    if (ACTION_ADD.equals(proceedingFlow.getAction())) {
       final List<ScopeLimitationDetail> scopeLimitations =
           (List<ScopeLimitationDetail>) session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS);
 

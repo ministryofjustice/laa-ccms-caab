@@ -33,4 +33,5 @@ public class UserRoleUtil {
   public static boolean hasRole(UserDetail user, UserRole role) {
     return user.getFunctions().contains(role.getCode());
   }
+
 }

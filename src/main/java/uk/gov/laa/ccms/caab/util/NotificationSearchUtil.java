@@ -80,4 +80,7 @@ public class NotificationSearchUtil {
     return copyCriteria;
   }
 
+  private NotificationSearchUtil() {
+  }
+
 }

@@ -711,9 +711,9 @@ public class ApplicationService {
     final ResultsDisplay<LinkedCaseResultRowDisplay> results = new ResultsDisplay<>();
 
     return caabApiClient.getLinkedCases(applicationId)
-        .flatMapMany(Flux::fromIterable) // Convert to Flux<LinkedCaseDetail>
-        .map(resultDisplayMapper::toLinkedCaseResultRowDisplay) // Map to ResultRowDisplay
-        .collectList() // Collect into a List
+        .flatMapMany(Flux::fromIterable)// Convert to Flux<LinkedCaseDetail>
+        .map(resultDisplayMapper::toLinkedCaseResultRowDisplay)// Map to ResultRowDisplay
+        .collectList()// Collect into a List
         .map(list -> {
           results.setContent(list); // Set the content of ResultsDisplay
           return results; // Return the populated ResultsDisplay
@@ -779,7 +779,7 @@ public class ApplicationService {
       final String proceedingCode,
       final String levelOfService,
       final String applicationType,
-      final List<uk.gov.laa.ccms.caab.model.ScopeLimitationDetail> scopeLimitations) {
+      final List<ScopeLimitationDetail> scopeLimitations) {
 
     BigDecimal maxValue = new BigDecimal(0);
     final List<Float> costLimitations = new ArrayList<>();

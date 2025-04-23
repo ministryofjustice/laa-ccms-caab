@@ -117,4 +117,7 @@ public class ProceedingUtil {
     return null;
   }
 
+  private ProceedingUtil() {
+  }
+
 }

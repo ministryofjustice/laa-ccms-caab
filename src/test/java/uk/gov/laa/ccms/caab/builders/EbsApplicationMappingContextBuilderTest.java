@@ -62,6 +62,9 @@ import uk.gov.laa.ccms.data.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetails;
 import uk.gov.laa.ccms.data.model.Proceeding;
+import uk.gov.laa.ccms.data.model.ProceedingDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
@@ -80,7 +83,7 @@ class EbsApplicationMappingContextBuilderTest {
   private EbsApplicationMappingContextBuilder applicationService;
 
   @BeforeEach
-  void beforeEach(){
+  void beforeEach() {
     applicationService = new EbsApplicationMappingContextBuilder(providerService, lookupService, ebsApiClient);
   }
 
@@ -270,14 +273,14 @@ class EbsApplicationMappingContextBuilderTest {
     CaseDetail ebsCase = buildCaseDetail(APP_TYPE_EMERGENCY);
 
     // Mock out the remaining lookups
-    uk.gov.laa.ccms.data.model.ProceedingDetail proceedingLookup =
-        new uk.gov.laa.ccms.data.model.ProceedingDetail();
+    ProceedingDetail proceedingLookup =
+        new ProceedingDetail();
     when(ebsApiClient.getProceeding(ebsProceeding.getProceedingType()))
         .thenReturn(Mono.just(proceedingLookup));
 
     CommonLookupValueDetail proceedingStatusLookup =
         new CommonLookupValueDetail();
-    when(lookupService.getCommonValue(COMMON_VALUE_PROCEEDING_STATUS,  ebsProceeding.getStatus()))
+    when(lookupService.getCommonValue(COMMON_VALUE_PROCEEDING_STATUS, ebsProceeding.getStatus()))
         .thenReturn(Mono.just(Optional.of(proceedingStatusLookup)));
 
     CommonLookupValueDetail matterTypeLookup = new CommonLookupValueDetail()
@@ -289,7 +292,7 @@ class EbsApplicationMappingContextBuilderTest {
     CommonLookupValueDetail levelOfServiceLookup = new CommonLookupValueDetail()
         .code(ebsProceeding.getLevelOfService())
         .description("the los");
-    when(lookupService.getCommonValue(COMMON_VALUE_LEVEL_OF_SERVICE,ebsProceeding.getLevelOfService()))
+    when(lookupService.getCommonValue(COMMON_VALUE_LEVEL_OF_SERVICE, ebsProceeding.getLevelOfService()))
         .thenReturn(Mono.just(Optional.of(levelOfServiceLookup)));
 
     CommonLookupValueDetail clientInvLookup = new CommonLookupValueDetail()
@@ -320,26 +323,26 @@ class EbsApplicationMappingContextBuilderTest {
     ScopeLimitationDetails scopeLimitationOne = new ScopeLimitationDetails()
         .totalElements(1)
         .addContentItem(
-            new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+            new ScopeLimitationDetail()
                 .costLimitation(BigDecimal.ZERO)
                 .emergencyCostLimitation(BigDecimal.ZERO));
 
     ScopeLimitationDetails scopeLimitationTwo = new ScopeLimitationDetails()
         .totalElements(1)
         .addContentItem(
-            new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+            new ScopeLimitationDetail()
                 .costLimitation(BigDecimal.TEN)
                 .emergencyCostLimitation(BigDecimal.ZERO));
 
     ScopeLimitationDetails scopeLimitationThree = new ScopeLimitationDetails()
         .totalElements(1)
         .addContentItem(
-            new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+            new ScopeLimitationDetail()
                 .costLimitation(BigDecimal.ZERO)
                 .emergencyCostLimitation(BigDecimal.ONE));
 
     when(lookupService.getScopeLimitationDetails(any(
-        uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
+        ScopeLimitationDetail.class)))
         .thenReturn(Mono.just(scopeLimitationOne))
         .thenReturn(Mono.just(scopeLimitationTwo))
         .thenReturn(Mono.just(scopeLimitationThree));
@@ -414,26 +417,26 @@ class EbsApplicationMappingContextBuilderTest {
     ScopeLimitationDetails scopeLimitationOne = new ScopeLimitationDetails()
         .totalElements(1)
         .addContentItem(
-            new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+            new ScopeLimitationDetail()
                 .costLimitation(BigDecimal.ZERO)
                 .emergencyCostLimitation(BigDecimal.ZERO));
 
     ScopeLimitationDetails scopeLimitationTwo = new ScopeLimitationDetails()
         .totalElements(1)
         .addContentItem(
-            new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+            new ScopeLimitationDetail()
                 .costLimitation(BigDecimal.TEN)
                 .emergencyCostLimitation(BigDecimal.ZERO));
 
     ScopeLimitationDetails scopeLimitationThree = new ScopeLimitationDetails()
         .totalElements(1)
         .addContentItem(
-            new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+            new ScopeLimitationDetail()
                 .costLimitation(BigDecimal.ZERO)
                 .emergencyCostLimitation(BigDecimal.ONE));
 
     when(lookupService.getScopeLimitationDetails(any(
-        uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
+        ScopeLimitationDetail.class)))
         .thenReturn(Mono.just(scopeLimitationOne))
         .thenReturn(Mono.just(scopeLimitationTwo))
         .thenReturn(Mono.just(scopeLimitationThree));
@@ -446,7 +449,7 @@ class EbsApplicationMappingContextBuilderTest {
             ebsCase);
 
     verify(lookupService, times(3))
-        .getScopeLimitationDetails(any(uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class));
+        .getScopeLimitationDetails(any(ScopeLimitationDetail.class));
 
     assertEquals(expectedCostLimitation, result);
   }
@@ -480,7 +483,7 @@ class EbsApplicationMappingContextBuilderTest {
 
     CommonLookupValueDetail applicationTypeLookup = new CommonLookupValueDetail();
 
-    uk.gov.laa.ccms.data.model.ProviderDetail providerDetail = buildProviderDetail(
+    ProviderDetail providerDetail = buildProviderDetail(
         ebsCase.getApplicationDetails().getProviderDetails().getProviderOfficeId(),
         ebsCase.getApplicationDetails().getProviderDetails().getFeeEarnerContactId(),
         ebsCase.getApplicationDetails().getProviderDetails().getSupervisorContactId());
@@ -511,8 +514,8 @@ class EbsApplicationMappingContextBuilderTest {
     // Also need to mock calls for the 'sub' mapping contexts, but we aren't testing their
     // content here.
     when(ebsApiClient.getProceeding(any(String.class)))
-        .thenReturn(Mono.just(new uk.gov.laa.ccms.data.model.ProceedingDetail()));
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROCEEDING_STATUS),  any(String.class)))
+        .thenReturn(Mono.just(new ProceedingDetail()));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROCEEDING_STATUS), any(String.class)))
         .thenReturn(Mono.just(Optional.of(new CommonLookupValueDetail())));
     when(lookupService.getAwardTypes()).thenReturn(Mono.just(
         new AwardTypeLookupDetail()
@@ -568,12 +571,12 @@ class EbsApplicationMappingContextBuilderTest {
 
     CommonLookupValueDetail applicationTypeLookup = new CommonLookupValueDetail();
 
-    uk.gov.laa.ccms.data.model.ProviderDetail providerDetail = buildProviderDetail(
+    ProviderDetail providerDetail = buildProviderDetail(
         ebsCase.getApplicationDetails().getProviderDetails().getProviderOfficeId(),
         ebsCase.getApplicationDetails().getProviderDetails().getFeeEarnerContactId(),
         ebsCase.getApplicationDetails().getProviderDetails().getSupervisorContactId());
 
-    when(lookupService.getCommonValue(COMMON_VALUE_APPLICATION_TYPE,ebsCase.getCertificateType()))
+    when(lookupService.getCommonValue(COMMON_VALUE_APPLICATION_TYPE, ebsCase.getCertificateType()))
         .thenReturn(Mono.just(Optional.of(applicationTypeLookup)));
 
     when(lookupService.getCommonValue(COMMON_VALUE_APPLICATION_TYPE,
@@ -586,21 +589,21 @@ class EbsApplicationMappingContextBuilderTest {
 
     CommonLookupValueDetail matterTypeLookup =
         new CommonLookupValueDetail().code("mat1").description("mat 1");
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_MATTER_TYPES),anyString())).thenReturn(Mono.just(Optional.of(matterTypeLookup)));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_MATTER_TYPES), anyString())).thenReturn(Mono.just(Optional.of(matterTypeLookup)));
 
     CommonLookupValueDetail levelOfServiceLookup =
         new CommonLookupValueDetail().code("los1").description("los 1");
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_LEVEL_OF_SERVICE),anyString())).thenReturn(Mono.just(Optional.of(levelOfServiceLookup)));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_LEVEL_OF_SERVICE), anyString())).thenReturn(Mono.just(Optional.of(levelOfServiceLookup)));
 
     CommonLookupValueDetail clientInvolvementLookup =
         new CommonLookupValueDetail().code("ci1").description("ci 1");
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES),anyString())).thenReturn(Mono.just(Optional.of(clientInvolvementLookup)));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES), anyString())).thenReturn(Mono.just(Optional.of(clientInvolvementLookup)));
 
     // Also need to mock calls for the 'sub' mapping contexts, but we aren't testing their
     // content here.
     when(ebsApiClient.getProceeding(any(String.class)))
-        .thenReturn(Mono.just(new uk.gov.laa.ccms.data.model.ProceedingDetail()));
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROCEEDING_STATUS),  any(String.class)))
+        .thenReturn(Mono.just(new ProceedingDetail()));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROCEEDING_STATUS), any(String.class)))
         .thenReturn(Mono.just(Optional.of(new CommonLookupValueDetail())));
     when(lookupService.getAwardTypes()).thenReturn(Mono.just(
         new AwardTypeLookupDetail()
@@ -634,7 +637,7 @@ class EbsApplicationMappingContextBuilderTest {
     ebsCase.getAwards().clear(); // Awards tested separately.
 
 
-    uk.gov.laa.ccms.data.model.ProviderDetail providerDetail = buildProviderDetail(
+    ProviderDetail providerDetail = buildProviderDetail(
         ebsCase.getApplicationDetails().getProviderDetails().getProviderOfficeId(),
         ebsCase.getApplicationDetails().getProviderDetails().getFeeEarnerContactId(),
         ebsCase.getApplicationDetails().getProviderDetails().getSupervisorContactId());
@@ -649,22 +652,22 @@ class EbsApplicationMappingContextBuilderTest {
 
     CommonLookupValueDetail matterTypeLookup =
         new CommonLookupValueDetail().code("mat1").description("mat 1");
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_MATTER_TYPES),anyString())).thenReturn(Mono.just(Optional.of(matterTypeLookup)));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_MATTER_TYPES), anyString())).thenReturn(Mono.just(Optional.of(matterTypeLookup)));
 
     CommonLookupValueDetail levelOfServiceLookup =
         new CommonLookupValueDetail().code("los1").description("los 1");
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_LEVEL_OF_SERVICE),anyString())).thenReturn(Mono.just(Optional.of(levelOfServiceLookup)));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_LEVEL_OF_SERVICE), anyString())).thenReturn(Mono.just(Optional.of(levelOfServiceLookup)));
 
     CommonLookupValueDetail clientInvolvementLookup =
         new CommonLookupValueDetail().code("ci1").description("ci 1");
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES),anyString())).thenReturn(Mono.just(Optional.of(clientInvolvementLookup)));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES), anyString())).thenReturn(Mono.just(Optional.of(clientInvolvementLookup)));
 
 
     // Also need to mock calls for the 'sub' mapping contexts, but we aren't testing their
     // content here.
     when(ebsApiClient.getProceeding(any(String.class)))
-        .thenReturn(Mono.just(new uk.gov.laa.ccms.data.model.ProceedingDetail()));
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROCEEDING_STATUS),  any(String.class)))
+        .thenReturn(Mono.just(new ProceedingDetail()));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROCEEDING_STATUS), any(String.class)))
         .thenReturn(Mono.just(Optional.of(new CommonLookupValueDetail())));
     when(lookupService.getAwardTypes()).thenReturn(Mono.just(
         new AwardTypeLookupDetail()
