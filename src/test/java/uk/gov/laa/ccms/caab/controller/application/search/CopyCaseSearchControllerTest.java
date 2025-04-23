@@ -60,7 +60,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class CopyCaseSearchControllerTest {
+class CopyCaseSearchControllerTest {
   @Mock
   private CaseSearchCriteriaValidator validator;
 
@@ -87,7 +87,7 @@ public class CopyCaseSearchControllerTest {
   private WebApplicationContext webApplicationContext;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(copyCaseSearchController).build();
     this.user = buildUser();
 
@@ -95,7 +95,7 @@ public class CopyCaseSearchControllerTest {
   }
 
   @Test
-  public void testGetCopyCaseSearchAddsFeeEarnersToModel() throws Exception {
+  void getCopyCaseSearchAddsFeeEarnersToModel() throws Exception {
     ProviderDetail providerDetail = new ProviderDetail();
     List<ContactDetail> feeEarners = buildFeeEarners();
 
@@ -113,7 +113,7 @@ public class CopyCaseSearchControllerTest {
   }
 
   @Test
-  public void testGetCopyCaseSearchNoFeeEarners() {
+  void getCopyCaseSearchNoFeeEarners() {
     when(providerService.getProvider(user.getProvider().getId()))
         .thenReturn(Mono.empty());
 
@@ -126,7 +126,7 @@ public class CopyCaseSearchControllerTest {
   }
 
   @Test
-  public void testPostCopyCaseSearchHandlesValidationFailure() throws Exception {
+  void postCopyCaseSearchHandlesValidationFailure() throws Exception {
     ProviderDetail providerDetail = new ProviderDetail();
     List<ContactDetail> feeEarners = buildFeeEarners();
 
@@ -151,7 +151,7 @@ public class CopyCaseSearchControllerTest {
   }
 
   @Test
-  public void testPostCopyCaseSearch_NoCopyCaseStatus() throws Exception {
+  void postCopyCaseSearchNoCopyCaseStatus() throws Exception {
     List<BaseApplicationDetail> baseApplications = new ArrayList<>();
 
     when(applicationService.getCases(any(), any())).thenReturn(baseApplications);
@@ -171,7 +171,7 @@ public class CopyCaseSearchControllerTest {
   }
 
   @Test
-  public void testPostCopyCaseSearch_NoResults() throws Exception {
+  void postCopyCaseSearchNoResults() throws Exception {
     List<BaseApplicationDetail> baseApplications = new ArrayList<>();
 
     when(applicationService.getCases(any(), any())).thenReturn(baseApplications);
@@ -193,7 +193,7 @@ public class CopyCaseSearchControllerTest {
   }
 
   @Test
-  public void testPostCopyCaseSearch_WithTooManyResults() throws Exception {
+  void postCopyCaseSearchWithTooManyResults() throws Exception {
     when(applicationService.getCases(any(), any())).thenThrow(
         new TooManyResultsException(""));
 
@@ -206,7 +206,7 @@ public class CopyCaseSearchControllerTest {
   }
 
   @Test
-  public void testPostCopyCaseSearch_WithResults() throws Exception {
+  void postCopyCaseSearchWithResults() throws Exception {
     List<BaseApplicationDetail> caseSearchResults = List.of(new BaseApplicationDetail());
 
     when(applicationService.getCases(any(), any())).thenReturn(caseSearchResults);
@@ -219,7 +219,7 @@ public class CopyCaseSearchControllerTest {
   }
 
   @Test
-  public void testGetCopyCaseSearchResults_PaginatesResults() throws Exception {
+  void getCopyCaseSearchResultsPaginatesResults() throws Exception {
     List<BaseApplicationDetail> caseSearchResults = List.of(
         new BaseApplicationDetail(),
         new BaseApplicationDetail());
@@ -240,7 +240,7 @@ public class CopyCaseSearchControllerTest {
 
 
   @Test
-  public void testSelectCopyCaseReferenceNumber_InvalidCaseRef() {
+  void selectCopyCaseReferenceNumberInvalidCaseRef() {
     Exception exception = assertThrows(ServletException.class, () ->
         this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm", "123")
             .sessionAttr(CASE_SEARCH_RESULTS, new ArrayList<BaseApplicationDetail>())
@@ -255,7 +255,7 @@ public class CopyCaseSearchControllerTest {
   }
 
   @Test
-  public void testSelectCopyCaseReferenceNumber_ValidCaseRef() throws Exception {
+  void selectCopyCaseReferenceNumberValidCaseRef() throws Exception {
     List<BaseApplicationDetail> caseSearchResults =
         List.of(new BaseApplicationDetail().caseReferenceNumber("123"));
 

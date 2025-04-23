@@ -13,7 +13,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 class OpponentUtilTest {
 
   @Test
-  void testGetPartyName_buildsFullName() {
+  void getPartyNameBuildsFullName() {
     final OpponentDetail opponent = buildOpponent(new Date());
 
     final CommonLookupValueDetail titleLookup = new CommonLookupValueDetail()
@@ -28,7 +28,7 @@ class OpponentUtilTest {
   }
 
   @Test
-  void testGetPartyName_noTitleMatchReturnsCode() {
+  void getPartyNameNoTitleMatchReturnsCode() {
     final OpponentDetail opponent = buildOpponent(new Date());
 
     final CommonLookupValueDetail titleLookup = new CommonLookupValueDetail()
@@ -42,7 +42,7 @@ class OpponentUtilTest {
   }
 
   @Test
-  void testGetPartyName_noNameElementsReturnsUndefined() {
+  void getPartyNameNoNameElementsReturnsUndefined() {
     final OpponentDetail opponent = new OpponentDetail();
 
     final CommonLookupValueDetail titleLookup = new CommonLookupValueDetail();
@@ -55,7 +55,7 @@ class OpponentUtilTest {
   }
 
   @Test
-  void testGetPartyName_noFirstnameReturnsCorrectly() {
+  void getPartyNameNoFirstnameReturnsCorrectly() {
     final OpponentDetail opponent = buildOpponent(new Date());
     opponent.setFirstName(null);
 
@@ -70,7 +70,7 @@ class OpponentUtilTest {
   }
 
   @Test
-  void testGetPartyName_noSurnameReturnsCorrectly() {
+  void getPartyNameNoSurnameReturnsCorrectly() {
     final OpponentDetail opponent = buildOpponent(new Date());
     opponent.setSurname(null);
 
@@ -85,7 +85,7 @@ class OpponentUtilTest {
   }
 
   @Test
-  void testGetPartyName_noFirstnameSurnameReturnsTitleOnly() {
+  void getPartyNameNoFirstnameSurnameReturnsTitleOnly() {
     final OpponentDetail opponent = buildOpponent(new Date());
     opponent.setFirstName(null);
     opponent.setSurname(null);

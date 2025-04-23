@@ -1487,7 +1487,7 @@ public class EbsApiClientTest {
         ", , /lookup/declarations?size=1000"
     })
     @DisplayName("getDeclarations parameterized test")
-    void testGetDeclarations(final String type, final String billType, final String expectedUri) {
+    void getDeclarations(final String type, final String billType, final String expectedUri) {
       final DeclarationLookupDetail mockDeclarationDetail = new DeclarationLookupDetail();
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
@@ -1519,7 +1519,7 @@ public class EbsApiClientTest {
         "DECLARATION_TYPE, , /lookup/declarations?size=1000&type=DECLARATION_TYPE"
     })
     @DisplayName("getDeclarations handles errors in a parameterized test")
-    void testGetDeclarations_handlesError(final String type, final String billType,
+    void getDeclarationsHandlesError(final String type, final String billType,
         final String expectedUri) {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
@@ -1559,7 +1559,7 @@ public class EbsApiClientTest {
         ", , /lookup/provider-request-types?size=1000"
     })
     @DisplayName("Should match URI")
-    void testGetProviderRequestTypes(final Boolean isCaseRelated, final String type,
+    void getProviderRequestTypes(final Boolean isCaseRelated, final String type,
         final String expectedUri) {
       final ProviderRequestTypeLookupDetail mockDetail = new ProviderRequestTypeLookupDetail();
 
@@ -1592,7 +1592,7 @@ public class EbsApiClientTest {
         "true, , /lookup/provider-request-types?size=1000&is-case-related=true"
     })
     @DisplayName("Should handle error")
-    void testGetProviderRequestTypes_handlesError(final Boolean isCaseRelated, final String type,
+    void getProviderRequestTypesHandlesError(final Boolean isCaseRelated, final String type,
         final String expectedUri) {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
@@ -1626,7 +1626,7 @@ public class EbsApiClientTest {
 
     @Test
     @DisplayName("Should create case reference")
-    void testPostAllocateNextCaseReference_createsCaseReference() {
+    void postAllocateNextCaseReferenceCreatesCaseReference() {
       when(webClientMock.post()).thenReturn(requestBodyUriMock);
       when(requestBodyUriMock.uri("/case-reference")).thenReturn(requestBodySpec);
       when(requestBodySpec.retrieve()).thenReturn(responseMock);
@@ -1646,7 +1646,7 @@ public class EbsApiClientTest {
 
     @Test
     @DisplayName("Should handle errors")
-    void testPostAllocateNextCaseReference_handlesError() {
+    void postAllocateNextCaseReferenceHandlesError() {
       when(webClientMock.post()).thenReturn(requestBodyUriMock);
       when(requestBodyUriMock.uri("/case-reference")).thenReturn(requestBodySpec);
       when(requestBodySpec.retrieve()).thenReturn(responseMock);

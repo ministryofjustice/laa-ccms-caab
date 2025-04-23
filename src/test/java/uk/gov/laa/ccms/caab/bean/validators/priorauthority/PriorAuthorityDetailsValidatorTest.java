@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.bean.validators.priorauthority;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,23 +26,23 @@ class PriorAuthorityDetailsValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     priorAuthorityDetailsFormData = new PriorAuthorityDetailsFormData();
     errors = new BeanPropertyBindingResult(priorAuthorityDetailsFormData, "priorAuthorityFormDataDetails");
   }
 
   @Test
-  public void supports_ReturnsTrueForPriorAuthorityFormDataDetailsClass() {
+  void supports_ReturnsTrueForPriorAuthorityFormDataDetailsClass() {
     assertTrue(priorAuthorityDetailsValidator.supports(PriorAuthorityDetailsFormData.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(priorAuthorityDetailsValidator.supports(Object.class));
   }
 
   @Test
-  public void validate_WithMissingFields_HasErrors() {
+  void validate_WithMissingFields_HasErrors() {
     priorAuthorityDetailsFormData.setSummary(null);
     priorAuthorityDetailsFormData.setJustification(null);
     priorAuthorityDetailsFormData.setValueRequired(true);
@@ -55,7 +56,7 @@ class PriorAuthorityDetailsValidatorTest {
   }
 
   @Test
-  public void validate_WithInvalidCurrency_HasErrors() {
+  void validate_WithInvalidCurrency_HasErrors() {
     priorAuthorityDetailsFormData.setValueRequired(true);
     priorAuthorityDetailsFormData.setAmountRequested("invalid");
 
@@ -65,7 +66,7 @@ class PriorAuthorityDetailsValidatorTest {
   }
 
   @Test
-  public void validate_WithValidDetails_NoErrors() {
+  void validate_WithValidDetails_NoErrors() {
     priorAuthorityDetailsFormData.setSummary("Valid summary");
     priorAuthorityDetailsFormData.setJustification("Valid justification");
     priorAuthorityDetailsFormData.setValueRequired(true);
@@ -77,7 +78,7 @@ class PriorAuthorityDetailsValidatorTest {
   }
 
   @Test
-  public void validate_DynamicOptionsValidation_AMT() {
+  void validate_DynamicOptionsValidation_AMT() {
     final Map<String, DynamicOptionFormData> dynamicOptions = new HashMap<>();
     final DynamicOptionFormData option = new DynamicOptionFormData();
     option.setMandatory(true);
@@ -92,7 +93,7 @@ class PriorAuthorityDetailsValidatorTest {
   }
 
   @Test
-  public void validate_DynamicOptionsValidation_INT() {
+  void validate_DynamicOptionsValidation_INT() {
     final Map<String, DynamicOptionFormData> dynamicOptions = new HashMap<>();
     final DynamicOptionFormData option = new DynamicOptionFormData();
     option.setMandatory(true);

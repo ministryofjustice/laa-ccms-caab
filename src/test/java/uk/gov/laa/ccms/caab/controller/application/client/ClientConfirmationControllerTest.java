@@ -68,12 +68,12 @@ class ClientConfirmationControllerTest {
   private WebApplicationContext webApplicationContext;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(clientConfirmationController).build();
   }
 
   @Test
-  void testClientConfirm() throws Exception {
+  void clientConfirm() throws Exception {
     String clientReferenceNumber = "123456";
     UserDetail user = buildUser(); // Assuming buildUser() method creates a UserDetail object
     ClientDetail clientInformation = new ClientDetail(); // Assuming proper initialization
@@ -92,7 +92,7 @@ class ClientConfirmationControllerTest {
   }
 
   @Test
-  void testClientConfirmedSuccess() throws Exception {
+  void clientConfirmedSuccess() throws Exception {
     String confirmedClientReference = "12345"; //must match client reference above
     ApplicationFormData applicationFormData = buildApplicationDetails();
     ClientDetail clientInformation = buildClientInformation();
@@ -111,7 +111,7 @@ class ClientConfirmationControllerTest {
   }
 
   @Test
-  void testClientConfirmedClientMismatch() {
+  void clientConfirmedClientMismatch() {
     String wrongReference = "wrongReference";
     ApplicationFormData applicationFormData = buildApplicationDetails();
     ClientDetail clientInformation = buildClientInformation();

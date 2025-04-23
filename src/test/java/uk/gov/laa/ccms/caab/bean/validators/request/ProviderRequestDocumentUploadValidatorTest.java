@@ -25,7 +25,7 @@ class ProviderRequestDocumentUploadValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     providerRequestDocumentUploadValidator = new ProviderRequestDocumentUploadValidator(
         Arrays.asList("pdf", "jpg", "png"),
         "5MB"
@@ -36,19 +36,19 @@ class ProviderRequestDocumentUploadValidatorTest {
 
   @Test
   @DisplayName("supports - Returns true for EvidenceUploadFormData class")
-  public void supports_ReturnsTrueForEvidenceUploadFormDataClass() {
+  void supports_ReturnsTrueForEvidenceUploadFormDataClass() {
     assertTrue(providerRequestDocumentUploadValidator.supports(EvidenceUploadFormData.class));
   }
 
   @Test
   @DisplayName("supports - Returns false for other classes")
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(providerRequestDocumentUploadValidator.supports(Object.class));
   }
 
   @Test
   @DisplayName("validate - Adds error when file size exceeds limit")
-  public void validate_FileSizeExceedsLimit_HasErrors() {
+  void validate_FileSizeExceedsLimit_HasErrors() {
     final MockMultipartFile oversizedFile = new MockMultipartFile("file", "valid.pdf", "application/pdf", new byte[6000000]);
     evidenceUploadFormData.setFile(oversizedFile);
     evidenceUploadFormData.setFileExtension("pdf");
@@ -63,7 +63,7 @@ class ProviderRequestDocumentUploadValidatorTest {
 
   @Test
   @DisplayName("validate - Adds error when document description exceeds max length")
-  public void validate_DescriptionExceedsMaxLength_HasErrors() {
+  void validate_DescriptionExceedsMaxLength_HasErrors() {
     final String longDescription = "A".repeat(300); // Exceeds max length of 255
     evidenceUploadFormData.setDocumentDescription(longDescription);
 

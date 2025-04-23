@@ -26,24 +26,24 @@ class OfficeValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     applicationFormData =
         new ApplicationFormData(); // Assuming that the default constructor sets all fields to null.
     errors = new BeanPropertyBindingResult(applicationFormData, APPLICATION_FORM_DATA);
   }
 
   @Test
-  public void supports_ReturnsTrueForApplicationDetailsClass() {
+  void supports_ReturnsTrueForApplicationDetailsClass() {
     assertTrue(officeValidator.supports(ApplicationFormData.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(officeValidator.supports(Object.class));
   }
 
   @Test
-  public void validate() {
+  void validate() {
     officeValidator.validate(applicationFormData, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("officeId"));

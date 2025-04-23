@@ -36,7 +36,7 @@ class SamlPrincipalControllerAdviceTest {
   private UserDetail userDetails;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     principal = mock(Saml2AuthenticatedPrincipal.class);
     advice = new SamlPrincipalControllerAdvice(userService);
     userDetails = new UserDetail();
@@ -46,7 +46,7 @@ class SamlPrincipalControllerAdviceTest {
   }
 
   @Test
-  public void addSamlPrincipalToModelTest_WhenPrincipalNotNullAndSessionContainsUser() {
+  void addSamlPrincipalToModelTest_WhenPrincipalNotNullAndSessionContainsUser() {
     when(session.getAttribute("user")).thenReturn(userDetails);
 
     advice.addSamlPrincipalToModel(principal, model, session);
@@ -58,7 +58,7 @@ class SamlPrincipalControllerAdviceTest {
   }
 
   @Test
-  public void addSamlPrincipalToModelTest_WhenPrincipalNotNullAndSessionContainsUserWithDifferentLoginId() {
+  void addSamlPrincipalToModelTest_WhenPrincipalNotNullAndSessionContainsUserWithDifferentLoginId() {
     UserDetail sessionUser = new UserDetail();
     sessionUser.setLoginId("different");
     when(session.getAttribute("user")).thenReturn(sessionUser);
@@ -73,7 +73,7 @@ class SamlPrincipalControllerAdviceTest {
   }
 
   @Test
-  public void addSamlPrincipalToModelTest_WhenPrincipalNotNullAndSessionDoesNotContainUser() {
+  void addSamlPrincipalToModelTest_WhenPrincipalNotNullAndSessionDoesNotContainUser() {
     when(session.getAttribute("user")).thenReturn(null);
 
     advice.addSamlPrincipalToModel(principal, model, session);
@@ -86,7 +86,7 @@ class SamlPrincipalControllerAdviceTest {
   }
 
   @Test
-  public void addSamlPrincipalToModelTest_WhenPrincipalIsNull() {
+  void addSamlPrincipalToModelTest_WhenPrincipalIsNull() {
     advice.addSamlPrincipalToModel(null, model, session);
 
     verifyNoInteractions(userService);

@@ -9,10 +9,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 
 @ExtendWith(MockitoExtension.class)
-public class CaabApiClientExceptionTest {
-    
+class CaabApiClientExceptionTest {
+
   @Test
-  public void testConstructorWithMessage() {
+  void constructorWithMessage() {
     String expectedMessage = "Test Exception";
     CaabApiClientException exception = new CaabApiClientException(expectedMessage);
 
@@ -21,7 +21,7 @@ public class CaabApiClientExceptionTest {
   }
 
   @Test
-  public void testConstructorWithMessageAndCause() {
+  void constructorWithMessageAndCause() {
     String expectedMessage = "Test Exception";
     Exception cause = new Exception("Cause Exception");
     CaabApiClientException exception = new CaabApiClientException(expectedMessage, cause);

@@ -35,7 +35,7 @@ class ResultDisplayMapperTest {
   CommonMapper commonMapper;
 
   @InjectMocks
-  ResultDisplayMapper mapper = new ResultDisplayMapperImpl();
+  ResultDisplayMapper mapper;
 
   private uk.gov.laa.ccms.soa.gateway.model.ClientDetail clientDetail;
   private ClientSummary clientSummary;
@@ -86,7 +86,7 @@ class ResultDisplayMapperTest {
   }
 
   @Test
-  void testToClientResultRowDisplay_FromClientDetail() {
+  void toClientResultRowDisplayFromClientDetail() {
     final ClientResultRowDisplay result = mapper.toClientResultRowDisplay(clientDetail);
 
     assertEquals("John", result.getFirstName());
@@ -96,7 +96,7 @@ class ResultDisplayMapperTest {
   }
 
   @Test
-  void testToClientResultRowDisplay_FromClientSummary() {
+  void toClientResultRowDisplayFromClientSummary() {
     final ClientResultRowDisplay result = mapper.toClientResultRowDisplay(clientSummary);
 
     assertEquals("Jane", result.getFirstName());
@@ -107,7 +107,7 @@ class ResultDisplayMapperTest {
   }
 
   @Test
-  void testToClientResultsDisplay_FromClientDetails() {
+  void toClientResultsDisplayFromClientDetails() {
     final ClientResultsDisplay result = mapper.toClientResultsDisplay(clientDetails);
 
     assertEquals(1, result.getTotalPages());
@@ -119,7 +119,7 @@ class ResultDisplayMapperTest {
   }
 
   @Test
-  void testToLinkedCaseResultRowDisplay() {
+  void toLinkedCaseResultRowDisplay() {
     final LinkedCaseResultRowDisplay result = mapper.toLinkedCaseResultRowDisplay(linkedCase);
 
     assertEquals("Alice", result.getClientFirstName());
@@ -134,7 +134,7 @@ class ResultDisplayMapperTest {
   }
 
   @Test
-  void testToOrganisationResultRowDisplay() {
+  void toOrganisationResultRowDisplay() {
     OrganisationSummary organisationSummary = new OrganisationSummary()
         .city("thecity")
         .name("thename")
@@ -159,7 +159,7 @@ class ResultDisplayMapperTest {
   }
 
   @Test
-  void testToOrganisationResultRowDisplay_noTypeMatchReturnsCode() {
+  void toOrganisationResultRowDisplayNoTypeMatchReturnsCode() {
     OrganisationSummary organisationSummary = new OrganisationSummary()
         .city("thecity")
         .name("thename")
@@ -184,7 +184,7 @@ class ResultDisplayMapperTest {
   }
 
   @Test
-  void testToOrganisationResultDisplay() {
+  void toOrganisationResultDisplay() {
     OrganisationDetails organisationDetails = new OrganisationDetails()
         .addContentItem(new OrganisationSummary())
         .totalElements(1)

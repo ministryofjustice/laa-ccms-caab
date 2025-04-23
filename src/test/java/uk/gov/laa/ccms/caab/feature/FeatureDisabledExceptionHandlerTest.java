@@ -18,7 +18,7 @@ import uk.gov.laa.ccms.caab.constants.SessionConstants;
 import uk.gov.laa.ccms.data.model.UserDetails;
 
 @ExtendWith(SpringExtension.class)
-public class FeatureDisabledExceptionHandlerTest {
+class FeatureDisabledExceptionHandlerTest {
 
   FeatureDisabledExceptionHandler exceptionHandler;
 

@@ -104,7 +104,7 @@ class EditClientSummaryControllerTest {
       .loginId("testLoginId");
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = MockMvcBuilders.standaloneSetup(editClientSummaryController).build();
 
     clientFlowFormData = new ClientFlowFormData("edit");
@@ -127,7 +127,7 @@ class EditClientSummaryControllerTest {
 
   @Test
   @DisplayName("Test get client details summary with form data in session")
-  void testGetClientDetailsSummary_withFormDataInSession() throws Exception {
+  void getClientDetailsSummaryWithFormDataInSession() throws Exception {
 
     when(lookupService.getClientLookups(any())).thenReturn(
         List.of(
@@ -162,7 +162,7 @@ class EditClientSummaryControllerTest {
 
   @Test
   @DisplayName("Test get client details summary without form data in session")
-  void testGetClientDetailsSummary_withoutFormDataInSession() throws Exception {
+  void getClientDetailsSummaryWithoutFormDataInSession() throws Exception {
 
     when(lookupService.getClientLookups(any())).thenReturn(
         List.of(
@@ -198,7 +198,7 @@ class EditClientSummaryControllerTest {
   }
 
   @Test
-  void testPostClientDetailsSummary() throws Exception {
+  void postClientDetailsSummary() throws Exception {
     final ClientFlowFormData clientFlowFormData = new ClientFlowFormData("edit");
 
     when(clientService.updateClient(any(), any(), any())).thenReturn(

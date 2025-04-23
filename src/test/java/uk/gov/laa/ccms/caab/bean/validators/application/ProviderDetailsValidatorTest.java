@@ -21,30 +21,30 @@ class ProviderDetailsValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     applicationFormData = new ApplicationFormData(); // Assuming that the default constructor sets all fields to null.
     errors = new BeanPropertyBindingResult(applicationFormData, "APPLICATION_FORM_DATA");
   }
 
   @Test
-  public void supports_ReturnsTrueForApplicationFormDataClass() {
+  void supports_ReturnsTrueForApplicationFormDataClass() {
     assertTrue(providerDetailsValidator.supports(ApplicationFormData.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(providerDetailsValidator.supports(Object.class));
   }
 
   @Test
-  public void validate_WithValidContactNameId_NoErrors() {
+  void validate_WithValidContactNameId_NoErrors() {
     applicationFormData.setContactNameId("John Doe");
     providerDetailsValidator.validate(applicationFormData, errors);
     assertFalse(errors.hasErrors());
   }
 
   @Test
-  public void validate_WithNullContactNameId_HasErrors() {
+  void validate_WithNullContactNameId_HasErrors() {
     applicationFormData.setContactNameId(null);
     providerDetailsValidator.validate(applicationFormData, errors);
     assertTrue(errors.hasErrors());
@@ -53,7 +53,7 @@ class ProviderDetailsValidatorTest {
   }
 
   @Test
-  public void validate_WithEmptyContactNameId_HasErrors() {
+  void validate_WithEmptyContactNameId_HasErrors() {
     applicationFormData.setContactNameId("");
     providerDetailsValidator.validate(applicationFormData, errors);
     assertTrue(errors.hasErrors());

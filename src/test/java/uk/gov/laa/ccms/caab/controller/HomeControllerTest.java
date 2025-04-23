@@ -32,7 +32,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class HomeControllerTest {
+class HomeControllerTest {
   @Mock
   private NotificationService notificationService;
 
@@ -45,7 +45,7 @@ public class HomeControllerTest {
   private WebApplicationContext webApplicationContext;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(homeController).build();
   }
 
@@ -68,11 +68,11 @@ public class HomeControllerTest {
 
   @ParameterizedTest
   @MethodSource("userDetailsAndNotificationParameters")
-  public void testHomeRetrievesUserDetailAndNotifications(int notifications, int standardActions,
-                                                          int overdueActions,
-                                                          boolean expectedShowNotifications,
-                                                          String expectedActionMsg,
-                                                          String expectedNotificationMsg)
+  void homeRetrievesUserDetailAndNotifications(int notifications, int standardActions,
+                                              int overdueActions,
+                                              boolean expectedShowNotifications,
+                                              String expectedActionMsg,
+                                              String expectedNotificationMsg)
       throws Exception {
 
     // Create a sample notification summary
@@ -97,7 +97,7 @@ public class HomeControllerTest {
   }
 
   @Test
-  public void testHomeHandlesNullNotifications() throws Exception {
+  void homeHandlesNullNotifications() throws Exception {
 
     // Mock the SOA Gateway service to return the notification summary
     when(notificationService.getNotificationsSummary(userDetails.getLoginId())).thenReturn(

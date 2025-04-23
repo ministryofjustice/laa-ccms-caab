@@ -71,7 +71,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   private static final String CASE_REFERENCE_MESSAGE = "Failed to retrieve case reference";
 
   @Test
-  public void testGetUser_returnData() throws Exception {
+  void getUserReturnData() throws Exception {
     final UserDetail expectedUserDetail = buildUserDetail();
     final String userJson = objectMapper.writeValueAsString(expectedUserDetail);
 
@@ -86,7 +86,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testGetUser_notFound() {
+  void getUserNotFound() {
     final String loginId = "user1";
     final String expectedMessage = USER_ERROR_MESSAGE.formatted(loginId);
 
@@ -102,7 +102,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testGetCommonValues_returnData() throws Exception {
+  void getCommonValuesReturnData() throws Exception {
     final CommonLookupDetail expectedCommonValues = buildCommonLookupDetail();
     final String commonValuesJson = objectMapper.writeValueAsString(expectedCommonValues);
 
@@ -127,7 +127,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testGetCaseStatusValues_returnData() throws Exception {
+  void getCaseStatusValuesReturnData() throws Exception {
     final String caseStatusValuesJson = objectMapper.writeValueAsString(
         buildCaseStatusLookupDetail());
 
@@ -146,7 +146,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testGetProvider() throws Exception {
+  void getProvider() throws Exception {
     final ProviderDetail provider = buildProviderDetail();
     final String providerJson = objectMapper.writeValueAsString(provider);
 
@@ -160,7 +160,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testGetAmendmentTypes_returnData() throws Exception {
+  void getAmendmentTypesReturnData() throws Exception {
     final AmendmentTypeLookupDetail expectedAmendmentTypes = buildAmendmentTypeLookupDetail();
     final String amendmentTypesJson = objectMapper.writeValueAsString(expectedAmendmentTypes);
     final String applicationType = "testApplicationType";
@@ -178,7 +178,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  void testGetUsers_returnsData() throws JsonProcessingException {
+  void getUsersReturnsData() throws JsonProcessingException {
     final String username = "user1";
     final Integer providerId = 123;
     final BaseUser user = new BaseUser()
@@ -198,7 +198,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testGetUsers_notFound() {
+  void getUsersNotFound() {
     final Integer providerId = 123;
     final String expectedMessage = "Failed to retrieve Users with parameters: size=1000, "
         + "provider-id=123";
@@ -214,7 +214,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
 
   @Test
-  public void testGetUserNotificationSummary_returnData() throws Exception {
+  void getUserNotificationSummaryReturnData() throws Exception {
     final String loginId = "user1";
     final NotificationSummary expectedNotificationsummary = buildUserNotificationSummary();
     final String notificationSummaryJson = objectMapper.writeValueAsString(
@@ -233,7 +233,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testGetUserNotificationSummary_notFound() {
+  void getUserNotificationSummaryNotFound() {
     final String loginId = "user1";
     final String expectedMessage = USER_ERROR_MESSAGE.formatted(loginId);
 
@@ -250,7 +250,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testGetNotifications_returnsData() throws JsonProcessingException {
+  void getNotificationsReturnsData() throws JsonProcessingException {
     Notifications notifications = buildNotifications();
     String notificationsJson = objectMapper.writeValueAsString(notifications);
 
@@ -277,7 +277,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testPostAllocateCaseReference_createsNewReference() throws JsonProcessingException {
+  void postAllocateCaseReferenceCreatesNewReference() throws JsonProcessingException {
     // Given
     CaseReferenceSummary expected =
         new CaseReferenceSummary().caseReferenceNumber("1234567890");
@@ -296,7 +296,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testPostAllocateCaseReference_handlesError() throws JsonProcessingException {
+  void postAllocateCaseReferenceHandlesError() throws JsonProcessingException {
     // Given
     CaseReferenceSummary expected =
         new CaseReferenceSummary().caseReferenceNumber("1234567890");
@@ -317,7 +317,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testGetCases_returnData() throws Exception {
+  void getCasesReturnData() throws Exception {
     int page = 0;
     int size = 20;
     int providerId = 2000;
@@ -356,7 +356,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
   @Test
   @DisplayName("Get client status should return data")
-  public void testGetClientStatus_returnData() throws JsonProcessingException {
+  void getClientStatusReturnData() throws JsonProcessingException {
     // Given
     TransactionStatus expected = new TransactionStatus().submissionStatus("Success").referenceNumber("123");
     String transactionDetailsJson = objectMapper.writeValueAsString(expected);

@@ -15,7 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 @ExtendWith(MockitoExtension.class)
-public class CancelClientRegistrationControllerTest {
+class CancelClientRegistrationControllerTest {
 
   @InjectMocks
   private CancelClientRegistrationController cancelClientRegistrationController;
@@ -23,19 +23,19 @@ public class CancelClientRegistrationControllerTest {
   private MockMvc mockMvc;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = MockMvcBuilders.standaloneSetup(cancelClientRegistrationController).build();
   }
 
   @Test
-  public void testClientDetailsCancelGet() throws Exception {
+  void clientDetailsCancelGet() throws Exception {
     mockMvc.perform(get("/application/client/details/cancel"))
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/cancel-client"));
   }
 
   @Test
-  public void testClientDetailsCancelPost() throws Exception {
+  void clientDetailsCancelPost() throws Exception {
     mockMvc.perform(post("/application/client/details/cancel"))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/client/search"));

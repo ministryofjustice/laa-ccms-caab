@@ -14,7 +14,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import uk.gov.laa.ccms.caab.controller.submission.SubmissionConfirmedController;
 
 @ExtendWith(MockitoExtension.class)
-public class SubmissionConfirmedControllerTest {
+class SubmissionConfirmedControllerTest {
 
   @InjectMocks
   private SubmissionConfirmedController submissionConfirmedController;
@@ -22,12 +22,12 @@ public class SubmissionConfirmedControllerTest {
   private MockMvc mockMvc;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = MockMvcBuilders.standaloneSetup(submissionConfirmedController).build();
   }
 
   @Test
-  void testSubmissionsConfirmed() throws Exception {
+  void submissionsConfirmed() throws Exception {
     mockMvc.perform(get("/submissions/testType/confirmed"))
         .andExpect(status().isOk())
         .andExpect(view().name("submissions/submissionConfirmed"));

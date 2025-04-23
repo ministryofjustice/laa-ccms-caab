@@ -35,7 +35,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class ClientSearchResultsControllerTest {
+class ClientSearchResultsControllerTest {
 
   @Mock
   private ClientService clientService;
@@ -57,7 +57,7 @@ public class ClientSearchResultsControllerTest {
   private WebApplicationContext webApplicationContext;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(clientSearchResultsController).build();
     this.user = buildUser();
 
@@ -65,7 +65,7 @@ public class ClientSearchResultsControllerTest {
   }
 
   @Test
-  public void testClientSearchResults_NoResults() throws Exception {
+  void clientSearchResultsNoResults() throws Exception {
     ClientDetails clientDetails = new ClientDetails();
     clientDetails.setTotalElements(0);
 
@@ -80,7 +80,7 @@ public class ClientSearchResultsControllerTest {
   }
 
   @Test
-  public void testClientSearchResults_WithManyResults() throws Exception {
+  void clientSearchResultsWithManyResults() throws Exception {
     ClientDetails clientDetails = new ClientDetails();
     clientDetails.setContent(new ArrayList<>());
     clientDetails.setTotalElements(300);
@@ -96,7 +96,7 @@ public class ClientSearchResultsControllerTest {
   }
 
   @Test
-  public void testClientSearchResults_WithResults() throws Exception {
+  void clientSearchResultsWithResults() throws Exception {
     ClientDetails clientDetails = new ClientDetails();
     clientDetails.setContent(new ArrayList<>());
     clientDetails.setTotalElements(100);
@@ -112,7 +112,7 @@ public class ClientSearchResultsControllerTest {
   }
 
   @Test
-  public void testClientSearch_Post() throws Exception {
+  void clientSearchPost() throws Exception {
     this.mockMvc.perform(post("/application/client/results")
             .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())
             .sessionAttr("clientSearchResults", new ClientResultsDisplay()))
@@ -121,7 +121,7 @@ public class ClientSearchResultsControllerTest {
   }
 
   @Test
-  public void testClientSearchResults_NullResults() throws Exception {
+  void clientSearchResultsNullResults() throws Exception {
     when(clientService.getClients(any(), any(), any())).thenReturn(Mono.empty());
 
     this.mockMvc.perform(get("/application/client/results")
@@ -132,7 +132,7 @@ public class ClientSearchResultsControllerTest {
   }
 
   @Test
-  public void testClientSearchResults_ZeroTotalElements() throws Exception {
+  void clientSearchResultsZeroTotalElements() throws Exception {
     ClientDetails clientDetails = new ClientDetails();
     clientDetails.setContent(new ArrayList<>());
     clientDetails.setTotalElements(0);

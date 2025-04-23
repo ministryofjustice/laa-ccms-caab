@@ -75,7 +75,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testDownloadDocument_success() {
+  void downloadDocumentSuccess() {
     String documentName = "integration-test-file-1";
     s3Template.upload(BUCKET_NAME, documentName, new ByteArrayInputStream("content".getBytes()));
 
@@ -90,7 +90,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testRemoveDocuments_success() {
+  void removeDocumentsSuccess() {
     String documentName = "integration-test-file-1";
     String documentName2 = "integration-test-file-2";
     String documentName3 = "integration-test-file-3";
@@ -110,7 +110,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testRemoveDraftDocuments_success() {
+  void removeDraftDocumentsSuccess() {
     String documentName = "draft/integration-test-file-1";
     String documentName2 = "draft/integration-test-file-2";
     String documentName3 = "draft/integration-test-file-3";
@@ -131,7 +131,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testRemoveDocument_success() {
+  void removeDocumentSuccess() {
     String documentName = "integration-test-file-1";
     s3Template.upload(BUCKET_NAME, documentName, InputStream.nullInputStream());
 
@@ -146,7 +146,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testRemoveDraftDocument_success() {
+  void removeDraftDocumentSuccess() {
     String documentName = "draft/integration-test-file-1";
     s3Template.upload(BUCKET_NAME, documentName, InputStream.nullInputStream());
 
@@ -161,7 +161,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testGetDocumentUrl_success() {
+  void getDocumentUrlSuccess() {
     String documentName = "integration-test-file-1";
     s3Template.upload(BUCKET_NAME, documentName, InputStream.nullInputStream());
 
@@ -180,7 +180,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testGetDraftDocumentUrl_success() {
+  void getDraftDocumentUrlSuccess() {
     String documentName = "draft/integration-test-file-1";
     s3Template.upload(BUCKET_NAME, documentName, InputStream.nullInputStream());
 
@@ -199,7 +199,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testUploadDocument_success() throws IOException {
+  void uploadDocumentSuccess() throws IOException {
     String documentName = "integration-test-file-1";
     String documentContent = "ZG9jdW1lbnRDb250ZW50"; // "documentContent" Base64 encoded
     String documentExtension = "pdf";
@@ -218,7 +218,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testUploadDraftDocument_success() throws IOException {
+  void uploadDraftDocumentSuccess() throws IOException {
     String documentName = "integration-test-file-1";
     String documentContent = "ZG9jdW1lbnRDb250ZW50"; // "documentContent" Base64 encoded
     String documentExtension = "pdf";

@@ -53,7 +53,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Test
-  public void testGetContractDetails_returnData() throws Exception {
+  void getContractDetailsReturnData() throws Exception {
     Integer providerFirmId = 123;
     Integer officeId = 345;
     String loginId = USER_1;
@@ -76,7 +76,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testGetClient_returnData() throws Exception {
+  void getClientReturnData() throws Exception {
     String clientReferenceNumber = "clientRef1";
     String loginId = USER_1;
     String userType = USER_TYPE;
@@ -97,7 +97,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testGetNotificationAttachments_returnsData() throws JsonProcessingException {
+  void getNotificationAttachmentsReturnsData() throws JsonProcessingException {
     String documentId = "documentId";
     String documentContent = "documentContent";
     String loginId = "loginId";
@@ -120,7 +120,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testRegisterDocument_returnsData() throws Exception {
+  void registerDocumentReturnsData() throws Exception {
     String loginId = USER_1;
     String userType = USER_TYPE;
     ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse()
@@ -144,7 +144,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testUploadDocument_returnsData() throws Exception {
+  void uploadDocumentReturnsData() throws Exception {
     String loginId = USER_1;
     String userType = USER_TYPE;
     ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse()
@@ -168,7 +168,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testUpdateDocument_returnsData() throws Exception {
+  void updateDocumentReturnsData() throws Exception {
     String loginId = USER_1;
     String userType = USER_TYPE;
     ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse()
@@ -192,7 +192,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testDownloadCoverSheet_returnsData() throws Exception {
+  void downloadCoverSheetReturnsData() throws Exception {
     String loginId = USER_1;
     String userType = USER_TYPE;
     CoverSheet coverSheet = new CoverSheet()
@@ -215,7 +215,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testDownloadDocument_returnsData() throws Exception {
+  void downloadDocumentReturnsData() throws Exception {
     String loginId = USER_1;
     String userType = USER_TYPE;
     Document document = new Document()
@@ -244,7 +244,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testUpdateUserOptions_returnsData() throws Exception {
+  void updateUserOptionsReturnsData() throws Exception {
     String loginId = USER_1;
     String userType = USER_TYPE;
     ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse()
@@ -267,7 +267,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
-  public void testUpdateNotification_returnsData() throws Exception {
+  void updateNotificationReturnsData() throws Exception {
     String loginId = USER_1;
     String userType = USER_TYPE;
     String notificationId = "12345";

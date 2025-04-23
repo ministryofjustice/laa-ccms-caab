@@ -21,7 +21,7 @@ import uk.gov.laa.ccms.caab.exception.AvScanException;
 import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 
 @ExtendWith(MockitoExtension.class)
-public class AvScanServiceTest {
+class AvScanServiceTest {
 
   @Mock
   private AvApiClient avApiClient;

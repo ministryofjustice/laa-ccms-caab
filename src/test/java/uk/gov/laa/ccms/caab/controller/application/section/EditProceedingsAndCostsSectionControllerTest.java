@@ -160,8 +160,8 @@ class EditProceedingsAndCostsSectionControllerTest {
         .userType("testUserType")
         .loginId("testLoginId");
 
-    @Test
-    public void testProceedingsAndCosts() throws Exception {
+  @Test
+  void proceedingsAndCosts() throws Exception {
         final String applicationId = "testApplicationId";
         final ApplicationDetail application = new ApplicationDetail();
         // Mock the applicationService to return a Mono of ApplicationDetail
@@ -178,8 +178,8 @@ class EditProceedingsAndCostsSectionControllerTest {
         verify(applicationService, times(1)).prepareProceedingSummary(applicationId, application, user);
     }
 
-    @Test
-    public void testProceedingsMakeLead() throws Exception {
+  @Test
+  void proceedingsMakeLead() throws Exception {
         final String applicationId = "testApplicationId";
         final Integer proceedingId = 1;
         final List<ProceedingDetail> proceedings = Collections.singletonList(new ProceedingDetail().id(proceedingId));
@@ -195,7 +195,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testProceedingsRemoveGet() throws Exception {
+    void proceedingsRemoveGet() throws Exception {
         final Integer proceedingId = 1;
 
         mockMvc.perform(get("/application/proceedings/{proceeding-id}/remove", proceedingId))
@@ -205,7 +205,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testProceedingsRemovePost() throws Exception {
+    void proceedingsRemovePost() throws Exception {
         final String applicationId = "testApplicationId";
         final Integer proceedingId = 1;
         final List<ProceedingDetail> proceedings = Collections.singletonList(new ProceedingDetail().id(proceedingId));
@@ -223,8 +223,8 @@ class EditProceedingsAndCostsSectionControllerTest {
         verify(applicationService, times(1)).deleteProceeding(eq(applicationId), eq(proceedingId), eq(userDetail));
     }
 
-    @Test
-    public void testProceedingsSummary() throws Exception {
+  @Test
+  void proceedingsSummary() throws Exception {
         final String applicationId = "testApplicationId";
         final Integer proceedingId = 1;
         final ApplicationDetail application = new ApplicationDetail();
@@ -251,8 +251,8 @@ class EditProceedingsAndCostsSectionControllerTest {
         verify(lookupService, times(1)).getOrderTypeDescription(any());
     }
 
-    @Test
-    public void testProceedingsActionMatterType_Add() throws Exception {
+  @Test
+  void proceedingsActionMatterTypeAdd() throws Exception {
         final ApplicationDetail application = new ApplicationDetail();
         application.setCategoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
         final List<MatterTypeLookupValueDetail> matterTypes =
@@ -271,8 +271,8 @@ class EditProceedingsAndCostsSectionControllerTest {
         verify(lookupService, times(1)).getMatterTypes(application.getCategoryOfLaw().getId());
     }
 
-    @Test
-    public void testProceedingsActionMatterType_Edit() throws Exception {
+  @Test
+  void proceedingsActionMatterTypeEdit() throws Exception {
         final ApplicationDetail application = new ApplicationDetail();
         application.setCategoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
         final ProceedingDetail proceeding = new ProceedingDetail().typeOfOrder(new StringDisplayValue().id("typeOfOrderId"));
@@ -296,8 +296,8 @@ class EditProceedingsAndCostsSectionControllerTest {
         verify(lookupService, times(1)).getMatterTypes(application.getCategoryOfLaw().getId());
     }
 
-    @Test
-    public void testProceedingsActionMatterTypePost_Add_Success() throws Exception {
+  @Test
+  void proceedingsActionMatterTypePostAddSuccess() throws Exception {
         final String action = "add";
         final ApplicationDetail application = new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
         final ProceedingFormDataMatterTypeDetails matterTypeDetails = new ProceedingFormDataMatterTypeDetails();
@@ -313,8 +313,8 @@ class EditProceedingsAndCostsSectionControllerTest {
         verify(matterTypeValidator, times(1)).validate(eq(matterTypeDetails), any(BindingResult.class));
     }
 
-    @Test
-    public void testProceedingsActionMatterTypePost_ValidationErrors() throws Exception {
+  @Test
+  void proceedingsActionMatterTypePostValidationErrors() throws Exception {
         final String action = "add";
         final ApplicationDetail application = new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
         final ProceedingFormDataMatterTypeDetails matterTypeDetails = new ProceedingFormDataMatterTypeDetails();
@@ -341,8 +341,8 @@ class EditProceedingsAndCostsSectionControllerTest {
         verify(matterTypeValidator, times(1)).validate(eq(matterTypeDetails), any(BindingResult.class));
     }
 
-    @Test
-    public void testProceedingsActionMatterTypePost_Edit_AmendmentCheck() throws Exception {
+  @Test
+  void proceedingsActionMatterTypePostEditAmendmentCheck() throws Exception {
         final String action = "edit";
         final ApplicationDetail application = new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
         final ProceedingFormDataMatterTypeDetails matterTypeDetails = new ProceedingFormDataMatterTypeDetails();
@@ -364,8 +364,8 @@ class EditProceedingsAndCostsSectionControllerTest {
         assertTrue(proceedingFlow.isAmended());
     }
 
-    @Test
-    public void testProceedingsActionProceedingType() throws Exception {
+  @Test
+  void proceedingsActionProceedingType() throws Exception {
         final String action = "add";
         final ApplicationDetail application = new ApplicationDetail()
             .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
@@ -395,8 +395,8 @@ class EditProceedingsAndCostsSectionControllerTest {
             .andExpect(model().attribute("proceedingTypeDetails", proceedingTypeDetails));
     }
 
-    @Test
-    public void testProceedingsActionProceedingTypePostWithValidationErrors() throws Exception {
+  @Test
+  void proceedingsActionProceedingTypePostWithValidationErrors() throws Exception {
         final String action = "add";
         final ApplicationDetail application = new ApplicationDetail()
             .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
@@ -431,8 +431,8 @@ class EditProceedingsAndCostsSectionControllerTest {
         verify(proceedingTypeValidator, times(1)).validate(eq(proceedingTypeDetails), any(BindingResult.class));
     }
 
-    @Test
-    public void testProceedingsActionProceedingTypePostSuccess() throws Exception {
+  @Test
+  void proceedingsActionProceedingTypePostSuccess() throws Exception {
         final String action = "add";
         final ApplicationDetail application = new ApplicationDetail();
         final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
@@ -452,8 +452,8 @@ class EditProceedingsAndCostsSectionControllerTest {
         assertEquals(proceedingTypeDetails, proceedingFlow.getProceedingDetails());
     }
 
-    @Test
-    public void testProceedingsActionProceedingTypePost_Edit_AmendmentCheck() throws Exception {
+  @Test
+  void proceedingsActionProceedingTypePostEditAmendmentCheck() throws Exception {
         final String action = "edit";
         final ApplicationDetail application = new ApplicationDetail();
         final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
@@ -479,9 +479,9 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testProceedingsActionFurtherDetails(final boolean orderTypeRequired) throws Exception {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void proceedingsActionFurtherDetails(final boolean orderTypeRequired) throws Exception {
         final String action = "add";
         final ApplicationDetail application = new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
         final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
@@ -536,8 +536,8 @@ class EditProceedingsAndCostsSectionControllerTest {
 
     }
 
-    @Test
-    public void testProceedingsActionFurtherDetailsPostAddSuccess() throws Exception {
+  @Test
+  void proceedingsActionFurtherDetailsPostAddSuccess() throws Exception {
         final String action = "add";
         final ApplicationDetail application = new ApplicationDetail();
         final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
@@ -560,8 +560,8 @@ class EditProceedingsAndCostsSectionControllerTest {
         assertEquals(furtherDetails, proceedingFlow.getFurtherDetails());
     }
 
-    @Test
-    public void testProceedingsActionFurtherDetailsPostAddWithValidationErrors() throws Exception {
+  @Test
+  void proceedingsActionFurtherDetailsPostAddWithValidationErrors() throws Exception {
         final String action = "add";
         final ApplicationDetail application = new ApplicationDetail()
             .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
@@ -613,9 +613,9 @@ class EditProceedingsAndCostsSectionControllerTest {
         );
     }
 
-    @ParameterizedTest
-    @MethodSource("provideFurtherDetailsForEdit")
-    public void testProceedingsActionFurtherDetailsPostEditWithParameterized(
+  @ParameterizedTest
+  @MethodSource("provideFurtherDetailsForEdit")
+  void proceedingsActionFurtherDetailsPostEditWithParameterized(
         final String clientInvolvementType,
         final String levelOfService,
         final String typeOfOrder,
@@ -649,8 +649,8 @@ class EditProceedingsAndCostsSectionControllerTest {
         assertEquals(expectedAmendment, proceedingFlow.isAmended(), "ProceedingDetail flow amendment status does not match expected.");
     }
 
-    @Test
-    public void testProceedingsActionConfirmFromSummaryPage() throws Exception {
+  @Test
+  void proceedingsActionConfirmFromSummaryPage() throws Exception {
         final String action = "edit";
         final ApplicationDetail application = new ApplicationDetail();
         ApplicationType applicationType = new ApplicationType();
@@ -685,8 +685,8 @@ class EditProceedingsAndCostsSectionControllerTest {
         verify(proceedingAndCostsMapper, times(1)).toProceedingFlow(any(ProceedingDetail.class), anyString());
     }
 
-    @Test
-    public void testProceedingsActionConfirmFromPreviousStep() throws Exception {
+  @Test
+  void proceedingsActionConfirmFromPreviousStep() throws Exception {
         final String action = "add";
         final ApplicationDetail application = new ApplicationDetail()
             .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
@@ -731,8 +731,8 @@ class EditProceedingsAndCostsSectionControllerTest {
 
     }
 
-    @Test
-    public void testProceedingsActionConfirmPostAdd() throws Exception {
+  @Test
+  void proceedingsActionConfirmPostAdd() throws Exception {
         final String action = "add";
         final ApplicationDetail application = new ApplicationDetail()
             .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
@@ -778,7 +778,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testScopeLimitationEditAddAction() throws Exception {
+    void scopeLimitationEditAddAction() throws Exception {
         final Integer scopeLimitationId = 0;
         final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData("add");
         proceedingFlow.setAction("add");
@@ -800,7 +800,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testScopeLimitationEditEditAction() throws Exception {
+    void scopeLimitationEditEditAction() throws Exception {
         final Integer scopeLimitationId = 1;
         final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData("edit");
         proceedingFlow.setAction("edit");
@@ -824,7 +824,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testScopeLimitationDetailsEditAction() throws Exception {
+    void scopeLimitationDetailsEditAction() throws Exception {
         final String action = "edit";
         final ApplicationDetail application = new ApplicationDetail()
             .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
@@ -858,7 +858,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testScopeLimitationDetailsAddAction() throws Exception {
+    void scopeLimitationDetailsAddAction() throws Exception {
         final String action = "add";
         final ApplicationDetail application = new ApplicationDetail()
             .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
@@ -889,7 +889,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testScopeLimitationDetailsPostWithValidationErrors() throws Exception {
+    void scopeLimitationDetailsPostWithValidationErrors() throws Exception {
         final String action = "edit";
         final ApplicationDetail application = new ApplicationDetail()
           .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
@@ -931,7 +931,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testScopeLimitationDetailsPostValidationPasses() throws Exception {
+    void scopeLimitationDetailsPostValidationPasses() throws Exception {
         final String action = "edit";
         final ApplicationDetail application = new ApplicationDetail()
             .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
@@ -971,7 +971,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testScopeLimitationConfirm() throws Exception {
+    void scopeLimitationConfirm() throws Exception {
         final String action = "edit";
         final ScopeLimitationDetail scopeLimitation = new ScopeLimitationDetail();
         final ScopeLimitationFlowFormData scopeLimitationFlow = new ScopeLimitationFlowFormData(action);
@@ -991,7 +991,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testScopeLimitationConfirmPostActionAdd() throws Exception {
+    void scopeLimitationConfirmPostActionAdd() throws Exception {
         final String action = "add";
         final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
         proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
@@ -1016,7 +1016,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testScopeLimitationConfirmPostActionEdit() throws Exception {
+    void scopeLimitationConfirmPostActionEdit() throws Exception {
         final String action = "edit";
         final ApplicationDetail application = new ApplicationDetail()
             .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
@@ -1054,7 +1054,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testScopeLimitationRemove() throws Exception {
+    void scopeLimitationRemove() throws Exception {
         final String action = "edit";
         final int scopeLimitationId = 1;
         final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
@@ -1073,7 +1073,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testScopeLimitationRemovePos_ActionAdd() throws Exception {
+    void scopeLimitationRemovePosActionAdd() throws Exception {
         final String action = "add";
         final int scopeLimitationIndex = 0;
         final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
@@ -1094,7 +1094,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testScopeLimitationRemovePost_ActionEdit() throws Exception {
+    void scopeLimitationRemovePostActionEdit() throws Exception {
         final int scopeLimitationId = 1;
         final String action = "edit";
         final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
@@ -1116,7 +1116,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testCaseCosts() throws Exception {
+    void caseCosts() throws Exception {
         final ApplicationDetail application = new ApplicationDetail();
         final CostStructureDetail costs = new CostStructureDetail();
         costs.setRequestedCostLimitation(new BigDecimal("1000"));
@@ -1150,7 +1150,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
 
     @Test
-    void testCaseCostsPost_ValidationPasses() throws Exception {
+    void caseCostsPostValidationPasses() throws Exception {
         final String applicationId = "123";
         final ApplicationDetail application = new ApplicationDetail();
         final CostStructureDetail costs = new CostStructureDetail();
@@ -1171,7 +1171,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testCaseCostsPost_WithValidationErrors() throws Exception {
+    void caseCostsPostWithValidationErrors() throws Exception {
         final String applicationId = "123";
         final ApplicationDetail application = new ApplicationDetail();
         final CostStructureDetail costs = new CostStructureDetail();
@@ -1204,7 +1204,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testPriorAuthorityType() throws Exception {
+    void priorAuthorityType() throws Exception {
         final List<PriorAuthorityTypeDetail> priorAuthorityTypes = List.of(
             new PriorAuthorityTypeDetail().code("1").description("Type 1"),
             new PriorAuthorityTypeDetail().code("2").description("Type 2")
@@ -1226,7 +1226,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testPriorAuthorityTypePostWithValidationErrors() throws Exception {
+    void priorAuthorityTypePostWithValidationErrors() throws Exception {
         final PriorAuthorityTypeFormData
             priorAuthorityTypeFormData = new PriorAuthorityTypeFormData();
         priorAuthorityTypeFormData.setPriorAuthorityType("1");
@@ -1262,7 +1262,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testPriorAuthorityTypePostValidationPasses() throws Exception {
+    void priorAuthorityTypePostValidationPasses() throws Exception {
         final PriorAuthorityTypeFormData
             priorAuthorityTypeDetails = new PriorAuthorityTypeFormData();
         priorAuthorityTypeDetails.setPriorAuthorityType("1");
@@ -1280,7 +1280,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testPriorAuthorityDetailsForAddAction() throws Exception {
+    void priorAuthorityDetailsForAddAction() throws Exception {
         final String priorAuthorityAction = "add";
         final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
         typeDetails.setPriorAuthorityType("1");
@@ -1313,7 +1313,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testPriorAuthorityDetailsForEditAction() throws Exception {
+    void priorAuthorityDetailsForEditAction() throws Exception {
         final String priorAuthorityAction = "edit";
         final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
         typeDetails.setPriorAuthorityType("1");
@@ -1357,7 +1357,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
     @ParameterizedTest
     @CsvSource({"add", "edit"})
-    void testPriorAuthorityDetailsPostWithValidationErrors(final String action) throws Exception {
+    void priorAuthorityDetailsPostWithValidationErrors(final String action) throws Exception {
         final String applicationId = "app123";
         final UserDetail user = new UserDetail();
 
@@ -1402,7 +1402,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
     @ParameterizedTest
     @CsvSource({"add", "edit"})
-    void testPriorAuthorityDetailsPostValidationPasses(final String action) throws Exception {
+    void priorAuthorityDetailsPostValidationPasses(final String action) throws Exception {
         final String applicationId = "app123";
         final UserDetail user = new UserDetail();
 
@@ -1431,7 +1431,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testPriorAuthorityConfirmFound() throws Exception {
+    void priorAuthorityConfirmFound() throws Exception {
         final int priorAuthorityId = 1;
         final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
         priorAuthority.setId(priorAuthorityId);
@@ -1450,7 +1450,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testPriorAuthorityConfirmNotFound() {
+    void priorAuthorityConfirmNotFound() {
         final int priorAuthorityId = 1;
         final List<PriorAuthorityDetail> priorAuthorities = Collections.emptyList();
 
@@ -1464,7 +1464,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testPriorAuthorityRemoveFound() throws Exception {
+    void priorAuthorityRemoveFound() throws Exception {
         final int priorAuthorityId = 1;
         final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
         priorAuthority.setId(priorAuthorityId);
@@ -1479,7 +1479,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testPriorAuthorityRemoveNotFound() {
+    void priorAuthorityRemoveNotFound() {
         final int priorAuthorityId = 1;
         final List<PriorAuthorityDetail> priorAuthorities = Collections.emptyList();
 
@@ -1493,7 +1493,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testPriorAuthorityRemovePostSuccess() throws Exception {
+    void priorAuthorityRemovePostSuccess() throws Exception {
         final int priorAuthorityId = 1;
         final UserDetail user = new UserDetail();
         final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
@@ -1512,7 +1512,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     }
 
     @Test
-    void testPriorAuthorityRemovePostNotFound() {
+    void priorAuthorityRemovePostNotFound() {
         final int priorAuthorityId = 1;
         final UserDetail user = new UserDetail();
         final List<PriorAuthorityDetail> priorAuthorities = new ArrayList<>();

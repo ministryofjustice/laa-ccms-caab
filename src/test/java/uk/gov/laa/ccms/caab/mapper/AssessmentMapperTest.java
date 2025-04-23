@@ -40,7 +40,7 @@ class AssessmentMapperTest {
   private AssessmentMappingContext context;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     final AssessmentOpponentMappingContext opponentMappingContext =
         AssessmentOpponentMappingContext
             .builder()
@@ -65,20 +65,20 @@ class AssessmentMapperTest {
   }
 
   @Test
-  public void testToAssessmentEntityTypeList_whenContextIsNull() {
+  void toAssessmentEntityTypeListWhenContextIsNull() {
     final List<AssessmentEntityTypeDetail> result
         = assessmentMapper.toAssessmentEntityTypeList(null);
     assertNull(result);
   }
 
-  @Test void testToAssessmentEntityTypeList_whenContextIsNotNull() {
+  @Test void toAssessmentEntityTypeListWhenContextIsNotNull() {
     final List<AssessmentEntityTypeDetail> result
         = assessmentMapper.toAssessmentEntityTypeList(context);
     assertEquals(3, result.size());
   }
 
   @Test
-  public void shouldConvertProceedingToAttributeList() {
+  void shouldConvertProceedingToAttributeList() {
     // Given
     final ProceedingDetail proceeding = context.getApplication().getProceedings().getFirst();
 
@@ -92,7 +92,7 @@ class AssessmentMapperTest {
 
 
   @Test
-  public void shouldConvertOpponentToAttributeList() {
+  void shouldConvertOpponentToAttributeList() {
     // Given
     final AssessmentOpponentMappingContext opponentMappingContext =
         context.getOpponentContext().getFirst();
@@ -106,7 +106,7 @@ class AssessmentMapperTest {
   }
 
   @Test
-  public void shouldConvertGlobalToAttributeList() {
+  void shouldConvertGlobalToAttributeList() {
     // When
     final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
 
@@ -115,7 +115,7 @@ class AssessmentMapperTest {
   }
 
   @Test
-  public void shouldReturnCorrectOpponentOpaInstanceMappingId() {
+  void shouldReturnCorrectOpponentOpaInstanceMappingId() {
     final OpponentDetail opponent = new OpponentDetail().id(123);
     final String expectedOpaInstanceMappingId = "OPPONENT_123";
 
@@ -125,7 +125,7 @@ class AssessmentMapperTest {
   }
 
   @Test
-  public void shouldReturnCorrectProceedingOpaInstanceMappingId() {
+  void shouldReturnCorrectProceedingOpaInstanceMappingId() {
     final ProceedingDetail proceeding = new ProceedingDetail().id(123);
     final String expectedOpaInstanceMappingId = "P_123";
 
@@ -208,7 +208,7 @@ class AssessmentMapperTest {
   }
 
   @Test
-  void testToAssessmentDetail_whenContextIsNull() {
+  void toAssessmentDetailWhenContextIsNull() {
     final AssessmentDetail assessment = new AssessmentDetail();
 
     assessmentMapper.toAssessmentDetail(assessment, null);
@@ -218,7 +218,7 @@ class AssessmentMapperTest {
   }
 
   @Test
-  void testToAssessmentDetail_whenContextIsNotNullAndEntityTypesIsNull() {
+  void toAssessmentDetailWhenContextIsNotNullAndEntityTypesIsNull() {
     final AssessmentDetail assessment = new AssessmentDetail();
     assessment.setEntityTypes(null);
 
@@ -229,7 +229,7 @@ class AssessmentMapperTest {
   }
 
   @Test
-  void testToAssessmentDetail_whenContextIsNotNullAndEntityTypesIsNotNullAndEmpty() {
+  void toAssessmentDetailWhenContextIsNotNullAndEntityTypesIsNotNullAndEmpty() {
     final AssessmentDetail assessment = new AssessmentDetail();
     assessment.setEntityTypes(new ArrayList<>());
 

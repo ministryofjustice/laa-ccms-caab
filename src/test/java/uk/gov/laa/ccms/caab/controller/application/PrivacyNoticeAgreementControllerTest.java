@@ -31,7 +31,7 @@ import uk.gov.laa.ccms.caab.constants.SessionConstants;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class PrivacyNoticeAgreementControllerTest {
+class PrivacyNoticeAgreementControllerTest {
 
     @Mock
     private PrivacyNoticeAgreementValidator privacyNoticeAgreementValidator;
@@ -44,13 +44,13 @@ public class PrivacyNoticeAgreementControllerTest {
     @Autowired
     private WebApplicationContext webApplicationContext;
 
-    @BeforeEach
-    public void setup() {
+  @BeforeEach
+  void setup() {
         mockMvc = standaloneSetup(privacyNoticeAgreementController).build();
     }
 
-    @Test
-    public void testGetPrivacyNoticeAgreement() throws Exception {
+  @Test
+  void getPrivacyNoticeAgreement() throws Exception {
         ApplicationFormData applicationFormData = new ApplicationFormData();
         this.mockMvc.perform(get("/application/agreement")
                         .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData))
@@ -60,8 +60,8 @@ public class PrivacyNoticeAgreementControllerTest {
                     applicationFormData));
     }
 
-    @Test
-    public void testPostPrivacyNoticeAgreement_ValidationSuccess_NewClient() throws Exception {
+  @Test
+  void postPrivacyNoticeAgreementValidationSuccessNewClient() throws Exception {
         ApplicationFormData applicationFormData = new ApplicationFormData();
         applicationFormData.setApplicationCreated(false);
         applicationFormData.setAgreementAccepted(true);
@@ -74,8 +74,8 @@ public class PrivacyNoticeAgreementControllerTest {
         verify(privacyNoticeAgreementValidator, times(1)).validate(any(), any());
     }
 
-    @Test
-    public void testPostPrivacyNoticeAgreement_ValidationSuccess_ExistingClient() throws Exception {
+  @Test
+  void postPrivacyNoticeAgreementValidationSuccessExistingClient() throws Exception {
         ApplicationFormData applicationFormData = new ApplicationFormData();
         applicationFormData.setApplicationCreated(true);
         applicationFormData.setAgreementAccepted(true);
@@ -88,8 +88,8 @@ public class PrivacyNoticeAgreementControllerTest {
         verify(privacyNoticeAgreementValidator, times(1)).validate(any(), any());
     }
 
-    @Test
-    public void testPostPrivacyNoticeAgreement_ValidationError() throws Exception {
+  @Test
+  void postPrivacyNoticeAgreementValidationError() throws Exception {
         ApplicationFormData applicationFormData = new ApplicationFormData();
         applicationFormData.setAgreementAccepted(false);
 
@@ -108,8 +108,8 @@ public class PrivacyNoticeAgreementControllerTest {
         verify(privacyNoticeAgreementValidator, times(1)).validate(any(), any());
     }
 
-    @Test
-    public void testGetPrivacyNoticeAgreementPrintable() throws Exception {
+  @Test
+  void getPrivacyNoticeAgreementPrintable() throws Exception {
         this.mockMvc.perform(get("/application/agreement/print"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("application/privacy-notice-agreement-printable"));

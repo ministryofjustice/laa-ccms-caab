@@ -85,7 +85,7 @@ class EbsApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildEbsCaseOutcomeMappingContext() {
+  void buildEbsCaseOutcomeMappingContext() {
     final CaseDetail ebsCase = buildCaseDetail("anytype");
     final List<EbsProceedingMappingContext> EbsProceedingMappingContexts = Collections.singletonList(
         EbsProceedingMappingContext.builder().build());
@@ -116,7 +116,7 @@ class EbsApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildEbsCaseOutcomeMappingContext_NoAwardTypes() {
+  void buildEbsCaseOutcomeMappingContextNoAwardTypes() {
     CaseDetail ebsCase = buildCaseDetail("anytype");
     List<EbsProceedingMappingContext> EbsProceedingMappingContexts = Collections.singletonList(
         EbsProceedingMappingContext.builder().build());
@@ -130,7 +130,7 @@ class EbsApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildEbsCaseOutcomeMappingContext_UnknownAwardType() {
+  void buildEbsCaseOutcomeMappingContextUnknownAwardType() {
     CaseDetail ebsCase = buildCaseDetail("anytype");
     List<EbsProceedingMappingContext> EbsProceedingMappingContexts = Collections.singletonList(
         EbsProceedingMappingContext.builder().build());
@@ -149,7 +149,7 @@ class EbsApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildEbsPriorAuthorityMappingContext_LovLookup() {
+  void buildEbsPriorAuthorityMappingContextLovLookup() {
     PriorAuthority ebsPriorAuthority = buildPriorAuthority();
 
     PriorAuthorityTypeDetails priorAuthorityTypeDetails =
@@ -190,7 +190,7 @@ class EbsApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildEbsPriorAuthorityMappingContext_NoLovLookup() {
+  void buildEbsPriorAuthorityMappingContextNoLovLookup() {
     PriorAuthority ebsPriorAuthority = buildPriorAuthority();
 
     PriorAuthorityTypeDetails priorAuthorityTypeDetails =
@@ -220,7 +220,7 @@ class EbsApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildEbsPriorAuthorityMappingContext_UnknownPriorAuthType() {
+  void buildEbsPriorAuthorityMappingContextUnknownPriorAuthType() {
     PriorAuthority ebsPriorAuthority = buildPriorAuthority();
 
     when(lookupService.getPriorAuthorityType(ebsPriorAuthority.getPriorAuthorityType()))
@@ -235,7 +235,7 @@ class EbsApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildEbsPriorAuthorityMappingContext_UnknownLookup() {
+  void buildEbsPriorAuthorityMappingContextUnknownLookup() {
     PriorAuthority ebsPriorAuthority = buildPriorAuthority();
 
     PriorAuthorityDetail priorAuthoritiesItem = new PriorAuthorityDetail()
@@ -264,7 +264,7 @@ class EbsApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildEbsProceedingMappingContext_Emergency() {
+  void buildEbsProceedingMappingContextEmergency() {
     Proceeding ebsProceeding =
         buildProceedingDetail(STATUS_DRAFT);
     CaseDetail ebsCase = buildCaseDetail(APP_TYPE_EMERGENCY);
@@ -405,7 +405,7 @@ class EbsApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testCalculateProceedingCostLimitation_NonEmergency() {
+  void calculateProceedingCostLimitationNonEmergency() {
     Proceeding ebsProceeding =
         buildProceedingDetail(STATUS_DRAFT);
     CaseDetail ebsCase = buildCaseDetail(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
@@ -452,7 +452,7 @@ class EbsApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testAddProceedingOutcomeContext_NullOutcome() {
+  void addProceedingOutcomeContextNullOutcome() {
     final Proceeding ebsProceeding =
         buildProceedingDetail(STATUS_DRAFT);
     ebsProceeding.setOutcome(null);
@@ -464,7 +464,7 @@ class EbsApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildEbsApplicationMappingContext_DevolvedPowersAllDraftProceedings() {
+  void buildEbsApplicationMappingContextDevolvedPowersAllDraftProceedings() {
     final CaseDetail ebsCase = buildCaseDetail(APP_TYPE_EMERGENCY_DEVOLVED_POWERS);
     ebsCase.getApplicationDetails().getProceedings().forEach(
         proceedingDetail -> {
@@ -555,7 +555,7 @@ class EbsApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildEbsApplicationMappingContext_NonDevolvedPowersMixedProceedings() {
+  void buildEbsApplicationMappingContextNonDevolvedPowersMixedProceedings() {
     CaseDetail ebsCase = buildCaseDetail(APP_TYPE_EMERGENCY);
     ebsCase.getApplicationDetails().getProceedings().forEach(
         proceedingDetail -> {
@@ -622,7 +622,7 @@ class EbsApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildEbsApplicationMappingContext_NoAppTypeDefaultsToCertificate() {
+  void buildEbsApplicationMappingContextNoAppTypeDefaultsToCertificate() {
     CaseDetail ebsCase = buildCaseDetail(null);
     ebsCase.getApplicationDetails().getProceedings().forEach(
         proceedingDetail -> {

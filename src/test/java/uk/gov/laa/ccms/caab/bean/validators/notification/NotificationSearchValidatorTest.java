@@ -23,24 +23,24 @@ class NotificationSearchValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     criteria = new NotificationSearchCriteria();
     errors = new BeanPropertyBindingResult(criteria, "criteria");
   }
 
   @Test
-  public void supports_ReturnsTrueForApplicationFormDataClass() {
+  void supports_ReturnsTrueForApplicationFormDataClass() {
     assertTrue(validator.supports(NotificationSearchCriteria.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(validator.supports(Object.class));
   }
 
 
   @Test
-  void testAllFieldsBlankValidator() {
+  void allFieldsBlankValidator() {
     // Set dates to empty
     criteria.setNotificationFromDate("");
     criteria.setNotificationToDate("");
@@ -50,7 +50,7 @@ class NotificationSearchValidatorTest {
   }
 
   @Test
-  void testValidateFromDate() {
+  void validateFromDate() {
     criteria.setNotificationFromDate("12/12/");
     validator.validate(criteria, errors);
     assertTrue(errors.hasErrors());
@@ -60,7 +60,7 @@ class NotificationSearchValidatorTest {
   }
 
   @Test
-  void testValidateToDate() {
+  void validateToDate() {
     criteria.setNotificationToDate("12/12/");
     validator.validate(criteria, errors);
     assertTrue(errors.hasErrors());
@@ -89,7 +89,7 @@ class NotificationSearchValidatorTest {
   }
 
   @Test
-  void testValidFromAndToDates() {
+  void validFromAndToDates() {
     criteria.setNotificationFromDate("12/12/2021");
     criteria.setNotificationToDate("13/12/2021");
     validator.validate(criteria, errors);
@@ -97,7 +97,7 @@ class NotificationSearchValidatorTest {
   }
 
   @Test
-  void testInvalidFromAndToDates() {
+  void invalidFromAndToDates() {
     criteria.setNotificationFromDate("13/12/2021");
     criteria.setNotificationToDate("12/12/2021");
     validator.validate(criteria, errors);
@@ -106,7 +106,7 @@ class NotificationSearchValidatorTest {
   }
 
   @Test
-  void testValidDates() {
+  void validDates() {
     criteria.setNotificationFromDate("11/12/2021");
     criteria.setNotificationToDate("12/12/2022");
     validator.validate(criteria, errors);
@@ -116,7 +116,7 @@ class NotificationSearchValidatorTest {
 
   @Test
   @DisplayName("Should have validation errors when more than 3 years")
-  void testShouldHaveValidationErrorsWhenMoreThan3Years() {
+  void shouldHaveValidationErrorsWhenMoreThan3Years() {
     criteria.setNotificationFromDate("11/12/2021");
     criteria.setNotificationToDate("12/12/2024");
     validator.validate(criteria, errors);
@@ -126,7 +126,7 @@ class NotificationSearchValidatorTest {
 
   @Test
   @DisplayName("Should not have validation errors when just under 3 years")
-  void testShouldNotHaveValidationErrorsWhenJustUnder3Years() {
+  void shouldNotHaveValidationErrorsWhenJustUnder3Years() {
     criteria.setNotificationFromDate("11/12/2021");
     criteria.setNotificationToDate("10/12/2024");
     validator.validate(criteria, errors);
@@ -135,7 +135,7 @@ class NotificationSearchValidatorTest {
   }
 
   @Test
-  void testCaseRefDoubleSpaceValidation() {
+  void caseRefDoubleSpaceValidation() {
     // Requires some text, otherwise value is disregarded for being blank
     criteria.setCaseReference("1  3");
     validator.validate(criteria, errors);
@@ -144,7 +144,7 @@ class NotificationSearchValidatorTest {
   }
 
   @Test
-  void testCaseRefAlphaNumericValidation() {
+  void caseRefAlphaNumericValidation() {
     criteria.setCaseReference("$%^");
     validator.validate(criteria,errors);
     assertTrue(errors.hasErrors());
@@ -152,7 +152,7 @@ class NotificationSearchValidatorTest {
   }
 
   @Test
-  void testValidCaseRef() {
+  void validCaseRef() {
     criteria.setCaseReference("30000aaa");
     validator.validate(criteria, errors);
     assertFalse(errors.hasErrors());
@@ -200,7 +200,7 @@ class NotificationSearchValidatorTest {
   }
 
   @Test
-  void testProviderCaseRefDoubleSpaceValidation() {
+  void providerCaseRefDoubleSpaceValidation() {
     // Requires some text, otherwise value is disregarded for being blank
     criteria.setProviderCaseReference("1  3");
     validator.validate(criteria, errors);

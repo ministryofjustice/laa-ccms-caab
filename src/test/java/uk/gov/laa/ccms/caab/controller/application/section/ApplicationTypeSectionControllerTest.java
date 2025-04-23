@@ -40,7 +40,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class ApplicationTypeSectionControllerTest {
+class ApplicationTypeSectionControllerTest {
 
   @Mock
   private ApplicationService applicationService;
@@ -60,14 +60,14 @@ public class ApplicationTypeSectionControllerTest {
   private ActiveCase activeCase;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(applicationTypeSectionController).build();
     this.user = buildUser();
     this.activeCase = buildActiveCase();
   }
 
   @Test
-  public void testApplicationSummaryApplicationType() throws Exception {
+  void applicationSummaryApplicationType() throws Exception {
     final ApplicationFormData applicationFormData = new ApplicationFormData();
     applicationFormData.setApplicationTypeCategory("Category A"); // Updated field
 
@@ -86,7 +86,7 @@ public class ApplicationTypeSectionControllerTest {
   }
 
   @Test
-  public void testDelegatedFunctionIsSuccessful() throws Exception {
+  void delegatedFunctionIsSuccessful() throws Exception {
     final ApplicationFormData applicationFormData = new ApplicationFormData();
     applicationFormData.setDelegatedFunctions(true);
 
@@ -103,7 +103,7 @@ public class ApplicationTypeSectionControllerTest {
   }
 
   @Test
-  public void testDelegatedFunctionHandlesValidationError() throws Exception {
+  void delegatedFunctionHandlesValidationError() throws Exception {
     final ApplicationFormData applicationFormData = new ApplicationFormData();
     applicationFormData.setDelegatedFunctions(true);
 

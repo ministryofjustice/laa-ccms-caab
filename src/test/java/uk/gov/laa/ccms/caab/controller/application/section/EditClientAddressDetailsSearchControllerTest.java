@@ -50,7 +50,7 @@ class EditClientAddressDetailsSearchControllerTest {
 
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(editClientAddressDetailsSearchController).build();
 
     addressSearch = new AddressSearchFormData();
@@ -62,7 +62,7 @@ class EditClientAddressDetailsSearchControllerTest {
   }
 
   @Test
-  void testClientDetailsAddressSearch() throws Exception {
+  void clientDetailsAddressSearch() throws Exception {
     mockMvc.perform(get("/application/sections/client/details/address/search")
             .sessionAttr(ADDRESS_SEARCH_RESULTS, searchResults)
             .flashAttr("addressSearch", addressSearch))
@@ -73,7 +73,7 @@ class EditClientAddressDetailsSearchControllerTest {
   }
 
   @Test
-  void testClientDetailsAddressSearchPost() throws Exception {
+  void clientDetailsAddressSearchPost() throws Exception {
 
     mockMvc.perform(post("/application/sections/client/details/address/search")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
@@ -85,7 +85,7 @@ class EditClientAddressDetailsSearchControllerTest {
   }
 
   @Test
-  void testClientDetailsAddressSearchPost_ValidationError() throws Exception {
+  void clientDetailsAddressSearchPostValidationError() throws Exception {
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];

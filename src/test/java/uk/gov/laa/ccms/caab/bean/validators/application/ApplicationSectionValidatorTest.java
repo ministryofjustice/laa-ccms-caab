@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.bean.validators.application;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_COMPLETE;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +28,7 @@ class ApplicationSectionValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     sectionData = ApplicationSectionDisplay.builder().build();
     errors = new BeanPropertyBindingResult(sectionData, "sectionData");
   }
@@ -52,7 +51,7 @@ class ApplicationSectionValidatorTest {
 
     assertTrue(errors.hasErrors());
     assertTrue(errors.hasGlobalErrors());
-    assertTrue(errors.getGlobalError().getCode().equals("provider.required"));
+    assertEquals("provider.required", errors.getGlobalError().getCode());
   }
 
   @Test
@@ -64,7 +63,7 @@ class ApplicationSectionValidatorTest {
 
     assertTrue(errors.hasErrors());
     assertTrue(errors.hasGlobalErrors());
-    assertTrue(errors.getGlobalError().getCode().equals("generalDetails.required"));
+    assertEquals("generalDetails.required", errors.getGlobalError().getCode());
   }
 
   @Test
@@ -77,7 +76,7 @@ class ApplicationSectionValidatorTest {
 
     assertTrue(errors.hasErrors());
     assertTrue(errors.hasGlobalErrors());
-    assertTrue(errors.getGlobalError().getCode().equals("proceedingsAndCosts.required"));
+    assertEquals("proceedingsAndCosts.required", errors.getGlobalError().getCode());
   }
 
   @Test
@@ -91,7 +90,7 @@ class ApplicationSectionValidatorTest {
 
     assertTrue(errors.hasErrors());
     assertTrue(errors.hasGlobalErrors());
-    assertTrue(errors.getGlobalError().getCode().equals("opponentsAndOtherParties.required"));
+    assertEquals("opponentsAndOtherParties.required", errors.getGlobalError().getCode());
   }
 
   @Test
@@ -106,7 +105,7 @@ class ApplicationSectionValidatorTest {
 
     assertTrue(errors.hasErrors());
     assertTrue(errors.hasGlobalErrors());
-    assertTrue(errors.getGlobalError().getCode().equals("meansAssessment.required"));
+    assertEquals("meansAssessment.required", errors.getGlobalError().getCode());
   }
 
   @Test
@@ -123,7 +122,7 @@ class ApplicationSectionValidatorTest {
 
     assertTrue(errors.hasErrors());
     assertTrue(errors.hasGlobalErrors());
-    assertTrue(errors.getGlobalError().getCode().equals("meritsAssessment.required"));
+    assertEquals("meritsAssessment.required", errors.getGlobalError().getCode());
   }
 
   @Test

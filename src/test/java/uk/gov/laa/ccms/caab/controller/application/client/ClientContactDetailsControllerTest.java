@@ -34,7 +34,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 @ExtendWith(MockitoExtension.class)
-public class ClientContactDetailsControllerTest {
+class ClientContactDetailsControllerTest {
 
   @Mock
   private LookupService lookupService;
@@ -57,7 +57,7 @@ public class ClientContactDetailsControllerTest {
   private ClientFormDataBasicDetails basicDetails;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(clientContactDetailsController).build();
 
     basicDetails = new ClientFormDataBasicDetails();
@@ -74,7 +74,7 @@ public class ClientContactDetailsControllerTest {
   }
 
   @Test
-  void testClientDetailsContact() throws Exception {
+  void clientDetailsContact() throws Exception {
 
     when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD)).thenReturn(
         Mono.just(correspondenceMethodLookupDetail));
@@ -91,7 +91,7 @@ public class ClientContactDetailsControllerTest {
 
   }
   @Test
-  void testClientDetailsContactPost() throws Exception {
+  void clientDetailsContactPost() throws Exception {
 
     mockMvc.perform(post("/application/client/details/contact")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
@@ -102,7 +102,7 @@ public class ClientContactDetailsControllerTest {
 
 
   @Test
-  void testClientDetailsContactPostValidationError() throws Exception {
+  void clientDetailsContactPostValidationError() throws Exception {
     contactDetails.setTelephoneHome("0123456789");
     contactDetails.setPasswordReminder("test");
     contactDetails.setCorrespondenceMethod("test");

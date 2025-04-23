@@ -27,7 +27,7 @@ class CopyApplicationMapperTest {
   private final CopyApplicationMapper copyApplicationMapper = new CopyApplicationMapperImpl();
 
   @Test
-  void testCopyApplication() {
+  void copyApplication() {
     Date sharedDate = new Date();
 
     ApplicationDetail copyApplication = buildApplicationDetail(2, true, sharedDate);
@@ -49,7 +49,7 @@ class CopyApplicationMapperTest {
   }
 
   @Test
-  void testCopyProceeding() {
+  void copyProceeding() {
     Date date = new Date();
     ProceedingDetail expectedProceeding = buildProceeding(date, BigDecimal.ONE);
 
@@ -63,7 +63,7 @@ class CopyApplicationMapperTest {
   }
 
   @Test
-  void testCopyScopeLimitation() {
+  void copyScopeLimitation() {
     ScopeLimitationDetail expectedScopeLimitation = buildScopeLimitation();
 
     ScopeLimitationDetail result = buildScopeLimitation();
@@ -76,7 +76,7 @@ class CopyApplicationMapperTest {
   }
 
   @Test
-  void testCopyOpponent() {
+  void copyOpponent() {
     Date date = new Date();
     OpponentDetail expectedOpponent = buildOpponent(date);
 
@@ -90,7 +90,7 @@ class CopyApplicationMapperTest {
 
   @Test
   @DisplayName("Should copy opponent with null address as empty address")
-  void testCopyOpponentIfAddressIsNull() {
+  void copyOpponentIfAddressIsNull() {
     Date date = new Date();
     OpponentDetail opponentToCopy = buildOpponent(date);
     opponentToCopy.setAddress(null);

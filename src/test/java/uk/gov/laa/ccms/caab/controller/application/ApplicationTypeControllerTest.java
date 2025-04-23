@@ -39,7 +39,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class ApplicationTypeControllerTest {
+class ApplicationTypeControllerTest {
   @Mock
   private LookupService lookupService;
 
@@ -55,12 +55,12 @@ public class ApplicationTypeControllerTest {
   private WebApplicationContext webApplicationContext;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(applicationTypeController).build();
   }
 
   @Test
-  public void testGetApplicationTypeAddsApplicationTypesToModel() throws Exception {
+  void getApplicationTypeAddsApplicationTypesToModel() throws Exception {
     final CommonLookupDetail applicationTypes = new CommonLookupDetail();
     applicationTypes.addContentItem(
         new CommonLookupValueDetail().type("Type 1").code("Code 1"));
@@ -81,7 +81,7 @@ public class ApplicationTypeControllerTest {
   }
 
   @Test
-  public void testGetApplicationTypeHandlesExceptionalFunding() throws Exception {
+  void getApplicationTypeHandlesExceptionalFunding() throws Exception {
     final ApplicationFormData applicationFormData = new ApplicationFormData();
     applicationFormData.setApplicationTypeCategory("ECF");
     applicationFormData.setExceptionalFunding(true);
@@ -95,7 +95,7 @@ public class ApplicationTypeControllerTest {
   }
 
   @Test
-  public void testPostApplicationTypeHandlesValidationError() throws Exception {
+  void postApplicationTypeHandlesValidationError() throws Exception {
     final ApplicationFormData applicationFormData = new ApplicationFormData();
 
     final CommonLookupDetail applicationTypes = new CommonLookupDetail();
@@ -120,7 +120,7 @@ public class ApplicationTypeControllerTest {
   }
 
   @Test
-  public void testPostApplicationTypeIsSuccessful() throws Exception {
+  void postApplicationTypeIsSuccessful() throws Exception {
     final ApplicationFormData applicationFormData = new ApplicationFormData();
     applicationFormData.setApplicationTypeCategory("ECF");
 

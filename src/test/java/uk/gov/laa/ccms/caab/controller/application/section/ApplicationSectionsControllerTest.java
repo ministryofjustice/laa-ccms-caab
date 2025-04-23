@@ -58,12 +58,12 @@ class ApplicationSectionsControllerTest {
   private WebApplicationContext webApplicationContext;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(applicationSectionsController).build();
   }
 
   @Test
-  public void testGetApplicationTypeAddsApplicationTypesToModel() throws Exception {
+  void getApplicationTypeAddsApplicationTypesToModel() throws Exception {
     final String id = "123";
 
     final ApplicationSectionDisplay applicationSectionDisplay =
@@ -95,7 +95,7 @@ class ApplicationSectionsControllerTest {
 
   @Test
   @DisplayName("completeApplication handles validation errors and returns task page view")
-  void testCompleteApplication_ValidationError() throws Exception {
+  void completeApplicationValidationError() throws Exception {
     final ApplicationSectionDisplay sectionData = ApplicationSectionDisplay.builder().build();
     final Object formData = new Object();
 
@@ -119,7 +119,7 @@ class ApplicationSectionsControllerTest {
 
   @Test
   @DisplayName("completeApplication redirects to validation page when no validation errors")
-  void testCompleteApplication_NoValidationErrors() throws Exception {
+  void completeApplicationNoValidationErrors() throws Exception {
     final ApplicationSectionDisplay sectionData = ApplicationSectionDisplay.builder().build();
     final Object formData = new Object();
 

@@ -29,7 +29,7 @@ import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 
 @ExtendWith(MockitoExtension.class)
-public class OpponentServiceTest {
+class OpponentServiceTest {
   @Mock
   private SoaApiClient soaApiClient;
 

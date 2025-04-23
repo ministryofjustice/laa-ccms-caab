@@ -48,7 +48,7 @@ import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class CaabApiClientTest {
+class CaabApiClientTest {
     
   @Mock
   private WebClient caabApiWebClient;

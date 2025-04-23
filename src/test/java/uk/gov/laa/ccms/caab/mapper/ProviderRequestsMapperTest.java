@@ -40,7 +40,7 @@ class ProviderRequestsMapperTest {
   CommonMapper commonMapper;
 
   @InjectMocks
-  ProviderRequestsMapper mapper = new ProviderRequestsMapperImpl();
+  ProviderRequestsMapper mapper;
 
   @Test
   @DisplayName("Should populate ProviderRequestDetailsFormData with dynamic options")

@@ -24,23 +24,23 @@ class CostDetailsValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     costsFormData = new CostsFormData();
     errors = new BeanPropertyBindingResult(costsFormData, "costsFormData");
   }
 
   @Test
-  public void supports_ReturnsTrueForCostsFormDataClass() {
+  void supports_ReturnsTrueForCostsFormDataClass() {
     assertTrue(costDetailsValidator.supports(CostsFormData.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(costDetailsValidator.supports(Object.class));
   }
 
   @Test
-  public void validate_WithInvalidCurrencyFormat_HasErrors() {
+  void validate_WithInvalidCurrencyFormat_HasErrors() {
     costsFormData.setRequestedCostLimitation("not a number");
     costDetailsValidator.validate(costsFormData, errors);
     assertTrue(errors.hasErrors());
@@ -49,7 +49,7 @@ class CostDetailsValidatorTest {
   }
 
   @Test
-  public void validate_WithExceedingCostLimitation_HasErrors() {
+  void validate_WithExceedingCostLimitation_HasErrors() {
     costsFormData.setRequestedCostLimitation("100000001.00");
     costDetailsValidator.validate(costsFormData, errors);
     assertTrue(errors.hasErrors());
@@ -58,7 +58,7 @@ class CostDetailsValidatorTest {
   }
 
   @Test
-  public void validate_WithValidAndWithinLimitCostLimitation_NoErrors() {
+  void validate_WithValidAndWithinLimitCostLimitation_NoErrors() {
     costsFormData.setRequestedCostLimitation("99999999.99");
     costDetailsValidator.validate(costsFormData, errors);
     assertFalse(errors.hasErrors());
