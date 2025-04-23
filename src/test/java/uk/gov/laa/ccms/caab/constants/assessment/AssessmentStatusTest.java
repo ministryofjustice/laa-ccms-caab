@@ -4,30 +4,30 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-public class AssessmentStatusTest {
+class AssessmentStatusTest {
 
   @Test
-  void testCompleteStatus() {
+  void completeStatus() {
     assertEquals("COMPLETE", AssessmentStatus.COMPLETE.getStatus());
   }
 
   @Test
-  void testErrorStatus() {
+  void errorStatus() {
     assertEquals("ERROR", AssessmentStatus.ERROR.getStatus());
   }
 
   @Test
-  void testNotStartedStatus() {
+  void notStartedStatus() {
     assertEquals("NOT_STARTED", AssessmentStatus.NOT_STARTED.getStatus());
   }
 
   @Test
-  void testRequiredStatus() {
+  void requiredStatus() {
     assertEquals("REQUIRED", AssessmentStatus.REQUIRED.getStatus());
   }
 
   @Test
-  void testUnchangedStatus() {
+  void unchangedStatus() {
     assertEquals("UNCHANGED", AssessmentStatus.UNCHANGED.getStatus());
   }
 }

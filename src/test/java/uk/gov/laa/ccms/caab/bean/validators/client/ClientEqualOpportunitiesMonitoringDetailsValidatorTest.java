@@ -26,30 +26,30 @@ class ClientEqualOpportunitiesMonitoringDetailsValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     monitoringDetails = buildClientDetails();
     errors = new BeanPropertyBindingResult(monitoringDetails, "monitoringDetails");
   }
 
   @Test
-  public void supports_ReturnsTrueForApplicationDetailsClass() {
+  void supports_ReturnsTrueForApplicationDetailsClass() {
     assertTrue(validator.supports(ClientFormDataMonitoringDetails.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(validator.supports(Object.class));
   }
 
   @Test
-  public void validate() {
+  void validate() {
     validator.validate(monitoringDetails, errors);
     assertFalse(errors.hasErrors());
   }
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_ethnicOrigin(String ethnicity) {
+  void validate_ethnicOrigin(String ethnicity) {
     monitoringDetails.setEthnicOrigin(ethnicity);
     validator.validate(monitoringDetails, errors);
     assertTrue(errors.hasErrors());
@@ -59,7 +59,7 @@ class ClientEqualOpportunitiesMonitoringDetailsValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_disability(String disability) {
+  void validate_disability(String disability) {
     monitoringDetails.setDisability(disability);
     validator.validate(monitoringDetails, errors);
     assertTrue(errors.hasErrors());

@@ -33,7 +33,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class OfficeControllerTest {
+class OfficeControllerTest {
 
   @Mock
   private OfficeValidator officeValidator;
@@ -49,13 +49,13 @@ public class OfficeControllerTest {
   private UserDetail user;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(officeController).build();
     this.user = buildUser();
   }
 
   @Test
-  public void testGetOfficeAddsOfficesToModel() throws Exception {
+  void getOfficeAddsOfficesToModel() throws Exception {
     this.mockMvc.perform(get("/application/office")
             .flashAttr("user", user))
         .andDo(print())
@@ -68,7 +68,7 @@ public class OfficeControllerTest {
   }
 
   @Test
-  public void testPostOfficeIsSuccessful() throws Exception {
+  void postOfficeIsSuccessful() throws Exception {
     final ApplicationFormData applicationFormData = new ApplicationFormData();
     applicationFormData.setOfficeId(1);
 
@@ -80,7 +80,7 @@ public class OfficeControllerTest {
   }
 
   @Test
-  public void testPostOfficeHandlesValidationError() throws Exception {
+  void postOfficeHandlesValidationError() throws Exception {
     final ApplicationFormData applicationFormData = new ApplicationFormData();
 
     doAnswer(invocation -> {

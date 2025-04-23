@@ -11,7 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class TooManyResultsExceptionTest {
 
   @Test
-  public void testConstructorWithMessage() {
+  void constructorWithMessage() {
     final String expectedMessage = "Too many results";
     final TooManyResultsException exception = new TooManyResultsException(expectedMessage);
 
@@ -20,7 +20,7 @@ class TooManyResultsExceptionTest {
   }
 
   @Test
-  public void testConstructorWithMessageAndCause() {
+  void constructorWithMessageAndCause() {
     final String expectedMessage = "Too many results";
     final Throwable cause = new Exception("Cause of too many results");
     final TooManyResultsException exception = new TooManyResultsException(expectedMessage, cause);

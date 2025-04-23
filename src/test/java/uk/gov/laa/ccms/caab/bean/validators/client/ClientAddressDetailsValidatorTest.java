@@ -30,23 +30,23 @@ class ClientAddressDetailsValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     addressDetails = buildClientFormDataAddressDetails();
     errors = new BeanPropertyBindingResult(addressDetails, "addressDetails");
   }
 
   @Test
-  public void supports_ReturnsTrueForClientFormDataAddressDetailsClass() {
+  void supports_ReturnsTrueForClientFormDataAddressDetailsClass() {
     assertTrue(clientAddressDetailsValidator.supports(ClientFormDataAddressDetails.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(clientAddressDetailsValidator.supports(Object.class));
   }
 
   @Test
-  public void validate() {
+  void validate() {
     clientAddressDetailsValidator.validate(addressDetails, errors);
     assertFalse(errors.hasErrors());
   }
@@ -62,7 +62,7 @@ class ClientAddressDetailsValidatorTest {
       "cityTown, test, 1",
       "county, test, 1"
   })
-  public void validate_noFixedAbode_invalid(String field, String value, int numberOfErrors) {
+  void validate_noFixedAbode_invalid(String field, String value, int numberOfErrors) {
     addressDetails = new ClientFormDataAddressDetails();
     addressDetails.setNoFixedAbode(true);
     addressDetails.setVulnerableClient(true);
@@ -90,7 +90,7 @@ class ClientAddressDetailsValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_countryRequired(String country) {
+  void validate_countryRequired(String country) {
     addressDetails.setCountry(country);
     clientAddressDetailsValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
@@ -101,7 +101,7 @@ class ClientAddressDetailsValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_houseNameNumberRequired(String houseNameNumber) {
+  void validate_houseNameNumberRequired(String houseNameNumber) {
     addressDetails.setHouseNameNumber(houseNameNumber);
     clientAddressDetailsValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
@@ -112,7 +112,7 @@ class ClientAddressDetailsValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_addressLine1Required(String addressLine1) {
+  void validate_addressLine1Required(String addressLine1) {
     addressDetails.setAddressLine1(addressLine1);
     clientAddressDetailsValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
@@ -123,7 +123,7 @@ class ClientAddressDetailsValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_cityTownRequired(String cityTown) {
+  void validate_cityTownRequired(String cityTown) {
     addressDetails.setCityTown(cityTown);
     clientAddressDetailsValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
@@ -135,7 +135,7 @@ class ClientAddressDetailsValidatorTest {
   // Test for UK postcodes
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_postcodeRequired_UK(String postcode) {
+  void validate_postcodeRequired_UK(String postcode) {
     addressDetails.setCountry("GBR");
     addressDetails.setPostcode(postcode);
     clientAddressDetailsValidator.validate(addressDetails, errors);
@@ -150,7 +150,7 @@ class ClientAddressDetailsValidatorTest {
       "USA",
       "GBR"
   })
-  public void validate_validatePostcodeFormat(String country) {
+  void validate_validatePostcodeFormat(String country) {
     addressDetails.setCountry(country);
     addressDetails.setPostcode("@@@@@@");
     clientAddressDetailsValidator.validate(addressDetails, errors);

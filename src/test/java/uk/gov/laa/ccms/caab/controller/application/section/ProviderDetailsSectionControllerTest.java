@@ -47,7 +47,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class ProviderDetailsSectionControllerTest {
+class ProviderDetailsSectionControllerTest {
 
   @Mock
   private ApplicationService applicationService;
@@ -67,12 +67,12 @@ public class ProviderDetailsSectionControllerTest {
   private WebApplicationContext webApplicationContext;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(providerDetailsController).build();
   }
 
   @Test
-  public void testApplicationSummaryProviderDetailsGet() throws Exception {
+  void applicationSummaryProviderDetailsGet() throws Exception {
     final String applicationId = "123";
     final ActiveCase activeCase = ActiveCase.builder().build();
     final UserDetail user = new UserDetail();
@@ -95,7 +95,7 @@ public class ProviderDetailsSectionControllerTest {
   }
 
   @Test
-  public void testApplicationSummaryProviderDetailsPost_ValidationError() throws Exception {
+  void applicationSummaryProviderDetailsPostValidationError() throws Exception {
     final String applicationId = "123";
     final ActiveCase activeCase = ActiveCase.builder().build();
     final UserDetail user = new UserDetail().provider(new BaseProvider().id(987));
@@ -137,7 +137,7 @@ public class ProviderDetailsSectionControllerTest {
       "null, 456, ref123, John Doe",
       "null, null, null, null"
   }, nullValues = "null")
-  public void testApplicationSummaryProviderDetailsPost_Successful(
+  void applicationSummaryProviderDetailsPostSuccessful(
       final Integer feeEarnerId,
       final Integer supervisorId,
       final String providerCaseReference,

@@ -15,7 +15,7 @@ import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 @ExtendWith(MockitoExtension.class)
-public class GlobalExceptionHandlerTest {
+class GlobalExceptionHandlerTest {
 
   @Mock
   private Logger loggerMock;
@@ -30,7 +30,7 @@ public class GlobalExceptionHandlerTest {
   private GlobalExceptionHandler globalExceptionHandler;
 
   @Test
-  public void testHandleDataApiClientException() {
+  void handleDataApiClientException() {
     final String errorMsg = "Test Exception";
     EbsApiClientException e = new EbsApiClientException(errorMsg);
 
@@ -40,7 +40,7 @@ public class GlobalExceptionHandlerTest {
   }
 
   @Test
-  public void testHandleCaabApplicationException() {
+  void handleCaabApplicationException() {
     final String errorMsg = "Test Exception";
     CaabApplicationException e = new CaabApplicationException(errorMsg);
 
@@ -50,7 +50,7 @@ public class GlobalExceptionHandlerTest {
   }
 
   @Test
-  public void testHandleServletRequestBindingException() {
+  void handleServletRequestBindingException() {
     final String errorMsg = "Test Exception";
     ServletRequestBindingException e = new ServletRequestBindingException(errorMsg);
 

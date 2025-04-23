@@ -58,7 +58,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 @ExtendWith(SpringExtension.class)
 @WebAppConfiguration
-public class AssessmentControllerTest {
+class AssessmentControllerTest {
 
   @Mock
   private AssessmentService assessmentService;
@@ -84,7 +84,7 @@ public class AssessmentControllerTest {
   private WebApplicationContext webApplicationContext;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     assessmentController.owdUrl = "http://example.com";
     assessmentController.interviewStyling = "interview-styling.css";
     assessmentController.fontStyling = "font-styling.css";
@@ -100,7 +100,7 @@ public class AssessmentControllerTest {
       .build();
 
   @Test
-  public void assessmentRemoveDisplaysCorrectView() throws Exception {
+  void assessmentRemoveDisplaysCorrectView() throws Exception {
     this.mockMvc.perform(get("/assessments/testCategory/remove"))
         .andDo(print())
         .andExpect(status().isOk())
@@ -113,7 +113,7 @@ public class AssessmentControllerTest {
       "merits",
       "means"
   })
-  public void assessmentRemovePostRedirectsToSummaryWhenAssessmentExists(
+  void assessmentRemovePostRedirectsToSummaryWhenAssessmentExists(
       final String category) throws Exception {
     when(assessmentService.deleteAssessments(any(), any(), any(), any())).thenReturn(Mono.empty());
 
@@ -126,7 +126,7 @@ public class AssessmentControllerTest {
   }
 
   @Test
-  public void assessmentGet_validAssessment() throws Exception {
+  void assessmentGet_validAssessment() throws Exception {
     when(applicationService.getApplication(anyString())).thenReturn(
         Mono.just(buildApplicationDetail(1, true, new Date())));
     when(contextSecurityUtil.createHubContext(anyString(), anyLong(), anyString(), anyLong(), anyString(), anyString(), anyString())).thenReturn(
@@ -168,7 +168,7 @@ public class AssessmentControllerTest {
   }
 
   @Test
-  public void assessmentGet_applicationNotFound() {
+  void assessmentGet_applicationNotFound() {
     when(applicationService.getApplication(anyString())).thenReturn(Mono.empty());
 
     final MockHttpServletRequestBuilder request = get("/assessments")
@@ -186,7 +186,7 @@ public class AssessmentControllerTest {
   }
 
   @Test
-  public void assessmentGet_unknownAssessment() {
+  void assessmentGet_unknownAssessment() {
     when(applicationService.getApplication(anyString()))
         .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
 
@@ -205,7 +205,7 @@ public class AssessmentControllerTest {
   }
 
   @Test
-  public void assessmentGet_clientNotFound() {
+  void assessmentGet_clientNotFound() {
     when(applicationService.getApplication(anyString())).thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
     when(assessmentService.getAssessments(any(), anyString(), anyString())).thenReturn(Mono.empty());
     when(clientService.getClient(anyString(), anyString(), anyString())).thenReturn(Mono.empty());
@@ -225,7 +225,7 @@ public class AssessmentControllerTest {
   }
 
   @Test
-  public void assessmentGet_assessmentDetailsNotFound() {
+  void assessmentGet_assessmentDetailsNotFound() {
     when(applicationService.getApplication(anyString())).thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
     when(contextSecurityUtil.createHubContext(anyString(), anyLong(), anyString(), anyLong(), anyString(), anyString(), anyString())).thenReturn("contextToken");
     when(clientService.getClient(anyString(), anyString(), anyString())).thenReturn(Mono.just(new ClientDetail()));
@@ -246,7 +246,7 @@ public class AssessmentControllerTest {
   }
 
   @Test
-  public void assessmentGet_prepopAssessmentNotFound() {
+  void assessmentGet_prepopAssessmentNotFound() {
     when(applicationService.getApplication(anyString())).thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
     when(contextSecurityUtil.createHubContext(anyString(), anyLong(), anyString(), anyLong(), anyString(), anyString(), anyString())).thenReturn("contextToken");
     when(clientService.getClient(anyString(), anyString(), anyString())).thenReturn(Mono.just(new ClientDetail()));
@@ -267,7 +267,7 @@ public class AssessmentControllerTest {
   }
 
   @Test
-  public void assessmentConfirmDisplaysCorrectView() throws Exception {
+  void assessmentConfirmDisplaysCorrectView() throws Exception {
     final String token = "someToken";
     final ContextToken contextToken = new ContextToken();
     contextToken.setRulebaseId(1L);
@@ -327,7 +327,7 @@ public class AssessmentControllerTest {
   }
 
   @Test
-  public void assessmentConfirm_throwsExceptionWhenAssessmentDetailsNotFound() {
+  void assessmentConfirm_throwsExceptionWhenAssessmentDetailsNotFound() {
     final String token = "someToken";
     final ContextToken contextToken = new ContextToken();
     contextToken.setRulebaseId(1L);
@@ -385,7 +385,7 @@ public class AssessmentControllerTest {
   }
 
   @Test
-  public void assessmentConfirm_throwsExceptionWhenAssessmentDetailNotFound() {
+  void assessmentConfirm_throwsExceptionWhenAssessmentDetailNotFound() {
     final String token = "someToken";
     final ContextToken contextToken = new ContextToken();
     contextToken.setRulebaseId(1L);

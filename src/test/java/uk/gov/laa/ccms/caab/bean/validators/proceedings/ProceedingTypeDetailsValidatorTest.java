@@ -25,23 +25,23 @@ class ProceedingTypeDetailsValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     proceedingDetails = new ProceedingFormDataProceedingDetails();
     errors = new BeanPropertyBindingResult(proceedingDetails, "proceedingDetails");
   }
 
   @Test
-  public void supports_ReturnsTrueForProceedingFormDataProceedingDetailsClass() {
+  void supports_ReturnsTrueForProceedingFormDataProceedingDetailsClass() {
     assertTrue(proceedingTypeDetailsValidator.supports(ProceedingFormDataProceedingDetails.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(proceedingTypeDetailsValidator.supports(Object.class));
   }
 
   @Test
-  public void validate_WithNullProceedingType_HasErrors() {
+  void validate_WithNullProceedingType_HasErrors() {
     proceedingDetails.setProceedingType(null);
     proceedingTypeDetailsValidator.validate(proceedingDetails, errors);
     assertTrue(errors.hasErrors());
@@ -50,7 +50,7 @@ class ProceedingTypeDetailsValidatorTest {
   }
 
   @Test
-  public void validate_WithValidProceedingType_NoErrors() {
+  void validate_WithValidProceedingType_NoErrors() {
     proceedingDetails.setProceedingType("Valid Proceeding Type");
     proceedingTypeDetailsValidator.validate(proceedingDetails, errors);
     assertFalse(errors.hasErrors());

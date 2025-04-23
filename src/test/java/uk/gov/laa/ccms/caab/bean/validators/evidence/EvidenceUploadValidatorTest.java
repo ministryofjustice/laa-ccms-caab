@@ -30,24 +30,24 @@ class EvidenceUploadValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     evidenceUploadFormData =
         new EvidenceUploadFormData();
     errors = new BeanPropertyBindingResult(evidenceUploadFormData, EVIDENCE_UPLOAD_FORM_DATA);
   }
 
   @Test
-  public void supports_ReturnsTrueForCorrectClass() {
+  void supports_ReturnsTrueForCorrectClass() {
     assertTrue(validator.supports(EvidenceUploadFormData.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(validator.supports(Object.class));
   }
 
   @Test
-  public void validate_noErrors() {
+  void validate_noErrors() {
     evidenceUploadFormData = buildEvidenceUploadFormData();
 
     validator.validate(evidenceUploadFormData, errors);
@@ -55,7 +55,7 @@ class EvidenceUploadValidatorTest {
   }
 
   @Test
-  public void validate_fileMandatory() {
+  void validate_fileMandatory() {
     evidenceUploadFormData = buildEvidenceUploadFormData();
     evidenceUploadFormData.setFile(null);
 
@@ -65,7 +65,7 @@ class EvidenceUploadValidatorTest {
   }
 
   @Test
-  public void validate_fileExtension() {
+  void validate_fileExtension() {
     evidenceUploadFormData = buildEvidenceUploadFormData();
     evidenceUploadFormData.setFile(new MockMultipartFile(
         "theFile",
@@ -80,7 +80,7 @@ class EvidenceUploadValidatorTest {
   }
 
   @Test
-  public void validate_fileSize() {
+  void validate_fileSize() {
     evidenceUploadFormData = buildEvidenceUploadFormData();
     evidenceUploadFormData.setFile(new MockMultipartFile(
         "theFile",
@@ -95,7 +95,7 @@ class EvidenceUploadValidatorTest {
   }
 
   @Test
-  public void validate_documentTypeMandatory() {
+  void validate_documentTypeMandatory() {
     evidenceUploadFormData = buildEvidenceUploadFormData();
     evidenceUploadFormData.setDocumentType(null);
 
@@ -105,7 +105,7 @@ class EvidenceUploadValidatorTest {
   }
 
   @Test
-  public void validate_evidenceTypeMandatory() {
+  void validate_evidenceTypeMandatory() {
     evidenceUploadFormData = buildEvidenceUploadFormData();
     evidenceUploadFormData.setEvidenceTypes(Collections.emptyList());
 
@@ -115,7 +115,7 @@ class EvidenceUploadValidatorTest {
   }
 
   @Test
-  public void validate_descriptionMaxLength() {
+  void validate_descriptionMaxLength() {
     evidenceUploadFormData = buildEvidenceUploadFormData();
     evidenceUploadFormData.setDocumentDescription("a".repeat(256));
 

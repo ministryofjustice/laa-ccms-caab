@@ -33,7 +33,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 
 @ExtendWith(MockitoExtension.class)
-public class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
+class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
 
   @Mock
   private LookupService lookupService;
@@ -54,7 +54,7 @@ public class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
   private ClientFormDataMonitoringDetails monitoringDetails;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
 
     clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
@@ -68,7 +68,7 @@ public class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
   }
 
   @Test
-  public void testClientEqualOpportunitiesMonitoringGet() throws Exception {
+  void clientEqualOpportunitiesMonitoringGet() throws Exception {
     when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN)).thenReturn(
         Mono.just(ethnicityLookupDetail));
 
@@ -84,7 +84,7 @@ public class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
   }
 
   @Test
-  public void testClientEqualOpportunitiesMonitoringPostValidationError() throws Exception {
+  void clientEqualOpportunitiesMonitoringPostValidationError() throws Exception {
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
@@ -107,7 +107,7 @@ public class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
   }
 
   @Test
-  public void testClientEqualOpportunitiesMonitoringPost() throws Exception {
+  void clientEqualOpportunitiesMonitoringPost() throws Exception {
     monitoringDetails.setDisability("TEST");
     monitoringDetails.setEthnicOrigin("TEST");
 

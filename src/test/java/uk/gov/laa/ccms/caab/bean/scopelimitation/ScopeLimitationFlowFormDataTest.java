@@ -11,12 +11,12 @@ class ScopeLimitationFlowFormDataTest {
   private ScopeLimitationFlowFormData scopeLimitationFlowFormData;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     scopeLimitationFlowFormData = new ScopeLimitationFlowFormData("action");
   }
 
   @Test
-  public void testScopeLimitationDetails() {
+  void scopeLimitationDetails() {
     assertNotNull(scopeLimitationFlowFormData.getScopeLimitationDetails());
     final ScopeLimitationFormDataDetails newDetails = new ScopeLimitationFormDataDetails();
     scopeLimitationFlowFormData.setScopeLimitationDetails(newDetails);

@@ -65,7 +65,7 @@ class EditClientAddressDetailsControllerTest {
   private ClientFormDataBasicDetails basicDetails;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(editClientAddressDetailsController).build();
 
     basicDetails = new ClientFormDataBasicDetails();
@@ -83,7 +83,7 @@ class EditClientAddressDetailsControllerTest {
   }
 
   @Test
-  void testEditClientDetailsAddress() throws Exception {
+  void editClientDetailsAddress() throws Exception {
     when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
@@ -96,7 +96,7 @@ class EditClientAddressDetailsControllerTest {
   }
 
   @Test
-  void testEditClientDetailsAddressPostFindAddress_NoAddresses() throws Exception {
+  void editClientDetailsAddressPostFindAddressNoAddresses() throws Exception {
     when(addressService.getAddresses(any())).thenReturn(
         new ResultsDisplay<AddressResultRowDisplay>());
 
@@ -113,7 +113,7 @@ class EditClientAddressDetailsControllerTest {
   }
 
   @Test
-  void testEditClientDetailsAddressPostFindAddress_WithAddresses() throws Exception {
+  void editClientDetailsAddressPostFindAddressWithAddresses() throws Exception {
     ResultsDisplay<AddressResultRowDisplay> addressResults = new ResultsDisplay<AddressResultRowDisplay>();
     addressResults.setContent(new ArrayList<>());
     addressResults.getContent().add(new AddressResultRowDisplay());
@@ -134,7 +134,7 @@ class EditClientAddressDetailsControllerTest {
   }
 
   @Test
-  void testEditClientDetailsAddressPostNext() throws Exception {
+  void editClientDetailsAddressPostNext() throws Exception {
     ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
 
     this.mockMvc.perform(post("/application/sections/client/details/address")
@@ -147,7 +147,7 @@ class EditClientAddressDetailsControllerTest {
   }
 
   @Test
-  void testEditClientDetailsAddressPostValidationError() throws Exception {
+  void editClientDetailsAddressPostValidationError() throws Exception {
     ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
 
     doAnswer(invocation -> {
@@ -170,7 +170,7 @@ class EditClientAddressDetailsControllerTest {
   }
 
   @Test
-  void testEditClientDetailsAddressPostSearchError() throws Exception {
+  void editClientDetailsAddressPostSearchError() throws Exception {
     ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
 
     doAnswer(invocation -> {

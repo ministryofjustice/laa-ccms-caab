@@ -14,17 +14,17 @@ import uk.gov.laa.ccms.caab.model.os.DeliveryPointAddress;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResult;
 
 @ExtendWith(SpringExtension.class)
-public class ClientAddressResultDisplayMapperTest {
+class ClientAddressResultDisplayMapperTest {
 
   private ClientAddressResultDisplayMapper mapper;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     mapper = Mappers.getMapper(ClientAddressResultDisplayMapper.class);
   }
 
   @Test
-  public void testToAddressLine1_withSubBuildingNameOrOrganizationName() {
+  void toAddressLine1WithSubBuildingNameOrOrganizationName() {
     DeliveryPointAddress address = new DeliveryPointAddress();
     address.setOrganisationName("Some Org");
     address.setSubBuildingName("Sub Building");
@@ -35,7 +35,7 @@ public class ClientAddressResultDisplayMapperTest {
   }
 
   @Test
-  public void testToAddressLine1_withoutSubBuildingNameOrOrganizationName() {
+  void toAddressLine1WithoutSubBuildingNameOrOrganizationName() {
     DeliveryPointAddress address = new DeliveryPointAddress();
     address.setBuildingNumber("10");
     address.setBuildingName("Some Building");
@@ -47,7 +47,7 @@ public class ClientAddressResultDisplayMapperTest {
   }
 
   @Test
-  public void testToAddressLine2_withSubBuildingNameOrOrganizationName() {
+  void toAddressLine2WithSubBuildingNameOrOrganizationName() {
     DeliveryPointAddress address = new DeliveryPointAddress();
     address.setOrganisationName("Some Org");
     address.setSubBuildingName("Sub Building");
@@ -61,7 +61,7 @@ public class ClientAddressResultDisplayMapperTest {
   }
 
   @Test
-  public void testToAddressLine2_withoutSubBuildingNameOrOrganizationName() {
+  void toAddressLine2WithoutSubBuildingNameOrOrganizationName() {
     DeliveryPointAddress address = new DeliveryPointAddress();
     address.setBuildingNumber("10");
     address.setBuildingName("Some Building");
@@ -72,7 +72,7 @@ public class ClientAddressResultDisplayMapperTest {
   }
 
   @Test
-  public void testToHouseNameNumber() {
+  void toHouseNameNumber() {
     DeliveryPointAddress address = new DeliveryPointAddress();
     address.setBuildingNumber("10");
     address.setBuildingName("Some Building");
@@ -83,7 +83,7 @@ public class ClientAddressResultDisplayMapperTest {
   }
 
   @Test
-  public void testToClientAddressResultRowDisplay() {
+  void toClientAddressResultRowDisplay() {
     OrdinanceSurveyResult surveyResult = new OrdinanceSurveyResult();
     DeliveryPointAddress deliveryPointAddress = new DeliveryPointAddress();
     deliveryPointAddress.setUprn("123456789");
@@ -106,7 +106,7 @@ public class ClientAddressResultDisplayMapperTest {
   }
 
   @Test
-  public void testUpdateClientDetails() {
+  void updateClientDetails() {
     ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();  // Assuming this is an empty object you want to populate
     AddressResultRowDisplay addressRowDisplay =
         buildAddressRowDisplay();

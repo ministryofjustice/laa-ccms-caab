@@ -4,15 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-public class InstanceMappingPrefixTest {
+class InstanceMappingPrefixTest {
 
   @Test
-  void testProceedingPrefix() {
+  void proceedingPrefix() {
     assertEquals("P_", InstanceMappingPrefix.PROCEEDING.getPrefix());
   }
 
   @Test
-  void testOpponentPrefix() {
+  void opponentPrefix() {
     assertEquals("OPPONENT_", InstanceMappingPrefix.OPPONENT.getPrefix());
   }
 }

@@ -45,7 +45,7 @@ import uk.gov.laa.ccms.data.model.DeclarationLookupValueDetail;
 class SubmissionSummaryDisplayMapperTest {
 
   @InjectMocks
-  SubmissionSummaryDisplayMapper mapper = new SubmissionSummaryDisplayMapperImpl();
+  SubmissionSummaryDisplayMapper mapper;
 
   @Test
   @DisplayName("toProviderSummaryDisplay should return null when ApplicationDetail is null")

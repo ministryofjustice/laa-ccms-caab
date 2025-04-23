@@ -1,13 +1,14 @@
 package uk.gov.laa.ccms.caab.client;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
 class AssessmentApiClientExceptionTest {
 
   @Test
-  public void testConstructorWithMessage() {
+  void constructorWithMessage() {
     final String expectedMessage = "Test Exception";
     final AssessmentApiClientException exception =
         new AssessmentApiClientException(expectedMessage);
@@ -17,7 +18,7 @@ class AssessmentApiClientExceptionTest {
   }
 
   @Test
-  public void testConstructorWithMessageAndCause() {
+  void constructorWithMessageAndCause() {
     final String expectedMessage = "Test Exception";
     final Exception cause = new Exception("Cause Exception");
     final AssessmentApiClientException exception =

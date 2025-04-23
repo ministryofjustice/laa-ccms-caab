@@ -72,7 +72,7 @@ class CaseSubmissionControllerTest {
 
   @Test
   @DisplayName("Test addCaseSubmission - Case confirmed")
-  void testAddCaseSubmission_CaseConfirmed() throws Exception {
+  void addCaseSubmissionCaseConfirmed() throws Exception {
 
     final TransactionStatus mockStatus = new TransactionStatus();
     mockStatus.setReferenceNumber("ref123");
@@ -89,7 +89,7 @@ class CaseSubmissionControllerTest {
 
   @Test
   @DisplayName("Test addCaseSubmission - Case not confirmed, poll continues")
-  void testAddCaseSubmission_CaseNotConfirmed() throws Exception {
+  void addCaseSubmissionCaseNotConfirmed() throws Exception {
     final TransactionStatus mockStatus = new TransactionStatus(); // No reference number set
     when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
 
@@ -105,7 +105,7 @@ class CaseSubmissionControllerTest {
 
   @Test
   @DisplayName("Test clientUpdateSubmitted - Removes active case and redirects to home")
-  void testClientUpdateSubmitted() throws Exception {
+  void clientUpdateSubmitted() throws Exception {
     mockMvc.perform(post("/submissions/case-create/confirmed")
             .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().is3xxRedirection())
@@ -114,7 +114,7 @@ class CaseSubmissionControllerTest {
 
   @Test
   @DisplayName("Test viewIncludingPollCount - Poll count within limit")
-  void testViewIncludingPollCount_WithinLimit() {
+  void viewIncludingPollCountWithinLimit() {
     when(session.getAttribute(SUBMISSION_POLL_COUNT)).thenReturn(1);
     when(submissionConstants.getMaxPollCount()).thenReturn(5);
 
@@ -126,7 +126,7 @@ class CaseSubmissionControllerTest {
 
   @Test
   @DisplayName("Test viewIncludingPollCount - Poll count exceeded")
-  void testViewIncludingPollCount_ExceededLimit() {
+  void viewIncludingPollCountExceededLimit() {
     when(session.getAttribute(SUBMISSION_POLL_COUNT)).thenReturn(5);
     when(submissionConstants.getMaxPollCount()).thenReturn(5);
 
@@ -137,7 +137,7 @@ class CaseSubmissionControllerTest {
 
   @Test
   @DisplayName("Test viewIncludingPollCount - Poll count starts from zero")
-  void testViewIncludingPollCount_StartFromZero() {
+  void viewIncludingPollCountStartFromZero() {
     when(session.getAttribute(SUBMISSION_POLL_COUNT)).thenReturn(null);
 
     final String view = caseSubmissionController.viewIncludingPollCount(session);

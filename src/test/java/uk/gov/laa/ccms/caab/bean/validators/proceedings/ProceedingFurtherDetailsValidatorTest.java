@@ -29,24 +29,24 @@ class ProceedingFurtherDetailsValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     proceedingFlowFormData = new ProceedingFlowFormData("test");
     furtherDetails = new ProceedingFormDataFurtherDetails();
     errors = new BeanPropertyBindingResult(furtherDetails, "furtherDetails");
   }
 
   @Test
-  public void supports_ReturnsTrueForProceedingFlowFormDataClass() {
+  void supports_ReturnsTrueForProceedingFlowFormDataClass() {
     assertTrue(proceedingFurtherDetailsValidator.supports(ProceedingFlowFormData.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(proceedingFurtherDetailsValidator.supports(Object.class));
   }
 
   @Test
-  public void validate_WithNullFields_HasErrors() {
+  void validate_WithNullFields_HasErrors() {
     proceedingFurtherDetailsValidator.validate(proceedingFlowFormData, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("clientInvolvementType"));
@@ -56,7 +56,7 @@ class ProceedingFurtherDetailsValidatorTest {
   }
 
   @Test
-  public void validate_WithValidFields_NoErrors() {
+  void validate_WithValidFields_NoErrors() {
     furtherDetails.setClientInvolvementType("Valid Client Involvement Type");
     furtherDetails.setLevelOfService("Valid Level Of Service");
     proceedingFlowFormData.setFurtherDetails(furtherDetails);
@@ -65,7 +65,7 @@ class ProceedingFurtherDetailsValidatorTest {
   }
 
   @Test
-  public void validate_WithValidFields_NoErrors_withTypeOfOrder() {
+  void validate_WithValidFields_NoErrors_withTypeOfOrder() {
     final ProceedingFormDataProceedingDetails proceedingDetails = new ProceedingFormDataProceedingDetails();
     proceedingDetails.setOrderTypeRequired(true);
     furtherDetails.setClientInvolvementType("Valid Client Involvement Type");

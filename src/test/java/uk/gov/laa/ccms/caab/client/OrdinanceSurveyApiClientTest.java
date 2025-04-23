@@ -38,7 +38,7 @@ class OrdinanceSurveyApiClientTest {
   ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
   @BeforeEach
-  private void setup(){
+  void setup() {
     this.ordinanceSurveyApiClient = new OrdinanceSurveyApiClient(webClientMock, testKey);
   }
 

@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipDetail;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRelationship;
 
-public class AssessmentUtilTest {
+class AssessmentUtilTest {
 
   @ParameterizedTest
   @CsvSource({
@@ -34,7 +34,7 @@ public class AssessmentUtilTest {
       "CASE123, CASE123, DIFFERENT_CASE, false", // mismatched attributes
       "CASE123, , , false" // no attributes
   })
-  void testIsAssessmentReferenceConsistent(
+  void isAssessmentReferenceConsistent(
       final String caseReferenceNumber,
       final String entityName,
       final String attributeValue,
@@ -71,7 +71,7 @@ public class AssessmentUtilTest {
       "invalidCurrency, CURRENCY, invalidCurrency",
       "invalidNumber, NUMBER, invalidNumber",
   })
-  void testGetFormattedAttributeValue_CatchBlocks(
+  void getFormattedAttributeValueCatchBlocks(
       final String value, final String type, final String expected) {
     final AssessmentAttributeDetail attribute = new AssessmentAttributeDetail();
     attribute.setValue(value);
@@ -82,7 +82,7 @@ public class AssessmentUtilTest {
   }
   
   @Test
-  void testGetNonFinancialAssessmentNamesIncludingPrepop_returnsCorrectNames() {
+  void getNonFinancialAssessmentNamesIncludingPrepopReturnsCorrectNames() {
     final List<String> expectedAssessmentNames = List.of(
         MEANS.getName(),
         MEANS_PREPOP.getName(),
@@ -97,7 +97,7 @@ public class AssessmentUtilTest {
 
   @Test
   @DisplayName("getEntityRelationship returns correct relationship detail when relationship matches")
-  void testGetEntityRelationship_ReturnsCorrectDetailWhenRelationshipMatches() {
+  void getEntityRelationshipReturnsCorrectDetailWhenRelationshipMatches() {
     final AssessmentRelationshipDetail relationshipDetail = new AssessmentRelationshipDetail();
     relationshipDetail.setName("opponentotherparties");
 
@@ -112,7 +112,7 @@ public class AssessmentUtilTest {
 
   @Test
   @DisplayName("getEntityRelationship returns null when relationship does not match")
-  void testGetEntityRelationship_ReturnsNullWhenRelationshipDoesNotMatch() {
+  void getEntityRelationshipReturnsNullWhenRelationshipDoesNotMatch() {
     final AssessmentRelationshipDetail relationshipDetail = new AssessmentRelationshipDetail();
     relationshipDetail.setName("parent");
 
@@ -127,7 +127,7 @@ public class AssessmentUtilTest {
 
   @Test
   @DisplayName("getEntityRelationship returns null when entity is null")
-  void testGetEntityRelationship_ReturnsNullWhenEntityIsNull() {
+  void getEntityRelationshipReturnsNullWhenEntityIsNull() {
     final AssessmentRelationship relationship = AssessmentRelationship.OPPONENT;
 
     final AssessmentRelationshipDetail result = AssessmentUtil.getEntityRelationship(null, relationship);
@@ -136,7 +136,7 @@ public class AssessmentUtilTest {
 
   @Test
   @DisplayName("getEntityRelationship returns null when relationship is null")
-  void testGetEntityRelationship_ReturnsNullWhenRelationshipIsNull() {
+  void getEntityRelationshipReturnsNullWhenRelationshipIsNull() {
     final AssessmentEntityDetail entity = new AssessmentEntityDetail();
     entity.setRelations(Collections.emptyList());
     final AssessmentRelationshipDetail result = AssessmentUtil.getEntityRelationship(entity, null);
@@ -145,7 +145,7 @@ public class AssessmentUtilTest {
 
   @Test
   @DisplayName("getRelatedEntities returns correct entities when relationship matches")
-  void testGetRelatedEntities_ReturnsCorrectEntitiesWhenRelationshipMatches() {
+  void getRelatedEntitiesReturnsCorrectEntitiesWhenRelationshipMatches() {
     final AssessmentEntityDetail entityDetail = new AssessmentEntityDetail();
     entityDetail.setName("Entity1");
 
@@ -167,7 +167,7 @@ public class AssessmentUtilTest {
 
   @Test
   @DisplayName("getRelatedEntities returns empty list when relationship does not match")
-  void testGetRelatedEntities_ReturnsEmptyListWhenRelationshipDoesNotMatch() {
+  void getRelatedEntitiesReturnsEmptyListWhenRelationshipDoesNotMatch() {
     final AssessmentEntityDetail entityDetail = new AssessmentEntityDetail();
     entityDetail.setName("Entity1");
 
@@ -188,7 +188,7 @@ public class AssessmentUtilTest {
 
   @Test
   @DisplayName("getRelatedEntities returns empty list when assessment has no entity types")
-  void testGetRelatedEntities_ReturnsEmptyListWhenNoEntityTypes() {
+  void getRelatedEntitiesReturnsEmptyListWhenNoEntityTypes() {
     final AssessmentDetail assessment = new AssessmentDetail();
     assessment.setEntityTypes(Collections.emptyList());
 

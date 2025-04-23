@@ -32,7 +32,7 @@ import uk.gov.laa.ccms.caab.bean.validators.application.DelegatedFunctionsValida
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class DelegatedFunctionsControllerTest {
+class DelegatedFunctionsControllerTest {
 
   @Mock
   private DelegatedFunctionsValidator delegatedFunctionsValidator;
@@ -48,13 +48,13 @@ public class DelegatedFunctionsControllerTest {
   private ApplicationFormData applicationFormData;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(delegatedFunctionsController).build();
     applicationFormData = new ApplicationFormData();
   }
 
   @Test
-  public void testGetDelegatedFunctions() throws Exception {
+  void getDelegatedFunctions() throws Exception {
     this.mockMvc.perform(get("/application/delegated-functions")
             .sessionAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
@@ -64,7 +64,7 @@ public class DelegatedFunctionsControllerTest {
   }
 
   @Test
-  public void testPostDelegatedFunctionsHandlesValidationError() throws Exception {
+  void postDelegatedFunctionsHandlesValidationError() throws Exception {
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
@@ -85,8 +85,8 @@ public class DelegatedFunctionsControllerTest {
       "SUB, false, SUB",
       "EMER, true, DP",
       "EMER, false, EMER"})
-  public void testPostDelegatedFunctionsIsSuccessful(String category, boolean delegatedFunctions,
-                                                     String expectedApplicationType)
+  void postDelegatedFunctionsIsSuccessful(String category, boolean delegatedFunctions,
+                                         String expectedApplicationType)
       throws Exception {
     applicationFormData.setApplicationTypeCategory(category);
     applicationFormData.setDelegatedFunctions(delegatedFunctions);

@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 class PriorAuthorityFlowFormDataTest {
 
   @Test
-  public void testConstructor() {
+  void constructor() {
     final String expectedAction = "create";
     final PriorAuthorityFlowFormData formData = new PriorAuthorityFlowFormData(expectedAction);
 

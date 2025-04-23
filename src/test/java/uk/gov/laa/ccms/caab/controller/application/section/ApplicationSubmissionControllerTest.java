@@ -171,7 +171,7 @@ class ApplicationSubmissionControllerTest {
   private static final UserDetail userDetail = buildUserDetail();
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = MockMvcBuilders.standaloneSetup(applicationSubmissionController).build();
 
     activeCase = ActiveCase.builder()
@@ -183,7 +183,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test /application/abandon")
-  void testViewAbandonApplicationConfirmation() throws Exception {
+  void viewAbandonApplicationConfirmation() throws Exception {
 
     mockMvc.perform(get("/application/abandon")
             .sessionAttr(ACTIVE_CASE, activeCase))
@@ -193,7 +193,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test abandonApplication - success")
-  void testAbandonApplication() throws Exception {
+  void abandonApplication() throws Exception {
     final ApplicationDetail applicationDetail = buildApplicationDetail(1, true, new Date());
 
     when(applicationService.getApplication("1")).thenReturn(Mono.just(applicationDetail));
@@ -210,7 +210,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test applicationSummary - success")
-  void testApplicationSummary() throws Exception {
+  void applicationSummary() throws Exception {
     final ApplicationDetail applicationDetail = buildApplicationDetail(1, true, new Date());
 
     final AssessmentDetail meansTestAssessment = new AssessmentDetail();
@@ -263,7 +263,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test applicationSummary print - success")
-  void testApplicationSummaryPrint() throws Exception {
+  void applicationSummaryPrint() throws Exception {
     final SubmissionSummaryDisplay submissionSummary = SubmissionSummaryDisplay.builder().build();
 
     mockMvc.perform(get("/application/summary/print")
@@ -277,7 +277,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test applicationSummaryPost - success")
-  void testApplicationSummaryPost_success() throws Exception {
+  void applicationSummaryPostSuccess() throws Exception {
     final SummarySubmissionFormData formData = new SummarySubmissionFormData();
     final SubmissionSummaryDisplay submissionSummary = SubmissionSummaryDisplay.builder().build();
 
@@ -292,7 +292,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test applicationDeclaration GET - success")
-  void testApplicationDeclarationGet_success() throws Exception {
+  void applicationDeclarationGetSuccess() throws Exception {
     final DeclarationLookupDetail declarationLookupDetail = new DeclarationLookupDetail();
     final List<DynamicCheckbox> checkboxes = List.of(new DynamicCheckbox());
 
@@ -310,7 +310,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test applicationDeclarationPost - success")
-  void testApplicationDeclarationPost_success() throws Exception {
+  void applicationDeclarationPostSuccess() throws Exception {
     final SummarySubmissionFormData formData = new SummarySubmissionFormData();
 
     // Mock user session attributes
@@ -367,7 +367,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test /application/validate - success and validation failure")
-  void testApplicationValidate() throws Exception {
+  void applicationValidate() throws Exception {
     final String applicationId = "12345";
 
     // Mocking the data returned by the service methods
@@ -454,7 +454,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test validateProceedings with proceeding errors")
-  void testValidateProceedings_WithErrors() {
+  void validateProceedingsWithErrors() {
     // Mock ProceedingDetail and ProceedingFlowFormData
     final ProceedingDetail proceedingDetail = new ProceedingDetail();
     proceedingDetail.setTypeOfOrder(new StringDisplayValue().id("orderTypeId").displayValue("Order Type"));
@@ -509,7 +509,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test validateProceedings with no proceedings returns false")
-  void testValidateProceedings_WithNoProceedings() {
+  void validateProceedingsWithNoProceedings() {
     final List<ProceedingDetail> proceedings = List.of();
 
     final boolean result = Boolean.TRUE.equals(
@@ -520,7 +520,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test validateProceedings with null proceedings returns false")
-  void testValidateProceedings_WithNullProceedings() {
+  void validateProceedingsWithNullProceedings() {
     final boolean result = Boolean.TRUE.equals(
         applicationSubmissionController.validateProceedings(null, model).block());
 
@@ -529,7 +529,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test validatePriorAuthorities with PriorAuthority errors")
-  void testValidatePriorAuthorities_WithErrors() {
+  void validatePriorAuthoritiesWithErrors() {
     final PriorAuthorityDetail priorAuthorityDetail = new PriorAuthorityDetail();
     final PriorAuthorityFlowFormData priorAuthorityFlowFormData = new PriorAuthorityFlowFormData("edit");
     priorAuthorityFlowFormData.setPriorAuthorityTypeFormData(new PriorAuthorityTypeFormData());
@@ -565,7 +565,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test validatePriorAuthorities with no PriorAuthorities returns false")
-  void testValidatePriorAuthorities_WithNoPriorAuthorities() {
+  void validatePriorAuthoritiesWithNoPriorAuthorities() {
     final List<PriorAuthorityDetail> priorAuthorities = List.of();
 
     boolean result = applicationSubmissionController.validatePriorAuthorities(priorAuthorities, model);
@@ -575,7 +575,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test validatePriorAuthorities with null PriorAuthorities returns false")
-  void testValidatePriorAuthorities_WithNullPriorAuthorities() {
+  void validatePriorAuthoritiesWithNullPriorAuthorities() {
     final boolean result = applicationSubmissionController.validatePriorAuthorities(null, model);
 
     assertFalse(result);
@@ -583,7 +583,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test validateOpponents with IndividualOpponentFormData returns true with errors")
-  void testValidateOpponents_WithIndividualOpponentErrors() {
+  void validateOpponentsWithIndividualOpponentErrors() {
     final List<AbstractOpponentFormData> opponents = List.of(new IndividualOpponentFormData());
 
     doAnswer(invocation -> {
@@ -602,7 +602,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test validateOpponents with OrganisationOpponentFormData returns true with errors")
-  void testValidateOpponents_WithOrganisationOpponentErrors() {
+  void validateOpponentsWithOrganisationOpponentErrors() {
     final List<AbstractOpponentFormData> opponents = List.of(new OrganisationOpponentFormData());
 
     doAnswer(invocation -> {
@@ -621,7 +621,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test validateOpponents with no opponents returns false")
-  void testValidateOpponents_WithNoOpponents() {
+  void validateOpponentsWithNoOpponents() {
     final List<AbstractOpponentFormData> opponents = List.of();
 
     final boolean result = applicationSubmissionController.validateOpponents(opponents, model);
@@ -631,7 +631,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test validateOpponents with null opponents returns false")
-  void testValidateOpponents_WithNullOpponents() {
+  void validateOpponentsWithNullOpponents() {
     final boolean result = applicationSubmissionController.validateOpponents(null, model);
 
     assertFalse(result);
@@ -639,7 +639,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test getErrorsFromModel returns errors when attribute is present")
-  void testGetErrorsFromModel_WithAttributePresent() {
+  void getErrorsFromModelWithAttributePresent() {
     final List<String> expectedErrors = List.of("Error 1", "Error 2");
 
     when(model.containsAttribute(ERROR_ATTRIBUTE)).thenReturn(true);
@@ -652,7 +652,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test getErrorsFromModel returns empty list when attribute is not present")
-  void testGetErrorsFromModel_WithoutAttributePresent() {
+  void getErrorsFromModelWithoutAttributePresent() {
     when(model.containsAttribute(ERROR_ATTRIBUTE)).thenReturn(false);
 
     final List<String> actualErrors = applicationSubmissionController.getErrorsFromModel(model, ERROR_ATTRIBUTE);
@@ -662,7 +662,7 @@ class ApplicationSubmissionControllerTest {
 
   @Test
   @DisplayName("Test POST /application/validate redirects to /application/sections")
-  void testApplicationValidatePost_RedirectsToApplicationSections() throws Exception {
+  void applicationValidatePostRedirectsToApplicationSections() throws Exception {
     mockMvc.perform(post("/application/validate"))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/sections"));

@@ -48,7 +48,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 
 @ExtendWith(MockitoExtension.class)
-public class EvidenceServiceTest {
+class EvidenceServiceTest {
 
   @Mock
   private CaabApiClient caabApiClient;

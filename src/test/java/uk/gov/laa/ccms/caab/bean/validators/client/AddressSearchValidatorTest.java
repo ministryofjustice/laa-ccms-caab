@@ -24,24 +24,24 @@ class AddressSearchValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     addressSearch =
         new AddressSearchFormData(); // Assuming that the default constructor sets all fields to null.
     errors = new BeanPropertyBindingResult(addressSearch, "clientDetails");
   }
 
   @Test
-  public void supports_ReturnsTrueForApplicationDetailsClass() {
+  void supports_ReturnsTrueForApplicationDetailsClass() {
     assertTrue(addressSearchValidator.supports(AddressSearchFormData.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(addressSearchValidator.supports(Object.class));
   }
 
   @Test
-  public void validate_errors() {
+  void validate_errors() {
     addressSearchValidator.validate(addressSearch, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
@@ -49,7 +49,7 @@ class AddressSearchValidatorTest {
   }
 
   @Test
-  public void validate() {
+  void validate() {
     addressSearch.setUprn("12345");
     addressSearchValidator.validate(addressSearch, errors);
     assertFalse(errors.hasErrors());

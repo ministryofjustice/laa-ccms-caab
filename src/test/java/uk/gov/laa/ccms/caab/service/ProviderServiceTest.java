@@ -26,7 +26,7 @@ import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 
 @ExtendWith(MockitoExtension.class)
-public class ProviderServiceTest {
+class ProviderServiceTest {
   @Mock
   private SoaApiClient soaApiClient;
 
@@ -136,7 +136,7 @@ public class ProviderServiceTest {
   }
 
   @Test
-  void testGetFeeEarnersByOffice() {
+  void getFeeEarnersByOffice() {
     ProviderDetail providerDetail = buildProviderDetail();
 
     List<ContactDetail> feeEarners = providerService.getFeeEarnersByOffice(providerDetail, 1);
@@ -147,7 +147,7 @@ public class ProviderServiceTest {
   }
 
   @Test
-  void testGetFeeEarnerByOfficeAndId() {
+  void getFeeEarnerByOfficeAndId() {
     ProviderDetail providerDetail = buildProviderDetail();
 
     ContactDetail feeEarner = providerService.getFeeEarnerByOfficeAndId(providerDetail, 1, 2);

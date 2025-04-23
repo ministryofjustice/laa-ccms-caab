@@ -69,7 +69,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 
 
 @ExtendWith(MockitoExtension.class)
-public class AssessmentServiceTest {
+class AssessmentServiceTest {
 
   @Mock
   private AssessmentApiClient assessmentApiClient;
@@ -87,7 +87,7 @@ public class AssessmentServiceTest {
   private final Date auditDate = new Date(System.currentTimeMillis());
 
   @Test
-  public void testSaveAssessment_createAssessment() {
+  void saveAssessmentCreateAssessment() {
     when(assessmentApiClient.createAssessment(
         any(AssessmentDetail.class), anyString())).thenReturn(Mono.empty());
 
@@ -102,7 +102,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  public void testSaveAssessment_updateAssessment() {
+  void saveAssessmentUpdateAssessment() {
     when(assessmentApiClient.updateAssessment(
         any(), any(AssessmentDetail.class), anyString())).thenReturn(Mono.empty());
 
@@ -163,7 +163,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testCalculateAssessmentStatuses_assessmentsNotStarted() {
+  void calculateAssessmentStatusesAssessmentsNotStarted() {
     final ApplicationDetail application = new ApplicationDetail()
         .amendment(false);
 
@@ -180,7 +180,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testCalculateAssessmentStatuses_startedMeansAssessment() {
+  void calculateAssessmentStatusesStartedMeansAssessment() {
     final ApplicationDetail application = new ApplicationDetail()
         .amendment(false);
 
@@ -204,7 +204,7 @@ public class AssessmentServiceTest {
         null,
         user);
 
-    assertEquals(application.getMeansAssessmentStatus(), PROGRESS_STATUS_DESC);
+    assertEquals(PROGRESS_STATUS_DESC, application.getMeansAssessmentStatus());
     assertNull(application.getMeritsAssessmentStatus());
   }
 
@@ -213,7 +213,7 @@ public class AssessmentServiceTest {
       "COMPLETE",
       "ERROR"
   })
-  void testCalculateAssessmentStatuses_meansAssessment_reassessmentRequired(
+  void calculateAssessmentStatusesMeansAssessmentReassessmentRequired(
       final String assessmentStatus) {
     final ApplicationDetail application = new ApplicationDetail()
         .amendment(false);
@@ -244,7 +244,7 @@ public class AssessmentServiceTest {
         null,
         user);
 
-    assertEquals(application.getMeansAssessmentStatus(), PROGRESS_STATUS_DESC);
+    assertEquals(PROGRESS_STATUS_DESC, application.getMeansAssessmentStatus());
     assertNull(application.getMeritsAssessmentStatus());
 
     verify(assessmentApiClient).patchAssessment(
@@ -258,7 +258,7 @@ public class AssessmentServiceTest {
       "COMPLETE",
       "ERROR"
   })
-  void testCalculateAssessmentStatuses_meritsAssessment_reassessmentRequired(
+  void calculateAssessmentStatusesMeritsAssessmentReassessmentRequired(
       final String assessmentStatus) {
     final ApplicationDetail application = new ApplicationDetail()
         .amendment(false);
@@ -290,7 +290,7 @@ public class AssessmentServiceTest {
         user);
 
     assertNull(application.getMeansAssessment());
-    assertEquals(application.getMeritsAssessmentStatus(), PROGRESS_STATUS_DESC);
+    assertEquals(PROGRESS_STATUS_DESC, application.getMeritsAssessmentStatus());
 
     verify(assessmentApiClient).patchAssessment(
         eq(ASSESSMENT_ID),
@@ -299,7 +299,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testCalculateAssessmentStatuses_meansAssessment_amendment_assessmentAmended() {
+  void calculateAssessmentStatusesMeansAssessmentAmendmentAssessmentAmended() {
     final ApplicationDetail application = new ApplicationDetail()
         .amendment(true)
         .meansAssessmentAmended(true);
@@ -325,12 +325,12 @@ public class AssessmentServiceTest {
         null,
         user);
 
-    assertEquals(application.getMeansAssessmentStatus(), PROGRESS_STATUS_DESC);
+    assertEquals(PROGRESS_STATUS_DESC, application.getMeansAssessmentStatus());
     assertNull(application.getMeritsAssessmentStatus());
   }
 
   @Test
-  void testCalculateAssessmentStatuses_meritsAssessment_amendment_assessmentAmended() {
+  void calculateAssessmentStatusesMeritsAssessmentAmendmentAssessmentAmended() {
     final ApplicationDetail application = new ApplicationDetail()
         .amendment(true)
         .meritsAssessmentAmended(true);
@@ -357,11 +357,11 @@ public class AssessmentServiceTest {
         user);
 
     assertNull(application.getMeansAssessment());
-    assertEquals(application.getMeritsAssessmentStatus(), PROGRESS_STATUS_DESC);
+    assertEquals(PROGRESS_STATUS_DESC, application.getMeritsAssessmentStatus());
   }
 
   @Test
-  void testCheckAssessmentForProceedingKeyChange_entityTypeNull_assertsTrue() {
+  void checkAssessmentForProceedingKeyChangeEntityTypeNullAssertsTrue() {
     final ApplicationDetail application = new ApplicationDetail();
 
     final boolean result = assessmentService.checkAssessmentForProceedingKeyChange(
@@ -371,7 +371,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testCheckAssessmentForProceedingKeyChange_assertsFalse() {
+  void checkAssessmentForProceedingKeyChangeAssertsFalse() {
     final String matterType = "TEST";
     final String proceedingType = "TEST";
     final String clientInvolvement = "TEST";
@@ -397,7 +397,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testCheckAssessmentForProceedingKeyChange_multipleScopeLimitations_assertsFalse() {
+  void checkAssessmentForProceedingKeyChangeMultipleScopeLimitationsAssertsFalse() {
     final String matterType = "TEST";
     final String proceedingType = "TEST";
     final String clientInvolvement = "TEST";
@@ -441,7 +441,7 @@ public class AssessmentServiceTest {
       //cant find proceeding with matching id
       "789, TEST, TEST, TEST, TEST"
   })
-  void testCheckAssessmentForProceedingKeyChange_assertsTrue(
+  void checkAssessmentForProceedingKeyChangeAssertsTrue(
       final Integer proceedingId,
       final String matterType,
       final String proceedingType,
@@ -468,7 +468,7 @@ public class AssessmentServiceTest {
 
 
   @Test
-  void testCalculateAssessmentStatuses_startedMeritsAssessment() {
+  void calculateAssessmentStatusesStartedMeritsAssessment() {
     final ApplicationDetail application = new ApplicationDetail()
         .amendment(false);
 
@@ -493,12 +493,12 @@ public class AssessmentServiceTest {
         user);
 
     assertNull(application.getMeansAssessmentStatus());
-    assertEquals(application.getMeritsAssessmentStatus(), PROGRESS_STATUS_DESC);
+    assertEquals(PROGRESS_STATUS_DESC, application.getMeritsAssessmentStatus());
   }
 
   //todo - test to be amended when amendment scenarios are added
   @Test
-  void testIsReassessmentRequired_isAmendment() {
+  void isReassessmentRequiredIsAmendment() {
     final ApplicationDetail application = new ApplicationDetail()
         .amendment(true);
 
@@ -510,7 +510,7 @@ public class AssessmentServiceTest {
 
 
   @Test
-  void testIsReassessmentRequired_assessmentNull_assertsFalse() {
+  void isReassessmentRequiredAssessmentNullAssertsFalse() {
     final ApplicationDetail application = new ApplicationDetail()
         .amendment(false);
 
@@ -520,7 +520,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testIsReassessmentRequired_assessmentHasMoreProceedingsThanApplication_assertsTrue() {
+  void isReassessmentRequiredAssessmentHasMoreProceedingsThanApplicationAssertsTrue() {
     final String matterType = "TEST";
     final String proceedingType = "TEST";
     final String clientInvolvement = "TEST";
@@ -546,7 +546,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testIsReassessmentRequired_meritsReassessmentRequired_assertsTrue() {
+  void isReassessmentRequiredMeritsReassessmentRequiredAssertsTrue() {
     final String matterType = "TEST";
     final String proceedingType = "TEST";
     final String clientInvolvement = "TEST";
@@ -573,7 +573,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testIsReassessmentRequired_opponentsHaveBeenUpdated_assertsTrue() {
+  void isReassessmentRequiredOpponentsHaveBeenUpdatedAssertsTrue() {
     final String matterType = "TEST";
     final String proceedingType = "TEST";
     final String clientInvolvement = "TEST";
@@ -608,7 +608,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testIsReassessmentRequired_assessmentHasMoreOpponentsThanApplication_assertsTrue() {
+  void isReassessmentRequiredAssessmentHasMoreOpponentsThanApplicationAssertsTrue() {
     final String matterType = "TEST";
     final String proceedingType = "TEST";
     final String clientInvolvement = "TEST";
@@ -643,7 +643,7 @@ public class AssessmentServiceTest {
       "meritsAssessment, true",
       "meansAssessment, false"
   })
-  void testIsReassessmentRequired_costLimitDifference(
+  void isReassessmentRequiredCostLimitDifference(
       final String assessmentName,
       final boolean expectedResult) {
 
@@ -682,7 +682,7 @@ public class AssessmentServiceTest {
       "P_123,,OPPONENT_234,,1,1",
       ",123,,234,1,1"
   })
-  void testCleanupData(
+  void cleanupData(
       final String proceedingEbsId,
       final Integer proceedingId,
       final String opponentEbsId,
@@ -730,7 +730,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testGetAssessmentOpponentMappingContexts() {
+  void getAssessmentOpponentMappingContexts() {
     final ApplicationDetail application = new ApplicationDetail();
     final OpponentDetail opponent1 = new OpponentDetail().title("MR");
     final OpponentDetail opponent2 = new OpponentDetail().title("MS");
@@ -764,7 +764,7 @@ public class AssessmentServiceTest {
 
 
   @Test
-  void testFindOrCreate_existingAssessment() {
+  void findOrCreateExistingAssessment() {
     final String providerId = "providerId";
     final String referenceId = "referenceId";
     final String assessmentName = "assessmentName";
@@ -789,7 +789,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testFindOrCreate_newAssessment() {
+  void findOrCreateNewAssessment() {
     final String providerId = "providerId";
     final String referenceId = "referenceId";
     final String assessmentName = "assessmentName";
@@ -810,7 +810,7 @@ public class AssessmentServiceTest {
 
 
   @Test
-  void testIsAssessmentCheckpointToBeDeleted_dateOfLastChangeAfterLastSaved() {
+  void isAssessmentCheckpointToBeDeletedDateOfLastChangeAfterLastSaved() {
     final Date lastSaved = new Date(System.currentTimeMillis() - 10000); // 10 seconds ago
     final Date dateOfLastChange = new Date(System.currentTimeMillis() - 5000); // 5 seconds ago
 
@@ -836,7 +836,7 @@ public class AssessmentServiceTest {
 
 
   @Test
-  void testIsProceedingsCountMismatch_proceedingsCountMismatch() {
+  void isProceedingsCountMismatchProceedingsCountMismatch() {
     final ApplicationDetail application = new ApplicationDetail();
     final ProceedingDetail proceeding1 = new ProceedingDetail().id(123);
     final ProceedingDetail proceeding2 = new ProceedingDetail().id(456);
@@ -859,7 +859,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testIsProceedingsCountMismatch_proceedingsExistInApplication() {
+  void isProceedingsCountMismatchProceedingsExistInApplication() {
     final ApplicationDetail application = new ApplicationDetail();
     final ProceedingDetail proceeding1 = new ProceedingDetail().id(123);
     application.addProceedingsItem(proceeding1);
@@ -882,7 +882,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testIsOpaProceedingsMatchApplication_proceedingsDoNotExistInApplication() {
+  void isOpaProceedingsMatchApplicationProceedingsDoNotExistInApplication() {
     final ApplicationDetail application = new ApplicationDetail();
     final ProceedingDetail proceeding = new ProceedingDetail().id(123);
     application.addProceedingsItem(proceeding);
@@ -903,7 +903,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testIsAppProceedingsExistInOpa_proceedingsExistWithNonMatchingScope() {
+  void isAppProceedingsExistInOpaProceedingsExistWithNonMatchingScope() {
     final ApplicationDetail application = new ApplicationDetail();
     final ProceedingDetail proceeding = new ProceedingDetail().id(123);
     proceeding.addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
@@ -928,7 +928,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testIsAppProceedingsExistInOpa_proceedingsDoNotExistInOpa() {
+  void isAppProceedingsExistInOpaProceedingsDoNotExistInOpa() {
     final ApplicationDetail application = new ApplicationDetail();
     final ProceedingDetail proceeding = new ProceedingDetail().id(123);
     application.addProceedingsItem(proceeding);
@@ -1010,7 +1010,7 @@ public class AssessmentServiceTest {
       "1, null,  true",
       "1, OPPONENT_1, true"
   }, nullValues = {"null"})
-  void testIsApplicationMatchOpaOpponents(
+  void isApplicationMatchOpaOpponents(
       final Integer opponentId,
       final String ebsId,
       final boolean expected) {
@@ -1031,7 +1031,7 @@ public class AssessmentServiceTest {
 
   @Test
   @DisplayName("Test getAssessmentSummaryToDisplay with valid parent and child lookups")
-  void testGetAssessmentSummaryToDisplay() {
+  void getAssessmentSummaryToDisplay() {
     final AssessmentDetail assessment = buildAssessmentDetail(new Date());
 
     // Setup mock data for parent summary lookups
@@ -1075,7 +1075,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testCreateSummaryEntity() {
+  void createSummaryEntity() {
     // Initialize assessment detail
     final AssessmentDetail assessment = new AssessmentDetail();
 
@@ -1135,7 +1135,7 @@ public class AssessmentServiceTest {
       "BOOLEAN,false,No",
       "TEXT,someText,someText"
   })
-  void testCreateSummaryAttributeDisplay(
+  void createSummaryAttributeDisplay(
       final String type,
       final String value,
       final String expectedFormattedValue) {

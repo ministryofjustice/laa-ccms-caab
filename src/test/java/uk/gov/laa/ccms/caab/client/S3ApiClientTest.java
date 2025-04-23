@@ -37,7 +37,7 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import uk.gov.laa.ccms.caab.config.S3DocumentBucketProperties;
 
 @ExtendWith(MockitoExtension.class)
-public class S3ApiClientTest {
+class S3ApiClientTest {
 
   @Mock
   private S3Template s3Template;

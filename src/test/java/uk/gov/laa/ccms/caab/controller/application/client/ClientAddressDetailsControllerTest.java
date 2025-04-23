@@ -38,7 +38,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.Page;
 
 @ExtendWith(MockitoExtension.class)
-public class ClientAddressDetailsControllerTest {
+class ClientAddressDetailsControllerTest {
 
   @Mock
   private LookupService lookupService;
@@ -66,7 +66,7 @@ public class ClientAddressDetailsControllerTest {
   private ClientFormDataBasicDetails basicDetails;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(clientAddressDetailsController).build();
 
     basicDetails = new ClientFormDataBasicDetails();
@@ -81,7 +81,7 @@ public class ClientAddressDetailsControllerTest {
   }
 
   @Test
-  void testClientDetailsAddress() throws Exception {
+  void clientDetailsAddress() throws Exception {
     when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
@@ -95,7 +95,7 @@ public class ClientAddressDetailsControllerTest {
   }
 
   @Test
-  void testClientDetailsAddressPostFindAddress_NoAddresses() throws Exception {
+  void clientDetailsAddressPostFindAddressNoAddresses() throws Exception {
     when(addressService.getAddresses(any())).thenReturn(
         new ResultsDisplay<AddressResultRowDisplay>());
 
@@ -112,7 +112,7 @@ public class ClientAddressDetailsControllerTest {
   }
 
   @Test
-  void testClientDetailsAddressPostFindAddress_WithAddresses() throws Exception {
+  void clientDetailsAddressPostFindAddressWithAddresses() throws Exception {
     ResultsDisplay<AddressResultRowDisplay> addressResults = new ResultsDisplay<AddressResultRowDisplay>();
     addressResults.setContent(new ArrayList<>());
     addressResults.getContent().add(new AddressResultRowDisplay());
@@ -133,7 +133,7 @@ public class ClientAddressDetailsControllerTest {
   }
 
   @Test
-  void testClientDetailsAddressPostNext() throws Exception {
+  void clientDetailsAddressPostNext() throws Exception {
     ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
 
     this.mockMvc.perform(post("/application/client/details/address")
@@ -146,7 +146,7 @@ public class ClientAddressDetailsControllerTest {
   }
 
   @Test
-  void testClientDetailsAddressPostValidationError() throws Exception {
+  void clientDetailsAddressPostValidationError() throws Exception {
     ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
 
     doAnswer(invocation -> {
@@ -169,7 +169,7 @@ public class ClientAddressDetailsControllerTest {
   }
 
   @Test
-  void testClientDetailsAddressPostSearchError() throws Exception {
+  void clientDetailsAddressPostSearchError() throws Exception {
     ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
 
     doAnswer(invocation -> {

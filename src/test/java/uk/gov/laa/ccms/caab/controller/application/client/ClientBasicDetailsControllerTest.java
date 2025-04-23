@@ -39,7 +39,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 @ExtendWith(MockitoExtension.class)
-public class ClientBasicDetailsControllerTest {
+class ClientBasicDetailsControllerTest {
 
   @Mock
   private LookupService lookupService;
@@ -62,7 +62,7 @@ public class ClientBasicDetailsControllerTest {
   private ClientFormDataBasicDetails basicDetails;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(clientBasicDetailsController).build();
 
     clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
@@ -80,7 +80,7 @@ public class ClientBasicDetailsControllerTest {
   }
 
   @Test
-  void testClientDetailsBasic() throws Exception {
+  void clientDetailsBasic() throws Exception {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
 
     when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(
@@ -106,7 +106,7 @@ public class ClientBasicDetailsControllerTest {
   }
 
   @Test
-  void testClientDetailsBasicGetWithPopulatedFields() throws Exception {
+  void clientDetailsBasicGetWithPopulatedFields() throws Exception {
     ClientSearchCriteria clientSearchCriteria = buildClientSearchCriteria();
 
     when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(
@@ -132,7 +132,7 @@ public class ClientBasicDetailsControllerTest {
   }
 
   @Test
-  void testClientDetailsBasicGetCountries() throws Exception {
+  void clientDetailsBasicGetCountries() throws Exception {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
 
     countryLookupDetail.addContentItem(
@@ -163,7 +163,7 @@ public class ClientBasicDetailsControllerTest {
   }
 
   @Test
-  void testClientDetailsBasicPost() throws Exception {
+  void clientDetailsBasicPost() throws Exception {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
 
     mockMvc.perform(post("/application/client/details/basic")
@@ -177,7 +177,7 @@ public class ClientBasicDetailsControllerTest {
   }
 
   @Test
-  void testClientDetailsBasicPostValidationError() throws Exception {
+  void clientDetailsBasicPostValidationError() throws Exception {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
 
     doAnswer(invocation -> {

@@ -18,11 +18,11 @@ import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 
-public class OpponentMapperTest {
+class OpponentMapperTest {
   OpponentMapper opponentMapper = new OpponentMapperImpl();
 
   @Test
-  void testOrganisationDetail_toOrganisationOpponentFormData() {
+  void organisationDetailToOrganisationOpponentFormData() {
     OrganisationDetail organisationDetail = buildOrganisationDetail("");
     CommonLookupValueDetail orgTypeLookup = new CommonLookupValueDetail()
         .code("thecode")
@@ -49,7 +49,7 @@ public class OpponentMapperTest {
   }
 
   @Test
-  void testOrganisationOpponentFormData_toOpponent() {
+  void organisationOpponentFormDataToOpponent() {
     OrganisationOpponentFormData opponentFormData = buildOrganisationOpponentFormData();
 
     OpponentDetail result = opponentMapper.toOpponent(opponentFormData);
@@ -77,7 +77,7 @@ public class OpponentMapperTest {
   }
 
   @Test
-  void testIndividualOpponentFormData_toOpponent() {
+  void individualOpponentFormDataToOpponent() {
     IndividualOpponentFormData opponentFormData = buildIndividualOpponentFormData();
 
     OpponentDetail result = opponentMapper.toOpponent(opponentFormData);
@@ -114,7 +114,7 @@ public class OpponentMapperTest {
 
 
   @Test
-  void testOrganisationOpponent_toOrganisationOpponentFormData() {
+  void organisationOpponentToOrganisationOpponentFormData() {
     OpponentDetail opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_ORGANISATION);
 
@@ -163,7 +163,7 @@ public class OpponentMapperTest {
   }
 
   @Test
-  void testIndividualOpponent_toIndividualOpponentFormData() {
+  void individualOpponentToIndividualOpponentFormData() {
     Date date = new Date();
     OpponentDetail opponent = buildOpponent(date);
     opponent.setType(OPPONENT_TYPE_INDIVIDUAL);

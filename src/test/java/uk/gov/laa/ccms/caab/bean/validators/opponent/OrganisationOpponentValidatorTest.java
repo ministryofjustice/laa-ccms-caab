@@ -28,24 +28,24 @@ class OrganisationOpponentValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     opponentFormData =
         new OrganisationOpponentFormData();
     errors = new BeanPropertyBindingResult(opponentFormData, CURRENT_OPPONENT);
   }
 
   @Test
-  public void supports_ReturnsTrueForCorrectClass() {
+  void supports_ReturnsTrueForCorrectClass() {
     assertTrue(validator.supports(OrganisationOpponentFormData.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(validator.supports(Object.class));
   }
 
   @Test
-  public void validate_sharedOrg_noErrors() {
+  void validate_sharedOrg_noErrors() {
     opponentFormData.setShared(true);
     opponentFormData.setRelationshipToCase("rel2case");
     opponentFormData.setRelationshipToClient("rel2client");
@@ -55,7 +55,7 @@ class OrganisationOpponentValidatorTest {
   }
 
   @Test
-  public void validate_sharedOrg_allErrors() {
+  void validate_sharedOrg_allErrors() {
     opponentFormData.setOtherInformation("a".repeat(2001));
 
     validator.validate(opponentFormData, errors);
@@ -72,7 +72,7 @@ class OrganisationOpponentValidatorTest {
   }
 
   @Test
-  public void validate_nonSharedOrg_noErrors() {
+  void validate_nonSharedOrg_noErrors() {
     opponentFormData.setShared(false);
     opponentFormData.setRelationshipToCase("rel2case");
     opponentFormData.setRelationshipToClient("rel2client");
@@ -85,7 +85,7 @@ class OrganisationOpponentValidatorTest {
   }
 
   @Test
-  public void validate_nonSharedOrg_telephoneAndFaxValid() {
+  void validate_nonSharedOrg_telephoneAndFaxValid() {
     opponentFormData.setShared(false);
     opponentFormData.setRelationshipToCase("rel2case");
     opponentFormData.setRelationshipToClient("rel2client");
@@ -100,7 +100,7 @@ class OrganisationOpponentValidatorTest {
   }
 
   @Test
-  public void validate_nonSharedOrg_telephoneAndFaxInvalidFormat() {
+  void validate_nonSharedOrg_telephoneAndFaxInvalidFormat() {
     opponentFormData.setShared(false);
     opponentFormData.setRelationshipToCase("rel2case");
     opponentFormData.setRelationshipToClient("rel2client");
@@ -128,7 +128,7 @@ class OrganisationOpponentValidatorTest {
   }
 
   @Test
-  public void validate_nonSharedOrg_otherInformation() {
+  void validate_nonSharedOrg_otherInformation() {
     opponentFormData.setShared(false);
     opponentFormData.setRelationshipToCase("rel2case");
     opponentFormData.setRelationshipToClient("rel2client");
@@ -158,7 +158,7 @@ class OrganisationOpponentValidatorTest {
       "rel2case, rel2client, orgname, orgtype, null, addline1, null, null, null, country, SE1 1PP, <contact, email@email.com, contactNameRole, invalid.format",
       "rel2case, rel2client, orgname, orgtype, null, addline1, null, null, null, country, null, contact name, email, emailAddress, invalid.format"
   }, nullValues = "null")
-  public void validate_nonSharedOrg_relationshipToCase(
+  void validate_nonSharedOrg_relationshipToCase(
       final String relationshipToCase,
       final String relationshipToClient,
       final String organisationName,

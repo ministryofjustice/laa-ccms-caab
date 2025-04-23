@@ -11,7 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class CaabApplicationExceptionTest {
 
   @Test
-  public void testConstructorWithMessage() {
+  void constructorWithMessage() {
     final String expectedMessage = "Test Exception";
     final CaabApplicationException exception = new CaabApplicationException(expectedMessage);
 
@@ -20,7 +20,7 @@ class CaabApplicationExceptionTest {
   }
 
   @Test
-  public void testConstructorWithMessageAndCause() {
+  void constructorWithMessageAndCause() {
     final String expectedMessage = "Test Exception";
     final Exception cause = new Exception("Cause Exception");
     final CaabApplicationException exception = new CaabApplicationException(expectedMessage, cause);

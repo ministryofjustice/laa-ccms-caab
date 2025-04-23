@@ -123,7 +123,7 @@ class SoaApplicationMapperTest {
   private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
   @Test
-  void testToApplicationDetailDevolvedPowers() {
+  void toApplicationDetailDevolvedPowers() {
     CaseDetail soaCaseDetail = buildCaseDetail(APP_TYPE_EMERGENCY_DEVOLVED_POWERS);
     SoaApplicationMappingContext applicationMappingContext =
         buildApplicationMappingContext(
@@ -223,7 +223,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToApplicationDetailNonDevolvedPowers() {
+  void toApplicationDetailNonDevolvedPowers() {
     SoaApplicationMappingContext applicationMappingContext =
         buildApplicationMappingContext(
             buildCaseDetail(APP_TYPE_EMERGENCY),
@@ -238,7 +238,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToCorrespondenceAddress() {
+  void toCorrespondenceAddress() {
     SoaApplicationMappingContext applicationMappingContext =
         buildApplicationMappingContext(
             buildCaseDetail(APP_TYPE_EMERGENCY),
@@ -269,7 +269,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToCostEntry() {
+  void toCostEntry() {
     CostLimitation soaCostLimitation = buildCostLimitation("");
 
     CostEntryDetail result = applicationMapper.toCostEntry(soaCostLimitation);
@@ -286,7 +286,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToProceeding() {
+  void toProceeding() {
     uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail soaProceeding =
         buildProceedingDetail(STATUS_DRAFT);
     SoaProceedingMappingContext proceedingMappingContext =
@@ -352,7 +352,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToScopeLimitation() {
+  void toScopeLimitation() {
     ScopeLimitation soaScopeLimitation = buildScopeLimitation("");
     CommonLookupValueDetail scopeLimitationLookup = new CommonLookupValueDetail()
         .code("scopecode")
@@ -377,7 +377,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToProceedingOutcome() {
+  void toProceedingOutcome() {
     uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail soaProceeding =
         buildProceedingDetail(STATUS_DRAFT);
     SoaProceedingMappingContext proceedingMappingContext =
@@ -417,7 +417,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testMapMostRecentAssessment_SingleAssessment() {
+  void mapMostRecentAssessmentSingleAssessment() {
     uk.gov.laa.ccms.soa.gateway.model.AssessmentResult soaAssessmentResult =
         buildAssessmentResult("");
 
@@ -481,7 +481,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToAddress() {
+  void toAddress() {
     uk.gov.laa.ccms.soa.gateway.model.AddressDetail soaAddress = buildAddressDetail("");
 
     AddressDetail result = applicationMapper.toAddress(soaAddress);
@@ -494,7 +494,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToClient() {
+  void toClient() {
     BaseClient soaBaseClient = buildBaseClient();
 
     ClientDetail result = applicationMapper.toClient(soaBaseClient);
@@ -510,7 +510,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToIndividualOpponent() {
+  void toIndividualOpponent() {
     OtherParty soaOtherParty = buildOtherPartyPerson();
 
     OpponentDetail result = applicationMapper.toIndividualOpponent(soaOtherParty);
@@ -576,7 +576,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToOrganisationOpponent() {
+  void toOrganisationOpponent() {
     OtherParty soaOtherParty = buildOtherPartyOrganisation();
 
     OpponentDetail result = applicationMapper.toOrganisationOpponent(soaOtherParty);
@@ -617,7 +617,7 @@ class SoaApplicationMapperTest {
 
 
   @Test
-  void testToLinkedCase() {
+  void toLinkedCase() {
     LinkedCase soaLinkedCase = buildLinkedCase();
 
     LinkedCaseDetail result = applicationMapper.toLinkedCase(soaLinkedCase);
@@ -638,7 +638,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToPriorAuthority() {
+  void toPriorAuthority() {
     PriorAuthority soaPriorAuthority =
         buildPriorAuthority();
     SoaPriorAuthorityMappingContext priorAuthorityMappingContext =
@@ -661,7 +661,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToReferenceDataItem() {
+  void toReferenceDataItem() {
     uk.gov.laa.ccms.data.model.PriorAuthorityDetail priorAuthorityDetail =
         buildPriorAuthorityDetail("dataType");
     CommonLookupValueDetail priorAuthLookup = new CommonLookupValueDetail();
@@ -678,7 +678,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToCaseOutcome() {
+  void toCaseOutcome() {
     CaseDetail soaCaseDetail = buildCaseDetail(APP_TYPE_EMERGENCY);
     SoaCaseOutcomeMappingContext caseOutcomeMappingContext = buildCaseOutcomeMappingContext(soaCaseDetail);
 
@@ -700,7 +700,7 @@ class SoaApplicationMapperTest {
 
 
   @Test
-  void testToTimeRecovery() {
+  void toTimeRecovery() {
     // Create a TimeRelatedAward object for testing
     TimeRelatedAward timeRelatedAward = buildTimeRelatedAward();
 
@@ -716,7 +716,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToRecovery() {
+  void toRecovery() {
     Recovery soaRecovery = buildRecovery();
 
     RecoveryDetail result = applicationMapper.toRecovery(soaRecovery);
@@ -760,7 +760,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToLiableParty() {
+  void toLiableParty() {
     String partyId = "123";
 
     LiablePartyDetail result = applicationMapper.toLiableParty(partyId);
@@ -772,7 +772,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToCostAward() {
+  void toCostAward() {
     Award soaAward = buildCostAward();
 
     CostAwardDetail result = applicationMapper.toCostAward(soaAward);
@@ -831,7 +831,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToFinancialAward() {
+  void toFinancialAward() {
     Award soaAward = buildFinancialAward();
 
     FinancialAwardDetail result = applicationMapper.toFinancialAward(soaAward);
@@ -883,7 +883,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToLandAward() {
+  void toLandAward() {
     Award soaAward = buildLandAward();
 
     LandAwardDetail result = applicationMapper.toLandAward(soaAward);
@@ -940,7 +940,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  void testToOtherAssetAward() {
+  void toOtherAssetAward() {
     Award soaAward = buildOtherAssetAward();
 
     OtherAssetAwardDetail result = applicationMapper.toOtherAssetAward(soaAward);
@@ -988,7 +988,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  public void testToApplicationDetails() {
+  void toApplicationDetails() {
     List<BaseApplicationDetail> baseApplicationList = List.of(
         buildBaseApplication(1),
         buildBaseApplication(2));
@@ -1003,7 +1003,7 @@ class SoaApplicationMapperTest {
   }
 
   @Test
-  public void testToBaseApplication() {
+  void toBaseApplication() {
     CaseSummary soaCaseSummary = buildCaseSummary();
 
     BaseApplicationDetail result = applicationMapper.toBaseApplication(soaCaseSummary);
@@ -1120,7 +1120,7 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toCaseDetail with valid CaseMappingContext")
-  void testToCaseDetail_Valid() {
+  void toCaseDetailValid() {
     final ApplicationDetail applicationDetail = buildApplicationDetail(1, false, new Date());
     final LinkedCaseDetail linkedCaseDetail = new LinkedCaseDetail().lscCaseReference("LC123").relationToCase("Related");
     final PriorAuthorityDetail priorAuthorityDetail = new PriorAuthorityDetail().summary("Test Prior Authority");
@@ -1152,14 +1152,14 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toCaseDetail with null CaseMappingContext")
-  void testToCaseDetail_Null() {
+  void toCaseDetailNull() {
     assertNull(applicationMapper.toCaseDetail(null));
   }
 
 
   @Test
   @DisplayName("Test toSoaCaseDoc with valid BaseEvidenceDocumentDetail")
-  void testToSoaCaseDoc_Valid() {
+  void toSoaCaseDocValid() {
     final BaseEvidenceDocumentDetail evidenceDocumentDetail
         = new BaseEvidenceDocumentDetail()
         .documentType(new StringDisplayValue()
@@ -1175,13 +1175,13 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaCaseDoc with null BaseEvidenceDocumentDetail")
-  void testToSoaCaseDoc_Null() {
+  void toSoaCaseDocNull() {
     assertNull(applicationMapper.toSoaCaseDoc(null));
   }
 
   @Test
   @DisplayName("Test toSoaPriorAuthority with valid PriorAuthorityDetail")
-  void testToSoaPriorAuthority_Valid() {
+  void toSoaPriorAuthorityValid() {
     final PriorAuthorityDetail priorAuthorityDetail = new PriorAuthorityDetail()
         .summary("Test Summary")
         .justification("Test Justification")
@@ -1204,14 +1204,14 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaPriorAuthority with null PriorAuthorityDetail")
-  void testToSoaPriorAuthority_Null() {
+  void toSoaPriorAuthorityNull() {
     assertNull(applicationMapper.toSoaPriorAuthority(null));
   }
 
 
   @Test
   @DisplayName("Test toSoaPriorAuthorityAttribute with valid ReferenceDataItemDetail")
-  void testToSoaPriorAuthorityAttribute_Valid() {
+  void toSoaPriorAuthorityAttributeValid() {
     final ReferenceDataItemDetail referenceDataItemDetail = new ReferenceDataItemDetail()
         .code(new StringDisplayValue().id("AttributeName"))
         .value(new StringDisplayValue().id("AttributeValue"));
@@ -1225,14 +1225,14 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaPriorAuthorityAttribute with null ReferenceDataItemDetail")
-  void testToSoaPriorAuthorityAttribute_Null() {
+  void toSoaPriorAuthorityAttributeNull() {
     assertNull(applicationMapper.toSoaPriorAuthorityAttribute(null));
   }
 
 
   @Test
   @DisplayName("Test toSoaLinkedCase with valid LinkedCaseDetail")
-  void testToSoaLinkedCase_Valid() {
+  void toSoaLinkedCaseValid() {
 
     final LinkedCaseDetail linkedCaseDetail = new LinkedCaseDetail()
         .lscCaseReference("LSC123")
@@ -1247,14 +1247,14 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaLinkedCase with null LinkedCaseDetail")
-  void testToSoaLinkedCase_Null() {
+  void toSoaLinkedCaseNull() {
     assertNull(applicationMapper.toSoaLinkedCase(null));
   }
 
 
   @Test
   @DisplayName("Test toSubmittedApplicationDetails with valid CaseMappingContext")
-  void testToSubmittedApplicationDetails_Valid() {
+  void toSubmittedApplicationDetailsValid() {
     final ApplicationDetail applicationDetail = new ApplicationDetail();
     applicationDetail.setApplicationType(new ApplicationType().id("type123"));
     applicationDetail.setCorrespondenceAddress(new AddressDetail().preferredAddress("preferred"));
@@ -1283,14 +1283,14 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSubmittedApplicationDetails with null CaseMappingContext")
-  void testToSubmittedApplicationDetails_Null() {
+  void toSubmittedApplicationDetailsNull() {
     assertNull(applicationMapper.toSubmittedApplicationDetails(null));
   }
 
 
   @Test
   @DisplayName("Test toBaseClient with valid ClientDetail")
-  void testToBaseClient_Valid() {
+  void toBaseClientValid() {
     final ClientDetail clientDetail = new ClientDetail();
     clientDetail.setReference("12345");
     clientDetail.setFirstName("John");
@@ -1306,13 +1306,13 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toBaseClient with null ClientDetail")
-  void testToBaseClient_Null() {
+  void toBaseClientNull() {
     assertNull(applicationMapper.toBaseClient(null));
   }
 
   @Test
   @DisplayName("Test toSoaProviderDetail with valid ApplicationProviderDetails")
-  void testToSoaProviderDetail_Valid() {
+  void toSoaProviderDetailValid() {
     final StringDisplayValue providerContact = new StringDisplayValue();
     providerContact.setId("user123");
 
@@ -1337,7 +1337,7 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaProviderDetail with null ApplicationProviderDetails")
-  void testToSoaProviderDetail_Null() {
+  void toSoaProviderDetailNull() {
     assertNull(applicationMapper.toSoaProviderDetail(null));
   }
 
@@ -1349,7 +1349,7 @@ class SoaApplicationMapperTest {
       "'LAW125', 'Third Law Description', '', '', ''"             // Case with no costs (null amounts)
   })
   @DisplayName("Parameterized Test toSoaCategoryOfLaw with different ApplicationDetail inputs")
-  void testToSoaCategoryOfLaw_Parameterized(
+  void toSoaCategoryOfLawParameterized(
       final String lawCode,
       final String lawDescription,
       final String requestedCostStr,
@@ -1385,14 +1385,14 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaCategoryOfLaw with null ApplicationDetail")
-  void testToSoaCategoryOfLaw_Null() {
+  void toSoaCategoryOfLawNull() {
     assertNull(applicationMapper.toSoaCategoryOfLaw(null));
   }
 
 
   @Test
   @DisplayName("Test toSoaAddressDetail with valid AddressDetail")
-  void testToSoaAddressDetail_Valid() {
+  void toSoaAddressDetailValid() {
     final AddressDetail addressDetail = new AddressDetail();
     addressDetail.setId(123);
     addressDetail.setHouseNameOrNumber("1234 House");
@@ -1420,13 +1420,13 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaAddressDetail with null AddressDetail")
-  void testToSoaAddressDetail_Null() {
+  void toSoaAddressDetailNull() {
     assertNull(applicationMapper.toSoaAddressDetail(null));
   }
 
   @Test
   @DisplayName("Test toSoaProceedingDetail with valid ProceedingDetail")
-  void testToSoaProceedingDetail_Valid() {
+  void toSoaProceedingDetailValid() {
     final ProceedingDetail proceedingDetail = new ProceedingDetail();
     proceedingDetail.setId(123);
     proceedingDetail.setStatus(new StringDisplayValue().id("Status"));
@@ -1460,13 +1460,13 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaProceedingDetail with null ProceedingDetail")
-  void testToSoaProceedingDetail_Null() {
+  void toSoaProceedingDetailNull() {
     assertNull(applicationMapper.toSoaProceedingDetail(null));
   }
 
   @Test
   @DisplayName("Test toSoaScopeLimitation with valid ScopeLimitationDetail")
-  void testToSoaScopeLimitation_Valid() {
+  void toSoaScopeLimitationValid() {
     final ScopeLimitationDetail scopeLimitationDetail = new ScopeLimitationDetail();
     scopeLimitationDetail.setScopeLimitation(new StringDisplayValue().id("scopeId").displayValue("Scope Description"));
     scopeLimitationDetail.setScopeLimitationWording("Scope Limitation Wording");
@@ -1482,14 +1482,14 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaScopeLimitation with null ScopeLimitationDetail")
-  void testToSoaScopeLimitation_Null() {
+  void toSoaScopeLimitationNull() {
     assertNull(applicationMapper.toSoaScopeLimitation(null));
   }
 
 
   @Test
   @DisplayName("Test toSoaOtherParty with individual type OpponentDetail")
-  void testToSoaOtherParty_Individual() {
+  void toSoaOtherPartyIndividual() {
     final OpponentDetail opponentDetail = new OpponentDetail();
     opponentDetail.setType(OPPONENT_TYPE_INDIVIDUAL);
     opponentDetail.setRelationshipToClient("ClientRelInd");
@@ -1510,7 +1510,7 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaOtherParty with organisation type OpponentDetail")
-  void testToSoaOtherParty_Organisation() {
+  void toSoaOtherPartyOrganisation() {
     final OpponentDetail opponentDetail = new OpponentDetail();
     opponentDetail.setType(OPPONENT_TYPE_ORGANISATION);
     opponentDetail.setRelationshipToClient("ClientRelOrg");
@@ -1531,7 +1531,7 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaOtherParty with null or unknown type OpponentDetail")
-  void testToSoaOtherParty_NullOrUnknownType() {
+  void toSoaOtherPartyNullOrUnknownType() {
     final OpponentDetail opponentDetail = new OpponentDetail();
     opponentDetail.setType(null);
 
@@ -1544,7 +1544,7 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaOtherParty with null OpponentDetail")
-  void testToSoaOtherParty_Null() {
+  void toSoaOtherPartyNull() {
     assertNull(applicationMapper.toSoaOtherParty(null));
   }
 
@@ -1554,7 +1554,7 @@ class SoaApplicationMapperTest {
       "'TestClientRel', 'TestCaseRel', '123456', 'true', 'true', 'John Doe', 'Test Employer', 'Employer Address', '1000', '500', '1990-01-01', 'Employed', 'Cert123', 'Monthly', '2023-10-12', 'OtherInfo'",
       "'ClientRel2', 'CaseRel2', '987654', 'false', 'false', 'Jane Smith', 'Another Employer', 'Another Address', '2000', '1000', '1985-05-05', 'Unemployed', 'Cert456', 'Weekly', '2023-08-20', 'Info2'"
   })
-  void testToSoaPerson_Valid(final String relationToClient, final String relationToCase, final String niNumber, final boolean legalAided,
+  void toSoaPersonValid(final String relationToClient, final String relationToCase, final String niNumber, final boolean legalAided,
       final boolean courtOrderedMeansAssesment, final String contactName, final String employerName,
       final String employerAddress, final String assessedIncome, final String assessedAssets, final String dateOfBirth,
       final String employmentStatus, final String certificateNumber, final String assessedIncomeFrequency,
@@ -1605,7 +1605,7 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaPerson with null OpponentDetail")
-  void testToSoaPerson_NullOpponentDetail() {
+  void toSoaPersonNullOpponentDetail() {
     assertNull(applicationMapper.toSoaPerson(null));
   }
 
@@ -1615,7 +1615,7 @@ class SoaApplicationMapperTest {
       "'ClientRelation', 'CaseRelation', 'OrgName', 'OrgType', 'ContactName', 'true', 'OtherInfo'",
       "'ClientRelation2', 'CaseRelation2', 'OrgName2', 'OrgType2', 'ContactName2', 'false', 'OtherInfo2'"
   })
-  void testToSoaOrganisation_Valid(final String relationToClient, final String relationToCase, final String organisationName, final String organisationType,
+  void toSoaOrganisationValid(final String relationToClient, final String relationToCase, final String organisationName, final String organisationType,
       final String contactName, final boolean currentlyTrading, final String otherInformation) {
     final OpponentDetail opponentDetail = new OpponentDetail();
     opponentDetail.setRelationshipToClient(relationToClient);
@@ -1641,7 +1641,7 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaOrganisation with null OpponentDetail")
-  void testToSoaOrganisation_NullOpponentDetail() {
+  void toSoaOrganisationNullOpponentDetail() {
     assertNull(applicationMapper.toSoaOrganisation(null));
   }
 
@@ -1654,7 +1654,7 @@ class SoaApplicationMapperTest {
       "'SA_TestName', 'TestType', 'TestValue', 'nonIntermediate', false",
       "'TestName', 'TestType', 'TestValue', 'nonIntermediate', true"
   })
-  void testToOpaAttribute_Valid_userDefinedIndicator(final String name, final String type, final String value,
+  void toOpaAttributeValidUserDefinedIndicator(final String name, final String type, final String value,
       final String inferencingType, final boolean expectedUserDefinedInd) {
     final AssessmentAttributeDetail assessmentAttributeDetail =
         new AssessmentAttributeDetail()
@@ -1675,13 +1675,13 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toOpaAttribute with null AssessmentAttributeDetail")
-  void testToOpaAttribute_Null() {
+  void toOpaAttributeNull() {
     assertNull(applicationMapper.toOpaAttribute(null));
   }
 
   @Test
   @DisplayName("Test toSoaRecordHistory with valid CaseMappingContext")
-  void testToSoaRecordHistory_ValidContext() {
+  void toSoaRecordHistoryValidContext() {
     final Date testDate = new Date();
     final ApplicationDetail application = buildApplicationDetail(1, false, testDate);
     application.getAuditTrail().created(testDate);
@@ -1704,7 +1704,7 @@ class SoaApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSoaRecordHistory with null context")
-  void testToSoaRecordHistory_NullContext() {
+  void toSoaRecordHistoryNullContext() {
     assertNull( applicationMapper.toSoaRecordHistory(null));
   }
 

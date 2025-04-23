@@ -55,14 +55,14 @@ class ApplicationSectionsBuilderTest {
   }
 
   @Test
-  void testCaseReferenceNumber() {
+  void caseReferenceNumber() {
     builder.caseReferenceNumber("REF123");
     ApplicationSectionDisplay result = builder.build();
     assertEquals("REF123", result.getCaseReferenceNumber());
   }
 
   @Test
-  void testApplicationType() {
+  void applicationType() {
     ApplicationType applicationType = new ApplicationType();
     applicationType.setId("TEST");
     applicationType.setDisplayValue("TEST DISPLAY");
@@ -82,7 +82,7 @@ class ApplicationSectionsBuilderTest {
   }
 
   @Test
-  void testApplicationType_ECF_statusDisabled() {
+  void applicationTypeECFStatusDisabled() {
     ApplicationType applicationType = new ApplicationType()
         .id(APP_TYPE_EXCEPTIONAL_CASE_FUNDING)
         .displayValue(APP_TYPE_EXCEPTIONAL_CASE_FUNDING_DISPLAY)
@@ -101,7 +101,7 @@ class ApplicationSectionsBuilderTest {
   }
 
   @Test
-  void testGeneralDetails_hasPreferredAddress_statusComplete() {
+  void generalDetailsHasPreferredAddressStatusComplete() {
     StringDisplayValue applicationStatus = new StringDisplayValue().id("1").displayValue("appStat");
     StringDisplayValue categoryOfLaw = new StringDisplayValue().id("1=2").displayValue("cat");
 
@@ -119,7 +119,7 @@ class ApplicationSectionsBuilderTest {
   }
 
   @Test
-  void testGeneralDetails_noPreferredAddress_statusStarted() {
+  void generalDetailsNoPreferredAddressStatusStarted() {
     StringDisplayValue applicationStatus = new StringDisplayValue().id("1").displayValue("appStat");
     StringDisplayValue categoryOfLaw = new StringDisplayValue().id("1=2").displayValue("cat");
 
@@ -130,7 +130,7 @@ class ApplicationSectionsBuilderTest {
   }
 
   @Test
-  void testClient() {
+  void client() {
     ClientDetail client = new ClientDetail()
         .firstName("first")
         .surname("second")
@@ -144,7 +144,7 @@ class ApplicationSectionsBuilderTest {
   }
 
   @Test
-  void testProvider_statusComplete() {
+  void providerStatusComplete() {
     ApplicationProviderDetails applicationProviderDetails = buildApplicationProviderDetails(1);
 
     builder.provider(applicationProviderDetails);
@@ -161,7 +161,7 @@ class ApplicationSectionsBuilderTest {
   }
 
   @Test
-  void testProvider_noProviderContact_statusStarted() {
+  void providerNoProviderContactStatusStarted() {
     ApplicationProviderDetails applicationProviderDetails = new ApplicationProviderDetails();
 
     builder.provider(applicationProviderDetails);
@@ -171,7 +171,7 @@ class ApplicationSectionsBuilderTest {
   }
 
   @Test
-  void testProceedingsAndCosts_statusComplete() {
+  void proceedingsAndCostsStatusComplete() {
     AuditDetail auditDetail = new AuditDetail();
     auditDetail.setLastSaved(Date.from(Instant.now()));
     auditDetail.setLastSavedBy("TestUser");
@@ -240,7 +240,7 @@ class ApplicationSectionsBuilderTest {
   }
 
   @Test
-  void testProceedingsAndCosts_noStage_statusStarted() {
+  void proceedingsAndCostsNoStageStatusStarted() {
     AuditDetail auditDetail = new AuditDetail();
     auditDetail.setLastSaved(Date.from(Instant.now()));
     auditDetail.setLastSavedBy("TestUser");
@@ -271,7 +271,7 @@ class ApplicationSectionsBuilderTest {
   }
 
   @Test
-  void testOpponentsAndOtherParties() {
+  void opponentsAndOtherParties() {
     AuditDetail auditDetail = new AuditDetail();
     auditDetail.setLastSaved(new Date());
     auditDetail.setLastSavedBy("TestUser");
@@ -318,7 +318,7 @@ class ApplicationSectionsBuilderTest {
       "true,false," + SECTION_STATUS_STARTED + ",true",
       "false,false," + SECTION_STATUS_NOT_AVAILABLE + ",false",
       "false,true," + SECTION_STATUS_NOT_AVAILABLE + ",false"})
-  void testDocumentUpload_disabled(
+  void documentUploadDisabled(
       final boolean evidenceRequired,
       final boolean allEvidenceProvided,
       final String expectedStatus,

@@ -23,16 +23,16 @@ import uk.gov.laa.ccms.soa.gateway.model.BaseDocument;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 
 @ExtendWith(MockitoExtension.class)
-public class NotificationAttachmentMapperTest {
+class NotificationAttachmentMapperTest {
 
   @Mock(answer = Answers.CALLS_REAL_METHODS)
   CommonMapper commonMapper;
 
   @InjectMocks
-  NotificationAttachmentMapper notificationAttachmentMapper = new NotificationAttachmentMapperImpl();
+  NotificationAttachmentMapper notificationAttachmentMapper;
 
   @Test
-  void testNotificationAttachmentDetail_toBaseDocument() {
+  void notificationAttachmentDetailToBaseDocument() {
 
     NotificationAttachmentDetail notificationAttachmentDetail = new NotificationAttachmentDetail();
     notificationAttachmentDetail.setId(123);
@@ -57,7 +57,7 @@ public class NotificationAttachmentMapperTest {
   }
 
   @Test
-  void testNotificationAttachmentDetail_toDocument() throws IOException {
+  void notificationAttachmentDetailToDocument() throws IOException {
 
     NotificationAttachmentDetail notificationAttachmentDetail = new NotificationAttachmentDetail();
     notificationAttachmentDetail.setId(123);
@@ -84,7 +84,7 @@ public class NotificationAttachmentMapperTest {
   }
 
   @Test
-  void testDocument_toBaseNotificationAttachmentDetail() {
+  void documentToBaseNotificationAttachmentDetail() {
 
     Document document = new Document();
     document.setDocumentId("12345");
@@ -114,7 +114,7 @@ public class NotificationAttachmentMapperTest {
   }
 
   @Test
-  void testNotificationAttachmentDetail_toNotificationAttachmentUploadFormData()
+  void notificationAttachmentDetailToNotificationAttachmentUploadFormData()
       throws IOException {
 
     NotificationAttachmentDetail notificationAttachmentDetail = new NotificationAttachmentDetail();
@@ -150,7 +150,7 @@ public class NotificationAttachmentMapperTest {
   }
 
   @Test
-  void testNotificationAttachmentUploadFormData_toNotificationAttachmentDetail() {
+  void notificationAttachmentUploadFormDataToNotificationAttachmentDetail() {
 
     String fileData = "ZmlsZURhdGE=";
 

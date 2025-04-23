@@ -58,7 +58,7 @@ class ClientSearchControllerTest {
   }
 
   @Test
-  void testGetClientSearchDetails() {
+  void getClientSearchDetails() {
     ClientSearchController clientSearchController =
         new ClientSearchController(lookupService, clientSearchCriteriaValidator);
     ClientSearchCriteria clientSearchCriteria = clientSearchController.getClientSearchDetails();
@@ -66,7 +66,7 @@ class ClientSearchControllerTest {
   }
 
   @Test
-  void testClientSearch_Get() throws Exception {
+  void clientSearchGet() throws Exception {
     when(lookupService.getCommonValues(COMMON_VALUE_GENDER)).thenReturn(Mono.empty());
     when(lookupService.getCommonValues(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE)).thenReturn(
         Mono.empty());
@@ -82,7 +82,7 @@ class ClientSearchControllerTest {
   }
 
   @Test
-  void testClientSearch_Post_WithErrors() throws Exception {
+  void clientSearchPostWithErrors() throws Exception {
     final ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
 
     when(lookupService.getCommonValues(COMMON_VALUE_GENDER)).thenReturn(Mono.empty());
@@ -108,7 +108,7 @@ class ClientSearchControllerTest {
   }
 
   @Test
-  void testClientSearch_Post_Successful() throws Exception {
+  void clientSearchPostSuccessful() throws Exception {
     final ClientSearchCriteria clientSearchCriteria = buildClientSearchDetails();
 
     this.mockMvc.perform(post("/application/client/search")

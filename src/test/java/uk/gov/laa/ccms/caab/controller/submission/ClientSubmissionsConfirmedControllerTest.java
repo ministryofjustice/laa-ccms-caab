@@ -59,12 +59,12 @@ public class ClientSubmissionsConfirmedControllerTest {
   private WebApplicationContext webApplicationContext;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = MockMvcBuilders.standaloneSetup(clientSubmissionsConfirmedController).build();
   }
 
   @Test
-  void testSubmissionsConfirmed() throws Exception {
+  void submissionsConfirmed() throws Exception {
     final ApplicationFormData mockApplicationFormData = new ApplicationFormData(); // Assuming you have a constructor or a mock object
     final UserDetail user = buildUser();
     final String clientReferenceNumber = "TEST-REF";
@@ -89,7 +89,7 @@ public class ClientSubmissionsConfirmedControllerTest {
   }
 
   @Test
-  void testClientUpdateSubmitted() throws Exception {
+  void clientUpdateSubmitted() throws Exception {
     mockMvc.perform(post("/submissions/client-update/confirmed"))
         .andDo(print())
         .andExpect(status().is3xxRedirection())

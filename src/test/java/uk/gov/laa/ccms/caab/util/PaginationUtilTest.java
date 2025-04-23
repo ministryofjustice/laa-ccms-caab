@@ -18,7 +18,7 @@ import uk.gov.laa.ccms.data.model.Notification;
 class PaginationUtilTest {
 
   @Test
-  void testSortDescendingCorrectInPaginationUtil() {
+  void sortDescendingCorrectInPaginationUtil() {
     final Pageable pageable = PageRequest.of(0, 10, Sort.by("caseReferenceNumber").descending());
     final List<Notification> notificationList = new ArrayList<>();
     notificationList.add(new Notification().caseReferenceNumber("12345"));
@@ -30,7 +30,7 @@ class PaginationUtilTest {
   }
 
   @Test
-  void testSortAscendingCorrectInPaginationUtil() {
+  void sortAscendingCorrectInPaginationUtil() {
     final Pageable pageable = PageRequest.of(0, 10, Sort.by("caseReferenceNumber").ascending());
     final List<Notification> notificationList = new ArrayList<>();
     notificationList.add(new Notification().caseReferenceNumber("12345"));
@@ -42,7 +42,7 @@ class PaginationUtilTest {
   }
 
   @Test
-  void testSortEmptyListInPaginationUtil() {
+  void sortEmptyListInPaginationUtil() {
     final Pageable pageable = PageRequest.of(0, 10, Sort.by("caseReferenceNumber").ascending());
     final List<Notification> notificationList = new ArrayList<>();
     final Page<Notification> notificationPage = PaginationUtil.paginateList(pageable, notificationList);
@@ -50,7 +50,7 @@ class PaginationUtilTest {
   }
 
   @Test
-  void testInvalidSortThrowsException() {
+  void invalidSortThrowsException() {
     final Pageable pageable = PageRequest.of(0, 10, Sort.by("invalidProperty").ascending());
     final List<Notification> notificationList = new ArrayList<>();
     notificationList.add(new Notification().caseReferenceNumber("12345"));
@@ -60,7 +60,7 @@ class PaginationUtilTest {
   }
 
   @Test
-  void testSortOnOtherDomainObjects() {
+  void sortOnOtherDomainObjects() {
     final List<CaseSummary> summary = new ArrayList<>();
     summary.add(buildCaseSummary().feeEarnerName("bbb"));
     summary.add(buildCaseSummary().feeEarnerName("aaa"));

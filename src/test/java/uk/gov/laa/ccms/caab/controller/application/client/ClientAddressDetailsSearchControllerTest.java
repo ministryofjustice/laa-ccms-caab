@@ -31,7 +31,7 @@ import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
 
 @ExtendWith(MockitoExtension.class)
-public class ClientAddressDetailsSearchControllerTest {
+class ClientAddressDetailsSearchControllerTest {
 
   @Mock
   private AddressService addressService;
@@ -49,7 +49,7 @@ public class ClientAddressDetailsSearchControllerTest {
   private ClientFlowFormData clientFlowFormData;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(clientAddressDetailsSearchController).build();
 
     addressSearch = new AddressSearchFormData();
@@ -60,7 +60,7 @@ public class ClientAddressDetailsSearchControllerTest {
   }
 
   @Test
-  void testClientDetailsAddressSearch() throws Exception {
+  void clientDetailsAddressSearch() throws Exception {
 
     mockMvc.perform(get("/application/client/details/address/search")
             .sessionAttr(ADDRESS_SEARCH_RESULTS, searchResults)
@@ -72,7 +72,7 @@ public class ClientAddressDetailsSearchControllerTest {
   }
 
   @Test
-  void testClientDetailsAddressSearchPost() throws Exception {
+  void clientDetailsAddressSearchPost() throws Exception {
 
     mockMvc.perform(post("/application/client/details/address/search")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
@@ -84,7 +84,7 @@ public class ClientAddressDetailsSearchControllerTest {
   }
 
   @Test
-  void testClientDetailsAddressSearchPost_ValidationError() throws Exception {
+  void clientDetailsAddressSearchPostValidationError() throws Exception {
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];

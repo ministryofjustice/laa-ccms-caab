@@ -46,7 +46,7 @@ class ClientDeceasedDetailsValidatorTest {
   @ValueSource(strings = {"/01/2000",
       "01//2000",
       "01/01/"})
-  void testValidate_numericFieldsError(String dodDay) {
+  void validateNumericFieldsError(String dodDay) {
     deceasedDetails.setDateOfDeath(dodDay);
 
     validator.validate(deceasedDetails, errors);
@@ -57,7 +57,7 @@ class ClientDeceasedDetailsValidatorTest {
   }
 
   @Test
-  void testValidate_futureDateError() {
+  void validateFutureDateError() {
     deceasedDetails.setDateOfDeath("1/1/3000");
 
     validator.validate(deceasedDetails, errors);
@@ -68,7 +68,7 @@ class ClientDeceasedDetailsValidatorTest {
   }
 
   @Test
-  void testValidate() {
+  void validate() {
     deceasedDetails.setDateOfDeath("01/01/2000");
 
     validator.validate(deceasedDetails, errors);

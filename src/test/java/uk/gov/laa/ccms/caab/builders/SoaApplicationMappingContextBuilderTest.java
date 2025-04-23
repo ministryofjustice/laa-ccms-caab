@@ -84,7 +84,7 @@ class SoaApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildSoaCaseOutcomeMappingContext() {
+  void buildSoaCaseOutcomeMappingContext() {
     final CaseDetail soaCase = buildCaseDetail("anytype");
     final List<SoaProceedingMappingContext> SoaProceedingMappingContexts = Collections.singletonList(
         SoaProceedingMappingContext.builder().build());
@@ -115,7 +115,7 @@ class SoaApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildSoaCaseOutcomeMappingContext_NoAwardTypes() {
+  void buildSoaCaseOutcomeMappingContextNoAwardTypes() {
     CaseDetail soaCase = buildCaseDetail("anytype");
     List<SoaProceedingMappingContext> SoaProceedingMappingContexts = Collections.singletonList(
         SoaProceedingMappingContext.builder().build());
@@ -129,7 +129,7 @@ class SoaApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildSoaCaseOutcomeMappingContext_UnknownAwardType() {
+  void buildSoaCaseOutcomeMappingContextUnknownAwardType() {
     CaseDetail soaCase = buildCaseDetail("anytype");
     List<SoaProceedingMappingContext> SoaProceedingMappingContexts = Collections.singletonList(
         SoaProceedingMappingContext.builder().build());
@@ -148,7 +148,7 @@ class SoaApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildSoaPriorAuthorityMappingContext_LovLookup() {
+  void buildSoaPriorAuthorityMappingContextLovLookup() {
     PriorAuthority soaPriorAuthority = buildPriorAuthority();
 
     PriorAuthorityTypeDetails priorAuthorityTypeDetails =
@@ -189,7 +189,7 @@ class SoaApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildSoaPriorAuthorityMappingContext_NoLovLookup() {
+  void buildSoaPriorAuthorityMappingContextNoLovLookup() {
     PriorAuthority soaPriorAuthority = buildPriorAuthority();
 
     PriorAuthorityTypeDetails priorAuthorityTypeDetails =
@@ -219,7 +219,7 @@ class SoaApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildSoaPriorAuthorityMappingContext_UnknownPriorAuthType() {
+  void buildSoaPriorAuthorityMappingContextUnknownPriorAuthType() {
     PriorAuthority soaPriorAuthority = buildPriorAuthority();
 
     when(lookupService.getPriorAuthorityType(soaPriorAuthority.getPriorAuthorityType()))
@@ -234,7 +234,7 @@ class SoaApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildSoaPriorAuthorityMappingContext_UnknownLookup() {
+  void buildSoaPriorAuthorityMappingContextUnknownLookup() {
     PriorAuthority soaPriorAuthority = buildPriorAuthority();
 
     PriorAuthorityDetail priorAuthoritiesItem = new PriorAuthorityDetail()
@@ -263,7 +263,7 @@ class SoaApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildSoaProceedingMappingContext_Emergency() {
+  void buildSoaProceedingMappingContextEmergency() {
     uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail soaProceeding =
         buildProceedingDetail(STATUS_DRAFT);
     CaseDetail soaCase = buildCaseDetail(APP_TYPE_EMERGENCY);
@@ -404,7 +404,7 @@ class SoaApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testCalculateProceedingCostLimitation_NonEmergency() {
+  void calculateProceedingCostLimitationNonEmergency() {
     uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail soaProceeding =
         buildProceedingDetail(STATUS_DRAFT);
     CaseDetail soaCase = buildCaseDetail(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
@@ -451,7 +451,7 @@ class SoaApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testAddProceedingOutcomeContext_NullOutcome() {
+  void addProceedingOutcomeContextNullOutcome() {
     final uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail soaProceeding =
         buildProceedingDetail(STATUS_DRAFT);
     soaProceeding.setOutcome(null);
@@ -463,7 +463,7 @@ class SoaApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildSoaApplicationMappingContext_DevolvedPowersAllDraftProceedings() {
+  void buildSoaApplicationMappingContextDevolvedPowersAllDraftProceedings() {
     final CaseDetail soaCase = buildCaseDetail(APP_TYPE_EMERGENCY_DEVOLVED_POWERS);
     soaCase.getApplicationDetails().getProceedings().forEach(
         proceedingDetail -> {
@@ -554,7 +554,7 @@ class SoaApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildSoaApplicationMappingContext_NonDevolvedPowersMixedProceedings() {
+  void buildSoaApplicationMappingContextNonDevolvedPowersMixedProceedings() {
     CaseDetail soaCase = buildCaseDetail(APP_TYPE_EMERGENCY);
     soaCase.getApplicationDetails().getProceedings().forEach(
         proceedingDetail -> {
@@ -621,7 +621,7 @@ class SoaApplicationMappingContextBuilderTest {
   }
 
   @Test
-  void testBuildSoaApplicationMappingContext_NoAppTypeDefaultsToCertificate() {
+  void buildSoaApplicationMappingContextNoAppTypeDefaultsToCertificate() {
     CaseDetail soaCase = buildCaseDetail(null);
     soaCase.getApplicationDetails().getProceedings().forEach(
         proceedingDetail -> {

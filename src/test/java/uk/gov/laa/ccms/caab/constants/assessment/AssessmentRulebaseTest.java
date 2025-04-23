@@ -1,13 +1,14 @@
 package uk.gov.laa.ccms.caab.constants.assessment;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
 class AssessmentRulebaseTest {
 
   @Test
-  void testFindByType() {
+  void findByType() {
     assertEquals(AssessmentRulebase.MEANS, AssessmentRulebase.findByType("MEANS"));
     assertEquals(AssessmentRulebase.MERITS, AssessmentRulebase.findByType("MERITS"));
     assertEquals(AssessmentRulebase.BILLING, AssessmentRulebase.findByType("BILLING"));
@@ -15,7 +16,7 @@ class AssessmentRulebaseTest {
   }
 
   @Test
-  void testGetPrePopAssessmentName() {
+  void getPrePopAssessmentName() {
     assertEquals("meansAssessment_PREPOP", AssessmentRulebase.MEANS.getPrePopAssessmentName());
     assertEquals("meritsAssessment_PREPOP", AssessmentRulebase.MERITS.getPrePopAssessmentName());
     assertEquals("billingAssessment_PREPOP", AssessmentRulebase.BILLING.getPrePopAssessmentName());
@@ -23,7 +24,7 @@ class AssessmentRulebaseTest {
   }
 
   @Test
-  void testGetPrePopAssessmentNameById() {
+  void getPrePopAssessmentNameById() {
     assertEquals("meansAssessment_PREPOP", AssessmentRulebase.getPrePopAssessmentName(1L));
     assertEquals("meritsAssessment_PREPOP", AssessmentRulebase.getPrePopAssessmentName(2L));
     assertEquals("billingAssessment_PREPOP", AssessmentRulebase.getPrePopAssessmentName(3L));
@@ -31,7 +32,7 @@ class AssessmentRulebaseTest {
   }
 
   @Test
-  void testFindById() {
+  void findById() {
     assertEquals(AssessmentRulebase.MEANS, AssessmentRulebase.findById(1L));
     assertEquals(AssessmentRulebase.MERITS, AssessmentRulebase.findById(2L));
     assertEquals(AssessmentRulebase.BILLING, AssessmentRulebase.findById(3L));
@@ -40,7 +41,7 @@ class AssessmentRulebaseTest {
   }
 
   @Test
-  void testGetDeploymentName() {
+  void getDeploymentName() {
     assertEquals("MeansAssessment", AssessmentRulebase.MEANS.getDeploymentName());
     assertEquals("MeritsAssessment", AssessmentRulebase.MERITS.getDeploymentName());
     assertEquals("BillingAssessment", AssessmentRulebase.BILLING.getDeploymentName());

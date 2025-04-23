@@ -25,23 +25,23 @@ class ScopeLimitationDetailsValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     scopeLimitationDetails = new ScopeLimitationFormDataDetails();
     errors = new BeanPropertyBindingResult(scopeLimitationDetails, "scopeLimitationDetails");
   }
 
   @Test
-  public void supports_ReturnsTrueForScopeLimitationFormDataDetailsClass() {
+  void supports_ReturnsTrueForScopeLimitationFormDataDetailsClass() {
     assertTrue(scopeLimitationDetailsValidator.supports(ScopeLimitationFormDataDetails.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(scopeLimitationDetailsValidator.supports(Object.class));
   }
 
   @Test
-  public void validate_WithNullScopeLimitation_HasErrors() {
+  void validate_WithNullScopeLimitation_HasErrors() {
     scopeLimitationDetails.setScopeLimitation(null);
     scopeLimitationDetailsValidator.validate(scopeLimitationDetails, errors);
     assertTrue(errors.hasErrors());
@@ -50,7 +50,7 @@ class ScopeLimitationDetailsValidatorTest {
   }
 
   @Test
-  public void validate_WithValidScopeLimitation_NoErrors() {
+  void validate_WithValidScopeLimitation_NoErrors() {
     scopeLimitationDetails.setScopeLimitation("Valid Scope Limitation");
     scopeLimitationDetailsValidator.validate(scopeLimitationDetails, errors);
     assertFalse(errors.hasErrors());

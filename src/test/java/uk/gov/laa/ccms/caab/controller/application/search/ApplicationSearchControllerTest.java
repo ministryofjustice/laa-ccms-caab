@@ -65,7 +65,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class ApplicationSearchControllerTest {
+class ApplicationSearchControllerTest {
   @Mock
   private CaseSearchCriteriaValidator validator;
 
@@ -98,7 +98,7 @@ public class ApplicationSearchControllerTest {
   private WebApplicationContext webApplicationContext;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = MockMvcBuilders
         .standaloneSetup(applicationSearchController)
         .setControllerAdvice(new GlobalExceptionHandler())
@@ -111,7 +111,7 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testGetApplicationSearch_PopulatesDropdowns() throws Exception {
+  void getApplicationSearchPopulatesDropdowns() throws Exception {
     ProviderDetail providerDetail = new ProviderDetail();
     List<ContactDetail> feeEarners = buildFeeEarners();
     CaseStatusLookupDetail caseStatuses = new CaseStatusLookupDetail()
@@ -133,7 +133,7 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testGetApplicationSearch_HandlesMissingLookupData() throws Exception {
+  void getApplicationSearchHandlesMissingLookupData() throws Exception {
     when(providerService.getProvider(user.getProvider().getId()))
         .thenReturn(Mono.empty());
     when(lookupService.getCaseStatusValues())
@@ -147,7 +147,7 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testPostApplicationSearchHandlesValidationFailure() throws Exception {
+  void postApplicationSearchHandlesValidationFailure() throws Exception {
     ProviderDetail providerDetail = new ProviderDetail();
     List<ContactDetail> feeEarners = buildFeeEarners();
     CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail()
@@ -176,7 +176,7 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testPostApplicationSearch_NoResults() throws Exception {
+  void postApplicationSearchNoResults() throws Exception {
     List<BaseApplicationDetail> baseApplications = new ArrayList<>();
 
     when(applicationService.getCases(any(), any())).thenReturn(baseApplications);
@@ -192,7 +192,7 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testPostApplicationSearch_WithTooManyResults() throws Exception {
+  void postApplicationSearchWithTooManyResults() throws Exception {
     when(applicationService.getCases(any(), any())).thenThrow(
         new TooManyResultsException(""));
 
@@ -205,7 +205,7 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testPostApplicationSearch_WithResults() throws Exception {
+  void postApplicationSearchWithResults() throws Exception {
     List<BaseApplicationDetail> caseSearchResults = List.of(new BaseApplicationDetail());
 
     when(applicationService.getCases(any(), any())).thenReturn(caseSearchResults);
@@ -218,7 +218,7 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testGetApplicationSearchResults_PaginatesResults() throws Exception {
+  void getApplicationSearchResultsPaginatesResults() throws Exception {
     List<BaseApplicationDetail> caseSearchResults = List.of(
         new BaseApplicationDetail(),
         new BaseApplicationDetail());
@@ -238,7 +238,7 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testSelectApplication_rejectsInvalidCaseReference() throws Exception {
+  void selectApplicationRejectsInvalidCaseReference() throws Exception {
 
     // No TDS applications
     when(applicationService.getTdsApplications(any(), any(), any(), any()))
@@ -252,7 +252,7 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testSelectApplication_unsubmittedApplication_redirectsToApplicationSummary()
+  void selectApplicationUnsubmittedApplicationRedirectsToApplicationSummary()
       throws Exception {
     final String selectedCaseRef = "1";
     final String appRef = "2";
@@ -276,7 +276,7 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testSelectApplication_otherStatus_redirectsToCaseSummary() throws Exception {
+  void selectApplicationOtherStatusRedirectsToCaseSummary() throws Exception {
     final String selectedCaseRef = "2";
 
     // EBS Case

@@ -22,23 +22,23 @@ class ProviderRequestTypesValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     providerRequestTypeFormData = new ProviderRequestTypeFormData();
     errors = new BeanPropertyBindingResult(providerRequestTypeFormData, "providerRequestTypeFormData");
   }
 
   @Test
-  public void supports_ReturnsTrueForProviderRequestTypeFormDataClass() {
+  void supports_ReturnsTrueForProviderRequestTypeFormDataClass() {
     assertTrue(providerRequestTypesValidator.supports(ProviderRequestTypeFormData.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(providerRequestTypesValidator.supports(Object.class));
   }
 
   @Test
-  public void validate_WithNullProviderRequestType_HasErrors() {
+  void validate_WithNullProviderRequestType_HasErrors() {
     providerRequestTypeFormData.setProviderRequestType(null);
     providerRequestTypesValidator.validate(providerRequestTypeFormData, errors);
     assertTrue(errors.hasErrors());
@@ -47,7 +47,7 @@ class ProviderRequestTypesValidatorTest {
   }
 
   @Test
-  public void validate_WithValidProviderRequestType_NoErrors() {
+  void validate_WithValidProviderRequestType_NoErrors() {
     providerRequestTypeFormData.setProviderRequestType("Valid Provider Request Type");
     providerRequestTypesValidator.validate(providerRequestTypeFormData, errors);
     assertFalse(errors.hasErrors());

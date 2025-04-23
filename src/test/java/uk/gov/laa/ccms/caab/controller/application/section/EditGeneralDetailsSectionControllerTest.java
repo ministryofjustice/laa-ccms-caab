@@ -120,14 +120,14 @@ class EditGeneralDetailsSectionControllerTest {
   private CommonLookupDetail mockCommonLookupDetail;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(editGeneralDetailsSectionController).build();
     mockCommonLookupDetail = new CommonLookupDetail();
     mockCommonLookupDetail.addContentItem(new CommonLookupValueDetail());
   }
 
   @Test
-  public void testCorrespondenceDetailsGet() throws Exception {
+  void correspondenceDetailsGet() throws Exception {
     final String applicationId = "123";
     final AddressFormData addressFormData = new AddressFormData();
 
@@ -149,9 +149,8 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
 
-
   @Test
-  public void testCorrespondenceDetailsGet_withSessionData() throws Exception {
+  void correspondenceDetailsGetWithSessionData() throws Exception {
     final String applicationId = "123";
     final AddressFormData addressFormData = new AddressFormData();
 
@@ -172,7 +171,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testUpdateCorrespondenceDetailsPost_next() throws Exception {
+  void updateCorrespondenceDetailsPostNext() throws Exception {
     final String applicationId = "123";
     final UserDetail user = new UserDetail();
     final AddressFormData addressDetails = new AddressFormData();
@@ -190,7 +189,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testUpdateCorrespondenceDetailsPost_next_handlesValidationError() throws Exception {
+  void updateCorrespondenceDetailsPostNextHandlesValidationError() throws Exception {
     final String applicationId = "123";
     final UserDetail user = new UserDetail();
     final AddressFormData addressDetails = new AddressFormData();
@@ -219,7 +218,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testUpdateCorrespondenceDetailsPost_findAddress_successful() throws Exception {
+  void updateCorrespondenceDetailsPostFindAddressSuccessful() throws Exception {
     final String applicationId = "123";
     final UserDetail user = new UserDetail();
     final AddressFormData addressDetails = new AddressFormData();
@@ -243,7 +242,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testUpdateCorrespondenceDetailsPost_findAddress_noResults() throws Exception {
+  void updateCorrespondenceDetailsPostFindAddressNoResults() throws Exception {
     final String applicationId = "123";
     final UserDetail user = new UserDetail();
     final AddressFormData addressDetails = new AddressFormData();
@@ -270,7 +269,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testCorrespondenceAddressSearchGet() throws Exception {
+  void correspondenceAddressSearchGet() throws Exception {
     final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
 
     this.mockMvc.perform(get("/application/sections/correspondence-address/search")
@@ -283,7 +282,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testCorrespondenceAddressSearchPost_successful() throws Exception {
+  void correspondenceAddressSearchPostSuccessful() throws Exception {
     final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
 
     this.mockMvc.perform(post("/application/sections/correspondence-address/search")
@@ -298,7 +297,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testCorrespondenceAddressSearchPost_handlesValidationError() throws Exception {
+  void correspondenceAddressSearchPostHandlesValidationError() throws Exception {
     final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
 
     doAnswer(invocation -> {
@@ -321,7 +320,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testLinkedCasesGet() throws Exception {
+  void linkedCasesGet() throws Exception {
     final String applicationId = "123";
     final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases = new ResultsDisplay<>();
 
@@ -338,7 +337,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testRemoveLinkedCaseGet() throws Exception {
+  void removeLinkedCaseGet() throws Exception {
     final Integer linkedCaseId = 1;
     final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
     linkedCase.setId(linkedCaseId);
@@ -355,7 +354,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testRemoveLinkedCasePost() throws Exception {
+  void removeLinkedCasePost() throws Exception {
     final String applicationId = "123";
     final String linkedCaseId = "1";
     final UserDetail user = new UserDetail();
@@ -371,7 +370,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testConfirmLinkedCaseGet() throws Exception {
+  void confirmLinkedCaseGet() throws Exception {
     final Integer linkedCaseId = 1;
     final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
     linkedCase.setId(linkedCaseId);
@@ -390,7 +389,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testConfirmLinkedCasePost() throws Exception {
+  void confirmLinkedCasePost() throws Exception {
     final String applicationId = "123";
     final String linkedCaseId = "1";
     final UserDetail user = new UserDetail();
@@ -408,7 +407,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testConfirmLinkedCasePost_validationError() throws Exception {
+  void confirmLinkedCasePostValidationError() throws Exception {
     final String applicationId = "123";
     final String linkedCaseId = "1";
     final UserDetail user = new UserDetail();
@@ -434,7 +433,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testLinkedCasesSearchGet() throws Exception {
+  void linkedCasesSearchGet() throws Exception {
     final ProviderDetail mockProviderDetail = new ProviderDetail();
     final CaseStatusLookupDetail mockCaseStatusValues = new CaseStatusLookupDetail();
 
@@ -450,7 +449,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testLinkedCasesSearchPost_validationError() throws Exception {
+  void linkedCasesSearchPostValidationError() throws Exception {
 
     final ProviderDetail mockProviderDetail = new ProviderDetail();
     final CaseStatusLookupDetail mockCaseStatusValues = new CaseStatusLookupDetail();
@@ -477,7 +476,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testLinkedCasesSearchPost_emptySearchResults() throws Exception {
+  void linkedCasesSearchPostEmptySearchResults() throws Exception {
     final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     when(applicationService.getCases(any(), any())).thenReturn(Collections.emptyList());
 
@@ -492,7 +491,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testLinkedCasesSearchPost_tooManyResults() throws Exception {
+  void linkedCasesSearchPostTooManyResults() throws Exception {
     // Arrange
     final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
 
@@ -512,7 +511,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testLinkedCasesSearchResults() throws Exception {
+  void linkedCasesSearchResults() throws Exception {
     final int page = 0;
     final int size = 10;
     final List<BaseApplicationDetail> caseSearchResults = Arrays.asList(new BaseApplicationDetail(), new BaseApplicationDetail());
@@ -533,7 +532,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testAddLinkedCaseGet_Success() throws Exception {
+  void addLinkedCaseGetSuccess() throws Exception {
     final String caseReferenceId = "123456789";
     final ApplicationDetails linkedCaseSearchResults = new ApplicationDetails();
     final List<BaseApplicationDetail> applications = new ArrayList<>();
@@ -557,7 +556,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testAddLinkedCasePost_Success() throws Exception {
+  void addLinkedCasePostSuccess() throws Exception {
     final String applicationId = "app123";
     final UserDetail user = new UserDetail();
     final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
@@ -575,7 +574,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
-  public void testAddLinkedCasePost_ValidationError() throws Exception {
+  void addLinkedCasePostValidationError() throws Exception {
     final String applicationId = "app123";
     final UserDetail user = new UserDetail();
     final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
