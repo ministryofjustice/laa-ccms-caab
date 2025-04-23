@@ -177,6 +177,7 @@ class OpponentsSectionControllerTest {
     @Test
     void organisationSearchPost_validationErrors_maxLengthsExceeded_returnsToSearch() throws Exception {
         OrganisationSearchCriteria testOrganisationSearchCriteria = new OrganisationSearchCriteria();
+
         testOrganisationSearchCriteria.setName(RandomStringUtils.insecure().nextAlphabetic(370));
         testOrganisationSearchCriteria.setCity(RandomStringUtils.insecure().nextAlphabetic(36));
         testOrganisationSearchCriteria.setPostcode(RandomStringUtils.insecure().nextAlphabetic(16));
