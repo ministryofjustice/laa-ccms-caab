@@ -74,7 +74,7 @@ public class OpponentService {
     if (organisationDetails.getTotalElements()
         > searchConstants.getMaxSearchResultsOrganisations()) {
       throw new TooManyResultsException(
-          String.format("Organisation Search returned %s results",
+          "Organisation Search returned %s results".formatted(
               organisationDetails.getTotalElements()));
     }
 

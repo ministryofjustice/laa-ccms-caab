@@ -208,7 +208,7 @@ public class ActionsAndNotificationsController {
         user.getProvider().getId())
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException(
-            String.format("Notification with id %s not found", notificationId)));
+        "Notification with id %s not found".formatted(notificationId)));
 
     return prepareNotificationPageModel(notification,
         new NotificationResponseFormData(), model, session);
@@ -460,8 +460,8 @@ public class ActionsAndNotificationsController {
         .getNotification(notificationId, user.getUserId(), user.getProvider().getId())
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException(
-            String.format("Notification with id %s not found",
-                notificationId)));
+        "Notification with id %s not found".formatted(
+            notificationId)));
     session.setAttribute(NOTIFICATION, updatedNotification);
 
     return "redirect:/notifications/%s/provide-documents-or-evidence".formatted(notificationId);

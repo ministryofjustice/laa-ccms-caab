@@ -115,7 +115,7 @@ class ResultDisplayMapperTest {
     assertEquals(0, result.getNumber());
     assertEquals(10, result.getSize());
     assertEquals(1, result.getContent().size());
-    assertEquals("Jane", result.getContent().get(0).getFirstName());
+    assertEquals("Jane", result.getContent().getFirst().getFirstName());
   }
 
   @Test
@@ -152,7 +152,7 @@ class ResultDisplayMapperTest {
 
     assertEquals(organisationSummary.getName(), result.getName());
     assertEquals(organisationSummary.getType(), result.getType());
-    assertEquals(orgTypesLookup.get(0).getDescription(), result.getTypeDisplayValue());
+    assertEquals(orgTypesLookup.getFirst().getDescription(), result.getTypeDisplayValue());
     assertEquals(organisationSummary.getPartyId(), result.getPartyId());
     assertEquals(organisationSummary.getPostcode(), result.getPostcode());
     assertEquals(organisationSummary.getCity(), result.getCity());

@@ -57,7 +57,7 @@ public class ProceedingUtil {
     return Optional.ofNullable(proceeding.getScopeLimitations())
         .filter(scopeLimitations -> !scopeLimitations.isEmpty())
         .map(scopeLimitations -> scopeLimitations.size() > 1 ? "MULTIPLE" :
-            scopeLimitations.get(0).getScopeLimitation().getId())
+            scopeLimitations.getFirst().getScopeLimitation().getId())
         .orElse(null);
   }
 

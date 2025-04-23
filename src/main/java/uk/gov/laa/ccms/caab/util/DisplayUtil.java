@@ -58,9 +58,9 @@ public class DisplayUtil {
    * @return formatted name.
    */
   public static String getFullName(final String firstName, final String lastName) {
-    return String.format("%s%s",
-            StringUtils.hasText(firstName) ? firstName + " " : "",
-            StringUtils.hasText(lastName) ? lastName : "").trim();
+    return "%s%s".formatted(
+        StringUtils.hasText(firstName) ? firstName + " " : "",
+        StringUtils.hasText(lastName) ? lastName : "").trim();
   }
 
   /**

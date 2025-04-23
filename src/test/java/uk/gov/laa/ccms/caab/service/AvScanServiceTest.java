@@ -63,7 +63,7 @@ public class AvScanServiceTest {
             caseReferenceNumber, providerId, userId, source, filename, inputStream));
 
     assertEquals(
-        String.format(SCAN_ERROR_FORMAT, filename, avApiClientException.getMessage()),
+        SCAN_ERROR_FORMAT.formatted(filename, avApiClientException.getMessage()),
         e.getMessage());
   }
 
@@ -81,7 +81,7 @@ public class AvScanServiceTest {
             caseReferenceNumber, providerId, userId, source, filename, inputStream));
 
     assertEquals(
-        String.format(VIRUS_FOUND_ERROR_FORMAT, filename, avApiVirusFoundException.getMessage()),
+        VIRUS_FOUND_ERROR_FORMAT.formatted(filename, avApiVirusFoundException.getMessage()),
         e.getMessage());
   }
 

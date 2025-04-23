@@ -105,13 +105,13 @@ class EbsApplicationMappingContextBuilderTest {
     assertNotNull(result.getLandAwards());
     assertNotNull(result.getOtherAssetAwards());
     assertEquals(1, result.getCostAwards().size());
-    assertEquals(ebsCase.getAwards().get(0), result.getCostAwards().get(0));
+    assertEquals(ebsCase.getAwards().getFirst(), result.getCostAwards().getFirst());
     assertEquals(1, result.getFinancialAwards().size());
-    assertEquals(ebsCase.getAwards().get(1), result.getFinancialAwards().get(0));
+    assertEquals(ebsCase.getAwards().get(1), result.getFinancialAwards().getFirst());
     assertEquals(1, result.getLandAwards().size());
-    assertEquals(ebsCase.getAwards().get(2), result.getLandAwards().get(0));
+    assertEquals(ebsCase.getAwards().get(2), result.getLandAwards().getFirst());
     assertEquals(1, result.getOtherAssetAwards().size());
-    assertEquals(ebsCase.getAwards().get(3), result.getOtherAssetAwards().get(0));
+    assertEquals(ebsCase.getAwards().get(3), result.getOtherAssetAwards().getFirst());
     assertEquals(EbsProceedingMappingContexts, result.getProceedingOutcomes());
   }
 
@@ -144,7 +144,7 @@ class EbsApplicationMappingContextBuilderTest {
     Exception e = assertThrows(CaabApplicationException.class, () ->
         applicationService.buildCaseOutcomeMappingContext(ebsCase, EbsProceedingMappingContexts));
 
-    assertEquals(String.format("Failed to find AwardType with code: %s",
+    assertEquals("Failed to find AwardType with code: %s".formatted(
         ebsCase.getAwards().get(3).getAwardType()), e.getMessage());
   }
 
@@ -154,8 +154,8 @@ class EbsApplicationMappingContextBuilderTest {
 
     PriorAuthorityTypeDetails priorAuthorityTypeDetails =
         buildPriorAuthorityTypeDetails(REFERENCE_DATA_ITEM_TYPE_LOV);
-    PriorAuthorityTypeDetail priorAuthorityTypeDetail = priorAuthorityTypeDetails.getContent().get(0);
-    PriorAuthorityDetail priorAuthoritiesItem = priorAuthorityTypeDetail.getPriorAuthorities().get(0);
+    PriorAuthorityTypeDetail priorAuthorityTypeDetail = priorAuthorityTypeDetails.getContent().getFirst();
+    PriorAuthorityDetail priorAuthoritiesItem = priorAuthorityTypeDetail.getPriorAuthorities().getFirst();
 
     when(lookupService.getPriorAuthorityType(ebsPriorAuthority.getPriorAuthorityType()))
         .thenReturn(Mono.just(Optional.of(priorAuthorityTypeDetail)));
@@ -165,28 +165,28 @@ class EbsApplicationMappingContextBuilderTest {
         .description("thedescription");
 
     when(lookupService.getCommonValue(priorAuthoritiesItem.getLovCode(),
-        ebsPriorAuthority.getDetails().get(0).getValue()))
+        ebsPriorAuthority.getDetails().getFirst().getValue()))
         .thenReturn(Mono.just(Optional.of(lookup)));
 
     EbsPriorAuthorityMappingContext result = applicationService.buildPriorAuthorityMappingContext(
         ebsPriorAuthority);
 
     verify(lookupService).getCommonValue(priorAuthoritiesItem.getLovCode(),
-        ebsPriorAuthority.getDetails().get(0).getValue());
+        ebsPriorAuthority.getDetails().getFirst().getValue());
 
     assertNotNull(result);
     assertEquals(ebsPriorAuthority, result.getEbsPriorAuthority());
     assertNotNull(result.getPriorAuthorityTypeLookup());
-    assertEquals(priorAuthorityTypeDetails.getContent().get(0),
+    assertEquals(priorAuthorityTypeDetails.getContent().getFirst(),
         result.getPriorAuthorityTypeLookup());
 
     assertNotNull(result.getItems());
     assertEquals(1, result.getItems().size());
-    assertEquals(priorAuthoritiesItem, result.getItems().get(0).getKey());
-    assertEquals(ebsPriorAuthority.getDetails().get(0).getValue(),
-        result.getItems().get(0).getValue().getCode());
+    assertEquals(priorAuthoritiesItem, result.getItems().getFirst().getKey());
+    assertEquals(ebsPriorAuthority.getDetails().getFirst().getValue(),
+        result.getItems().getFirst().getValue().getCode());
     assertEquals(lookup.getDescription(),
-        result.getItems().get(0).getValue().getDescription());
+        result.getItems().getFirst().getValue().getDescription());
   }
 
   @Test
@@ -195,7 +195,7 @@ class EbsApplicationMappingContextBuilderTest {
 
     PriorAuthorityTypeDetails priorAuthorityTypeDetails =
         buildPriorAuthorityTypeDetails("otherDataType");
-    PriorAuthorityTypeDetail priorAuthorityTypeDetail = priorAuthorityTypeDetails.getContent().get(0);
+    PriorAuthorityTypeDetail priorAuthorityTypeDetail = priorAuthorityTypeDetails.getContent().getFirst();
 
     when(lookupService.getPriorAuthorityType(ebsPriorAuthority.getPriorAuthorityType()))
         .thenReturn(Mono.just(Optional.of(priorAuthorityTypeDetail)));
@@ -206,17 +206,17 @@ class EbsApplicationMappingContextBuilderTest {
     assertNotNull(result);
     assertEquals(ebsPriorAuthority, result.getEbsPriorAuthority());
     assertNotNull(result.getPriorAuthorityTypeLookup());
-    assertEquals(priorAuthorityTypeDetails.getContent().get(0),
+    assertEquals(priorAuthorityTypeDetails.getContent().getFirst(),
         result.getPriorAuthorityTypeLookup());
 
     assertNotNull(result.getItems());
     assertEquals(1, result.getItems().size());
-    assertEquals(priorAuthorityTypeDetails.getContent().get(0).getPriorAuthorities().get(0),
-        result.getItems().get(0).getKey());
-    assertEquals(ebsPriorAuthority.getDetails().get(0).getValue(),
-        result.getItems().get(0).getValue().getCode());
-    assertEquals(ebsPriorAuthority.getDetails().get(0).getValue(),
-        result.getItems().get(0).getValue().getDescription());
+    assertEquals(priorAuthorityTypeDetails.getContent().getFirst().getPriorAuthorities().getFirst(),
+        result.getItems().getFirst().getKey());
+    assertEquals(ebsPriorAuthority.getDetails().getFirst().getValue(),
+        result.getItems().getFirst().getValue().getCode());
+    assertEquals(ebsPriorAuthority.getDetails().getFirst().getValue(),
+        result.getItems().getFirst().getValue().getDescription());
   }
 
   @Test
@@ -230,7 +230,7 @@ class EbsApplicationMappingContextBuilderTest {
         () -> applicationService.buildPriorAuthorityMappingContext(
             ebsPriorAuthority));
 
-    assertEquals(String.format("Failed to find PriorAuthorityType with code: %s",
+    assertEquals("Failed to find PriorAuthorityType with code: %s".formatted(
         ebsPriorAuthority.getPriorAuthorityType()), e.getMessage());
   }
 
@@ -239,7 +239,7 @@ class EbsApplicationMappingContextBuilderTest {
     PriorAuthority ebsPriorAuthority = buildPriorAuthority();
 
     PriorAuthorityDetail priorAuthoritiesItem = new PriorAuthorityDetail()
-        .code(ebsPriorAuthority.getDetails().get(0).getName())
+        .code(ebsPriorAuthority.getDetails().getFirst().getName())
         .description("priorAuthItemDesc")
         .dataType(REFERENCE_DATA_ITEM_TYPE_LOV);
 
@@ -252,15 +252,15 @@ class EbsApplicationMappingContextBuilderTest {
         .thenReturn(Mono.just(Optional.of(priorAuthorityTypeDetail)));
 
     when(lookupService.getCommonValue(priorAuthoritiesItem.getLovCode(),
-        ebsPriorAuthority.getDetails().get(0).getValue()))
+        ebsPriorAuthority.getDetails().getFirst().getValue()))
         .thenReturn(Mono.empty());
 
     Exception e = assertThrows(CaabApplicationException.class,
         () -> applicationService.buildPriorAuthorityMappingContext(
             ebsPriorAuthority));
 
-    assertEquals(String.format("Failed to find common value with code: %s",
-        ebsPriorAuthority.getDetails().get(0).getValue()), e.getMessage());
+    assertEquals("Failed to find common value with code: %s".formatted(
+        ebsPriorAuthority.getDetails().getFirst().getValue()), e.getMessage());
   }
 
   @Test
@@ -299,9 +299,9 @@ class EbsApplicationMappingContextBuilderTest {
         .thenReturn(Mono.just(Optional.of(clientInvLookup)));
 
     CommonLookupValueDetail scopeLimitationOneLookup = new CommonLookupValueDetail()
-        .code(ebsProceeding.getScopeLimitations().get(0).getScopeLimitation())
+        .code(ebsProceeding.getScopeLimitations().getFirst().getScopeLimitation())
         .description("the limitation 1");
-    when(lookupService.getCommonValue(COMMON_VALUE_SCOPE_LIMITATIONS, ebsProceeding.getScopeLimitations().get(0).getScopeLimitation()))
+    when(lookupService.getCommonValue(COMMON_VALUE_SCOPE_LIMITATIONS, ebsProceeding.getScopeLimitations().getFirst().getScopeLimitation()))
         .thenReturn(Mono.just(Optional.of(scopeLimitationOneLookup)));
 
     CommonLookupValueDetail scopeLimitationTwoLookup = new CommonLookupValueDetail()
@@ -385,9 +385,9 @@ class EbsApplicationMappingContextBuilderTest {
     assertEquals(proceedingStatusLookup, result.getProceedingStatusLookup());
     assertNotNull(result.getScopeLimitations());
     assertEquals(3, result.getScopeLimitations().size());
-    assertEquals(ebsProceeding.getScopeLimitations().get(0),
-        result.getScopeLimitations().get(0).getKey());
-    assertEquals(scopeLimitationOneLookup, result.getScopeLimitations().get(0).getValue());
+    assertEquals(ebsProceeding.getScopeLimitations().getFirst(),
+        result.getScopeLimitations().getFirst().getKey());
+    assertEquals(scopeLimitationOneLookup, result.getScopeLimitations().getFirst().getValue());
     assertEquals(ebsProceeding.getScopeLimitations().get(1),
         result.getScopeLimitations().get(1).getKey());
     assertEquals(scopeLimitationTwoLookup, result.getScopeLimitations().get(1).getValue());
@@ -396,9 +396,9 @@ class EbsApplicationMappingContextBuilderTest {
     assertEquals(scopeLimitationThreeLookup, result.getScopeLimitations().get(2).getValue());
 
     // Check the proceeding outcome data
-    assertEquals(outcomeResults.getContent().get(0), result.getOutcomeResultLookup());
-    assertEquals(stageEnds.getContent().get(0), result.getStageEndLookup());
-    assertEquals(courts.getContent().get(0), result.getCourtLookup());
+    assertEquals(outcomeResults.getContent().getFirst(), result.getOutcomeResultLookup());
+    assertEquals(stageEnds.getContent().getFirst(), result.getStageEndLookup());
+    assertEquals(courts.getContent().getFirst(), result.getCourtLookup());
 //          return true; // Return true to indicate the match is successful
 //        })
 //        .verifyComplete();
@@ -526,7 +526,7 @@ class EbsApplicationMappingContextBuilderTest {
     assertEquals(applicationTypeLookup, result.getApplicationType());
     assertEquals(providerDetail, result.getProviderDetail());
     assertEquals(providerDetail.getOffices().get(2), result.getProviderOffice());
-    assertEquals(providerDetail.getOffices().get(2).getFeeEarners().get(0),
+    assertEquals(providerDetail.getOffices().get(2).getFeeEarners().getFirst(),
         result.getFeeEarnerContact());
     assertEquals(providerDetail.getOffices().get(2).getFeeEarners().get(1),
         result.getSupervisorContact());

@@ -197,7 +197,7 @@ public class CopyCaseSearchController {
     ProviderDetail provider = providerService.getProvider(user.getProvider().getId()).block();
     if (provider == null) {
       throw new CaabApplicationException(
-          String.format("Failed to retrieve Provider with id: %s",
+          "Failed to retrieve Provider with id: %s".formatted(
               user.getProvider().getId()));
     }
 

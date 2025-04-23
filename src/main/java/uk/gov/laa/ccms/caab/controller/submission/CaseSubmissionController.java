@@ -91,7 +91,7 @@ public class CaseSubmissionController {
     if (session.getAttribute(SUBMISSION_POLL_COUNT) != null) {
       submissionPollCount = (int) session.getAttribute(SUBMISSION_POLL_COUNT);
       if (submissionPollCount >= submissionConstants.getMaxPollCount()) {
-        return String.format("redirect:/submissions/%s/failed",
+        return "redirect:/submissions/%s/failed".formatted(
             SubmissionConstants.SUBMISSION_CREATE_CASE);
       }
     }

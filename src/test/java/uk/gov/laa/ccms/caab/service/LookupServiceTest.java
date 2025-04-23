@@ -634,8 +634,8 @@ public class LookupServiceTest {
 
     assertEquals(9, lookups.size());
 
-    assertEquals("contactTitle", lookups.get(0).getLeft());
-    assertEquals(titleLookupValueDetail, lookups.get(0).getRight().block().get());
+    assertEquals("contactTitle", lookups.getFirst().getLeft());
+    assertEquals(titleLookupValueDetail, lookups.getFirst().getRight().block().get());
 
     assertEquals("countryOfOrigin", lookups.get(1).getLeft());
 

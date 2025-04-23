@@ -45,7 +45,7 @@ class AddressSearchValidatorTest {
     addressSearchValidator.validate(addressSearch, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
-    assertEquals("required.uprn",errors.getAllErrors().get(0).getCode());
+    assertEquals("required.uprn",errors.getAllErrors().getFirst().getCode());
   }
 
   @Test
