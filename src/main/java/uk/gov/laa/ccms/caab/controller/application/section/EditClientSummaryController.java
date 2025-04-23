@@ -129,7 +129,7 @@ public class EditClientSummaryController extends AbstractClientSummaryController
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
     session.setAttribute(APPLICATION_CLIENT_NAMES, applicationClientNames);
 
-    return String.format("redirect:/submissions/%s", SUBMISSION_UPDATE_CLIENT);
+    return "redirect:/submissions/%s".formatted(SUBMISSION_UPDATE_CLIENT);
   }
 
 }

@@ -66,7 +66,7 @@ public class ProviderRequestDetailsValidator extends FileUploadValidator {
         .forEach(entry -> {
           String key = entry.getKey();
           DynamicOptionFormData value = entry.getValue();
-          String fieldPath = String.format("dynamicOptions[%s].fieldValue", key);
+          String fieldPath = "dynamicOptions[%s].fieldValue".formatted(key);
 
           if (value.isMandatory()) {
             validateRequiredField(fieldPath, value.getFieldValue(), value.getFieldDescription(),

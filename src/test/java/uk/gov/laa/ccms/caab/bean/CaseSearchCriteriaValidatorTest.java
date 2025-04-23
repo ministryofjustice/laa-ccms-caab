@@ -43,7 +43,7 @@ public class CaseSearchCriteriaValidatorTest {
     validator.validate(searchCriteria, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getGlobalErrorCount());
-    assertEquals("required.atLeastOneSearchCriteria", errors.getGlobalErrors().get(0).getCode());
+    assertEquals("required.atLeastOneSearchCriteria", errors.getGlobalErrors().getFirst().getCode());
   }
 
   @Test

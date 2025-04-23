@@ -153,8 +153,7 @@ public class CaabApiClientTest {
     final int page = 0;
     final int size = 2;
 
-    final String expectedUri = String.format(
-        "/applications?case-reference-number=%s&provider-id=%s&provider-case-ref=%s&client-surname=%s&client-reference=%s&fee-earner=%s&office-id=%s&status=%s&page=%s&size=%s",
+    final String expectedUri = "/applications?case-reference-number=%s&provider-id=%s&provider-case-ref=%s&client-surname=%s&client-reference=%s&fee-earner=%s&office-id=%s&status=%s&page=%s&size=%s".formatted(
         caseSearchCriteria.getCaseReference(),
         providerId,
         caseSearchCriteria.getProviderCaseReference(),
@@ -237,7 +236,7 @@ public class CaabApiClientTest {
     final String loginId = "user1";
     final String id = "123";
     final String type = "application-type";
-    final String expectedUri = String.format("/applications/{id}/%s", type);
+    final String expectedUri = "/applications/{id}/%s".formatted(type);
 
     final ApplicationType applicationType = new ApplicationType();
 
@@ -259,7 +258,7 @@ public class CaabApiClientTest {
     final String loginId = "user1";
     final String id = "123";
     final String type = "correspondence-address";
-    final String expectedUri = String.format("/applications/{id}/%s", type);
+    final String expectedUri = "/applications/{id}/%s".formatted(type);
 
     final AddressDetail correspondenceAddress = new AddressDetail();
 
@@ -709,8 +708,7 @@ public class CaabApiClientTest {
     final String loginId = "user123";
     final Integer providerId = 456;
 
-    final String expectedUri = String.format(
-        "/case-outcomes?case-reference-number=%s&provider-id=%s",
+    final String expectedUri = "/case-outcomes?case-reference-number=%s&provider-id=%s".formatted(
         caseReferenceNumber,
         providerId);
 
@@ -740,8 +738,7 @@ public class CaabApiClientTest {
     final String caseReferenceNumber = "123";
     final Integer providerId = 456;
 
-    final String expectedUri = String.format(
-        "/case-outcomes?case-reference-number=%s&provider-id=%s",
+    final String expectedUri = "/case-outcomes?case-reference-number=%s&provider-id=%s".formatted(
         caseReferenceNumber,
         providerId);
 
@@ -838,8 +835,7 @@ public class CaabApiClientTest {
     final String ccmsModule = "ccmsMod";
     final Boolean transferPending = true;
     final String loginId = "user123";
-    final String expectedUri = String.format(
-        "/evidence?application-or-outcome-id=%s&case-reference-number=%s&provider-id=%s&document-type=%s&ccms-module=%s&transfer-pending=%s",
+    final String expectedUri = "/evidence?application-or-outcome-id=%s&case-reference-number=%s&provider-id=%s&document-type=%s&ccms-module=%s&transfer-pending=%s".formatted(
         applicationOrOutcomeId,
         caseReferenceNumber,
         providerId,
@@ -882,8 +878,7 @@ public class CaabApiClientTest {
     final Boolean transferPending = true;
     final String size = "1000";
 
-    final String expectedUri = String.format(
-        "/evidence?size=%s&application-or-outcome-id=%s&case-reference-number=%s&provider-id=%s&document-type=%s&ccms-module=%s&transfer-pending=%s",
+    final String expectedUri = "/evidence?size=%s&application-or-outcome-id=%s&case-reference-number=%s&provider-id=%s&document-type=%s&ccms-module=%s&transfer-pending=%s".formatted(
         size,
         applicationOrOutcomeId,
         caseReferenceNumber,

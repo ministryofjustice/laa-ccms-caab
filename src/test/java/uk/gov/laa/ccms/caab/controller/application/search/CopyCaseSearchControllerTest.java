@@ -122,7 +122,7 @@ public class CopyCaseSearchControllerTest {
             .sessionAttr(USER_DETAILS, user)));
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
-    assertEquals(String.format("Failed to retrieve Provider with id: %s", user.getProvider().getId()), exception.getCause().getMessage());
+    assertEquals("Failed to retrieve Provider with id: %s".formatted(user.getProvider().getId()), exception.getCause().getMessage());
   }
 
   @Test

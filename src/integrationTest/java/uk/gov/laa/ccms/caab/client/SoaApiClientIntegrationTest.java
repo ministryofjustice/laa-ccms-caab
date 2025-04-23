@@ -62,8 +62,8 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     String contractDetailsJson = objectMapper.writeValueAsString(contractDetails);
 
     wiremock.stubFor(
-        get(String.format("/contract-details?providerFirmId=%s&officeId=%s", providerFirmId,
-            officeId))
+        get("/contract-details?providerFirmId=%s&officeId=%s".formatted(providerFirmId,
+                officeId))
             .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
             .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
             .willReturn(okJson(contractDetailsJson)));
@@ -83,7 +83,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     ClientDetail clientDetail = new ClientDetail(); // Fill with appropriate data
     String clientDetailJson = objectMapper.writeValueAsString(clientDetail);
 
-    wiremock.stubFor(get(String.format("/clients/%s", clientReferenceNumber))
+    wiremock.stubFor(get("/clients/%s".formatted(clientReferenceNumber))
         .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
         .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
         .willReturn(okJson(clientDetailJson)));
@@ -109,7 +109,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
 
     String notificationAttachmentJson = objectMapper.writeValueAsString(notificationAttachment);
 
-    wiremock.stubFor(get(String.format("/documents/%s", documentId))
+    wiremock.stubFor(get("/documents/%s".formatted(documentId))
         .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
         .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
         .willReturn(okJson(notificationAttachmentJson)));

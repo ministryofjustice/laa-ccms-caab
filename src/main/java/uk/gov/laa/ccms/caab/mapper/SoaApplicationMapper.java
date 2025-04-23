@@ -1102,7 +1102,7 @@ public interface SoaApplicationMapper {
   @Named("mapProceedingId")
   default String proceedingId(final Integer id) {
     return id != null
-        ? String.format("P_%s", id)
+        ? "P_%s".formatted(id)
         : null;
   }
 
