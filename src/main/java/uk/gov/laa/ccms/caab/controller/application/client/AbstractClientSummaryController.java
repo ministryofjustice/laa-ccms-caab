@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
+import static uk.gov.laa.ccms.caab.bean.NestedBindingResult.asNestedProperty;
+
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -7,7 +9,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ChildBindingResult;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
@@ -43,14 +44,14 @@ public abstract class AbstractClientSummaryController {
       final ClientFlowFormData clientFlowFormData,
       final BindingResult bindingResult) {
     basicValidator.validate(clientFlowFormData.getBasicDetails(),
-        new ChildBindingResult(bindingResult, "basicDetails"));
+        asNestedProperty(bindingResult, "basicDetails"));
     contactValidator.validate(clientFlowFormData.getContactDetails(),
-        new ChildBindingResult(bindingResult, "contactDetails"));
+        asNestedProperty(bindingResult, "contactDetails"));
     addressValidator.validate(clientFlowFormData.getAddressDetails(),
-        new ChildBindingResult(bindingResult, "addressDetails"));
+        asNestedProperty(bindingResult, "addressDetails"));
     opportunitiesValidator.validate(
         clientFlowFormData.getMonitoringDetails(),
-        new ChildBindingResult(bindingResult, "monitoringDetails"));
+        asNestedProperty(bindingResult, "monitoringDetails"));
 
     if (bindingResult.hasErrors()) {
       throw new CaabApplicationException(

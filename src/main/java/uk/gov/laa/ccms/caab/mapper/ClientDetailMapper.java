@@ -185,6 +185,7 @@ public interface ClientDetailMapper {
 
   @Mapping(target = "telephoneMobile",
       source = "mobileNumber")
+
   @Mapping(target = "telephoneHomePresent",
       expression = "java(contacts.getTelephoneHome() != null "
          + "&& !contacts.getTelephoneHome().isEmpty())")
@@ -194,6 +195,8 @@ public interface ClientDetailMapper {
   @Mapping(target = "telephoneMobilePresent",
       expression = "java(contacts.getMobileNumber() != null "
          + "&& !contacts.getMobileNumber().isEmpty())")
+  @Mapping(target = "emailAddress",
+      expression = "java(contacts.getEmailAddress() == null ? \"\" : contacts.getEmailAddress())")
   ClientFormDataContactDetails toClientFormDataContactDetails(ContactDetail contacts);
 
   @Mapping(target = "houseNameNumber", source = "house")
