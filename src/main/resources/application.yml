@@ -52,6 +52,9 @@ spring:
     aws:
       s3:
         region: ${S3_REGION}
+  threads:
+    virtual:
+      enabled: true
 
 server:
   tomcat:
