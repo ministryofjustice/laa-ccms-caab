@@ -28,7 +28,8 @@ public class NestedBindingResult implements BindingResult {
    * Creates an instance of {@code NestedBindingResult} representing a nested scoped
    * binding result for a specific property of the parent {@code BindingResult}.
    *
-   * @param parent the parent {@code BindingResult} from which the nested binding result derives and delegates operations
+   * @param parent the parent {@code BindingResult} from which the nested binding result derives
+   *               and delegates operations
    * @param nestedPropertyName the name of the nested property to scope the binding result to
    * @return a {@code NestedBindingResult} scoped to the specified nested property
    */
@@ -90,7 +91,8 @@ public class NestedBindingResult implements BindingResult {
   @Override
   public void rejectValue(String field, String errorCode, Object[] errorArgs,
       String defaultMessage) {
-    parent.rejectValue(nestedPropertyName + "." + field, errorCode, errorArgs, defaultMessage);
+    parent.rejectValue(nestedPropertyName + "." + field, errorCode,
+        errorArgs, defaultMessage);
   }
 
   @Override

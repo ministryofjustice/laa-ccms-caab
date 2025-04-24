@@ -33,5 +33,4 @@ public class SubmissionConstants {
   @Value("${submission.max-poll-count:6}")
   private Integer maxPollCount;
 
-
 }

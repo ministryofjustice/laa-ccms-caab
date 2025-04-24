@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
+import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_CLIENT_NAMES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_REFERENCE;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
@@ -71,8 +73,9 @@ public class ClientSubmissionsInProgressController {
    *
    * @return The view name for the submission in progress.
    */
-  @GetMapping("/submissions/client-update")
+  @GetMapping("/{context}/client-update")
   public String clientUpdateSubmission(
+      @PathVariable(CONTEXT_NAME) final String context,
       @SessionAttribute(SUBMISSION_TRANSACTION_ID) final String transactionId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(APPLICATION_CLIENT_NAMES) final BaseClientDetail baseClient,
@@ -94,7 +97,7 @@ public class ClientSubmissionsInProgressController {
       session.removeAttribute(CLIENT_FLOW_FORM_DATA);
       session.removeAttribute(APPLICATION_CLIENT_NAMES);
 
-      return "redirect:/submissions/client-update/confirmed";
+      return "redirect:/%s/client-update/confirmed".formatted(context);
     }
 
     return viewIncludingPollCount(session, SUBMISSION_UPDATE_CLIENT);

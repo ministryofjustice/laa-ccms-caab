@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
+import uk.gov.laa.ccms.caab.constants.ContextConstants;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.BaseOffice;
@@ -32,14 +33,13 @@ import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.RecordHistory;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class ClientSubmissionsConfirmedControllerTest {
+class ClientSubmissionsConfirmedControllerTest {
 
   @Mock
   private HttpSession httpSession;
@@ -89,11 +89,19 @@ public class ClientSubmissionsConfirmedControllerTest {
   }
 
   @Test
-  void testClientUpdateSubmitted() throws Exception {
-    mockMvc.perform(post("/submissions/client-update/confirmed"))
+  void testClientUpdateSubmittedApplication() throws Exception {
+    mockMvc.perform(post("/" + ContextConstants.APPLICATION + "/client-update/confirmed"))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/sections"));
+  }
+
+  @Test
+  void testClientUpdateSubmittedAmendment() throws Exception {
+    mockMvc.perform(post("/" + ContextConstants.AMENDMENTS + "/client-update/confirmed"))
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/amendments/summary"));
   }
 
   private UserDetail buildUser() {
