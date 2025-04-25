@@ -12,22 +12,22 @@ import lombok.EqualsAndHashCode;
 public class ClientFormDataContactDetails extends AbstractClientFormData {
 
   @Size(max = 15)
-  private String telephoneHome;
+  private String telephoneHome = "";
 
   @Size(max = 15)
-  private String telephoneWork;
+  private String telephoneWork = "";
 
   @Size(max = 15)
-  private String telephoneMobile;
+  private String telephoneMobile = "";
 
   @Size(max = 200)
-  private String emailAddress;
+  private String emailAddress = "";
 
   @Size(max = 35)
-  private String password;
+  private String password = "";
 
   @Size(max = 35)
-  private String passwordReminder;
+  private String passwordReminder = "";
 
   private String correspondenceMethod;
   private String correspondenceLanguage;
