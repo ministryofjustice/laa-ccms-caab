@@ -190,7 +190,7 @@ public class ClientSummaryControllerTest {
             .sessionAttr(USER_DETAILS, userDetails)
             .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/submissions/client-create"));
+        .andExpect(redirectedUrl("/application/client-create"));
 
     verify(clientService).createClient(any(), any());
   }

@@ -62,11 +62,11 @@ public class ClientSubmissionsInProgressControllerTest {
     when(clientService.getClientStatus(anyString())).thenReturn(Mono.just(clientStatus));
 
     mockMvc.perform(
-            get("/submissions/client-create")
+            get("/application/client-create")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
                 .sessionAttr(USER_DETAILS, user))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/submissions/client-create/confirmed"));
+        .andExpect(redirectedUrl("/application/client-create/confirmed"));
   }
 
   @Test
@@ -80,7 +80,7 @@ public class ClientSubmissionsInProgressControllerTest {
     when(clientService.getClientStatus(anyString())).thenReturn(Mono.just(clientStatus));
 
     mockMvc.perform(
-            get("/submissions/client-create")
+            get("/application/client-create")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
                 .sessionAttr(USER_DETAILS, user))
         .andExpect(status().isOk())
@@ -103,7 +103,7 @@ public class ClientSubmissionsInProgressControllerTest {
     final int submissionPollCount = 3;
 
     mockMvc.perform(
-            get("/submissions/client-create")
+            get("/application/client-create")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
                 .sessionAttr(USER_DETAILS, user)
                 .sessionAttr(SUBMISSION_POLL_COUNT, submissionPollCount))
@@ -124,12 +124,12 @@ public class ClientSubmissionsInProgressControllerTest {
     int submissionPollCount = 6;
 
     mockMvc.perform(
-            get("/submissions/client-create")
+            get("/application/client-create")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
                 .sessionAttr(USER_DETAILS, user)
                 .sessionAttr("submissionPollCount", submissionPollCount))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/submissions/client-create/failed"));
+        .andExpect(redirectedUrl("/application/client-create/failed"));
   }
 
   @Test
@@ -147,12 +147,12 @@ public class ClientSubmissionsInProgressControllerTest {
     when(clientService.updateClientNames(anyString(), any(), any())).thenReturn(Mono.empty());
 
     mockMvc.perform(
-            get("/submissions/client-update")
+            get("/application/client-update")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
                 .sessionAttr(USER_DETAILS, user)
                 .sessionAttr(APPLICATION_CLIENT_NAMES, baseClient))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/submissions/client-update/confirmed"));
+        .andExpect(redirectedUrl("/application/client-update/confirmed"));
   }
 
   @Test
@@ -168,7 +168,7 @@ public class ClientSubmissionsInProgressControllerTest {
     when(clientService.getClientStatus(anyString())).thenReturn(Mono.just(clientStatus));
 
     mockMvc.perform(
-            get("/submissions/client-update")
+            get("/application/client-update")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
                 .sessionAttr(USER_DETAILS, user)
                 .sessionAttr(APPLICATION_CLIENT_NAMES, baseClient))

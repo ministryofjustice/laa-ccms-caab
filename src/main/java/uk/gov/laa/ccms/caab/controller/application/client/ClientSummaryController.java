@@ -74,6 +74,6 @@ public class ClientSummaryController extends AbstractClientSummaryController {
 
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
 
-    return String.format("redirect:/submissions/%s", SUBMISSION_CREATE_CLIENT);
+    return String.format("redirect:/application/%s", SUBMISSION_CREATE_CLIENT);
   }
 }

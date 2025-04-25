@@ -20,7 +20,7 @@ public class SubmissionConfirmedController {
    *
    * @return The view name for a completed submission.
    */
-  @GetMapping("/submissions/{submissionType}/confirmed")
+  @GetMapping("/application/{submissionType}/confirmed")
   public String submissionsConfirmed(
       @PathVariable String submissionType,
       Model model) {

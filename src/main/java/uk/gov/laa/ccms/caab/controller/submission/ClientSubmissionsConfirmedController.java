@@ -42,7 +42,7 @@ public class ClientSubmissionsConfirmedController {
    * @param session The http session for the view.
    * @return The view name for a client creation submission page.
    */
-  @PostMapping("/submissions/client-create/confirmed")
+  @PostMapping("/application/client-create/confirmed")
   public String clientCreateSubmitted(
       @SessionAttribute(APPLICATION_FORM_DATA) final ApplicationFormData applicationFormData,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
@@ -72,7 +72,7 @@ public class ClientSubmissionsConfirmedController {
    * @return Redirect path to go back to either case sections or amendments summary page.
    */
   @PostMapping("/{context}/client-update/confirmed")
-  public String clientUpdateSubmitted(@PathVariable("context") String context) {
+  public String clientUpdateSubmitted(@PathVariable("context") final String context) {
     if (ContextConstants.APPLICATION.equals(context)) {
       return "redirect:/application/sections";
     }

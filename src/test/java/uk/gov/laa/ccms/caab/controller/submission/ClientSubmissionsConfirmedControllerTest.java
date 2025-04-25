@@ -78,7 +78,7 @@ class ClientSubmissionsConfirmedControllerTest {
         .thenReturn(Mono.empty());
 
     mockMvc.perform(
-            post("/submissions/client-create/confirmed")
+            post("/application/client-create/confirmed")
                 .sessionAttr(APPLICATION_FORM_DATA, mockApplicationFormData)
                 .sessionAttr(USER_DETAILS, user)
                 .sessionAttr(CLIENT_REFERENCE, clientReferenceNumber)

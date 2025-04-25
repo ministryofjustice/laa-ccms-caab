@@ -9,7 +9,7 @@ import lombok.Getter;
  * @author Jamie Briggs
  */
 @Getter
-public class ContextConstants {
+public final class ContextConstants {
 
   /*
    * Context param name
@@ -19,7 +19,7 @@ public class ContextConstants {
   /*
    * Context name for new submissions
    */
-  public static final String APPLICATION = "submissions";
+  public static final String APPLICATION = "application";
 
   /*
    * Context name for amendments

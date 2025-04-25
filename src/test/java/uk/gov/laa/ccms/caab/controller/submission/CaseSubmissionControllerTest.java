@@ -78,11 +78,11 @@ class CaseSubmissionControllerTest {
     mockStatus.setReferenceNumber("ref123");
     when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
 
-    mockMvc.perform(get("/submissions/case-create")
+    mockMvc.perform(get("/application/case-create")
             .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
             .sessionAttr(USER_DETAILS, userDetail))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/submissions/%s/confirmed".formatted(SUBMISSION_CREATE_CASE)));
+        .andExpect(redirectedUrl("/application/%s/confirmed".formatted(SUBMISSION_CREATE_CASE)));
 
     verify(applicationService, times(1)).getCaseStatus(anyString());
   }
@@ -93,7 +93,7 @@ class CaseSubmissionControllerTest {
     final TransactionStatus mockStatus = new TransactionStatus(); // No reference number set
     when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
 
-    mockMvc.perform(get("/submissions/case-create")
+    mockMvc.perform(get("/application/case-create")
             .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
             .sessionAttr(USER_DETAILS, userDetail))
         .andExpect(status().isOk())
@@ -106,7 +106,7 @@ class CaseSubmissionControllerTest {
   @Test
   @DisplayName("Test clientUpdateSubmitted - Removes active case and redirects to home")
   void testClientUpdateSubmitted() throws Exception {
-    mockMvc.perform(post("/submissions/case-create/confirmed")
+    mockMvc.perform(post("/application/case-create/confirmed")
             .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/home"));
@@ -132,7 +132,7 @@ class CaseSubmissionControllerTest {
 
     final String view = caseSubmissionController.viewIncludingPollCount(session);
 
-    assertEquals("redirect:/submissions/%s/failed".formatted(SUBMISSION_CREATE_CASE), view);
+    assertEquals("redirect:/application/%s/failed".formatted(SUBMISSION_CREATE_CASE), view);
   }
 
   @Test

@@ -209,7 +209,7 @@ class EditClientSummaryControllerTest {
             .sessionAttr(ACTIVE_CASE, activeCase)
             .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/submissions/client-update"));
+        .andExpect(redirectedUrl("/application/client-update"));
 
     verify(clientService).updateClient(any(), any(), any());
   }

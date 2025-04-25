@@ -769,7 +769,7 @@ class ActionsAndNotificationsControllerTest {
             .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/submissions/notification-attachments/confirmed"));
+        .andExpect(redirectedUrl("/application/notification-attachments/confirmed"));
 
     verify(notificationService).submitNotificationAttachments(notification.getNotificationId(),
         userDetails.getLoginId(), userDetails.getUserType(), userDetails.getUserId());
@@ -786,7 +786,7 @@ class ActionsAndNotificationsControllerTest {
     when(notificationService.getNotification("234", userDetails.getUserId(), userDetails.getProvider().getId()))
         .thenReturn(Mono.just(notification));
 
-    mockMvc.perform(post("/submissions/notification-attachments/confirmed")
+    mockMvc.perform(post("/application/notification-attachments/confirmed")
             .sessionAttr("notification", notification)
             .flashAttrs(flashMap))
         .andDo(print())

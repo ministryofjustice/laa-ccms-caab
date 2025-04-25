@@ -292,7 +292,7 @@ public class ProviderRequestsController {
         evidenceService.uploadAndUpdateDocuments(
             documents, UNRELATED_CASE_REFERENCE, notificationId, userDetail).block();
       }
-      return "redirect:/submissions/provider-request/confirmed";
+      return "redirect:/application/provider-request/confirmed";
     }
   }
 
@@ -544,7 +544,7 @@ public class ProviderRequestsController {
         providerRequestDocumentUploadValidator.getMaxFileSize());
   }
 
-  @PostMapping("/submissions/provider-request/confirmed")
+  @PostMapping("/application/provider-request/confirmed")
   public String clientUpdateSubmitted(final SessionStatus sessionStatus) {
     sessionStatus.setComplete();
     return "redirect:/home";
