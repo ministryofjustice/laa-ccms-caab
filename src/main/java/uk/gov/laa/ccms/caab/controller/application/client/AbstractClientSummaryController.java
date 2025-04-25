@@ -1,20 +1,12 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
-import static uk.gov.laa.ccms.caab.bean.NestedBindingResult.asNestedProperty;
-
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -30,34 +22,8 @@ public abstract class AbstractClientSummaryController {
 
   protected final ClientService clientService;
 
-  protected final ClientBasicDetailsValidator basicValidator;
-
-  protected final ClientContactDetailsValidator contactValidator;
-
-  protected final ClientAddressDetailsValidator addressValidator;
-
-  protected final ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator;
-
   protected final ClientDetailMapper clientDetailsMapper;
 
-  protected void validateClientFlowFormData(
-      final ClientFlowFormData clientFlowFormData,
-      final BindingResult bindingResult) {
-    basicValidator.validate(clientFlowFormData.getBasicDetails(),
-        asNestedProperty(bindingResult, "basicDetails"));
-    contactValidator.validate(clientFlowFormData.getContactDetails(),
-        asNestedProperty(bindingResult, "contactDetails"));
-    addressValidator.validate(clientFlowFormData.getAddressDetails(),
-        asNestedProperty(bindingResult, "addressDetails"));
-    opportunitiesValidator.validate(
-        clientFlowFormData.getMonitoringDetails(),
-        asNestedProperty(bindingResult, "monitoringDetails"));
-
-    if (bindingResult.hasErrors()) {
-      throw new CaabApplicationException(
-          "Client submission containing missing or invalid client details.");
-    }
-  }
 
   protected Mono<Void> populateSummaryListLookups(
       final ClientFlowFormData clientFlowFormData, final Model model) {

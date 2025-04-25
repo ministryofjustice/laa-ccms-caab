@@ -211,11 +211,6 @@ class EditClientSummaryControllerTest {
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/submissions/client-update"));
 
-    verify(basicValidator).validate(any(), any());
-    verify(contactValidator).validate(any(), any());
-    verify(addressValidator).validate(any(), any());
-    verify(opportunitiesValidator).validate(any(), any());
-
     verify(clientService).updateClient(any(), any(), any());
   }
 

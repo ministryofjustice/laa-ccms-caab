@@ -65,8 +65,10 @@ public interface ClientDetailMapper {
       source = "mentalIncapacity")
   ClientPersonalDetail toClientPersonalDetail(ClientFormDataBasicDetails basicDetails);
 
-  @Mapping(target = "mobileNumber",
-      source = "telephoneMobile")
+  @Mapping(target = "telephoneHome", source = "telephoneHome", defaultValue = "")
+  @Mapping(target = "telephoneWork", source = "telephoneWork", defaultValue = "")
+  @Mapping(target = "mobileNumber", source = "telephoneMobile", defaultValue = "")
+  @Mapping(target = "emailAddress", source = "emailAddress", defaultValue = "")
   ContactDetail toContactDetails(ClientFormDataContactDetails contactDetails);
 
   @Mapping(target = "addressId",
@@ -185,7 +187,6 @@ public interface ClientDetailMapper {
 
   @Mapping(target = "telephoneMobile",
       source = "mobileNumber")
-
   @Mapping(target = "telephoneHomePresent",
       expression = "java(contacts.getTelephoneHome() != null "
          + "&& !contacts.getTelephoneHome().isEmpty())")
@@ -195,8 +196,6 @@ public interface ClientDetailMapper {
   @Mapping(target = "telephoneMobilePresent",
       expression = "java(contacts.getMobileNumber() != null "
          + "&& !contacts.getMobileNumber().isEmpty())")
-  @Mapping(target = "emailAddress",
-      expression = "java(contacts.getEmailAddress() == null ? \"\" : contacts.getEmailAddress())")
   ClientFormDataContactDetails toClientFormDataContactDetails(ContactDetail contacts);
 
   @Mapping(target = "houseNameNumber", source = "house")

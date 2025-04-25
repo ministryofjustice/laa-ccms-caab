@@ -9,17 +9,12 @@ import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -40,17 +35,9 @@ public class ClientSummaryController extends AbstractClientSummaryController {
   public ClientSummaryController(
       final LookupService lookupService,
       final ClientService clientService,
-      final ClientBasicDetailsValidator basicValidator,
-      final ClientContactDetailsValidator contactValidator,
-      final ClientAddressDetailsValidator addressValidator,
-      final ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator,
       final ClientDetailMapper clientDetailsMapper) {
     super(lookupService,
         clientService,
-        basicValidator,
-        contactValidator,
-        addressValidator,
-        opportunitiesValidator,
         clientDetailsMapper);
   }
 
@@ -78,10 +65,7 @@ public class ClientSummaryController extends AbstractClientSummaryController {
   public String clientDetailsSummary(
       @ModelAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      final BindingResult bindingResult,
       final HttpSession session) {
-
-    validateClientFlowFormData(clientFlowFormData, bindingResult);
 
     final ClientTransactionResponse response =
         clientService.createClient(

@@ -29,7 +29,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientPersonalDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContactDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 
-public class ClientDetailMapperTest {
+class ClientDetailMapperTest {
 
   private ClientDetailMapper clientDetailMapper;
 
@@ -68,10 +68,10 @@ public class ClientDetailMapperTest {
   private final String disability = "TEST";
   private final String specialConsiderations = "TEST SPECIAL CONSIDERATIONS";
 
-  private String dateofBirth = "10/6/2000";
-  private String day = "10";
-  private String month = "6";
-  private String year = "2000";
+  private final String dateofBirth = "10/6/2000";
+  private final String day = "10";
+  private final String month = "6";
+  private final String year = "2000";
 
 
   @BeforeEach
@@ -261,10 +261,23 @@ public class ClientDetailMapperTest {
   }
 
   @Test
+  void toContactDetailsNullEmail() {
+    ClientFormDataContactDetails clientFormDataContactDetails = new ClientFormDataContactDetails();
+
+    ContactDetail contactDetail = clientDetailMapper.toContactDetails(clientFormDataContactDetails);
+
+    assertEquals("", contactDetail.getEmailAddress());
+    assertEquals("", contactDetail.getTelephoneHome());
+    assertEquals("", contactDetail.getTelephoneWork());
+    assertEquals("", contactDetail.getMobileNumber());
+  }
+
+  @Test
   void toContactDetails_null() {
     ContactDetail contactDetail = clientDetailMapper.toContactDetails(null);
     assertNull(contactDetail);
   }
+
 
   @Test
   void toAddressDetail() {

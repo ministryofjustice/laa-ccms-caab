@@ -3,7 +3,6 @@ package uk.gov.laa.ccms.caab.controller.application.client;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -192,11 +191,6 @@ public class ClientSummaryControllerTest {
             .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/submissions/client-create"));
-
-    verify(basicValidator).validate(any(), any());
-    verify(contactValidator).validate(any(), any());
-    verify(addressValidator).validate(any(), any());
-    verify(opportunitiesValidator).validate(any(), any());
 
     verify(clientService).createClient(any(), any());
   }

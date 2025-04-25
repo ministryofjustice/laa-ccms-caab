@@ -1,9 +1,7 @@
 package uk.gov.laa.ccms.caab.client;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -187,15 +185,11 @@ public class SoaApiClient {
    * @param caseDetail the details of the case to be created
    * @return a {@link Mono} emitting the {@link CaseTransactionResponse} for the created case
    */
-  @SneakyThrows
   public Mono<CaseTransactionResponse> createCase(
       final String loginId,
       final String userType,
       final CaseDetail caseDetail) {
-    ObjectMapper objectMapper = new ObjectMapper();
-    String caseJson = objectMapper.writeValueAsString(caseDetail);
-    return Mono.empty();
-    /*return soaApiWebClient
+    return soaApiWebClient
         .post()
         .uri(builder -> builder.path("/cases")
             .build())
@@ -206,7 +200,7 @@ public class SoaApiClient {
         .retrieve()
         .bodyToMono(CaseTransactionResponse.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiCreateError(
-            e, "Cases"));*/
+            e, "Cases"));
   }
 
   /**
