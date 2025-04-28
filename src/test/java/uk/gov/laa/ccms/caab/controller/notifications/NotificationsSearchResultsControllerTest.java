@@ -60,7 +60,7 @@ class NotificationsSearchResultsControllerTest {
   }
 
   @Test
-  void testGetSearchResults_returnsData() throws Exception {
+  void getSearchResultsReturnsData() throws Exception {
     Notifications notificationsMock = getNotificationsMock();
 
     when(notificationService.getNotifications(any(), anyInt(), any(), any()))
@@ -76,7 +76,7 @@ class NotificationsSearchResultsControllerTest {
   }
 
   @Test
-  void testGetSearchResults_noData() throws Exception {
+  void getSearchResultsNoData() throws Exception {
     Notifications notificationsMock = new Notifications()
         .content(new ArrayList<>());
 
@@ -92,7 +92,7 @@ class NotificationsSearchResultsControllerTest {
   }
 
   @Test
-  void testSearchResults_WithoutAssignedUser_AndNoContent_ThrowsException() {
+  void searchResultsWithoutAssignedUserAndNoContentThrowsException() {
     NotificationSearchCriteria criteria = buildNotificationSearchCriteria();
     criteria.setAssignedToUserId("mildew@rot.com");
 
@@ -112,7 +112,7 @@ class NotificationsSearchResultsControllerTest {
   }
 
   @Test
-  void testGetSearchResults_SortIsApplied() throws Exception {
+  void getSearchResultsSortIsApplied() throws Exception {
     Notifications notificationsMock = getNotificationsMock();
 
     when(notificationService.getNotifications(any(), anyInt(), any(), any()))
@@ -138,7 +138,7 @@ class NotificationsSearchResultsControllerTest {
   }
 
   @Test
-  void testGetSearchResults_WhenSortCriteriaChanged_ResetPage() throws Exception {
+  void getSearchResultsWhenSortCriteriaChangedResetPage() throws Exception {
     Notifications notificationsMock = getNotificationsMock();
 
     when(notificationService.getNotifications(any(), anyInt(), any(), any()))

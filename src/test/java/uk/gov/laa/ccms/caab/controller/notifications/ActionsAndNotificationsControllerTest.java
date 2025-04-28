@@ -180,7 +180,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testNotificationsEndpointAndViewNameWhenNotificationTypeSet_Data() throws Exception {
+  void notificationsEndpointAndViewNameWhenNotificationTypeSetData() throws Exception {
     Notifications notificationsMock = getNotificationsMock();
 
     Mockito.when(notificationService.getNotifications(any(), anyInt(), any(), any()))
@@ -194,7 +194,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testNotificationsEndpoint_FromHeaderURL_NotificationType_ALL_RedirectsToResultsEndpoint()
+  void notificationsEndpointFromHeaderURLNotificationTypeALLRedirectsToResultsEndpoint()
       throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Map<String, Object> flashMap = new HashMap<>();
@@ -210,7 +210,7 @@ class ActionsAndNotificationsControllerTest {
 
 
   @Test
-  void testNotificationsFromHeaderEndpoint_dropdownCodeExecutes_andRedirectsToSearchResultsEndpoint()
+  void notificationsFromHeaderEndpointDropdownCodeExecutesAndRedirectsToSearchResultsEndpoint()
       throws Exception {
 
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
@@ -257,7 +257,7 @@ class ActionsAndNotificationsControllerTest {
 
 
   @Test
-  void testNotificationsSearchValidationForcesReturnToSearchPage() throws Exception {
+  void notificationsSearchValidationForcesReturnToSearchPage() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
@@ -303,7 +303,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testSearchEndpointCalledFromRefineSearch_ExecuteDropdownCodeRedirectToSearchPage()
+  void searchEndpointCalledFromRefineSearchExecuteDropdownCodeRedirectToSearchPage()
       throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Map<String, Object> flashMap = new HashMap<>();
@@ -341,7 +341,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testNotificationsSearchEndpoint_validCriteria_redirectsToSearchResults() throws Exception {
+  void notificationsSearchEndpointValidCriteriaRedirectsToSearchResults() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
@@ -354,7 +354,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testGetNotification() throws Exception {
+  void getNotification() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Notification notification = buildNotification();
     Notifications notificationsMock = getNotificationsMock();
@@ -374,7 +374,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testGetNotification_throwsException_whenNotification_notFound() {
+  void getNotificationThrowsExceptionWhenNotificationNotFound() {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Notifications notificationsMock = getNotificationsMock();
     Map<String, Object> flashMap = new HashMap<>();
@@ -392,7 +392,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testReturnToNotifications_Data_RedirectsToResultsPage() throws Exception {
+  void returnToNotificationsDataRedirectsToResultsPage() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Notifications notificationsMock = getNotificationsMock();
     Map<String, Object> flashMap = new HashMap<>();
@@ -408,7 +408,7 @@ class ActionsAndNotificationsControllerTest {
 
 
   @Test
-  void testReturnToNotifications_noData_redirectsToResultsPage() throws Exception {
+  void returnToNotificationsNoDataRedirectsToResultsPage() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("notificationSearchCriteria", criteria);
@@ -421,7 +421,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testRetrieveNotificationAttachment_redirectsToNotificationPage() throws Exception {
+  void retrieveNotificationAttachmentRedirectsToNotificationPage() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Notifications notificationsMock = getNotificationsMock();
     Map<String, Object> flashMap = new HashMap<>();
@@ -438,7 +438,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testRetrieveNotificationAttachment_redirectsToProvideDocumentsPage() throws Exception {
+  void retrieveNotificationAttachmentRedirectsToProvideDocumentsPage() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Notifications notificationsMock = getNotificationsMock();
     Map<String, Object> flashMap = new HashMap<>();
@@ -455,7 +455,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testRemmoveNotificationAttachment_removesAttachment_andRedirectsToProvideDocumentsPage()
+  void remmoveNotificationAttachmentRemovesAttachmentAndRedirectsToProvideDocumentsPage()
       throws Exception {
 
     Map<String, Object> flashMap = new HashMap<>();
@@ -473,7 +473,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testRetrieveDraftNotificationAttachment_redirectsToProvideDocumentsPage() throws Exception {
+  void retrieveDraftNotificationAttachmentRedirectsToProvideDocumentsPage() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Notifications notificationsMock = getNotificationsMock();
     Map<String, Object> flashMap = new HashMap<>();
@@ -489,7 +489,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testEditDraftNotificationAttachment_redirectsToUploadPage() throws Exception {
+  void editDraftNotificationAttachmentRedirectsToUploadPage() throws Exception {
 
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
@@ -518,7 +518,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testGetUploadNotificationAttachment_createsDropsDownAndDisplaysUploadForm()
+  void getUploadNotificationAttachmentCreatesDropsDownAndDisplaysUploadForm()
       throws Exception {
 
     CommonLookupValueDetail documentType = new CommonLookupValueDetail()
@@ -555,7 +555,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testPostUploadNotificationAttachment_newPostalAttachment_uploadsAndReturnsToProvideDocumentsPage()
+  void postUploadNotificationAttachmentNewPostalAttachmentUploadsAndReturnsToProvideDocumentsPage()
       throws Exception {
 
     NotificationAttachmentUploadFormData attachmentUploadFormData =
@@ -595,7 +595,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testPostUploadNotificationAttachment_editPostalAttachment_updatesAndReturnsToProvideDocumentsPage()
+  void postUploadNotificationAttachmentEditPostalAttachmentUpdatesAndReturnsToProvideDocumentsPage()
       throws Exception {
 
     NotificationAttachmentUploadFormData attachmentUploadFormData =
@@ -637,7 +637,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testPostUploadNotificationAttachment_newElectronicAttachment_runsVirusScan_uploadsAndReturnsToProvideDocumentsPage()
+  void postUploadNotificationAttachmentNewElectronicAttachmentRunsVirusScanUploadsAndReturnsToProvideDocumentsPage()
       throws Exception {
 
     String filename = "filename";
@@ -685,7 +685,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testGetProvideDocumentsOrEvidence_populatesDraftAttachments_andDisplaysPage()
+  void getProvideDocumentsOrEvidencePopulatesDraftAttachmentsAndDisplaysPage()
       throws Exception {
 
     Notification notification = buildNotification();
@@ -741,7 +741,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testPostProvideDocumentsOrEvidence_submitsDraftAttachments_andRedirectsToSubmissionConfirmation()
+  void postProvideDocumentsOrEvidenceSubmitsDraftAttachmentsAndRedirectsToSubmissionConfirmation()
       throws Exception {
 
     Notification notification = buildNotification();
@@ -776,7 +776,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testPostNotificationAttachmentsSubmissionConfirmed_redirectsToProvideDocumentsOrEvidencePage()
+  void postNotificationAttachmentsSubmissionConfirmedRedirectsToProvideDocumentsOrEvidencePage()
       throws Exception {
 
     Notification notification = buildNotification();
@@ -795,7 +795,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testPostProvideDocumentsOrEvidence_noDocumentsToSubmit()
+  void postProvideDocumentsOrEvidenceNoDocumentsToSubmit()
       throws Exception {
 
     Notification notification = buildNotification();
@@ -837,7 +837,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testGetNotification_populatesDocumentUrls() throws Exception {
+  void getNotificationPopulatesDocumentUrls() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Notifications notificationsMock = getNotificationsMock();
     Notification notification = buildNotification();
@@ -862,7 +862,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testSubmitNotificationResponse_success() throws Exception {
+  void submitNotificationResponseSuccess() throws Exception {
     Map<String, Object> flashMap = new HashMap<>();
 
     NotificationResponseFormData formData = new NotificationResponseFormData();
@@ -893,7 +893,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testSubmitNotificationResponse_throwsException_whenSubmitNotificationFails() {
+  void submitNotificationResponseThrowsExceptionWhenSubmitNotificationFails() {
     Map<String, Object> flashMap = new HashMap<>();
 
     NotificationResponseFormData formData = new NotificationResponseFormData();
@@ -923,7 +923,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testSubmitNotificationResponse_handlesValidationError() throws Exception {
+  void submitNotificationResponseHandlesValidationError() throws Exception {
     Map<String, Object> flashMap = new HashMap<>();
 
     NotificationResponseFormData formData = new NotificationResponseFormData();

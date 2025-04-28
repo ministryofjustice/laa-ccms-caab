@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.mapper;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +22,7 @@ class AddressFormDataMapperTest {
   }
 
   @Test
-  void testToAddressFormDataNotNull() {
+  void toAddressFormDataNotNull() {
     final AddressDetail address = new AddressDetail();
     address.setHouseNameOrNumber("123");
     address.setCity("CityName");
@@ -47,13 +48,13 @@ class AddressFormDataMapperTest {
   }
 
   @Test
-  void testToAddressFormDataWithNull() {
+  void toAddressFormDataWithNull() {
     final AddressFormData result = mapper.toAddressFormData(null);
     assertNull(result);
   }
 
   @Test
-  void testToAddressNotNull() {
+  void toAddressNotNull() {
     final AddressFormData addressFormData = new AddressFormData();
     addressFormData.setHouseNameNumber("123");
     addressFormData.setCityTown("CityName");
@@ -79,13 +80,13 @@ class AddressFormDataMapperTest {
   }
 
   @Test
-  void testToAddressWithNull() {
+  void toAddressWithNull() {
     final AddressDetail result = mapper.toAddress(null);
     assertNull(result);
   }
 
   @Test
-  void testUpdateAddressFormDataNotNull() {
+  void updateAddressFormDataNotNull() {
     final AddressFormData addressDetails = new AddressFormData();
     final AddressResultRowDisplay addressResultRowDisplay = new AddressResultRowDisplay();
     addressResultRowDisplay.setCountry("Country");
@@ -108,7 +109,7 @@ class AddressFormDataMapperTest {
   }
 
   @Test
-  void testUpdateAddressFormDataWithNull() {
+  void updateAddressFormDataWithNull() {
     final AddressFormData addressDetails = new AddressFormData();
     mapper.updateAddressFormData(addressDetails, null);
 

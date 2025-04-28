@@ -28,24 +28,24 @@ class OrganisationSearchCriteriaValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     searchCriteria =
         new OrganisationSearchCriteria();
     errors = new BeanPropertyBindingResult(searchCriteria, ORGANISATION_SEARCH_CRITERIA);
   }
 
   @Test
-  public void supports_ReturnsTrueForOrganisationSearchCriteriaClass() {
+  void supports_ReturnsTrueForOrganisationSearchCriteriaClass() {
     assertTrue(organisationSearchCriteriaValidator.supports(OrganisationSearchCriteria.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(organisationSearchCriteriaValidator.supports(Object.class));
   }
 
   @Test
-  public void validate_noErrors() {
+  void validate_noErrors() {
     searchCriteria.setName("aname");
 
     organisationSearchCriteriaValidator.validate(searchCriteria, errors);
@@ -53,7 +53,7 @@ class OrganisationSearchCriteriaValidatorTest {
   }
 
   @Test
-  public void validate_generatesErrors() {
+  void validate_generatesErrors() {
     organisationSearchCriteriaValidator.validate(searchCriteria, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("name"));

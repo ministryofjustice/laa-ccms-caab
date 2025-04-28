@@ -29,7 +29,7 @@ import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResponse;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResult;
 
 @ExtendWith(MockitoExtension.class)
-public class AddressServiceTest {
+class AddressServiceTest {
 
   @Mock
   private OrdinanceSurveyApiClient ordinanceSurveyApiClient;

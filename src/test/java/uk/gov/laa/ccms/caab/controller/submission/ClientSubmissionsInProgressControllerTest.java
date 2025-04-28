@@ -29,7 +29,7 @@ import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
-public class ClientSubmissionsInProgressControllerTest {
+class ClientSubmissionsInProgressControllerTest {
 
   @Mock
   private ClientService clientService;
@@ -46,12 +46,12 @@ public class ClientSubmissionsInProgressControllerTest {
   private MockMvc mockMvc;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
   }
 
   @Test
-  void testSubmissionsInProgress_withClientReferenceNumber() throws Exception {
+  void submissionsInProgressWithClientReferenceNumber() throws Exception {
     UserDetail user = new UserDetail();
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
@@ -70,7 +70,7 @@ public class ClientSubmissionsInProgressControllerTest {
   }
 
   @Test
-  void testSubmissionsInProgress_withoutClientReferenceNumber() throws Exception {
+  void submissionsInProgressWithoutClientReferenceNumber() throws Exception {
     UserDetail user = new UserDetail();
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
@@ -88,7 +88,7 @@ public class ClientSubmissionsInProgressControllerTest {
   }
 
   @Test
-  void testSubmissionsInProgress_withPollingThresholdNotReached() throws Exception {
+  void submissionsInProgressWithPollingThresholdNotReached() throws Exception {
     final UserDetail user = new UserDetail();
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
@@ -111,7 +111,7 @@ public class ClientSubmissionsInProgressControllerTest {
   }
 
   @Test
-  void testSubmissionsInProgress_withPollingThresholdReached() throws Exception {
+  void submissionsInProgressWithPollingThresholdReached() throws Exception {
     UserDetail user = new UserDetail();
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
@@ -133,7 +133,7 @@ public class ClientSubmissionsInProgressControllerTest {
   }
 
   @Test
-  void testClientUpdateSubmission_withClientReferenceNumber() throws Exception {
+  void clientUpdateSubmissionWithClientReferenceNumber() throws Exception {
     final UserDetail user = new UserDetail();
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
@@ -156,7 +156,7 @@ public class ClientSubmissionsInProgressControllerTest {
   }
 
   @Test
-  void testClientUpdateSubmission_withoutClientReferenceNumber() throws Exception {
+  void clientUpdateSubmissionWithoutClientReferenceNumber() throws Exception {
     final UserDetail user = new UserDetail();
     user.setLoginId("testLogin");
     user.setUserType("testUserType");

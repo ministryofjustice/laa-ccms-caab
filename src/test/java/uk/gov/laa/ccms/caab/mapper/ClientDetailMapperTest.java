@@ -29,7 +29,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientPersonalDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContactDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 
-public class ClientDetailMapperTest {
+class ClientDetailMapperTest {
 
   private ClientDetailMapper clientDetailMapper;
 
@@ -80,7 +80,7 @@ public class ClientDetailMapperTest {
   }
 
   @Test
-  void testMapStringToListNonNullValue() {
+  void mapStringToListNonNullValue() {
     String inputValue = "testString";
     List<String> expectedOutput = Collections.singletonList(inputValue);
     List<String> result = clientDetailMapper.mapStringToList(inputValue);
@@ -88,7 +88,7 @@ public class ClientDetailMapperTest {
   }
 
   @Test
-  void testMapStringToListNullValue() {
+  void mapStringToListNullValue() {
     List<String> result = clientDetailMapper.mapStringToList(null);
     assertNull(result);
   }
@@ -99,7 +99,7 @@ public class ClientDetailMapperTest {
       "15/7/1990, 15, 6, 1990",
       "31/12/2022, 31, 11, 2022"
   })
-  void testMapDateOfBirth(String day, int expectedDay, int expectedMonth, int expectedYear) {
+  void mapDateOfBirth(String day, int expectedDay, int expectedMonth, int expectedYear) {
     // Create a ClientDetails object for testing
     ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
     basicDetails.setDateOfBirth(day);
@@ -118,7 +118,7 @@ public class ClientDetailMapperTest {
   }
 
   @Test
-  void testMapDateOfBirthWithNull() {
+  void mapDateOfBirthWithNull() {
     assertNull(clientDetailMapper.mapDateOfBirth(null));
   }
 
@@ -130,7 +130,7 @@ public class ClientDetailMapperTest {
       "John, James,, John James",
       ",,,",
   })
-  void testMapFullName(String firstName, String middleNames, String surname,
+  void mapFullName(String firstName, String middleNames, String surname,
                        String expectedFullName) {
     // Create a ClientDetails object for testing
     ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
@@ -377,7 +377,7 @@ public class ClientDetailMapperTest {
   }
 
   @Test
-  void testToClientFormDataContactDetails() {
+  void toClientFormDataContactDetails() {
     ClientFormDataContactDetails expectedClientFormDataContactDetails =
         buildClientFormDataContactDetails();
     ContactDetail contactDetail = buildContactDetail();
@@ -389,14 +389,14 @@ public class ClientDetailMapperTest {
   }
 
   @Test
-  void testToClientFormDataContactDetails_null() {
+  void toClientFormDataContactDetailsNull() {
     ClientFormDataContactDetails contactDetails =
         clientDetailMapper.toClientFormDataContactDetails(null);
     assertNull(contactDetails);
   }
 
   @Test
-  void testToClientFormDataAddressDetails() {
+  void toClientFormDataAddressDetails() {
     ClientFormDataAddressDetails expectedClientFormDataAddressDetails =
         buildClientFormDataAddressDetails();
     AddressDetail addressDetail = buildAddressDetail();
@@ -408,14 +408,14 @@ public class ClientDetailMapperTest {
   }
 
   @Test
-  void testToClientFormDataAddressDetails_null() {
+  void toClientFormDataAddressDetailsNull() {
     ClientFormDataAddressDetails addressDetails =
         clientDetailMapper.toClientFormDataAddressDetails(null);
     assertNull(addressDetails);
   }
 
   @Test
-  void testToClientFlowFormData_null() {
+  void toClientFlowFormDataNull() {
     ClientFlowFormData clientFlowFormData = clientDetailMapper.toClientFlowFormData(null);
     assertNull(clientFlowFormData);
   }

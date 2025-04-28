@@ -27,7 +27,7 @@ class ReflectionUtilsTest {
   }
 
   @Test
-  void testNullifyStrings_NoFields() {
+  void nullifyStringsNoFields() {
     TestClassNoFields obj = new TestClassNoFields();
     ReflectionUtils.nullifyStrings(obj);
     // Just asserting that no exception is thrown
@@ -35,7 +35,7 @@ class ReflectionUtilsTest {
   }
 
   @Test
-  void testNullifyStrings_NonStringFields() {
+  void nullifyStringsNonStringFields() {
     TestClassNonStringFields obj = new TestClassNonStringFields();
     ReflectionUtils.nullifyStrings(obj);
     assertEquals(42, obj.number);
@@ -43,7 +43,7 @@ class ReflectionUtilsTest {
   }
 
   @Test
-  void testNullifyStrings_StringFieldsWithValues() {
+  void nullifyStringsStringFieldsWithValues() {
     TestClassWithStrings obj = new TestClassWithStrings();
     ReflectionUtils.nullifyStrings(obj);
     assertEquals("value1", obj.string1);

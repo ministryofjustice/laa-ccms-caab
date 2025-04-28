@@ -38,7 +38,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class ProviderControllerTest {
+class ProviderControllerTest {
 
   @Mock
   ProviderFirmValidator validator;
@@ -55,12 +55,12 @@ public class ProviderControllerTest {
   private WebApplicationContext webApplicationContext;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(providerController).build();
   }
 
   @Test
-  public void testGetProviderSwitchScreen() throws Exception {
+  void getProviderSwitchScreen() throws Exception {
 
     BaseProvider providerFirm = new BaseProvider()
         .id(12345)
@@ -84,7 +84,7 @@ public class ProviderControllerTest {
   }
 
   @Test
-  public void testUpdateProviderOptions() throws Exception {
+  void updateProviderOptions() throws Exception {
 
     String loginId = "testLoginId";
     String userType = "testUserType";
@@ -125,7 +125,7 @@ public class ProviderControllerTest {
   }
 
   @Test
-  public void testUpdateProviderOptions_returnsToSwitchProviderScreen_whenValidationFails() throws Exception {
+  void updateProviderOptionsReturnsToSwitchProviderScreenWhenValidationFails() throws Exception {
 
     String loginId = "testLoginId";
     String userType = "testUserType";

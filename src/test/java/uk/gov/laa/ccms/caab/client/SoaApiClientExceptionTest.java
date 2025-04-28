@@ -9,9 +9,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class SoaApiClientExceptionTest {
-    
+
   @Test
-  public void testConstructorWithMessage() {
+  void constructorWithMessage() {
     String expectedMessage = "Test Exception";
     SoaApiClientException exception = new SoaApiClientException(expectedMessage);
 
@@ -20,7 +20,7 @@ class SoaApiClientExceptionTest {
   }
 
   @Test
-  public void testConstructorWithMessageAndCause() {
+  void constructorWithMessageAndCause() {
     String expectedMessage = "Test Exception";
     Exception cause = new Exception("Cause Exception");
     SoaApiClientException exception = new SoaApiClientException(expectedMessage, cause);

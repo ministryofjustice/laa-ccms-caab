@@ -18,7 +18,7 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class FeatureAspectTest {
+class FeatureAspectTest {
 
   @Mock
   private FeatureService featureService;

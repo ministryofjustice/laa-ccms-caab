@@ -3,7 +3,6 @@ package uk.gov.laa.ccms.caab.controller.application.client;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -54,7 +53,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 @ExtendWith(MockitoExtension.class)
-public class ClientSummaryControllerTest {
+class ClientSummaryControllerTest {
 
   @Mock
   private ClientService clientService;
@@ -99,7 +98,7 @@ public class ClientSummaryControllerTest {
       .loginId("testLoginId");
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = MockMvcBuilders.standaloneSetup(clientSummaryController).build();
 
     clientFlowFormData = new ClientFlowFormData("create");
@@ -120,7 +119,7 @@ public class ClientSummaryControllerTest {
 
   @Test
   @DisplayName("Test client details summary without correspondence language")
-  void testClientDetailsSummary_Get() throws Exception {
+  void clientDetailsSummaryGet() throws Exception {
 
     when(lookupService.getClientLookups(any())).thenReturn(
         List.of(
@@ -150,7 +149,7 @@ public class ClientSummaryControllerTest {
 
   @Test
   @DisplayName("Test client details summary with correspondence language")
-  void testClientDetailsSummary_Get_withCorrespondenceLanguage() throws Exception {
+  void clientDetailsSummaryGetWithCorrespondenceLanguage() throws Exception {
     final String TEST_LANGUAGE = "TEST";
     clientFlowFormData.getContactDetails().setCorrespondenceLanguage(TEST_LANGUAGE);
 
@@ -181,7 +180,7 @@ public class ClientSummaryControllerTest {
 
 
   @Test
-  void testClientDetailsSummary_Post() throws Exception {
+  void clientDetailsSummaryPost() throws Exception {
     final ClientFlowFormData clientFlowFormData = new ClientFlowFormData("create");
 
     when(clientService.createClient(any(), any())).thenReturn(

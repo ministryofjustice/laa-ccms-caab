@@ -8,47 +8,47 @@ import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 
-public class ApplicationTypeBuilderTest {
+class ApplicationTypeBuilderTest {
 
   private final ApplicationTypeBuilder builder = new ApplicationTypeBuilder();
 
   @Test
-  void testApplicationTypeForSubstantiveWithoutDelegatedFunctions() {
+  void applicationTypeForSubstantiveWithoutDelegatedFunctions() {
     ApplicationType result = builder.applicationType("SUB", false).build();
     assertEquals("SUB", result.getId());
     assertEquals("Substantive", result.getDisplayValue());
   }
 
   @Test
-  void testApplicationTypeForSubstantiveWithDelegatedFunctions() {
+  void applicationTypeForSubstantiveWithDelegatedFunctions() {
     ApplicationType result = builder.applicationType("SUB", true).build();
     assertEquals("SUBDP", result.getId());
     assertEquals("Substantive Delegated Functions", result.getDisplayValue());
   }
 
   @Test
-  void testApplicationTypeForEmergencyWithoutDelegatedFunctions() {
+  void applicationTypeForEmergencyWithoutDelegatedFunctions() {
     ApplicationType result = builder.applicationType("EMER", false).build();
     assertEquals("EMER", result.getId());
     assertEquals("Emergency", result.getDisplayValue());
   }
 
   @Test
-  void testApplicationTypeForEmergencyWithDelegatedFunctions() {
+  void applicationTypeForEmergencyWithDelegatedFunctions() {
     ApplicationType result = builder.applicationType("EMER", true).build();
     assertEquals("DP", result.getId());
     assertEquals("Emergency Delegated Functions", result.getDisplayValue());
   }
 
   @Test
-  void testApplicationTypeForExceptionalCaseFunding() {
+  void applicationTypeForExceptionalCaseFunding() {
     ApplicationType result = builder.applicationType("ECF", false).build();
     assertEquals("ECF", result.getId());
     assertEquals("Exceptional Case Funding", result.getDisplayValue());
   }
 
   @Test
-  void testDevolvedPowers() throws ParseException {
+  void devolvedPowers() throws ParseException {
     SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
     DevolvedPowersDetail devolvedPowers = new DevolvedPowersDetail();
     devolvedPowers.setUsed(true);
@@ -59,7 +59,7 @@ public class ApplicationTypeBuilderTest {
   }
 
   @Test
-  void testDevolvedPowersContractFlag() {
+  void devolvedPowersContractFlag() {
     DevolvedPowersDetail devolvedPowers = new DevolvedPowersDetail();
     devolvedPowers.setContractFlag("ContractFlag");
 

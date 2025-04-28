@@ -17,7 +17,7 @@ import uk.gov.laa.ccms.caab.bean.notification.NotificationAttachmentUploadFormDa
 import uk.gov.laa.ccms.caab.constants.SendBy;
 
 @ExtendWith(SpringExtension.class)
-public class NotificationAttachmentUploadValidatorTest {
+class NotificationAttachmentUploadValidatorTest {
 
   private final NotificationAttachmentUploadValidator validator = new NotificationAttachmentUploadValidator(
       List.of("pdf", "doc"),
@@ -28,7 +28,7 @@ public class NotificationAttachmentUploadValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     notificationAttachmentUploadFormData =
         new NotificationAttachmentUploadFormData();
     errors = new BeanPropertyBindingResult(notificationAttachmentUploadFormData,
@@ -36,17 +36,17 @@ public class NotificationAttachmentUploadValidatorTest {
   }
 
   @Test
-  public void supports_ReturnsTrueForCorrectClass() {
+  void supports_ReturnsTrueForCorrectClass() {
     assertTrue(validator.supports(NotificationAttachmentUploadFormData.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(validator.supports(Object.class));
   }
 
   @Test
-  public void validate_electronic_noErrors() {
+  void validate_electronic_noErrors() {
     notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
     notificationAttachmentUploadFormData.setSendBy(SendBy.ELECTRONIC);
 
@@ -55,7 +55,7 @@ public class NotificationAttachmentUploadValidatorTest {
   }
 
   @Test
-  public void validate_postal_noErrors() {
+  void validate_postal_noErrors() {
     notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
     notificationAttachmentUploadFormData.setSendBy(SendBy.POSTAL);
 
@@ -64,7 +64,7 @@ public class NotificationAttachmentUploadValidatorTest {
   }
 
   @Test
-  public void validate_fileMandatory() {
+  void validate_fileMandatory() {
     notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
     notificationAttachmentUploadFormData.setFile(null);
 
@@ -74,7 +74,7 @@ public class NotificationAttachmentUploadValidatorTest {
   }
 
   @Test
-  public void validate_fileExtension() {
+  void validate_fileExtension() {
     notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
     notificationAttachmentUploadFormData.setFile(new MockMultipartFile(
         "theFile",
@@ -89,7 +89,7 @@ public class NotificationAttachmentUploadValidatorTest {
   }
 
   @Test
-  public void validate_fileSize() {
+  void validate_fileSize() {
     notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
     notificationAttachmentUploadFormData.setFile(new MockMultipartFile(
         "theFile",
@@ -104,7 +104,7 @@ public class NotificationAttachmentUploadValidatorTest {
   }
 
   @Test
-  public void validate_documentTypeMandatory() {
+  void validate_documentTypeMandatory() {
     notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
     notificationAttachmentUploadFormData.setDocumentType(null);
 
@@ -114,7 +114,7 @@ public class NotificationAttachmentUploadValidatorTest {
   }
 
   @Test
-  public void validate_descriptionMaxLength() {
+  void validate_descriptionMaxLength() {
     notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
     notificationAttachmentUploadFormData.setDocumentDescription("a".repeat(256));
 

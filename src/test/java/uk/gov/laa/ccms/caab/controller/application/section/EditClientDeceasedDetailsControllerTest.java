@@ -36,7 +36,7 @@ class EditClientDeceasedDetailsControllerTest {
   private ClientFormDataDeceasedDetails deceasedDetails;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(editClientDeceasedDetailsController).build();
 
     deceasedDetails = new ClientFormDataDeceasedDetails();
@@ -46,7 +46,7 @@ class EditClientDeceasedDetailsControllerTest {
   }
 
   @Test
-  void testEditClientDetailsDeceased() throws Exception {
+  void editClientDetailsDeceased() throws Exception {
     this.mockMvc.perform(get("/application/sections/client/details/deceased")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andDo(print())
@@ -55,7 +55,7 @@ class EditClientDeceasedDetailsControllerTest {
   }
 
   @Test
-  void testEditClientDetailsDeceasedPost() throws Exception {
+  void editClientDetailsDeceasedPost() throws Exception {
 
     mockMvc.perform(post("/application/sections/client/details/deceased")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
@@ -65,7 +65,7 @@ class EditClientDeceasedDetailsControllerTest {
   }
 
   @Test
-  void testEditClientDetailsDeceasedPostValidationError() throws Exception {
+  void editClientDetailsDeceasedPostValidationError() throws Exception {
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];

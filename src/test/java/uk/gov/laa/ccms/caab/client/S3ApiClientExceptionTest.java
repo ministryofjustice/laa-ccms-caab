@@ -8,10 +8,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class S3ApiClientExceptionTest {
+class S3ApiClientExceptionTest {
 
   @Test
-  public void testConstructorWithMessage() {
+  void constructorWithMessage() {
     String expectedMessage = "Test Exception";
     S3ApiClientException exception = new S3ApiClientException(expectedMessage);
 
@@ -20,7 +20,7 @@ public class S3ApiClientExceptionTest {
   }
 
   @Test
-  public void testConstructorWithMessageAndCause() {
+  void constructorWithMessageAndCause() {
     String expectedMessage = "Test Exception";
     Exception cause = new Exception("Cause Exception");
     S3ApiClientException exception = new S3ApiClientException(expectedMessage, cause);

@@ -53,7 +53,7 @@ class EditClientEqualOpportunitiesMonitoringDetailsControllerTest {
   private ClientFormDataMonitoringDetails monitoringDetails;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
 
     monitoringDetails = new ClientFormDataMonitoringDetails();
@@ -68,7 +68,7 @@ class EditClientEqualOpportunitiesMonitoringDetailsControllerTest {
   }
 
   @Test
-  public void testEditClientEqualOpportunitiesMonitoringGet() throws Exception {
+  void editClientEqualOpportunitiesMonitoringGet() throws Exception {
     when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN)).thenReturn(
         Mono.just(ethnicityLookupDetail));
 
@@ -83,7 +83,7 @@ class EditClientEqualOpportunitiesMonitoringDetailsControllerTest {
   }
 
   @Test
-  public void testEditClientEqualOpportunitiesMonitoringPostValidationError() throws Exception {
+  void editClientEqualOpportunitiesMonitoringPostValidationError() throws Exception {
 
     doAnswer(invocation -> {
       Errors errors = (Errors) invocation.getArguments()[1];
@@ -106,7 +106,7 @@ class EditClientEqualOpportunitiesMonitoringDetailsControllerTest {
   }
 
   @Test
-  public void testEditClientEqualOpportunitiesMonitoringPost() throws Exception {
+  void editClientEqualOpportunitiesMonitoringPost() throws Exception {
     monitoringDetails.setDisability("TEST");
     monitoringDetails.setEthnicOrigin("TEST");
 

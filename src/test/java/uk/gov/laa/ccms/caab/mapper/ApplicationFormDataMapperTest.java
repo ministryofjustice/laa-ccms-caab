@@ -22,7 +22,7 @@ class ApplicationFormDataMapperTest {
   private final ApplicationFormDataMapper mapper = new ApplicationFormDataMapperImpl();
 
   @Test
-  void testToApplicationTypeFormData() {
+  void toApplicationTypeFormData() {
     // Create a sample DevolvedPowersDetail
     DevolvedPowersDetail devolvedPowers = new DevolvedPowersDetail();
     devolvedPowers.setUsed(true);
@@ -46,7 +46,7 @@ class ApplicationFormDataMapperTest {
   }
 
   @Test
-  void testToApplicationProviderDetailsFormData() {
+  void toApplicationProviderDetailsFormData() {
     final ApplicationProviderDetails providerDetails = new ApplicationProviderDetails();
     providerDetails.setOffice(new IntDisplayValue().id(1).displayValue("OfficeName"));
     providerDetails.setFeeEarner(new StringDisplayValue().id("10").displayValue("Fee Earner Name"));
@@ -66,7 +66,7 @@ class ApplicationFormDataMapperTest {
   }
 
   @Test
-  void testToApplicationProviderDetailsFormData_withNull() {
+  void toApplicationProviderDetailsFormDataWithNull() {
     final ApplicationFormData result = mapper.toApplicationProviderDetailsFormData(null);
     assertNull(result);
   }

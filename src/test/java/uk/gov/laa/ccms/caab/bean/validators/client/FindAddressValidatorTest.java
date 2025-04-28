@@ -30,23 +30,23 @@ class FindAddressValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     addressDetails = buildAddressDetails();
     errors = new BeanPropertyBindingResult(addressDetails, "addressDetails");
   }
 
   @Test
-  public void supports_ReturnsTrueForClientDetailsClass() {
+  void supports_ReturnsTrueForClientDetailsClass() {
     assertTrue(findAddressValidator.supports(ClientFormDataAddressDetails.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(findAddressValidator.supports(Object.class));
   }
 
   @Test
-  public void validate() {
+  void validate() {
     findAddressValidator.validate(addressDetails, errors);
     System.out.println(errors.getAllErrors());
     assertFalse(errors.hasErrors());
@@ -54,7 +54,7 @@ class FindAddressValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_countryRequired(final String country) {
+  void validate_countryRequired(final String country) {
     addressDetails.setCountry(country);
     findAddressValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
@@ -64,7 +64,7 @@ class FindAddressValidatorTest {
   }
 
   @Test
-  public void validate_countryNotUnitedKingdom() {
+  void validate_countryNotUnitedKingdom() {
     addressDetails.setCountry("USA");
     findAddressValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
@@ -75,7 +75,7 @@ class FindAddressValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_houseNameNumberRequired(String houseNameNumber) {
+  void validate_houseNameNumberRequired(String houseNameNumber) {
     addressDetails.setHouseNameNumber(houseNameNumber);
     findAddressValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
@@ -96,7 +96,7 @@ class FindAddressValidatorTest {
       "cityTown, test, 3",
       "county, test, 3"
   })
-  public void validate_noFixedAbode_invalid(String field, String value, int numberOfErrors) {
+  void validate_noFixedAbode_invalid(String field, String value, int numberOfErrors) {
     addressDetails = new ClientFormDataAddressDetails();
     addressDetails.setNoFixedAbode(true);
 

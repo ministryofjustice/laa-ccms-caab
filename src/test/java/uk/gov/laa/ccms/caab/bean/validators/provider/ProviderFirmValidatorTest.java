@@ -14,7 +14,7 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.provider.ProviderFirmFormData;
 
 @ExtendWith(SpringExtension.class)
-public class ProviderFirmValidatorTest {
+class ProviderFirmValidatorTest {
 
   @InjectMocks
   private ProviderFirmValidator validator;
@@ -24,23 +24,23 @@ public class ProviderFirmValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     providerFirmFormData = new ProviderFirmFormData(); // Assuming that the default constructor sets all fields to null.
     errors = new BeanPropertyBindingResult(providerFirmFormData, "providerFirmFormData");
   }
 
   @Test
-  public void supports_ReturnsTrueForSupportedClass() {
+  void supports_ReturnsTrueForSupportedClass() {
     assertTrue(validator.supports(ProviderFirmFormData.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(validator.supports(Object.class));
   }
 
   @Test
-  public void validate_validatesNoProviderFirmSelected() {
+  void validate_validatesNoProviderFirmSelected() {
     validator.validate(providerFirmFormData, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getFieldErrors().size());
@@ -48,7 +48,7 @@ public class ProviderFirmValidatorTest {
   }
 
   @Test
-  public void validate_noErrors() {
+  void validate_noErrors() {
     providerFirmFormData.setProviderFirmId(12345);
     validator.validate(providerFirmFormData, errors);
     assertFalse(errors.hasErrors());

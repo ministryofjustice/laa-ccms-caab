@@ -128,7 +128,7 @@ class EbsApplicationMapperTest {
   private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
   @Test
-  void testToApplicationDetailDevolvedPowers() {
+  void toApplicationDetailDevolvedPowers() {
     CaseDetail ebsCaseDetail = buildCaseDetail(APP_TYPE_EMERGENCY_DEVOLVED_POWERS);
     EbsApplicationMappingContext applicationMappingContext =
         buildApplicationMappingContext(
@@ -228,7 +228,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToApplicationDetailNonDevolvedPowers() {
+  void toApplicationDetailNonDevolvedPowers() {
     EbsApplicationMappingContext applicationMappingContext =
         buildApplicationMappingContext(
             buildCaseDetail(APP_TYPE_EMERGENCY),
@@ -243,7 +243,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToCorrespondenceAddress() {
+  void toCorrespondenceAddress() {
     EbsApplicationMappingContext applicationMappingContext =
         buildApplicationMappingContext(
             buildCaseDetail(APP_TYPE_EMERGENCY),
@@ -274,7 +274,7 @@ class EbsApplicationMapperTest {
   }
 
     @Test
-  void testToCostEntry() {
+  void toCostEntry() {
     CostLimitation ebsCostLimitation = buildCostLimitation("");
 
     CostEntryDetail result = applicationMapper.toCostEntry(ebsCostLimitation);
@@ -291,7 +291,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToProceeding() {
+  void toProceeding() {
     uk.gov.laa.ccms.data.model.Proceeding ebsProceeding =
         buildProceedingDetail(STATUS_DRAFT);
     EbsProceedingMappingContext proceedingMappingContext =
@@ -357,7 +357,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToScopeLimitation() {
+  void toScopeLimitation() {
     ScopeLimitation ebsScopeLimitation = buildScopeLimitation("");
     CommonLookupValueDetail scopeLimitationLookup = new CommonLookupValueDetail()
         .code("scopecode")
@@ -382,7 +382,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToProceedingOutcome() {
+  void toProceedingOutcome() {
     uk.gov.laa.ccms.data.model.Proceeding ebsProceeding =
         buildProceedingDetail(STATUS_DRAFT);
     EbsProceedingMappingContext proceedingMappingContext =
@@ -422,7 +422,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testMapMostRecentAssessment_SingleAssessment() {
+  void mapMostRecentAssessmentSingleAssessment() {
     uk.gov.laa.ccms.data.model.AssessmentResult ebsAssessmentResult =
         buildAssessmentResult("");
 
@@ -486,7 +486,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToAddress() {
+  void toAddress() {
     uk.gov.laa.ccms.data.model.AddressDetail ebsAddress = buildAddressDetail("");
 
     AddressDetail result = applicationMapper.toAddress(ebsAddress);
@@ -499,7 +499,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToClient() {
+  void toClient() {
     BaseClient ebsBaseClient = buildBaseClient();
 
     ClientDetail result = applicationMapper.toClient(ebsBaseClient);
@@ -515,7 +515,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToIndividualOpponent() {
+  void toIndividualOpponent() {
     OtherParty ebsOtherParty = buildOtherPartyPerson();
 
     OpponentDetail result = applicationMapper.toIndividualOpponent(ebsOtherParty);
@@ -581,7 +581,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToOrganisationOpponent() {
+  void toOrganisationOpponent() {
     OtherParty ebsOtherParty = buildOtherPartyOrganisation();
 
     OpponentDetail result = applicationMapper.toOrganisationOpponent(ebsOtherParty);
@@ -622,7 +622,7 @@ class EbsApplicationMapperTest {
 
 
   @Test
-  void testToLinkedCase() {
+  void toLinkedCase() {
     LinkedCase ebsLinkedCase = buildLinkedCase();
 
     LinkedCaseDetail result = applicationMapper.toLinkedCase(ebsLinkedCase);
@@ -643,7 +643,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToPriorAuthority() {
+  void toPriorAuthority() {
    PriorAuthority ebsPriorAuthority =
         buildPriorAuthority();
     EbsPriorAuthorityMappingContext priorAuthorityMappingContext =
@@ -666,7 +666,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToReferenceDataItem() {
+  void toReferenceDataItem() {
     uk.gov.laa.ccms.data.model.PriorAuthorityDetail priorAuthorityDetail =
         buildPriorAuthorityDetail("dataType");
     CommonLookupValueDetail priorAuthLookup = new CommonLookupValueDetail();
@@ -683,7 +683,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToCaseOutcome() {
+  void toCaseOutcome() {
     CaseDetail ebsCaseDetail = buildCaseDetail(APP_TYPE_EMERGENCY);
     EbsCaseOutcomeMappingContext caseOutcomeMappingContext = buildCaseOutcomeMappingContext(ebsCaseDetail);
 
@@ -705,7 +705,7 @@ class EbsApplicationMapperTest {
 
 
   @Test
-  void testToTimeRecovery() {
+  void toTimeRecovery() {
     // Create a TimeRelatedAward object for testing
     TimeRelatedAward timeRelatedAward = buildTimeRelatedAward();
 
@@ -721,7 +721,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToRecovery() {
+  void toRecovery() {
     Recovery ebsRecovery = buildRecovery();
 
     RecoveryDetail result = applicationMapper.toRecovery(ebsRecovery);
@@ -765,7 +765,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToLiableParty() {
+  void toLiableParty() {
     String partyId = "123";
 
     LiablePartyDetail result = applicationMapper.toLiableParty(partyId);
@@ -777,7 +777,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToCostAward() {
+  void toCostAward() {
     Award ebsAward = buildCostAward();
 
     CostAwardDetail result = applicationMapper.toCostAward(ebsAward);
@@ -836,7 +836,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToFinancialAward() {
+  void toFinancialAward() {
     Award ebsAward = buildFinancialAward();
 
     FinancialAwardDetail result = applicationMapper.toFinancialAward(ebsAward);
@@ -888,7 +888,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToLandAward() {
+  void toLandAward() {
     Award ebsAward = buildLandAward();
 
     LandAwardDetail result = applicationMapper.toLandAward(ebsAward);
@@ -945,7 +945,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  void testToOtherAssetAward() {
+  void toOtherAssetAward() {
     Award ebsAward = buildOtherAssetAward();
 
     OtherAssetAwardDetail result = applicationMapper.toOtherAssetAward(ebsAward);
@@ -993,7 +993,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  public void testToApplicationDetails() {
+  void toApplicationDetails() {
     List<BaseApplicationDetail> baseApplicationList = List.of(
         buildBaseApplication(1),
         buildBaseApplication(2));
@@ -1008,7 +1008,7 @@ class EbsApplicationMapperTest {
   }
 
   @Test
-  public void testToBaseApplication() {
+  void toBaseApplication() {
     CaseSummary ebsCaseSummary = buildCaseSummary();
 
     BaseApplicationDetail result = applicationMapper.toBaseApplication(ebsCaseSummary);
@@ -1125,7 +1125,7 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toCaseDetail with valid CaseMappingContext")
-  void testToEbsCaseDetail_Valid() {
+  void toEbsCaseDetailValid() {
     final ApplicationDetail applicationDetail = buildApplicationDetail(1, false, new Date());
     final LinkedCaseDetail linkedCaseDetail = new LinkedCaseDetail().lscCaseReference("LC123").relationToCase("Related");
     final PriorAuthorityDetail priorAuthorityDetail = new PriorAuthorityDetail().summary("Test Prior Authority");
@@ -1157,14 +1157,14 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toCaseDetail with null CaseMappingContext")
-  void testToEbsCaseDetail_Null() {
+  void toEbsCaseDetailNull() {
     assertNull(applicationMapper.toEbsCaseDetail(null));
   }
 
 
   @Test
   @DisplayName("Test toEbsCaseDoc with valid BaseEvidenceDocumentDetail")
-  void testToEbsCaseDoc_Valid() {
+  void toEbsCaseDocValid() {
     final BaseEvidenceDocumentDetail evidenceDocumentDetail
         = new BaseEvidenceDocumentDetail()
         .documentType(new StringDisplayValue()
@@ -1180,13 +1180,13 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toEbsCaseDoc with null BaseEvidenceDocumentDetail")
-  void testToEbsCaseDoc_Null() {
+  void toEbsCaseDocNull() {
     assertNull(applicationMapper.toEbsCaseDoc(null));
   }
 
   @Test
   @DisplayName("Test toEbsPriorAuthority with valid PriorAuthorityDetail")
-  void testToEbsPriorAuthority_Valid() {
+  void toEbsPriorAuthorityValid() {
     final PriorAuthorityDetail priorAuthorityDetail = new PriorAuthorityDetail()
         .summary("Test Summary")
         .justification("Test Justification")
@@ -1209,14 +1209,14 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toEbsPriorAuthority with null PriorAuthorityDetail")
-  void testToEbsPriorAuthority_Null() {
+  void toEbsPriorAuthorityNull() {
     assertNull(applicationMapper.toEbsPriorAuthority(null));
   }
 
 
   @Test
   @DisplayName("Test toEbsPriorAuthorityAttribute with valid ReferenceDataItemDetail")
-  void testToEbsPriorAuthorityAttribute_Valid() {
+  void toEbsPriorAuthorityAttributeValid() {
     final ReferenceDataItemDetail referenceDataItemDetail = new ReferenceDataItemDetail()
         .code(new StringDisplayValue().id("AttributeName"))
         .value(new StringDisplayValue().id("AttributeValue"));
@@ -1230,14 +1230,14 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toEbsPriorAuthorityAttribute with null ReferenceDataItemDetail")
-  void testToEbsPriorAuthorityAttribute_Null() {
+  void toEbsPriorAuthorityAttributeNull() {
     assertNull(applicationMapper.toEbsPriorAuthorityAttribute(null));
   }
 
 
   @Test
   @DisplayName("Test toEbsLinkedCase with valid LinkedCaseDetail")
-  void testToEbsLinkedCase_Valid() {
+  void toEbsLinkedCaseValid() {
 
     final LinkedCaseDetail linkedCaseDetail = new LinkedCaseDetail()
         .lscCaseReference("LSC123")
@@ -1252,14 +1252,14 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toEbsLinkedCase with null LinkedCaseDetail")
-  void testToEbsLinkedCase_Null() {
+  void toEbsLinkedCaseNull() {
     assertNull(applicationMapper.toEbsLinkedCase(null));
   }
 
 
   @Test
   @DisplayName("Test toSubmittedApplicationDetails with valid CaseMappingContext")
-  void testToSubmittedApplicationDetails_Valid() {
+  void toSubmittedApplicationDetailsValid() {
     final ApplicationDetail applicationDetail = new ApplicationDetail();
     applicationDetail.setApplicationType(new ApplicationType().id("type123"));
     applicationDetail.setCorrespondenceAddress(new AddressDetail().preferredAddress("preferred"));
@@ -1288,14 +1288,14 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toSubmittedApplicationDetails with null CaseMappingContext")
-  void testToSubmittedApplicationDetails_Null() {
+  void toSubmittedApplicationDetailsNull() {
     assertNull(applicationMapper.toSubmittedApplicationDetails(null));
   }
 
 
   @Test
   @DisplayName("Test toBaseClient with valid ClientDetail")
-  void testToBaseClient_Valid() {
+  void toBaseClientValid() {
     final ClientDetail clientDetail = new ClientDetail();
     clientDetail.setReference("12345");
     clientDetail.setFirstName("John");
@@ -1311,13 +1311,13 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toBaseClient with null ClientDetail")
-  void testToBaseClient_Null() {
+  void toBaseClientNull() {
     assertNull(applicationMapper.toBaseClient(null));
   }
 
   @Test
   @DisplayName("Test toEbsProviderDetail with valid ApplicationProviderDetails")
-  void testToEbsProviderDetail_Valid() {
+  void toEbsProviderDetailValid() {
     final StringDisplayValue providerContact = new StringDisplayValue();
     providerContact.setId("user123");
 
@@ -1342,7 +1342,7 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toEbsProviderDetail with null ApplicationProviderDetails")
-  void testToEbsProviderDetail_Null() {
+  void toEbsProviderDetailNull() {
     assertNull(applicationMapper.toEbsProviderDetail(null));
   }
 
@@ -1354,7 +1354,7 @@ class EbsApplicationMapperTest {
       "'LAW125', 'Third Law Description', '', '', ''"             // Case with no costs (null amounts)
   })
   @DisplayName("Parameterized Test toEbsCategoryOfLaw with different ApplicationDetail inputs")
-  void testToEbsCategoryOfLaw_Parameterized(
+  void toEbsCategoryOfLawParameterized(
       final String lawCode,
       final String lawDescription,
       final String requestedCostStr,
@@ -1390,14 +1390,14 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toEbsCategoryOfLaw with null ApplicationDetail")
-  void testToEbsCategoryOfLaw_Null() {
+  void toEbsCategoryOfLawNull() {
     assertNull(applicationMapper.toEbsCategoryOfLaw(null));
   }
 
 
   @Test
   @DisplayName("Test toEbsAddressDetail with valid AddressDetail")
-  void testToEbsAddressDetail_Valid() {
+  void toEbsAddressDetailValid() {
     final AddressDetail addressDetail = new AddressDetail();
     addressDetail.setId(123);
     addressDetail.setHouseNameOrNumber("1234 House");
@@ -1425,13 +1425,13 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toEbsAddressDetail with null AddressDetail")
-  void testToEbsAddressDetail_Null() {
+  void toEbsAddressDetailNull() {
     assertNull(applicationMapper.toEbsAddressDetail(null));
   }
 
   @Test
   @DisplayName("Test toEbsProceedingDetail with valid ProceedingDetail")
-  void testToEbsProceedingDetail_Valid() {
+  void toEbsProceedingDetailValid() {
     final ProceedingDetail proceedingDetail = new ProceedingDetail();
     proceedingDetail.setId(123);
     proceedingDetail.setStatus(new StringDisplayValue().id("Status"));
@@ -1465,13 +1465,13 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toEbsProceedingDetail with null ProceedingDetail")
-  void testToEbsProceedingDetail_Null() {
+  void toEbsProceedingDetailNull() {
     assertNull(applicationMapper.toEbsProceedingDetail(null));
   }
 
   @Test
   @DisplayName("Test toEbsScopeLimitation with valid ScopeLimitationDetail")
-  void testToEbsScopeLimitation_Valid() {
+  void toEbsScopeLimitationValid() {
     final ScopeLimitationDetail scopeLimitationDetail = new ScopeLimitationDetail();
     scopeLimitationDetail.setScopeLimitation(new StringDisplayValue().id("scopeId").displayValue("Scope Description"));
     scopeLimitationDetail.setScopeLimitationWording("Scope Limitation Wording");
@@ -1487,14 +1487,14 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toEbsScopeLimitation with null ScopeLimitationDetail")
-  void testToEbsScopeLimitation_Null() {
+  void toEbsScopeLimitationNull() {
     assertNull(applicationMapper.toEbsScopeLimitation(null));
   }
 
 
   @Test
   @DisplayName("Test toEbsOtherParty with individual type OpponentDetail")
-  void testToEbsOtherParty_Individual() {
+  void toEbsOtherPartyIndividual() {
     final OpponentDetail opponentDetail = new OpponentDetail();
     opponentDetail.setType(OPPONENT_TYPE_INDIVIDUAL);
     opponentDetail.setRelationshipToClient("ClientRelInd");
@@ -1515,7 +1515,7 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toEbsOtherParty with organisation type OpponentDetail")
-  void testToEbsOtherParty_Organisation() {
+  void toEbsOtherPartyOrganisation() {
     final OpponentDetail opponentDetail = new OpponentDetail();
     opponentDetail.setType(OPPONENT_TYPE_ORGANISATION);
     opponentDetail.setRelationshipToClient("ClientRelOrg");
@@ -1536,7 +1536,7 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toEbsOtherParty with null or unknown type OpponentDetail")
-  void testToEbsOtherParty_NullOrUnknownType() {
+  void toEbsOtherPartyNullOrUnknownType() {
     final OpponentDetail opponentDetail = new OpponentDetail();
     opponentDetail.setType(null);
 
@@ -1549,7 +1549,7 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toEbsOtherParty with null OpponentDetail")
-  void testToEbsOtherParty_Null() {
+  void toEbsOtherPartyNull() {
     assertNull(applicationMapper.toEbsOtherParty(null));
   }
 
@@ -1559,7 +1559,7 @@ class EbsApplicationMapperTest {
       "'TestClientRel', 'TestCaseRel', '123456', 'true', 'true', 'John Doe', 'Test Employer', 'Employer Address', '1000', '500', '1990-01-01', 'Employed', 'Cert123', 'Monthly', '2023-10-12', 'OtherInfo'",
       "'ClientRel2', 'CaseRel2', '987654', 'false', 'false', 'Jane Smith', 'Another Employer', 'Another Address', '2000', '1000', '1985-05-05', 'Unemployed', 'Cert456', 'Weekly', '2023-08-20', 'Info2'"
   })
-  void testToEbsPerson_Valid(final String relationToClient, final String relationToCase, final String niNumber, final boolean legalAided,
+  void toEbsPersonValid(final String relationToClient, final String relationToCase, final String niNumber, final boolean legalAided,
                              final boolean courtOrderedMeansAssesment, final String contactName, final String employerName,
                              final String employerAddress, final String assessedIncome, final String assessedAssets, final String dateOfBirth,
                              final String employmentStatus, final String certificateNumber, final String assessedIncomeFrequency,
@@ -1610,7 +1610,7 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toEbsPerson with null OpponentDetail")
-  void testToEbsPerson_NullOpponentDetail() {
+  void toEbsPersonNullOpponentDetail() {
     assertNull(applicationMapper.toEbsPerson(null));
   }
 
@@ -1620,7 +1620,7 @@ class EbsApplicationMapperTest {
       "'ClientRelation', 'CaseRelation', 'OrgName', 'OrgType', 'ContactName', 'true', 'OtherInfo'",
       "'ClientRelation2', 'CaseRelation2', 'OrgName2', 'OrgType2', 'ContactName2', 'false', 'OtherInfo2'"
   })
-  void testToEbsOrganisation_Valid(final String relationToClient, final String relationToCase, final String organisationName, final String organisationType,
+  void toEbsOrganisationValid(final String relationToClient, final String relationToCase, final String organisationName, final String organisationType,
                                    final String contactName, final boolean currentlyTrading, final String otherInformation) {
     final OpponentDetail opponentDetail = new OpponentDetail();
     opponentDetail.setRelationshipToClient(relationToClient);
@@ -1646,7 +1646,7 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toEbsOrganisation with null OpponentDetail")
-  void testToEbsOrganisation_NullOpponentDetail() {
+  void toEbsOrganisationNullOpponentDetail() {
     assertNull(applicationMapper.toEbsOrganisation(null));
   }
 
@@ -1659,7 +1659,7 @@ class EbsApplicationMapperTest {
       "'SA_TestName', 'TestType', 'TestValue', 'nonIntermediate', false",
       "'TestName', 'TestType', 'TestValue', 'nonIntermediate', true"
   })
-  void testToOpaAttribute_Valid_userDefinedIndicator(final String name, final String type, final String value,
+  void toOpaAttributeValidUserDefinedIndicator(final String name, final String type, final String value,
                                 final String inferencingType, final boolean expectedUserDefinedInd) {
     final AssessmentAttributeDetail assessmentAttributeDetail =
         new AssessmentAttributeDetail()
@@ -1680,13 +1680,13 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toOpaAttribute with null AssessmentAttributeDetail")
-  void testToOpaAttribute_Null() {
+  void toOpaAttributeNull() {
     assertNull(applicationMapper.toOpaAttribute(null));
   }
 
   @Test
   @DisplayName("Test toEbsRecordHistory with valid CaseMappingContext")
-  void testToEbsRecordHistory_ValidContext() {
+  void toEbsRecordHistoryValidContext() {
     final Date testDate = new Date();
     final ApplicationDetail application = buildApplicationDetail(1, false, testDate);
     application.getAuditTrail().created(testDate);
@@ -1709,7 +1709,7 @@ class EbsApplicationMapperTest {
 
   @Test
   @DisplayName("Test toEbsRecordHistory with null context")
-  void testToEbsRecordHistory_NullContext() {
+  void toEbsRecordHistoryNullContext() {
     assertNull( applicationMapper.toEbsRecordHistory(null));
   }
 

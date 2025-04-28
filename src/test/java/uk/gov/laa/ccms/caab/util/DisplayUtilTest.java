@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 class DisplayUtilTest {
 
   @Test
-  void testGetDelimitedString_buildsCorrectly() {
+  void getDelimitedStringBuildsCorrectly() {
     final List<String> items = List.of("1", "2", "3", "4");
     final String delimiter = "|";
     final String lastDelim = "*";
@@ -27,7 +27,7 @@ class DisplayUtilTest {
   }
 
   @Test
-  void testGetDelimitedString_noItems_buildsCorrectly() {
+  void getDelimitedStringNoItemsBuildsCorrectly() {
     final List<String> items = Collections.emptyList();
     final String delimiter = "|";
     final String lastDelim = "*";
@@ -39,7 +39,7 @@ class DisplayUtilTest {
   }
 
   @Test
-  void testGetCommaDelimitedString_buildsCorrectly() {
+  void getCommaDelimitedStringBuildsCorrectly() {
     final List<String> items = List.of("1", "2", "3", "4");
     final String delimiter = ", ";
     final String lastDelim = " or ";

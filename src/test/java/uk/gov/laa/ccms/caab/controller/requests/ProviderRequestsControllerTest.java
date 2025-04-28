@@ -107,7 +107,7 @@ class ProviderRequestsControllerTest {
 
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(providerRequestsController).build();
   }
 
@@ -172,7 +172,7 @@ class ProviderRequestsControllerTest {
 
   @Test
   @DisplayName("GET /provider-requests/types should return provider request type view")
-  void testGetRequestType() throws Exception {
+  void getRequestType() throws Exception {
     when(lookupService.getProviderRequestTypes(eq(false), isNull()))
         .thenReturn(Mono.just(new ProviderRequestTypeLookupDetail()));
 
@@ -188,7 +188,7 @@ class ProviderRequestsControllerTest {
 
   @Test
   @DisplayName("POST /provider-requests/types should redirect to provider request details on success")
-  void testRequestTypePost_Success() throws Exception {
+  void requestTypePostSuccess() throws Exception {
     final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
     final ProviderRequestTypeFormData providerRequestTypeDetails = new ProviderRequestTypeFormData();
 
@@ -208,7 +208,7 @@ class ProviderRequestsControllerTest {
 
   @Test
   @DisplayName("POST /provider-requests/types should return form view with validation errors")
-  void testRequestTypePost_HasValidationErrors() throws Exception {
+  void requestTypePostHasValidationErrors() throws Exception {
     final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
     final ProviderRequestTypeFormData providerRequestTypeDetails = new ProviderRequestTypeFormData();
 
@@ -239,7 +239,7 @@ class ProviderRequestsControllerTest {
 
   @Test
   @DisplayName("Should populate provider request types in the model")
-  void testPopulateProviderRequestTypes() throws Exception {
+  void populateProviderRequestTypes() throws Exception {
     final ProviderRequestTypeLookupValueDetail mockRequestType = new ProviderRequestTypeLookupValueDetail();
     final ProviderRequestTypeLookupDetail mockDetail = new ProviderRequestTypeLookupDetail();
     mockDetail.setContent(List.of(mockRequestType));
@@ -258,7 +258,7 @@ class ProviderRequestsControllerTest {
 
   @Test
   @DisplayName("Should populate provider request types in the model based on user function codes")
-  void testPopulateProviderRequestTypesBasedOnUserFunctionCodes() throws Exception {
+  void populateProviderRequestTypesBasedOnUserFunctionCodes() throws Exception {
     final ProviderRequestTypeLookupValueDetail mockRequestType1 =
         new ProviderRequestTypeLookupValueDetail();
     mockRequestType1.setName("test1");
@@ -291,7 +291,7 @@ class ProviderRequestsControllerTest {
 
   @Test
   @DisplayName("Should handle empty provider request types in the model")
-  void testPopulateProviderRequestTypes_Empty() throws Exception {
+  void populateProviderRequestTypesEmpty() throws Exception {
     when(lookupService.getProviderRequestTypes(eq(false), isNull()))
         .thenReturn(Mono.just(new ProviderRequestTypeLookupDetail()));
 
@@ -306,7 +306,7 @@ class ProviderRequestsControllerTest {
 
   @Test
   @DisplayName("Should return provider request detail view with populated model attributes")
-  void testProviderRequestsDetails_PopulatesModel() {
+  void providerRequestsDetailsPopulatesModel() {
     final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
     final ProviderRequestDetailsFormData providerRequestDetailsForm = new ProviderRequestDetailsFormData();
     final ProviderRequestTypeFormData providerRequestType = new ProviderRequestTypeFormData();
@@ -341,7 +341,7 @@ class ProviderRequestsControllerTest {
 
   @Test
   @DisplayName("GET /provider-requests/details should return provider request detail view with populated model")
-  void testGetRequestDetail_PopulatesModel() throws Exception {
+  void getRequestDetailPopulatesModel() throws Exception {
     final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
     final ProviderRequestDetailsFormData providerRequestDetailsForm = new ProviderRequestDetailsFormData();
     final ProviderRequestTypeFormData providerRequestType = new ProviderRequestTypeFormData();
@@ -376,7 +376,7 @@ class ProviderRequestsControllerTest {
 
   @Test
   @DisplayName("Should populate model with lookup dropdown values for provider request details")
-  void testPopulateProviderRequestDetailsLookupDropdowns() {
+  void populateProviderRequestDetailsLookupDropdowns() {
     final ProviderRequestTypeLookupValueDetail providerRequestType = new ProviderRequestTypeLookupValueDetail();
 
     final ProviderRequestDataLookupValueDetail lookupItem = new ProviderRequestDataLookupValueDetail();
@@ -403,7 +403,7 @@ class ProviderRequestsControllerTest {
 
   @Test
   @DisplayName("Should redirect to document upload when action is 'document_upload'")
-  void testPostRequestDetail_documentUpload() throws Exception {
+  void postRequestDetailDocumentUpload() throws Exception {
     final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
     final ProviderRequestDetailsFormData providerRequestDetailsForm = new ProviderRequestDetailsFormData();
     final ProviderRequestTypeFormData providerRequestType = new ProviderRequestTypeFormData();
@@ -436,7 +436,7 @@ class ProviderRequestsControllerTest {
 
   @Test
   @DisplayName("Should remove document and return view name when action is 'document_delete'")
-  void testPostRequestDetail_documentDelete() throws Exception {
+  void postRequestDetailDocumentDelete() throws Exception {
     final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
     final ProviderRequestDetailsFormData providerRequestDetailsForm = new ProviderRequestDetailsFormData();
     providerRequestDetailsForm.setDocumentIdToDelete(123);
@@ -479,7 +479,7 @@ class ProviderRequestsControllerTest {
 
   @Test
   @DisplayName("Should return provider request details view with validation errors")
-  void testPostRequestDetail_validationErrors() throws Exception {
+  void postRequestDetailValidationErrors() throws Exception {
     final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
     final ProviderRequestDetailsFormData providerRequestDetailsForm = new ProviderRequestDetailsFormData();
     final ProviderRequestTypeFormData providerRequestType = new ProviderRequestTypeFormData();
@@ -520,7 +520,7 @@ class ProviderRequestsControllerTest {
 
   @Test
   @DisplayName("Should handle AV scan exception and return provider request details view")
-  void testPostRequestDetail_avScanException() throws Exception {
+  void postRequestDetailAvScanException() throws Exception {
     final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
     final ProviderRequestDetailsFormData providerRequestDetailsForm = new ProviderRequestDetailsFormData();
     final ProviderRequestTypeFormData providerRequestType = new ProviderRequestTypeFormData();
@@ -564,7 +564,7 @@ class ProviderRequestsControllerTest {
 
   @Test
   @DisplayName("GET /provider-requests/documents should return document upload view with populated model")
-  void testAddDocumentsToRequest() throws Exception {
+  void addDocumentsToRequest() throws Exception {
     final String maxFileSize = String.valueOf(5L * 1024 * 1024);
     final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
     commonLookupDetail.setContent(List.of(new CommonLookupValueDetail().code("DOC1").description("Document Type 1")));
@@ -592,7 +592,7 @@ class ProviderRequestsControllerTest {
 
   @Test
   @DisplayName("Should handle document upload and redirect to provider request details")
-  void testPostDocuments_success() throws Exception {
+  void postDocumentsSuccess() throws Exception {
     final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
     final EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
     final MockMultipartFile mockFile = new MockMultipartFile(
@@ -621,7 +621,7 @@ class ProviderRequestsControllerTest {
 
   @Test
   @DisplayName("Should handle validation errors during document upload")
-  void testPostDocuments_validationErrors() throws Exception {
+  void postDocumentsValidationErrors() throws Exception {
     final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
     final EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
     final String maxFileSize = String.valueOf(5L * 1024 * 1024);

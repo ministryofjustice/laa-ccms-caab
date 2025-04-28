@@ -30,7 +30,7 @@ class InitialApplicationBuilderTest {
   }
 
   @Test
-  void testCaseReference() {
+  void caseReference() {
     CaseReferenceSummary summary = new CaseReferenceSummary();
     summary.setCaseReferenceNumber("REF123");
     ApplicationDetail detail = builder.caseReference(summary).build();
@@ -38,7 +38,7 @@ class InitialApplicationBuilderTest {
   }
 
   @Test
-  void testProvider() {
+  void provider() {
     UserDetail userDetail = new UserDetail();
     BaseProvider provider = new BaseProvider();
     provider.setId(123);
@@ -50,7 +50,7 @@ class InitialApplicationBuilderTest {
   }
 
   @Test
-  void testCategoryOfLaw() {
+  void categoryOfLaw() {
     String categoryId = "CATEGORY1";
     CategoryOfLawLookupValueDetail lookupValueDetail =
         new CategoryOfLawLookupValueDetail()
@@ -62,7 +62,7 @@ class InitialApplicationBuilderTest {
   }
 
   @Test
-  void testContractualDevolvedPower() {
+  void contractualDevolvedPower() {
 
     ApplicationType applicationType = new ApplicationType();
     // Create a mock ContractDetail object
@@ -84,7 +84,7 @@ class InitialApplicationBuilderTest {
   }
 
   @Test
-  void testOffice() {
+  void office() {
     Integer officeId = 1;
     BaseOffice baseOffice = new BaseOffice();
     baseOffice.setId(officeId);
@@ -97,7 +97,7 @@ class InitialApplicationBuilderTest {
   }
 
   @Test
-  void testLarScopeFlag() {
+  void larScopeFlag() {
     AmendmentTypeLookupValueDetail lookupValueDetail = new AmendmentTypeLookupValueDetail();
     lookupValueDetail.setDefaultLarScopeFlag("Y");
     AmendmentTypeLookupDetail lookupDetail = new AmendmentTypeLookupDetail();
@@ -108,7 +108,7 @@ class InitialApplicationBuilderTest {
   }
 
   @Test
-  void testStatus() {
+  void status() {
     ApplicationDetail detail = builder.status().build();
     assertEquals(STATUS_UNSUBMITTED_ACTUAL_VALUE, detail.getStatus().getId());
     assertEquals(STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY, detail.getStatus().getDisplayValue());

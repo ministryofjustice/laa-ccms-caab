@@ -12,7 +12,7 @@ import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValida
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
-public class CaseSearchCriteriaValidatorTest {
+class CaseSearchCriteriaValidatorTest {
 
   @InjectMocks
   private CaseSearchCriteriaValidator validator;
@@ -22,24 +22,24 @@ public class CaseSearchCriteriaValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     searchCriteria =
         new CaseSearchCriteria(); // Assuming that the default constructor sets all fields to null.
     errors = new BeanPropertyBindingResult(searchCriteria, "applicationSearchCriteria");
   }
-  
+
   @Test
-  public void supports_ReturnsTrueForSupportedClass() {
+  void supports_ReturnsTrueForSupportedClass() {
     assertTrue(validator.supports(CaseSearchCriteria.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(validator.supports(Object.class));
   }
 
   @Test
-  public void validate_validatesNoSearchCriteria() {
+  void validate_validatesNoSearchCriteria() {
     validator.validate(searchCriteria, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getGlobalErrorCount());
@@ -47,42 +47,42 @@ public class CaseSearchCriteriaValidatorTest {
   }
 
   @Test
-  public void validate_validatesSearchCriteriaCaseRef() {
+  void validate_validatesSearchCriteriaCaseRef() {
     searchCriteria.setCaseReference("123");
     validator.validate(searchCriteria, errors);
     assertFalse(errors.hasErrors());
   }
 
   @Test
-  public void validate_validatesSearchCriteriaSurname() {
+  void validate_validatesSearchCriteriaSurname() {
     searchCriteria.setClientSurname("surname");
     validator.validate(searchCriteria, errors);
     assertFalse(errors.hasErrors());
   }
 
   @Test
-  public void validate_validatesSearchCriteriaOffice() {
+  void validate_validatesSearchCriteriaOffice() {
     searchCriteria.setOfficeId(1);
     validator.validate(searchCriteria, errors);
     assertFalse(errors.hasErrors());
   }
 
   @Test
-  public void validate_validatesSearchCriteriaProviderRef() {
+  void validate_validatesSearchCriteriaProviderRef() {
     searchCriteria.setProviderCaseReference("provref");
     validator.validate(searchCriteria, errors);
     assertFalse(errors.hasErrors());
   }
 
   @Test
-  public void validate_validatesSearchCriteriaFeeEarner() {
+  void validate_validatesSearchCriteriaFeeEarner() {
     searchCriteria.setFeeEarnerId(123);
     validator.validate(searchCriteria, errors);
     assertFalse(errors.hasErrors());
   }
 
   @Test
-  void testCaseRefDoubleSpaceValidation() {
+  void caseRefDoubleSpaceValidation() {
     // Requires some text, otherwise value is disregarded for being blank
     searchCriteria.setCaseReference("1  3");
     validator.validate(searchCriteria, errors);
@@ -91,7 +91,7 @@ public class CaseSearchCriteriaValidatorTest {
   }
 
   @Test
-  void testCaseRefAlphaNumericValidation() {
+  void caseRefAlphaNumericValidation() {
     searchCriteria.setCaseReference("$%^");
     validator.validate(searchCriteria,errors);
     assertTrue(errors.hasErrors());
@@ -99,7 +99,7 @@ public class CaseSearchCriteriaValidatorTest {
   }
 
   @Test
-  void testValidCaseRef() {
+  void validCaseRef() {
     searchCriteria.setCaseReference("30000aaa");
     validator.validate(searchCriteria, errors);
     assertFalse(errors.hasErrors());
@@ -147,7 +147,7 @@ public class CaseSearchCriteriaValidatorTest {
   }
 
   @Test
-  void testProviderCaseRefDoubleSpaceValidation() {
+  void providerCaseRefDoubleSpaceValidation() {
     // Requires some text, otherwise value is disregarded for being blank
     searchCriteria.setProviderCaseReference("1  3");
     validator.validate(searchCriteria, errors);

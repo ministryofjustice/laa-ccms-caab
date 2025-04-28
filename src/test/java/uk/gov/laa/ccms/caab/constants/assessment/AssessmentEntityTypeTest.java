@@ -4,15 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-public class AssessmentEntityTypeTest {
+class AssessmentEntityTypeTest {
 
   @Test
-  void testProceedingType() {
+  void proceedingType() {
     assertEquals("PROCEEDING", AssessmentEntityType.PROCEEDING.getType());
   }
 
   @Test
-  void testOpponentOtherPartiesType() {
+  void opponentOtherPartiesType() {
     assertEquals("OPPONENT_OTHER_PARTIES", AssessmentEntityType.OPPONENT.getType());
   }
 }

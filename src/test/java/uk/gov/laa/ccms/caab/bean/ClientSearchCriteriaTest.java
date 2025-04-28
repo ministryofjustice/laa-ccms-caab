@@ -1,9 +1,7 @@
 package uk.gov.laa.ccms.caab.bean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +21,7 @@ class ClientSearchCriteriaTest {
   }
 
   @Test
-  void testGetDateOfBirth() {
+  void getDateOfBirth() {
     // Set the date components
     clientSearchCriteria.setDateOfBirth("01/02/1990");
 
@@ -38,16 +36,15 @@ class ClientSearchCriteriaTest {
   @CsvSource({"01/2000",
       "01//2000",
       "01/01/"})
-  void testGetDateOfBirth_NullComponent(String dobDay) {
+  void getDateOfBirthNullComponent(String dobDay) {
     clientSearchCriteria.setDateOfBirth(dobDay);
 
-    Assertions.assertThrows(CaabApplicationException.class, () -> {
-      clientSearchCriteria.getFormattedDateOfBirth();
-    });
+    assertThrows(CaabApplicationException.class, () ->
+      clientSearchCriteria.getFormattedDateOfBirth());
   }
 
   @Test
-  void testGetUniqueIdentifier_MatchingType() {
+  void getUniqueIdentifierMatchingType() {
     // Set the unique identifier type and value
     clientSearchCriteria.setUniqueIdentifierType(1); // Assuming 1 represents the matching type
     clientSearchCriteria.setUniqueIdentifierValue("ABC123");
@@ -61,7 +58,7 @@ class ClientSearchCriteriaTest {
   }
 
   @Test
-  void testGetUniqueIdentifier_NonMatchingType() {
+  void getUniqueIdentifierNonMatchingType() {
     // Set the unique identifier type and value
     clientSearchCriteria.setUniqueIdentifierType(1); // Assuming 1 represents the matching type
     clientSearchCriteria.setUniqueIdentifierValue("ABC123");

@@ -54,7 +54,7 @@ class EditClientBasicDetailsControllerTest {
   private ClientFormDataBasicDetails basicDetails;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(editClientBasicDetailsController).build();
 
     basicDetails = new ClientFormDataBasicDetails();
@@ -73,7 +73,7 @@ class EditClientBasicDetailsControllerTest {
   }
 
   @Test
-  void testClientDetailsBasic() throws Exception {
+  void clientDetailsBasic() throws Exception {
     when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(
         Mono.just(titleLookupDetail));
     when(lookupService.getCountries()).thenReturn(
@@ -95,7 +95,7 @@ class EditClientBasicDetailsControllerTest {
   }
 
   @Test
-  void testClientDetailsBasicPost() throws Exception {
+  void clientDetailsBasicPost() throws Exception {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
 
     mockMvc.perform(post("/application/sections/client/details/basic")
@@ -109,7 +109,7 @@ class EditClientBasicDetailsControllerTest {
   }
 
   @Test
-  void testClientDetailsBasicPostValidationError() throws Exception {
+  void clientDetailsBasicPostValidationError() throws Exception {
     ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
 
     doAnswer(invocation -> {

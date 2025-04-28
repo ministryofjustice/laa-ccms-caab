@@ -29,24 +29,24 @@ class IndividualOpponentValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     opponentFormData =
         new IndividualOpponentFormData();
     errors = new BeanPropertyBindingResult(opponentFormData, CURRENT_OPPONENT);
   }
 
   @Test
-  public void supports_ReturnsTrueForCorrectClass() {
+  void supports_ReturnsTrueForCorrectClass() {
     assertTrue(validator.supports(IndividualOpponentFormData.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(validator.supports(Object.class));
   }
 
   @Test
-  public void validate_noErrors() {
+  void validate_noErrors() {
     opponentFormData.setTitle("title");
     opponentFormData.setFirstName("first");
     opponentFormData.setSurname("surname");
@@ -58,7 +58,7 @@ class IndividualOpponentValidatorTest {
   }
 
   @Test
-  public void validate_dateOfBirthMandatory() {
+  void validate_dateOfBirthMandatory() {
     opponentFormData.setTitle("title");
     opponentFormData.setFirstName("first");
     opponentFormData.setSurname("surname");
@@ -73,7 +73,7 @@ class IndividualOpponentValidatorTest {
 
   @ParameterizedTest
   @CsvFileSource(resources = "/csv/IndividualOpponentValidatorTest_values.csv", nullValues = "null")
-  public void testIndividualOpponentValidation(
+  void individualOpponentValidation(
       final String relationshipToCase,
       final String relationshipToClient,
       final String houseNameOrNumber,
@@ -133,7 +133,7 @@ class IndividualOpponentValidatorTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"USA", "GBR"})
-  public void validate_invalidPostcodeFormat(String country)
+  void validate_invalidPostcodeFormat(String country)
   {
     opponentFormData.setRelationshipToCase("OPP");
     opponentFormData.setRelationshipToClient("CUSTOMER");
@@ -152,7 +152,7 @@ class IndividualOpponentValidatorTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"USA", "GBR"})
-  public void validate_validPostcodeFormat(String country)
+  void validate_validPostcodeFormat(String country)
   {
     opponentFormData.setRelationshipToCase("OPP");
     opponentFormData.setRelationshipToClient("CUSTOMER");

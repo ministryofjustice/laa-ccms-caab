@@ -49,7 +49,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class CategoryOfLawControllerTest {
+class CategoryOfLawControllerTest {
   @Mock
   private ProviderService providerService;
 
@@ -74,7 +74,7 @@ public class CategoryOfLawControllerTest {
   private CategoryOfLawLookupDetail categoriesOfLaw;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(categoryOfLawController).build();
 
     this.user = buildUser();
@@ -91,7 +91,7 @@ public class CategoryOfLawControllerTest {
   }
 
   @Test
-  public void testGetCategoryOfLawAddsCategoriesOfLawToModel() throws Exception {
+  void getCategoryOfLawAddsCategoriesOfLawToModel() throws Exception {
     final List<String> categoryOfLawCodes = new ArrayList<>();
     categoryOfLawCodes.add("CAT1");
 //    categoryOfLawCodes.add("CAT2");
@@ -124,7 +124,7 @@ public class CategoryOfLawControllerTest {
   }
 
   @Test
-  public void testGetCategoryOfLawNoCategoriesOfLawToModel() throws Exception {
+  void getCategoryOfLawNoCategoriesOfLawToModel() throws Exception {
     final List<String> categoryOfLawCodes = new ArrayList<>();
 
     when(providerService.getCategoryOfLawCodes(
@@ -161,7 +161,7 @@ public class CategoryOfLawControllerTest {
   }
 
   @Test
-  public void testGetCategoryOfLaw_ExceptionFundingReturnsAllCodes() throws Exception {
+  void getCategoryOfLawExceptionFundingReturnsAllCodes() throws Exception {
     when(lookupService.getCategoriesOfLaw()).thenReturn(
         Mono.just(categoriesOfLaw));
 
@@ -180,7 +180,7 @@ public class CategoryOfLawControllerTest {
   }
 
   @Test
-  public void testPostCategoryOfLawHandlesValidationError() throws Exception {
+  void postCategoryOfLawHandlesValidationError() throws Exception {
     final List<String> categoryOfLawCodes = new ArrayList<>();
     categoryOfLawCodes.add("CAT1");
 //    categoryOfLawCodes.add("CAT2");
@@ -212,7 +212,7 @@ public class CategoryOfLawControllerTest {
   }
 
   @Test
-  public void testPostCategoryOfLawIsSuccessful() throws Exception {
+  void postCategoryOfLawIsSuccessful() throws Exception {
     applicationFormData.setCategoryOfLawId("CAT1");
 
     this.mockMvc.perform(post("/application/category-of-law")
@@ -226,7 +226,7 @@ public class CategoryOfLawControllerTest {
   }
 
   @Test
-  public void testPostCategoryOfLaw_HandlesExceptionalFunding() throws Exception {
+  void postCategoryOfLawHandlesExceptionalFunding() throws Exception {
     applicationFormData.setCategoryOfLawId("CAT1");
     applicationFormData.setExceptionalFunding(true);
 

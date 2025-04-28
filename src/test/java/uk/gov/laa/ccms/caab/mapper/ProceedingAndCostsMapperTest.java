@@ -44,7 +44,7 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testToProceeding_newProceeding() {
+  void toProceedingNewProceeding() {
     // Create the form data objects with example values
     final ProceedingFormDataMatterTypeDetails matterTypeDetails = new ProceedingFormDataMatterTypeDetails();
     matterTypeDetails.setMatterType("MT001");
@@ -94,7 +94,7 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testToProceeding_existingProceeding() {
+  void toProceedingExistingProceeding() {
     // Create and setup ProceedingFlowFormData with example values
     final ProceedingFormDataMatterTypeDetails matterTypeDetails = new ProceedingFormDataMatterTypeDetails();
     matterTypeDetails.setMatterType("MT002");
@@ -146,7 +146,7 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testToProceedingFlow() {
+  void toProceedingFlow() {
     final ProceedingDetail proceeding = new ProceedingDetail();
     proceeding.setMatterType(new StringDisplayValue().id("MT001").displayValue("Matter Type 1"));
     proceeding.setProceedingType(new StringDisplayValue().id("PT001").displayValue("ProceedingDetail Type 1"));
@@ -182,7 +182,7 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testToScopeLimitationList() {
+  void toScopeLimitationList() {
     final List<uk.gov.laa.ccms.data.model.ScopeLimitationDetail> scopeLimitationDetailList =
         new ArrayList<>();
     final uk.gov.laa.ccms.data.model.ScopeLimitationDetail ebsScopeLimitation1 =
@@ -217,13 +217,13 @@ class ProceedingAndCostsMapperTest {
 
 
   @Test
-  void testToScopeLimitationList_withNull() {
+  void toScopeLimitationListWithNull() {
     final List<ScopeLimitationDetail> result = mapper.toScopeLimitationList(null);
     assertNull(result);
   }
 
   @Test
-  void testToScopeLimitationFlow() {
+  void toScopeLimitationFlow() {
     final ScopeLimitationDetail scopeLimitation = new ScopeLimitationDetail();
     scopeLimitation.setId(123);
     final StringDisplayValue displayValue = new StringDisplayValue().id("SL001").displayValue("Scope Limitation Description");
@@ -238,13 +238,13 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testToScopeLimitation_withNull() {
+  void toScopeLimitationWithNull() {
     final ScopeLimitationFlowFormData result = mapper.toScopeLimitationFlow(null);
     assertNull(result);
   }
 
   @Test
-  void testToCostsFormData() {
+  void toCostsFormData() {
     final BigDecimal costLimitation = new BigDecimal("5000.00");
     final CostsFormData result = mapper.toCostsFormData(costLimitation);
 
@@ -253,14 +253,14 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testToCostsFormData_withNull() {
+  void toCostsFormDataWithNull() {
     final CostsFormData result = mapper.toCostsFormData(null);
 
     assertNull(result);
   }
 
   @Test
-  void testToCostStructure() {
+  void toCostStructure() {
     final CostStructureDetail costStructure = new CostStructureDetail();
     final CostsFormData costsFormData = new CostsFormData();
     costsFormData.setRequestedCostLimitation("10000.00");
@@ -272,7 +272,7 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testToCostStructure_withNull() {
+  void toCostStructureWithNull() {
     final CostStructureDetail costStructure = new CostStructureDetail();
     mapper.toCostStructure(costStructure, null);
 
@@ -280,7 +280,7 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testToPriorAuthorityFlowFormData() {
+  void toPriorAuthorityFlowFormData() {
     final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
     priorAuthority.setId(123);
     priorAuthority.setType(new StringDisplayValue().id("PA001").displayValue("Prior Authority Type"));
@@ -297,13 +297,13 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testToPriorAuthorityFlowFormData_withNull() {
+  void toPriorAuthorityFlowFormDataWithNull() {
     final PriorAuthorityFlowFormData result = mapper.toPriorAuthorityFlowFormData(null);
     assertNull(result);
   }
 
   @Test
-  void testToDynamicOptions() {
+  void toDynamicOptions() {
     final List<ReferenceDataItemDetail> items = new ArrayList<>();
     final ReferenceDataItemDetail item1 = new ReferenceDataItemDetail();
     item1.setCode(new StringDisplayValue().id("Item1").displayValue("Item 1 Description"));
@@ -343,7 +343,7 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testToDynamicOptions_withNull() {
+  void toDynamicOptionsWithNull() {
     final Map<String, DynamicOptionFormData> result = mapper.toDynamicOptions(null);
 
     assertNull(result);
@@ -351,7 +351,7 @@ class ProceedingAndCostsMapperTest {
 
 
   @Test
-  void testToPriorAuthorityFormDataDetails() {
+  void toPriorAuthorityFormDataDetails() {
     final PriorAuthorityDetailsFormData priorAuthorityDetails = new PriorAuthorityDetailsFormData();
     final PriorAuthorityFlowFormData priorAuthorityFlowFormData = new PriorAuthorityFlowFormData("edit");
     final PriorAuthorityDetailsFormData formDataDetails = new PriorAuthorityDetailsFormData();
@@ -364,7 +364,7 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testToPriorAuthorityFormDataDetails_withNull() {
+  void toPriorAuthorityFormDataDetailsWithNull() {
     final PriorAuthorityDetailsFormData priorAuthorityDetails = new PriorAuthorityDetailsFormData();
 
     mapper.toPriorAuthorityDetailsFormData(priorAuthorityDetails, null);
@@ -373,7 +373,7 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testMapDynamicOptions() {
+  void mapDynamicOptions() {
     final PriorAuthorityDetailsFormData priorAuthorityDetails = new PriorAuthorityDetailsFormData();
     priorAuthorityDetails.setDynamicOptions(new HashMap<>());
 
@@ -404,7 +404,7 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testPopulatePriorAuthorityDetailsForm() {
+  void populatePriorAuthorityDetailsForm() {
     final PriorAuthorityDetailsFormData priorAuthorityDetails = new PriorAuthorityDetailsFormData();
     priorAuthorityDetails.setDynamicOptions(new HashMap<>());
 
@@ -448,7 +448,7 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testPopulatePriorAuthorityDetailsForm_withEmptyDetails() {
+  void populatePriorAuthorityDetailsFormWithEmptyDetails() {
     final PriorAuthorityDetailsFormData priorAuthorityDetails = new PriorAuthorityDetailsFormData();
     priorAuthorityDetails.setDynamicOptions(new HashMap<>());
 
@@ -463,7 +463,7 @@ class ProceedingAndCostsMapperTest {
 
 
   @Test
-  void testToPriorAuthorityFormDataDynamicOption() {
+  void toPriorAuthorityFormDataDynamicOption() {
     final uk.gov.laa.ccms.data.model.PriorAuthorityDetail formOption =
         new uk.gov.laa.ccms.data.model.PriorAuthorityDetail();
     formOption.setMandatoryFlag(true);
@@ -479,7 +479,7 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testToPriorAuthorityFormDataDynamicOption_withNull() {
+  void toPriorAuthorityFormDataDynamicOptionWithNull() {
     final uk.gov.laa.ccms.data.model.PriorAuthorityDetail formOption = null;
 
     final DynamicOptionFormData result =
@@ -489,7 +489,7 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testToPriorAuthority() {
+  void toPriorAuthority() {
     final PriorAuthorityFlowFormData priorAuthorityFlowFormData =
         new PriorAuthorityFlowFormData("edit");
     priorAuthorityFlowFormData.setPriorAuthorityId(123);
@@ -520,13 +520,13 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testToPriorAuthority_withNull() {
+  void toPriorAuthorityWithNull() {
     final PriorAuthorityDetail result = mapper.toPriorAuthority(null, null);
     assertNull(result);
   }
 
   @Test
-  void testToReferenceDataItems() {
+  void toReferenceDataItems() {
     final Map<String, DynamicOptionFormData> dynamicOptionsMap = new HashMap<>();
     final DynamicOptionFormData dynamicOption1 = new DynamicOptionFormData();
     dynamicOption1.setFieldDescription("Description 1");
@@ -555,7 +555,7 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testToReferenceDataItem() {
+  void toReferenceDataItem() {
     final String key = "key1";
     final DynamicOptionFormData dynamicOption = new DynamicOptionFormData();
     dynamicOption.setFieldDescription("Field Description");
@@ -578,7 +578,7 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testToReferenceDataItem_withNull() {
+  void toReferenceDataItemWithNull() {
     final ReferenceDataItemDetail result = mapper.toReferenceDataItem(null, null);
     assertNull(result);
   }

@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -68,7 +67,7 @@ import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 
 @ExtendWith(MockitoExtension.class)
-public class LookupServiceTest {
+class LookupServiceTest {
   @Mock
   private EbsApiClient ebsApiClient;
 
@@ -311,7 +310,7 @@ public class LookupServiceTest {
   }
 
   @Test
-  public void getCountries_returnsData() {
+  void getCountries_returnsData() {
     final CommonLookupValueDetail commonValue = new CommonLookupValueDetail().code("GBR");
     final CommonLookupDetail commonValues = new CommonLookupDetail().addContentItem(commonValue);
 
@@ -324,7 +323,7 @@ public class LookupServiceTest {
   }
 
   @Test
-  public void getCountry_returnsData() {
+  void getCountry_returnsData() {
     final CommonLookupValueDetail commonValue = new CommonLookupValueDetail().code("GBR");
     final CommonLookupDetail commonValues = new CommonLookupDetail().addContentItem(commonValue);
 
@@ -338,7 +337,7 @@ public class LookupServiceTest {
   }
 
   @Test
-  public void getCategoriesOfLaw_returnsData() {
+  void getCategoriesOfLaw_returnsData() {
     final CategoryOfLawLookupValueDetail commonValue =
         new CategoryOfLawLookupValueDetail().code("CAT1");
     final CategoryOfLawLookupDetail commonValues =
@@ -355,7 +354,7 @@ public class LookupServiceTest {
   }
 
   @Test
-  public void getCategoryOfLaw_returnsData() {
+  void getCategoryOfLaw_returnsData() {
     final CategoryOfLawLookupValueDetail commonValue = new CategoryOfLawLookupValueDetail()
         .code("CAT1")
         .matterTypeDescription("DESC")
@@ -563,7 +562,7 @@ public class LookupServiceTest {
 
   @Test
   @DisplayName("Test getClientLookups method")
-  void testGetClientLookups() {
+  void getClientLookups() {
     final String TITLE = "Mr.";
     final String COUNTRY_OF_ORIGIN = "UK";
     final String MARITAL_STATUS = "Single";

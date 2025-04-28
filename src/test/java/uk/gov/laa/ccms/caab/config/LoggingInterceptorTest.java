@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.ModelAndView;
 
-public class LoggingInterceptorTest {
+class LoggingInterceptorTest {
 
   private Logger loggerMock;
   private LoggingInterceptor loggingInterceptor;
@@ -36,7 +36,7 @@ public class LoggingInterceptorTest {
   private HttpSession session;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     loggerMock = mock(Logger.class); // Initialize the loggerMock
     loggingInterceptor = new LoggingInterceptor();
     loggingInterceptor.setLog(loggerMock);
@@ -47,7 +47,7 @@ public class LoggingInterceptorTest {
   }
 
   @Test
-  public void testPreHandleWithControllerAnnotation() throws Exception {
+  void preHandleWithControllerAnnotation() throws Exception {
     // Create a mock Controller instance
     MyController myController = new MyController();
     // Create a HandlerMethod with the MyController instance as the beanType
@@ -62,7 +62,7 @@ public class LoggingInterceptorTest {
   }
 
   @Test
-  public void testPreHandleWithoutControllerOrRestControllerAnnotation() throws Exception {
+  void preHandleWithoutControllerOrRestControllerAnnotation() throws Exception {
     // Create a mock Controller instance
     NoControllerClass noControllerClass = new NoControllerClass();
     // Create a HandlerMethod with the MyController instance as the beanType
@@ -76,7 +76,7 @@ public class LoggingInterceptorTest {
   }
 
   @Test
-  public void testPostHandleWithSessionAttributes() throws NoSuchMethodException {
+  void postHandleWithSessionAttributes() throws NoSuchMethodException {
     ModelAndView modelAndView = new ModelAndView("redirect:/some-url");
 
     // Create a mock Controller instance

@@ -28,23 +28,23 @@ class ClientBasicDetailsValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     basicDetails = new ClientFormDataBasicDetails();
     errors = new BeanPropertyBindingResult(basicDetails, "basicDetails");
   }
 
   @Test
-  public void supports_ReturnsTrueForApplicationDetailsClass() {
+  void supports_ReturnsTrueForApplicationDetailsClass() {
     assertTrue(clientBasicDetailsValidator.supports(ClientFormDataBasicDetails.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(clientBasicDetailsValidator.supports(Object.class));
   }
 
   @Test
-  public void validate() {
+  void validate() {
     basicDetails = buildBasicDetails();
     clientBasicDetailsValidator.validate(basicDetails, errors);
     assertFalse(errors.hasErrors());
@@ -52,7 +52,7 @@ class ClientBasicDetailsValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_titleRequired(String title) {
+  void validate_titleRequired(String title) {
     basicDetails = buildBasicDetails();
     basicDetails.setTitle(title);
 
@@ -64,7 +64,7 @@ class ClientBasicDetailsValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_surnameRequired(String surname) {
+  void validate_surnameRequired(String surname) {
     basicDetails = buildBasicDetails();
     basicDetails.setSurname(surname);
 
@@ -76,7 +76,7 @@ class ClientBasicDetailsValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_countryOfOriginRequired(String countryOfOrigin) {
+  void validate_countryOfOriginRequired(String countryOfOrigin) {
     basicDetails = buildBasicDetails();
     basicDetails.setCountryOfOrigin(countryOfOrigin);
 
@@ -88,7 +88,7 @@ class ClientBasicDetailsValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_genderRequired(String gender) {
+  void validate_genderRequired(String gender) {
     basicDetails = buildBasicDetails();
     basicDetails.setGender(gender);
 
@@ -100,7 +100,7 @@ class ClientBasicDetailsValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_maritalStatusRequired(String maritalStatus) {
+  void validate_maritalStatusRequired(String maritalStatus) {
     basicDetails = buildBasicDetails();
     basicDetails.setMaritalStatus(maritalStatus);
 

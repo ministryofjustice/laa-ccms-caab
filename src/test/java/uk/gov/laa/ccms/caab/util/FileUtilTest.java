@@ -11,7 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 class FileUtilTest {
 
   @Test
-  void testGetFileExtension_extractsCorrectExtension() {
+  void getFileExtensionExtractsCorrectExtension() {
     final String fileExt = "pdf";
     String filename = "originalName.%s".formatted(fileExt);
 
@@ -28,7 +28,7 @@ class FileUtilTest {
   }
 
   @Test
-  void testGetFileExtension_noExtension_returnsFilename() {
+  void getFileExtensionNoExtensionReturnsFilename() {
     String filename = "originalName";
 
     final MultipartFile multipartFile = new MockMultipartFile(

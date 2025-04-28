@@ -24,16 +24,16 @@ import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupValueDetail;
 
 @ExtendWith(MockitoExtension.class)
-public class EvidenceMapperTest {
+class EvidenceMapperTest {
 
   @Mock(answer = Answers.CALLS_REAL_METHODS)
   CommonMapper commonMapper;
 
   @InjectMocks
-  EvidenceMapper evidenceMapper = new EvidenceMapperImpl();
+  EvidenceMapper evidenceMapper;
 
   @Test
-  void testEvidenceUploadFormData_toEvidenceDocumentDetail() throws IOException {
+  void evidenceUploadFormDataToEvidenceDocumentDetail() throws IOException {
     EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
     evidenceUploadFormData.setApplicationOrOutcomeId("123");
     evidenceUploadFormData.setCaseReferenceNumber("caseRef");
@@ -79,7 +79,7 @@ public class EvidenceMapperTest {
   }
 
   @Test
-  void testToEvidenceRequired_providedTrue() {
+  void toEvidenceRequiredProvidedTrue() {
     EvidenceDocumentTypeLookupValueDetail evidenceDocumentTypeLookupValueDetail =
         new EvidenceDocumentTypeLookupValueDetail().code("thecode").description("evidence 1");
 
@@ -96,7 +96,7 @@ public class EvidenceMapperTest {
   }
 
   @Test
-  void testToEvidenceRequired_providedFalse() {
+  void toEvidenceRequiredProvidedFalse() {
     EvidenceDocumentTypeLookupValueDetail evidenceDocumentTypeLookupValueDetail =
         new EvidenceDocumentTypeLookupValueDetail().code("thecode").description("evidence 1");
 
@@ -113,7 +113,7 @@ public class EvidenceMapperTest {
   }
 
   @Test
-  void testToEvidenceRequiredList() {
+  void toEvidenceRequiredList() {
     EvidenceDocumentTypeLookupValueDetail docType1 =
         new EvidenceDocumentTypeLookupValueDetail().code("thecode").description("evidence 1");
     EvidenceDocumentTypeLookupValueDetail docType2 =

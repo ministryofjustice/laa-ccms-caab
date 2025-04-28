@@ -29,23 +29,23 @@ class DeclarationSubmissionValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     summarySubmissionFormData = new SummarySubmissionFormData();
     errors = new BeanPropertyBindingResult(summarySubmissionFormData, "summarySubmissionFormData");
   }
 
   @Test
-  public void supports_ReturnsTrueForSummarySubmissionFormDataClass() {
+  void supports_ReturnsTrueForSummarySubmissionFormDataClass() {
     assertTrue(declarationSubmissionValidator.supports(SummarySubmissionFormData.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(declarationSubmissionValidator.supports(Object.class));
   }
 
   @Test
-  public void validate_WithNullDeclarationOptions_HasErrors() {
+  void validate_WithNullDeclarationOptions_HasErrors() {
     summarySubmissionFormData.setDeclarationOptions(null);
     declarationSubmissionValidator.validate(summarySubmissionFormData, errors);
 
@@ -55,7 +55,7 @@ class DeclarationSubmissionValidatorTest {
   }
 
   @Test
-  public void validate_WithUncheckedDeclarationOptions_HasErrors() {
+  void validate_WithUncheckedDeclarationOptions_HasErrors() {
     final DynamicCheckbox uncheckedCheckbox = new DynamicCheckbox();
     uncheckedCheckbox.setChecked(false);
     summarySubmissionFormData.setDeclarationOptions(List.of(uncheckedCheckbox));
@@ -68,7 +68,7 @@ class DeclarationSubmissionValidatorTest {
   }
 
   @Test
-  public void validate_WithCheckedDeclarationOptions_NoErrors() {
+  void validate_WithCheckedDeclarationOptions_NoErrors() {
     final DynamicCheckbox checkedCheckbox = new DynamicCheckbox();
     checkedCheckbox.setChecked(true);
     summarySubmissionFormData.setDeclarationOptions(List.of(checkedCheckbox));

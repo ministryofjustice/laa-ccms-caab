@@ -37,7 +37,7 @@ public class CaabApiClientIntegrationTest extends AbstractIntegrationTest {
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Test
-  public void testCreateApplication() throws Exception {
+  void createApplication() throws Exception {
     String loginId = "user1";
     ApplicationDetail applicationDetail =
         new ApplicationDetail(); // Populate this object with appropriate test data

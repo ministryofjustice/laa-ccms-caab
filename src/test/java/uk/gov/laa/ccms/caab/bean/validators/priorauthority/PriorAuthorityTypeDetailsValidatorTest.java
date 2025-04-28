@@ -22,23 +22,23 @@ class PriorAuthorityTypeDetailsValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     priorAuthorityTypeDetails = new PriorAuthorityTypeFormData();
     errors = new BeanPropertyBindingResult(priorAuthorityTypeDetails, "priorAuthorityTypeDetails");
   }
 
   @Test
-  public void supports_ReturnsTrueForPriorAuthorityFormDataTypeDetailsClass() {
+  void supports_ReturnsTrueForPriorAuthorityFormDataTypeDetailsClass() {
     assertTrue(priorAuthorityTypeDetailsValidator.supports(PriorAuthorityTypeFormData.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(priorAuthorityTypeDetailsValidator.supports(Object.class));
   }
 
   @Test
-  public void validate_WithNullPriorAuthorityType_HasErrors() {
+  void validate_WithNullPriorAuthorityType_HasErrors() {
     priorAuthorityTypeDetails.setPriorAuthorityType(null);
     priorAuthorityTypeDetailsValidator.validate(priorAuthorityTypeDetails, errors);
     assertTrue(errors.hasErrors());
@@ -47,7 +47,7 @@ class PriorAuthorityTypeDetailsValidatorTest {
   }
 
   @Test
-  public void validate_WithValidPriorAuthorityType_NoErrors() {
+  void validate_WithValidPriorAuthorityType_NoErrors() {
     priorAuthorityTypeDetails.setPriorAuthorityType("Valid Prior Authority Type");
     priorAuthorityTypeDetailsValidator.validate(priorAuthorityTypeDetails, errors);
     assertFalse(errors.hasErrors());

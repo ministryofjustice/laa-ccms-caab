@@ -30,7 +30,7 @@ class ContextTokenTest {
   }
 
   @Test
-  void testCreateJsonContextToken() {
+  void createJsonContextToken() {
     final String json = contextToken.createJsonContextToken();
     final JSONObject jsonObject = new JSONObject(json);
 
@@ -46,13 +46,13 @@ class ContextTokenTest {
   }
 
   @Test
-  void testCreateJsonContextToken_MissingMandatoryField() {
+  void createJsonContextTokenMissingMandatoryField() {
     contextToken.setCaseId(null);
     assertThrows(UnsupportedOperationException.class, () -> contextToken.createJsonContextToken());
   }
 
   @Test
-  void testParseJsonContextToken() throws ConnectorSecurityContextException {
+  void parseJsonContextToken() throws ConnectorSecurityContextException {
     final String json = contextToken.createJsonContextToken();
     final ContextToken parsedToken = new ContextToken().parseJsonContextToken(json);
 
@@ -68,24 +68,24 @@ class ContextTokenTest {
   }
 
   @Test
-  void testParseJsonContextToken_InvalidJson() {
+  void parseJsonContextTokenInvalidJson() {
     assertThrows(ConnectorSecurityContextException.class, () -> new ContextToken().parseJsonContextToken("{}"));
   }
 
   @Test
-  void testHandlesConnectorLoad() {
+  void handlesConnectorLoad() {
     assertTrue(contextToken.handlesConnectorLoad(ContextToken.QUERY_KEY));
     assertFalse(contextToken.handlesConnectorLoad("invalid"));
   }
 
   @Test
-  void testHandlesPuiReturn() {
+  void handlesPuiReturn() {
     assertTrue(contextToken.handlesPuiReturn(ContextToken.QUERY_KEY_RET));
     assertFalse(contextToken.handlesPuiReturn("invalid"));
   }
 
   @Test
-  void testIsValid() {
+  void isValid() {
     assertTrue(contextToken.isValid());
     contextToken.setCaseId(null);
     assertFalse(contextToken.isValid());
@@ -99,7 +99,7 @@ class ContextTokenTest {
   }
 
   @Test
-  void testToStringForOpaSession() {
+  void toStringForOpaSession() {
     final StringBuilder sb = contextToken.toStringForOpaSession();
     assertTrue(sb.toString().contains("caseId[123]"));
     assertTrue(sb.toString().contains("providerId[provider]"));
@@ -115,7 +115,7 @@ class ContextTokenTest {
   }
 
   @Test
-  void testEquals() {
+  void equals() {
     final ContextToken sameToken = new ContextToken();
     sameToken.setCaseId("123");
     sameToken.setRulebaseId(1L);
@@ -129,7 +129,7 @@ class ContextTokenTest {
   }
 
   @Test
-  void testIsTtlExpired() {
+  void isTtlExpired() {
     final long currentTime = System.currentTimeMillis();
     assertFalse(contextToken.isTtlExpired(currentTime, 1000));
 

@@ -25,23 +25,23 @@ class ProceedingMatterTypeDetailsValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     matterTypeDetails = new ProceedingFormDataMatterTypeDetails(); // Assuming that the default constructor sets all fields to null.
     errors = new BeanPropertyBindingResult(matterTypeDetails, "matterTypeDetails");
   }
 
   @Test
-  public void supports_ReturnsTrueForProceedingFormDataMatterTypeDetailsClass() {
+  void supports_ReturnsTrueForProceedingFormDataMatterTypeDetailsClass() {
     assertTrue(proceedingMatterTypeDetailsValidator.supports(ProceedingFormDataMatterTypeDetails.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(proceedingMatterTypeDetailsValidator.supports(Object.class));
   }
 
   @Test
-  public void validate_WithNullMatterType_HasErrors() {
+  void validate_WithNullMatterType_HasErrors() {
     matterTypeDetails.setMatterType(null);
     proceedingMatterTypeDetailsValidator.validate(matterTypeDetails, errors);
     assertTrue(errors.hasErrors());
@@ -50,7 +50,7 @@ class ProceedingMatterTypeDetailsValidatorTest {
   }
 
   @Test
-  public void validate_WithValidMatterType_NoErrors() {
+  void validate_WithValidMatterType_NoErrors() {
     matterTypeDetails.setMatterType("Valid Matter Type");
     proceedingMatterTypeDetailsValidator.validate(matterTypeDetails, errors);
     assertFalse(errors.hasErrors());

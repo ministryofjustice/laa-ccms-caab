@@ -563,7 +563,7 @@ class ApplicationServiceTest {
       "false, 10, 1, other, false, true, false",
       "false, 10, 1, " + OPPONENT_TYPE_INDIVIDUAL + ", true, true, false",
       "false, 10, 1, " + OPPONENT_TYPE_INDIVIDUAL + ", false, true, true"})
-  void testCopyApplication(
+  void copyApplication(
       Boolean copyCostLimit,
       BigDecimal costLimit1,
       BigDecimal costLimit2,
@@ -746,7 +746,7 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void testGetApplicationTypeFormData() {
+  void getApplicationTypeFormData() {
     final String id = "12345";
     final ApplicationFormData mockApplicationFormData = new ApplicationFormData();
     final ApplicationType applicationType = new ApplicationType();
@@ -763,7 +763,7 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void testGetProviderDetailsFormData() {
+  void getProviderDetailsFormData() {
     final String id = "12345";
     final ApplicationFormData mockApplicationFormData = new ApplicationFormData();
     final ApplicationProviderDetails providerDetails = new ApplicationProviderDetails();
@@ -780,7 +780,7 @@ class ApplicationServiceTest {
 
   @Test
   @DisplayName("getMonoProviderDetailsFormData returns Mono of ApplicationFormData when successful")
-  void testGetMonoProviderDetailsFormData_Successful() {
+  void getMonoProviderDetailsFormDataSuccessful() {
     final String id = "12345";
     final ApplicationProviderDetails mockProviderDetails = new ApplicationProviderDetails();
     final ApplicationFormData expectedApplicationFormData = new ApplicationFormData();
@@ -800,7 +800,7 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void testGetCorrespondenceAddressFormData() {
+  void getCorrespondenceAddressFormData() {
     final String id = "12345";
     final AddressDetail mockAddress = new AddressDetail();
     final AddressFormData expectedAddressFormData = new AddressFormData();
@@ -820,7 +820,7 @@ class ApplicationServiceTest {
 
   @Test
   @DisplayName("getMonoCorrespondenceAddressFormData returns Mono of AddressFormData when successful")
-  void testGetMonoCorrespondenceAddressFormData_Successful() {
+  void getMonoCorrespondenceAddressFormDataSuccessful() {
     final String id = "12345";
     final AddressDetail mockAddress = new AddressDetail();
     final AddressFormData expectedAddressFormData = new AddressFormData();
@@ -839,7 +839,7 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void testGetLinkedCases() {
+  void getLinkedCases() {
     final String id = "12345";
     final List<LinkedCaseDetail> mockLinkedCases = Arrays.asList(new LinkedCaseDetail(), new LinkedCaseDetail());
     final List<LinkedCaseResultRowDisplay> expectedLinkedCaseDisplays = Arrays.asList(
@@ -913,7 +913,7 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void testPatchApplicationType() throws ParseException {
+  void patchApplicationType() throws ParseException {
     final String id = "12345";
     final ApplicationFormData applicationFormData = new ApplicationFormData();
     final UserDetail user = new UserDetail().loginId("TEST123");
@@ -962,7 +962,7 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void testBuildIndividualOpponentFormData_noLookupMatchReturnsCodes() {
+  void buildIndividualOpponentFormDataNoLookupMatchReturnsCodes() {
     OpponentDetail opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_INDIVIDUAL);
 
@@ -998,7 +998,7 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void testBuildOrgOpponentFormData_ReturnsOrganisationName() {
+  void buildOrgOpponentFormDataReturnsOrganisationName() {
     OpponentDetail opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_ORGANISATION);
 
@@ -1037,7 +1037,7 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void testBuildOrgOpponentFormData_lookupMatchesReturnDisplayValues() {
+  void buildOrgOpponentFormDataLookupMatchesReturnDisplayValues() {
     OpponentDetail opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_ORGANISATION);
 
@@ -1097,7 +1097,7 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void testBuildIndividualOpponentFormData_lookupMatchesReturnDisplayValues() {
+  void buildIndividualOpponentFormDataLookupMatchesReturnDisplayValues() {
     OpponentDetail opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_INDIVIDUAL);
 
@@ -1144,7 +1144,7 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void testGetOpponents_queriesLookupData() {
+  void getOpponentsQueriesLookupData() {
     final String applicationId = "123";
     OpponentDetail opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_INDIVIDUAL);
@@ -1553,7 +1553,7 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void testAddOpponent() {
+  void addOpponent() {
     String appplicationId = "12345";
     UserDetail user = new UserDetail().loginId("userLoginId");
     ApplicationDetail application = getApplicationDetail();
@@ -1574,7 +1574,7 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void testGetCaseStatus(){
+  void getCaseStatus(){
     // Given
     String transactionId = "12345";
     TransactionStatus expected = new TransactionStatus().submissionStatus("Success")
