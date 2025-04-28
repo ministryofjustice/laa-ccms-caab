@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
-import java.util.ArrayList;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
@@ -13,6 +12,7 @@ import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificati
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -308,7 +308,8 @@ public class ApplicationSearchController {
     model.addAttribute(NOTIFICATION_ID, notificationId);
   }
 
-  private void setActiveCase(Model model, HttpSession session, String caseReferenceNumber, ApplicationDetail ebsCase) {
+  private void setActiveCase(Model model, HttpSession session,
+      String caseReferenceNumber, ApplicationDetail ebsCase) {
     String clientSurname = ebsCase.getClient().getSurname();
     String clientFullName = ebsCase.getClient().getFirstName()
         + (clientSurname.isEmpty() ? "" : " " + clientSurname);
@@ -337,7 +338,8 @@ public class ApplicationSearchController {
             ProceedingOutcomeDetail draftProceedingOutcome =
                 getProceedingOutcome(amendments, proceeding.getProceedingCaseId());
             if (draftProceedingOutcome != null) {
-              proceeding.getStatus().setDisplayValue(CaseProceedingDisplayStatus.OUTCOME.getStatus());
+              proceeding.getStatus().setDisplayValue(
+                  CaseProceedingDisplayStatus.OUTCOME.getStatus());
             } else {
               proceeding.getStatus().setDisplayValue(ebsCase.getStatus().getDisplayValue());
             }
@@ -373,21 +375,21 @@ public class ApplicationSearchController {
   }
 
   private void populateDropdowns(UserDetail user, Model model) {
-      Tuple2<ProviderDetail, CaseStatusLookupDetail> combinedResults =
-          Optional.ofNullable(Mono.zip(
-              providerService.getProvider(user.getProvider().getId()),
-              lookupService.getCaseStatusValues()).block()).orElseThrow(
-                  () -> new CaabApplicationException("Failed to retrieve lookup data"));
+    Tuple2<ProviderDetail, CaseStatusLookupDetail> combinedResults =
+        Optional.ofNullable(Mono.zip(
+            providerService.getProvider(user.getProvider().getId()),
+            lookupService.getCaseStatusValues()).block()).orElseThrow(
+                () -> new CaabApplicationException("Failed to retrieve lookup data"));
 
-      ProviderDetail providerDetail = combinedResults.getT1();
-      CaseStatusLookupDetail caseStatusLookupDetail = combinedResults.getT2();
+    ProviderDetail providerDetail = combinedResults.getT1();
+    CaseStatusLookupDetail caseStatusLookupDetail = combinedResults.getT2();
 
-      model.addAttribute("feeEarners",
-          providerService.getAllFeeEarners(providerDetail));
-      model.addAttribute("offices",
-          user.getProvider().getOffices());
-      model.addAttribute("statuses",
-          caseStatusLookupDetail.getContent());
-    }
+    model.addAttribute("feeEarners",
+        providerService.getAllFeeEarners(providerDetail));
+    model.addAttribute("offices",
+        user.getProvider().getOffices());
+    model.addAttribute("statuses",
+        caseStatusLookupDetail.getContent());
+  }
 }
 
