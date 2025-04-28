@@ -200,8 +200,8 @@ public class LookupService {
       final String courtCode, final String description) {
     return ebsApiClient.getCommonValues(
         COMMON_VALUE_COURTS,
-        StringUtils.hasText(courtCode) ? String.format("*%s*", courtCode) : null,
-        StringUtils.hasText(description) ? String.format("*%s*", description.toUpperCase()) : null);
+        StringUtils.hasText(courtCode) ? "*%s*".formatted(courtCode) : null,
+        StringUtils.hasText(description) ? "*%s*".formatted(description.toUpperCase()) : null);
   }
 
   /**

@@ -372,8 +372,8 @@ public class OpponentsSectionController {
                       .description(opponentFormData.getRelationshipToCase())))
               .blockOptional()
               .orElseThrow(() -> new CaabApplicationException(
-                  String.format("Failed to retrieve relationship to case with code: %s",
-                      opponentFormData.getRelationshipToCase())));
+              "Failed to retrieve relationship to case with code: %s".formatted(
+                  opponentFormData.getRelationshipToCase())));
 
       opponentFormData.setDateOfBirthMandatory(relationshipToCase.getDateOfBirthMandatory());
     }
@@ -414,7 +414,7 @@ public class OpponentsSectionController {
         .filter(opponentFormData -> opponentFormData.getId().equals(opponentId))
         .findFirst()
         .orElseThrow(() -> new CaabApplicationException(
-            String.format("Invalid Opponent Id: %s", opponentId)));
+            "Invalid Opponent Id: %s".formatted(opponentId)));
 
     model.addAttribute(CURRENT_OPPONENT, currentOpponent);
 
@@ -505,7 +505,7 @@ public class OpponentsSectionController {
                 && Boolean.TRUE.equals(opponentFormData.getDeletable()))
             .findFirst()
             .orElseThrow(() -> new CaabApplicationException(
-                String.format("Invalid Opponent Id: %s", opponentId)));
+            "Invalid Opponent Id: %s".formatted(opponentId)));
 
     model.addAttribute(CURRENT_OPPONENT, currentOpponent);
 
@@ -536,7 +536,7 @@ public class OpponentsSectionController {
                     && Boolean.TRUE.equals(opponentFormData.getDeletable()));
 
     if (!validOpponentId) {
-      throw new CaabApplicationException(String.format("Invalid Opponent Id: %s", opponentId));
+      throw new CaabApplicationException("Invalid Opponent Id: %s".formatted(opponentId));
     }
 
     opponentService.deleteOpponent(opponentId, user);

@@ -115,7 +115,7 @@ public class NotificationSearchCriteria {
       int month = Integer.parseInt(monthInput);
       int day = Integer.parseInt(dayInput);
 
-      return String.format("%d-%02d-%02d", year, month, day);
+      return "%d-%02d-%02d".formatted(year, month, day);
     } catch (NumberFormatException e) {
       // Handle the exception if any of the year, month or day is not a valid integer
       throw new CaabApplicationException("Unable to format date", e);

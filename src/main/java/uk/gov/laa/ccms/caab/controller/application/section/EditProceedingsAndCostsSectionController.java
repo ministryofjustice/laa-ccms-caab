@@ -394,7 +394,7 @@ public class EditProceedingsAndCostsSectionController {
     proceedingFlow.setMatterTypeDetails(matterTypeDetails);
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
-    return String.format("redirect:/application/proceedings/%s/proceeding-type", action);
+    return "redirect:/application/proceedings/%s/proceeding-type".formatted(action);
 
   }
 
@@ -500,7 +500,7 @@ public class EditProceedingsAndCostsSectionController {
     proceedingFlow.setProceedingDetails(proceedingTypeDetails);
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
-    return String.format("redirect:/application/proceedings/%s/further-details", action);
+    return "redirect:/application/proceedings/%s/further-details".formatted(action);
 
   }
 
@@ -621,7 +621,7 @@ public class EditProceedingsAndCostsSectionController {
     proceedingFlow.setFurtherDetails(furtherDetails);
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
-    return String.format("redirect:/application/proceedings/%s/confirm", action);
+    return "redirect:/application/proceedings/%s/confirm".formatted(action);
   }
 
   /**
@@ -1231,7 +1231,7 @@ public class EditProceedingsAndCostsSectionController {
       model.addAttribute(CURRENT_PROCEEDING, proceeding);
     }
 
-    return String.format("redirect:/application/proceedings/%s/confirm",
+    return "redirect:/application/proceedings/%s/confirm".formatted(
         proceedingFlow.getAction());
   }
 
@@ -1299,7 +1299,7 @@ public class EditProceedingsAndCostsSectionController {
       model.addAttribute(CURRENT_PROCEEDING, proceeding);
     }
 
-    return String.format("redirect:/application/proceedings/%s/confirm",
+    return "redirect:/application/proceedings/%s/confirm".formatted(
         proceedingFlow.getAction());
   }
 

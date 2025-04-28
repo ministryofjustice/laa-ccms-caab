@@ -61,7 +61,7 @@ public class OrganisationSearchCriteriaValidator extends AbstractValidator {
                 + "letters and spaces only");
       } else if (city.matches(DOUBLE_SPACE)) {
         errors.rejectValue("city", "invalid.city",
-            String.format(GENERIC_DOUBLE_SPACES, "City"));
+            GENERIC_DOUBLE_SPACES.formatted("City"));
       }
     }
   }
@@ -77,10 +77,10 @@ public class OrganisationSearchCriteriaValidator extends AbstractValidator {
       //check no double spaces
       if (!name.matches(CHARACTER_SET_A)) {
         errors.rejectValue("name", "invalid.name",
-            String.format(GENERIC_INCORRECT_FORMAT, "Organisation name"));
+            GENERIC_INCORRECT_FORMAT.formatted("Organisation name"));
       } else if (name.matches(DOUBLE_SPACE)) {
         errors.rejectValue("name", "invalid.name",
-            String.format(GENERIC_DOUBLE_SPACES, "Organisation name"));
+            GENERIC_DOUBLE_SPACES.formatted("Organisation name"));
       }
     }
   }

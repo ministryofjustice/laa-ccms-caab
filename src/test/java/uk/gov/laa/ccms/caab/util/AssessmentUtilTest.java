@@ -162,7 +162,7 @@ public class AssessmentUtilTest {
     final List<AssessmentEntityDetail> result = AssessmentUtil.getRelatedEntities(relationshipDetail, assessment);
 
     assertEquals(1, result.size());
-    assertEquals(entityDetail, result.get(0));
+    assertEquals(entityDetail, result.getFirst());
   }
 
   @Test

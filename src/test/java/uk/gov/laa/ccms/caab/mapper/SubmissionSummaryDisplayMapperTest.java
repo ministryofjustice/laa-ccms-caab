@@ -472,8 +472,8 @@ class SubmissionSummaryDisplayMapperTest {
 
     assertNotNull(result, "Result should not be null.");
     assertEquals(1, result.size(), "Result list should have correct size.");
-    assertEquals("Checkbox Option 1", result.get(0).getFieldValueDisplayValue(), "Field value display should be mapped correctly.");
-    assertFalse(result.get(0).isChecked(), "Checked should be false by default.");
+    assertEquals("Checkbox Option 1", result.getFirst().getFieldValueDisplayValue(), "Field value display should be mapped correctly.");
+    assertFalse(result.getFirst().isChecked(), "Checked should be false by default.");
   }
 
   @Test

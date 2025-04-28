@@ -700,7 +700,7 @@ public class AssessmentService {
         getAssessmentEntitiesForEntityType(assessment, entityType);
 
     for (final AssessmentEntityDetail entity : entities) {
-      log.debug(String.format("%s entity ID : %s", entityType, entity.getName()));
+      log.debug("%s entity ID : %s".formatted(entityType, entity.getName()));
       addRedundantEntityMethod.accept(entitiesToDelete, entity.getName());
     }
 
@@ -715,7 +715,7 @@ public class AssessmentService {
         .filter(Objects::nonNull)
         .flatMap(relationship -> relationship.getRelationshipTargets().stream())
         .forEach(target -> {
-          log.debug(String.format("%s relationship target entity ID : %s",
+          log.debug("%s relationship target entity ID : %s".formatted(
               relationshipType,
               target.getTargetEntityId()));
           addRedundantEntityMethod.accept(entitiesToDelete, target.getTargetEntityId());

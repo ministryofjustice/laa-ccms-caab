@@ -207,7 +207,7 @@ public class EbsApiClientTest {
       String  notificationId = "123";
       int userId = 876;
       int providerId = 456;
-      String expectedUri = String.format("/notifications/%s?user-id=%s&provider-id=%s", notificationId, userId, providerId);
+      String expectedUri = "/notifications/%s?user-id=%s&provider-id=%s".formatted(notificationId, userId, providerId);
       ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
@@ -235,7 +235,7 @@ public class EbsApiClientTest {
       String notificationId = "123";
       int userId = 876;
       int providerId = 456;
-      String expectedUri = String.format("/notifications/%s?user-id=%s&provider-id=%s", notificationId, userId, providerId);
+      String expectedUri = "/notifications/%s?user-id=%s&provider-id=%s".formatted(notificationId, userId, providerId);
       ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
@@ -383,7 +383,7 @@ public class EbsApiClientTest {
 
         // Assert the URI
         assertEquals(
-            String.format("/lookup/common?size=1000&type=%s&code=%s&description=%s&sort=%s",
+            "/lookup/common?size=1000&type=%s&code=%s&description=%s&sort=%s".formatted(
                 type, code, descr, sort), actualUri.toString());
       }
 
@@ -418,7 +418,7 @@ public class EbsApiClientTest {
 
         // Assert the URI
         assertEquals(
-            String.format("/lookup/common?size=1000&type=%s&code=%s&description=%s&sort=%s",
+            "/lookup/common?size=1000&type=%s&code=%s&description=%s&sort=%s".formatted(
                 type, code, descr, sort), actualUri.toString());
       }
     }
@@ -944,7 +944,7 @@ public class EbsApiClientTest {
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
       // Assert the URI
-      assertEquals(String.format("/prior-authority-types?size=1000&code=%s&value-required=%s",
+      assertEquals("/prior-authority-types?size=1000&code=%s&value-required=%s".formatted(
           code, valueRequired), actualUri.toString());
     }
 
@@ -980,7 +980,7 @@ public class EbsApiClientTest {
 
       // Assert the URI
       assertEquals(
-          String.format("/lookup/outcome-results?size=1000&proceeding-code=%s&outcome-result=%s",
+          "/lookup/outcome-results?size=1000&proceeding-code=%s&outcome-result=%s".formatted(
               proceedingCode, outcomeResult), actualUri.toString());
     }
   }
@@ -1013,7 +1013,7 @@ public class EbsApiClientTest {
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
       // Assert the URI
-      assertEquals(String.format("/lookup/stage-ends?size=1000&proceeding-code=%s&stage-end=%s",
+      assertEquals("/lookup/stage-ends?size=1000&proceeding-code=%s&stage-end=%s".formatted(
           proceedingCode, stageEnd), actualUri.toString());
     }
   }

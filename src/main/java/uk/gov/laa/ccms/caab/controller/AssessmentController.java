@@ -260,7 +260,7 @@ public class AssessmentController {
 
 
     final String submitReturnUrl =
-        String.format(RETURN_URL, contextToken);
+        RETURN_URL.formatted(contextToken);
 
     model.addAttribute("checkpoint",
         prepopAssessment.getCheckpoint() != null ? CHECKPOINT_RESUME : CHECKPOINT_START);
