@@ -1,11 +1,11 @@
 package uk.gov.laa.ccms.caab.constants;
 
-import lombok.Data;
+import lombok.Getter;
 
 /**
  * Constants for common value types used in the application.
  */
-@Data
+@Getter
 public class CommonValueConstants {
 
   /**

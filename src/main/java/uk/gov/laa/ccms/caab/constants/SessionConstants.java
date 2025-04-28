@@ -1,11 +1,11 @@
 package uk.gov.laa.ccms.caab.constants;
 
-import lombok.Data;
+import lombok.Getter;
 
 /**
  * Constants for session attribute names used in the application.
  */
-@Data
+@Getter
 public class SessionConstants {
 
   /**
@@ -30,7 +30,6 @@ public class SessionConstants {
    * Used when returning to copy case results screen to prepopulate table of results
    */
   public static final String CASE_SEARCH_RESULTS = "caseSearchResults";
-
 
   /**
    * Session attribute used to keep track of client search criteria during the creation of a new
@@ -85,6 +84,11 @@ public class SessionConstants {
    * Session attribute used for holding the Notifications retrieved from SOA.
    */
   public static final String NOTIFICATIONS_SEARCH_RESULTS = "notificationsSearchResults";
+
+  /**
+   * Session attribute used to keep track of the current case.
+   */
+  public static final String CASE = "case";
 
   /**
    * Session attribute used to keep track of the Case Reference Number, used for

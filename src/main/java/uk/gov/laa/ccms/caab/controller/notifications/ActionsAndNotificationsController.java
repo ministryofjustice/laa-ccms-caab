@@ -210,6 +210,8 @@ public class ActionsAndNotificationsController {
         .orElseThrow(() -> new CaabApplicationException(
         "Notification with id %s not found".formatted(notificationId)));
 
+    session.setAttribute(NOTIFICATION_ID, notificationId);
+
     return prepareNotificationPageModel(notification,
         new NotificationResponseFormData(), model, session);
   }

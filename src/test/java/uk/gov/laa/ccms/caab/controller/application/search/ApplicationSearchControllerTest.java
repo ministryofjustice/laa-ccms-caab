@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
+import org.hamcrest.Matchers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
@@ -15,9 +16,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -44,13 +48,20 @@ import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
+import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.feature.FeatureService;
 import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ClientDetail;
+import uk.gov.laa.ccms.caab.model.CostEntryDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.IntDisplayValue;
+import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -324,7 +335,39 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testSelectApplication_otherStatus_redirectsToCaseSummary() throws Exception {
+  public void testSelectApplication_otherStatus_redirectsToCaseOverview() throws Exception {
+    final String selectedCaseRef = "2";
+    final String appRef = "3";
+
+    // EBS Case
+    ApplicationDetail ebsCase = new ApplicationDetail()
+        .caseReferenceNumber(selectedCaseRef);
+
+    when(applicationService.getCase(any(), any(Long.class), any())).thenReturn(ebsCase);
+
+    // TDS application
+    BaseApplicationDetail tdsApplication = new BaseApplicationDetail()
+        .id(Integer.parseInt(appRef))
+        .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
+        .caseReferenceNumber(selectedCaseRef);
+
+    ApplicationDetails appDetails = new ApplicationDetails()
+        .addContentItem(tdsApplication);
+
+    when(applicationService.getTdsApplications(any(), any(), any(), any()))
+        .thenReturn(appDetails);
+
+    mockMvc.perform(get("/application/{case-reference-number}/view", selectedCaseRef)
+            .sessionAttr(USER_DETAILS, user))
+        .andDo(print())
+        .andExpect(request().sessionAttribute(CASE, ebsCase))
+        .andExpect(request().sessionAttribute(APPLICATION, tdsApplication))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/case/overview"));
+  }
+
+  @Test
+  public void testSelectApplication_amendment_redirectsToCaseOverview() throws Exception {
     final String selectedCaseRef = "2";
 
     // EBS Case
@@ -340,9 +383,221 @@ public class ApplicationSearchControllerTest {
     mockMvc.perform(get("/application/{case-reference-number}/view", selectedCaseRef)
             .sessionAttr(USER_DETAILS, user))
         .andDo(print())
-        .andExpect(request().sessionAttribute(CASE_REFERENCE_NUMBER, selectedCaseRef))
+        .andExpect(request().sessionAttribute(CASE, applicationDetail))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/case/summary/todo"));
+        .andExpect(redirectedUrl("/case/overview"));
+  }
+
+  @Test
+  public void testCaseOverview_loadsCaseDetails() throws Exception {
+    final String selectedCaseRef = "2";
+    final Integer providerId = 1;
+    final String providerReference = "providerReference";
+    final String clientFirstname = "firstname";
+    final String clientSurname = "surname";
+    final String clientReference = "clientReference";
+
+    // EBS Case
+    ApplicationDetail applicationDetail =
+        getEbsCase(selectedCaseRef, providerId, providerReference, clientFirstname, clientSurname,
+            clientReference, false, null, null);
+
+    final ActiveCase activeCase =
+        getActiveCase(selectedCaseRef, providerId, clientFirstname, clientSurname, clientReference,
+            providerReference);
+
+    mockMvc
+        .perform(
+            get("/case/overview", selectedCaseRef)
+                .sessionAttr(USER_DETAILS, user)
+                .sessionAttr(CASE, applicationDetail))
+        .andDo(print())
+        .andExpect(request().sessionAttribute(CASE, applicationDetail))
+        .andExpect(request().sessionAttribute(ACTIVE_CASE, activeCase))
+        .andExpect(model().attribute("hasEbsAmendments", false))
+        .andExpect(model().attribute("draftProceedings", Matchers.empty()))
+        .andExpect(model().attribute("draftCosts", Matchers.nullValue()))
+        .andExpect(model().attribute("returnTo", "caseSearchResults"))
+        .andExpect(model().attribute(NOTIFICATION_ID, Matchers.nullValue()))
+        .andExpect(view().name("application/case-overview"));
+  }
+
+  @Test
+  public void testCaseOverview_setsReturnTo() throws Exception {
+    final String selectedCaseRef = "2";
+    final Integer providerId = 1;
+    final String providerReference = "providerReference";
+    final String clientFirstname = "firstname";
+    final String clientSurname = "surname";
+    final String clientReference = "clientReference";
+    final String notificationId = "5";
+
+    // EBS Case
+    ApplicationDetail applicationDetail =
+        getEbsCase(selectedCaseRef, providerId, providerReference, clientFirstname, clientSurname,
+            clientReference, false, null, null);
+
+    final ActiveCase activeCase =
+        getActiveCase(selectedCaseRef, providerId, clientFirstname, clientSurname, clientReference,
+            providerReference);
+
+    mockMvc
+        .perform(
+            get("/case/overview", selectedCaseRef)
+                .sessionAttr(USER_DETAILS, user)
+                .sessionAttr(CASE, applicationDetail)
+                .sessionAttr(NOTIFICATION_ID, notificationId)
+                .header("referer", "/notifications/%s".formatted(notificationId)))
+        .andDo(print())
+        .andExpect(request().sessionAttribute(CASE, applicationDetail))
+        .andExpect(request().sessionAttribute(ACTIVE_CASE, activeCase))
+        .andExpect(model().attribute("hasEbsAmendments", false))
+        .andExpect(model().attribute("draftProceedings", Matchers.empty()))
+        .andExpect(model().attribute("draftCosts", Matchers.nullValue()))
+        .andExpect(model().attribute("returnTo", "notification"))
+        .andExpect(model().attribute(NOTIFICATION_ID, notificationId))
+        .andExpect(view().name("application/case-overview"));
+  }
+
+  @Test
+  public void testCaseOverview_setsAmendmentDetails_fromEbsCase() throws Exception {
+    final String selectedCaseRef = "2";
+    final String appRef = "3";
+    final Integer providerId = 1;
+    final String providerReference = "providerReference";
+    final String clientFirstname = "firstname";
+    final String clientSurname = "surname";
+    final String clientReference = "clientReference";
+    final boolean hasEbsAmendments = true;
+    final Integer proceedingId = 2;
+    final String costId = "4";
+
+    // EBS Case
+    ApplicationDetail applicationDetail =
+        getEbsCase(selectedCaseRef, providerId, providerReference, clientFirstname, clientSurname,
+            clientReference, hasEbsAmendments, proceedingId, costId);
+
+    final ActiveCase activeCase =
+        getActiveCase(selectedCaseRef, providerId, clientFirstname, clientSurname, clientReference,
+            providerReference);
+
+    // TDS application
+    BaseApplicationDetail tdsApplication = new BaseApplicationDetail()
+        .id(Integer.parseInt(appRef))
+        .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
+        .caseReferenceNumber(selectedCaseRef);
+
+    when(applicationService.getApplication(any())).thenReturn(Mono.empty());
+
+    ProceedingDetail expectedProceeding = new ProceedingDetail().id(proceedingId);
+    CostStructureDetail expectedCost =
+        new CostStructureDetail().addCostEntriesItem(new CostEntryDetail().ebsId(costId));
+
+    mockMvc
+        .perform(
+            get("/case/overview", selectedCaseRef)
+                .sessionAttr(USER_DETAILS, user)
+                .sessionAttr(CASE, applicationDetail)
+                .sessionAttr(APPLICATION, tdsApplication))
+        .andDo(print())
+        .andExpect(request().sessionAttribute(CASE, applicationDetail))
+        .andExpect(request().sessionAttribute(ACTIVE_CASE, activeCase))
+        .andExpect(model().attribute("hasEbsAmendments", hasEbsAmendments))
+        .andExpect(model().attribute("draftProceedings", List.of(expectedProceeding)))
+        .andExpect(model().attribute("draftCosts", expectedCost))
+        .andExpect(model().attribute("returnTo", "caseSearchResults"))
+        .andExpect(model().attribute(NOTIFICATION_ID, Matchers.nullValue()))
+        .andExpect(view().name("application/case-overview"));
+  }
+
+  @Test
+  public void testCaseOverview_setsAmendmentDetails_fromTdsAmendments() throws Exception {
+    final String selectedCaseRef = "2";
+    final String appRef = "3";
+    final Integer providerId = 1;
+    final String providerReference = "providerReference";
+    final String clientFirstname = "firstname";
+    final String clientSurname = "surname";
+    final String clientReference = "clientReference";
+    final boolean hasEbsAmendments = false;
+    final Integer proceedingId = 2;
+    final String costId = "4";
+
+    // EBS Case
+    ApplicationDetail applicationDetail =
+        getEbsCase(selectedCaseRef, providerId, providerReference, clientFirstname, clientSurname,
+            clientReference, hasEbsAmendments, null, null);
+
+    final ActiveCase activeCase =
+        getActiveCase(selectedCaseRef, providerId, clientFirstname, clientSurname, clientReference,
+            providerReference);
+
+    // TDS application
+    BaseApplicationDetail tdsApplication = new BaseApplicationDetail()
+        .id(Integer.parseInt(appRef))
+        .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
+        .caseReferenceNumber(selectedCaseRef);
+
+    ProceedingDetail expectedProceeding = new ProceedingDetail().id(proceedingId);
+    CostStructureDetail expectedCost =
+        new CostStructureDetail().addCostEntriesItem(new CostEntryDetail().ebsId(costId));
+
+    ApplicationDetail amendments =
+        new ApplicationDetail()
+          .proceedings(List.of(expectedProceeding))
+          .costs(expectedCost);
+
+    when(applicationService.getApplication(any())).thenReturn(Mono.just(amendments));
+
+    mockMvc
+        .perform(
+            get("/case/overview", selectedCaseRef)
+                .sessionAttr(USER_DETAILS, user)
+                .sessionAttr(CASE, applicationDetail)
+                .sessionAttr(APPLICATION, tdsApplication))
+        .andDo(print())
+        .andExpect(request().sessionAttribute(CASE, applicationDetail))
+        .andExpect(request().sessionAttribute(ACTIVE_CASE, activeCase))
+        .andExpect(model().attribute("hasEbsAmendments", hasEbsAmendments))
+        .andExpect(model().attribute("draftProceedings", List.of(expectedProceeding)))
+        .andExpect(model().attribute("draftCosts", expectedCost))
+        .andExpect(model().attribute("returnTo", "caseSearchResults"))
+        .andExpect(model().attribute(NOTIFICATION_ID, Matchers.nullValue()))
+        .andExpect(view().name("application/case-overview"));
+  }
+
+  private ApplicationDetail getEbsCase(String selectedCaseRef, Integer providerId,
+      String providerReference, String clientFirstname, String clientSurname,
+      String clientReference, boolean hasEbsAmendments, Integer proceedingId, String costId) {
+    ApplicationDetail ebsCase =  new ApplicationDetail()
+        .caseReferenceNumber(selectedCaseRef)
+        .providerDetails(new ApplicationProviderDetails()
+            .provider(new IntDisplayValue()
+                .id(providerId))
+            .providerCaseReference(providerReference))
+        .client(new ClientDetail()
+            .firstName(clientFirstname)
+            .surname(clientSurname)
+            .reference(clientReference))
+        .costs(new CostStructureDetail().addCostEntriesItem(new CostEntryDetail().ebsId(costId)))
+        .amendment(false);
+
+    if (hasEbsAmendments) {
+      ebsCase.setAmendmentProceedingsInEbs(List.of(new ProceedingDetail().id(proceedingId)));
+    }
+
+    return ebsCase;
+  }
+
+  private ActiveCase getActiveCase(String selectedCaseRef, Integer providerId, String clientFirstname,
+      String clientSurname, String clientReference, String providerReference) {
+    return ActiveCase.builder()
+        .caseReferenceNumber(selectedCaseRef)
+        .providerId(providerId)
+        .client("%s %s" .formatted(clientFirstname, clientSurname))
+        .clientReferenceNumber(clientReference)
+        .providerCaseReferenceNumber(providerReference)
+        .build();
   }
 
   private UserDetail buildUser() {

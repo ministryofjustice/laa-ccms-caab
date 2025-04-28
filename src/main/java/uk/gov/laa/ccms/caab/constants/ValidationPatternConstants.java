@@ -1,11 +1,11 @@
 package uk.gov.laa.ccms.caab.constants;
 
-import lombok.Data;
+import lombok.Getter;
 
 /**
  * Constants for validation patterns used in the application.
  */
-@Data
+@Getter
 public class ValidationPatternConstants {
 
   /**

@@ -1,12 +1,11 @@
 package uk.gov.laa.ccms.caab.constants;
 
-import lombok.Data;
-
+import lombok.Getter;
 
 /**
  * Constants for client action values used for creating or editing.
  */
-@Data
+@Getter
 public class ClientActionConstants {
 
   public static final String ACTION_CREATE = "create";

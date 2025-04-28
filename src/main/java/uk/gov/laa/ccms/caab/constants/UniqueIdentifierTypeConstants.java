@@ -1,11 +1,11 @@
 package uk.gov.laa.ccms.caab.constants;
 
-import lombok.Data;
+import lombok.Getter;
 
 /**
  * Constants for unique identifier types used in the application.
  */
-@Data
+@Getter
 public class UniqueIdentifierTypeConstants {
 
   /**
