@@ -150,8 +150,8 @@ public interface OpponentMapper {
    */
   default OpponentDetail toOpponent(
       final AbstractOpponentFormData opponentFormData) {
-    return opponentFormData instanceof OrganisationOpponentFormData oofd
-        ? toOrganisationOpponent(oofd)
+    return opponentFormData instanceof OrganisationOpponentFormData formData
+        ? toOrganisationOpponent(formData)
         : toIndividualOpponent((IndividualOpponentFormData) opponentFormData);
   }
 
