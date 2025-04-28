@@ -285,7 +285,7 @@ public class ProviderRequestsController {
                     CcmsModule.REQUEST)
                 .blockOptional()
                 .orElseThrow(() -> new CaabApplicationException(
-                    String.format("Invalid document session id: %s", documentSessionId)));
+                "Invalid document session id: %s".formatted(documentSessionId)));
 
         //using the list of documents, we need to upload them to ebs through soa.
         // we also update the status of the documents in the tds to say they have been uploaded
@@ -477,7 +477,7 @@ public class ProviderRequestsController {
               .map(EvidenceDocumentDetails::getContent)
               .blockOptional()
               .orElseThrow(() -> new CaabApplicationException(
-                  String.format("Invalid document session id: %s", documentSessionId)));
+              "Invalid document session id: %s".formatted(documentSessionId)));
 
       model.addAttribute("documentsUploaded", documents);
     } else {

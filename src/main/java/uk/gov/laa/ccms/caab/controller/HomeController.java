@@ -49,9 +49,9 @@ public class HomeController {
        * Format the display message for Overdue Actions.
        * 'x overdue', or 'none overdue'
        */
-      final String overdueActionsMsg = String.format("%s overdue",
-              notificationSummary.getOverdueActions() > 0
-                      ? notificationSummary.getOverdueActions().toString() : "none");
+      final String overdueActionsMsg = "%s overdue".formatted(
+          notificationSummary.getOverdueActions() > 0
+              ? notificationSummary.getOverdueActions().toString() : "none");
 
       /*
        * Format the overall display message for Actions.
@@ -61,18 +61,18 @@ public class HomeController {
       int totalActions = notificationSummary.getStandardActions()
           + notificationSummary.getOverdueActions();
       final String actionsMsg = totalActions > 0
-              ? String.format("%s Outstanding Actions (%s)",
-                      totalActions,
-                      overdueActionsMsg) : NO_OUTSTANDING_ACTIONS;
+              ? "%s Outstanding Actions (%s)".formatted(
+          totalActions,
+          overdueActionsMsg) : NO_OUTSTANDING_ACTIONS;
 
       /*
        * Format the display message for Notifications.
        * 'View Notifications (x outstanding)' or,
        * 'View Notifications (none outstanding)'
        */
-      final String notificationsMsg = String.format("View Notifications (%s outstanding)",
-              notificationSummary.getNotifications() > 0
-                      ? notificationSummary.getNotifications().toString() : "none");
+      final String notificationsMsg = "View Notifications (%s outstanding)".formatted(
+          notificationSummary.getNotifications() > 0
+              ? notificationSummary.getNotifications().toString() : "none");
 
       model.addAttribute("actionsMsg", actionsMsg);
       model.addAttribute("notificationsMsg", notificationsMsg);

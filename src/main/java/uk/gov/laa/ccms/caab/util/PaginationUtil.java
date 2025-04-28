@@ -60,7 +60,7 @@ public final class PaginationUtil {
 
     if (!topLevelOrders.isEmpty()) {
       // Sort the list based on top-level properties
-      list.sort(comparatorForTopLevelSort(list.get(0).getClass(), topLevelOrders));
+      list.sort(comparatorForTopLevelSort(list.getFirst().getClass(), topLevelOrders));
     }
 
     if (!nestedOrders.isEmpty()) {

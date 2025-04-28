@@ -173,7 +173,7 @@ public class ApplicationService {
 
       if (caseDetails.getTotalElements() > searchConstants.getMaxSearchResultsCases()) {
         throw new TooManyResultsException(
-            String.format("Case Search returned %s results", caseDetails.getTotalElements()));
+            "Case Search returned %s results".formatted(caseDetails.getTotalElements()));
       }
 
       searchResults.addAll(caseDetails.getContent().stream()
@@ -229,7 +229,7 @@ public class ApplicationService {
     // Final check of the number of results now that the two searches have been combined.
     if (searchResults.size() > searchConstants.getMaxSearchResultsCases()) {
       throw new TooManyResultsException(
-          String.format("Case Search returned %s results", searchResults.size()));
+          "Case Search returned %s results".formatted(searchResults.size()));
     }
 
     // Sort the combined list by Case Reference

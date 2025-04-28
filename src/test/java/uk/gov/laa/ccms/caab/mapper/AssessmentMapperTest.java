@@ -281,7 +281,7 @@ class AssessmentMapperTest {
 
   @Test
   void toAssessmentEntityDetail_whenOpponentContextIsNotNull() {
-    final AssessmentOpponentMappingContext opponentContext = context.getOpponentContext().get(0);
+    final AssessmentOpponentMappingContext opponentContext = context.getOpponentContext().getFirst();
     final AssessmentEntityDetail result = assessmentMapper.toAssessmentEntityDetail(opponentContext);
 
     assertNotNull(result);

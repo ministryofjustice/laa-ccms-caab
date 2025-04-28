@@ -116,13 +116,13 @@ class OrganisationOpponentValidatorTest {
 
     // Should be 3 errors on telephoneWork. Minlength, format and doublespaces.
     assertEquals(3, errors.getFieldErrors("telephoneWork").size());
-    assertEquals("length.below.min", errors.getFieldErrors("telephoneWork").get(0).getCode());
+    assertEquals("length.below.min", errors.getFieldErrors("telephoneWork").getFirst().getCode());
     assertEquals("invalid.format", errors.getFieldErrors("telephoneWork").get(1).getCode());
     assertEquals("double.spaces", errors.getFieldErrors("telephoneWork").get(2).getCode());
 
     // Should be 3 errors on telephoneWork. Minlength, format and doublespaces.
     assertEquals(3, errors.getFieldErrors("faxNumber").size());
-    assertEquals("length.below.min", errors.getFieldErrors("faxNumber").get(0).getCode());
+    assertEquals("length.below.min", errors.getFieldErrors("faxNumber").getFirst().getCode());
     assertEquals("invalid.format", errors.getFieldErrors("faxNumber").get(1).getCode());
     assertEquals("double.spaces", errors.getFieldErrors("faxNumber").get(2).getCode());
   }
@@ -141,7 +141,7 @@ class OrganisationOpponentValidatorTest {
     validator.validate(opponentFormData, errors);
     // Should be two errors on otherInformation. Length and format.
     assertEquals(2, errors.getFieldErrors("otherInformation").size());
-    assertEquals("invalid.format", errors.getFieldErrors("otherInformation").get(0).getCode());
+    assertEquals("invalid.format", errors.getFieldErrors("otherInformation").getFirst().getCode());
     assertEquals("length.exceeds.max", errors.getFieldErrors("otherInformation").get(1).getCode());
   }
 

@@ -94,7 +94,7 @@ public class LoggingInterceptor implements HandlerInterceptor {
     StringBuilder sessionLogs = new StringBuilder("[SESSION KEYS] - [");
     while (attributeNames.hasMoreElements()) {
       String attributeName = attributeNames.nextElement();
-      sessionLogs.append(String.format("%s,", attributeName));
+      sessionLogs.append("%s,".formatted(attributeName));
     }
     sessionLogs.append("]");
     log.debug("{}", sessionLogs);

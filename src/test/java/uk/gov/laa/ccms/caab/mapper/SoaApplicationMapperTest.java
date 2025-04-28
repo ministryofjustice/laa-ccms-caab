@@ -217,7 +217,7 @@ class SoaApplicationMapperTest {
     assertNotNull(result.getOpponents());
     assertNotNull(result.getOpponents());
     assertEquals(2, result.getOpponents().size());
-    assertEquals(OPPONENT_TYPE_INDIVIDUAL, result.getOpponents().get(0).getType());
+    assertEquals(OPPONENT_TYPE_INDIVIDUAL, result.getOpponents().getFirst().getType());
     assertEquals(OPPONENT_TYPE_ORGANISATION, result.getOpponents().get(1).getType());
 
   }
@@ -428,56 +428,56 @@ class SoaApplicationMapperTest {
         result.getAssessmentId());
     assertEquals(soaAssessmentResult.getDate(),
         result.getDate());
-    assertEquals(soaAssessmentResult.getAssessmentDetails().get(0).getCaption(),
-        result.getAssessmentDetails().get(0).getCaption());
-    assertEquals(soaAssessmentResult.getAssessmentDetails().get(0).getScreenName(),
-        result.getAssessmentDetails().get(0).getScreenName());
-    assertEquals(soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getCaption(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getCaption());
+    assertEquals(soaAssessmentResult.getAssessmentDetails().getFirst().getCaption(),
+        result.getAssessmentDetails().getFirst().getCaption());
+    assertEquals(soaAssessmentResult.getAssessmentDetails().getFirst().getScreenName(),
+        result.getAssessmentDetails().getFirst().getScreenName());
+    assertEquals(soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getCaption(),
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getCaption());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getEntityName(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getEntityName());
+        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getEntityName(),
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getEntityName());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getSequenceNumber(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getSequenceNumber());
+        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getSequenceNumber(),
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getSequenceNumber());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
+        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
             .getCaption(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0).getCaption());
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst().getCaption());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
+        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
             .getInstanceLabel(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
             .getInstanceLabel());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getAttribute(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getAttribute());
+        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getAttribute(),
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getAttribute());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getCaption(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getCaption());
+        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getCaption(),
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getCaption());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getResponseText(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getResponseText());
+        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getResponseText(),
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getResponseText());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getResponseType(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getResponseType());
+        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getResponseType(),
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getResponseType());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getResponseValue(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getResponseValue());
-    assertEquals(soaAssessmentResult.getResults().get(0).getAttribute(),
-        result.getResults().get(0).getAttribute());
-    assertEquals(soaAssessmentResult.getResults().get(0).getAttributeValue(),
-        result.getResults().get(0).getAttributeValue());
+        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getResponseValue(),
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getResponseValue());
+    assertEquals(soaAssessmentResult.getResults().getFirst().getAttribute(),
+        result.getResults().getFirst().getAttribute());
+    assertEquals(soaAssessmentResult.getResults().getFirst().getAttributeValue(),
+        result.getResults().getFirst().getAttributeValue());
   }
 
   @Test
@@ -1030,7 +1030,7 @@ class SoaApplicationMapperTest {
             .code("apptypecode")
             .description("apptypedesc"))
         .amendmentProceedingsInEbs(Collections.singletonList(
-            buildProceedingMappingContext(soaCase.getApplicationDetails().getProceedings().get(0))))
+            buildProceedingMappingContext(soaCase.getApplicationDetails().getProceedings().getFirst())))
         .caseOutcome(buildCaseOutcomeMappingContext(soaCase))
         .caseWithOnlyDraftProceedings(Boolean.TRUE)
         .certificate(new CommonLookupValueDetail()
@@ -1044,12 +1044,12 @@ class SoaApplicationMapperTest {
         .supervisorContact(new uk.gov.laa.ccms.data.model.ContactDetail()
             .id(101)
             .name("supName"))
-        .meansAssessment(soaCase.getApplicationDetails().getMeansAssesments().get(0))
-        .meritsAssessment(soaCase.getApplicationDetails().getMeritsAssesments().get(0))
+        .meansAssessment(soaCase.getApplicationDetails().getMeansAssesments().getFirst())
+        .meritsAssessment(soaCase.getApplicationDetails().getMeritsAssesments().getFirst())
         .priorAuthorities(Collections.singletonList(buildPriorAuthorityMappingContext(
-            soaCase.getPriorAuthorities().get(0))))
+            soaCase.getPriorAuthorities().getFirst())))
         .proceedings(Collections.singletonList(
-            buildProceedingMappingContext(soaCase.getApplicationDetails().getProceedings().get(0))))
+            buildProceedingMappingContext(soaCase.getApplicationDetails().getProceedings().getFirst())))
         .providerDetail(new uk.gov.laa.ccms.data.model.ProviderDetail()
             .id(1)
             .name("provname"))
@@ -1097,12 +1097,12 @@ class SoaApplicationMapperTest {
   private SoaCaseOutcomeMappingContext buildCaseOutcomeMappingContext(CaseDetail soaCase) {
     return SoaCaseOutcomeMappingContext.builder()
         .soaCase(soaCase)
-        .costAwards(Collections.singletonList(soaCase.getAwards().get(0)))
+        .costAwards(Collections.singletonList(soaCase.getAwards().getFirst()))
         .financialAwards(Collections.singletonList(soaCase.getAwards().get(1)))
         .landAwards(Collections.singletonList(soaCase.getAwards().get(2)))
         .otherAssetAwards(Collections.singletonList(soaCase.getAwards().get(3)))
         .proceedingOutcomes(Collections.singletonList(buildProceedingMappingContext(
-            soaCase.getApplicationDetails().getProceedings().get(0))))
+            soaCase.getApplicationDetails().getProceedings().getFirst())))
         .build();
   }
 
@@ -1140,13 +1140,13 @@ class SoaApplicationMapperTest {
     assertNotNull(result.getApplicationDetails());
     assertNotNull(result.getLinkedCases());
     assertEquals(1, result.getLinkedCases().size());
-    assertEquals("LC123", result.getLinkedCases().get(0).getCaseReferenceNumber());
+    assertEquals("LC123", result.getLinkedCases().getFirst().getCaseReferenceNumber());
     assertNotNull(result.getPriorAuthorities());
     assertEquals(1, result.getPriorAuthorities().size());
-    assertEquals("Test Prior Authority", result.getPriorAuthorities().get(0).getDescription());
+    assertEquals("Test Prior Authority", result.getPriorAuthorities().getFirst().getDescription());
     assertNotNull(result.getCaseDocs());
     assertEquals(1, result.getCaseDocs().size());
-    assertEquals("DOC123", result.getCaseDocs().get(0).getCcmsDocumentId());
+    assertEquals("DOC123", result.getCaseDocs().getFirst().getCcmsDocumentId());
     assertNotNull(result.getRecordHistory());
   }
 
@@ -1199,7 +1199,7 @@ class SoaApplicationMapperTest {
     assertEquals("Approved", result.getDecisionStatus());
     assertNotNull(result.getDetails());
     assertEquals(1, result.getDetails().size());
-    assertEquals("PA123", result.getDetails().get(0).getName());
+    assertEquals("PA123", result.getDetails().getFirst().getName());
   }
 
   @Test

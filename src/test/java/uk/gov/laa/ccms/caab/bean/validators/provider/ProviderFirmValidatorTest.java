@@ -44,7 +44,7 @@ public class ProviderFirmValidatorTest {
     validator.validate(providerFirmFormData, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getFieldErrors().size());
-    assertEquals("required.providerFirmId", errors.getFieldErrors().get(0).getCode());
+    assertEquals("required.providerFirmId", errors.getFieldErrors().getFirst().getCode());
   }
 
   @Test

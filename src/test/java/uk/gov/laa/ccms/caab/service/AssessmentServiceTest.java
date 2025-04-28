@@ -1063,15 +1063,15 @@ public class AssessmentServiceTest {
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
 
-    final AssessmentSummaryEntityDisplay summaryDisplay = result.get(0);
+    final AssessmentSummaryEntityDisplay summaryDisplay = result.getFirst();
     assertEquals("PROCEEDING", summaryDisplay.getName());
     assertEquals("Proceeding", summaryDisplay.getDisplayName());
     assertEquals(1, summaryDisplay.getEntityLevel());
     assertNotNull(summaryDisplay.getAttributes());
     assertEquals(1, summaryDisplay.getAttributes().size());
-    assertEquals("PROCEEDING_NAME", summaryDisplay.getAttributes().get(0).getName());
-    assertEquals("Proceeding Name", summaryDisplay.getAttributes().get(0).getDisplayName());
-    assertEquals("TEST", summaryDisplay.getAttributes().get(0).getValue());
+    assertEquals("PROCEEDING_NAME", summaryDisplay.getAttributes().getFirst().getName());
+    assertEquals("Proceeding Name", summaryDisplay.getAttributes().getFirst().getDisplayName());
+    assertEquals("TEST", summaryDisplay.getAttributes().getFirst().getValue());
   }
 
   @Test
@@ -1114,16 +1114,16 @@ public class AssessmentServiceTest {
     // Verify the result
     assertFalse(summaryEntitiesToDisplay.isEmpty());
     assertEquals(1, summaryEntitiesToDisplay.size());
-    assertEquals("testEntity", summaryEntitiesToDisplay.get(0).getName());
-    assertEquals("Test Entity", summaryEntitiesToDisplay.get(0).getDisplayName());
-    assertEquals(1, summaryEntitiesToDisplay.get(0).getEntityLevel());
+    assertEquals("testEntity", summaryEntitiesToDisplay.getFirst().getName());
+    assertEquals("Test Entity", summaryEntitiesToDisplay.getFirst().getDisplayName());
+    assertEquals(1, summaryEntitiesToDisplay.getFirst().getEntityLevel());
 
-    final List<AssessmentSummaryAttributeDisplay> attributes = summaryEntitiesToDisplay.get(0).getAttributes();
+    final List<AssessmentSummaryAttributeDisplay> attributes = summaryEntitiesToDisplay.getFirst().getAttributes();
     assertFalse(attributes.isEmpty());
     assertEquals(1, attributes.size());
-    assertEquals("testAttribute", attributes.get(0).getName());
-    assertEquals("Test Attribute", attributes.get(0).getDisplayName());
-    assertEquals("testValue", attributes.get(0).getValue());
+    assertEquals("testAttribute", attributes.getFirst().getName());
+    assertEquals("Test Attribute", attributes.getFirst().getDisplayName());
+    assertEquals("testValue", attributes.getFirst().getValue());
   }
 
   @ParameterizedTest

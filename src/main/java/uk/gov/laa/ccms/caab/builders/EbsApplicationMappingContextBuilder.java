@@ -124,7 +124,7 @@ public class EbsApplicationMappingContextBuilder {
                 .description(ebsCase.getCertificateType())))
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException(
-            String.format("Failed to retrieve applicationtype with code: %s",
+            "Failed to retrieve applicationtype with code: %s".formatted(
                 ebsCase.getCertificateType()))) : null;
 
     // Lookup the application type display value - this should be based on the
@@ -138,7 +138,7 @@ public class EbsApplicationMappingContextBuilder {
                 .orElse(certificateLookup))
             .blockOptional()
             .orElseThrow(() -> new CaabApplicationException(
-                String.format("Failed to retrieve applicationtype with code: %s",
+                "Failed to retrieve applicationtype with code: %s".formatted(
                     ebsApplicationDetails.getApplicationAmendmentType()))) : certificateLookup;
 
     // Find the correct provider office.
@@ -147,8 +147,8 @@ public class EbsApplicationMappingContextBuilder {
             String.valueOf(officeDetail.getId())))
         .findAny()
         .orElseThrow(() -> new CaabApplicationException(
-            String.format("Failed to find Office with id: %s",
-                ebsProvider.getProviderOfficeId())));
+        "Failed to find Office with id: %s".formatted(
+            ebsProvider.getProviderOfficeId())));
 
     // Get the Fee Earners for the relevant office, and Map them by contact id.
     final Map<Integer, ContactDetail> feeEarnerById =
@@ -488,7 +488,7 @@ public class EbsApplicationMappingContextBuilder {
     return Optional.ofNullable(awardTypes.get(award.getAwardType()))
         .map(AwardTypeLookupValueDetail::getAwardType)
         .orElseThrow(() -> new CaabApplicationException(
-            String.format("Failed to find AwardType with code: %s", award.getAwardType())));
+        "Failed to find AwardType with code: %s".formatted(award.getAwardType())));
   }
 
   /**
@@ -511,8 +511,8 @@ public class EbsApplicationMappingContextBuilder {
                     .description(ebsPriorAuthority.getPriorAuthorityType())))
             .blockOptional()
             .orElseThrow(() -> new CaabApplicationException(
-                String.format("Failed to find PriorAuthorityType with code: %s",
-                    ebsPriorAuthority.getPriorAuthorityType())));
+            "Failed to find PriorAuthorityType with code: %s".formatted(
+                ebsPriorAuthority.getPriorAuthorityType())));
 
     // Build a Map of PriorAuthorityDetail keyed on code
     Map<String, uk.gov.laa.ccms.data.model.PriorAuthorityDetail> priorAuthDetailMap =
@@ -556,8 +556,8 @@ public class EbsApplicationMappingContextBuilder {
               .orElse(priorAuthorityAttribute.getValue()))
           .blockOptional()
           .orElseThrow(() -> new CaabApplicationException(
-              String.format("Failed to find common value with code: %s",
-                  priorAuthorityAttribute.getValue())));
+          "Failed to find common value with code: %s".formatted(
+              priorAuthorityAttribute.getValue())));
     } else {
       description = priorAuthorityAttribute.getValue();
     }

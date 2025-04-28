@@ -344,7 +344,7 @@ public class NotificationService {
                     .orElse(null))
             .blockOptional()
             .orElseThrow(() -> new CaabApplicationException(
-                String.format("Invalid notification attachment id: %s", notificationAttachmentId)));
+            "Invalid notification attachment id: %s".formatted(notificationAttachmentId)));
 
     caabApiClient.deleteNotificationAttachment(notificationAttachmentId, loginId).block();
     if (notificationAttachment.getSendBy().equals(ELECTRONIC.getCode())) {

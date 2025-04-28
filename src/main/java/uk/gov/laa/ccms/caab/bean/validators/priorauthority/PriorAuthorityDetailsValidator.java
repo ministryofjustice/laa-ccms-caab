@@ -83,20 +83,20 @@ public class PriorAuthorityDetailsValidator extends AbstractValidator {
             priorAuthorityDetails.getDynamicOptions().get(key);
 
         if (value.isMandatory()) {
-          validateRequiredField(String.format("dynamicOptions[%s].fieldValue", key),
+          validateRequiredField("dynamicOptions[%s].fieldValue".formatted(key),
               value.getFieldValue(), value.getFieldDescription(), errors);
         }
 
         if (StringUtils.hasText(value.getFieldValue())) {
           if (FIELD_TYPE_AMT.equals(value.getFieldType())) {
-            validateCurrencyField(String.format("dynamicOptions[%s].fieldValue", key),
+            validateCurrencyField("dynamicOptions[%s].fieldValue".formatted(key),
                 value.getFieldValue(), value.getFieldDescription(), errors);
 
-            validateNumericLimit(String.format("dynamicOptions[%s].fieldValue", key),
+            validateNumericLimit("dynamicOptions[%s].fieldValue".formatted(key),
                 value.getFieldValue(), value.getFieldDescription(), MAX_COST_LIMIT, errors);
 
           } else if (FIELD_TYPE_INT.equals(value.getFieldType())) {
-            validateNumericField(String.format("dynamicOptions[%s].fieldValue", key),
+            validateNumericField("dynamicOptions[%s].fieldValue".formatted(key),
                 value.getFieldValue(), value.getFieldDescription(), errors);
           }
         }

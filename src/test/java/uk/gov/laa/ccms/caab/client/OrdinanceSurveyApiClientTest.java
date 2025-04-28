@@ -64,7 +64,7 @@ class OrdinanceSurveyApiClientTest {
 
     // Assert the URI
     assertEquals(
-        String.format("%s?postcode=%s&key=%s", expectedUri, postcode, testKey),
+        "%s?postcode=%s&key=%s".formatted(expectedUri, postcode, testKey),
         actualUri.toString());
   }
 

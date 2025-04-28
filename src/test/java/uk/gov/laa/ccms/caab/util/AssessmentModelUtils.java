@@ -95,7 +95,7 @@ public class AssessmentModelUtils {
 
   public static AssessmentEntityDetail buildProceedingEntityDetail() {
     return new AssessmentEntityDetail()
-        .name(String.format("%s123", InstanceMappingPrefix.PROCEEDING.getPrefix()))
+        .name("%s123".formatted(InstanceMappingPrefix.PROCEEDING.getPrefix()))
         .addAttributesItem(buildMatterTypeAttribute())
         .addAttributesItem(buildProceedingNameAttribute())
         .addAttributesItem(buildClientInvolvementAttribute())
@@ -118,12 +118,12 @@ public class AssessmentModelUtils {
 
   public static AssessmentEntityDetail buildOpponentEntityDetail() {
     return new AssessmentEntityDetail()
-        .name(String.format("%s234", InstanceMappingPrefix.OPPONENT.getPrefix()));
+        .name("%s234".formatted(InstanceMappingPrefix.OPPONENT.getPrefix()));
   }
 
   public static AssessmentEntityDetail buildProceedingEntityDetailWithMultipleScopes() {
     return new AssessmentEntityDetail()
-        .name(String.format("%s789", InstanceMappingPrefix.PROCEEDING.getPrefix()))
+        .name("%s789".formatted(InstanceMappingPrefix.PROCEEDING.getPrefix()))
         .addAttributesItem(buildMatterTypeAttribute())
         .addAttributesItem(buildProceedingNameAttribute())
         .addAttributesItem(buildClientInvolvementAttribute())

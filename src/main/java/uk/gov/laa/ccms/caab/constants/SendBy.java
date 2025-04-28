@@ -33,7 +33,7 @@ public enum SendBy {
         .filter(sendBy -> sendBy.getCode().equals(rawCode))
         .findFirst()
         .orElseThrow(() -> new IllegalArgumentException(
-            String.format("%s is not a valid SendBy code", rawCode)));
+        "%s is not a valid SendBy code".formatted(rawCode)));
   }
 
 }

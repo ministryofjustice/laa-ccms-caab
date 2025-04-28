@@ -120,7 +120,7 @@ public class ClientSubmissionsInProgressController {
     if (session.getAttribute(SUBMISSION_POLL_COUNT) != null) {
       submissionPollCount = (int) session.getAttribute(SUBMISSION_POLL_COUNT);
       if (submissionPollCount >= submissionConstants.getMaxPollCount()) {
-        return String.format("redirect:/application/%s/failed", submissionType);
+        return "redirect:/application/%s/failed".formatted(submissionType);
       }
     }
     submissionPollCount = submissionPollCount + 1;
