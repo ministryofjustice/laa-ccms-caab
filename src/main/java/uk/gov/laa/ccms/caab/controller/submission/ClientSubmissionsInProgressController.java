@@ -14,7 +14,6 @@ import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREA
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_UPDATE_CLIENT;
 
 import jakarta.servlet.http.HttpSession;
-import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -85,8 +84,8 @@ public class ClientSubmissionsInProgressController {
       @SessionAttribute(APPLICATION_CLIENT_NAMES) final BaseClientDetail baseClient,
       final HttpSession session, final Model model) {
 
-    if (!Arrays.asList(APPLICATION.toLowerCase(), AMENDMENTS.toLowerCase())
-        .contains(context.toLowerCase())) {
+    if (!APPLICATION.equalsIgnoreCase(context)
+        && !AMENDMENTS.equalsIgnoreCase(context)) {
       throw new CaabApplicationException("Unknown context");
     }
 

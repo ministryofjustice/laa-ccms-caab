@@ -73,13 +73,11 @@ public class ClientSubmissionsConfirmedController {
    */
   @PostMapping("/{context}/client-update/confirmed")
   public String clientUpdateSubmitted(@PathVariable("context") final String context) {
-    if (ContextConstants.APPLICATION.equals(context)) {
-      return "redirect:/application/sections";
-    }
-    if (ContextConstants.AMENDMENTS.equals(context)) {
-      return "redirect:/amendments/summary";
-    }
-    throw new CaabApplicationException("Unknown context used: " + context);
+    return switch (context) {
+      case ContextConstants.APPLICATION -> "redirect:/application/sections";
+      case ContextConstants.AMENDMENTS -> "redirect:/amendments/summary";
+      default -> throw new CaabApplicationException("Unknown context used: " + context);
+    };
   }
 
 
