@@ -12,7 +12,6 @@ import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,10 +19,6 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
-import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
 import uk.gov.laa.ccms.caab.controller.application.client.AbstractClientSummaryController;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
@@ -48,17 +43,9 @@ public class EditClientSummaryController extends AbstractClientSummaryController
   public EditClientSummaryController(
       final LookupService lookupService,
       final ClientService clientService,
-      final ClientBasicDetailsValidator basicValidator,
-      final ClientContactDetailsValidator contactValidator,
-      final ClientAddressDetailsValidator addressValidator,
-      final ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator,
       final ClientDetailMapper clientDetailsMapper) {
     super(lookupService,
         clientService,
-        basicValidator,
-        contactValidator,
-        addressValidator,
-        opportunitiesValidator,
         clientDetailsMapper);
   }
 
@@ -109,10 +96,7 @@ public class EditClientSummaryController extends AbstractClientSummaryController
       final @ModelAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       final @SessionAttribute(USER_DETAILS) UserDetail user,
       final @SessionAttribute(ACTIVE_CASE) ActiveCase activeCase,
-      final BindingResult bindingResult,
       final HttpSession session) {
-
-    validateClientFlowFormData(clientFlowFormData, bindingResult);
 
     final ClientTransactionResponse response =
         clientService.updateClient(
@@ -122,14 +106,13 @@ public class EditClientSummaryController extends AbstractClientSummaryController
             .blockOptional()
             .orElseThrow(() -> new CaabApplicationException("Failed to update Client"));
 
-
     final BaseClientDetail applicationClientNames =
         clientDetailsMapper.toBaseClient(clientFlowFormData);
 
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
     session.setAttribute(APPLICATION_CLIENT_NAMES, applicationClientNames);
 
-    return "redirect:/submissions/%s".formatted(SUBMISSION_UPDATE_CLIENT);
+    return "redirect:/application/%s".formatted(SUBMISSION_UPDATE_CLIENT);
   }
 
 }

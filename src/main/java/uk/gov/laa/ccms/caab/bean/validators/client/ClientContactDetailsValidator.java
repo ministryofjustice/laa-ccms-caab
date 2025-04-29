@@ -134,9 +134,9 @@ public class ClientContactDetailsValidator extends AbstractValidator {
         "Password reminder", errors);
 
     validatePasswordNeedsReminder(contactDetails, errors);
-    validateEmailField(contactDetails, errors);
 
     if (Boolean.FALSE.equals(contactDetails.getVulnerableClient())) {
+      validateEmailField(contactDetails, errors);
       validateTelephones(contactDetails, errors);
       validateRequiredField("correspondenceMethod", contactDetails.getCorrespondenceMethod(),
           "Correspondence method", errors);

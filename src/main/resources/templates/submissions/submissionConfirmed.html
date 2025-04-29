@@ -8,7 +8,7 @@
   <div id="breadcrumbs"></div>
   <div id="main-content" style="padding-top: 40px;">
     <form action="#"
-          th:action="@{/submissions/{submissionType}/confirmed(submissionType=${submissionType})}" method="post">
+          th:action="@{/application/{submissionType}/confirmed(submissionType=${submissionType})}" method="post">
       <h1 class="govuk-heading-l" th:text="#{submission.confirmation}"></h1>
       <p class="govuk-body-l" th:text="#{submission.successfullyProcessed}"></p>
       <div class="govuk-button-group">
