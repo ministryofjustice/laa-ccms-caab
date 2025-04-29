@@ -13,7 +13,7 @@ class FileUtilTest {
   @Test
   void testGetFileExtension_extractsCorrectExtension() {
     final String fileExt = "pdf";
-    String filename = String.format("originalName.%s", fileExt);
+    String filename = "originalName.%s".formatted(fileExt);
 
     final MultipartFile multipartFile = new MockMultipartFile(
         "theFile",

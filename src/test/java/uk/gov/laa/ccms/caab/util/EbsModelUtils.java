@@ -642,7 +642,7 @@ public class EbsModelUtils {
     return new AwardTypeLookupDetail()
         .addContentItem(new AwardTypeLookupValueDetail()
             .awardType(AWARD_TYPE_COST)
-            .code(soaCase.getAwards().get(0).getAwardType()))
+            .code(soaCase.getAwards().getFirst().getAwardType()))
         .addContentItem(new AwardTypeLookupValueDetail()
             .awardType(AWARD_TYPE_FINANCIAL)
             .code(soaCase.getAwards().get(1).getAwardType()))

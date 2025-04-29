@@ -138,7 +138,5 @@ public class IndividualOpponentValidator extends AbstractOpponentValidator {
       validateNumericField(fieldId, fieldValue, displayValue, errors);
     }
   }
-
-
 }
 

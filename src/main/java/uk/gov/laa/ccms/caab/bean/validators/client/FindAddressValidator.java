@@ -41,8 +41,7 @@ public class FindAddressValidator extends AbstractClientAddressValidator {
     String postcode = "";
     String houseNameNumber = "";
 
-    if (target instanceof ClientFormDataAddressDetails) {
-      final ClientFormDataAddressDetails addressDetails = (ClientFormDataAddressDetails) target;
+    if (target instanceof ClientFormDataAddressDetails addressDetails) {
 
       if (addressDetails.getNoFixedAbode()) {
         validateNoFixedAbode(addressDetails, errors);
@@ -52,8 +51,7 @@ public class FindAddressValidator extends AbstractClientAddressValidator {
       postcode = addressDetails.getPostcode();
       houseNameNumber = addressDetails.getHouseNameNumber();
 
-    } else if (target instanceof AddressFormData) {
-      final AddressFormData addressDetails = (AddressFormData) target;
+    } else if (target instanceof AddressFormData addressDetails) {
 
       country = addressDetails.getCountry();
       postcode = addressDetails.getPostcode();

@@ -308,7 +308,7 @@ class EditProceedingsAndCostsSectionControllerTest {
                 .sessionAttr(PROCEEDING_FLOW_FORM_DATA, new ProceedingFlowFormData(action))
                 .flashAttr("matterTypeDetails", matterTypeDetails))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl(String.format("/application/proceedings/%s/proceeding-type", action)));
+            .andExpect(redirectedUrl("/application/proceedings/%s/proceeding-type".formatted(action)));
 
         verify(matterTypeValidator, times(1)).validate(eq(matterTypeDetails), any(BindingResult.class));
     }
@@ -359,7 +359,7 @@ class EditProceedingsAndCostsSectionControllerTest {
                 .sessionAttr(PROCEEDING_FLOW_FORM_DATA_OLD, oldProceedingFlow)
                 .flashAttr("matterTypeDetails", matterTypeDetails))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl(String.format("/application/proceedings/%s/proceeding-type", action)));
+            .andExpect(redirectedUrl("/application/proceedings/%s/proceeding-type".formatted(action)));
 
         assertTrue(proceedingFlow.isAmended());
     }
@@ -446,7 +446,7 @@ class EditProceedingsAndCostsSectionControllerTest {
                 .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
                 .flashAttr("proceedingTypeDetails", proceedingTypeDetails))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl(String.format("/application/proceedings/%s/further-details", action)));
+            .andExpect(redirectedUrl("/application/proceedings/%s/further-details".formatted(action)));
 
         assertEquals(Boolean.TRUE, proceedingFlow.isAmended());
         assertEquals(proceedingTypeDetails, proceedingFlow.getProceedingDetails());
@@ -473,7 +473,7 @@ class EditProceedingsAndCostsSectionControllerTest {
                 .sessionAttr(PROCEEDING_FLOW_FORM_DATA_OLD, oldProceedingFlow)
                 .flashAttr("proceedingTypeDetails", proceedingTypeDetails))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl(String.format("/application/proceedings/%s/further-details", action)));
+            .andExpect(redirectedUrl("/application/proceedings/%s/further-details".formatted(action)));
 
         assertTrue(proceedingFlow.isAmended(), "ProceedingDetail flow should be marked as amended when proceeding type is changed.");
     }
@@ -554,7 +554,7 @@ class EditProceedingsAndCostsSectionControllerTest {
                 .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
                 .flashAttr("furtherDetails", furtherDetails))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl(String.format("/application/proceedings/%s/confirm", action)));
+            .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
 
         assertTrue(proceedingFlow.isAmended());
         assertEquals(furtherDetails, proceedingFlow.getFurtherDetails());
@@ -644,7 +644,7 @@ class EditProceedingsAndCostsSectionControllerTest {
                 .session(session)
                 .flashAttr("furtherDetails", furtherDetails))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl(String.format("/application/proceedings/%s/confirm", action)));
+            .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
 
         assertEquals(expectedAmendment, proceedingFlow.isAmended(), "ProceedingDetail flow amendment status does not match expected.");
     }
@@ -1012,7 +1012,7 @@ class EditProceedingsAndCostsSectionControllerTest {
         mockMvc.perform(post("/application/proceedings/scope-limitations/confirm")
                 .session(session))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl(String.format("/application/proceedings/%s/confirm", action)));
+            .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
     }
 
     @Test
@@ -1050,7 +1050,7 @@ class EditProceedingsAndCostsSectionControllerTest {
         mockMvc.perform(post("/application/proceedings/scope-limitations/confirm")
                 .session(session))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl(String.format("/application/proceedings/%s/confirm", action)));
+            .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
     }
 
     @Test
@@ -1088,7 +1088,7 @@ class EditProceedingsAndCostsSectionControllerTest {
         mockMvc.perform(post("/application/proceedings/scope-limitations/{scope-limitation-id}/remove", scopeLimitationIndex)
                 .session(session))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl(String.format("/application/proceedings/%s/confirm", action)));
+            .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
 
         assertTrue(scopeLimitations.isEmpty(), "Scope limitations list should be empty after removal");
     }
@@ -1110,7 +1110,7 @@ class EditProceedingsAndCostsSectionControllerTest {
         mockMvc.perform(post("/application/proceedings/scope-limitations/{scope-limitation-id}/remove", scopeLimitationId)
                 .session(session))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl(String.format("/application/proceedings/%s/confirm", action)));
+            .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
 
         assertTrue(proceeding.getScopeLimitations().isEmpty(), "ProceedingDetail's scope limitations should be empty after removal");
     }

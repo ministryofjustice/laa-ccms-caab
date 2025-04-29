@@ -110,7 +110,7 @@ class NotificationServiceTest {
 
     StepVerifier.create(notificationsMono)
         .expectNextMatches(notifications ->
-            notifications.getContent().get(0).getUser().getLoginId().equals("user1"))
+            notifications.getContent().getFirst().getUser().getLoginId().equals("user1"))
         .verifyComplete();
   }
 

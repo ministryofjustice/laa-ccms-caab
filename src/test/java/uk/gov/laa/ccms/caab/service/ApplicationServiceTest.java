@@ -255,13 +255,13 @@ class ApplicationServiceTest {
             .caseReferenceNumber("1"));
 
     // expected result, sorted by case reference
-    final List<BaseApplicationDetail> expectedResult = List.of(mockTdsApplicationDetails.getContent().get(0),
+    final List<BaseApplicationDetail> expectedResult = List.of(mockTdsApplicationDetails.getContent().getFirst(),
         mockEbsApplication);
 
     when(ebsApiClient.getCases(
         caseSearchCriteria, userDetail.getProvider().getId(), page, size))
         .thenReturn(Mono.just(mockCaseDetails));
-    when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().get(0)))
+    when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().getFirst()))
         .thenReturn(mockEbsApplication);
     when(caabApiClient.getApplications(caseSearchCriteria, userDetail.getProvider().getId(),
         page, size)).thenReturn(Mono.just(mockTdsApplicationDetails));
@@ -321,7 +321,7 @@ class ApplicationServiceTest {
 
     when(ebsApiClient.getCases(caseSearchCriteria, userDetail.getProvider().getId(),
         page, size)).thenReturn(Mono.just(mockCaseDetails));
-    when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().get(0)))
+    when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().getFirst()))
         .thenReturn(mockEbsApplication);
     when(caabApiClient.getApplications(caseSearchCriteria,
         userDetail.getProvider().getId(), page, size))
@@ -399,9 +399,9 @@ class ApplicationServiceTest {
     when(ebsApiClient.getCases(caseSearchCriteria,
         userDetail.getProvider().getId(), page, size))
         .thenReturn(Mono.just(mockCaseDetails));
-    when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().get(0)))
+    when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().getFirst()))
         .thenReturn(new BaseApplicationDetail()
-            .caseReferenceNumber(mockCaseDetails.getContent().get(0).getCaseReferenceNumber()));
+            .caseReferenceNumber(mockCaseDetails.getContent().getFirst().getCaseReferenceNumber()));
     when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().get(1)))
         .thenReturn(new BaseApplicationDetail()
             .caseReferenceNumber(mockCaseDetails.getContent().get(1).getCaseReferenceNumber()));
@@ -424,7 +424,7 @@ class ApplicationServiceTest {
     final CaseStatusLookupValueDetail lookupValue = applicationService.getCopyCaseStatus();
 
     assertNotNull(lookupValue);
-    assertEquals(caseStatusLookupDetail.getContent().get(0), lookupValue);
+    assertEquals(caseStatusLookupDetail.getContent().getFirst(), lookupValue);
   }
 
   @Test
@@ -581,12 +581,12 @@ class ApplicationServiceTest {
     CaseReferenceSummary caseReferenceSummary = buildCaseReferenceSummary();
 
     // Update the cost limitations for this test
-    applicationToCopy.getProceedings().get(0).setCostLimitation(costLimit1);
+    applicationToCopy.getProceedings().getFirst().setCostLimitation(costLimit1);
     applicationToCopy.getProceedings().get(1).setCostLimitation(costLimit2);
 
     // Update the opponent type for this test
-    applicationToCopy.getOpponents().get(0).setType(opponentType);
-    applicationToCopy.getOpponents().get(0).setSharedInd(opponentShared);
+    applicationToCopy.getOpponents().getFirst().setType(opponentType);
+    applicationToCopy.getOpponents().getFirst().setSharedInd(opponentShared);
 
     when(ebsApiClient.postAllocateNextCaseReference())
         .thenReturn(Mono.just(caseReferenceSummary));
@@ -602,7 +602,7 @@ class ApplicationServiceTest {
     RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
         buildRelationshipToCaseLookupDetail();
     // Update the relationshipToCase lookup for this test
-    relationshipToCaseLookupDetail.getContent().get(0).setCopyParty(opponentRelCopyParty);
+    relationshipToCaseLookupDetail.getContent().getFirst().setCopyParty(opponentRelCopyParty);
 
     when(lookupService.getPersonToCaseRelationships()).thenReturn(
         Mono.just(relationshipToCaseLookupDetail));
@@ -636,7 +636,7 @@ class ApplicationServiceTest {
     // to the case is set to 'Copy Party' then the ebsId should be null.
     StepVerifier.create(resultMono)
         .expectNextMatches(applicationDetail ->
-            opponentEbsIdCleared == (applicationDetail.getOpponents().get(0).getEbsId() == null)
+            opponentEbsIdCleared == (applicationDetail.getOpponents().getFirst().getEbsId() == null)
                 && expectedDefaultCostLimit.equals(
                 newApplicationCaptor.getValue().getCosts().getDefaultCostLimitation())
                 && expectedRequestedCostLimit.equals(
@@ -955,7 +955,7 @@ class ApplicationServiceTest {
 
     final List<ProceedingDetail> capturedProceedings = proceedingArgumentCaptor.getAllValues();
 
-    assertFalse(capturedProceedings.get(0).getLeadProceedingInd());
+    assertFalse(capturedProceedings.getFirst().getLeadProceedingInd());
     assertTrue(capturedProceedings.get(1).getLeadProceedingInd());
 
     verify(caabApiClient).patchApplication(eq(applicationId), any(ApplicationDetail.class), eq(user.getLoginId()));

@@ -122,7 +122,7 @@ public class SoaApplicationMappingContextBuilder {
                 .description(soaCase.getCertificateType())))
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException(
-            String.format("Failed to retrieve applicationtype with code: %s",
+            "Failed to retrieve applicationtype with code: %s".formatted(
                 soaCase.getCertificateType()))) : null;
 
     // Lookup the application type display value - this should be based on the
@@ -135,7 +135,7 @@ public class SoaApplicationMappingContextBuilder {
                 .orElse(certificateLookup))
             .blockOptional()
             .orElseThrow(() -> new CaabApplicationException(
-                String.format("Failed to retrieve applicationtype with code: %s",
+                "Failed to retrieve applicationtype with code: %s".formatted(
                     soaApplicationDetails.getApplicationAmendmentType()))) : certificateLookup;
 
     // Find the correct provider office.
@@ -144,8 +144,8 @@ public class SoaApplicationMappingContextBuilder {
             String.valueOf(officeDetail.getId())))
         .findAny()
         .orElseThrow(() -> new CaabApplicationException(
-            String.format("Failed to find Office with id: %s",
-                soaProvider.getProviderOfficeId())));
+        "Failed to find Office with id: %s".formatted(
+            soaProvider.getProviderOfficeId())));
 
     // Get the Fee Earners for the relevant office, and Map them by contact id.
     final Map<Integer, ContactDetail> feeEarnerById =
@@ -486,7 +486,7 @@ public class SoaApplicationMappingContextBuilder {
     return Optional.ofNullable(awardTypes.get(award.getAwardType()))
         .map(AwardTypeLookupValueDetail::getAwardType)
         .orElseThrow(() -> new CaabApplicationException(
-            String.format("Failed to find AwardType with code: %s", award.getAwardType())));
+        "Failed to find AwardType with code: %s".formatted(award.getAwardType())));
   }
 
   /**
@@ -509,8 +509,8 @@ public class SoaApplicationMappingContextBuilder {
                     .description(soaPriorAuthority.getPriorAuthorityType())))
             .blockOptional()
             .orElseThrow(() -> new CaabApplicationException(
-                String.format("Failed to find PriorAuthorityType with code: %s",
-                    soaPriorAuthority.getPriorAuthorityType())));
+            "Failed to find PriorAuthorityType with code: %s".formatted(
+                soaPriorAuthority.getPriorAuthorityType())));
 
     // Build a Map of PriorAuthorityDetail keyed on code
     Map<String, uk.gov.laa.ccms.data.model.PriorAuthorityDetail> priorAuthDetailMap =
@@ -554,8 +554,8 @@ public class SoaApplicationMappingContextBuilder {
               .orElse(priorAuthorityAttribute.getValue()))
           .blockOptional()
           .orElseThrow(() -> new CaabApplicationException(
-              String.format("Failed to find common value with code: %s",
-                  priorAuthorityAttribute.getValue())));
+          "Failed to find common value with code: %s".formatted(
+              priorAuthorityAttribute.getValue())));
     } else {
       description = priorAuthorityAttribute.getValue();
     }

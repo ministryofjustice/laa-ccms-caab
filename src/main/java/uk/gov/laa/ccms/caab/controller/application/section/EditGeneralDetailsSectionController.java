@@ -518,7 +518,7 @@ public class EditGeneralDetailsSectionController {
             .filter(lc -> caseReferenceId.equals(lc.getCaseReferenceNumber()))
             .findFirst()
             .orElseThrow(() -> new CaabApplicationException(
-                String.format("Unable to add linked case with case reference: %s",
+                "Unable to add linked case with case reference: %s".formatted(
                     caseReferenceId)));
 
     //map base application to linked case

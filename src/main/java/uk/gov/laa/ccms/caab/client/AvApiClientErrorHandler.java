@@ -44,7 +44,7 @@ public class AvApiClientErrorHandler {
    * @throws AvApiVirusFoundException wrapping the response from ClamAv.
    */
   public void handleVirusFoundError(final String responseMsg) throws AvApiVirusFoundException {
-    final String message = String.format(VIRUS_FOUND_MSG, responseMsg);
+    final String message = VIRUS_FOUND_MSG.formatted(responseMsg);
     log.error(message);
     throw new AvApiVirusFoundException(message);
   }

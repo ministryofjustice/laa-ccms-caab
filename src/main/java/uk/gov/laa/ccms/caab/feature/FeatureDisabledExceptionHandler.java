@@ -23,13 +23,13 @@ public class FeatureDisabledExceptionHandler implements HandlerExceptionResolver
   @Override
   public ModelAndView resolveException(
       HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
-    if (ex instanceof FeatureDisabledException) {
+    if (ex instanceof FeatureDisabledException exception) {
       ModelAndView modelAndView = new ModelAndView("feature-unavailable");
       modelAndView.addObject(
           SessionConstants.USER_DETAILS,
           request.getSession().getAttribute(SessionConstants.USER_DETAILS));
       modelAndView.addObject("puiHomeUrl", puiHomeUrl);
-      modelAndView.addObject("feature", ((FeatureDisabledException) ex).getFeature().getName());
+      modelAndView.addObject("feature", exception.getFeature().getName());
       return modelAndView;
     }
 

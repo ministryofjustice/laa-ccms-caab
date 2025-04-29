@@ -73,7 +73,7 @@ public abstract class FileUploadValidator extends AbstractValidator {
       if (!isValidExtension(fileUploadFormData.getFileExtension())) {
         errors.rejectValue("file", INVALID_EXTENSION_ERROR_CODE,
             new String[]{getCommaDelimitedString(validExtensions)},
-            String.format(INVALID_EXTENSION_ERROR, getCommaDelimitedString(validExtensions)));
+            INVALID_EXTENSION_ERROR.formatted(getCommaDelimitedString(validExtensions)));
       } else {
         validateFileSize(fileUploadFormData, errors);
       }
@@ -130,7 +130,7 @@ public abstract class FileUploadValidator extends AbstractValidator {
    */
   public void rejectFileSize(Errors errors) {
     errors.rejectValue("file", MAX_FILESIZE_ERROR_CODE, new String[]{maxFileSize},
-        String.format(MAX_FILESIZE_ERROR, maxFileSize));
+        MAX_FILESIZE_ERROR.formatted(maxFileSize));
   }
 
   /**
