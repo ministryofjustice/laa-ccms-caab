@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
-import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,7 +23,9 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULT
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -215,6 +216,53 @@ public class ApplicationSearchControllerTest {
             .sessionAttr(CASE_SEARCH_CRITERIA, new CaseSearchCriteria()))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/search/results"));
+  }
+
+  @Test
+  void testPostApplicationSearch_noValidationErrors_maxLengthsNotExceeded_displaysNoResults() throws Exception {
+    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    caseSearchCriteria.setClientSurname(RandomStringUtils.insecure().nextAlphabetic(35));
+    caseSearchCriteria.setCaseReference(RandomStringUtils.insecure().nextAlphabetic(35));
+    caseSearchCriteria.setProviderCaseReference(RandomStringUtils.insecure().nextAlphabetic(35));
+
+    mockMvc.perform(post("/application/search")
+            .sessionAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria)
+            .sessionAttr(USER_DETAILS, user))
+        .andExpect(status().isOk())
+        .andExpect(view().name(
+            "application/application-search-no-results"));
+  }
+
+  @Test
+  void testPostApplicationSearch_validationErrors_maxLengthsExceeded_returnsToSearch() throws Exception {
+    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+
+    caseSearchCriteria.setClientSurname(RandomStringUtils.insecure().nextAlphabetic(36));
+    caseSearchCriteria.setCaseReference(RandomStringUtils.insecure().nextAlphabetic(36));
+    caseSearchCriteria.setProviderCaseReference(RandomStringUtils.insecure().nextAlphabetic(36));
+
+    ProviderDetail providerDetail = new ProviderDetail();
+    List<ContactDetail> feeEarners = buildFeeEarners();
+    CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail()
+        .addContentItem(new CaseStatusLookupValueDetail());
+
+    when(providerService.getProvider(user.getProvider().getId()))
+        .thenReturn(Mono.just(providerDetail));
+    when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
+    when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(caseStatusLookupDetail));
+
+    mockMvc.perform(post("/application/search")
+            .sessionAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria)
+            .sessionAttr(USER_DETAILS, user))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(model().attributeHasFieldErrors(CASE_SEARCH_CRITERIA, "clientSurname"))
+        .andExpect(model().attributeHasFieldErrors(CASE_SEARCH_CRITERIA, "providerCaseReference"))
+        .andExpect(model().attributeHasFieldErrors(CASE_SEARCH_CRITERIA, "caseReference"))
+        .andExpect(model().attribute("feeEarners", feeEarners))
+        .andExpect(model().attribute("offices", user.getProvider().getOffices()))
+        .andExpect(model().attribute("statuses", caseStatusLookupDetail.getContent()))
+        .andExpect(view().name("application/application-search"));
   }
 
   @Test

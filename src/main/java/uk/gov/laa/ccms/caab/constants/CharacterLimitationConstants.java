@@ -40,4 +40,9 @@ public class CharacterLimitationConstants {
    * the size for other information.
    */
   public static final int OTHER_INFORMATION_CHARACTER_SIZE = 2000;
+
+  /**
+   * the size for special considerations.
+   */
+  public static final int SPECIAL_CONSIDERATIONS_CHARACTER_SIZE = 2000;
 }
