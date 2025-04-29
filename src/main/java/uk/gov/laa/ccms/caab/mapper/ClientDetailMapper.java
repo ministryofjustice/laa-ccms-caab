@@ -65,10 +65,8 @@ public interface ClientDetailMapper {
       source = "mentalIncapacity")
   ClientPersonalDetail toClientPersonalDetail(ClientFormDataBasicDetails basicDetails);
 
-  @Mapping(target = "telephoneHome", source = "telephoneHome", defaultValue = "")
-  @Mapping(target = "telephoneWork", source = "telephoneWork", defaultValue = "")
-  @Mapping(target = "mobileNumber", source = "telephoneMobile", defaultValue = "")
-  @Mapping(target = "emailAddress", source = "emailAddress", defaultValue = "")
+  @Mapping(target = "mobileNumber",
+      source = "telephoneMobile")
   ContactDetail toContactDetails(ClientFormDataContactDetails contactDetails);
 
   @Mapping(target = "addressId",

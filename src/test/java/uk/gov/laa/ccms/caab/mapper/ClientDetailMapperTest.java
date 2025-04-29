@@ -261,18 +261,6 @@ class ClientDetailMapperTest {
   }
 
   @Test
-  void toContactDetailsNullEmail() {
-    ClientFormDataContactDetails clientFormDataContactDetails = new ClientFormDataContactDetails();
-
-    ContactDetail contactDetail = clientDetailMapper.toContactDetails(clientFormDataContactDetails);
-
-    assertThat(contactDetail.getEmailAddress()).isEmpty();
-    assertThat(contactDetail.getTelephoneHome()).isEmpty();
-    assertThat(contactDetail.getTelephoneWork()).isEmpty();
-    assertThat(contactDetail.getMobileNumber()).isEmpty();
-  }
-
-  @Test
   void toContactDetails_null() {
     ContactDetail contactDetail = clientDetailMapper.toContactDetails(null);
     assertNull(contactDetail);
