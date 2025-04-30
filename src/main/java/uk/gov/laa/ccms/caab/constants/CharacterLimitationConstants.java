@@ -3,7 +3,7 @@ package uk.gov.laa.ccms.caab.constants;
 /**
  * Constants for character limitation sizes.
  */
-public class CharacterLimitationConstants {
+public final class CharacterLimitationConstants {
 
   /**
    * the default size for field lengths.
@@ -49,4 +49,7 @@ public class CharacterLimitationConstants {
    * the size for special considerations.
    */
   public static final int SPECIAL_CONSIDERATIONS_CHARACTER_SIZE = 2000;
+
+  private CharacterLimitationConstants() {
+  }
 }

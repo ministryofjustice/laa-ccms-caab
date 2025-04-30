@@ -489,7 +489,7 @@ public class EditGeneralDetailsSectionController {
     final ApplicationDetails linkedCaseSearchResults = applicationMapper.toApplicationDetails(
         PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), caseSearchResults));
 
-    model.addAttribute(CURRENT_URL,  request.getRequestURL().toString());
+    model.addAttribute(CURRENT_URL, request.getRequestURL().toString());
 
     model.addAttribute(CASE_RESULTS_PAGE, linkedCaseSearchResults);
     session.setAttribute(CASE_RESULTS_PAGE, linkedCaseSearchResults);

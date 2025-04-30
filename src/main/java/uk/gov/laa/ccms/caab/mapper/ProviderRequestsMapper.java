@@ -210,9 +210,8 @@ public interface ProviderRequestsMapper {
     final List<ProviderRequestAttribute> attributes = new ArrayList<>();
 
     if (formData.getDynamicOptions() != null) {
-      formData.getDynamicOptions().values().forEach(dynamicOption -> {
-        attributes.add(dynamicOptionToProviderRequestAttribute(dynamicOption));
-      });
+      formData.getDynamicOptions().values().forEach(dynamicOption ->
+          attributes.add(dynamicOptionToProviderRequestAttribute(dynamicOption)));
     }
 
     if (formData.getAdditionalInformationLabel() != null) {

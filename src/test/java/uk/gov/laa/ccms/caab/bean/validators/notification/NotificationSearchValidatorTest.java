@@ -146,7 +146,7 @@ class NotificationSearchValidatorTest {
   @Test
   void testCaseRefAlphaNumericValidation() {
     criteria.setCaseReference("$%^");
-    validator.validate(criteria,errors);
+    validator.validate(criteria, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
   }

@@ -94,9 +94,3 @@ class SamlPrincipalControllerAdviceTest {
     verifyNoInteractions(session);
   }
 }
-
-
-
-
-
-

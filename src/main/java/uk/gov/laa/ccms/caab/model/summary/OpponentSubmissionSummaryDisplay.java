@@ -149,4 +149,3 @@ public class OpponentSubmissionSummaryDisplay {
    */
   private String otherInformation;
 }
-

@@ -12,7 +12,7 @@ import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 /**
  * Utility class for handling application details and related operations.
  */
-public class ApplicationUtil {
+public final class ApplicationUtil {
 
   /**
    * Gets the application type or amendment type for Assessment input.
@@ -22,8 +22,8 @@ public class ApplicationUtil {
    *         otherwise the application type ID
    */
   public static String getAppAmendTypeAssessmentInput(final ApplicationDetail application) {
-    if (application.getApplicationType().getId()
-        .equalsIgnoreCase(APP_TYPE_EXCEPTIONAL_CASE_FUNDING)) {
+    if (APP_TYPE_EXCEPTIONAL_CASE_FUNDING
+        .equalsIgnoreCase(application.getApplicationType().getId())) {
       return APP_TYPE_SUBSTANTIVE;
     } else {
       return application.getApplicationType().getId();
@@ -54,10 +54,10 @@ public class ApplicationUtil {
    * @return true if the application type is "EXCEPTIONAL_CASE_FUNDING", otherwise false
    */
   public static boolean getEcfFlagAssessmentInput(final ApplicationDetail application) {
-    return application
+    return APP_TYPE_EXCEPTIONAL_CASE_FUNDING
+        .equalsIgnoreCase(application
         .getApplicationType()
-        .getId()
-        .equalsIgnoreCase(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
+        .getId());
   }
 
   /**
@@ -123,6 +123,9 @@ public class ApplicationUtil {
     }
     return latestKeyChange;
 
+  }
+
+  private ApplicationUtil() {
   }
 
 

@@ -141,7 +141,7 @@ public abstract class AbstractValidator implements Validator {
       String displayValue, Errors errors) {
 
     if (fieldValue == null || fieldValue.length() > maxLength) {
-      errors.rejectValue(field, "length.exceeds.max", new Object[] {maxLength, displayValue},
+      errors.rejectValue(field, "length.exceeds.max", new Object[]{maxLength, displayValue},
           GENERIC_MAX_LENGTH.formatted(maxLength, displayValue));
     }
   }
@@ -160,7 +160,7 @@ public abstract class AbstractValidator implements Validator {
       final String country, final String postcode, Errors errors) {
 
     if (StringUtils.hasText(country)) {
-      if (country.equals("GBR")) {
+      if ("GBR".equals(country)) {
         validateUkPostcodeFormat(postcode, true, errors);
       } else {
         validateInternationalPostcodeFormat(postcode, false, errors);
@@ -247,7 +247,7 @@ public abstract class AbstractValidator implements Validator {
 
     Individual individual = (Individual) target;
 
-    if (!(individual.getDateOfBirth() == null) && !individual.getDateOfBirth().isBlank()) {
+    if (individual.getDateOfBirth() != null && !individual.getDateOfBirth().isBlank()) {
       validateValidDateField(individual.getDateOfBirth(), "dateOfBirth", "Date of birth",
           COMPONENT_DATE_PATTERN, errors);
     }

@@ -11,7 +11,7 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 /**
  * Utility class for handling proceeding-related operations.
  */
-public class OpponentUtil {
+public final class OpponentUtil {
 
   private static final String OPPONENT_TYPE_ORGANISATION = "ORGANISATION";
   private static final String OPPONENT_TYPE_PERSON = "PERSON";
@@ -203,5 +203,8 @@ public class OpponentUtil {
         .orElse(new CommonLookupValueDetail()
             .code(opponent.getRelationshipToClient())
             .description(opponent.getRelationshipToClient()));
+  }
+
+  private OpponentUtil() {
   }
 }

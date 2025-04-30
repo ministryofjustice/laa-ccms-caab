@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.DOUBLE_S
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.FIRST_CHARACTER_MUST_BE_ALPHA;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -138,9 +139,9 @@ public class NotificationSearchValidator extends AbstractValidator {
   protected void validateLessThanThreeYearsBetweenDates(final Date fromDate, final String fieldName,
       final Date toDate, Errors errors) {
 
-    LocalDate fromLocalDate = fromDate.toInstant().atZone(java.time.ZoneId.systemDefault())
+    LocalDate fromLocalDate = fromDate.toInstant().atZone(ZoneId.systemDefault())
         .toLocalDate();
-    LocalDate toLocalDate = toDate.toInstant().atZone(java.time.ZoneId.systemDefault())
+    LocalDate toLocalDate = toDate.toInstant().atZone(ZoneId.systemDefault())
         .toLocalDate();
     LocalDate threeYearsAfterFrom = fromLocalDate.plusYears(3L);
 

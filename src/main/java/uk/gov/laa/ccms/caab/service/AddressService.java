@@ -84,7 +84,7 @@ public class AddressService {
       final ResultsDisplay<AddressResultRowDisplay> results,
       final ClientFormDataAddressDetails addressDetails) {
 
-    final AddressResultRowDisplay clientAddress = (results != null)
+    final AddressResultRowDisplay clientAddress = results != null
         ? results.getContent().stream()
         .filter(result -> uprn
             .equals(result.getUprn()))
@@ -110,7 +110,7 @@ public class AddressService {
       final ResultsDisplay<AddressResultRowDisplay> results,
       final AddressFormData addressFormData) {
 
-    final AddressResultRowDisplay addressResultRowDisplay = (results != null)
+    final AddressResultRowDisplay addressResultRowDisplay = results != null
         ? results.getContent().stream()
         .filter(result -> uprn
             .equals(result.getUprn()))

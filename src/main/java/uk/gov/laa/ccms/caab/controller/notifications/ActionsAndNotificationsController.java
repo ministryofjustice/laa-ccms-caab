@@ -144,8 +144,8 @@ public class ActionsAndNotificationsController {
       @RequestParam(value = "notification_type", required = false) String notificationType,
       Model model) {
     if (StringUtils.hasText(notificationType)) {
-      criteria.setNotificationType(notificationType.equals("all") ? "" : notificationType);
-      if (notificationType.equals("all")) {
+      criteria.setNotificationType("all".equals(notificationType) ? "" : notificationType);
+      if ("all".equals(notificationType)) {
         NotificationSearchCriteria.reset(criteria);
       }
       criteria.setLoginId(user.getLoginId());

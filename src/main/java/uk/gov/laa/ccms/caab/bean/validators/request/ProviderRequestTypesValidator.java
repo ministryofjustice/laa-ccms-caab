@@ -42,5 +42,3 @@ public class ProviderRequestTypesValidator extends AbstractValidator {
   }
 
 }
-
-

@@ -47,7 +47,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   private S3Template s3Template;
 
   @BeforeEach
-  void beforeEach(){
+  void beforeEach() {
     // Check if bucket exists, if not then create the bucket
     if(!s3Template.bucketExists(BUCKET_NAME)){
       s3Template.createBucket(BUCKET_NAME);
@@ -55,7 +55,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @AfterAll
-  static void afterAll(){
+  static void afterAll() {
     localstackContainer.stop();
   }
 

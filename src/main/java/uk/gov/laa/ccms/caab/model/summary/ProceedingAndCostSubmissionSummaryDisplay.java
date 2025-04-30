@@ -19,4 +19,3 @@ public class ProceedingAndCostSubmissionSummaryDisplay {
    */
   private String caseCostLimitation;
 }
-

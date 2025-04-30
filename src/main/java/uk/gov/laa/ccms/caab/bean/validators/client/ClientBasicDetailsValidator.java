@@ -156,4 +156,3 @@ public class ClientBasicDetailsValidator extends AbstractValidator {
     }
   }
 }
-

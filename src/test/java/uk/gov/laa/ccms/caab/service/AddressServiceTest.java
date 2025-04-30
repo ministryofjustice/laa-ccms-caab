@@ -40,7 +40,7 @@ public class AddressServiceTest {
   @InjectMocks
   private AddressService addressService;
 
-  private final int MAX_RESULTS = 10;
+  private static final int MAX_RESULTS = 10;
 
 
   @Test
@@ -50,7 +50,7 @@ public class AddressServiceTest {
     OrdinanceSurveyResponse mockResponse = new OrdinanceSurveyResponse();
     Mono<OrdinanceSurveyResponse> mockResponseMono = Mono.just(mockResponse);
 
-    ResultsDisplay<AddressResultRowDisplay> mockDisplay = new ResultsDisplay<AddressResultRowDisplay>();
+    ResultsDisplay<AddressResultRowDisplay> mockDisplay = new ResultsDisplay<>();
 
     when(ordinanceSurveyApiClient.getAddresses(postcode)).thenReturn(mockResponseMono);
 
@@ -79,7 +79,7 @@ public class AddressServiceTest {
   }
 
   @ParameterizedTest
-  @CsvSource({"0","1","2","3","4","5","6","7","8","9"})
+  @CsvSource({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"})
   void filterByHouseNumber_ReturnsFilteredAddresses(String houseNameNumber) {
 
     AddressResultRowDisplay row = new AddressResultRowDisplay();
@@ -154,16 +154,16 @@ public class AddressServiceTest {
     assertNotNull(addressDetails);
   }
 
-  private OrdinanceSurveyResponse buildOrdinanceSurveyResponse(){
+  private OrdinanceSurveyResponse buildOrdinanceSurveyResponse() {
     OrdinanceSurveyResponse response = new OrdinanceSurveyResponse();
     response.setResults(buildOrdinanceSurveyResults());
     return response;
   }
 
-  private List<OrdinanceSurveyResult> buildOrdinanceSurveyResults(){
+  private List<OrdinanceSurveyResult> buildOrdinanceSurveyResults() {
     List<OrdinanceSurveyResult> results = new ArrayList<>();
 
-    for (int i = 0; i < MAX_RESULTS; i++){
+    for (int i = 0; i < MAX_RESULTS; i++) {
       OrdinanceSurveyResult result = new OrdinanceSurveyResult();
       result.setDeliveryPointAddress(buildDeliveryPointAddress(String.valueOf(i)));
       results.add(result);
@@ -172,18 +172,18 @@ public class AddressServiceTest {
     return results;
   }
 
-  private DeliveryPointAddress buildDeliveryPointAddress(String number){
+  private DeliveryPointAddress buildDeliveryPointAddress(String number) {
     DeliveryPointAddress dpa = new DeliveryPointAddress();
     dpa.setAddress("TEST, ADDRESS, DATA");
     dpa.setBuildingNumber(number);
     return dpa;
   }
 
-  private ResultsDisplay<AddressResultRowDisplay> buildClientAddressResultsDisplay(){
-    ResultsDisplay<AddressResultRowDisplay> addressResultsDisplay = new ResultsDisplay<AddressResultRowDisplay>();
+  private ResultsDisplay<AddressResultRowDisplay> buildClientAddressResultsDisplay() {
+    ResultsDisplay<AddressResultRowDisplay> addressResultsDisplay = new ResultsDisplay<>();
 
     List<AddressResultRowDisplay> content = new ArrayList<>();
-    for (int i = 0; i < MAX_RESULTS; i++){
+    for (int i = 0; i < MAX_RESULTS; i++) {
       AddressResultRowDisplay result = new AddressResultRowDisplay();
       result.setFullAddress("TEST, ADDRESS, DATA");
       result.setHouseNameNumber(String.valueOf(i));

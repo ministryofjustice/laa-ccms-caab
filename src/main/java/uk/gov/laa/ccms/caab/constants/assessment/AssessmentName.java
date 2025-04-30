@@ -12,7 +12,7 @@ public enum AssessmentName {
   MEANS("meansAssessment", "means"),
   MEANS_PREPOP("meansAssessment_PREPOP", "means"),
   MERITS("meritsAssessment", "merits"),
-  MERITS_PREPOP("meritsAssessment_PREPOP",  "merits");
+  MERITS_PREPOP("meritsAssessment_PREPOP", "merits");
 
   private final String name;
   private final String category;
