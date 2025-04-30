@@ -21,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -426,11 +427,11 @@ public class EditGeneralDetailsSectionController {
   @PostMapping("/application/sections/linked-cases/search")
   public String linkedCasesSearchPost(
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
-      @ModelAttribute(CASE_SEARCH_CRITERIA) final CaseSearchCriteria caseSearchCriteria,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(LINKED_CASES)
       final ResultsDisplay<LinkedCaseResultRowDisplay> currentlinkedCases,
       final RedirectAttributes redirectAttributes,
+      @Validated @ModelAttribute(CASE_SEARCH_CRITERIA) final CaseSearchCriteria caseSearchCriteria,
       final BindingResult bindingResult,
       final Model model) {
 

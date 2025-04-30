@@ -45,4 +45,9 @@ public class CharacterLimitationConstants {
    * the size for national insurance number.
    */
   public static final int NATIONAL_INSURANCE_NUMBER_CHARACTER_SIZE = 9;
+
+  /**
+   * the size for special considerations.
+   */
+  public static final int SPECIAL_CONSIDERATIONS_CHARACTER_SIZE = 2000;
 }
