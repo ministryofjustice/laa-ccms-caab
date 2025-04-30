@@ -440,7 +440,7 @@ public class ActionsAndNotificationsController {
     notificationService.submitNotificationAttachments(notificationId, user.getLoginId(),
         user.getUserType(), user.getUserId());
 
-    return "redirect:/submissions/notification-attachments/confirmed";
+    return "redirect:/application/notification-attachments/confirmed";
   }
 
   /**
@@ -450,7 +450,7 @@ public class ActionsAndNotificationsController {
    * @param notification the notification.
    * @return a redirect to the provide documents or evidence page.
    */
-  @PostMapping("/submissions/notification-attachments/confirmed")
+  @PostMapping("/application/notification-attachments/confirmed")
   public String notificationAttachmentsSubmitted(
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @SessionAttribute(NOTIFICATION) Notification notification, HttpSession session) {

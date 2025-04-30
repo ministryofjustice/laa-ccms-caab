@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.mapper;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -29,7 +29,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientPersonalDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContactDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 
-public class ClientDetailMapperTest {
+class ClientDetailMapperTest {
 
   private ClientDetailMapper clientDetailMapper;
 
@@ -68,10 +68,10 @@ public class ClientDetailMapperTest {
   private final String disability = "TEST";
   private final String specialConsiderations = "TEST SPECIAL CONSIDERATIONS";
 
-  private String dateofBirth = "10/6/2000";
-  private String day = "10";
-  private String month = "6";
-  private String year = "2000";
+  private final String dateofBirth = "10/6/2000";
+  private final String day = "10";
+  private final String month = "6";
+  private final String year = "2000";
 
 
   @BeforeEach
@@ -84,7 +84,7 @@ public class ClientDetailMapperTest {
     String inputValue = "testString";
     List<String> expectedOutput = Collections.singletonList(inputValue);
     List<String> result = clientDetailMapper.mapStringToList(inputValue);
-    assertEquals(expectedOutput, result);
+    assertThat(result).isEqualTo(expectedOutput);
   }
 
   @Test
@@ -112,9 +112,9 @@ public class ClientDetailMapperTest {
     calendar.setTime(dateOfBirth);
 
     // Assertions for the mapped date
-    assertEquals(expectedYear, calendar.get(Calendar.YEAR));
-    assertEquals(expectedMonth, calendar.get(Calendar.MONTH));
-    assertEquals(expectedDay, calendar.get(Calendar.DAY_OF_MONTH));
+    assertThat(calendar.get(Calendar.YEAR)).isEqualTo(expectedYear);
+    assertThat(calendar.get(Calendar.MONTH)).isEqualTo(expectedMonth);
+    assertThat(calendar.get(Calendar.DAY_OF_MONTH)).isEqualTo(expectedDay);
   }
 
   @Test
@@ -142,7 +142,7 @@ public class ClientDetailMapperTest {
     String fullName = clientDetailMapper.mapFullName(basicDetails);
 
     // Assertions for the mapped full name
-    assertEquals(expectedFullName, fullName);
+    assertThat(fullName).isEqualTo(expectedFullName);
   }
 
   @Test
@@ -153,7 +153,7 @@ public class ClientDetailMapperTest {
     ClientFlowFormData clientFlowFormData = buildClientFlowFormData();
 
     ClientDetail clientDetail = clientDetailMapper.toClientDetail(clientFlowFormData);
-    assertEquals(expectedClientDetail, clientDetail);
+    assertThat(clientDetail).isEqualTo(expectedClientDetail);
   }
 
   @Test
@@ -170,7 +170,7 @@ public class ClientDetailMapperTest {
 
     ClientDetailDetails clientDetailDetails =
         clientDetailMapper.toClientDetailDetails(clientFlowFormData);
-    assertEquals(expectedClientDetailDetails, clientDetailDetails);
+    assertThat(clientDetailDetails).isEqualTo(expectedClientDetailDetails);
   }
 
   @Test
@@ -222,7 +222,7 @@ public class ClientDetailMapperTest {
 
     NameDetail nameDetail = clientDetailMapper.toNameDetail(clientFormDataBasicDetails);
 
-    assertEquals(expectedNameDetail, nameDetail);
+    assertThat(nameDetail).isEqualTo(expectedNameDetail);
   }
 
   @Test
@@ -241,7 +241,7 @@ public class ClientDetailMapperTest {
     ClientPersonalDetail personalDetail =
         clientDetailMapper.toClientPersonalDetail(clientFormDataBasicDetails);
 
-    assertEquals(expectedPersonalDetail, personalDetail);
+    assertThat(personalDetail).isEqualTo(expectedPersonalDetail);
   }
 
   @Test
@@ -257,7 +257,7 @@ public class ClientDetailMapperTest {
 
     ContactDetail contactDetail = clientDetailMapper.toContactDetails(clientFormDataContactDetails);
 
-    assertEquals(expectedContactDetail, contactDetail);
+    assertThat(contactDetail).isEqualTo(expectedContactDetail);
   }
 
   @Test
@@ -266,6 +266,7 @@ public class ClientDetailMapperTest {
     assertNull(contactDetail);
   }
 
+
   @Test
   void toAddressDetail() {
     AddressDetail expectedAddressDetail = buildAddressDetail();
@@ -273,7 +274,7 @@ public class ClientDetailMapperTest {
 
     AddressDetail addressDetail = clientDetailMapper.toAddressDetail(clientFormDataAddressDetails);
 
-    assertEquals(expectedAddressDetail, addressDetail);
+    assertThat(addressDetail).isEqualTo(expectedAddressDetail);
   }
 
   @Test
@@ -293,7 +294,7 @@ public class ClientDetailMapperTest {
     ClientFlowFormData clientFlowFormData =
         clientDetailMapper.toClientFlowFormData(clientDetailDetails);
 
-    assertEquals(expectedClientFlowFormData, clientFlowFormData);
+    assertThat(clientFlowFormData).isEqualTo(expectedClientFlowFormData);
   }
 
   @Test
@@ -325,7 +326,7 @@ public class ClientDetailMapperTest {
     clientDetailMapper.addClientFormDataBasicDetailsFromNameDetail(clientFormDataBasicDetails,
         nameDetail);
 
-    assertEquals(expectedClientFormDataBasicDetails, clientFormDataBasicDetails);
+    assertThat(clientFormDataBasicDetails).isEqualTo(expectedClientFormDataBasicDetails);
   }
 
 
@@ -354,7 +355,7 @@ public class ClientDetailMapperTest {
     clientDetailMapper.addClientFormDataBasicDetailsFromClientPersonalDetail(
         clientFormDataBasicDetails, clientPersonalDetail);
 
-    assertEquals(expectedClientFormDataBasicDetails, clientFormDataBasicDetails);
+    assertThat(clientFormDataBasicDetails).isEqualTo(expectedClientFormDataBasicDetails);
   }
 
 
@@ -385,7 +386,7 @@ public class ClientDetailMapperTest {
     ClientFormDataContactDetails clientFormDataContactDetails =
         clientDetailMapper.toClientFormDataContactDetails(contactDetail);
 
-    assertEquals(expectedClientFormDataContactDetails, clientFormDataContactDetails);
+    assertThat(clientFormDataContactDetails).isEqualTo(expectedClientFormDataContactDetails);
   }
 
   @Test
@@ -404,7 +405,7 @@ public class ClientDetailMapperTest {
     ClientFormDataAddressDetails clientFormDataAddressDetails =
         clientDetailMapper.toClientFormDataAddressDetails(addressDetail);
 
-    assertEquals(expectedClientFormDataAddressDetails, clientFormDataAddressDetails);
+    assertThat(clientFormDataAddressDetails).isEqualTo(expectedClientFormDataAddressDetails);
   }
 
   @Test
