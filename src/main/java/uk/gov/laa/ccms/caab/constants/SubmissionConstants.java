@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.constants;
 
-import lombok.Data;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
  * Constants for submission types used on the submission screens.
  */
 @Component
-@Data
+@Getter
 public class SubmissionConstants {
 
   /**
@@ -32,6 +32,5 @@ public class SubmissionConstants {
    */
   @Value("${submission.max-poll-count:6}")
   private Integer maxPollCount;
-
 
 }

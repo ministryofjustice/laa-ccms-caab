@@ -580,8 +580,11 @@ public interface EbsApplicationMapper {
    */
   @AfterMapping
   default void finaliseAward(@MappingTarget final BaseAwardDetail baseAward) {
-    baseAward.getLiableParties().forEach(
-        liableParty -> liableParty.setAwardType(baseAward.getAwardType()));
+    if (baseAward.getLiableParties() != null) {
+      baseAward
+          .getLiableParties()
+          .forEach(liableParty -> liableParty.setAwardType(baseAward.getAwardType()));
+    }
   }
 
   @Mapping(target = "opponentId", source = ".")

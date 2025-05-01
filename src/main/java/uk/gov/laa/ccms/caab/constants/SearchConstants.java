@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.constants;
 
-import lombok.Data;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
  * Component that holds constants for maximum search results in the application.
  */
 @Component
-@Data
+@Getter
 public class SearchConstants {
 
   /**
