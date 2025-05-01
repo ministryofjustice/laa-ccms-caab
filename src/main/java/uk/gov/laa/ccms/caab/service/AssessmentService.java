@@ -461,8 +461,9 @@ public class AssessmentService {
           .map(AssessmentAttributeDetail::getValue)
           .orElse(null);
 
-      final boolean applicationTypeMismatch = (applicationTypeFromAssessment != null &&
-          (applicationType == null || !applicationType.equalsIgnoreCase(applicationTypeFromAssessment)));
+      final boolean applicationTypeMismatch = (applicationTypeFromAssessment != null
+          && (applicationType == null
+          || !applicationType.equalsIgnoreCase(applicationTypeFromAssessment)));
 
       if (applicationTypeMismatch) {
         if (APP_TYPE_EXCEPTIONAL_CASE_FUNDING.equalsIgnoreCase(applicationType)) {
@@ -478,11 +479,14 @@ public class AssessmentService {
           getAssessmentAttribute(globalEntity, DELEGATED_FUNCTIONS_DATE);
 
       if (delegatedFunctionsAttribute != null) {
-        final Optional<LocalDate> attributeDate = Optional.ofNullable(delegatedFunctionsAttribute.getValue())
-            .map(dateStr -> LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+        final Optional<LocalDate> attributeDate = Optional.ofNullable(
+            delegatedFunctionsAttribute.getValue())
+            .map(dateStr -> 
+                LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("dd-MM-yyyy")));
 
         if (attributeDate.isPresent()) {
-          if (!applicationDateUsed.isPresent() || !applicationDateUsed.get().isEqual(attributeDate.get())) {
+          if (!applicationDateUsed.isPresent()
+              || !applicationDateUsed.get().isEqual(attributeDate.get())) {
             return true;
           }
         }
