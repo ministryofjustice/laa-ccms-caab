@@ -1,14 +1,11 @@
 package uk.gov.laa.ccms.caab.constants;
 
-import lombok.Getter;
-
 /**
  * Class that defines constants for different context values
  * used in submissions and amendments processes.
  *
  * @author Jamie Briggs
  */
-@Getter
 public final class ContextConstants {
 
   /*

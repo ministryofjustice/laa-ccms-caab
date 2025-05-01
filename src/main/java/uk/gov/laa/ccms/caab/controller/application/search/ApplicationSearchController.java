@@ -327,38 +327,37 @@ public class ApplicationSearchController {
   private void setProceedingDisplayStatuses(ApplicationDetail ebsCase,
       ApplicationDetail amendments) {
     List<ProceedingDetail> proceedings = ebsCase.getProceedings();
-    if (proceedings != null) {
-      for (ProceedingDetail proceeding : proceedings) {
-        if ("LIVE".equalsIgnoreCase(proceeding.getStatus().getId())) {
-          if (proceeding.getOutcome() != null) {
-            // this means the outcome comes from EBS
-            proceeding.getStatus().setDisplayValue(CaseProceedingDisplayStatus.OUTCOME.getStatus());
-          } else {
-            // no outcome from EBS, let's check if there is an unsubmitted one
-            ProceedingOutcomeDetail draftProceedingOutcome =
-                getProceedingOutcome(amendments, proceeding.getProceedingCaseId());
-            if (draftProceedingOutcome != null) {
-              proceeding.getStatus().setDisplayValue(
-                  CaseProceedingDisplayStatus.OUTCOME.getStatus());
-            } else {
-              proceeding.getStatus().setDisplayValue(ebsCase.getStatus().getDisplayValue());
-            }
-          }
-        } else if ("DRAFT".equalsIgnoreCase(proceeding.getStatus().getId())) {
-          // if a DRAFT on the case coming from EBS then it's submitted
-          proceeding.getStatus().setDisplayValue(CaseProceedingDisplayStatus.SUBMITTED.getStatus());
-        }
-      }
+    if (proceedings == null) {
+      return;
+    }
 
-      // if there are DRAFT and LIVE coming from EBS, the DRAFT are put into the
-      // amendmentProceedingsInEbs list.
-      List<ProceedingDetail> amendmentProceedingsInEbs = ebsCase.getAmendmentProceedingsInEbs();
-      if (amendmentProceedingsInEbs != null) {
-        for (ProceedingDetail proceeding : amendmentProceedingsInEbs) {
-          proceeding.getStatus().setDisplayValue(CaseProceedingDisplayStatus.SUBMITTED.getStatus());
-        }
+    for (ProceedingDetail proceeding : proceedings) {
+      String statusId = proceeding.getStatus().getId();
+      proceeding.getStatus().setDisplayValue(switch (statusId.toUpperCase()) {
+        case "LIVE" -> handleLiveProceeding(proceeding, amendments, ebsCase);
+        case "DRAFT" -> CaseProceedingDisplayStatus.SUBMITTED.getStatus();
+        default -> proceeding.getStatus().getDisplayValue();
+      });
+    }
+
+    List<ProceedingDetail> amendmentProceedingsInEbs = ebsCase.getAmendmentProceedingsInEbs();
+    if (amendmentProceedingsInEbs != null) {
+      for (ProceedingDetail proceeding : amendmentProceedingsInEbs) {
+        proceeding.getStatus().setDisplayValue(CaseProceedingDisplayStatus.SUBMITTED.getStatus());
       }
     }
+  }
+
+  private String handleLiveProceeding(ProceedingDetail proceeding, ApplicationDetail amendments,
+      ApplicationDetail ebsCase) {
+    if (proceeding.getOutcome() != null) {
+      return CaseProceedingDisplayStatus.OUTCOME.getStatus();
+    }
+    ProceedingOutcomeDetail draftOutcome =
+        getProceedingOutcome(amendments, proceeding.getProceedingCaseId());
+    return draftOutcome != null
+        ? CaseProceedingDisplayStatus.OUTCOME.getStatus()
+        : ebsCase.getStatus().getDisplayValue();
   }
 
   private ProceedingOutcomeDetail getProceedingOutcome(ApplicationDetail amendments,

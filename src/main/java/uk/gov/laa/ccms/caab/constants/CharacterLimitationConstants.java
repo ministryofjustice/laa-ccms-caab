@@ -3,7 +3,6 @@ package uk.gov.laa.ccms.caab.constants;
 /**
  * Constants for character limitation sizes.
  */
-
 public class CharacterLimitationConstants {
 
   /**

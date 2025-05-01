@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.application.search;
 import org.hamcrest.Matchers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import org.junit.jupiter.api.DisplayName;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -123,7 +124,8 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testGetApplicationSearch_PopulatesDropdowns() throws Exception {
+  @DisplayName("Application search form populates dropdowns")
+  public void getApplicationSearchPopulatesDropdowns() throws Exception {
     ProviderDetail providerDetail = new ProviderDetail();
     List<ContactDetail> feeEarners = buildFeeEarners();
     CaseStatusLookupDetail caseStatuses = new CaseStatusLookupDetail()
@@ -145,7 +147,8 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testGetApplicationSearch_HandlesMissingLookupData() throws Exception {
+  @DisplayName("Application search handles missing lookup data")
+  public void getApplicationSearchHandlesMissingLookupData() throws Exception {
     when(providerService.getProvider(user.getProvider().getId()))
         .thenReturn(Mono.empty());
     when(lookupService.getCaseStatusValues())
@@ -159,7 +162,8 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testPostApplicationSearchHandlesValidationFailure() throws Exception {
+  @DisplayName("Application search is rejected when no search criteria is provided")
+  public void postApplicationSearchHandlesValidationFailure() throws Exception {
     ProviderDetail providerDetail = new ProviderDetail();
     List<ContactDetail> feeEarners = buildFeeEarners();
     CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail()
@@ -188,7 +192,8 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testPostApplicationSearch_NoResults() throws Exception {
+  @DisplayName("Application search redirects to 'no results' screen when there are no results")
+  public void postApplicationSearchNoResults() throws Exception {
     List<BaseApplicationDetail> baseApplications = new ArrayList<>();
 
     when(applicationService.getCases(any(), any())).thenReturn(baseApplications);
@@ -204,7 +209,8 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testPostApplicationSearch_WithTooManyResults() throws Exception {
+  @DisplayName("Application search redirects to 'too many results' screen when result limit exceeded")
+  public void postApplicationSearchWithTooManyResults() throws Exception {
     when(applicationService.getCases(any(), any())).thenThrow(
         new TooManyResultsException(""));
 
@@ -217,7 +223,8 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testPostApplicationSearch_WithResults() throws Exception {
+  @DisplayName("Application search returns results")
+  public void postApplicationSearchWithResults() throws Exception {
     List<BaseApplicationDetail> caseSearchResults = List.of(new BaseApplicationDetail());
 
     when(applicationService.getCases(any(), any())).thenReturn(caseSearchResults);
@@ -230,7 +237,8 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  void testPostApplicationSearch_noValidationErrors_maxLengthsNotExceeded_displaysNoResults() throws Exception {
+  @DisplayName("Application search succeeds when text fields have valid values")
+  void postApplicationSearchNoValidationErrorsMaxLengthsNotExceededDisplaysNoResults() throws Exception {
     CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     caseSearchCriteria.setClientSurname(RandomStringUtils.insecure().nextAlphabetic(35));
     caseSearchCriteria.setCaseReference(RandomStringUtils.insecure().nextAlphabetic(35));
@@ -245,7 +253,8 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  void testPostApplicationSearch_validationErrors_maxLengthsExceeded_returnsToSearch() throws Exception {
+  @DisplayName("Application search is rejected when field max length is exceeded")
+  void postApplicationSearchValidationErrorsMaxLengthsExceededReturnsToSearch() throws Exception {
     CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
 
     caseSearchCriteria.setClientSurname(RandomStringUtils.insecure().nextAlphabetic(36));
@@ -277,7 +286,8 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testGetApplicationSearchResults_PaginatesResults() throws Exception {
+  @DisplayName("Application search results are paginated")
+  public void applicationSearchResultsPaginatesResults() throws Exception {
     List<BaseApplicationDetail> caseSearchResults = List.of(
         new BaseApplicationDetail(),
         new BaseApplicationDetail());
@@ -297,7 +307,8 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testSelectApplication_rejectsInvalidCaseReference() throws Exception {
+  @DisplayName("Attempting to view an application with an invalid case reference is rejected")
+  public void selectApplicationRejectsInvalidCaseReference() throws Exception {
 
     // No TDS applications
     when(applicationService.getTdsApplications(any(), any(), any(), any()))
@@ -311,7 +322,9 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testSelectApplication_unsubmittedApplication_redirectsToApplicationSummary()
+  @DisplayName("Selecting an application with unsubmitted status which is not under amendment"
+      + "redirects the user to the application sections screen")
+  public void selectApplicationWithUnsubmittedStatusRedirectsToCaseOverview()
       throws Exception {
     final String selectedCaseRef = "1";
     final String appRef = "2";
@@ -335,7 +348,9 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testSelectApplication_otherStatus_redirectsToCaseOverview() throws Exception {
+  @DisplayName("Selecting an application with a status other than unsubmitted"
+      + "redirects the user to the case overview screen")
+  public void selectApplicationWithOtherStatusRedirectsToCaseOverview() throws Exception {
     final String selectedCaseRef = "2";
     final String appRef = "3";
 
@@ -367,7 +382,9 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testSelectApplication_amendment_redirectsToCaseOverview() throws Exception {
+  @DisplayName("Selecting an application under amendment redirects"
+      + "the user to the case overview screen")
+  public void selectApplicationAmendmentRedirectsToCaseOverview() throws Exception {
     final String selectedCaseRef = "2";
 
     // EBS Case
@@ -389,7 +406,8 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testCaseOverview_loadsCaseDetails() throws Exception {
+  @DisplayName("Case overview screen loads case details")
+  public void caseOverviewLoadsCaseDetails() throws Exception {
     final String selectedCaseRef = "2";
     final Integer providerId = 1;
     final String providerReference = "providerReference";
@@ -423,7 +441,8 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testCaseOverview_setsReturnTo() throws Exception {
+  @DisplayName("Case overview screen correctly sets return link")
+  public void caseOverviewSetsReturnTo() throws Exception {
     final String selectedCaseRef = "2";
     final Integer providerId = 1;
     final String providerReference = "providerReference";
@@ -460,7 +479,8 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testCaseOverview_setsAmendmentDetails_fromEbsCase() throws Exception {
+  @DisplayName("Case overview screen sets amendments details from EBS case")
+  public void caseOverviewSetsEbsCaseAmendments() throws Exception {
     final String selectedCaseRef = "2";
     final String appRef = "3";
     final Integer providerId = 1;
@@ -511,7 +531,8 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  public void testCaseOverview_setsAmendmentDetails_fromTdsAmendments() throws Exception {
+  @DisplayName("Case overview screen sets amendments details from TDS")
+  public void caseOverviewSetsTdsAmendments() throws Exception {
     final String selectedCaseRef = "2";
     final String appRef = "3";
     final Integer providerId = 1;

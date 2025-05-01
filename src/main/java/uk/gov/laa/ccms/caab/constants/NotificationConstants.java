@@ -1,11 +1,8 @@
 package uk.gov.laa.ccms.caab.constants;
 
-import lombok.Getter;
-
 /**
  * Constants for Notifications.
  */
-@Getter
 public class NotificationConstants {
 
   /**
