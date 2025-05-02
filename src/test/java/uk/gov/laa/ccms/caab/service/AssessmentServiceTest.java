@@ -1181,7 +1181,11 @@ public class AssessmentServiceTest {
       // Non-devolved type (SUB) with no dates → false
       "SUB, SUB, , , false",
       // Devolved type (DP) with missing date in application → true
-      "DP, DP, , 15-03-2020, true"
+      "DP, DP, , 15-03-2020, true",
+      // Special case for ECF type with no dates → false
+      "ECF, SUB, , , false",
+      // Special case for ECF type not matching with no dates → dp
+      "ECF, DP, , , true",
   })
   @DisplayName("applicationTypeMatches - combined type and delegated date validation")
   void testapplicationTypeMatches_combinedLogic(
