@@ -148,12 +148,15 @@ class ClientContactDetailsValidatorTest {
   void validate_validateTelephoneField_invalidCharacters(String type, String telephone) {
     contactDetails.setVulnerableClient(false);
 
-    if (type.equals("telephoneHome"))
+    if ("telephoneHome".equals(type)) {
       contactDetails.setTelephoneHome(telephone);
-    if (type.equals("telephoneWork"))
+    }
+    if ("telephoneWork".equals(type)) {
       contactDetails.setTelephoneWork(telephone);
-    if (type.equals("telephoneMobile"))
+    }
+    if ("telephoneMobile".equals(type)) {
       contactDetails.setTelephoneMobile(telephone);
+    }
 
     clientContactDetailsValidator.validate(contactDetails, errors);
     assertTrue(errors.hasErrors());
@@ -173,12 +176,15 @@ class ClientContactDetailsValidatorTest {
   void validate_validateTelephoneField_invalidCharactersVulnerable(String type, String telephone) {
     contactDetails.setVulnerableClient(true);
 
-    if (type.equals("telephoneHome"))
+    if ("telephoneHome".equals(type)) {
       contactDetails.setTelephoneHome(telephone);
-    if (type.equals("telephoneWork"))
+    }
+    if ("telephoneWork".equals(type)) {
       contactDetails.setTelephoneWork(telephone);
-    if (type.equals("telephoneMobile"))
+    }
+    if ("telephoneMobile".equals(type)) {
       contactDetails.setTelephoneMobile(telephone);
+    }
 
     clientContactDetailsValidator.validate(contactDetails, errors);
     assertThat(errors.hasErrors()).isFalse();
@@ -196,12 +202,15 @@ class ClientContactDetailsValidatorTest {
   void validate_validateTelephoneField_invalidLength(String type, String telephone) {
     contactDetails.setVulnerableClient(false);
 
-    if (type.equals("telephoneHome"))
+    if ("telephoneHome".equals(type)) {
       contactDetails.setTelephoneHome(telephone);
-    if (type.equals("telephoneWork"))
+    }
+    if ("telephoneWork".equals(type)) {
       contactDetails.setTelephoneWork(telephone);
-    if (type.equals("telephoneMobile"))
+    }
+    if ("telephoneMobile".equals(type)) {
       contactDetails.setTelephoneMobile(telephone);
+    }
 
     clientContactDetailsValidator.validate(contactDetails, errors);
     assertTrue(errors.hasErrors());
@@ -210,7 +219,7 @@ class ClientContactDetailsValidatorTest {
   }
 
 
-  private ClientFormDataContactDetails buildContactDetails(){
+  private ClientFormDataContactDetails buildContactDetails() {
     ClientFormDataContactDetails contactDetails1 = new ClientFormDataContactDetails();
     contactDetails1.setTelephoneHome("1111111111");
     contactDetails1.setTelephoneWork("2222222222");

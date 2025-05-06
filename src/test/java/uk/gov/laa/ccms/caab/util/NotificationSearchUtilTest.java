@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
@@ -11,11 +12,11 @@ import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 class NotificationSearchUtilTest {
 
   String toMojStringDate(LocalDate localDate) {
-    return localDate.format(java.time.format.DateTimeFormatter.ofPattern("d/M/yyyy"));
+    return localDate.format(DateTimeFormatter.ofPattern("d/M/yyyy"));
   }
 
   String toResultStringDate(LocalDate localDate) {
-    return localDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+    return localDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
   }
 
   @Test

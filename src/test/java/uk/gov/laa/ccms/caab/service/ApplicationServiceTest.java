@@ -509,7 +509,7 @@ class ApplicationServiceTest {
     // Add just a couple portions to EbsApplicationMappingContext. This is build using
     //  EbsApplicationMappingContextBuilder.class.
     CommonLookupValueDetail applicationTypeLookup = new CommonLookupValueDetail();
-    uk.gov.laa.ccms.data.model.ProviderDetail providerDetail = buildProviderDetail(
+    ProviderDetail providerDetail = buildProviderDetail(
         ebsCase.getApplicationDetails().getProviderDetails().getProviderOfficeId(),
         ebsCase.getApplicationDetails().getProviderDetails().getFeeEarnerContactId(),
         ebsCase.getApplicationDetails().getProviderDetails().getSupervisorContactId());
@@ -1574,7 +1574,7 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void testGetCaseStatus(){
+  void testGetCaseStatus() {
     // Given
     String transactionId = "12345";
     TransactionStatus expected = new TransactionStatus().submissionStatus("Success")
@@ -1589,7 +1589,7 @@ class ApplicationServiceTest {
 
   @Test
   @DisplayName("Should return case if present")
-  void shouldReturnCaseIfPresent(){
+  void shouldReturnCaseIfPresent() {
     // Given
     String caseRef = "12345";
     long providerId = 123456789L;
@@ -1613,7 +1613,7 @@ class ApplicationServiceTest {
 
   @Test
   @DisplayName("Should throw exception if case not found")
-  void shouldThrowExceptionIfCaseNotFound(){
+  void shouldThrowExceptionIfCaseNotFound() {
     // Given
     String caseRef = "12345";
     long providerId = 123456789L;

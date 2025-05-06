@@ -19,6 +19,7 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -59,7 +60,7 @@ public class Encryptor {
     try {
       final PBEParameterSpec ps = new PBEParameterSpec(salt, 20);
       final SecretKeyFactory kf = SecretKeyFactory.getInstance("PBEWithMD5AndDES");
-      final SecretKey k = kf.generateSecret(new javax.crypto.spec.PBEKeySpec(pass));
+      final SecretKey k = kf.generateSecret(new PBEKeySpec(pass));
 
       encryptCipher = Cipher.getInstance("PBEWithMD5AndDES/CBC/PKCS5Padding");
       encryptCipher.init(Cipher.ENCRYPT_MODE, k, ps);
@@ -115,4 +116,3 @@ public class Encryptor {
   }
 
 }
-

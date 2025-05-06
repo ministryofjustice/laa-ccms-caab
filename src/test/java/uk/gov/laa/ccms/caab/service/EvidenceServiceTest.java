@@ -100,7 +100,7 @@ public class EvidenceServiceTest {
         true)).thenReturn(Mono.just(evidenceDocumentDetails));
 
     Mono<EvidenceDocumentDetails> resultMono = evidenceService.getEvidenceDocumentsForCase(
-        caseReferenceNumber,source);
+        caseReferenceNumber, source);
 
     StepVerifier.create(resultMono)
         .expectNext(evidenceDocumentDetails)
@@ -307,7 +307,7 @@ public class EvidenceServiceTest {
     StepVerifier.create(resultMono)
         .expectNextMatches(result -> result.size() == 2
             && result.contains(requiredDocType1)
-            && result.contains(requiredDocType2) )
+            && result.contains(requiredDocType2))
         .verifyComplete();
 
   }
@@ -393,7 +393,7 @@ public class EvidenceServiceTest {
         evidenceService.getPriorAuthorityDocumentsRequired(applicationId);
 
     StepVerifier.create(resultMono)
-        .expectNextMatches(result -> !result.isEmpty() )
+        .expectNextMatches(result -> !result.isEmpty())
         .verifyComplete();
 
     verify(caabApiClient).getPriorAuthorities(applicationId);
@@ -436,7 +436,7 @@ public class EvidenceServiceTest {
         evidenceService.getCaseOutcomeDocumentsRequired(caseReferenceNumber, providerId);
 
     StepVerifier.create(resultMono)
-        .expectNextMatches(result -> !result.isEmpty() )
+        .expectNextMatches(result -> !result.isEmpty())
         .verifyComplete();
 
     verify(caseOutcomeService).getCaseOutcome(caseReferenceNumber, providerId);

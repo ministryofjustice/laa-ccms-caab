@@ -56,7 +56,7 @@ public class EvidenceMapperTest {
         evidenceMapper.toEvidenceDocumentDetail(evidenceUploadFormData);
 
     assertNotNull(result);
-    assertEquals(evidenceUploadFormData.getApplicationOrOutcomeId().toString(), result.getApplicationOrOutcomeId());
+    assertEquals(evidenceUploadFormData.getApplicationOrOutcomeId(), result.getApplicationOrOutcomeId());
     assertNull(result.getAuditTrail());
     assertEquals(evidenceUploadFormData.getCaseReferenceNumber(), result.getCaseReferenceNumber());
     assertEquals(evidenceUploadFormData.getCcmsModule().getCode(), result.getCcmsModule());

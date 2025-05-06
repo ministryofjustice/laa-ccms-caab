@@ -232,10 +232,10 @@ public class AssessmentController {
 
       populateOpaModel(contextToken, prepopAssessment, user, assessmentRulebase, model);
 
-    } else if (assessment.equalsIgnoreCase("billing")) {
+    } else if ("billing".equalsIgnoreCase(assessment)) {
       //todo - later implementation
 
-    } else if (assessment.equalsIgnoreCase("poa")) {
+    } else if ("poa".equalsIgnoreCase(assessment)) {
       //todo - later implementation
     }
 

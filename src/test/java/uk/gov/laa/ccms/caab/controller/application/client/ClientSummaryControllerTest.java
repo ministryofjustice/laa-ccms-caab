@@ -150,8 +150,8 @@ public class ClientSummaryControllerTest {
   @Test
   @DisplayName("Test client details summary with correspondence language")
   void testClientDetailsSummary_Get_withCorrespondenceLanguage() throws Exception {
-    final String TEST_LANGUAGE = "TEST";
-    clientFlowFormData.getContactDetails().setCorrespondenceLanguage(TEST_LANGUAGE);
+    final String testLanguage = "TEST";
+    clientFlowFormData.getContactDetails().setCorrespondenceLanguage(testLanguage);
 
     when(lookupService.getClientLookups(any())).thenReturn(
         List.of(

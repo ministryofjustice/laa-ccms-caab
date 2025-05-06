@@ -29,9 +29,11 @@ import uk.gov.laa.ccms.data.model.CategoryOfLaw;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.ContactDetails;
+import uk.gov.laa.ccms.data.model.CostAward;
 import uk.gov.laa.ccms.data.model.CostLimitation;
 import uk.gov.laa.ccms.data.model.Discharge;
 import uk.gov.laa.ccms.data.model.ExternalResource;
+import uk.gov.laa.ccms.data.model.FinancialAward;
 import uk.gov.laa.ccms.data.model.LandAward;
 import uk.gov.laa.ccms.data.model.LarDetails;
 import uk.gov.laa.ccms.data.model.LinkedCase;
@@ -68,7 +70,7 @@ import uk.gov.laa.ccms.data.model.TimeRelatedAward;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.Valuation;
 
-public class EbsModelUtils {
+public final class EbsModelUtils {
 
   public static ProviderDetail buildProviderDetail() {
     return buildProviderDetail("1", "2", "3");
@@ -230,7 +232,7 @@ public class EbsModelUtils {
                         .contactDetails(buildContactDetail("prov"))
                         .providerOfficeId("11111")
                         .contactUserId(buildUserDetail("contact"))
-                        .providerFirmId("12345") // Defined as String, but data is numeric in db!
+                        .providerFirmId("12345")// Defined as String, but data is numeric in db!
                         .providerCaseReferenceNumber("provcaseref123")
                         .feeEarnerContactId("22222")
                         .supervisorContactId("33333"))
@@ -487,7 +489,7 @@ public class EbsModelUtils {
         .awardId("costAwardId")
         .awardCategory("costCat")
         .costAward(
-            new uk.gov.laa.ccms.data.model.CostAward()
+            new CostAward()
                 .serviceAddress(
                     new ServiceAddress()
                         .addressLine1("add1")
@@ -516,7 +518,7 @@ public class EbsModelUtils {
         .awardId("finAwardId")
         .awardCategory("finCat")
         .financialAward(
-            new uk.gov.laa.ccms.data.model.FinancialAward()
+            new FinancialAward()
                 .serviceAddress(
                     new ServiceAddress()
                         .addressLine1("add1")
@@ -665,6 +667,9 @@ public class EbsModelUtils {
         .passwordReminder(prefix + "remember")
         .telephoneHome(prefix + "tel123")
         .telephoneWork(prefix + "telwork123");
+  }
+
+  private EbsModelUtils() {
   }
 
 

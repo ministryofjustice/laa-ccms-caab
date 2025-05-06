@@ -8,4 +8,3 @@ import java.util.List;
 public record ProceedingScopeLimitationsDelegatedFunctionsApplyFormData(
     List<ScopeLimitationDelegatedFunctionApplyFormData> scopeLimitationDataList) {
 }
-

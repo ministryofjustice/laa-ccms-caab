@@ -9,7 +9,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
  * This class is used to manipulate object properties using reflection.
  * </p>
  */
-public class ReflectionUtils {
+public final class ReflectionUtils {
 
   /**
    * Iterates over all string fields of a given object. If any string field has a value
@@ -36,5 +36,8 @@ public class ReflectionUtils {
         throw new CaabApplicationException("Failed to nullify field: " + f.getName(), e);
       }
     }
+  }
+
+  private ReflectionUtils() {
   }
 }

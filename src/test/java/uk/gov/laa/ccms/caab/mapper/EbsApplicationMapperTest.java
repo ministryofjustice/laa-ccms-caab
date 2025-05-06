@@ -65,6 +65,7 @@ import uk.gov.laa.ccms.caab.mapper.context.EbsPriorAuthorityMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.EbsProceedingMappingContext;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AssessmentResult;
@@ -98,6 +99,7 @@ import uk.gov.laa.ccms.data.model.CaseDoc;
 import uk.gov.laa.ccms.data.model.CaseSummary;
 import uk.gov.laa.ccms.data.model.CategoryOfLaw;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.CostLimitation;
 import uk.gov.laa.ccms.data.model.LinkedCase;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
@@ -111,6 +113,8 @@ import uk.gov.laa.ccms.data.model.PriorAuthority;
 import uk.gov.laa.ccms.data.model.PriorAuthorityAttribute;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.Proceeding;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetails;
 import uk.gov.laa.ccms.data.model.RecordHistory;
 import uk.gov.laa.ccms.data.model.Recovery;
 import uk.gov.laa.ccms.data.model.ScopeLimitation;
@@ -249,7 +253,7 @@ class EbsApplicationMapperTest {
             buildCaseDetail(APP_TYPE_EMERGENCY),
             false,
             null);
-    uk.gov.laa.ccms.data.model.@Valid SubmittedApplicationDetails ebsApplicationDetails =
+    @Valid SubmittedApplicationDetails ebsApplicationDetails =
         applicationMappingContext.getEbsCaseDetail().getApplicationDetails();
 
     AddressDetail result = applicationMapper.toCorrespondenceAddress(applicationMappingContext);
@@ -292,7 +296,7 @@ class EbsApplicationMapperTest {
 
   @Test
   void testToProceeding() {
-    uk.gov.laa.ccms.data.model.Proceeding ebsProceeding =
+    Proceeding ebsProceeding =
         buildProceedingDetail(STATUS_DRAFT);
     EbsProceedingMappingContext proceedingMappingContext =
         buildProceedingMappingContext(ebsProceeding);
@@ -383,7 +387,7 @@ class EbsApplicationMapperTest {
 
   @Test
   void testToProceedingOutcome() {
-    uk.gov.laa.ccms.data.model.Proceeding ebsProceeding =
+    Proceeding ebsProceeding =
         buildProceedingDetail(STATUS_DRAFT);
     EbsProceedingMappingContext proceedingMappingContext =
         buildProceedingMappingContext(ebsProceeding);
@@ -998,7 +1002,7 @@ class EbsApplicationMapperTest {
         buildBaseApplication(1),
         buildBaseApplication(2));
 
-    uk.gov.laa.ccms.caab.model.ApplicationDetails result =
+    ApplicationDetails result =
         applicationMapper.toApplicationDetails(new PageImpl<>(baseApplicationList));
 
     assertNotNull(result);
@@ -1026,7 +1030,7 @@ class EbsApplicationMapperTest {
   }
 
   private EbsApplicationMappingContext buildApplicationMappingContext(
-      uk.gov.laa.ccms.data.model.CaseDetail ebsCaseDetail,
+      CaseDetail ebsCaseDetail,
       Boolean devolvedPowers,
       LocalDate devolvedPowersDate) {
     return EbsApplicationMappingContext.builder()
@@ -1043,10 +1047,10 @@ class EbsApplicationMapperTest {
             .description("certificate descr"))
         .currentProviderBilledAmount(BigDecimal.ONE)
         .devolvedPowers(Pair.of(devolvedPowers, devolvedPowersDate))
-        .feeEarnerContact(new uk.gov.laa.ccms.data.model.ContactDetail()
+        .feeEarnerContact(new ContactDetail()
             .id(100)
             .name("feeEarnerName"))
-        .supervisorContact(new uk.gov.laa.ccms.data.model.ContactDetail()
+        .supervisorContact(new ContactDetail()
             .id(101)
             .name("supName"))
         .meansAssessment(ebsCaseDetail.getApplicationDetails().getMeansAssessments().getFirst())
@@ -1055,7 +1059,7 @@ class EbsApplicationMapperTest {
             ebsCaseDetail.getPriorAuthorities().getFirst())))
         .proceedings(Collections.singletonList(
             buildProceedingMappingContext(ebsCaseDetail.getApplicationDetails().getProceedings().getFirst())))
-        .providerDetail(new uk.gov.laa.ccms.data.model.ProviderDetail()
+        .providerDetail(new ProviderDetail()
             .id(1)
             .name("provname"))
         .providerOffice(new OfficeDetail().id(1000).name("offName"))
@@ -1329,7 +1333,7 @@ class EbsApplicationMapperTest {
     providerDetails.supervisor(new StringDisplayValue().id("300"));
     providerDetails.feeEarner(new StringDisplayValue().id("400"));
 
-    final uk.gov.laa.ccms.data.model.ProviderDetails result = applicationMapper.toEbsProviderDetail(providerDetails);
+    final ProviderDetails result = applicationMapper.toEbsProviderDetail(providerDetails);
 
     assertNotNull(result);
     assertEquals("user123", result.getContactUserId().getLoginId());
@@ -1446,7 +1450,7 @@ class EbsApplicationMapperTest {
     proceedingDetail.setDateDevolvedPowersUsed(new Date());
     proceedingDetail.setDateGranted(new Date());
 
-    final uk.gov.laa.ccms.data.model.Proceeding result = applicationMapper.toEbsProceedingDetail(proceedingDetail);
+    final Proceeding result = applicationMapper.toEbsProceedingDetail(proceedingDetail);
 
     assertNotNull(result);
     assertEquals("P_123", result.getProceedingCaseId());
@@ -1710,7 +1714,7 @@ class EbsApplicationMapperTest {
   @Test
   @DisplayName("Test toEbsRecordHistory with null context")
   void testToEbsRecordHistory_NullContext() {
-    assertNull( applicationMapper.toEbsRecordHistory(null));
+    assertNull(applicationMapper.toEbsRecordHistory(null));
   }
 
   private LocalDateTime toLocalDateTime(Date date) {

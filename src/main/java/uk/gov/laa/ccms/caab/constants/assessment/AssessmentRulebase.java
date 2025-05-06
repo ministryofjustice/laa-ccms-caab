@@ -62,7 +62,7 @@ public enum AssessmentRulebase {
    */
   public static AssessmentRulebase findById(final Long id) {
     return Arrays.stream(AssessmentRulebase.values())
-        .filter(assessmentRulebase -> assessmentRulebase.getId() == (id))
+        .filter(assessmentRulebase -> assessmentRulebase.getId() == id)
         .findFirst()
         .orElse(null);
   }

@@ -107,7 +107,7 @@ class ContextTokenTest {
 
   @Test
   void testHashCode() {
-    final int hashCode = contextToken.hashcode();
+    final int hashCode = contextToken.hashCode();
     assertEquals(hashCode, contextToken.getTtl().intValue()
         * contextToken.getCaseId().hashCode()
         * contextToken.getProviderId().hashCode()

@@ -29,4 +29,3 @@ public class SearchConstants {
   @Value("${search.max-results.organisations:100}")
   private Integer maxSearchResultsOrganisations;
 }
-

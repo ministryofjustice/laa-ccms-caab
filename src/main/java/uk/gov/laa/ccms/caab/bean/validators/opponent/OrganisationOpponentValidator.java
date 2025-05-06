@@ -116,4 +116,3 @@ public class OrganisationOpponentValidator extends AbstractOpponentValidator {
   }
 
 }
-

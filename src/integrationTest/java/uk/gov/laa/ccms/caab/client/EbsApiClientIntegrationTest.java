@@ -263,8 +263,8 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     int size = 10;
 
     wiremock.stubFor(
-        get(String.format("/notifications?provider-id=20&assigned-to-user-id=%s&include-closed=%s&page=%s&" +
-                "size=%s",
+        get(String.format("/notifications?provider-id=20&assigned-to-user-id=%s&include-closed=%s&page=%s&"
+                + "size=%s",
             criteria.getAssignedToUserId(),
             criteria.isIncludeClosed(),
             page,
@@ -326,15 +326,15 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     CaseDetails caseDetails = buildCaseDetails();
     String caseDetailsJson = objectMapper.writeValueAsString(caseDetails);
 
-    wiremock.stubFor(get(String.format("/cases?provider-id=%s&" +
-            "case-reference-number=%s&" +
-            "provider-case-reference=%s&" +
-            "case-status=%s&" +
-            "fee-earner-id=%s&" +
-            "office-id=%s&" +
-            "client-surname=%s&" +
-            "page=%s&" +
-            "size=%s",
+    wiremock.stubFor(get(String.format("/cases?provider-id=%s&"
+            + "case-reference-number=%s&"
+            + "provider-case-reference=%s&"
+            + "case-status=%s&"
+            + "fee-earner-id=%s&"
+            + "office-id=%s&"
+            + "client-surname=%s&"
+            + "page=%s&"
+            + "size=%s",
         providerId,
         searchCriteria.getCaseReference(),
         searchCriteria.getProviderCaseReference(),

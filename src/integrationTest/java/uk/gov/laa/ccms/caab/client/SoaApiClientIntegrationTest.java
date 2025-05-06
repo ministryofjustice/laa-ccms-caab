@@ -196,7 +196,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     String loginId = USER_1;
     String userType = USER_TYPE;
     CoverSheet coverSheet = new CoverSheet()
-        .fileData("Y29udGVudA==") //content
+        .fileData("Y29udGVudA==")//content
         .documentId("12345");
 
     String coverSheetResponse = objectMapper.writeValueAsString(coverSheet);
@@ -219,7 +219,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     String loginId = USER_1;
     String userType = USER_TYPE;
     Document document = new Document()
-        .fileData("Y29udGVudA==") //content
+        .fileData("Y29udGVudA==")//content
         .documentId("12345")
         .channel(ELECTRONIC.getCode())
         .documentType("DOC_TYPE")

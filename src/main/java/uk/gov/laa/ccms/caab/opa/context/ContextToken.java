@@ -251,8 +251,9 @@ public class ContextToken {
     final StringBuilder sb = new StringBuilder();
     sb.append("caseId[").append(caseId).append("] ");
     sb.append("providerId[").append(providerId).append("] ");
-    sb.append("RuleBase[").append(
-        AssessmentRulebase.getPrePopAssessmentName(rulebaseId)).append("] ");
+    sb.append("RuleBase[")
+        .append(AssessmentRulebase.getPrePopAssessmentName(rulebaseId))
+        .append("] ");
     return sb;
   }
 
@@ -261,7 +262,7 @@ public class ContextToken {
    *
    * @return the hash code value
    */
-  public int hashcode() {
+  public int hashCode() {
     return getTtl().intValue()
         * getCaseId().hashCode()
         * getProviderId().hashCode()

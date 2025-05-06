@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
@@ -27,7 +28,7 @@ import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 
-public class CaabModelUtils {
+public final class CaabModelUtils {
 
   public static BaseApplicationDetail buildBaseApplication(Integer id) {
     return new BaseApplicationDetail()
@@ -38,7 +39,7 @@ public class CaabModelUtils {
         .status(new StringDisplayValue().id("st" + id).displayValue("status " + id));
   }
 
-  public static ApplicationDetail buildApplicationDetail(Integer id, Boolean flag, java.util.Date date) {
+  public static ApplicationDetail buildApplicationDetail(Integer id, Boolean flag, Date date) {
     return new ApplicationDetail()
         .caseReferenceNumber(id + "")
         .categoryOfLaw(new StringDisplayValue().id(id + "cat1").displayValue(id + "catoflaw1"))
@@ -114,7 +115,7 @@ public class CaabModelUtils {
             new StringDisplayValue().id("prov" + id).displayValue("provcontact " + id));
   }
 
-  public static ProceedingDetail buildProceeding(java.util.Date date, BigDecimal costLimitation) {
+  public static ProceedingDetail buildProceeding(Date date, BigDecimal costLimitation) {
     return new ProceedingDetail()
         .auditTrail(new AuditDetail())
         .availableFunctions(new ArrayList<>(Arrays.asList("a", "b", "c")))
@@ -144,7 +145,7 @@ public class CaabModelUtils {
         .typeOfOrder(new StringDisplayValue().id("too").displayValue("type of order"));
   }
 
-  public static ProceedingOutcomeDetail buildProceedingOutcome(java.util.Date date) {
+  public static ProceedingOutcomeDetail buildProceedingOutcome(Date date) {
     return new ProceedingOutcomeDetail()
         .adrInfo("adr")
         .alternativeResolution("alt")
@@ -177,7 +178,7 @@ public class CaabModelUtils {
         .nonDefaultWordingReqd(Boolean.TRUE);
   }
 
-  public static OpponentDetail buildOpponent(java.util.Date date) {
+  public static OpponentDetail buildOpponent(Date date) {
     return new OpponentDetail()
         .address(buildAddressDetail())
         .amendment(Boolean.TRUE)
@@ -238,6 +239,9 @@ public class CaabModelUtils {
         .noFixedAbode(Boolean.TRUE)
         .postcode("post")
         .preferredAddress("prefAdd");
+  }
+
+  private CaabModelUtils() {
   }
 
 
