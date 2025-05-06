@@ -113,7 +113,7 @@ public class ClientAddressDetailsControllerTest {
 
   @Test
   void testClientDetailsAddressPostFindAddress_WithAddresses() throws Exception {
-    ResultsDisplay<AddressResultRowDisplay> addressResults = new ResultsDisplay<AddressResultRowDisplay>();
+    ResultsDisplay<AddressResultRowDisplay> addressResults = new ResultsDisplay<>();
     addressResults.setContent(new ArrayList<>());
     addressResults.getContent().add(new AddressResultRowDisplay());
 

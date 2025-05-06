@@ -7,7 +7,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 /**
  * Utility class for handling file related operations.
  */
-public class FileUtil {
+public final class FileUtil {
 
   /**
    * Extract the file extension from the filename of a MultipartFile.
@@ -43,7 +43,10 @@ public class FileUtil {
    * @return the full filename.
    */
   public static String getFilename(String name, String extension) {
-    return name + ((extension == null || extension.equals(name)) ? "" : "." + extension);
+    return name + (extension == null || extension.equals(name) ? "" : "." + extension);
+  }
+
+  private FileUtil() {
   }
 
 }

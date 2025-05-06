@@ -40,6 +40,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
+import uk.gov.laa.ccms.soa.gateway.model.Notification;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
@@ -78,9 +79,9 @@ class NotificationServiceTest {
 
     StepVerifier.create(summaryMono)
         .expectNextMatches(summary ->
-            summary.getNotifications() == 10 &&
-                summary.getStandardActions() == 5 &&
-                summary.getOverdueActions() == 2)
+            summary.getNotifications() == 10
+                && summary.getStandardActions() == 5
+                && summary.getOverdueActions() == 2)
         .verifyComplete();
   }
 
@@ -110,7 +111,7 @@ class NotificationServiceTest {
 
     StepVerifier.create(notificationsMono)
         .expectNextMatches(notifications ->
-            notifications.getContent().getFirst().getUser().getLoginId().equals("user1"))
+            "user1".equals(notifications.getContent().getFirst().getUser().getLoginId()))
         .verifyComplete();
   }
 
@@ -120,8 +121,8 @@ class NotificationServiceTest {
     String loginId = "loginId";
     String userType = "userType";
 
-    uk.gov.laa.ccms.soa.gateway.model.Notification notificationResponse =
-        new uk.gov.laa.ccms.soa.gateway.model.Notification();
+    Notification notificationResponse =
+        new Notification();
     notificationResponse.setUserId(loginId);
     notificationResponse.action("action");
     notificationResponse.message("message");

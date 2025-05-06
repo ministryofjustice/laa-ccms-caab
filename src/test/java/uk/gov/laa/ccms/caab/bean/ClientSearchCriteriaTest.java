@@ -41,9 +41,8 @@ class ClientSearchCriteriaTest {
   void testGetDateOfBirth_NullComponent(String dobDay) {
     clientSearchCriteria.setDateOfBirth(dobDay);
 
-    Assertions.assertThrows(CaabApplicationException.class, () -> {
-      clientSearchCriteria.getFormattedDateOfBirth();
-    });
+    Assertions.assertThrows(CaabApplicationException.class, () ->
+      clientSearchCriteria.getFormattedDateOfBirth());
   }
 
   @Test

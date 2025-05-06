@@ -39,7 +39,7 @@ public class CostDetailsValidator extends AbstractValidator {
     final CostsFormData costDetails = (CostsFormData) target;
 
     validateRequiredField("requestedCostLimitation",
-        String.valueOf(costDetails.getRequestedCostLimitation()),
+        costDetails.getRequestedCostLimitation(),
         "Requested cost limitation", errors);
 
     if (costDetails.getRequestedCostLimitation() != null) {
@@ -54,5 +54,3 @@ public class CostDetailsValidator extends AbstractValidator {
   }
 
 }
-
-

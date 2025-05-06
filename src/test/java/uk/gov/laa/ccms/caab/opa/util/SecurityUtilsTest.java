@@ -53,10 +53,8 @@ public class SecurityUtilsTest {
       final String username,
       final String providerName,
       final String expectedMessage) {
-    final Exception exception = assertThrows(UnsupportedOperationException.class, () -> {
-      securityUtils.createJsonToken(username, providerName);
-    });
-    ;
+    final Exception exception = assertThrows(UnsupportedOperationException.class, () ->
+      securityUtils.createJsonToken(username, providerName));
     final String actualMessage = exception.getMessage();
 
     assertEquals(expectedMessage, actualMessage);

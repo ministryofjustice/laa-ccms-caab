@@ -716,8 +716,7 @@ class ActionsAndNotificationsControllerTest {
         userDetails.getUserId())).thenReturn(Mono.just(notificationAttachmentDetails));
     when(notificationService.getDraftDocumentLinks(List.of(baseNotificationAttachment))).thenReturn(
         draftDocumentLinks);
-    when(notificationService.getDocumentLinks(notification.getUploadedDocuments())).thenReturn
-     (documentLinks);
+    when(notificationService.getDocumentLinks(notification.getUploadedDocuments())).thenReturn(documentLinks);
     when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
         any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
         .thenReturn(new BaseNotificationAttachmentDetail());

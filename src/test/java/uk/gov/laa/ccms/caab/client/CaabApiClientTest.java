@@ -92,7 +92,7 @@ public class CaabApiClientTest {
     final Mono<String> result = caabApiClient.createApplication(loginId, application);
 
     StepVerifier.create(result)
-        .expectNext(locationId) // Expect the location header value
+        .expectNext(locationId)// Expect the location header value
         .verifyComplete();
 
     verify(requestHeadersMock, times(1)).exchangeToMono(any(Function.class));

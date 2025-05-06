@@ -123,9 +123,9 @@ public class ApplicationSearchController {
    * Processes the search form submission for applications and cases.
    *
    * @param caseSearchCriteria The criteria used to search for applications and cases.
-   * @param user    The details of the currently authenticated user.
-   * @param bindingResult  Validation result of the search criteria form.
-   * @param model          The model used to pass data to the view.
+   * @param user               The details of the currently authenticated user.
+   * @param bindingResult      Validation result of the search criteria form.
+   * @param model              The model used to pass data to the view.
    * @return Either redirects to the search results or reloads the form with validation errors.
    */
   @PostMapping("/application/search")
@@ -160,11 +160,11 @@ public class ApplicationSearchController {
   /**
    * Displays the search results of applications and cases.
    *
-   * @param page Page number for pagination.
-   * @param size Size of results per page.
+   * @param page              Page number for pagination.
+   * @param size              Size of results per page.
    * @param caseSearchResults The full un-paginated search results list.
-   * @param request The HTTP request.
-   * @param model Model to store attributes for the view.
+   * @param request           The HTTP request.
+   * @param model             Model to store attributes for the view.
    * @return The appropriate view based on the search results.
    */
   @GetMapping("/application/search/results")
@@ -179,7 +179,7 @@ public class ApplicationSearchController {
     ApplicationDetails applicationDetails = applicationMapper.toApplicationDetails(
         PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), caseSearchResults));
 
-    model.addAttribute(CURRENT_URL,  request.getRequestURL().toString());
+    model.addAttribute(CURRENT_URL, request.getRequestURL().toString());
     model.addAttribute(CASE_RESULTS_PAGE, applicationDetails);
     model.addAttribute("amendmentsEnabled", featureService.isEnabled(Feature.AMENDMENTS));
     return "application/application-search-results";
@@ -378,7 +378,7 @@ public class ApplicationSearchController {
         Optional.ofNullable(Mono.zip(
             providerService.getProvider(user.getProvider().getId()),
             lookupService.getCaseStatusValues()).block()).orElseThrow(
-                () -> new CaabApplicationException("Failed to retrieve lookup data"));
+              () -> new CaabApplicationException("Failed to retrieve lookup data"));
 
     ProviderDetail providerDetail = combinedResults.getT1();
     CaseStatusLookupDetail caseStatusLookupDetail = combinedResults.getT2();

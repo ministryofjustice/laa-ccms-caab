@@ -79,4 +79,3 @@ class PaginationUtilTest {
         .categoryOfLaw("CAT1");
   }
 }
-

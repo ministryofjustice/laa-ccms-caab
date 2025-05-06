@@ -54,8 +54,10 @@ import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
@@ -947,7 +949,7 @@ public class AssessmentServiceTest {
 
 
   @ParameterizedTest
-  @CsvSource(value ={
+  @CsvSource(value = {
       "2, true",
       "10, true",
       "0, true"
@@ -976,7 +978,7 @@ public class AssessmentServiceTest {
 
 
   @ParameterizedTest
-  @CsvSource(value ={
+  @CsvSource(value = {
       "987, null, true",
       "987, OPPONENT_987, true",
       "234, null, false",
@@ -1004,7 +1006,7 @@ public class AssessmentServiceTest {
   }
 
   @ParameterizedTest
-  @CsvSource(value ={
+  @CsvSource(value = {
       "234, null, false",
       "1, 'OPPONENT_234', false",
       "1, null,  true",
@@ -1196,11 +1198,11 @@ public class AssessmentServiceTest {
       final boolean expected) throws Exception {
 
     final ApplicationDetail application = new ApplicationDetail();
-    final var applicationType = new uk.gov.laa.ccms.caab.model.ApplicationType();
+    final var applicationType = new ApplicationType();
     applicationType.setId(applicationTypeCode);
 
     if (applicationDelegatedDate != null) {
-      final var devolvedPowers = new uk.gov.laa.ccms.caab.model.DevolvedPowersDetail();
+      final var devolvedPowers = new DevolvedPowersDetail();
       devolvedPowers.setDateUsed(new SimpleDateFormat("dd-MM-yyyy").parse(applicationDelegatedDate));
       applicationType.setDevolvedPowers(devolvedPowers);
     }

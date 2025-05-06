@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @EnableConfigurationProperties(FeatureProperties.class)
-public class FeatureService {
+public final class FeatureService {
 
   private final FeatureProperties featureProperties;
 

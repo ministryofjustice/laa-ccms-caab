@@ -18,7 +18,7 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.constants.assessment.InstanceMappingPrefix;
 
-public class AssessmentModelUtils {
+public final class AssessmentModelUtils {
 
   public static AssessmentDetail buildAssessmentDetail(final Date date) {
     return new AssessmentDetail()
@@ -167,6 +167,9 @@ public class AssessmentModelUtils {
     return new AssessmentAttributeDetail()
         .name(MERITS_EVIDENCE_REQD.name())
         .value(value);
+  }
+
+  private AssessmentModelUtils() {
   }
 
 }

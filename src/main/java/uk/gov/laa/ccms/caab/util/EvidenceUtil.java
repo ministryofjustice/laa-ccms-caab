@@ -22,7 +22,7 @@ import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 /**
  * Utility methods for Evidence and Document Upload.
  */
-public class EvidenceUtil {
+public final class EvidenceUtil {
 
   /**
    * Determine whether evidence documents are required for the supplied means, merits,
@@ -99,5 +99,8 @@ public class EvidenceUtil {
     return evidenceUploaded.stream()
         .anyMatch(evidence -> Arrays.asList(evidence.getEvidenceDescriptions().split("\\^"))
             .contains(evidenceDescription));
+  }
+
+  private EvidenceUtil() {
   }
 }

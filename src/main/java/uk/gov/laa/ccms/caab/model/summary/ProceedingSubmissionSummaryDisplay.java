@@ -40,4 +40,3 @@ public class ProceedingSubmissionSummaryDisplay {
    */
   private List<ScopeLimitationSubmissionSummaryDisplay> scopeLimitations;
 }
-

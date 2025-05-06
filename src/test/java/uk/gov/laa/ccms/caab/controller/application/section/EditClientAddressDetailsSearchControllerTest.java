@@ -55,7 +55,7 @@ class EditClientAddressDetailsSearchControllerTest {
 
     addressSearch = new AddressSearchFormData();
 
-    searchResults = new ResultsDisplay<AddressResultRowDisplay>();
+    searchResults = new ResultsDisplay<>();
     searchResults.setContent(new ArrayList<>());
 
     clientFlowFormData = new ClientFlowFormData(ACTION_EDIT);

@@ -10,7 +10,7 @@ import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 /**
  * Utility class for handling proceeding-related operations.
  */
-public class ProceedingUtil {
+public final class ProceedingUtil {
   private static final String NEW_PROCEEDING = "NEW";
   private static final String UNCHANGED_PROCEEDING = "UNCHANGED";
   private static final String CHANGED_PROCEEDING = "CHANGED";
@@ -115,6 +115,9 @@ public class ProceedingUtil {
       }
     }
     return null;
+  }
+
+  private ProceedingUtil() {
   }
 
 }

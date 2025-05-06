@@ -22,4 +22,7 @@ public final class ContextConstants {
    * Context name for amendments
    */
   public static final String AMENDMENTS = "amendments";
+
+  private ContextConstants() {
+  }
 }

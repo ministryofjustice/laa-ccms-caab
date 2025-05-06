@@ -53,7 +53,7 @@ public class ClientAddressDetailsSearchControllerTest {
     mockMvc = standaloneSetup(clientAddressDetailsSearchController).build();
 
     addressSearch = new AddressSearchFormData();
-    searchResults = new ResultsDisplay<AddressResultRowDisplay>();
+    searchResults = new ResultsDisplay<>();
     searchResults.setContent(new ArrayList<>());
     clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
 

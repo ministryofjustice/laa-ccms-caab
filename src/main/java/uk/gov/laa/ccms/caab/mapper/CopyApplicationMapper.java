@@ -51,8 +51,8 @@ public interface CopyApplicationMapper {
   @Mapping(target = "defaultInd", ignore = true)
   @Mapping(target = "nonDefaultWordingReqd", ignore = true)
   @Mapping(target = "stage", ignore = true)
-  uk.gov.laa.ccms.caab.model.ScopeLimitationDetail copyScopeLimitation(
-      uk.gov.laa.ccms.caab.model.ScopeLimitationDetail scopeLimitationToCopy);
+  ScopeLimitationDetail copyScopeLimitation(
+      ScopeLimitationDetail scopeLimitationToCopy);
 
   List<OpponentDetail> copyOpponentList(List<OpponentDetail> opponentList);
 

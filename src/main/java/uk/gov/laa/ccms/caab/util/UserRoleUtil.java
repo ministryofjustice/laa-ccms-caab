@@ -7,7 +7,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 /**
  * Utility class which provides methods for handling user roles.
  */
-public class UserRoleUtil {
+public final class UserRoleUtil {
 
   /**
    * Finds any roles in the second list that are missing in the first list.

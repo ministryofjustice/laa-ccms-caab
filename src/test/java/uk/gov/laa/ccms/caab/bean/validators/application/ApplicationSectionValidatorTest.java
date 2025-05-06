@@ -52,7 +52,7 @@ class ApplicationSectionValidatorTest {
 
     assertTrue(errors.hasErrors());
     assertTrue(errors.hasGlobalErrors());
-    assertTrue(errors.getGlobalError().getCode().equals("provider.required"));
+    assertTrue("provider.required".equals(errors.getGlobalError().getCode()));
   }
 
   @Test
@@ -64,7 +64,7 @@ class ApplicationSectionValidatorTest {
 
     assertTrue(errors.hasErrors());
     assertTrue(errors.hasGlobalErrors());
-    assertTrue(errors.getGlobalError().getCode().equals("generalDetails.required"));
+    assertTrue("generalDetails.required".equals(errors.getGlobalError().getCode()));
   }
 
   @Test
@@ -77,7 +77,7 @@ class ApplicationSectionValidatorTest {
 
     assertTrue(errors.hasErrors());
     assertTrue(errors.hasGlobalErrors());
-    assertTrue(errors.getGlobalError().getCode().equals("proceedingsAndCosts.required"));
+    assertTrue("proceedingsAndCosts.required".equals(errors.getGlobalError().getCode()));
   }
 
   @Test
@@ -91,7 +91,7 @@ class ApplicationSectionValidatorTest {
 
     assertTrue(errors.hasErrors());
     assertTrue(errors.hasGlobalErrors());
-    assertTrue(errors.getGlobalError().getCode().equals("opponentsAndOtherParties.required"));
+    assertTrue("opponentsAndOtherParties.required".equals(errors.getGlobalError().getCode()));
   }
 
   @Test
@@ -106,7 +106,7 @@ class ApplicationSectionValidatorTest {
 
     assertTrue(errors.hasErrors());
     assertTrue(errors.hasGlobalErrors());
-    assertTrue(errors.getGlobalError().getCode().equals("meansAssessment.required"));
+    assertTrue("meansAssessment.required".equals(errors.getGlobalError().getCode()));
   }
 
   @Test
@@ -123,7 +123,7 @@ class ApplicationSectionValidatorTest {
 
     assertTrue(errors.hasErrors());
     assertTrue(errors.hasGlobalErrors());
-    assertTrue(errors.getGlobalError().getCode().equals("meritsAssessment.required"));
+    assertTrue("meritsAssessment.required".equals(errors.getGlobalError().getCode()));
   }
 
   @Test
