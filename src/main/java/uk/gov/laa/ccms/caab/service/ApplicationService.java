@@ -341,7 +341,7 @@ public class ApplicationService {
           Mono<String> application = caabApiClient.createApplication(user.getLoginId(),
               applicationDetail);
           puiMetricService.incrementCreatedApplicationsCount();
-          if(isCopyCase) {
+          if (isCopyCase) {
             puiMetricService.incrementCopyCount();
           }
           return application;
@@ -564,7 +564,7 @@ public class ApplicationService {
    *
    * @param application the application to retrieve a summary for.
    * @return A Mono of ApplicationSectionDisplay representing the application section display
-   * values.
+   *     values.
    */
   public ApplicationSectionDisplay getApplicationSections(
       final ApplicationDetail application,
