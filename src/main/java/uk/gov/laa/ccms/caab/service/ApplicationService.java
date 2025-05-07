@@ -37,6 +37,7 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.metric.PuiMetricService;
 import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.builders.ApplicationSectionsBuilder;
 import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
@@ -113,6 +114,8 @@ public class ApplicationService {
   private final CaabApiClient caabApiClient;
 
   private final AssessmentService assessmentService;
+
+  private final PuiMetricService puiMetricService;
 
   private final ProviderService providerService;
 
@@ -242,9 +245,9 @@ public class ApplicationService {
   /**
    * Applies a patch to an existing application.
    *
-   * @param id The unique identifier of the application to be patched.
+   * @param id    The unique identifier of the application to be patched.
    * @param patch The details of the application patch.
-   * @param user The user details, including the login ID.
+   * @param user  The user details, including the login ID.
    * @return A Mono indicating the completion of the patch operation.
    */
   public Mono<Void> patchApplication(
@@ -312,8 +315,8 @@ public class ApplicationService {
    * Create a draft Application in the CAAB's Transient Data Store.
    *
    * @param applicationFormData - The details of the Application to create
-   * @param clientDetail - The client details
-   * @param user - The related User.
+   * @param clientDetail        - The client details
+   * @param user                - The related User.
    * @return a String containing the id of the application
    */
   public Mono<String> createApplication(
@@ -323,19 +326,27 @@ public class ApplicationService {
       throws ParseException {
     Mono<ApplicationDetail> applicationMono;
 
-    if (StringUtils.hasText(applicationFormData.getCopyCaseReferenceNumber())) {
+    boolean isCopyCase = StringUtils.hasText(applicationFormData.getCopyCaseReferenceNumber());
+    if (isCopyCase) {
       ApplicationDetail ebsApplicationToCopy =
           this.getCase(applicationFormData.getCopyCaseReferenceNumber(),
-          user.getProvider().getId(), user.getUsername());
-
+              user.getProvider().getId(), user.getUsername());
       applicationMono = copyApplication(ebsApplicationToCopy, clientDetail, user);
     } else {
       applicationMono = buildNewApplication(applicationFormData, clientDetail, user);
     }
 
     return applicationMono
-        .flatMap(applicationDetail -> caabApiClient.createApplication(
-            user.getLoginId(), applicationDetail));
+        .flatMap(applicationDetail -> {
+          Mono<String> application = caabApiClient.createApplication(user.getLoginId(),
+              applicationDetail);
+          puiMetricService.incrementCreatedApplicationsCount();
+          if(isCopyCase) {
+            puiMetricService.incrementCopyCount();
+          }
+          return application;
+        });
+
   }
 
   protected Mono<ApplicationDetail> buildNewApplication(
@@ -512,7 +523,7 @@ public class ApplicationService {
    * Abandon an application by removing all related data from the TDS.
    *
    * @param application - the application to abandon.
-   * @param user - the user performing the application abandon.
+   * @param user        - the user performing the application abandon.
    */
   public void abandonApplication(final ApplicationDetail application, final UserDetail user) {
 
@@ -540,6 +551,11 @@ public class ApplicationService {
      *  This should be handled in assessment-api via a cascade.
      */
 
+    /*
+     * Increment relevent metrics
+     */
+    puiMetricService.incrementAbandonedCount();
+
     Mono.when(removeDocsMono, deleteAppMono, deleteAssessmentsMono).block();
   }
 
@@ -547,8 +563,8 @@ public class ApplicationService {
    * Retrieves the application section display values.
    *
    * @param application the application to retrieve a summary for.
-   * @return A Mono of ApplicationSectionDisplay representing the application section
-   *         display values.
+   * @return A Mono of ApplicationSectionDisplay representing the application section display
+   * values.
    */
   public ApplicationSectionDisplay getApplicationSections(
       final ApplicationDetail application,
@@ -567,7 +583,6 @@ public class ApplicationService {
           .orElse(new CommonLookupValueDetail().description(correspondenceCode))
           .getDescription();
     }
-
 
     final Mono<RelationshipToCaseLookupDetail> orgRelationshipsToCaseMono =
         lookupService.getOrganisationToCaseRelationships();
@@ -702,9 +717,9 @@ public class ApplicationService {
   }
 
   /**
-   * Retrieves linked cases associated with a specific application id.
-   * This method fetches a list of linked cases, transforms them into a
-   * {@code ResultsDisplay<LinkedCaseResultRowDisplay>} format, and returns the result.
+   * Retrieves linked cases associated with a specific application id. This method fetches a list of
+   * linked cases, transforms them into a {@code ResultsDisplay<LinkedCaseResultRowDisplay>} format,
+   * and returns the result.
    *
    * @param applicationId The unique identifier for the cases to be retrieved.
    * @return A {@code ResultsDisplay<LinkedCaseResultRowDisplay>} containing the linked cases.
@@ -723,16 +738,16 @@ public class ApplicationService {
   }
 
   /**
-   * Retrieves the default scope limitation details for a given proceeding.
-   * The scope limitation details are fetched based on the category of law, matter type, proceeding
-   * code, level of service, and application type. If the application type is emergency or
-   * substantive devolved powers, the method sets the emergency and emergency scope default flags
-   * to true. Otherwise, it sets the scope default flag to true.
+   * Retrieves the default scope limitation details for a given proceeding. The scope limitation
+   * details are fetched based on the category of law, matter type, proceeding code, level of
+   * service, and application type. If the application type is emergency or substantive devolved
+   * powers, the method sets the emergency and emergency scope default flags to true. Otherwise, it
+   * sets the scope default flag to true.
    *
-   * @param categoryOfLaw The category of law.
-   * @param matterType The type of the matter.
-   * @param proceedingCode The code of the proceeding.
-   * @param levelOfService The level of service.
+   * @param categoryOfLaw   The category of law.
+   * @param matterType      The type of the matter.
+   * @param proceedingCode  The code of the proceeding.
+   * @param levelOfService  The level of service.
    * @param applicationType The type of the application.
    * @return A Mono of ScopeLimitationDetails containing the default scope limitation details.
    */
@@ -767,11 +782,11 @@ public class ApplicationService {
   /**
    * Calculates the maximum cost limitation for a proceeding.
    *
-   * @param categoryOfLaw The category of law.
-   * @param matterType The type of the matter.
-   * @param proceedingCode The code of the proceeding.
-   * @param levelOfService The level of service.
-   * @param applicationType The type of the application.
+   * @param categoryOfLaw    The category of law.
+   * @param matterType       The type of the matter.
+   * @param proceedingCode   The code of the proceeding.
+   * @param levelOfService   The level of service.
+   * @param applicationType  The type of the application.
    * @param scopeLimitations The list of scope limitations.
    * @return The maximum cost limitation for the proceeding.
    */
@@ -824,12 +839,12 @@ public class ApplicationService {
   /**
    * Determines the proceeding stage based on various parameters.
    *
-   * @param categoryOfLaw The category of law.
-   * @param matterType The type of the matter.
-   * @param proceedingCode The code of the proceeding.
-   * @param levelOfService The level of service.
+   * @param categoryOfLaw    The category of law.
+   * @param matterType       The type of the matter.
+   * @param proceedingCode   The code of the proceeding.
+   * @param levelOfService   The level of service.
    * @param scopeLimitations The list of scope limitations.
-   * @param isAmendment Flag indicating if it's an amendment.
+   * @param isAmendment      Flag indicating if it's an amendment.
    * @return The proceeding stage as an Integer.
    */
   public Integer getProceedingStage(
@@ -912,12 +927,14 @@ public class ApplicationService {
   }
 
   /**
-   * Updates the lead proceeding for a specific application.
-   * This method communicates with the CAAB API client to update the lead proceeding.
+   * Updates the lead proceeding for a specific application. This method communicates with the CAAB
+   * API client to update the lead proceeding.
    *
-   * @param applicationId The id of the application for which the lead proceeding should be updated.
+   * @param applicationId       The id of the application for which the lead proceeding should be
+   *                            updated.
    * @param newLeadProceedingId The id of the new lead proceeding.
-   * @param user The user performing the operation, identified by {@code UserDetail}.
+   * @param user                The user performing the operation, identified by
+   *                            {@code UserDetail}.
    */
   public void makeLeadProceeding(
       final String applicationId,
@@ -967,9 +984,9 @@ public class ApplicationService {
   }
 
   /**
-   * Removes a linked case from a primary case.
-   * This method communicates with the CAAB API client to un-link a case identified by
-   * {@code linkedCaseId} from a primary case identified by {@code id}.
+   * Removes a linked case from a primary case. This method communicates with the CAAB API client to
+   * un-link a case identified by {@code linkedCaseId} from a primary case identified by
+   * {@code id}.
    *
    * @param linkedCaseId The ID of the linked case to be removed.
    * @param user         The user performing the operation, identified by {@code UserDetail}.
@@ -981,10 +998,9 @@ public class ApplicationService {
   }
 
   /**
-   * Updates a specific linked case with new data.
-   * This method maps the provided {@code data} to a {@code LinkedCaseDetail} object and updates
-   * the linked case identified by {@code linkedCaseId} in relation to the primary case
-   * identified by {@code id}.
+   * Updates a specific linked case with new data. This method maps the provided {@code data} to a
+   * {@code LinkedCaseDetail} object and updates the linked case identified by {@code linkedCaseId}
+   * in relation to the primary case identified by {@code id}.
    *
    * @param linkedCaseId The ID of the linked case to be updated.
    * @param data         The new data for the linked case, encapsulated in
@@ -1025,9 +1041,9 @@ public class ApplicationService {
   /**
    * Patches an application's correspondence address in the CAAB's Transient Data Store.
    *
-   * @param id the ID associated with the application
+   * @param id              the ID associated with the application
    * @param addressFormData the details of the Application to amend
-   * @param user the related User.
+   * @param user            the related User.
    */
   public void updateCorrespondenceAddress(
       final String id,
@@ -1046,9 +1062,9 @@ public class ApplicationService {
   /**
    * Patches an application's application type in the CAAB's Transient Data Store.
    *
-   * @param id the ID associated with the application
+   * @param id                  the ID associated with the application
    * @param applicationFormData the details of the Application to amend
-   * @param user the related User.
+   * @param user                the related User.
    */
   public void updateApplicationType(
       final String id,
@@ -1074,9 +1090,9 @@ public class ApplicationService {
   /**
    * Patches an application's provider details in the CAAB's Transient Data Store.
    *
-   * @param id the ID associated with the application
+   * @param id                  the ID associated with the application
    * @param applicationFormData the details of the Application to amend
-   * @param user the related User.
+   * @param user                the related User.
    */
   public void updateProviderDetails(
       final String id,
@@ -1086,7 +1102,6 @@ public class ApplicationService {
     final ProviderDetail provider = Optional.ofNullable(user.getProvider())
         .map(providerData -> providerService.getProvider(providerData.getId()).block())
         .orElseThrow(() -> new CaabApplicationException("Error retrieving provider"));
-
 
     final ContactDetail feeEarner = providerService.getFeeEarnerByOfficeAndId(
         provider, applicationFormData.getOfficeId(), applicationFormData.getFeeEarnerId());
@@ -1124,9 +1139,9 @@ public class ApplicationService {
   }
 
   /**
-   * Fetches the opponents associated with a specific application id.
-   * This method communicates with the CAAB API client to fetch the proceedings and
-   * transforms them into a {@code AbstractOpponentFormData} format.
+   * Fetches the opponents associated with a specific application id. This method communicates with
+   * the CAAB API client to fetch the proceedings and transforms them into a
+   * {@code AbstractOpponentFormData} format.
    *
    * @param applicationId The id of the application for which opponents should be retrieved.
    * @return List of AbstractOpponentFormData.
@@ -1144,9 +1159,9 @@ public class ApplicationService {
   /**
    * Add a new OpponentDetail to an application based on the supplied form data.
    *
-   * @param applicationId - the id of the application.
+   * @param applicationId    - the id of the application.
    * @param opponentFormData - the opponent form data.
-   * @param userDetail - the user related user.
+   * @param userDetail       - the user related user.
    */
   public void addOpponent(
       final String applicationId,
@@ -1170,8 +1185,8 @@ public class ApplicationService {
   }
 
   /**
-   * Build an AbstractOpponentFormData for the provided OpponentDetail.
-   * Codes will be translated to their display value depending on the type of opponent.
+   * Build an AbstractOpponentFormData for the provided OpponentDetail. Codes will be translated to
+   * their display value depending on the type of opponent.
    *
    * @param opponent - the opponent
    * @return AbstractOpponentFormData for the OpponentDetail
@@ -1249,9 +1264,9 @@ public class ApplicationService {
   /**
    * Prepares the proceeding summary for a specific application.
    *
-   * @param id The ID of the application.
+   * @param id          The ID of the application.
    * @param application The application details.
-   * @param user The user performing the operation.
+   * @param user        The user performing the operation.
    */
   public void prepareProceedingSummary(
       final String id,
@@ -1318,8 +1333,8 @@ public class ApplicationService {
    * Adds a proceeding associated to a specific application.
    *
    * @param applicationId the ID of the application to which the proceeding is added
-   * @param proceeding the proceeding to add
-   * @param user the user details initiating the action
+   * @param proceeding    the proceeding to add
+   * @param user          the user details initiating the action
    */
   public void addProceeding(
       final String applicationId,
@@ -1338,7 +1353,7 @@ public class ApplicationService {
    * Updates a specified proceeding.
    *
    * @param proceeding the proceeding to update
-   * @param user the user details initiating the update
+   * @param user       the user details initiating the update
    */
   public void updateProceeding(
       final ProceedingDetail proceeding,
@@ -1350,7 +1365,7 @@ public class ApplicationService {
    * Deletes a specified proceeding.
    *
    * @param proceedingId the ID of the proceeding to delete
-   * @param user the user details initiating the deletion
+   * @param user         the user details initiating the deletion
    */
   public void deleteProceeding(
       final String applicationId,
@@ -1384,7 +1399,7 @@ public class ApplicationService {
    *
    * @param applicationId the ID of the application to update
    * @param costStructure the new cost structure details
-   * @param user the user details initiating the update
+   * @param user          the user details initiating the update
    */
   public void updateCostStructure(
       final String applicationId,
@@ -1399,9 +1414,9 @@ public class ApplicationService {
   /**
    * Adds a priorAuthority associated to a specific application.
    *
-   * @param applicationId the ID of the application to which the priorAuthority is added
+   * @param applicationId  the ID of the application to which the priorAuthority is added
    * @param priorAuthority the priorAuthority to add
-   * @param user the user details initiating the action
+   * @param user           the user details initiating the action
    */
   public void addPriorAuthority(
       final String applicationId,
@@ -1414,7 +1429,7 @@ public class ApplicationService {
    * Updates a specified priorAuthority.
    *
    * @param priorAuthority the priorAuthority to update
-   * @param user the user details initiating the update
+   * @param user           the user details initiating the update
    */
   public void updatePriorAuthority(
       final PriorAuthorityDetail priorAuthority,
@@ -1427,7 +1442,7 @@ public class ApplicationService {
    * Deletes a specified priorAuthority.
    *
    * @param priorAuthorityId the ID of the priorAuthority to delete
-   * @param user the user details initiating the deletion
+   * @param user             the user details initiating the deletion
    */
   public void deletePriorAuthority(
       final Integer priorAuthorityId,
@@ -1438,11 +1453,11 @@ public class ApplicationService {
   /**
    * Creates a new case using the provided user, application, assessments, and evidence documents.
    *
-   * @param user the user creating the case
-   * @param application the application details for the case
-   * @param meansAssessment the means assessment details for the case
+   * @param user             the user creating the case
+   * @param application      the application details for the case
+   * @param meansAssessment  the means assessment details for the case
    * @param meritsAssessment the merits assessment details for the case
-   * @param caseDocs the list of evidence documents for the case
+   * @param caseDocs         the list of evidence documents for the case
    * @return the {@link CaseTransactionResponse} for the created case
    */
   public CaseTransactionResponse createCase(
@@ -1460,8 +1475,9 @@ public class ApplicationService {
         .user(user)
         .build();
 
-
     final CaseDetail caseToSubmit = soaApplicationMapper.toCaseDetail(caseMappingContext);
+
+    puiMetricService.incrementSubmitApplicationsCount();
 
     return soaApiClient.createCase(user.getLoginId(), user.getUserType(), caseToSubmit)
         .block();

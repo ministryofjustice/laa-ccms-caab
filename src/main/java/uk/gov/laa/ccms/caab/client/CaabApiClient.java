@@ -20,7 +20,6 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
-import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
@@ -79,6 +78,21 @@ public class CaabApiClient {
         .exchangeToMono(CaabApiClient::getIdResponse)
         .onErrorResume(e -> caabApiClientErrorHandler
             .handleApiCreateError(e, RESOURCE_TYPE_APPLICATION));
+  }
+
+  /**
+   * Retrieves the total number of applications using the CAAB API.
+   *
+   * @return a Mono containing the total number of applications.
+   */
+  public Mono<Long> getTotalApplications() {
+    return caabApiWebClient
+        .get()
+        .uri("/applications/_count")
+        .retrieve()
+        .bodyToMono(Long.class)
+        .onErrorResume(e -> caabApiClientErrorHandler
+            .handleApiRetrieveError(e, RESOURCE_TYPE_APPLICATION, "count", "0"));
   }
 
   /**

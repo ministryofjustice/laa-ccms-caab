@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import uk.gov.laa.ccms.caab.bean.metric.PuiMetricService;
 import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.caab.util.UserRoleUtil;
@@ -24,6 +25,7 @@ public class HomeController {
   public static final String NO_OUTSTANDING_ACTIONS = "No Outstanding Actions";
 
   private final NotificationService notificationService;
+  private final PuiMetricService customMetricsService;
 
   /**
    * Handles requests to the home page. Retrieves and formats user notifications and actions.
@@ -33,6 +35,7 @@ public class HomeController {
    */
   @GetMapping({"/home", "/"})
   public String home(Model model, HttpSession session) {
+    customMetricsService.incrementCreatedApplicationsCount();
     session.removeAttribute(NOTIFICATION_SEARCH_CRITERIA);
     UserDetail user = (UserDetail) model.getAttribute(USER_DETAILS);
 
