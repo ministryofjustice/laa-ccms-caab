@@ -174,8 +174,10 @@
               <table th:unless="${availableActions.isEmpty()}" class="govuk-table" data-test="available-actions">
                   <thead class="govuk-table__head">
                   <tr class="govuk-table__row">
-                      <th scope="col" class="govuk-table__header" th:text="Action"></th>
-                      <th scope="col" class="govuk-table__header" th:text="Description"></th>
+                      <th scope="col" class="govuk-table__header"
+                          th:text="#{case.overview.availableActions.table.action}"></th>
+                      <th scope="col" class="govuk-table__header"
+                          th:text="#{case.overview.availableActions.table.action}"></th>
                   </tr>
                   </thead>
                   <tbody class="govuk-table__body">
