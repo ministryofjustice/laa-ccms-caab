@@ -180,10 +180,11 @@
           <tr class="govuk-table__row" th:each="action : ${availableActions}">
             <td class="govuk-table__cell">
               <a class="govuk-link" href="#"
-                 th:text="${action.action()}">
+                 th:text="${#messages.msg(action.actionKey())}">
               </a>
             </td>
-            <td class="govuk-table__cell" th:text="${action.description()}">
+            <td class="govuk-table__cell"
+                th:text="${#messages.msg(action.descriptionKey())}">
             </td>
           </tr>
           </tbody>

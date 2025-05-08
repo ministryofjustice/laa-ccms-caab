@@ -1,9 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
-import org.hamcrest.Matchers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import org.junit.jupiter.api.DisplayName;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -17,7 +15,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
-import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
@@ -26,12 +23,12 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -44,11 +41,11 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
-import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.feature.FeatureService;
@@ -74,6 +71,10 @@ import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -415,7 +416,7 @@ public class ApplicationSearchControllerTest {
     // EBS Case
     ApplicationDetail applicationDetail =
         getEbsCase(selectedCaseRef, providerId, providerReference, clientFirstname, clientSurname,
-            clientReference, false, null, null, List.of(FunctionConstants.AMEND_CASE)); // Added AMEND_CASE for this test
+            clientReference, false, null, null, List.of(FunctionConstants.AMEND_CASE));
 
     final ActiveCase activeCase =
         getActiveCase(selectedCaseRef, providerId, clientFirstname, clientSurname, clientReference,
@@ -434,7 +435,7 @@ public class ApplicationSearchControllerTest {
         .andExpect(model().attribute("draftCosts", Matchers.nullValue()))
         .andExpect(model().attribute("availableActions", Matchers.hasItem(new AvailableAction(
             FunctionConstants.AMEND_CASE, "Amend Case",
-            "Create an amendment for this application", "#")))) // Adjusted assertion
+            "Create an amendment for this application", "#"))))
         .andExpect(model().attribute("returnTo", "caseSearchResults"))
         .andExpect(model().attribute(NOTIFICATION_ID, Matchers.nullValue()))
         .andExpect(view().name("application/case-overview"));
@@ -754,7 +755,7 @@ public class ApplicationSearchControllerTest {
                         .surname(clientSurname)
                         .reference(clientReference))
                 .costs(new CostStructureDetail().addCostEntriesItem(new CostEntryDetail().ebsId(costId)))
-                .availableFunctions(availableFunctions) // Use provided functions
+                .availableFunctions(availableFunctions)// Use provided functions
                 .amendment(false);
 
         if (hasEbsAmendments
@@ -770,7 +771,7 @@ public class ApplicationSearchControllerTest {
     return ActiveCase.builder()
         .caseReferenceNumber(selectedCaseRef)
         .providerId(providerId)
-        .client("%s %s" .formatted(clientFirstname, clientSurname))
+        .client("%s %s".formatted(clientFirstname, clientSurname))
         .clientReferenceNumber(clientReference)
         .providerCaseReferenceNumber(providerReference)
         .build();

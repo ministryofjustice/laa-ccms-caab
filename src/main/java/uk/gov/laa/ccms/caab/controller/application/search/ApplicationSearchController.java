@@ -12,11 +12,6 @@ import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificati
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -63,6 +58,12 @@ import uk.gov.laa.ccms.caab.util.PaginationUtil;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Controller responsible for managing the searching of applications and cases.
@@ -245,7 +246,8 @@ public class ApplicationSearchController {
   private static List<AvailableAction> getAvailableActions(ApplicationDetail ebsCase,
                                                            boolean amendment) {
 
-    if (ebsCase.getAvailableFunctions() == null || ebsCase.getAvailableFunctions().isEmpty()) {
+    if (ebsCase.getAvailableFunctions() == null
+        || ebsCase.getAvailableFunctions().isEmpty()) {
       return Collections.emptyList();
     }
 
@@ -253,40 +255,74 @@ public class ApplicationSearchController {
     boolean openAmendment = amendment || hasEbsAmendments(ebsCase);
 
     AvailableAction amendmentAction = openAmendment
-        ? new AvailableAction(FunctionConstants.AMEND_CASE, "Continue Amendment",
-        "Continue to create this amendment", "#")
-        : new AvailableAction(FunctionConstants.AMEND_CASE, "Amend Case",
-        "Create an amendment for this application", "#");
+        ? new AvailableAction(
+        FunctionConstants.AMEND_CASE,
+        "action.amendCase.continue.name",
+        "action.amendCase.continue.description",
+        "#")
+        : new AvailableAction(
+        FunctionConstants.AMEND_CASE,
+        "action.amendCase.new.name",
+        "action.amendCase.new.description",
+        "#");
 
     List<AvailableAction> availableActions = List.of(
         amendmentAction,
-        new AvailableAction(FunctionConstants.AMEND_CLIENT, "Amend Client",
-            "View or update the client details", "#"),
-        new AvailableAction(FunctionConstants.BILLING, "Billing",
-            "View financial details and Bills/POAs for this case", "#"),
-        new AvailableAction(FunctionConstants.OUTCOME_WITH_DISCHARGE, "Record Outcome",
-            "Record an outcome for this case or for one of its proceedings", "#"),
-        new AvailableAction(FunctionConstants.OUTCOME_NO_DISCHARGE, "Record Outcome",
-            "Record an outcome for this case or for one of its proceedings", "#"),
-        new AvailableAction(FunctionConstants.SUBMIT_CASE_REQUEST, "Submit Case Query",
-            "Create a service request related to this case", "#"),
-        new AvailableAction(FunctionConstants.VIEW_CASE, "View Case or Application",
-            "Open a read-only version of this case or application", "#"),
-        new AvailableAction(FunctionConstants.NOTIFICATIONS, "View Case Notifications",
-            "View all notifications belonging to this case", "#"),
-        new AvailableAction(FunctionConstants.VIEW_CASE_OUTCOME, "View Outcome",
-            "View the outcomes for this case", "#"),
-        new AvailableAction(FunctionConstants.EDIT_PROVIDER, "Amend Provider Details",
-            "Amend Provider Details", "#"),
-        new AvailableAction(FunctionConstants.CASE_CORRESPONDENCE_PREFERENCE,
-            "Amend Correspondence Address",
-            "Amend Correspondence Address", "#"),
-        new AvailableAction(FunctionConstants.ALLOCATE_COST_LIMIT, "Allocate Cost Limit",
-            "Allocate Cost Limit", "#"),
-        new AvailableAction(FunctionConstants.MEANS_REASSESSMENT,
-            "Complete Means Reassessment",
-            "Complete Means Reassessment", "#")
-    );
+        new AvailableAction(
+            FunctionConstants.AMEND_CLIENT,
+            "action.amendClient.name",
+            "action.amendClient.description",
+            "#"),
+        new AvailableAction(
+            FunctionConstants.BILLING, "action.billing.name", "action.billing.description", "#"),
+        new AvailableAction(
+            FunctionConstants.OUTCOME_WITH_DISCHARGE,
+            "action.recordOutcome.name",
+            "action.recordOutcome.description",
+            "#"),
+        new AvailableAction(
+            FunctionConstants.OUTCOME_NO_DISCHARGE,
+            "action.recordOutcome.name",
+            "action.recordOutcome.description",
+            "#"),
+        new AvailableAction(
+            FunctionConstants.SUBMIT_CASE_REQUEST,
+            "action.submitCaseQuery.name",
+            "action.submitCaseQuery.description",
+            "#"),
+        new AvailableAction(
+            FunctionConstants.VIEW_CASE, "action.viewCase.name", "action.viewCase.description",
+            "#"),
+        new AvailableAction(
+            FunctionConstants.NOTIFICATIONS,
+            "action.viewNotifications.name",
+            "action.viewNotifications.description",
+            "#"),
+        new AvailableAction(
+            FunctionConstants.VIEW_CASE_OUTCOME,
+            "action.viewOutcome.name",
+            "action.viewOutcome.description",
+            "#"),
+        new AvailableAction(
+            FunctionConstants.EDIT_PROVIDER,
+            "action.amendProviderDetails.name",
+            "action.amendProviderDetails.description",
+            "#"),
+        new AvailableAction(
+            FunctionConstants.CASE_CORRESPONDENCE_PREFERENCE,
+            "action.amendCorrespondenceAddress.name",
+            "action.amendCorrespondenceAddress.description",
+            "#"),
+        new AvailableAction(
+            FunctionConstants.ALLOCATE_COST_LIMIT,
+            "action.allocateCostLimit.name",
+            "action.allocateCostLimit.description",
+            "#"),
+        new AvailableAction(
+            FunctionConstants.MEANS_REASSESSMENT,
+            "action.completeMeansReassessment.name",
+            "action.completeMeansReassessment.description",
+            "#"));
 
     return availableActions.stream()
         .filter(availableAction -> caseAvailableFunctions.contains(availableAction.actionCode()))
@@ -363,7 +399,7 @@ public class ApplicationSearchController {
 
   private void setReturnDetails(Model model, String notificationId, HttpServletRequest request) {
     String referer = request.getHeader("referer");
-    String returnTo = (referer != null && referer.contains("notifications"))
+    String returnTo = referer != null && referer.contains("notifications")
         ? "notification" : "caseSearchResults";
     model.addAttribute("returnTo", returnTo);
     model.addAttribute(NOTIFICATION_ID, notificationId);
@@ -452,4 +488,3 @@ public class ApplicationSearchController {
         caseStatusLookupDetail.getContent());
   }
 }
-
