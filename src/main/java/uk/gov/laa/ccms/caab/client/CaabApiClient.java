@@ -81,21 +81,6 @@ public class CaabApiClient {
   }
 
   /**
-   * Retrieves the total number of applications using the CAAB API.
-   *
-   * @return a Mono containing the total number of applications.
-   */
-  public Mono<Long> getTotalApplications() {
-    return caabApiWebClient
-        .get()
-        .uri("/applications/_count")
-        .retrieve()
-        .bodyToMono(Long.class)
-        .onErrorResume(e -> caabApiClientErrorHandler
-            .handleApiRetrieveError(e, RESOURCE_TYPE_APPLICATION, "count", "0"));
-  }
-
-  /**
    * Retrieves an application using the CAAB API.
    *
    * @param id the ID associated with the application
