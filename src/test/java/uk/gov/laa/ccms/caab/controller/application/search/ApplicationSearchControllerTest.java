@@ -36,18 +36,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.Errors;
-import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
+import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -57,6 +56,7 @@ import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
+import uk.gov.laa.ccms.caab.model.AvailableAction;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ClientDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
@@ -106,9 +106,6 @@ public class ApplicationSearchControllerTest {
   private MockMvc mockMvc;
 
   private UserDetail user;
-
-  @Autowired
-  private WebApplicationContext webApplicationContext;
 
   @BeforeEach
   public void setup() {
@@ -418,7 +415,7 @@ public class ApplicationSearchControllerTest {
     // EBS Case
     ApplicationDetail applicationDetail =
         getEbsCase(selectedCaseRef, providerId, providerReference, clientFirstname, clientSurname,
-            clientReference, false, null, null);
+            clientReference, false, null, null, List.of(FunctionConstants.AMEND_CASE)); // Added AMEND_CASE for this test
 
     final ActiveCase activeCase =
         getActiveCase(selectedCaseRef, providerId, clientFirstname, clientSurname, clientReference,
@@ -435,6 +432,9 @@ public class ApplicationSearchControllerTest {
         .andExpect(model().attribute("hasEbsAmendments", false))
         .andExpect(model().attribute("draftProceedings", Matchers.empty()))
         .andExpect(model().attribute("draftCosts", Matchers.nullValue()))
+        .andExpect(model().attribute("availableActions", Matchers.hasItem(new AvailableAction(
+            FunctionConstants.AMEND_CASE, "Amend Case",
+            "Create an amendment for this application", "#")))) // Adjusted assertion
         .andExpect(model().attribute("returnTo", "caseSearchResults"))
         .andExpect(model().attribute(NOTIFICATION_ID, Matchers.nullValue()))
         .andExpect(view().name("application/case-overview"));
@@ -587,27 +587,182 @@ public class ApplicationSearchControllerTest {
         .andExpect(view().name("application/case-overview"));
   }
 
-  private ApplicationDetail getEbsCase(String selectedCaseRef, Integer providerId,
-      String providerReference, String clientFirstname, String clientSurname,
-      String clientReference, boolean hasEbsAmendments, Integer proceedingId, String costId) {
-    ApplicationDetail ebsCase =  new ApplicationDetail()
-        .caseReferenceNumber(selectedCaseRef)
-        .providerDetails(new ApplicationProviderDetails()
-            .provider(new IntDisplayValue()
-                .id(providerId))
-            .providerCaseReference(providerReference))
-        .client(new ClientDetail()
-            .firstName(clientFirstname)
-            .surname(clientSurname)
-            .reference(clientReference))
-        .costs(new CostStructureDetail().addCostEntriesItem(new CostEntryDetail().ebsId(costId)))
-        .amendment(false);
+    @Test
+    @DisplayName("Case overview screen shows no available actions when ebsCase has no functions")
+    public void caseOverview_noAvailableFunctions_showsNoActions() throws Exception {
+        final String selectedCaseRef = "3";
+        ApplicationDetail ebsCase = getEbsCase(
+                selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null, Collections.emptyList());
 
-    if (hasEbsAmendments) {
-      ebsCase.setAmendmentProceedingsInEbs(List.of(new ProceedingDetail().id(proceedingId)));
+        mockMvc.perform(get("/case/overview").sessionAttr(USER_DETAILS, user).sessionAttr(CASE, ebsCase))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("availableActions", Matchers.empty()));
     }
 
-    return ebsCase;
+    @Test
+    @DisplayName(
+            "Case overview screen shows 'Continue Amendment' when AMEND_CASE is available and it's a TDS amendment")
+    public void caseOverview_amendCase_isTdsAmendment_showsContinueAmendment() throws Exception {
+        final String selectedCaseRef = "4";
+        ApplicationDetail ebsCase = getEbsCase(
+                selectedCaseRef,
+                1,
+                "ref",
+                "client",
+                "smith",
+                "clientRef",
+                false,
+                null,
+                null,
+                List.of(FunctionConstants.AMEND_CASE));
+        BaseApplicationDetail tdsApplication = new BaseApplicationDetail().id(100); // Indicates an amendment
+
+        ProceedingDetail expectedProceeding = new ProceedingDetail().id(2);
+        CostStructureDetail expectedCost =
+                new CostStructureDetail().addCostEntriesItem(new CostEntryDetail().ebsId("4"));
+
+        ApplicationDetail amendments =
+                new ApplicationDetail().proceedings(List.of(expectedProceeding)).costs(expectedCost);
+
+        when(applicationService.getApplication(any())).thenReturn(Mono.just(amendments));
+
+        mockMvc.perform(
+                        get("/case/overview")
+                                .sessionAttr(USER_DETAILS, user)
+                                .sessionAttr(CASE, ebsCase)
+                                .sessionAttr(APPLICATION, tdsApplication) // tdsApplication is present
+                        )
+                .andExpect(status().isOk())
+                .andExpect(model().attribute(
+                                "availableActions",
+                                Matchers.hasItem(new AvailableAction(
+                                        FunctionConstants.AMEND_CASE,
+                                        "Continue Amendment",
+                                        "Continue to create this amendment",
+                                        "#"))));
+    }
+
+    @Test
+    @DisplayName(
+            "Case overview screen shows 'Continue Amendment' when AMEND_CASE is available and there are EBS amendments")
+    public void caseOverview_amendCase_hasEbsAmendments_showsContinueAmendment() throws Exception {
+        final String selectedCaseRef = "5";
+        ApplicationDetail ebsCase = getEbsCase(
+                selectedCaseRef,
+                1,
+                "ref",
+                "client",
+                "smith",
+                "clientRef",
+                true,
+                1,
+                "cost1",
+                List.of(FunctionConstants.AMEND_CASE)); // hasEbsAmendments = true
+
+        mockMvc.perform(get("/case/overview").sessionAttr(USER_DETAILS, user).sessionAttr(CASE, ebsCase))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute(
+                                "availableActions",
+                                Matchers.hasItem(new AvailableAction(
+                                        FunctionConstants.AMEND_CASE,
+                                        "Continue Amendment",
+                                        "Continue to create this amendment",
+                                        "#"))));
+  }
+
+    @Test
+    @DisplayName("Case overview screen filters available actions based on predefined list and ebsCase functions")
+    public void caseOverview_filtersAvailableActions() throws Exception {
+        final String selectedCaseRef = "6";
+        // ebsCase has AMEND_CASE, BILLING, and an UNKNOWN_FUNCTION
+        ApplicationDetail ebsCase = getEbsCase(
+                selectedCaseRef,
+                1,
+                "ref",
+                "client",
+                "smith",
+                "clientRef",
+                false,
+                null,
+                null,
+                List.of(FunctionConstants.AMEND_CASE, FunctionConstants.BILLING, "UNKNOWN_FUNCTION"));
+
+        mockMvc.perform(get("/case/overview").sessionAttr(USER_DETAILS, user).sessionAttr(CASE, ebsCase))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute(
+                                "availableActions",
+                                Matchers.containsInAnyOrder(
+                                        new AvailableAction(
+                                                FunctionConstants.AMEND_CASE,
+                                                "Amend Case",
+                                                "Create an amendment for this application",
+                                                "#"),
+                                        new AvailableAction(
+                                                FunctionConstants.BILLING,
+                                                "Billing",
+                                                "View financial details and Bills/POAs for this case",
+                                                "#"))))
+                .andExpect(model().attribute(
+                                "availableActions",
+                                Matchers.not(Matchers.hasItem(
+                                        Matchers.hasProperty("actionCode", Matchers.is("UNKNOWN_FUNCTION"))))))
+                .andExpect(model().attribute("availableActions", Matchers.iterableWithSize(2)));
+    }
+
+    private ApplicationDetail getEbsCase(
+            String selectedCaseRef,
+            Integer providerId,
+            String providerReference,
+            String clientFirstname,
+            String clientSurname,
+            String clientReference,
+            boolean hasEbsAmendments,
+            Integer proceedingId,
+            String costId) { // Keep existing signature for other tests
+        return getEbsCase(
+                selectedCaseRef,
+                providerId,
+                providerReference,
+                clientFirstname,
+                clientSurname,
+                clientReference,
+                hasEbsAmendments,
+                proceedingId,
+                costId,
+                List.of(FunctionConstants.AMEND_CASE)); // Default with AMEND_CASE
+  }
+
+    // Overloaded method to specify available functions
+    private ApplicationDetail getEbsCase(
+            String selectedCaseRef,
+            Integer providerId,
+            String providerReference,
+            String clientFirstname,
+            String clientSurname,
+            String clientReference,
+            boolean hasEbsAmendments,
+            Integer proceedingId,
+            String costId,
+            List<String> availableFunctions) {
+        ApplicationDetail ebsCase = new ApplicationDetail()
+                .caseReferenceNumber(selectedCaseRef)
+                .providerDetails(new ApplicationProviderDetails()
+                        .provider(new IntDisplayValue().id(providerId))
+                        .providerCaseReference(providerReference))
+                .client(new ClientDetail()
+                        .firstName(clientFirstname)
+                        .surname(clientSurname)
+                        .reference(clientReference))
+                .costs(new CostStructureDetail().addCostEntriesItem(new CostEntryDetail().ebsId(costId)))
+                .availableFunctions(availableFunctions) // Use provided functions
+                .amendment(false);
+
+        if (hasEbsAmendments
+                && proceedingId != null) { // ensure proceedingId is not null if hasEbsAmendments is true for this setup
+            ebsCase.setAmendmentProceedingsInEbs(List.of(new ProceedingDetail().id(proceedingId)));
+        }
+
+        return ebsCase;
   }
 
   private ActiveCase getActiveCase(String selectedCaseRef, Integer providerId, String clientFirstname,

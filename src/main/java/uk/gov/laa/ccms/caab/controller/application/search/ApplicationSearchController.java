@@ -13,8 +13,10 @@ import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificati
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -41,6 +43,7 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
+import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.feature.Feature;
@@ -48,6 +51,7 @@ import uk.gov.laa.ccms.caab.feature.FeatureService;
 import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
+import uk.gov.laa.ccms.caab.model.AvailableAction;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -204,7 +208,8 @@ public class ApplicationSearchController {
       HttpSession session,
       HttpServletRequest request) {
 
-    ebsCase.setAmendment(isAmendment(ebsCase, tdsApplication));
+    boolean isAmendment = isAmendment(ebsCase, tdsApplication);
+    ebsCase.setAmendment(isAmendment);
 
     setActiveCase(model, session, ebsCase.getCaseReferenceNumber(), ebsCase);
     setReturnDetails(model, notificationId, request);
@@ -221,15 +226,71 @@ public class ApplicationSearchController {
     }
     setProceedingDisplayStatuses(ebsCase, amendments);
 
-    boolean hasEbsAmendments = ebsCase.getAmendmentProceedingsInEbs() != null
-        && !ebsCase.getAmendmentProceedingsInEbs().isEmpty();
+    List<AvailableAction> availableActions = getAvailableActions(ebsCase, isAmendment);
 
     model.addAttribute("case", ebsCase);
-    model.addAttribute("hasEbsAmendments", hasEbsAmendments);
+    model.addAttribute("availableActions", availableActions);
+    model.addAttribute("hasEbsAmendments", hasEbsAmendments(ebsCase));
     model.addAttribute("draftProceedings", draftProceedings);
     model.addAttribute("draftCosts", draftCosts);
     session.setAttribute(CASE_REFERENCE_NUMBER, ebsCase.getCaseReferenceNumber());
     return "application/case-overview";
+  }
+
+  private static boolean hasEbsAmendments(ApplicationDetail ebsCase) {
+    return ebsCase.getAmendmentProceedingsInEbs() != null
+        && !ebsCase.getAmendmentProceedingsInEbs().isEmpty();
+  }
+
+  private static List<AvailableAction> getAvailableActions(ApplicationDetail ebsCase,
+                                                           boolean amendment) {
+
+    if (ebsCase.getAvailableFunctions() == null || ebsCase.getAvailableFunctions().isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    Set<String> caseAvailableFunctions = Set.copyOf(ebsCase.getAvailableFunctions());
+    boolean openAmendment = amendment || hasEbsAmendments(ebsCase);
+
+    AvailableAction amendmentAction = openAmendment
+        ? new AvailableAction(FunctionConstants.AMEND_CASE, "Continue Amendment",
+        "Continue to create this amendment", "#")
+        : new AvailableAction(FunctionConstants.AMEND_CASE, "Amend Case",
+        "Create an amendment for this application", "#");
+
+    List<AvailableAction> availableActions = List.of(
+        amendmentAction,
+        new AvailableAction(FunctionConstants.AMEND_CLIENT, "Amend Client",
+            "View or update the client details", "#"),
+        new AvailableAction(FunctionConstants.BILLING, "Billing",
+            "View financial details and Bills/POAs for this case", "#"),
+        new AvailableAction(FunctionConstants.OUTCOME_WITH_DISCHARGE, "Record Outcome",
+            "Record an outcome for this case or for one of its proceedings", "#"),
+        new AvailableAction(FunctionConstants.OUTCOME_NO_DISCHARGE, "Record Outcome",
+            "Record an outcome for this case or for one of its proceedings", "#"),
+        new AvailableAction(FunctionConstants.SUBMIT_CASE_REQUEST, "Submit Case Query",
+            "Create a service request related to this case", "#"),
+        new AvailableAction(FunctionConstants.VIEW_CASE, "View Case or Application",
+            "Open a read-only version of this case or application", "#"),
+        new AvailableAction(FunctionConstants.NOTIFICATIONS, "View Case Notifications",
+            "View all notifications belonging to this case", "#"),
+        new AvailableAction(FunctionConstants.VIEW_CASE_OUTCOME, "View Outcome",
+            "View the outcomes for this case", "#"),
+        new AvailableAction(FunctionConstants.EDIT_PROVIDER, "Amend Provider Details",
+            "Amend Provider Details", "#"),
+        new AvailableAction(FunctionConstants.CASE_CORRESPONDENCE_PREFERENCE,
+            "Amend Correspondence Address",
+            "Amend Correspondence Address", "#"),
+        new AvailableAction(FunctionConstants.ALLOCATE_COST_LIMIT, "Allocate Cost Limit",
+            "Allocate Cost Limit", "#"),
+        new AvailableAction(FunctionConstants.MEANS_REASSESSMENT,
+            "Complete Means Reassessment",
+            "Complete Means Reassessment", "#")
+    );
+
+    return availableActions.stream()
+        .filter(availableAction -> caseAvailableFunctions.contains(availableAction.actionCode()))
+        .toList();
   }
 
   /**

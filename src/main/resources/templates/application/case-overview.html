@@ -165,6 +165,32 @@
         </table>
       </div>
     </div>
+
+    <div th:if="${!availableActions.isEmpty()}" class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m" th:text="#{case.overview.availableActions.title}"/>
+        <table class="govuk-table" data-test="available-actions">
+          <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header" th:text="Action"></th>
+            <th scope="col" class="govuk-table__header" th:text="Description"></th>
+          </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+          <tr class="govuk-table__row" th:each="action : ${availableActions}">
+            <td class="govuk-table__cell">
+              <a class="govuk-link" href="#"
+                 th:text="${action.action()}">
+              </a>
+            </td>
+            <td class="govuk-table__cell" th:text="${action.description()}">
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
 </body>
