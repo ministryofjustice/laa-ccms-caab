@@ -12,6 +12,11 @@ import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificati
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -38,7 +43,6 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
-import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.feature.Feature;
@@ -55,15 +59,10 @@ import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.util.PaginationUtil;
+import uk.gov.laa.ccms.caab.util.view.ActionViewHelper;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 
 /**
  * Controller responsible for managing the searching of applications and cases.
@@ -254,77 +253,7 @@ public class ApplicationSearchController {
     Set<String> caseAvailableFunctions = Set.copyOf(ebsCase.getAvailableFunctions());
     boolean openAmendment = amendment || hasEbsAmendments(ebsCase);
 
-    AvailableAction amendmentAction = openAmendment
-        ? new AvailableAction(
-        FunctionConstants.AMEND_CASE,
-        "action.amendCase.continue.name",
-        "action.amendCase.continue.description",
-        "#")
-        : new AvailableAction(
-        FunctionConstants.AMEND_CASE,
-        "action.amendCase.new.name",
-        "action.amendCase.new.description",
-        "#");
-
-    List<AvailableAction> availableActions = List.of(
-        amendmentAction,
-        new AvailableAction(
-            FunctionConstants.AMEND_CLIENT,
-            "action.amendClient.name",
-            "action.amendClient.description",
-            "#"),
-        new AvailableAction(
-            FunctionConstants.BILLING, "action.billing.name", "action.billing.description", "#"),
-        new AvailableAction(
-            FunctionConstants.OUTCOME_WITH_DISCHARGE,
-            "action.recordOutcome.name",
-            "action.recordOutcome.description",
-            "#"),
-        new AvailableAction(
-            FunctionConstants.OUTCOME_NO_DISCHARGE,
-            "action.recordOutcome.name",
-            "action.recordOutcome.description",
-            "#"),
-        new AvailableAction(
-            FunctionConstants.SUBMIT_CASE_REQUEST,
-            "action.submitCaseQuery.name",
-            "action.submitCaseQuery.description",
-            "#"),
-        new AvailableAction(
-            FunctionConstants.VIEW_CASE, "action.viewCase.name", "action.viewCase.description",
-            "#"),
-        new AvailableAction(
-            FunctionConstants.NOTIFICATIONS,
-            "action.viewNotifications.name",
-            "action.viewNotifications.description",
-            "#"),
-        new AvailableAction(
-            FunctionConstants.VIEW_CASE_OUTCOME,
-            "action.viewOutcome.name",
-            "action.viewOutcome.description",
-            "#"),
-        new AvailableAction(
-            FunctionConstants.EDIT_PROVIDER,
-            "action.amendProviderDetails.name",
-            "action.amendProviderDetails.description",
-            "#"),
-        new AvailableAction(
-            FunctionConstants.CASE_CORRESPONDENCE_PREFERENCE,
-            "action.amendCorrespondenceAddress.name",
-            "action.amendCorrespondenceAddress.description",
-            "#"),
-        new AvailableAction(
-            FunctionConstants.ALLOCATE_COST_LIMIT,
-            "action.allocateCostLimit.name",
-            "action.allocateCostLimit.description",
-            "#"),
-        new AvailableAction(
-            FunctionConstants.MEANS_REASSESSMENT,
-            "action.completeMeansReassessment.name",
-            "action.completeMeansReassessment.description",
-            "#"));
-
-    return availableActions.stream()
+    return ActionViewHelper.getAllAvailableActions(openAmendment).stream()
         .filter(availableAction -> caseAvailableFunctions.contains(availableAction.actionCode()))
         .toList();
   }
