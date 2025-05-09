@@ -4,58 +4,69 @@
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
 version: 2
+
 registries:
+  maven-central:
+    type: maven-repository
+    url: https://repo.maven.apache.org/maven2
   caab-api-github-packages:
     type: maven-repository
     url: https://maven.pkg.github.com/ministryofjustice/laa-ccms-caab-api
-    username: PhilDigitalJustice
+    username: ${{ secrets.USER }}
     password: ${{ secrets.REPO_TOKEN }}
   assessment-api-github-packages:
     type: maven-repository
     url: https://maven.pkg.github.com/ministryofjustice/laa-ccms-caab-assessment-api
-    username: PhilDigitalJustice
+    username: ${{ secrets.USER }}
     password: ${{ secrets.REPO_TOKEN }}
   ebs-api-github-packages:
     type: maven-repository
     url: https://maven.pkg.github.com/ministryofjustice/laa-ccms-data-api
-    username: PhilDigitalJustice
+    username: ${{ secrets.USER }}
     password: ${{ secrets.REPO_TOKEN }}
   soa-api-github-packages:
     type: maven-repository
     url: https://maven.pkg.github.com/ministryofjustice/laa-ccms-soa-gateway-api
-    username: PhilDigitalJustice
+    username: ${{ secrets.USER }}
     password: ${{ secrets.REPO_TOKEN }}
   spring-boot-common-github-packages:
     type: maven-repository
     url: https://maven.pkg.github.com/ministryofjustice/laa-ccms-spring-boot-common
-    username: PhilDigitalJustice
+    username: ${{ secrets.USER }}
     password: ${{ secrets.REPO_TOKEN }}
+
 updates:
-  - package-ecosystem: "gradle" # See documentation for possible values
-    directory: "/" # Location of package manifests
-    registries: "*"
+  - package-ecosystem: "gradle"
+    directory: "/"
+    registries:
+      - maven-central
+      - caab-api-github-packages
+      - assessment-api-github-packages
+      - ebs-api-github-packages
+      - soa-api-github-packages
+      - spring-boot-common-github-packages
     schedule:
       interval: "weekly"
     groups:
-      gradle-updates:
+      external-dependencies:
         exclude-patterns:
           - "uk.gov.laa.ccms.*"
-      internal-packages:
+      internal-dependencies:
         patterns:
-          - "uk.gov.laa.ccms.*" # All internal Gradle dependencies
+          - "uk.gov.laa.ccms.*"
   - package-ecosystem: "npm"
-    directory: "/" # Location of package.json
+    directory: "/"
     schedule:
       interval: "weekly"
     groups:
-      npm-updates:
+      npm-dependencies:
         patterns:
-          - "**" # Matches all NPM packages
+          - "**"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
     groups:
-      github-actions:
+      github-actions-dependencies:
         patterns:
           - "**"
