@@ -13,8 +13,10 @@ import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificati
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -48,6 +50,7 @@ import uk.gov.laa.ccms.caab.feature.FeatureService;
 import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
+import uk.gov.laa.ccms.caab.model.AvailableAction;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -56,6 +59,7 @@ import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.util.PaginationUtil;
+import uk.gov.laa.ccms.caab.util.view.ActionViewHelper;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -204,7 +208,8 @@ public class ApplicationSearchController {
       HttpSession session,
       HttpServletRequest request) {
 
-    ebsCase.setAmendment(isAmendment(ebsCase, tdsApplication));
+    boolean isAmendment = isAmendment(ebsCase, tdsApplication);
+    ebsCase.setAmendment(isAmendment);
 
     setActiveCase(model, session, ebsCase.getCaseReferenceNumber(), ebsCase);
     setReturnDetails(model, notificationId, request);
@@ -221,15 +226,36 @@ public class ApplicationSearchController {
     }
     setProceedingDisplayStatuses(ebsCase, amendments);
 
-    boolean hasEbsAmendments = ebsCase.getAmendmentProceedingsInEbs() != null
-        && !ebsCase.getAmendmentProceedingsInEbs().isEmpty();
+    List<AvailableAction> availableActions = getAvailableActions(ebsCase, isAmendment);
 
     model.addAttribute("case", ebsCase);
-    model.addAttribute("hasEbsAmendments", hasEbsAmendments);
+    model.addAttribute("availableActions", availableActions);
+    model.addAttribute("hasEbsAmendments", hasEbsAmendments(ebsCase));
     model.addAttribute("draftProceedings", draftProceedings);
     model.addAttribute("draftCosts", draftCosts);
     session.setAttribute(CASE_REFERENCE_NUMBER, ebsCase.getCaseReferenceNumber());
     return "application/case-overview";
+  }
+
+  private static boolean hasEbsAmendments(ApplicationDetail ebsCase) {
+    return ebsCase.getAmendmentProceedingsInEbs() != null
+        && !ebsCase.getAmendmentProceedingsInEbs().isEmpty();
+  }
+
+  private static List<AvailableAction> getAvailableActions(ApplicationDetail ebsCase,
+                                                           boolean amendment) {
+
+    if (ebsCase.getAvailableFunctions() == null
+        || ebsCase.getAvailableFunctions().isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    Set<String> caseAvailableFunctions = Set.copyOf(ebsCase.getAvailableFunctions());
+    boolean openAmendment = amendment || hasEbsAmendments(ebsCase);
+
+    return ActionViewHelper.getAllAvailableActions(openAmendment).stream()
+        .filter(availableAction -> caseAvailableFunctions.contains(availableAction.actionCode()))
+        .toList();
   }
 
   /**
@@ -302,7 +328,7 @@ public class ApplicationSearchController {
 
   private void setReturnDetails(Model model, String notificationId, HttpServletRequest request) {
     String referer = request.getHeader("referer");
-    String returnTo = (referer != null && referer.contains("notifications"))
+    String returnTo = referer != null && referer.contains("notifications")
         ? "notification" : "caseSearchResults";
     model.addAttribute("returnTo", returnTo);
     model.addAttribute(NOTIFICATION_ID, notificationId);
@@ -391,4 +417,3 @@ public class ApplicationSearchController {
         caseStatusLookupDetail.getContent());
   }
 }
-
