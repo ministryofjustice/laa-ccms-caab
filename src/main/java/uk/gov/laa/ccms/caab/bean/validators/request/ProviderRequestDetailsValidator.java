@@ -1,8 +1,6 @@
 package uk.gov.laa.ccms.caab.bean.validators.request;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -10,10 +8,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
-import org.springframework.validation.ValidationUtils;
 import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestDetailsFormData;
-import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 import uk.gov.laa.ccms.caab.bean.validators.file.FileUploadValidator;
 
 /**

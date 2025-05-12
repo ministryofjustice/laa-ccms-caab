@@ -3,9 +3,7 @@ package uk.gov.laa.ccms.caab.bean.validators.client;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
-import org.springframework.validation.Validator;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
-import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**

@@ -9,7 +9,6 @@ import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildClientDetail;
 
-import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
