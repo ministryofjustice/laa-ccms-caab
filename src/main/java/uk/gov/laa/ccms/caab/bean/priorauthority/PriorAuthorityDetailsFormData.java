@@ -5,7 +5,6 @@ import java.util.Map;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
-import uk.gov.laa.ccms.caab.bean.file.FileUploadFormData;
 
 /**
  * This class represents the details of a prior authority details form data.
