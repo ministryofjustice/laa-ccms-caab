@@ -63,8 +63,9 @@ class PuiMetricServiceTest {
   @DisplayName("Should increment copied counter")
   void shouldIncrementCopiedCounter(){
     // When
-    puiMetricService.incrementCopyCount("456","123");
+    puiMetricService.incrementCopyAndCreatedCount("456","123");
     // Then
+    assertThat(puiMetricService.getApplicationsCreatedCounter().get()).isEqualTo(1);
     assertThat(puiMetricService.getApplicationsCopiedCounter().get()).isEqualTo(1);
   }
 
@@ -72,9 +73,10 @@ class PuiMetricServiceTest {
   @DisplayName("Should increment copied counter twice")
   void shouldIncrementCopiedCounterTwice(){
     // When
-    puiMetricService.incrementCopyCount("456","123");
-    puiMetricService.incrementCopyCount("456","123");
+    puiMetricService.incrementCopyAndCreatedCount("456","123");
+    puiMetricService.incrementCopyAndCreatedCount("456","123");
     // Then
+    assertThat(puiMetricService.getApplicationsCreatedCounter().get()).isEqualTo(2);
     assertThat(puiMetricService.getApplicationsCopiedCounter().get()).isEqualTo(2);
   }
 

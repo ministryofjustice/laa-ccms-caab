@@ -559,7 +559,7 @@ class ApplicationServiceTest {
         any(ApplicationDetail.class),
         eq(applicationToCopy));
     verify(puiMetricService, times(1))
-        .incrementCopyCount(eq(applicationFormData.getCopyCaseReferenceNumber()),
+        .incrementCopyAndCreatedCount(eq(applicationFormData.getCopyCaseReferenceNumber()),
             anyString());
   }
 

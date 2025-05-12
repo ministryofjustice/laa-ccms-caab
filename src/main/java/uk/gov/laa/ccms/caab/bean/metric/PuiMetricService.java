@@ -74,9 +74,10 @@ public class PuiMetricService {
   /**
    * Increments the copied applications counter by 1.
    */
-  public void incrementCopyCount(String sourceCaseReference, String caseReference) {
+  public void incrementCopyAndCreatedCount(String sourceCaseReference, String caseReference) {
     log.info("Case reference {} created via copy from {}", caseReference, sourceCaseReference);
     applicationsCopiedCounter.inc();
+    applicationsCreatedCounter.inc();
   }
 
   /**

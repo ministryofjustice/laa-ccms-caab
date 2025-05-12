@@ -340,7 +340,7 @@ public class ApplicationService {
           puiMetricService.incrementCreatedApplicationsCount(
               applicationDetail.getCaseReferenceNumber());
           if (isCopyCase) {
-            puiMetricService.incrementCopyCount(
+            puiMetricService.incrementCopyAndCreatedCount(
                 applicationFormData.getCopyCaseReferenceNumber(),
                 applicationDetail.getCaseReferenceNumber());
           }
