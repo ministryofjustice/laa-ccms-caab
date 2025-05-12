@@ -22,7 +22,13 @@ public interface CopyApplicationMapper {
 
   @BeanMapping(ignoreByDefault = true)
   @Mapping(target = "applicationType", source = "applicationType")
+  @Mapping(target = "applicationType.displayValue", source = "applicationType.displayValue")
+  @Mapping(target = "applicationType.id", source = "applicationType.id")
   @Mapping(target = "applicationType.devolvedPowers.contractFlag", ignore = true)
+  @Mapping(target = "applicationType.devolvedPowers.dateUsed",
+      source = "applicationType.devolvedPowers.dateUsed")
+  @Mapping(target = "applicationType.devolvedPowers.used",
+      source = "applicationType.devolvedPowers.used")
   @Mapping(target = "providerDetails", source = "providerDetails")
   @Mapping(target = "categoryOfLaw", source = "categoryOfLaw")
   @Mapping(target = "correspondenceAddress", source = "correspondenceAddress")
