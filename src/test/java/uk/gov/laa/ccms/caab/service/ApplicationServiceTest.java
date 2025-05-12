@@ -482,7 +482,7 @@ class ApplicationServiceTest {
     verify(soaApiClient).getContractDetails(anyInt(), anyInt(), anyString(), anyString());
     verify(ebsApiClient).getAmendmentTypes(any());
     verify(caabApiClient).createApplication(anyString(), any());
-    verify(puiMetricService, times(1)).incrementCreatedApplicationsCount();
+    verify(puiMetricService, times(1)).incrementCreatedApplicationsCount("REF123");
   }
 
   @Test
@@ -557,7 +557,9 @@ class ApplicationServiceTest {
     verify(copyApplicationMapper).copyApplication(
         any(ApplicationDetail.class),
         eq(applicationToCopy));
-    verify(puiMetricService, times(1)).incrementCopyCount();
+    verify(puiMetricService, times(1))
+        .incrementCopyCount(eq(applicationFormData.getCopyCaseReferenceNumber()),
+            anyString());
   }
 
 
@@ -1223,7 +1225,7 @@ class ApplicationServiceTest {
 
     verify(assessmentService).deleteAssessments(user, expectedAssessmentNames, application.getCaseReferenceNumber(), null);
 
-    verify(puiMetricService).incrementAbandonedCount();
+    verify(puiMetricService).incrementAbandonedCount(application.getCaseReferenceNumber());
   }
 
   @Test

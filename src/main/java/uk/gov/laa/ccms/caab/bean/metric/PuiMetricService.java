@@ -2,8 +2,9 @@ package uk.gov.laa.ccms.caab.bean.metric;
 
 import io.prometheus.metrics.core.metrics.Counter;
 import io.prometheus.metrics.model.registry.PrometheusRegistry;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import uk.gov.laa.ccms.caab.client.CaabApiClient;
 
 /**
  * PuiMetricService is a component responsible for maintaining and updating
@@ -19,6 +20,8 @@ import uk.gov.laa.ccms.caab.client.CaabApiClient;
  *
  * @author Jamie Briggs
  */
+@Slf4j
+@Getter
 @Component
 public class PuiMetricService {
 
@@ -32,10 +35,8 @@ public class PuiMetricService {
    * the lifecycle of PUI applications.
    *
    * @param meterRegistry the PrometheusRegistry instance used to register counters and gauges.
-   * @param caabApiClient the CaabApiClient instance used to fetch the total number of
-   *                      applications in TDS.
    */
-  public PuiMetricService(PrometheusRegistry meterRegistry, CaabApiClient caabApiClient) {
+  public PuiMetricService(PrometheusRegistry meterRegistry) {
     this.applicationsCreatedCounter = Counter.builder()
         .name("pui_applications_started")
         .help("Total number of applications started")
@@ -57,31 +58,33 @@ public class PuiMetricService {
   /**
    * Increments the created applications counter by 1.
    */
-  public void incrementCreatedApplicationsCount() {
+  public void incrementCreatedApplicationsCount(String caseReference) {
+    log.info("Case reference {} created", caseReference);
     applicationsCreatedCounter.inc();
   }
 
   /**
    * Increments the submitted applications counter by 1.
    */
-  public void incrementSubmitApplicationsCount() {
+  public void incrementSubmitApplicationsCount(String caseReference) {
+    log.info("Case reference {} submitted", caseReference);
     applicationsSubmittedCounter.inc();
   }
 
   /**
    * Increments the copied applications counter by 1.
    */
-  public void incrementCopyCount() {
+  public void incrementCopyCount(String sourceCaseReference, String caseReference) {
+    log.info("Case reference {} created via copy from {}", caseReference, sourceCaseReference);
     applicationsCopiedCounter.inc();
   }
 
   /**
    * Increments the abandoned applications counter by 1.
    */
-  public void incrementAbandonedCount() {
+  public void incrementAbandonedCount(String caseReference) {
+    log.info("Case reference {} abandoned", caseReference);
     applicationsAbandonedCounter.inc();
   }
-
-
 
 }

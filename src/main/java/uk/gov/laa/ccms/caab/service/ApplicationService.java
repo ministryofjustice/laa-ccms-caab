@@ -322,8 +322,7 @@ public class ApplicationService {
   public Mono<String> createApplication(
       final ApplicationFormData applicationFormData,
       final ClientDetail clientDetail,
-      final UserDetail user)
-      throws ParseException {
+      final UserDetail user) {
     Mono<ApplicationDetail> applicationMono;
 
     boolean isCopyCase = StringUtils.hasText(applicationFormData.getCopyCaseReferenceNumber());
@@ -340,9 +339,12 @@ public class ApplicationService {
         .flatMap(applicationDetail -> {
           Mono<String> application = caabApiClient.createApplication(user.getLoginId(),
               applicationDetail);
-          puiMetricService.incrementCreatedApplicationsCount();
+          puiMetricService.incrementCreatedApplicationsCount(
+              applicationDetail.getCaseReferenceNumber());
           if (isCopyCase) {
-            puiMetricService.incrementCopyCount();
+            puiMetricService.incrementCopyCount(
+                applicationFormData.getCopyCaseReferenceNumber(),
+                applicationDetail.getCaseReferenceNumber());
           }
           return application;
         });
@@ -352,7 +354,7 @@ public class ApplicationService {
   protected Mono<ApplicationDetail> buildNewApplication(
       final ApplicationFormData applicationFormData,
       final ClientDetail clientDetail,
-      final UserDetail user) throws ParseException {
+      final UserDetail user) {
     ApplicationType applicationType = new ApplicationTypeBuilder()
         .applicationType(
             applicationFormData.getApplicationTypeCategory(),
@@ -554,7 +556,7 @@ public class ApplicationService {
     /*
      * Increment relevent metrics
      */
-    puiMetricService.incrementAbandonedCount();
+    puiMetricService.incrementAbandonedCount(application.getCaseReferenceNumber());
 
     Mono.when(removeDocsMono, deleteAppMono, deleteAssessmentsMono).block();
   }
@@ -1477,10 +1479,10 @@ public class ApplicationService {
 
     final CaseDetail caseToSubmit = soaApplicationMapper.toCaseDetail(caseMappingContext);
 
-    puiMetricService.incrementSubmitApplicationsCount();
+    puiMetricService.incrementSubmitApplicationsCount(caseToSubmit.getCaseReferenceNumber());
 
-    return soaApiClient.createCase(user.getLoginId(), user.getUserType(), caseToSubmit)
-        .block();
+    return soaApiClient.createCase(user.getLoginId(), user.getUserType(),
+            caseToSubmit).block();
 
   }
 
