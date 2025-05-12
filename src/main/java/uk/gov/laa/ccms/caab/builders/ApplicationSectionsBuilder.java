@@ -410,7 +410,7 @@ public class ApplicationSectionsBuilder {
       final List<RelationshipToCaseLookupValueDetail> personRelationships) {
 
     final List<RelationshipToCaseLookupValueDetail> relationships =
-        opponent.getType().equalsIgnoreCase(TYPE_ORGANISATION)
+        TYPE_ORGANISATION.equalsIgnoreCase(opponent.getType())
         ? organisationRelationships
         : personRelationships;
 

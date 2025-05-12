@@ -42,7 +42,7 @@ public class ApplicationFormData {
   /**
    * The option for delegated functions.
    */
-  private boolean delegatedFunctions = false;
+  private boolean delegatedFunctions;
 
   /**
    * The date when delegated function was used.
@@ -51,12 +51,12 @@ public class ApplicationFormData {
   /**
    * The option for privacy notice agreement.
    */
-  private boolean agreementAccepted = false;
+  private boolean agreementAccepted;
 
   /**
    * The boolean to control the routing after the privacy notice agreement.
    */
-  private boolean applicationCreated = false;
+  private boolean applicationCreated;
 
   /**
    * The string to control contractual devolved powers flag, used for edit application type, not
@@ -89,4 +89,3 @@ public class ApplicationFormData {
   private String contactNameId;
 
 }
-

@@ -65,6 +65,7 @@ import uk.gov.laa.ccms.caab.mapper.context.EbsPriorAuthorityMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.EbsProceedingMappingContext;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AssessmentResult;
@@ -98,6 +99,7 @@ import uk.gov.laa.ccms.data.model.CaseDoc;
 import uk.gov.laa.ccms.data.model.CaseSummary;
 import uk.gov.laa.ccms.data.model.CategoryOfLaw;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.CostLimitation;
 import uk.gov.laa.ccms.data.model.LinkedCase;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
@@ -111,6 +113,8 @@ import uk.gov.laa.ccms.data.model.PriorAuthority;
 import uk.gov.laa.ccms.data.model.PriorAuthorityAttribute;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.Proceeding;
+import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetails;
 import uk.gov.laa.ccms.data.model.RecordHistory;
 import uk.gov.laa.ccms.data.model.Recovery;
 import uk.gov.laa.ccms.data.model.ScopeLimitation;
@@ -222,7 +226,7 @@ class EbsApplicationMapperTest {
     assertNotNull(result.getOpponents());
     assertNotNull(result.getOpponents());
     assertEquals(2, result.getOpponents().size());
-    assertEquals(OPPONENT_TYPE_INDIVIDUAL, result.getOpponents().get(0).getType());
+    assertEquals(OPPONENT_TYPE_INDIVIDUAL, result.getOpponents().getFirst().getType());
     assertEquals(OPPONENT_TYPE_ORGANISATION, result.getOpponents().get(1).getType());
 
   }
@@ -249,7 +253,7 @@ class EbsApplicationMapperTest {
             buildCaseDetail(APP_TYPE_EMERGENCY),
             false,
             null);
-    uk.gov.laa.ccms.data.model.@Valid SubmittedApplicationDetails ebsApplicationDetails =
+    @Valid SubmittedApplicationDetails ebsApplicationDetails =
         applicationMappingContext.getEbsCaseDetail().getApplicationDetails();
 
     AddressDetail result = applicationMapper.toCorrespondenceAddress(applicationMappingContext);
@@ -292,7 +296,7 @@ class EbsApplicationMapperTest {
 
   @Test
   void testToProceeding() {
-    uk.gov.laa.ccms.data.model.Proceeding ebsProceeding =
+    Proceeding ebsProceeding =
         buildProceedingDetail(STATUS_DRAFT);
     EbsProceedingMappingContext proceedingMappingContext =
         buildProceedingMappingContext(ebsProceeding);
@@ -383,7 +387,7 @@ class EbsApplicationMapperTest {
 
   @Test
   void testToProceedingOutcome() {
-    uk.gov.laa.ccms.data.model.Proceeding ebsProceeding =
+    Proceeding ebsProceeding =
         buildProceedingDetail(STATUS_DRAFT);
     EbsProceedingMappingContext proceedingMappingContext =
         buildProceedingMappingContext(ebsProceeding);
@@ -433,56 +437,56 @@ class EbsApplicationMapperTest {
         result.getAssessmentId());
     assertEquals(toDate(ebsAssessmentResult.getDate()),
         result.getDate());
-    assertEquals(ebsAssessmentResult.getAssessmentDetails().get(0).getCaption(),
-        result.getAssessmentDetails().get(0).getCaption());
-    assertEquals(ebsAssessmentResult.getAssessmentDetails().get(0).getScreenName(),
-        result.getAssessmentDetails().get(0).getScreenName());
-    assertEquals(ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getCaption(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getCaption());
+    assertEquals(ebsAssessmentResult.getAssessmentDetails().getFirst().getCaption(),
+        result.getAssessmentDetails().getFirst().getCaption());
+    assertEquals(ebsAssessmentResult.getAssessmentDetails().getFirst().getScreenName(),
+        result.getAssessmentDetails().getFirst().getScreenName());
+    assertEquals(ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getCaption(),
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getCaption());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getEntityName(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getEntityName());
+        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getEntityName(),
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getEntityName());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getSequenceNumber(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getSequenceNumber());
+        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getSequenceNumber(),
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getSequenceNumber());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
+        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
             .getCaption(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0).getCaption());
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst().getCaption());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
+        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
             .getInstanceLabel(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
             .getInstanceLabel());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getAttribute(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getAttribute());
+        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getAttribute(),
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getAttribute());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getCaption(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getCaption());
+        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getCaption(),
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getCaption());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getResponseText(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getResponseText());
+        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getResponseText(),
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getResponseText());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getResponseType(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getResponseType());
+        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getResponseType(),
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getResponseType());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getResponseValue(),
-        result.getAssessmentDetails().get(0).getEntity().get(0).getInstances().get(0)
-            .getAttributes().get(0).getResponseValue());
-    assertEquals(ebsAssessmentResult.getResults().get(0).getAttribute(),
-        result.getResults().get(0).getAttribute());
-    assertEquals(ebsAssessmentResult.getResults().get(0).getAttributeValue(),
-        result.getResults().get(0).getAttributeValue());
+        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getResponseValue(),
+        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+            .getAttributes().getFirst().getResponseValue());
+    assertEquals(ebsAssessmentResult.getResults().getFirst().getAttribute(),
+        result.getResults().getFirst().getAttribute());
+    assertEquals(ebsAssessmentResult.getResults().getFirst().getAttributeValue(),
+        result.getResults().getFirst().getAttributeValue());
   }
 
   @Test
@@ -998,7 +1002,7 @@ class EbsApplicationMapperTest {
         buildBaseApplication(1),
         buildBaseApplication(2));
 
-    uk.gov.laa.ccms.caab.model.ApplicationDetails result =
+    ApplicationDetails result =
         applicationMapper.toApplicationDetails(new PageImpl<>(baseApplicationList));
 
     assertNotNull(result);
@@ -1026,7 +1030,7 @@ class EbsApplicationMapperTest {
   }
 
   private EbsApplicationMappingContext buildApplicationMappingContext(
-      uk.gov.laa.ccms.data.model.CaseDetail ebsCaseDetail,
+      CaseDetail ebsCaseDetail,
       Boolean devolvedPowers,
       LocalDate devolvedPowersDate) {
     return EbsApplicationMappingContext.builder()
@@ -1035,7 +1039,7 @@ class EbsApplicationMapperTest {
             .code("apptypecode")
             .description("apptypedesc"))
         .amendmentProceedingsInEbs(Collections.singletonList(
-            buildProceedingMappingContext(ebsCaseDetail.getApplicationDetails().getProceedings().get(0))))
+            buildProceedingMappingContext(ebsCaseDetail.getApplicationDetails().getProceedings().getFirst())))
         .caseOutcome(buildCaseOutcomeMappingContext(ebsCaseDetail))
         .caseWithOnlyDraftProceedings(Boolean.TRUE)
         .certificate(new CommonLookupValueDetail()
@@ -1043,19 +1047,19 @@ class EbsApplicationMapperTest {
             .description("certificate descr"))
         .currentProviderBilledAmount(BigDecimal.ONE)
         .devolvedPowers(Pair.of(devolvedPowers, devolvedPowersDate))
-        .feeEarnerContact(new uk.gov.laa.ccms.data.model.ContactDetail()
+        .feeEarnerContact(new ContactDetail()
             .id(100)
             .name("feeEarnerName"))
-        .supervisorContact(new uk.gov.laa.ccms.data.model.ContactDetail()
+        .supervisorContact(new ContactDetail()
             .id(101)
             .name("supName"))
-        .meansAssessment(ebsCaseDetail.getApplicationDetails().getMeansAssessments().get(0))
-        .meritsAssessment(ebsCaseDetail.getApplicationDetails().getMeritsAssessments().get(0))
+        .meansAssessment(ebsCaseDetail.getApplicationDetails().getMeansAssessments().getFirst())
+        .meritsAssessment(ebsCaseDetail.getApplicationDetails().getMeritsAssessments().getFirst())
         .priorAuthorities(Collections.singletonList(buildPriorAuthorityMappingContext(
-            ebsCaseDetail.getPriorAuthorities().get(0))))
+            ebsCaseDetail.getPriorAuthorities().getFirst())))
         .proceedings(Collections.singletonList(
-            buildProceedingMappingContext(ebsCaseDetail.getApplicationDetails().getProceedings().get(0))))
-        .providerDetail(new uk.gov.laa.ccms.data.model.ProviderDetail()
+            buildProceedingMappingContext(ebsCaseDetail.getApplicationDetails().getProceedings().getFirst())))
+        .providerDetail(new ProviderDetail()
             .id(1)
             .name("provname"))
         .providerOffice(new OfficeDetail().id(1000).name("offName"))
@@ -1102,12 +1106,12 @@ class EbsApplicationMapperTest {
   private EbsCaseOutcomeMappingContext buildCaseOutcomeMappingContext(CaseDetail ebsCase) {
     return EbsCaseOutcomeMappingContext.builder()
         .ebsCase(ebsCase)
-        .costAwards(Collections.singletonList(ebsCase.getAwards().get(0)))
+        .costAwards(Collections.singletonList(ebsCase.getAwards().getFirst()))
         .financialAwards(Collections.singletonList(ebsCase.getAwards().get(1)))
         .landAwards(Collections.singletonList(ebsCase.getAwards().get(2)))
         .otherAssetAwards(Collections.singletonList(ebsCase.getAwards().get(3)))
         .proceedingOutcomes(Collections.singletonList(buildProceedingMappingContext(
-            ebsCase.getApplicationDetails().getProceedings().get(0))))
+            ebsCase.getApplicationDetails().getProceedings().getFirst())))
         .build();
   }
 
@@ -1145,13 +1149,13 @@ class EbsApplicationMapperTest {
     assertNotNull(result.getApplicationDetails());
     assertNotNull(result.getLinkedCases());
     assertEquals(1, result.getLinkedCases().size());
-    assertEquals("LC123", result.getLinkedCases().get(0).getCaseReferenceNumber());
+    assertEquals("LC123", result.getLinkedCases().getFirst().getCaseReferenceNumber());
     assertNotNull(result.getPriorAuthorities());
     assertEquals(1, result.getPriorAuthorities().size());
-    assertEquals("Test Prior Authority", result.getPriorAuthorities().get(0).getDescription());
+    assertEquals("Test Prior Authority", result.getPriorAuthorities().getFirst().getDescription());
     assertNotNull(result.getCaseDocs());
     assertEquals(1, result.getCaseDocs().size());
-    assertEquals("DOC123", result.getCaseDocs().get(0).getCcmsDocumentId());
+    assertEquals("DOC123", result.getCaseDocs().getFirst().getCcmsDocumentId());
     assertNotNull(result.getRecordHistory());
   }
 
@@ -1204,7 +1208,7 @@ class EbsApplicationMapperTest {
     assertEquals("Approved", result.getDecisionStatus());
     assertNotNull(result.getDetails());
     assertEquals(1, result.getDetails().size());
-    assertEquals("PA123", result.getDetails().get(0).getName());
+    assertEquals("PA123", result.getDetails().getFirst().getName());
   }
 
   @Test
@@ -1329,7 +1333,7 @@ class EbsApplicationMapperTest {
     providerDetails.supervisor(new StringDisplayValue().id("300"));
     providerDetails.feeEarner(new StringDisplayValue().id("400"));
 
-    final uk.gov.laa.ccms.data.model.ProviderDetails result = applicationMapper.toEbsProviderDetail(providerDetails);
+    final ProviderDetails result = applicationMapper.toEbsProviderDetail(providerDetails);
 
     assertNotNull(result);
     assertEquals("user123", result.getContactUserId().getLoginId());
@@ -1446,7 +1450,7 @@ class EbsApplicationMapperTest {
     proceedingDetail.setDateDevolvedPowersUsed(new Date());
     proceedingDetail.setDateGranted(new Date());
 
-    final uk.gov.laa.ccms.data.model.Proceeding result = applicationMapper.toEbsProceedingDetail(proceedingDetail);
+    final Proceeding result = applicationMapper.toEbsProceedingDetail(proceedingDetail);
 
     assertNotNull(result);
     assertEquals("P_123", result.getProceedingCaseId());
@@ -1710,7 +1714,7 @@ class EbsApplicationMapperTest {
   @Test
   @DisplayName("Test toEbsRecordHistory with null context")
   void testToEbsRecordHistory_NullContext() {
-    assertNull( applicationMapper.toEbsRecordHistory(null));
+    assertNull(applicationMapper.toEbsRecordHistory(null));
   }
 
   private LocalDateTime toLocalDateTime(Date date) {

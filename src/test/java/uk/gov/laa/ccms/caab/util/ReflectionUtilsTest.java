@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.util;
 
 import org.junit.jupiter.api.Test;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 import static org.junit.jupiter.api.Assertions.*;
 

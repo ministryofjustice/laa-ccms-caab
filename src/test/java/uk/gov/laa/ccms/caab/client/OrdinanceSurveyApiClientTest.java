@@ -38,7 +38,7 @@ class OrdinanceSurveyApiClientTest {
   ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
   @BeforeEach
-  private void setup(){
+  private void setup() {
     this.ordinanceSurveyApiClient = new OrdinanceSurveyApiClient(webClientMock, testKey);
   }
 
@@ -64,7 +64,7 @@ class OrdinanceSurveyApiClientTest {
 
     // Assert the URI
     assertEquals(
-        String.format("%s?postcode=%s&key=%s", expectedUri, postcode, testKey),
+        "%s?postcode=%s&key=%s".formatted(expectedUri, postcode, testKey),
         actualUri.toString());
   }
 

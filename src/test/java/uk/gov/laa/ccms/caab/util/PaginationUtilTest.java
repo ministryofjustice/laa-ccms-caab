@@ -26,7 +26,7 @@ class PaginationUtilTest {
     notificationList.sort((n1, n2) -> n2.getCaseReferenceNumber().compareTo(n1.getCaseReferenceNumber()));
     final Page<Notification> notificationPage = PaginationUtil.paginateList(pageable, notificationList);
     assertEquals(2, notificationPage.getTotalElements());
-    assertEquals("12345", notificationPage.getContent().get(0).getCaseReferenceNumber());
+    assertEquals("12345", notificationPage.getContent().getFirst().getCaseReferenceNumber());
   }
 
   @Test
@@ -38,7 +38,7 @@ class PaginationUtilTest {
     notificationList.sort(Comparator.comparing(Notification::getCaseReferenceNumber));
     final Page<Notification> notificationPage = PaginationUtil.paginateList(pageable, notificationList);
     assertEquals(2, notificationPage.getTotalElements());
-    assertEquals("11234", notificationPage.getContent().get(0).getCaseReferenceNumber());
+    assertEquals("11234", notificationPage.getContent().getFirst().getCaseReferenceNumber());
   }
 
   @Test
@@ -67,7 +67,7 @@ class PaginationUtilTest {
     summary.sort(Comparator.comparing(CaseSummary::getFeeEarnerName));
     final Pageable pageable = PageRequest.of(0, 10, Sort.by("feeEarnerName").ascending());
     final Page<CaseSummary> caseSummariesPage = PaginationUtil.paginateList(pageable, summary);
-    assertEquals("aaa", caseSummariesPage.getContent().get(0).getFeeEarnerName());
+    assertEquals("aaa", caseSummariesPage.getContent().getFirst().getFeeEarnerName());
   }
 
   private CaseSummary buildCaseSummary() {
@@ -79,4 +79,3 @@ class PaginationUtilTest {
         .categoryOfLaw("CAT1");
   }
 }
-

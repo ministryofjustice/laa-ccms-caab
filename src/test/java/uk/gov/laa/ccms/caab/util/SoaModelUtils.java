@@ -12,6 +12,7 @@ import java.util.Date;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
+import uk.gov.laa.ccms.soa.gateway.model.AssessmentResult;
 import uk.gov.laa.ccms.soa.gateway.model.AssessmentScreen;
 import uk.gov.laa.ccms.soa.gateway.model.Award;
 import uk.gov.laa.ccms.soa.gateway.model.BaseClient;
@@ -26,11 +27,14 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetailsDisabilityMonitoring
 import uk.gov.laa.ccms.soa.gateway.model.ClientPersonalDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContactDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
+import uk.gov.laa.ccms.soa.gateway.model.CostAward;
 import uk.gov.laa.ccms.soa.gateway.model.CostLimitation;
 import uk.gov.laa.ccms.soa.gateway.model.Discharge;
 import uk.gov.laa.ccms.soa.gateway.model.ExternalResource;
+import uk.gov.laa.ccms.soa.gateway.model.FinancialAward;
 import uk.gov.laa.ccms.soa.gateway.model.LandAward;
 import uk.gov.laa.ccms.soa.gateway.model.LarDetails;
+import uk.gov.laa.ccms.soa.gateway.model.LinkedCase;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OfferedAmount;
 import uk.gov.laa.ccms.soa.gateway.model.OpaAttribute;
@@ -43,6 +47,7 @@ import uk.gov.laa.ccms.soa.gateway.model.OtherParty;
 import uk.gov.laa.ccms.soa.gateway.model.OtherPartyOrganisation;
 import uk.gov.laa.ccms.soa.gateway.model.OtherPartyPerson;
 import uk.gov.laa.ccms.soa.gateway.model.OutcomeDetail;
+import uk.gov.laa.ccms.soa.gateway.model.PriorAuthority;
 import uk.gov.laa.ccms.soa.gateway.model.PriorAuthorityAttribute;
 import uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ProviderDetail;
@@ -57,10 +62,10 @@ import uk.gov.laa.ccms.soa.gateway.model.TimeRelatedAward;
 import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.Valuation;
 
-public class SoaModelUtils {
+public final class SoaModelUtils {
 
-  public static uk.gov.laa.ccms.soa.gateway.model.PriorAuthority buildPriorAuthority() {
-    return new uk.gov.laa.ccms.soa.gateway.model.PriorAuthority()
+  public static PriorAuthority buildPriorAuthority() {
+    return new PriorAuthority()
         .assessedAmount(BigDecimal.TEN)
         .decisionStatus("dstat")
         .description("descr")
@@ -90,9 +95,9 @@ public class SoaModelUtils {
                 .certificateType("certtype")
                 .client(buildBaseClient())
                 .correspondenceAddress(buildAddressDetail("corr"))
-                .dateOfFirstAttendance(new java.util.Date())
-                .dateOfHearing(new java.util.Date())
-                .devolvedPowersDate(new java.util.Date())
+                .dateOfFirstAttendance(new Date())
+                .dateOfHearing(new Date())
+                .devolvedPowersDate(new Date())
                 .addExternalResourcesItem(
                     new ExternalResource()
                         .costCeiling(Arrays.asList(
@@ -116,7 +121,7 @@ public class SoaModelUtils {
                         .contactDetails(buildContactDetail("prov"))
                         .providerOfficeId("11111")
                         .contactUserId(buildUserDetail("contact"))
-                        .providerFirmId("12345") // Defined as String, but data is numeric in db!
+                        .providerFirmId("12345")// Defined as String, but data is numeric in db!
                         .providerCaseReferenceNumber("provcaseref123")
                         .feeEarnerContactId("22222")
                         .supervisorContactId("33333"))
@@ -136,7 +141,7 @@ public class SoaModelUtils {
             .actualCaseStatus("actualstat")
             .displayCaseStatus("displaystat")
             .statusUpdateInd(Boolean.TRUE))
-        .certificateDate(new java.util.Date())
+        .certificateDate(new Date())
         .certificateType("certtype")
         .dischargeStatus(
             new Discharge()
@@ -150,8 +155,8 @@ public class SoaModelUtils {
         .recordHistory(
             new RecordHistory()
                 .createdBy(buildUserDetail("creator"))
-                .dateCreated(new java.util.Date())
-                .dateLastUpdated(new java.util.Date())
+                .dateCreated(new Date())
+                .dateLastUpdated(new Date())
                 .lastUpdatedBy(buildUserDetail("lastUpd")))
         .undertakingAmount(BigDecimal.TEN);
 
@@ -161,10 +166,10 @@ public class SoaModelUtils {
     return new ProceedingDetail()
         .availableFunctions(Arrays.asList("pavfuncs1", "pavfuncs2"))
         .clientInvolvementType("citype")
-        .dateApplied(new java.util.Date())
-        .dateCostsValid(new java.util.Date())
-        .dateDevolvedPowersUsed(new java.util.Date())
-        .dateGranted(new java.util.Date())
+        .dateApplied(new Date())
+        .dateCostsValid(new Date())
+        .dateDevolvedPowersUsed(new Date())
+        .dateGranted(new Date())
         .devolvedPowersInd(Boolean.TRUE)
         .leadProceedingIndicator(Boolean.TRUE)
         .levelOfService("levofsvc")
@@ -197,8 +202,8 @@ public class SoaModelUtils {
         .altAcceptanceReason("altaccreason")
         .altDisputeResolution("altdispres")
         .courtCode("courtcode")
-        .finalWorkDate(new java.util.Date())
-        .issueDate(new java.util.Date())
+        .finalWorkDate(new Date())
+        .issueDate(new Date())
         .outcomeCourtCaseNumber("outccn")
         .resolutionMethod("resmeth")
         .result("res")
@@ -215,12 +220,12 @@ public class SoaModelUtils {
                 .assessedAssets(BigDecimal.TEN)
                 .assessedIncome(BigDecimal.ONE)
                 .assessedIncomeFrequency("often")
-                .assessmentDate(new java.util.Date())
+                .assessmentDate(new Date())
                 .certificateNumber("certnum")
                 .contactDetails(buildContactDetail("opp"))
                 .contactName("conname")
                 .courtOrderedMeansAssesment(Boolean.TRUE)
-                .dateOfBirth(new java.util.Date())
+                .dateOfBirth(new Date())
                 .employersName("employer")
                 .employmentStatus("empstat")
                 .name(buildNameDetail())
@@ -262,8 +267,8 @@ public class SoaModelUtils {
         .title("mr");
   }
 
-  public static uk.gov.laa.ccms.soa.gateway.model.LinkedCase buildLinkedCase() {
-    return new uk.gov.laa.ccms.soa.gateway.model.LinkedCase()
+  public static LinkedCase buildLinkedCase() {
+    return new LinkedCase()
         .caseReferenceNumber("lcaseref")
         .caseStatus("lcasestat")
         .categoryOfLawCode("lcat1")
@@ -320,11 +325,11 @@ public class SoaModelUtils {
         .billingProviderName(prefix + "billprovname");
   }
 
-  public static uk.gov.laa.ccms.soa.gateway.model.AssessmentResult buildAssessmentResult(
+  public static AssessmentResult buildAssessmentResult(
       String prefix) {
-    return new uk.gov.laa.ccms.soa.gateway.model.AssessmentResult()
+    return new AssessmentResult()
         .defaultInd(Boolean.TRUE)
-        .date(new java.util.Date())
+        .date(new Date())
         .assessmentId(prefix + "assessid")
         .addResultsItem(
             new OpaGoal()
@@ -365,7 +370,7 @@ public class SoaModelUtils {
         .awardId("costAwardId")
         .awardCategory("costCat")
         .costAward(
-            new uk.gov.laa.ccms.soa.gateway.model.CostAward()
+            new CostAward()
                 .serviceAddress(
                     new ServiceAddress()
                         .addressLine1("add1")
@@ -374,8 +379,8 @@ public class SoaModelUtils {
                 .recovery(buildRecovery())
                 .awardedBy("me")
                 .liableParties(Arrays.asList("1", "2", "3"))
-                .orderDate(new java.util.Date())
-                .orderDateServed(new java.util.Date())
+                .orderDate(new Date())
+                .orderDateServed(new Date())
                 .otherDetails("otherDets")
                 .certificateCostRateLsc(BigDecimal.ONE)
                 .certificateCostRateMarket(BigDecimal.ZERO)
@@ -383,7 +388,7 @@ public class SoaModelUtils {
                 .preCertificateAwardOth(BigDecimal.ONE)
                 .courtAssessmentStatus("assessstate")
                 .interestAwardedRate(BigDecimal.TEN)
-                .interestAwardedStartDate(new java.util.Date()));
+                .interestAwardedStartDate(new Date()));
   }
 
   public static Award buildFinancialAward() {
@@ -394,7 +399,7 @@ public class SoaModelUtils {
         .awardId("finAwardId")
         .awardCategory("finCat")
         .financialAward(
-            new uk.gov.laa.ccms.soa.gateway.model.FinancialAward()
+            new FinancialAward()
                 .serviceAddress(
                     new ServiceAddress()
                         .addressLine1("add1")
@@ -406,8 +411,8 @@ public class SoaModelUtils {
                 .amount(BigDecimal.ONE)
                 .awardJustifications("justified")
                 .liableParties(Arrays.asList("1", "2", "3"))
-                .orderDate(new java.util.Date())
-                .orderDateServed(new java.util.Date())
+                .orderDate(new Date())
+                .orderDateServed(new Date())
                 .otherDetails("otherDets")
                 .statutoryChangeReason("statreason"));
   }
@@ -421,7 +426,7 @@ public class SoaModelUtils {
         .awardCategory("landCat")
         .landAward(
             new LandAward()
-                .orderDate(new java.util.Date())
+                .orderDate(new Date())
                 .description("descr")
                 .titleNo("title")
                 .propertyAddress(
@@ -433,7 +438,7 @@ public class SoaModelUtils {
                     new Valuation()
                         .amount(BigDecimal.TEN)
                         .criteria("crit")
-                        .date(new java.util.Date()))
+                        .date(new Date()))
                 .disputedPercentage(BigDecimal.ZERO)
                 .awardedPercentage(BigDecimal.TEN)
                 .mortgageAmountDue(BigDecimal.ONE)
@@ -467,7 +472,7 @@ public class SoaModelUtils {
                 .recoveredPercentage(BigDecimal.ONE)
                 .disputedPercentage(BigDecimal.ZERO)
                 .noRecoveryDetails("none")
-                .orderDate(new java.util.Date())
+                .orderDate(new Date())
                 .recovery("recov")
                 .statChargeExemptReason("exempt")
                 .timeRelatedAward(buildTimeRelatedAward())
@@ -475,12 +480,12 @@ public class SoaModelUtils {
                     new Valuation()
                         .amount(BigDecimal.TEN)
                         .criteria("crit")
-                        .date(new java.util.Date())));
+                        .date(new Date())));
   }
 
   public static TimeRelatedAward buildTimeRelatedAward() {
     return new TimeRelatedAward()
-        .awardDate(new java.util.Date())
+        .awardDate(new Date())
         .amount(BigDecimal.TEN)
         .awardType("type")
         .description("desc1")
@@ -501,23 +506,23 @@ public class SoaModelUtils {
                 .client(
                     new RecoveryAmount()
                         .amount(BigDecimal.ONE)
-                        .dateReceived(new java.util.Date())
+                        .dateReceived(new Date())
                         .paidToLsc(BigDecimal.ZERO))
                 .court(
                     new RecoveryAmount()
                         .amount(BigDecimal.TEN)
-                        .dateReceived(new java.util.Date())
+                        .dateReceived(new Date())
                         .paidToLsc(BigDecimal.ONE))
                 .solicitor(
                     new RecoveryAmount()
                         .amount(BigDecimal.ZERO)
-                        .dateReceived(new java.util.Date())
+                        .dateReceived(new Date())
                         .paidToLsc(BigDecimal.TEN)))
         .unRecoveredAmount(BigDecimal.ZERO);
   }
 
   public static UserDetail buildUserDetail(String prefix) {
-    return new uk.gov.laa.ccms.soa.gateway.model.UserDetail()
+    return new UserDetail()
         .userType(prefix + "type1")
         .userLoginId(prefix + "login1")
         .userName(prefix + "username");
@@ -566,7 +571,7 @@ public class SoaModelUtils {
     return new AwardTypeLookupDetail()
         .addContentItem(new AwardTypeLookupValueDetail()
             .awardType(AWARD_TYPE_COST)
-            .code(soaCase.getAwards().get(0).getAwardType()))
+            .code(soaCase.getAwards().getFirst().getAwardType()))
         .addContentItem(new AwardTypeLookupValueDetail()
             .awardType(AWARD_TYPE_FINANCIAL)
             .code(soaCase.getAwards().get(1).getAwardType()))
@@ -608,5 +613,8 @@ public class SoaModelUtils {
         .otherInformation("otherinf")
         .partyId("123")
         .type("thetype");
+  }
+
+  private SoaModelUtils() {
   }
 }

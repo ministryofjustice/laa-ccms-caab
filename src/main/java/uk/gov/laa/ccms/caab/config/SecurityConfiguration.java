@@ -55,7 +55,7 @@ public class SecurityConfiguration {
               "/actuator/prometheus",
               "/actuator/health/**",
               "/actuator/info",
-              "/actuator/metrics").permitAll()  // Ensure Actuator endpoints are excluded
+              "/actuator/metrics").permitAll()// Ensure Actuator endpoints are excluded
           .requestMatchers(HttpMethod.GET,
               "/provider-requests/*")
             .hasAuthority(UserRole.CREATE_PROVIDER_REQUEST.getCode())
@@ -100,10 +100,11 @@ public class SecurityConfiguration {
           .requestMatchers(HttpMethod.POST,
               "/application/sections")
           .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
+          .requestMatchers("/case/overview").hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode())
           .anyRequest().authenticated())
         .sessionManagement(sessionManagement -> sessionManagement
           .invalidSessionStrategy(new SimpleRedirectInvalidSessionStrategy("/home")))
-      .logout((logout) -> logout
+      .logout(logout -> logout
           .addLogoutHandler((req, res, auth) -> {
             try {
               res.sendRedirect(logoutUrl);
@@ -125,7 +126,7 @@ public class SecurityConfiguration {
   private Converter<ResponseToken, Saml2Authentication> groupsConverter() {
     Converter<ResponseToken, Saml2Authentication> delegate =
             OpenSaml4AuthenticationProvider.createDefaultResponseAuthenticationConverter();
-    return (responseToken) -> {
+    return responseToken -> {
       Saml2Authentication authentication = delegate.convert(responseToken);
       Saml2AuthenticatedPrincipal principal =
               (Saml2AuthenticatedPrincipal) authentication.getPrincipal();

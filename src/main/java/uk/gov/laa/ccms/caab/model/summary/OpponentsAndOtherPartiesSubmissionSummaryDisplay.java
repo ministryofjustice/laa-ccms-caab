@@ -14,4 +14,3 @@ public class OpponentsAndOtherPartiesSubmissionSummaryDisplay {
    */
   private List<OpponentSubmissionSummaryDisplay> opponents;
 }
-

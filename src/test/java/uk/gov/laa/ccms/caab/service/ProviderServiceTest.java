@@ -59,7 +59,7 @@ public class ProviderServiceTest {
 
     assertNotNull(response);
     assertEquals(2, response.size());
-    assertEquals("CAT1", response.get(0));
+    assertEquals("CAT1", response.getFirst());
     assertEquals("CAT2", response.get(1));
   }
 
@@ -93,7 +93,7 @@ public class ProviderServiceTest {
 
     assertNotNull(response);
     assertEquals(1, response.size());
-    assertEquals(cat2, response.get(0));
+    assertEquals(cat2, response.getFirst());
  }
 
   @Test
@@ -118,7 +118,7 @@ public class ProviderServiceTest {
 
     assertNotNull(feeEarners);
     assertEquals(3, feeEarners.size());
-    assertEquals("a fee earner", feeEarners.get(0).getName());
+    assertEquals("a fee earner", feeEarners.getFirst().getName());
     assertEquals("b fee earner", feeEarners.get(1).getName());
     assertEquals("c supervisor", feeEarners.get(2).getName());
   }
@@ -142,7 +142,7 @@ public class ProviderServiceTest {
     List<ContactDetail> feeEarners = providerService.getFeeEarnersByOffice(providerDetail, 1);
 
     assertEquals(2, feeEarners.size());
-    assertEquals("a fee earner", feeEarners.get(0).getName());
+    assertEquals("a fee earner", feeEarners.getFirst().getName());
     assertEquals("c supervisor", feeEarners.get(1).getName());
   }
 

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html" xmlns:govuk="http://www.thymeleaf.org">
+<head>
+  <title th:text="|#{service.name} - #{case.overview}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a class="govuk-back-link"
+       th:if="${returnTo ==  'notification'}"
+       th:href="@{/notifications/{notification_id}(notification_id=${notification_id})}"
+       th:text="#{site.returnToNotification}"/>
+    <a class="govuk-back-link"
+       th:unless="${returnTo ==  'notification'}"
+       th:href="@{/application/search/results}"
+       th:text="#{site.returnToSearchResults}"/>
+  </div>
+  <div id="main-content">
+    <h1 class="govuk-heading-l" th:text="#{case.overview}"></h1>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m" th:text="#{case.overview.summary.title}"/>
+        <table class="govuk-table">
+          <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header"
+                th:text="#{case.overview.summary.status}"/>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{case.overview.summary.costLimit}"/>
+            <th scope="col" class="govuk-table__header"
+                th:unless="${case.status.displayValue == 'Submitted'}"
+                th:text="#{case.overview.summary.certificateType}"/>
+            <th scope="col" class="govuk-table__header"
+                th:if="${case.status.displayValue == 'Submitted'}"
+                th:text="#{case.overview.summary.applicationType}"/>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{case.overview.summary.categoryOfLaw}"/>
+          </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell" th:text="${case.status.displayValue}"/>
+            <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(case.costs.requestedCostLimitation)}"/>
+            <td class="govuk-table__cell"
+                th:unless="${case.status.displayValue == 'Submitted'}"
+                th:text="${case.certificate.displayValue}"/>
+            <td class="govuk-table__cell"
+                th:if="${case.status.displayValue == 'Submitted'}"
+                th:text="${case.applicationType.displayValue}"/>
+            <td class="govuk-table__cell" th:text="${case.categoryOfLaw.displayValue}"/>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="govuk-grid-row" th:if="${case.status.displayValue == 'Submitted'}">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m"
+            th:text="#{case.overview.currentLiveCertificate.title}"/>
+        <div class="govuk-inset-text">
+          <th:block th:text="#{case.noCurrentLiveCertificate}"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m"
+            th:text="${case.status.displayValue == 'Submitted' ? #messages.msg('case.overview.applicationSummary.title') : #messages.msg('case.overview.currentLiveCertificate.title')}"/>
+        <table class="govuk-table">
+          <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header"
+                th:text="#{case.overview.proceeding}"/>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{case.overview.proceeding.matterType}"/>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{case.overview.proceeding.formOfCivilLegalService}"/>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{case.overview.proceeding.clientInvolvementType}"/>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{common.status}"/>
+          </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+          <tr class="govuk-table__row">
+
+          </tr>
+          <tr class="govuk-table__row" th:each="proceeding: ${case.proceedings}">
+            <td class="govuk-table__cell" th:text="${proceeding.description}"/>
+            <td class="govuk-table__cell" th:text="${proceeding.matterType.displayValue}"/>
+            <td class="govuk-table__cell" th:text="${proceeding.levelOfService.displayValue}"/>
+            <td class="govuk-table__cell" th:text="${proceeding.clientInvolvement.displayValue}"/>
+            <td class="govuk-table__cell" th:text="${proceeding.status.displayValue}"/>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div th:if="${case.amendment}"
+         class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m" th:text="#{case.overview.amendmentSummary.title}"/>
+        <table class="govuk-table">
+          <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header"
+                th:text="#{case.overview.proceeding}"/>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{case.overview.proceeding.matterType}"/>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{case.overview.proceeding.formOfCivilLegalService}"/>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{case.overview.proceeding.clientInvolvementType}"/>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{common.status}"/>
+          </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+          <tr class="govuk-table__row">
+
+          </tr>
+          <tr class="govuk-table__row" th:each="draftProceeding: ${draftProceedings}">
+            <td class="govuk-table__cell" th:text="${draftProceeding.description}"/>
+            <td class="govuk-table__cell" th:text="${draftProceeding.matterType.displayValue}"/>
+            <td class="govuk-table__cell" th:text="${draftProceeding.levelOfService.displayValue}"/>
+            <td class="govuk-table__cell" th:text="${draftProceeding.clientInvolvement.displayValue}"/>
+            <td class="govuk-table__cell" th:text="${draftProceeding.status.displayValue}"/>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m" th:text="#{case.overview.costs.title}"/>
+        <table class="govuk-table">
+          <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header"
+                th:text="#{case.overview.costs.title}"/>
+            <th scope="col" class="govuk-table__header"
+                th:text="${(case.status.displayValue == 'Submitted' || case.amendment)
+                ? #messages.msg('case.overview.costs.requestedAmount')
+                : #messages.msg('case.overview.costs.grantedAmount')}"/>
+          </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell"
+                th:text="${(case.status.displayValue == 'Submitted'|| (hasEbsAmendments && !case.amendment))
+                ? #messages.msg('case.overview.costs.costLimitation')
+                : #messages.msg('case.overview.costs.caseCostLimitation')}"/>
+            <td class="govuk-table__cell"
+                th:text="${(hasEbsAmendments || case.amendment)
+                ? (draftCosts != null ? #numbers.formatCurrency(draftCosts.requestedCostLimitation) : #numbers.formatCurrency(0))
+                : #numbers.formatCurrency(case.costs.requestedCostLimitation)}"/>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+      <div class="govuk-grid-row">
+          <div class="govuk-grid-column-full">
+              <h2 class="govuk-heading-m" th:text="#{case.overview.availableActions.title}"/>
+              <p th:if="${availableActions.isEmpty()}" class="govuk-body"
+                 th:text="#{case.overview.availableActions.noActions}"></p>
+              <table th:unless="${availableActions.isEmpty()}" class="govuk-table" data-test="available-actions">
+                  <thead class="govuk-table__head">
+                  <tr class="govuk-table__row">
+                      <th scope="col" class="govuk-table__header"
+                          th:text="#{case.overview.availableActions.table.action}"></th>
+                      <th scope="col" class="govuk-table__header"
+                          th:text="#{case.overview.availableActions.table.action}"></th>
+                  </tr>
+                  </thead>
+                  <tbody class="govuk-table__body">
+                  <tr class="govuk-table__row" th:each="action : ${availableActions}">
+                      <td class="govuk-table__cell">
+                          <a class="govuk-link" href="#"
+                             th:text="${#messages.msg(action.actionKey())}">
+                          </a>
+                      </td>
+                      <td class="govuk-table__cell"
+                          th:text="${#messages.msg(action.descriptionKey())}">
+                      </td>
+                  </tr>
+                  </tbody>
+              </table>
+          </div>
+      </div>
+
+  </div>
+</div>
+</body>
+</html>

@@ -35,7 +35,8 @@ public abstract class AbstractOpponentValidator extends AbstractValidator {
           "County", false, errors);
       validateRequiredField("country", opponentFormData.getCountry(),
           "Country", errors);
-      validateInternationalPostcodeFormat(opponentFormData.getPostcode(), false, errors);
+
+      validatePostcodeFormat(opponentFormData.getCountry(), opponentFormData.getPostcode(), errors);
     }
   }
 

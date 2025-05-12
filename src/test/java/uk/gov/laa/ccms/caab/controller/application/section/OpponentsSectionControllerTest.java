@@ -26,6 +26,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -158,6 +159,41 @@ class OpponentsSectionControllerTest {
             .andExpect(status().isOk())
             .andExpect(view().name("application/opponents/opponents-organisation-search"));
 
+    }
+
+    @Test
+    void organisationSearchPost_noValidationErrors_maxLengthsNotExceeded_displaysResults() throws Exception {
+        OrganisationSearchCriteria testOrganisationSearchCriteria = new OrganisationSearchCriteria();
+        testOrganisationSearchCriteria.setName("This Company Organisation Name less than 360 chars");
+        testOrganisationSearchCriteria.setCity("Short City Name");
+        testOrganisationSearchCriteria.setPostcode("SA5 7DF");
+
+        mockMvc.perform(post("/application/opponents/organisation/search")
+                .flashAttr(ORGANISATION_SEARCH_CRITERIA, testOrganisationSearchCriteria))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/opponents/organisation/search/results"));
+    }
+
+    @Test
+    void organisationSearchPost_validationErrors_maxLengthsExceeded_returnsToSearch() throws Exception {
+        OrganisationSearchCriteria testOrganisationSearchCriteria = new OrganisationSearchCriteria();
+
+        testOrganisationSearchCriteria.setName(RandomStringUtils.insecure().nextAlphabetic(370));
+        testOrganisationSearchCriteria.setCity(RandomStringUtils.insecure().nextAlphabetic(36));
+        testOrganisationSearchCriteria.setPostcode(RandomStringUtils.insecure().nextAlphabetic(16));
+
+        CommonLookupDetail orgTypes = new CommonLookupDetail()
+            .addContentItem(new CommonLookupValueDetail());
+        when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.just(orgTypes));
+
+        mockMvc.perform(post("/application/opponents/organisation/search")
+                .flashAttr(ORGANISATION_SEARCH_CRITERIA, testOrganisationSearchCriteria))
+            .andDo(print())
+            .andExpect(status().isOk())
+            .andExpect(model().attributeHasFieldErrors(ORGANISATION_SEARCH_CRITERIA, "name"))
+            .andExpect(model().attributeHasFieldErrors(ORGANISATION_SEARCH_CRITERIA, "city"))
+            .andExpect(model().attributeHasFieldErrors(ORGANISATION_SEARCH_CRITERIA, "postcode"))
+            .andExpect(view().name("application/opponents/opponents-organisation-search"));
     }
 
     @Test
@@ -485,6 +521,71 @@ class OpponentsSectionControllerTest {
             .andExpect(model().attributeExists("legalAidedOptions"))
             .andExpect(view().name("application/opponents/opponents-individual-create"));
 
+    }
+
+    @Test
+    void individualCreatePost_noValidationErrors_maxLengthsNotExceeded_displaysResults() throws Exception {
+        final String applicationId = "123";
+        IndividualOpponentFormData opponentFormData = new IndividualOpponentFormData();
+        opponentFormData.setFirstName("Ken");
+        opponentFormData.setSurname("Yates");
+        opponentFormData.setMiddleNames("Jake");
+        opponentFormData.setNationalInsuranceNumber("AB000000A");
+        opponentFormData.setCertificateNumber("121221AA");
+
+        mockMvc.perform(post("/application/opponents/individual/create")
+                .sessionAttr(CURRENT_OPPONENT, opponentFormData)
+                .sessionAttr(APPLICATION_ID, applicationId)
+                .sessionAttr(USER_DETAILS, user))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/sections/opponents"));
+
+        verify(applicationService).addOpponent(applicationId, opponentFormData, user);
+    }
+
+    @Test
+    void individualCreatePost_validationErrors_maxLengthsExceeded__returnsToView() throws Exception {
+        IndividualOpponentFormData testIndividualOpponentFormData = new IndividualOpponentFormData();
+
+        CommonLookupDetail contactTitles = new CommonLookupDetail()
+            .addContentItem(new CommonLookupValueDetail());
+        when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(Mono.just(contactTitles));
+
+        RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+            new RelationshipToCaseLookupDetail().addContentItem(new RelationshipToCaseLookupValueDetail());
+        when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.just(relationshipToCaseLookupDetail));
+
+        CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
+            .addContentItem(new CommonLookupValueDetail());
+        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
+
+        CommonLookupDetail countries = new CommonLookupDetail()
+            .addContentItem(new CommonLookupValueDetail());
+        when(lookupService.getCountries()).thenReturn(Mono.just(countries));
+
+        testIndividualOpponentFormData.setFirstName(RandomStringUtils.insecure().nextAlphabetic(36));
+        testIndividualOpponentFormData.setSurname(RandomStringUtils.insecure().nextAlphabetic(36));
+        testIndividualOpponentFormData.setMiddleNames(RandomStringUtils.insecure().nextAlphabetic(36));
+        testIndividualOpponentFormData.setNationalInsuranceNumber(RandomStringUtils.insecure().nextAlphabetic(10));
+        testIndividualOpponentFormData.setCertificateNumber(RandomStringUtils.insecure().nextAlphabetic(36));
+
+        mockMvc.perform(post("/application/opponents/individual/create")
+                .sessionAttr(CURRENT_OPPONENT, testIndividualOpponentFormData)
+                .sessionAttr(APPLICATION_ID, "123")
+                .sessionAttr(USER_DETAILS, user))
+            .andDo(print())
+            .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "firstName"))
+            .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "surname"))
+            .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "middleNames"))
+            .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "certificateNumber"))
+            .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "nationalInsuranceNumber"))
+            .andExpect(model().attribute("contactTitles", contactTitles.getContent()))
+            .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+            .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+            .andExpect(model().attribute("countries", countries.getContent()))
+            .andExpect(model().attributeExists("legalAidedOptions"))
+            .andExpect(view().name("application/opponents/opponents-individual-create"));
     }
 
     @Test

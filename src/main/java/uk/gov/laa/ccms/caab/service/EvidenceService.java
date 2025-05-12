@@ -207,7 +207,7 @@ public class EvidenceService {
                 .orElse(null))
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException(
-            String.format("Invalid document id: %s", documentId)));
+        "Invalid document id: %s".formatted(documentId)));
 
     caabApiClient.deleteEvidenceDocument(documentId, userId).block();
   }

@@ -114,7 +114,7 @@ class EditClientAddressDetailsControllerTest {
 
   @Test
   void testEditClientDetailsAddressPostFindAddress_WithAddresses() throws Exception {
-    ResultsDisplay<AddressResultRowDisplay> addressResults = new ResultsDisplay<AddressResultRowDisplay>();
+    ResultsDisplay<AddressResultRowDisplay> addressResults = new ResultsDisplay<>();
     addressResults.setContent(new ArrayList<>());
     addressResults.getContent().add(new AddressResultRowDisplay());
 

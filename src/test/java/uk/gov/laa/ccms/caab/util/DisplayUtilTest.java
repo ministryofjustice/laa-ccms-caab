@@ -19,8 +19,8 @@ class DisplayUtilTest {
     final String result = DisplayUtil.getDelimitedString(items, delimiter, lastDelim);
 
     assertNotNull(result);
-    assertEquals(String.format("%s%s%s%s%s%s%s",
-        items.get(0), delimiter,
+    assertEquals("%s%s%s%s%s%s%s".formatted(
+        items.getFirst(), delimiter,
         items.get(1), delimiter,
         items.get(2), lastDelim,
         items.get(3)), result);
@@ -47,8 +47,8 @@ class DisplayUtilTest {
     final String result = DisplayUtil.getCommaDelimitedString(items);
 
     assertNotNull(result);
-    assertEquals(String.format("%s%s%s%s%s%s%s",
-        items.get(0), delimiter,
+    assertEquals("%s%s%s%s%s%s%s".formatted(
+        items.getFirst(), delimiter,
         items.get(1), delimiter,
         items.get(2), lastDelim,
         items.get(3)), result);

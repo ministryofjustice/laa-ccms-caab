@@ -43,7 +43,7 @@ public class CaseSubmissionController {
    * @return the view name or a redirect to the confirmed submission page if the
    *         case status is valid
    */
-  @GetMapping("/submissions/case-create")
+  @GetMapping("/application/case-create")
   public String addCaseSubmission(
       @SessionAttribute(SUBMISSION_TRANSACTION_ID) final String transactionId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
@@ -57,7 +57,7 @@ public class CaseSubmissionController {
 
     if (caseStatus != null && StringUtils.hasText(caseStatus.getReferenceNumber())) {
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
-      return "redirect:/submissions/%s/confirmed".formatted(SUBMISSION_CREATE_CASE);
+      return "redirect:/application/%s/confirmed".formatted(SUBMISSION_CREATE_CASE);
     }
 
     return viewIncludingPollCount(session);
@@ -70,7 +70,7 @@ public class CaseSubmissionController {
    * @param session the HTTP session to be updated
    * @return a redirect to the home page after removing the active case attribute
    */
-  @PostMapping("/submissions/case-create/confirmed")
+  @PostMapping("/application/case-create/confirmed")
   public String clientUpdateSubmitted(final HttpSession session) {
     session.removeAttribute(ACTIVE_CASE);
     return "redirect:/home";
@@ -91,7 +91,7 @@ public class CaseSubmissionController {
     if (session.getAttribute(SUBMISSION_POLL_COUNT) != null) {
       submissionPollCount = (int) session.getAttribute(SUBMISSION_POLL_COUNT);
       if (submissionPollCount >= submissionConstants.getMaxPollCount()) {
-        return String.format("redirect:/submissions/%s/failed",
+        return "redirect:/application/%s/failed".formatted(
             SubmissionConstants.SUBMISSION_CREATE_CASE);
       }
     }

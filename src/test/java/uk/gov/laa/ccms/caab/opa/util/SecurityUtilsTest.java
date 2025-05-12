@@ -3,10 +3,6 @@ package uk.gov.laa.ccms.caab.opa.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-
-import java.io.UnsupportedEncodingException;
 
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,14 +10,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import uk.gov.laa.ccms.caab.opa.context.ContextToken;
-import uk.gov.laa.ccms.caab.opa.security.ContextUrlEncoder;
 import uk.gov.laa.ccms.caab.opa.security.Encryptor;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,10 +45,8 @@ public class SecurityUtilsTest {
       final String username,
       final String providerName,
       final String expectedMessage) {
-    final Exception exception = assertThrows(UnsupportedOperationException.class, () -> {
-      securityUtils.createJsonToken(username, providerName);
-    });
-    ;
+    final Exception exception = assertThrows(UnsupportedOperationException.class, () ->
+      securityUtils.createJsonToken(username, providerName));
     final String actualMessage = exception.getMessage();
 
     assertEquals(expectedMessage, actualMessage);

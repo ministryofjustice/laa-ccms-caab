@@ -4,7 +4,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
-import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 
 /**
@@ -41,8 +40,7 @@ public class FindAddressValidator extends AbstractClientAddressValidator {
     String postcode = "";
     String houseNameNumber = "";
 
-    if (target instanceof ClientFormDataAddressDetails) {
-      final ClientFormDataAddressDetails addressDetails = (ClientFormDataAddressDetails) target;
+    if (target instanceof ClientFormDataAddressDetails addressDetails) {
 
       if (addressDetails.getNoFixedAbode()) {
         validateNoFixedAbode(addressDetails, errors);
@@ -52,8 +50,7 @@ public class FindAddressValidator extends AbstractClientAddressValidator {
       postcode = addressDetails.getPostcode();
       houseNameNumber = addressDetails.getHouseNameNumber();
 
-    } else if (target instanceof AddressFormData) {
-      final AddressFormData addressDetails = (AddressFormData) target;
+    } else if (target instanceof AddressFormData addressDetails) {
 
       country = addressDetails.getCountry();
       postcode = addressDetails.getPostcode();
@@ -62,7 +59,7 @@ public class FindAddressValidator extends AbstractClientAddressValidator {
     validateRequiredField("country", country,
         "Country", errors);
 
-    if (StringUtils.hasText(country) && !country.equals("GBR")) {
+    if (StringUtils.hasText(country) && !"GBR".equals(country)) {
       errors.rejectValue("country", "required.GBR",
           "The address lookup system is not available for the country you have "
               + "selected. Please enter the address manually.");
@@ -74,5 +71,3 @@ public class FindAddressValidator extends AbstractClientAddressValidator {
 
   }
 }
-
-

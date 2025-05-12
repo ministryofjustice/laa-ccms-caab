@@ -43,5 +43,3 @@ public class PriorAuthorityTypeDetailsValidator extends AbstractValidator {
   }
 
 }
-
-

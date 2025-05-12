@@ -1,12 +1,10 @@
 package uk.gov.laa.ccms.caab.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_VIEW;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
@@ -18,11 +16,9 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_M
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_ORDER_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,7 +37,6 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataMonitoringDetails;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
-import uk.gov.laa.ccms.caab.mapper.context.submission.GeneralDetailsSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.OpponentSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.ProceedingSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
@@ -564,36 +559,36 @@ public class LookupServiceTest {
   @Test
   @DisplayName("Test getClientLookups method")
   void testGetClientLookups() {
-    final String TITLE = "Mr.";
-    final String COUNTRY_OF_ORIGIN = "UK";
-    final String MARITAL_STATUS = "Single";
-    final String GENDER = "Male";
-    final String CORRESPONDENCE_METHOD = "Email";
-    final String ETHNIC_ORIGIN = "Asian";
-    final String DISABILITY = "None";
-    final String COUNTRY = "USA";
-    final String CORRESPONDENCE_LANGUAGE = "English";
+    final String title = "Mr.";
+    final String countryOfOrigin = "UK";
+    final String maritalStatus = "Single";
+    final String gender = "Male";
+    final String correspondenceMethod = "Email";
+    final String ethnicOrigin = "Asian";
+    final String disability = "None";
+    final String country = "USA";
+    final String correspondenceLanguage = "English";
 
     final ClientFlowFormData clientFlowFormData = new ClientFlowFormData(ACTION_VIEW);
     final ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
-    basicDetails.setTitle(TITLE);
-    basicDetails.setCountryOfOrigin(COUNTRY_OF_ORIGIN);
-    basicDetails.setMaritalStatus(MARITAL_STATUS);
-    basicDetails.setGender(GENDER);
+    basicDetails.setTitle(title);
+    basicDetails.setCountryOfOrigin(countryOfOrigin);
+    basicDetails.setMaritalStatus(maritalStatus);
+    basicDetails.setGender(gender);
     clientFlowFormData.setBasicDetails(basicDetails);
 
     final ClientFormDataContactDetails contactDetails = new ClientFormDataContactDetails();
-    contactDetails.setCorrespondenceMethod(CORRESPONDENCE_METHOD);
-    contactDetails.setCorrespondenceLanguage(CORRESPONDENCE_LANGUAGE);
+    contactDetails.setCorrespondenceMethod(correspondenceMethod);
+    contactDetails.setCorrespondenceLanguage(correspondenceLanguage);
     clientFlowFormData.setContactDetails(contactDetails);
 
     final ClientFormDataMonitoringDetails monitoringDetails = new ClientFormDataMonitoringDetails();
-    monitoringDetails.setEthnicOrigin(ETHNIC_ORIGIN);
-    monitoringDetails.setDisability(DISABILITY);
+    monitoringDetails.setEthnicOrigin(ethnicOrigin);
+    monitoringDetails.setDisability(disability);
     clientFlowFormData.setMonitoringDetails(monitoringDetails);
 
     final ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
-    addressDetails.setCountry(COUNTRY);
+    addressDetails.setCountry(country);
     clientFlowFormData.setAddressDetails(addressDetails);
 
     final CommonLookupValueDetail titleLookupValueDetail = new CommonLookupValueDetail();
@@ -619,13 +614,13 @@ public class LookupServiceTest {
         correspondenceLanguageLookupValueDetail
     ));
 
-    when(ebsApiClient.getCommonValues(COMMON_VALUE_CONTACT_TITLE, TITLE)).thenReturn(Mono.just(commonLookupDetailWithCountry));
-    when(ebsApiClient.getCommonValues(COMMON_VALUE_MARITAL_STATUS, MARITAL_STATUS)).thenReturn(Mono.just(commonLookupDetailWithCountry));
-    when(ebsApiClient.getCommonValues(COMMON_VALUE_GENDER, GENDER)).thenReturn(Mono.just(commonLookupDetailWithCountry));
-    when(ebsApiClient.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD, CORRESPONDENCE_METHOD)).thenReturn(Mono.just(commonLookupDetailWithCountry));
-    when(ebsApiClient.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN, ETHNIC_ORIGIN)).thenReturn(Mono.just(commonLookupDetailWithCountry));
-    when(ebsApiClient.getCommonValues(COMMON_VALUE_DISABILITY, DISABILITY)).thenReturn(Mono.just(commonLookupDetailWithCountry));
-    when(ebsApiClient.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE, CORRESPONDENCE_LANGUAGE)).thenReturn(Mono.just(commonLookupDetailWithCountry));
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_CONTACT_TITLE, title)).thenReturn(Mono.just(commonLookupDetailWithCountry));
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_MARITAL_STATUS, maritalStatus)).thenReturn(Mono.just(commonLookupDetailWithCountry));
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_GENDER, gender)).thenReturn(Mono.just(commonLookupDetailWithCountry));
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD, correspondenceMethod)).thenReturn(Mono.just(commonLookupDetailWithCountry));
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN, ethnicOrigin)).thenReturn(Mono.just(commonLookupDetailWithCountry));
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_DISABILITY, disability)).thenReturn(Mono.just(commonLookupDetailWithCountry));
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE, correspondenceLanguage)).thenReturn(Mono.just(commonLookupDetailWithCountry));
 
     when(ebsApiClient.getCountries()).thenReturn(Mono.just(commonLookupDetailWithCountry));
 
@@ -634,8 +629,8 @@ public class LookupServiceTest {
 
     assertEquals(9, lookups.size());
 
-    assertEquals("contactTitle", lookups.get(0).getLeft());
-    assertEquals(titleLookupValueDetail, lookups.get(0).getRight().block().get());
+    assertEquals("contactTitle", lookups.getFirst().getLeft());
+    assertEquals(titleLookupValueDetail, lookups.getFirst().getRight().block().get());
 
     assertEquals("countryOfOrigin", lookups.get(1).getLeft());
 
@@ -696,9 +691,9 @@ public class LookupServiceTest {
 
     StepVerifier.create(result)
         .expectNextMatches(map ->
-            map.size() == 2 &&
-                map.get("lookup1").equals(detail1) &&
-                map.get("lookup2").equals(detail2))
+            map.size() == 2
+                && map.get("lookup1").equals(detail1)
+                && map.get("lookup2").equals(detail2))
         .verifyComplete();
   }
 
@@ -734,10 +729,10 @@ public class LookupServiceTest {
 
     StepVerifier.create(result)
         .expectNextMatches(context ->
-            context.getContactTitle().equals(mockContactTitle) &&
-                context.getOrganisationRelationshipsToCase().equals(mockOrganisationRelationshipsToCase) &&
-                context.getIndividualRelationshipsToCase().equals(mockIndividualRelationshipsToCase) &&
-                context.getRelationshipToClient().equals(mockRelationshipToClient)
+            context.getContactTitle().equals(mockContactTitle)
+                && context.getOrganisationRelationshipsToCase().equals(mockOrganisationRelationshipsToCase)
+                && context.getIndividualRelationshipsToCase().equals(mockIndividualRelationshipsToCase)
+                && context.getRelationshipToClient().equals(mockRelationshipToClient)
         )
         .verifyComplete();
   }

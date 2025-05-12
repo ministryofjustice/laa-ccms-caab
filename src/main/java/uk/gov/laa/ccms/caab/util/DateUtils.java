@@ -8,7 +8,7 @@ import java.util.Date;
 /**
  * DateUtils.
  */
-public class DateUtils {
+public final class DateUtils {
 
   // Date pattern used for component-specific date formatting
   public static final String COMPONENT_DATE_PATTERN = "d/M/yyyy";

@@ -63,6 +63,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
@@ -77,10 +78,10 @@ import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
 import uk.gov.laa.ccms.caab.builders.EbsApplicationMappingContextBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
+import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
@@ -259,13 +260,13 @@ class ApplicationServiceTest {
             .caseReferenceNumber("1"));
 
     // expected result, sorted by case reference
-    final List<BaseApplicationDetail> expectedResult = List.of(mockTdsApplicationDetails.getContent().get(0),
+    final List<BaseApplicationDetail> expectedResult = List.of(mockTdsApplicationDetails.getContent().getFirst(),
         mockEbsApplication);
 
     when(ebsApiClient.getCases(
         caseSearchCriteria, userDetail.getProvider().getId(), page, size))
         .thenReturn(Mono.just(mockCaseDetails));
-    when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().get(0)))
+    when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().getFirst()))
         .thenReturn(mockEbsApplication);
     when(caabApiClient.getApplications(caseSearchCriteria, userDetail.getProvider().getId(),
         page, size)).thenReturn(Mono.just(mockTdsApplicationDetails));
@@ -325,7 +326,7 @@ class ApplicationServiceTest {
 
     when(ebsApiClient.getCases(caseSearchCriteria, userDetail.getProvider().getId(),
         page, size)).thenReturn(Mono.just(mockCaseDetails));
-    when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().get(0)))
+    when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().getFirst()))
         .thenReturn(mockEbsApplication);
     when(caabApiClient.getApplications(caseSearchCriteria,
         userDetail.getProvider().getId(), page, size))
@@ -403,9 +404,9 @@ class ApplicationServiceTest {
     when(ebsApiClient.getCases(caseSearchCriteria,
         userDetail.getProvider().getId(), page, size))
         .thenReturn(Mono.just(mockCaseDetails));
-    when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().get(0)))
+    when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().getFirst()))
         .thenReturn(new BaseApplicationDetail()
-            .caseReferenceNumber(mockCaseDetails.getContent().get(0).getCaseReferenceNumber()));
+            .caseReferenceNumber(mockCaseDetails.getContent().getFirst().getCaseReferenceNumber()));
     when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().get(1)))
         .thenReturn(new BaseApplicationDetail()
             .caseReferenceNumber(mockCaseDetails.getContent().get(1).getCaseReferenceNumber()));
@@ -428,7 +429,7 @@ class ApplicationServiceTest {
     final CaseStatusLookupValueDetail lookupValue = applicationService.getCopyCaseStatus();
 
     assertNotNull(lookupValue);
-    assertEquals(caseStatusLookupDetail.getContent().get(0), lookupValue);
+    assertEquals(caseStatusLookupDetail.getContent().getFirst(), lookupValue);
   }
 
   @Test
@@ -513,7 +514,7 @@ class ApplicationServiceTest {
     // Add just a couple portions to EbsApplicationMappingContext. This is build using
     //  EbsApplicationMappingContextBuilder.class.
     CommonLookupValueDetail applicationTypeLookup = new CommonLookupValueDetail();
-    uk.gov.laa.ccms.data.model.ProviderDetail providerDetail = buildProviderDetail(
+    ProviderDetail providerDetail = buildProviderDetail(
         ebsCase.getApplicationDetails().getProviderDetails().getProviderOfficeId(),
         ebsCase.getApplicationDetails().getProviderDetails().getFeeEarnerContactId(),
         ebsCase.getApplicationDetails().getProviderDetails().getSupervisorContactId());
@@ -588,12 +589,12 @@ class ApplicationServiceTest {
     CaseReferenceSummary caseReferenceSummary = buildCaseReferenceSummary();
 
     // Update the cost limitations for this test
-    applicationToCopy.getProceedings().get(0).setCostLimitation(costLimit1);
+    applicationToCopy.getProceedings().getFirst().setCostLimitation(costLimit1);
     applicationToCopy.getProceedings().get(1).setCostLimitation(costLimit2);
 
     // Update the opponent type for this test
-    applicationToCopy.getOpponents().get(0).setType(opponentType);
-    applicationToCopy.getOpponents().get(0).setSharedInd(opponentShared);
+    applicationToCopy.getOpponents().getFirst().setType(opponentType);
+    applicationToCopy.getOpponents().getFirst().setSharedInd(opponentShared);
 
     when(ebsApiClient.postAllocateNextCaseReference())
         .thenReturn(Mono.just(caseReferenceSummary));
@@ -609,7 +610,7 @@ class ApplicationServiceTest {
     RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
         buildRelationshipToCaseLookupDetail();
     // Update the relationshipToCase lookup for this test
-    relationshipToCaseLookupDetail.getContent().get(0).setCopyParty(opponentRelCopyParty);
+    relationshipToCaseLookupDetail.getContent().getFirst().setCopyParty(opponentRelCopyParty);
 
     when(lookupService.getPersonToCaseRelationships()).thenReturn(
         Mono.just(relationshipToCaseLookupDetail));
@@ -643,7 +644,7 @@ class ApplicationServiceTest {
     // to the case is set to 'Copy Party' then the ebsId should be null.
     StepVerifier.create(resultMono)
         .expectNextMatches(applicationDetail ->
-            opponentEbsIdCleared == (applicationDetail.getOpponents().get(0).getEbsId() == null)
+            opponentEbsIdCleared == (applicationDetail.getOpponents().getFirst().getEbsId() == null)
                 && expectedDefaultCostLimit.equals(
                 newApplicationCaptor.getValue().getCosts().getDefaultCostLimitation())
                 && expectedRequestedCostLimit.equals(
@@ -962,7 +963,7 @@ class ApplicationServiceTest {
 
     final List<ProceedingDetail> capturedProceedings = proceedingArgumentCaptor.getAllValues();
 
-    assertFalse(capturedProceedings.get(0).getLeadProceedingInd());
+    assertFalse(capturedProceedings.getFirst().getLeadProceedingInd());
     assertTrue(capturedProceedings.get(1).getLeadProceedingInd());
 
     verify(caabApiClient).patchApplication(eq(applicationId), any(ApplicationDetail.class), eq(user.getLoginId()));
@@ -1582,7 +1583,7 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void testGetCaseStatus(){
+  void testGetCaseStatus() {
     // Given
     String transactionId = "12345";
     TransactionStatus expected = new TransactionStatus().submissionStatus("Success")
@@ -1597,7 +1598,7 @@ class ApplicationServiceTest {
 
   @Test
   @DisplayName("Should return case if present")
-  void shouldReturnCaseIfPresent(){
+  void shouldReturnCaseIfPresent() {
     // Given
     String caseRef = "12345";
     long providerId = 123456789L;
@@ -1621,14 +1622,16 @@ class ApplicationServiceTest {
 
   @Test
   @DisplayName("Should throw exception if case not found")
-  void shouldThrowExceptionIfCaseNotFound(){
+  void shouldThrowExceptionIfCaseNotFound() {
     // Given
     String caseRef = "12345";
     long providerId = 123456789L;
     String userName = "John";
-    when(ebsApiClient.getCase(caseRef, providerId, userName)).thenReturn(Mono.empty());
+    when(ebsApiClient.getCase(caseRef, providerId, userName))
+        .thenThrow(new EbsApiClientException("not found", HttpStatus.NOT_FOUND));
     // When / Then
-    assertThrows(CaabApplicationException.class, () -> applicationService.getCase(caseRef, providerId, userName));
+    assertThrows(EbsApiClientException.class,
+        () -> applicationService.getCase(caseRef, providerId, userName));
   }
 
   private static ApplicationDetail getApplicationDetail() {

@@ -1,5 +1,13 @@
 package uk.gov.laa.ccms.caab.bean.opponent;
 
+import static uk.gov.laa.ccms.caab.constants.CharacterLimitationConstants.ADDRESS_LINE1_CHARACTER_SIZE;
+import static uk.gov.laa.ccms.caab.constants.CharacterLimitationConstants.DEFAULT_CHARACTER_SIZE;
+import static uk.gov.laa.ccms.caab.constants.CharacterLimitationConstants.EMAIL_ADDRESS_CHARACTER_SIZE;
+import static uk.gov.laa.ccms.caab.constants.CharacterLimitationConstants.OTHER_INFORMATION_CHARACTER_SIZE;
+import static uk.gov.laa.ccms.caab.constants.CharacterLimitationConstants.POSTCODE_CHARACTER_SIZE;
+import static uk.gov.laa.ccms.caab.constants.CharacterLimitationConstants.TELEPHONE_NUMBER_CHARACTER_SIZE;
+
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
@@ -50,26 +58,31 @@ public abstract class AbstractOpponentFormData {
   /**
    * The opponent house name/number.
    */
+  @Size(max = DEFAULT_CHARACTER_SIZE)
   private String houseNameOrNumber;
 
   /**
    * The address line 1 for the opponent.
    */
+  @Size(max = ADDRESS_LINE1_CHARACTER_SIZE)
   private String addressLine1;
 
   /**
    * The address line 2 for the opponent.
    */
+  @Size(max = DEFAULT_CHARACTER_SIZE)
   private String addressLine2;
 
   /**
    * The city for the opponent.
    */
+  @Size(max = DEFAULT_CHARACTER_SIZE)
   private String city;
 
   /**
    * The opponent's county.
    */
+  @Size(max = DEFAULT_CHARACTER_SIZE)
   private String county;
 
   /**
@@ -80,26 +93,31 @@ public abstract class AbstractOpponentFormData {
   /**
    * The postcode for the opponent.
    */
+  @Size(max = POSTCODE_CHARACTER_SIZE)
   private String postcode;
 
   /**
    * The work telephone number for the opponent.
    */
+  @Size(max = TELEPHONE_NUMBER_CHARACTER_SIZE)
   private String telephoneWork;
 
   /**
    * The fax number for the opponent.
    */
+  @Size(max = TELEPHONE_NUMBER_CHARACTER_SIZE)
   private String faxNumber;
 
   /**
    * The email address for the opponent.
    */
+  @Size(max = EMAIL_ADDRESS_CHARACTER_SIZE)
   private String emailAddress;
 
   /**
    * Any other information regarding the opponent.
    */
+  @Size(max = OTHER_INFORMATION_CHARACTER_SIZE)
   private String otherInformation;
 
   /**

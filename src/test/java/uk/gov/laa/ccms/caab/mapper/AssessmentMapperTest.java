@@ -9,7 +9,6 @@ import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildClientDetail;
 
-import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -134,7 +133,7 @@ class AssessmentMapperTest {
     assertEquals(expectedOpaInstanceMappingId, result);
   }
 
-  private void assertGlobalAttributes(final List<AssessmentAttributeDetail> attributes){
+  private void assertGlobalAttributes(final List<AssessmentAttributeDetail> attributes) {
 
     assertEquals(30, attributes.size());
     assertContainsAttribute(attributes, AssessmentAttribute.APPLICATION_CASE_REF, "1234567890");
@@ -168,7 +167,7 @@ class AssessmentMapperTest {
     assertContainsAttribute(attributes, AssessmentAttribute.USER_PROVIDER_FIRM_ID, "123");
     assertContainsAttribute(attributes, AssessmentAttribute.USER_TYPE, "testUserType");
   }
-  private void assertProceedingAttributes(final List<AssessmentAttributeDetail> attributes){
+  private void assertProceedingAttributes(final List<AssessmentAttributeDetail> attributes) {
     assertEquals(10, attributes.size());
     assertContainsAttribute(attributes, AssessmentAttribute.CLIENT_INVOLVEMENT_TYPE, "clientInv");
     assertContainsAttribute(attributes, AssessmentAttribute.LEAD_PROCEEDING, "true");
@@ -181,7 +180,7 @@ class AssessmentMapperTest {
     assertContainsAttribute(attributes, AssessmentAttribute.REQUESTED_SCOPE, "scopelim");
     assertContainsAttribute(attributes, AssessmentAttribute.SCOPE_LIMIT_IS_DEFAULT, "true");
   }
-  private void assertOpponentAttributes(final List<AssessmentAttributeDetail> attributes){
+  private void assertOpponentAttributes(final List<AssessmentAttributeDetail> attributes) {
     assertEquals(6, attributes.size());
     assertContainsAttribute(attributes, AssessmentAttribute.OPPONENT_DOB, dateStr);
     assertContainsAttribute(attributes, AssessmentAttribute.OTHER_PARTY_ID, "ebsid");
@@ -246,7 +245,7 @@ class AssessmentMapperTest {
 
     assessmentMapper.toAssessmentDetail(assessment, null);
     assertNotNull(assessment.getEntityTypes());
-    assertEquals(0,assessment.getEntityTypes().size());
+    assertEquals(0, assessment.getEntityTypes().size());
   }
 
   @Test
@@ -281,7 +280,7 @@ class AssessmentMapperTest {
 
   @Test
   void toAssessmentEntityDetail_whenOpponentContextIsNotNull() {
-    final AssessmentOpponentMappingContext opponentContext = context.getOpponentContext().get(0);
+    final AssessmentOpponentMappingContext opponentContext = context.getOpponentContext().getFirst();
     final AssessmentEntityDetail result = assessmentMapper.toAssessmentEntityDetail(opponentContext);
 
     assertNotNull(result);

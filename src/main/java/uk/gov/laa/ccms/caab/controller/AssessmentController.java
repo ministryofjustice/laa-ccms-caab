@@ -232,10 +232,10 @@ public class AssessmentController {
 
       populateOpaModel(contextToken, prepopAssessment, user, assessmentRulebase, model);
 
-    } else if (assessment.equalsIgnoreCase("billing")) {
+    } else if ("billing".equalsIgnoreCase(assessment)) {
       //todo - later implementation
 
-    } else if (assessment.equalsIgnoreCase("poa")) {
+    } else if ("poa".equalsIgnoreCase(assessment)) {
       //todo - later implementation
     }
 
@@ -260,7 +260,7 @@ public class AssessmentController {
 
 
     final String submitReturnUrl =
-        String.format(RETURN_URL, contextToken);
+        RETURN_URL.formatted(contextToken);
 
     model.addAttribute("checkpoint",
         prepopAssessment.getCheckpoint() != null ? CHECKPOINT_RESUME : CHECKPOINT_START);

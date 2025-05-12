@@ -5,8 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.opa.context.exception.ConnectorSecurityContextException;
@@ -251,8 +249,9 @@ public class ContextToken {
     final StringBuilder sb = new StringBuilder();
     sb.append("caseId[").append(caseId).append("] ");
     sb.append("providerId[").append(providerId).append("] ");
-    sb.append("RuleBase[").append(
-        AssessmentRulebase.getPrePopAssessmentName(rulebaseId)).append("] ");
+    sb.append("RuleBase[")
+        .append(AssessmentRulebase.getPrePopAssessmentName(rulebaseId))
+        .append("] ");
     return sb;
   }
 
@@ -261,7 +260,7 @@ public class ContextToken {
    *
    * @return the hash code value
    */
-  public int hashcode() {
+  public int hashCode() {
     return getTtl().intValue()
         * getCaseId().hashCode()
         * getProviderId().hashCode()

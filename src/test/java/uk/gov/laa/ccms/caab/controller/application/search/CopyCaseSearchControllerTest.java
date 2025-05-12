@@ -122,7 +122,7 @@ public class CopyCaseSearchControllerTest {
             .sessionAttr(USER_DETAILS, user)));
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
-    assertEquals(String.format("Failed to retrieve Provider with id: %s", user.getProvider().getId()), exception.getCause().getMessage());
+    assertEquals("Failed to retrieve Provider with id: %s".formatted(user.getProvider().getId()), exception.getCause().getMessage());
   }
 
   @Test
@@ -176,9 +176,9 @@ public class CopyCaseSearchControllerTest {
 
     when(applicationService.getCases(any(), any())).thenReturn(baseApplications);
 
-    String COPY_STATUS_CODE = "APP";
+    String copyStatusCode = "APP";
     when(applicationService.getCopyCaseStatus()).thenReturn(
-        new CaseStatusLookupValueDetail().code(COPY_STATUS_CODE));
+        new CaseStatusLookupValueDetail().code(copyStatusCode));
 
     CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     this.mockMvc.perform(post("/application/copy-case/search")
@@ -189,7 +189,7 @@ public class CopyCaseSearchControllerTest {
 
     verify(applicationService).getCopyCaseStatus();
     verify(applicationService).getCases(eq(caseSearchCriteria), any());
-    assertEquals(COPY_STATUS_CODE, caseSearchCriteria.getStatus());
+    assertEquals(copyStatusCode, caseSearchCriteria.getStatus());
   }
 
   @Test

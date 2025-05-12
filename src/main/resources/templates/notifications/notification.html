@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='ATT,EVID,SUBNOT')}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='ATT,EVID,SUBNOT,VC')}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" xmlns:govuk="http://www.thymeleaf.org">
 <head>
   <title th:text="|#{service.name} - ${notification.subject}|"/>
 </head>
@@ -84,8 +85,11 @@
                 <td class="govuk-table__cell"
                     th:unless="${#strings.isEmpty(notification.caseReferenceNumber)}">
                   <a class="govuk-link govuk-link--no-visited-state"
+                     sec:authorize="hasAuthority(@roles.viewCaseDetails)"
                      th:text="${notification.caseReferenceNumber}"
                      th:href="@{/application/{case-reference-number}/view(case-reference-number=${notification.caseReferenceNumber})}"/>
+
+                  <span sec:authorize="!hasAuthority(@roles.viewCaseDetails)" th:text="${notification.caseReferenceNumber}"/>
                 </td>
                 <td class="govuk-table__cell"
                     th:text="${notification.providerCaseReferenceNumber}"/>
@@ -112,13 +116,19 @@
               <td class="govuk-table__cell" th:text="${attachment.text}"></td>
               <td th:if="${documentLinks.get(attachment.getDocumentId)} != null"
                   class="govuk-table__cell">
-                <div
-                    th:replace="~{partials/actions :: restrictedActionLink('Download', ${user.functions}, 'ATT', false, '', ${documentLinks.get(attachment.getDocumentId)}, true)}"></div>
+                <a class="govuk-link"
+                   sec:authorize="hasAuthority(@roles.viewNotificationAttachment)"
+                   th:text="#{site.download}"
+                   th:href="${documentLinks.get(attachment.getDocumentId)}"/>
+                <span sec:authorize="!hasAuthority(@roles.viewNotificationAttachment)" th:text="#{site.download}"/>
               </td>
               <td th:if="${documentLinks.get(attachment.getDocumentId)} == null"
                   class="govuk-table__cell">
-                <div th:replace="~{partials/actions :: restrictedActionLink('Retrieve',
-                ${user.functions}, 'ATT', false, 'ccms-download-link', @{/notifications/{notification_id}/attachments/{attachment_id}/retrieve(notification_id=${notification.getNotificationId},attachment_id=${attachment.getDocumentId})}, true)}"></div>
+                <a class="govuk-link ccms-download-link"
+                   sec:authorize="hasAuthority(@roles.viewNotificationAttachment)"
+                   th:text="#{site.retrieve}"
+                   th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/retrieve(notification_id=${notification.getNotificationId},attachment_id=${attachment.getDocumentId})}"/>
+                <span sec:authorize="!hasAuthority(@roles.viewNotificationAttachment)"  th:text="#{site.retrieve}"/>
                 <div
                      style="visibility:hidden;display:inline-block"
                      class="loader-small"></div>
@@ -130,11 +140,11 @@
       </div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-one-third">
-          <div th:if="${#lists.contains(user.functions, 'EVID') and notification.evidenceAllowed == true}">
+          <div sec:authorize="hasAuthority(@roles.uploadEvidence)" th:if="${notification.evidenceAllowed == true}">
             <p class="govuk-body govuk-!-text-align-left">
-            <div
-              th:replace="~{partials/actions :: restrictedActionLink(#{notifications.provideDocumentsOrEvidence}, ${user.functions}, 'EVID', true, 'govuk-button&#45;&#45;secondary', @{/notifications/{notification_id}/provide-documents-or-evidence(notification_id=${notification.getNotificationId})}, false)}">
-            </div>
+            <a class="govuk-button govuk-button--secondary" data-module="govuk-button"
+               th:text="#{notifications.provideDocumentsOrEvidence}"
+               th:href="@{/notifications/{notification_id}/provide-documents-or-evidence(notification_id=${notification.getNotificationId})}"/>
             </p>
           </div>
         </div>
@@ -148,10 +158,9 @@
           </div>
         </div>
       </div>
-      <div class="govuk-button-group">
+      <div sec:authorize="hasAuthority(@roles.submitNotification)" class="govuk-button-group">
         <div th:if="${notification.notificationOpenIndicator}">
-          <div th:replace="~{partials/actions :: restrictedSubmitButton(#{site.submit},
-                  ${user.functions}, 'SUBNOT')}"></div>
+          <govuk:button type="submit" th:text="#{site.submit}"/>
         </div>
       </div>
     </form>

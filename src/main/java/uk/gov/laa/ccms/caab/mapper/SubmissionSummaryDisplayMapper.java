@@ -180,7 +180,7 @@ public interface SubmissionSummaryDisplayMapper {
       final OpponentDetail opponent,
       @Context final OpponentSubmissionSummaryMappingContext context) {
 
-    if (opponent.getType().equalsIgnoreCase("Organisation")) {
+    if ("Organisation".equalsIgnoreCase(opponent.getType())) {
       return COMMON_MAPPER.toRelationshipDisplayValue(
           opponent.getRelationshipToCase(), context.getOrganisationRelationshipsToCase());
     } else {

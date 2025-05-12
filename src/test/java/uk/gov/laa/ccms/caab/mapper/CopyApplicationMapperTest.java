@@ -133,7 +133,7 @@ class CopyApplicationMapperTest {
     expectedProceeding.setEbsId(null);
     expectedProceeding.getStatus().setId(STATUS_DRAFT);
     expectedProceeding.getStatus().setDisplayValue(PROCEEDING_STATUS_UNCHANGED_DISPLAY);
-    applyScopeLimitationMappingUpdates(expectedProceeding.getScopeLimitations().get(0));
+    applyScopeLimitationMappingUpdates(expectedProceeding.getScopeLimitations().getFirst());
 
     return expectedProceeding;
   }

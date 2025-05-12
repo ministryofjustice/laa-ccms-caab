@@ -19,7 +19,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -739,7 +738,7 @@ public class ApplicationSubmissionController {
 
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
 
-    return "redirect:/submissions/%s".formatted(SUBMISSION_CREATE_CASE);
+    return "redirect:/application/%s".formatted(SUBMISSION_CREATE_CASE);
   }
 
   /**

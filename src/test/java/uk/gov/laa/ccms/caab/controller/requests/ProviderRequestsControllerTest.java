@@ -40,10 +40,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
@@ -577,10 +575,10 @@ class ProviderRequestsControllerTest {
     mockMvc.perform(get("/provider-requests/documents"))
         .andExpect(status().isOk())
         .andExpect(view().name("requests/provider-request-doc-upload"))
-        .andExpect(model().attributeExists(EVIDENCE_UPLOAD_FORM_DATA)) // Check EvidenceUploadFormData is in the model
-        .andExpect(model().attributeExists("documentTypes")) // Check documentTypes dropdown
+        .andExpect(model().attributeExists(EVIDENCE_UPLOAD_FORM_DATA))// Check EvidenceUploadFormData is in the model
+        .andExpect(model().attributeExists("documentTypes"))// Check documentTypes dropdown
         .andExpect(model().attribute("documentTypes", List.of(new CommonLookupValueDetail().code("DOC1").description("Document Type 1"))))
-        .andExpect(model().attribute("validExtensions", "pdf or docx")) // Check valid file extensions
+        .andExpect(model().attribute("validExtensions", "pdf or docx"))// Check valid file extensions
         .andExpect(model().attribute("maxFileSize", maxFileSize)); // Check max file size
 
     // Verify interactions with mocks

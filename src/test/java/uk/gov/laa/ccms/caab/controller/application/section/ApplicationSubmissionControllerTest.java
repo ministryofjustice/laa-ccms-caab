@@ -63,8 +63,8 @@ import uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox;
 import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
-import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityDetailsFormData;
+import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityTypeFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
@@ -326,7 +326,7 @@ class ApplicationSubmissionControllerTest {
     final EvidenceDocumentDetails mockEvidenceDocDetails = mock(EvidenceDocumentDetails.class);
     when(evidenceService.getEvidenceDocumentsForCase(anyString(), eq(APPLICATION))).thenReturn(Mono.just(mockEvidenceDocDetails));
     doNothing().when(evidenceService).registerPreviouslyUploadedDocuments(any(), any());
-    when(evidenceService.uploadAndUpdateDocuments(any(), anyString(),eq(null), any())).thenReturn(Mono.empty());
+    when(evidenceService.uploadAndUpdateDocuments(any(), anyString(), eq(null), any())).thenReturn(Mono.empty());
 
     // Mock application service
     final ApplicationDetail mockApplicationDetail = mock(ApplicationDetail.class);
@@ -350,7 +350,7 @@ class ApplicationSubmissionControllerTest {
             .sessionAttr(USER_DETAILS, mockUser)
             .sessionAttr(ACTIVE_CASE, mockActiveCase))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/submissions/%s".formatted(SUBMISSION_CREATE_CASE)));
+        .andExpect(redirectedUrl("/application/%s".formatted(SUBMISSION_CREATE_CASE)));
 
     // Verify interactions
     verify(declarationSubmissionValidator, times(1)).validate(any(), any());

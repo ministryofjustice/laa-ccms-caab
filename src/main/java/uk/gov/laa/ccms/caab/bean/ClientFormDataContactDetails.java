@@ -32,9 +32,9 @@ public class ClientFormDataContactDetails extends AbstractClientFormData {
   private String correspondenceMethod;
   private String correspondenceLanguage;
 
-  private boolean telephoneHomePresent = false;
-  private boolean telephoneWorkPresent = false;
-  private boolean telephoneMobilePresent = false;
+  private boolean telephoneHomePresent;
+  private boolean telephoneWorkPresent;
+  private boolean telephoneMobilePresent;
 
   /**
    * Cleanup mobile numbers if not selected in the UI.

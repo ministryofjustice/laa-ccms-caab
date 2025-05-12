@@ -69,7 +69,7 @@ public class AvScanService {
         log.error("********** Malware scan service reported virus found **********",
             virusFoundException);
         throw new AvVirusFoundException(
-            String.format(VIRUS_FOUND_ERROR_FORMAT, filename,
+            VIRUS_FOUND_ERROR_FORMAT.formatted(filename,
                 virusFoundException.getMessage()), virusFoundException);
 
       } catch (AvApiClientException avApiClientException) {
@@ -81,7 +81,7 @@ public class AvScanService {
         log.error("********** Malware scan service threw exception **********",
             avApiClientException);
         throw new AvScanException(
-            String.format(SCAN_ERROR_FORMAT, filename,
+            SCAN_ERROR_FORMAT.formatted(filename,
                 avApiClientException.getMessage()), avApiClientException);
       }
     }

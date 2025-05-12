@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.service;
 
-import static org.apache.commons.lang3.time.DateUtils.isSameDay;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROGRESS_STATUS_TYPES;
@@ -36,8 +37,9 @@ import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getProceedingByEbsId;
 import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getProceedingById;
 import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getRequestedScopeForAssessmentInput;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -70,6 +72,7 @@ import uk.gov.laa.ccms.caab.mapper.AssessmentMapper;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
@@ -332,11 +335,6 @@ public class AssessmentService {
     if (!application.getAmendment()) {
       if (assessment != null) {
 
-        //check for any application type attribute changes between assessment and application
-        if (applicationTypeMatches(application, assessment)) {
-          return true;
-        }
-
         final AssessmentEntityTypeDetail proceedingEntityType =
             getAssessmentEntityType(assessment, PROCEEDING);
 
@@ -444,46 +442,59 @@ public class AssessmentService {
     final List<AssessmentEntityDetail> globalEntities =
         getAssessmentEntitiesForEntityType(assessment, GLOBAL);
 
+    if (globalEntities.isEmpty()) {
+      return false; // No entities to compare against
+    }
+
+    final String applicationType = application.getApplicationType().getId();
+
+    final Optional<LocalDate> applicationDateUsed = Optional.of(application)
+        .map(ApplicationDetail::getApplicationType)
+        .map(ApplicationType::getDevolvedPowers)
+        .map(DevolvedPowersDetail::getDateUsed)
+        .map(date -> date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+
     for (final AssessmentEntityDetail globalEntity : globalEntities) {
 
-      final AssessmentAttributeDetail applicationTypeAttribute =
-          getAssessmentAttribute(globalEntity, APP_AMEND_TYPE);
+      final String applicationTypeFromAssessment = Optional.ofNullable(
+              getAssessmentAttribute(globalEntity, APP_AMEND_TYPE))
+          .map(AssessmentAttributeDetail::getValue)
+          .orElse(null);
 
-      //check if the application type matches
-      if (applicationTypeAttribute != null
-          && !application.getApplicationType().getId()
-          .equalsIgnoreCase(applicationTypeAttribute.getValue())) {
-        return true;
+      final boolean applicationTypeMismatch = (applicationTypeFromAssessment != null
+          && (applicationType == null
+          || !applicationType.equalsIgnoreCase(applicationTypeFromAssessment)));
+
+      if (applicationTypeMismatch) {
+        if (APP_TYPE_EXCEPTIONAL_CASE_FUNDING.equalsIgnoreCase(applicationType)) {
+          if (!APP_TYPE_SUBSTANTIVE.equalsIgnoreCase(applicationTypeFromAssessment)) {
+            return true;
+          }
+        } else {
+          return true;
+        }
       }
 
       final AssessmentAttributeDetail delegatedFunctionsAttribute =
           getAssessmentAttribute(globalEntity, DELEGATED_FUNCTIONS_DATE);
 
-      final Optional<DevolvedPowersDetail> devolvedPowers =
-          Optional.ofNullable(application.getApplicationType().getDevolvedPowers());
-      final Optional<Date> applicationDateUsed =
-          devolvedPowers.map(DevolvedPowersDetail::getDateUsed);
-
       if (delegatedFunctionsAttribute != null) {
-        // If there is a delegatedFunctionsAttribute, check if it matches the application's date
-        final SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-        try {
-          final Date attributeDate = sdf.parse(delegatedFunctionsAttribute.getValue());
-          if (applicationDateUsed.isEmpty() || !isSameDay(applicationDateUsed.get(),
-              attributeDate)) {
+        final Optional<LocalDate> attributeDate = Optional.ofNullable(
+            delegatedFunctionsAttribute.getValue())
+            .map(dateStr -> 
+                LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+
+        if (attributeDate.isPresent()) {
+          if (!applicationDateUsed.isPresent()
+              || !applicationDateUsed.get().isEqual(attributeDate.get())) {
             return true;
           }
-        } catch (final ParseException e) {
-          log.error("Error parsing delegated functions date", e);
-          throw new RuntimeException(e);
         }
-      } else {
-        // If there's no delegatedFunctionsAttribute but the application has a date, return true
-        if (applicationDateUsed.isPresent()) {
-          return true;
-        }
+      } else if (applicationDateUsed.isPresent()) {
+        return true;
       }
     }
+
     return false;
   }
 
@@ -700,7 +711,7 @@ public class AssessmentService {
         getAssessmentEntitiesForEntityType(assessment, entityType);
 
     for (final AssessmentEntityDetail entity : entities) {
-      log.debug(String.format("%s entity ID : %s", entityType, entity.getName()));
+      log.debug("%s entity ID : %s".formatted(entityType, entity.getName()));
       addRedundantEntityMethod.accept(entitiesToDelete, entity.getName());
     }
 
@@ -715,7 +726,7 @@ public class AssessmentService {
         .filter(Objects::nonNull)
         .flatMap(relationship -> relationship.getRelationshipTargets().stream())
         .forEach(target -> {
-          log.debug(String.format("%s relationship target entity ID : %s",
+          log.debug("%s relationship target entity ID : %s".formatted(
               relationshipType,
               target.getTargetEntityId()));
           addRedundantEntityMethod.accept(entitiesToDelete, target.getTargetEntityId());
@@ -878,7 +889,7 @@ public class AssessmentService {
         providerId, referenceId, assessmentRulebase.getPrePopAssessmentName());
 
     // find or create an opa session
-    final boolean createdNewPrepopAssessment = (prepopAssessment.getId() == null);
+    final boolean createdNewPrepopAssessment = prepopAssessment.getId() == null;
 
     //used to populate the lookups for title for the opponent
     final List<AssessmentOpponentMappingContext>
@@ -1005,7 +1016,7 @@ public class AssessmentService {
       isMatching = dateOfLastChange.after(assessment.getAuditDetail().getLastSaved());
     }
 
-    return (isMatching || isProceedingsCountMismatch(application, assessment));
+    return isMatching || isProceedingsCountMismatch(application, assessment);
   }
 
   /**
@@ -1024,8 +1035,8 @@ public class AssessmentService {
     final List<AssessmentEntityDetail> proceedingEntities =
         getAssessmentEntitiesForEntityType(assessment, PROCEEDING);
 
-    return (application.getProceedings().size() != proceedingEntities.size()
-        || isAssessmentProceedingsMatchingApplication(application, assessment));
+    return application.getProceedings().size() != proceedingEntities.size()
+        || isAssessmentProceedingsMatchingApplication(application, assessment);
   }
 
   /**
@@ -1062,7 +1073,7 @@ public class AssessmentService {
       }
 
     }
-    return (isMatching || isApplicationProceedingsMatchingAssessment(application, assessment));
+    return isMatching || isApplicationProceedingsMatchingAssessment(application, assessment);
   }
 
   /**
@@ -1107,7 +1118,7 @@ public class AssessmentService {
         isMatching = true;
       }
     }
-    return (isMatching || isOpponentCountMatchingAssessments(application, assessment));
+    return isMatching || isOpponentCountMatchingAssessments(application, assessment);
   }
 
   /**
@@ -1178,6 +1189,8 @@ public class AssessmentService {
       final ApplicationDetail application,
       final AssessmentDetail assessment) {
 
+    boolean isMatching = false;
+
     for (final OpponentDetail opponent : application.getOpponents()) {
       log.debug("App opponent ID - " + opponent.getId() + ", EBS-ID - " + opponent.getEbsId());
 
@@ -1193,11 +1206,11 @@ public class AssessmentService {
 
       if (opponentEntity == null) {
         log.debug("APP OPPONENTS DOESN'T EXIST IN OPASESSION OBJECT");
-        return true;
+        isMatching = true;
       }
 
     }
-    return false;
+    return isMatching || applicationTypeMatches(application, assessment);
   }
 
 

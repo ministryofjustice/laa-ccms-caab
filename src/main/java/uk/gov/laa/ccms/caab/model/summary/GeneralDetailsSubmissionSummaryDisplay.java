@@ -69,4 +69,3 @@ public class GeneralDetailsSubmissionSummaryDisplay {
    */
   private String county;
 }
-

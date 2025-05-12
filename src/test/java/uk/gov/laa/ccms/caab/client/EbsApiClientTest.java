@@ -52,6 +52,7 @@ import uk.gov.laa.ccms.data.model.ProceedingDetails;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.ProviderRequestTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
+import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
@@ -159,9 +160,9 @@ public class EbsApiClientTest {
 
       StepVerifier.create(notificationSummary)
           .expectNextMatches(summary ->
-              summary.getNotifications().equals(1) &&
-                  summary.getStandardActions().equals(3) &&
-                  summary.getOverdueActions().equals(2)
+              summary.getNotifications().equals(1)
+                  && summary.getStandardActions().equals(3)
+                  && summary.getOverdueActions().equals(2)
           )
           .verifyComplete();
     }
@@ -188,9 +189,9 @@ public class EbsApiClientTest {
 
       StepVerifier.create(notificationSummary)
           .expectNextMatches(summary ->
-              summary.getNotifications().equals(1) &&
-                  summary.getStandardActions().equals(3) &&
-                  summary.getOverdueActions().equals(2)
+              summary.getNotifications().equals(1)
+                  && summary.getStandardActions().equals(3)
+                  && summary.getOverdueActions().equals(2)
           )
           .verifyComplete();
     }
@@ -207,7 +208,7 @@ public class EbsApiClientTest {
       String  notificationId = "123";
       int userId = 876;
       int providerId = 456;
-      String expectedUri = String.format("/notifications/%s?user-id=%s&provider-id=%s", notificationId, userId, providerId);
+      String expectedUri = "/notifications/%s?user-id=%s&provider-id=%s".formatted(notificationId, userId, providerId);
       ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
@@ -230,12 +231,12 @@ public class EbsApiClientTest {
 
     @Test
     @DisplayName("Should handle error")
-    void getNotification_handlesError(){
+    void getNotification_handlesError() {
       // Given
       String notificationId = "123";
       int userId = 876;
       int providerId = 456;
-      String expectedUri = String.format("/notifications/%s?user-id=%s&provider-id=%s", notificationId, userId, providerId);
+      String expectedUri = "/notifications/%s?user-id=%s&provider-id=%s".formatted(notificationId, userId, providerId);
       ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
@@ -272,10 +273,11 @@ public class EbsApiClientTest {
 
       criteria.setLoginId("testUserId");
       criteria.setUserType("testUserType");
-      int page = 10, size = 10;
+      int page = 10;
+      int size = 10;
       String expectedUri = String.format(
-          "/notifications?provider-id=1&assigned-to-user-id=%s&include-closed=%s&page=%s&" +
-              "size=%s",
+          "/notifications?provider-id=1&assigned-to-user-id=%s&include-closed=%s&page=%s&"
+              + "size=%s",
           criteria.getAssignedToUserId(),
           criteria.isIncludeClosed(),
           page,
@@ -291,7 +293,7 @@ public class EbsApiClientTest {
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
       when(responseMock.bodyToMono(Notifications.class)).thenReturn(
           Mono.just(notificationsObj));
-      Mono<uk.gov.laa.ccms.data.model.Notifications> notificationsMono =
+      Mono<Notifications> notificationsMono =
           ebsApiClient.getNotifications(
               criteria, 1, page,
               size);
@@ -312,10 +314,11 @@ public class EbsApiClientTest {
       criteria.setAssignedToUserId("testUserId");
       criteria.setLoginId("testUserId");
       criteria.setUserType("testUserType");
-      int page = 10, size = 10;
+      int page = 10;
+      int size = 10;
       String expectedUri = String.format(
-          "/notifications?provider-id=1&assigned-to-user-id=%s&include-closed=%s&page=%s&" +
-              "size=%s",
+          "/notifications?provider-id=1&assigned-to-user-id=%s&include-closed=%s&page=%s&"
+              + "size=%s",
           criteria.getAssignedToUserId(),
           criteria.isIncludeClosed(),
           page,
@@ -383,7 +386,7 @@ public class EbsApiClientTest {
 
         // Assert the URI
         assertEquals(
-            String.format("/lookup/common?size=1000&type=%s&code=%s&description=%s&sort=%s",
+            "/lookup/common?size=1000&type=%s&code=%s&description=%s&sort=%s".formatted(
                 type, code, descr, sort), actualUri.toString());
       }
 
@@ -418,7 +421,7 @@ public class EbsApiClientTest {
 
         // Assert the URI
         assertEquals(
-            String.format("/lookup/common?size=1000&type=%s&code=%s&description=%s&sort=%s",
+            "/lookup/common?size=1000&type=%s&code=%s&description=%s&sort=%s".formatted(
                 type, code, descr, sort), actualUri.toString());
       }
     }
@@ -855,8 +858,8 @@ public class EbsApiClientTest {
     @Test
     @DisplayName("Should return data")
     void getScopeLimitations_returnsData() {
-      final uk.gov.laa.ccms.data.model.ScopeLimitationDetail scopeLimitationDetail =
-          new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+      final ScopeLimitationDetail scopeLimitationDetail =
+          new ScopeLimitationDetail()
               .scopeLimitations("scopeLimitations")
               .categoryOfLaw("categoryOfLaw")
               .matterType("matterType")
@@ -944,7 +947,7 @@ public class EbsApiClientTest {
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
       // Assert the URI
-      assertEquals(String.format("/prior-authority-types?size=1000&code=%s&value-required=%s",
+      assertEquals("/prior-authority-types?size=1000&code=%s&value-required=%s".formatted(
           code, valueRequired), actualUri.toString());
     }
 
@@ -980,7 +983,7 @@ public class EbsApiClientTest {
 
       // Assert the URI
       assertEquals(
-          String.format("/lookup/outcome-results?size=1000&proceeding-code=%s&outcome-result=%s",
+          "/lookup/outcome-results?size=1000&proceeding-code=%s&outcome-result=%s".formatted(
               proceedingCode, outcomeResult), actualUri.toString());
     }
   }
@@ -1013,7 +1016,7 @@ public class EbsApiClientTest {
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
       // Assert the URI
-      assertEquals(String.format("/lookup/stage-ends?size=1000&proceeding-code=%s&stage-end=%s",
+      assertEquals("/lookup/stage-ends?size=1000&proceeding-code=%s&stage-end=%s".formatted(
           proceedingCode, stageEnd), actualUri.toString());
     }
   }

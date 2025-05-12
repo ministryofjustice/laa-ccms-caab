@@ -144,8 +144,8 @@ public class ActionsAndNotificationsController {
       @RequestParam(value = "notification_type", required = false) String notificationType,
       Model model) {
     if (StringUtils.hasText(notificationType)) {
-      criteria.setNotificationType(notificationType.equals("all") ? "" : notificationType);
-      if (notificationType.equals("all")) {
+      criteria.setNotificationType("all".equals(notificationType) ? "" : notificationType);
+      if ("all".equals(notificationType)) {
         NotificationSearchCriteria.reset(criteria);
       }
       criteria.setLoginId(user.getLoginId());
@@ -208,7 +208,9 @@ public class ActionsAndNotificationsController {
         user.getProvider().getId())
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException(
-            String.format("Notification with id %s not found", notificationId)));
+        "Notification with id %s not found".formatted(notificationId)));
+
+    session.setAttribute(NOTIFICATION_ID, notificationId);
 
     return prepareNotificationPageModel(notification,
         new NotificationResponseFormData(), model, session);
@@ -440,7 +442,7 @@ public class ActionsAndNotificationsController {
     notificationService.submitNotificationAttachments(notificationId, user.getLoginId(),
         user.getUserType(), user.getUserId());
 
-    return "redirect:/submissions/notification-attachments/confirmed";
+    return "redirect:/application/notification-attachments/confirmed";
   }
 
   /**
@@ -450,7 +452,7 @@ public class ActionsAndNotificationsController {
    * @param notification the notification.
    * @return a redirect to the provide documents or evidence page.
    */
-  @PostMapping("/submissions/notification-attachments/confirmed")
+  @PostMapping("/application/notification-attachments/confirmed")
   public String notificationAttachmentsSubmitted(
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @SessionAttribute(NOTIFICATION) Notification notification, HttpSession session) {
@@ -460,8 +462,8 @@ public class ActionsAndNotificationsController {
         .getNotification(notificationId, user.getUserId(), user.getProvider().getId())
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException(
-            String.format("Notification with id %s not found",
-                notificationId)));
+        "Notification with id %s not found".formatted(
+            notificationId)));
     session.setAttribute(NOTIFICATION, updatedNotification);
 
     return "redirect:/notifications/%s/provide-documents-or-evidence".formatted(notificationId);

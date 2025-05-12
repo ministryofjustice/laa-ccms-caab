@@ -54,7 +54,7 @@ class ClientEqualOpportunitiesMonitoringDetailsValidatorTest {
     validator.validate(monitoringDetails, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
-    assertEquals("required.ethnicOrigin",errors.getAllErrors().get(0).getCode());
+    assertEquals("required.ethnicOrigin", errors.getAllErrors().getFirst().getCode());
   }
 
   @ParameterizedTest
@@ -64,10 +64,10 @@ class ClientEqualOpportunitiesMonitoringDetailsValidatorTest {
     validator.validate(monitoringDetails, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
-    assertEquals("required.disability",errors.getAllErrors().get(0).getCode());
+    assertEquals("required.disability", errors.getAllErrors().getFirst().getCode());
   }
 
-  private ClientFormDataMonitoringDetails buildClientDetails(){
+  private ClientFormDataMonitoringDetails buildClientDetails() {
     ClientFormDataMonitoringDetails monitoringDetails1 = new ClientFormDataMonitoringDetails();
     monitoringDetails1.setEthnicOrigin("TEST");
     monitoringDetails1.setDisability("TEST");

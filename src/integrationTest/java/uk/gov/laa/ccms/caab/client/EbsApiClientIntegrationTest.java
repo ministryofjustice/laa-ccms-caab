@@ -75,7 +75,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     final UserDetail expectedUserDetail = buildUserDetail();
     final String userJson = objectMapper.writeValueAsString(expectedUserDetail);
 
-    wiremock.stubFor(get(String.format("/users/%s", expectedUserDetail.getLoginId()))
+    wiremock.stubFor(get("/users/%s".formatted(expectedUserDetail.getLoginId()))
         .willReturn(okJson(userJson)));
 
     final Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(expectedUserDetail.getLoginId());
@@ -88,9 +88,9 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   @Test
   public void testGetUser_notFound() {
     final String loginId = "user1";
-    final String expectedMessage = String.format(USER_ERROR_MESSAGE, loginId);
+    final String expectedMessage = USER_ERROR_MESSAGE.formatted(loginId);
 
-    wiremock.stubFor(get(String.format("/users/%s", loginId))
+    wiremock.stubFor(get("/users/%s".formatted(loginId))
         .willReturn(notFound()));
 
     final Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(loginId);
@@ -150,7 +150,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     final ProviderDetail provider = buildProviderDetail();
     final String providerJson = objectMapper.writeValueAsString(provider);
 
-    wiremock.stubFor(get(String.format("/providers/%s", provider.getId()))
+    wiremock.stubFor(get("/providers/%s".formatted(provider.getId()))
         .willReturn(okJson(providerJson)));
 
     final ProviderDetail result = ebsApiClient.getProvider(provider.getId()).block();
@@ -188,7 +188,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
         .addContentItem(user);
 
     final String userDetailsJson = objectMapper.writeValueAsString(userDetails);
-    wiremock.stubFor(get(String.format("/users?size=1000&provider-id=%s", providerId))
+    wiremock.stubFor(get("/users?size=1000&provider-id=%s".formatted(providerId))
         .willReturn(okJson(userDetailsJson)));
     final UserDetails result = ebsApiClient.getUsers(providerId).block();
 
@@ -202,7 +202,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     final Integer providerId = 123;
     final String expectedMessage = "Failed to retrieve Users with parameters: size=1000, "
         + "provider-id=123";
-    wiremock.stubFor(get(String.format("/users?size=1000&provider-id=%s", providerId))
+    wiremock.stubFor(get("/users?size=1000&provider-id=%s".formatted(providerId))
         .willReturn(notFound()));
     final Mono<UserDetails> userDetailsMono = ebsApiClient.getUsers(providerId);
 
@@ -220,7 +220,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     final String notificationSummaryJson = objectMapper.writeValueAsString(
         expectedNotificationsummary);
 
-    wiremock.stubFor(get(String.format("/users/%s/notifications/summary", loginId))
+    wiremock.stubFor(get("/users/%s/notifications/summary".formatted(loginId))
         .willReturn(okJson(notificationSummaryJson)));
 
     final Mono<NotificationSummary> userNotificationSummary =
@@ -235,9 +235,9 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   @Test
   public void testGetUserNotificationSummary_notFound() {
     final String loginId = "user1";
-    final String expectedMessage = String.format(USER_ERROR_MESSAGE, loginId);
+    final String expectedMessage = USER_ERROR_MESSAGE.formatted(loginId);
 
-    wiremock.stubFor(get(String.format("/users/%s/notifications/summary", loginId))
+    wiremock.stubFor(get("/users/%s/notifications/summary".formatted(loginId))
         .willReturn(notFound()));
 
     final Mono<NotificationSummary> notificationSummary = ebsApiClient.getUserNotificationSummary(
@@ -263,8 +263,8 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     int size = 10;
 
     wiremock.stubFor(
-        get(String.format("/notifications?provider-id=20&assigned-to-user-id=%s&include-closed=%s&page=%s&" +
-                "size=%s",
+        get(String.format("/notifications?provider-id=20&assigned-to-user-id=%s&include-closed=%s&page=%s&"
+                + "size=%s",
             criteria.getAssignedToUserId(),
             criteria.isIncludeClosed(),
             page,
@@ -300,7 +300,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     // Given
     CaseReferenceSummary expected =
         new CaseReferenceSummary().caseReferenceNumber("1234567890");
-    final String expectedMessage = String.format(CASE_REFERENCE_MESSAGE);
+    final String expectedMessage = CASE_REFERENCE_MESSAGE.formatted();
 
     wiremock.stubFor(post("/case-reference")
         .willReturn(serverError()));
@@ -326,15 +326,15 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     CaseDetails caseDetails = buildCaseDetails();
     String caseDetailsJson = objectMapper.writeValueAsString(caseDetails);
 
-    wiremock.stubFor(get(String.format("/cases?provider-id=%s&" +
-            "case-reference-number=%s&" +
-            "provider-case-reference=%s&" +
-            "case-status=%s&" +
-            "fee-earner-id=%s&" +
-            "office-id=%s&" +
-            "client-surname=%s&" +
-            "page=%s&" +
-            "size=%s",
+    wiremock.stubFor(get(String.format("/cases?provider-id=%s&"
+            + "case-reference-number=%s&"
+            + "provider-case-reference=%s&"
+            + "case-status=%s&"
+            + "fee-earner-id=%s&"
+            + "office-id=%s&"
+            + "client-surname=%s&"
+            + "page=%s&"
+            + "size=%s",
         providerId,
         searchCriteria.getCaseReference(),
         searchCriteria.getProviderCaseReference(),
@@ -361,7 +361,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     TransactionStatus expected = new TransactionStatus().submissionStatus("Success").referenceNumber("123");
     String transactionDetailsJson = objectMapper.writeValueAsString(expected);
     String transactionId = "1234567890";
-    wiremock.stubFor(get(String.format("/clients/status/%s", transactionId)).willReturn(
+    wiremock.stubFor(get("/clients/status/%s".formatted(transactionId)).willReturn(
         okJson(transactionDetailsJson)
     ));
     // When

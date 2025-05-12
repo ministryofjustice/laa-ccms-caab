@@ -77,6 +77,7 @@ import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.data.model.AssessmentScreen;
 import uk.gov.laa.ccms.data.model.Award;
 import uk.gov.laa.ccms.data.model.BaseClient;
+import uk.gov.laa.ccms.data.model.CaseDetail;
 import uk.gov.laa.ccms.data.model.CaseDoc;
 import uk.gov.laa.ccms.data.model.CaseStatus;
 import uk.gov.laa.ccms.data.model.CaseSummary;
@@ -99,6 +100,7 @@ import uk.gov.laa.ccms.data.model.PriorAuthorityAttribute;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.Proceeding;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetails;
 import uk.gov.laa.ccms.data.model.RecordHistory;
 import uk.gov.laa.ccms.data.model.Recovery;
 import uk.gov.laa.ccms.data.model.ScopeLimitation;
@@ -580,8 +582,11 @@ public interface EbsApplicationMapper {
    */
   @AfterMapping
   default void finaliseAward(@MappingTarget final BaseAwardDetail baseAward) {
-    baseAward.getLiableParties().forEach(
-        liableParty -> liableParty.setAwardType(baseAward.getAwardType()));
+    if (baseAward.getLiableParties() != null) {
+      baseAward
+          .getLiableParties()
+          .forEach(liableParty -> liableParty.setAwardType(baseAward.getAwardType()));
+    }
   }
 
   @Mapping(target = "opponentId", source = ".")
@@ -720,7 +725,7 @@ public interface EbsApplicationMapper {
   @Mapping(target = "dischargeStatus", ignore = true)
   @Mapping(target = "caseStatus", ignore = true)
   @Mapping(target = "availableFunctions", ignore = true)
-  uk.gov.laa.ccms.data.model.CaseDetail toEbsCaseDetail(CaseMappingContext context);
+  CaseDetail toEbsCaseDetail(CaseMappingContext context);
 
   @Mapping(target = "ccmsDocumentId", source = "registeredDocumentId")
   @Mapping(target = "documentSubject", source = "documentType.displayValue")
@@ -821,7 +826,7 @@ public interface EbsApplicationMapper {
   @Mapping(target = "contactUserId.userId", ignore = true)
   @Mapping(target = "contactUserId.username", ignore = true)
   @Mapping(target = "contactUserId.userType", ignore = true)
-  uk.gov.laa.ccms.data.model.ProviderDetails toEbsProviderDetail(
+  ProviderDetails toEbsProviderDetail(
       ApplicationProviderDetails providerDetail);
 
   @Mapping(target = "categoryOfLawCode", source = "categoryOfLaw.id")
@@ -1077,7 +1082,7 @@ public interface EbsApplicationMapper {
     if (opponentDetail == null || opponentDetail.getType() == null) {
       return null;
     }
-    return opponentDetail.getType().equalsIgnoreCase(OPPONENT_TYPE_INDIVIDUAL)
+    return OPPONENT_TYPE_INDIVIDUAL.equalsIgnoreCase(opponentDetail.getType())
         ? toEbsPerson(opponentDetail)
         : null;
   }
@@ -1094,7 +1099,7 @@ public interface EbsApplicationMapper {
     if (opponentDetail == null || opponentDetail.getType() == null) {
       return null;
     }
-    return opponentDetail.getType().equalsIgnoreCase(OPPONENT_TYPE_ORGANISATION)
+    return OPPONENT_TYPE_ORGANISATION.equalsIgnoreCase(opponentDetail.getType())
         ? toEbsOrganisation(opponentDetail)
         : null;
   }
@@ -1110,7 +1115,7 @@ public interface EbsApplicationMapper {
   @Named("mapProceedingId")
   default String proceedingId(final Integer id) {
     return id != null
-        ? String.format("P_%s", id)
+        ? "P_%s".formatted(id)
         : null;
   }
 

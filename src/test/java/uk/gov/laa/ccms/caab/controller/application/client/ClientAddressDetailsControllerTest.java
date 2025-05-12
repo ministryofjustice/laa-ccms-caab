@@ -35,7 +35,6 @@ import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
-import uk.gov.laa.ccms.data.model.Page;
 
 @ExtendWith(MockitoExtension.class)
 public class ClientAddressDetailsControllerTest {
@@ -113,7 +112,7 @@ public class ClientAddressDetailsControllerTest {
 
   @Test
   void testClientDetailsAddressPostFindAddress_WithAddresses() throws Exception {
-    ResultsDisplay<AddressResultRowDisplay> addressResults = new ResultsDisplay<AddressResultRowDisplay>();
+    ResultsDisplay<AddressResultRowDisplay> addressResults = new ResultsDisplay<>();
     addressResults.setContent(new ArrayList<>());
     addressResults.getContent().add(new AddressResultRowDisplay());
 

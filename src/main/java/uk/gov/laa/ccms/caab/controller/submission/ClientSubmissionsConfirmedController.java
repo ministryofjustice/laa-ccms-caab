@@ -10,9 +10,12 @@ import java.text.ParseException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
+import uk.gov.laa.ccms.caab.constants.ContextConstants;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -39,7 +42,7 @@ public class ClientSubmissionsConfirmedController {
    * @param session The http session for the view.
    * @return The view name for a client creation submission page.
    */
-  @PostMapping("/submissions/client-create/confirmed")
+  @PostMapping("/application/client-create/confirmed")
   public String clientCreateSubmitted(
       @SessionAttribute(APPLICATION_FORM_DATA) final ApplicationFormData applicationFormData,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
@@ -62,9 +65,19 @@ public class ClientSubmissionsConfirmedController {
         .thenReturn("redirect:/application/sections").block();
   }
 
-  @PostMapping("/submissions/client-update/confirmed")
-  public String clientUpdateSubmitted() {
-    return "redirect:/application/sections";
+  /**
+   * Handles the POST request for a client update submission.
+   *
+   * @param context The context of the application. Should be either "submissions" or "amendments".
+   * @return Redirect path to go back to either case sections or amendments summary page.
+   */
+  @PostMapping("/{context}/client-update/confirmed")
+  public String clientUpdateSubmitted(@PathVariable("context") final String context) {
+    return switch (context) {
+      case ContextConstants.APPLICATION -> "redirect:/application/sections";
+      case ContextConstants.AMENDMENTS -> "redirect:/amendments/summary";
+      default -> throw new CaabApplicationException("Unknown context used: " + context);
+    };
   }
 
 

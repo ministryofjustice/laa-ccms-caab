@@ -285,14 +285,14 @@ public class ProviderRequestsController {
                     CcmsModule.REQUEST)
                 .blockOptional()
                 .orElseThrow(() -> new CaabApplicationException(
-                    String.format("Invalid document session id: %s", documentSessionId)));
+                "Invalid document session id: %s".formatted(documentSessionId)));
 
         //using the list of documents, we need to upload them to ebs through soa.
         // we also update the status of the documents in the tds to say they have been uploaded
         evidenceService.uploadAndUpdateDocuments(
             documents, UNRELATED_CASE_REFERENCE, notificationId, userDetail).block();
       }
-      return "redirect:/submissions/provider-request/confirmed";
+      return "redirect:/application/provider-request/confirmed";
     }
   }
 
@@ -477,7 +477,7 @@ public class ProviderRequestsController {
               .map(EvidenceDocumentDetails::getContent)
               .blockOptional()
               .orElseThrow(() -> new CaabApplicationException(
-                  String.format("Invalid document session id: %s", documentSessionId)));
+              "Invalid document session id: %s".formatted(documentSessionId)));
 
       model.addAttribute("documentsUploaded", documents);
     } else {
@@ -544,7 +544,7 @@ public class ProviderRequestsController {
         providerRequestDocumentUploadValidator.getMaxFileSize());
   }
 
-  @PostMapping("/submissions/provider-request/confirmed")
+  @PostMapping("/application/provider-request/confirmed")
   public String clientUpdateSubmitted(final SessionStatus sessionStatus) {
     sessionStatus.setComplete();
     return "redirect:/home";

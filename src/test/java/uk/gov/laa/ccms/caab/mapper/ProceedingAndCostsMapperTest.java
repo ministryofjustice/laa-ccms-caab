@@ -209,8 +209,8 @@ class ProceedingAndCostsMapperTest {
 
     assertNotNull(result);
     assertEquals(2, result.size());
-    assertEquals(ebsScopeLimitation1.getScopeLimitations(), result.get(0).getScopeLimitation().getId());
-    assertEquals(ebsScopeLimitation1.getDescription(), result.get(0).getScopeLimitation().getDisplayValue());
+    assertEquals(ebsScopeLimitation1.getScopeLimitations(), result.getFirst().getScopeLimitation().getId());
+    assertEquals(ebsScopeLimitation1.getDescription(), result.getFirst().getScopeLimitation().getDisplayValue());
     assertEquals(ebsScopeLimitation2.getScopeLimitations(), result.get(1).getScopeLimitation().getId());
     assertEquals(ebsScopeLimitation2.getDescription(), result.get(1).getScopeLimitation().getDisplayValue());
   }
@@ -548,7 +548,7 @@ class ProceedingAndCostsMapperTest {
 
     assertNotNull(result);
     assertEquals(1, result.size());
-    ReferenceDataItemDetail item = result.get(0);
+    ReferenceDataItemDetail item = result.getFirst();
     assertEquals("Key1", item.getCode().getId());
     assertEquals("Description 1", item.getCode().getDisplayValue());
     assertEquals("LOV1", item.getLovLookUp());

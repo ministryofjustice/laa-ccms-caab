@@ -48,4 +48,3 @@ public class CaseSearchCriteria implements Serializable {
    */
   private String status;
 }
-

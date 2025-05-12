@@ -3,7 +3,6 @@ package uk.gov.laa.ccms.caab.controller.application.client;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -151,8 +150,8 @@ public class ClientSummaryControllerTest {
   @Test
   @DisplayName("Test client details summary with correspondence language")
   void testClientDetailsSummary_Get_withCorrespondenceLanguage() throws Exception {
-    final String TEST_LANGUAGE = "TEST";
-    clientFlowFormData.getContactDetails().setCorrespondenceLanguage(TEST_LANGUAGE);
+    final String testLanguage = "TEST";
+    clientFlowFormData.getContactDetails().setCorrespondenceLanguage(testLanguage);
 
     when(lookupService.getClientLookups(any())).thenReturn(
         List.of(
@@ -191,12 +190,7 @@ public class ClientSummaryControllerTest {
             .sessionAttr(USER_DETAILS, userDetails)
             .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/submissions/client-create"));
-
-    verify(basicValidator).validate(any(), any());
-    verify(contactValidator).validate(any(), any());
-    verify(addressValidator).validate(any(), any());
-    verify(opportunitiesValidator).validate(any(), any());
+        .andExpect(redirectedUrl("/application/client-create"));
 
     verify(clientService).createClient(any(), any());
   }

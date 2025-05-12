@@ -134,7 +134,7 @@ class SoaApiClientTest {
     String loginId = "user1";
     String userType = "userType";
 
-    String expectedUri = String.format("/cases/%s", caseReferenceNumber);
+    String expectedUri = "/cases/%s".formatted(caseReferenceNumber);
 
     CaseDetail mockCaseDetail = new CaseDetail();
 
@@ -366,8 +366,7 @@ class SoaApiClientTest {
     searchCriteria.setCity("thecity");
     searchCriteria.setPostcode("thepostcode");
 
-    String expectedUri = String.format(
-        "/organisations?name=%s&type=%s&city=%s&postcode=%s&page=%s&size=%s",
+    String expectedUri = "/organisations?name=%s&type=%s&city=%s&postcode=%s&page=%s&size=%s".formatted(
         searchCriteria.getName(),
         searchCriteria.getType(),
         searchCriteria.getCity(),
@@ -447,7 +446,7 @@ class SoaApiClientTest {
     String userType = "userType";
     String orgId = "123";
 
-    String expectedUri = String.format("/organisations/%s", orgId);
+    String expectedUri = "/organisations/%s".formatted(orgId);
 
     OrganisationDetail mockOrganisationDetail = new OrganisationDetail();
 

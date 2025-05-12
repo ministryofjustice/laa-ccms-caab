@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -227,7 +228,7 @@ public interface ProceedingAndCostsMapper {
 
     if (items != null) {
       return items.stream().collect(
-          java.util.stream.Collectors.toMap(
+          Collectors.toMap(
               item -> item.getCode().getId(),
               item -> {
                 final DynamicOptionFormData option =

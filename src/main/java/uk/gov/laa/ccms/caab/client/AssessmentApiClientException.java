@@ -1,15 +1,12 @@
 package uk.gov.laa.ccms.caab.client;
 
 
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 /**
  * Represents exceptions that may occur while interacting with the Assessment API microservice.
  */
-public class AssessmentApiClientException extends RuntimeException {
-  @Getter
-  HttpStatus httpStatus;
+public class AssessmentApiClientException extends ApiClientException {
 
   /**
    * Constructs a new Assessment API client exception with the specified detail message.
@@ -39,7 +36,6 @@ public class AssessmentApiClientException extends RuntimeException {
    * @param httpStatus the http status of the response
    */
   public AssessmentApiClientException(String message, HttpStatus httpStatus) {
-    super(message);
-    this.httpStatus = httpStatus;
+    super(message, httpStatus);
   }
 }

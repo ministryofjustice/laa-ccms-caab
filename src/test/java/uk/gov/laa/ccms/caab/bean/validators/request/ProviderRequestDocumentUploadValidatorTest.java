@@ -57,7 +57,7 @@ class ProviderRequestDocumentUploadValidatorTest {
 
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("file"));
-    assertEquals(String.format(FileUploadValidator.MAX_FILESIZE_ERROR, "5MB"),
+    assertEquals(FileUploadValidator.MAX_FILESIZE_ERROR.formatted("5MB"),
         errors.getFieldError("file").getDefaultMessage());
   }
 

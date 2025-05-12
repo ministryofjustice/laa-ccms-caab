@@ -1,7 +1,11 @@
 package uk.gov.laa.ccms.caab.bean.opponent;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
+import static uk.gov.laa.ccms.caab.constants.CharacterLimitationConstants.DEFAULT_CHARACTER_SIZE;
+import static uk.gov.laa.ccms.caab.constants.CharacterLimitationConstants.NATIONAL_INSURANCE_NUMBER_CHARACTER_SIZE;
+import static uk.gov.laa.ccms.caab.constants.CharacterLimitationConstants.TELEPHONE_NUMBER_CHARACTER_SIZE;
 
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import uk.gov.laa.ccms.caab.bean.common.Individual;
@@ -25,16 +29,19 @@ public class IndividualOpponentFormData extends AbstractOpponentFormData impleme
   /**
    * The first name of an individual opponent.
    */
+  @Size(max = DEFAULT_CHARACTER_SIZE)
   private String firstName;
 
   /**
    * THe middle name(s) of an individual opponent.
    */
+  @Size(max = DEFAULT_CHARACTER_SIZE)
   private String middleNames;
 
   /**
    * The surname of an individual opponent.
    */
+  @Size(max = DEFAULT_CHARACTER_SIZE)
   private String surname;
 
   /**
@@ -45,16 +52,19 @@ public class IndividualOpponentFormData extends AbstractOpponentFormData impleme
   /**
    * The national insurance number of an individual opponent.
    */
+  @Size(max = NATIONAL_INSURANCE_NUMBER_CHARACTER_SIZE)
   private String nationalInsuranceNumber;
 
   /**
    * The home telephone number for the opponent.
    */
+  @Size(max = TELEPHONE_NUMBER_CHARACTER_SIZE)
   private String telephoneHome;
 
   /**
    * The mobile number for the opponent.
    */
+  @Size(max = TELEPHONE_NUMBER_CHARACTER_SIZE)
   private String telephoneMobile;
 
   /**
@@ -65,6 +75,7 @@ public class IndividualOpponentFormData extends AbstractOpponentFormData impleme
   /**
    * The opponent's legal aid certificate number.
    */
+  @Size(max = DEFAULT_CHARACTER_SIZE)
   private String certificateNumber;
 
   /**

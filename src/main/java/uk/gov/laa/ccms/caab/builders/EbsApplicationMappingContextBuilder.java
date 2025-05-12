@@ -56,11 +56,14 @@ import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthority;
 import uk.gov.laa.ccms.data.model.PriorAuthorityAttribute;
+import uk.gov.laa.ccms.data.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 import uk.gov.laa.ccms.data.model.Proceeding;
 import uk.gov.laa.ccms.data.model.ProceedingDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
+import uk.gov.laa.ccms.data.model.ProviderDetails;
 import uk.gov.laa.ccms.data.model.ScopeLimitation;
+import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
 import uk.gov.laa.ccms.data.model.SubmittedApplicationDetails;
@@ -98,7 +101,7 @@ public class EbsApplicationMappingContextBuilder {
     final SubmittedApplicationDetails ebsApplicationDetails =
         ebsCase.getApplicationDetails();
 
-    final uk.gov.laa.ccms.data.model.ProviderDetails ebsProvider =
+    final ProviderDetails ebsProvider =
         ebsApplicationDetails.getProviderDetails();
 
     // Determine whether all the proceedings in the ebsCase are at status DRAFT
@@ -124,7 +127,7 @@ public class EbsApplicationMappingContextBuilder {
                 .description(ebsCase.getCertificateType())))
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException(
-            String.format("Failed to retrieve applicationtype with code: %s",
+            "Failed to retrieve applicationtype with code: %s".formatted(
                 ebsCase.getCertificateType()))) : null;
 
     // Lookup the application type display value - this should be based on the
@@ -138,7 +141,7 @@ public class EbsApplicationMappingContextBuilder {
                 .orElse(certificateLookup))
             .blockOptional()
             .orElseThrow(() -> new CaabApplicationException(
-                String.format("Failed to retrieve applicationtype with code: %s",
+                "Failed to retrieve applicationtype with code: %s".formatted(
                     ebsApplicationDetails.getApplicationAmendmentType()))) : certificateLookup;
 
     // Find the correct provider office.
@@ -147,8 +150,8 @@ public class EbsApplicationMappingContextBuilder {
             String.valueOf(officeDetail.getId())))
         .findAny()
         .orElseThrow(() -> new CaabApplicationException(
-            String.format("Failed to find Office with id: %s",
-                ebsProvider.getProviderOfficeId())));
+        "Failed to find Office with id: %s".formatted(
+            ebsProvider.getProviderOfficeId())));
 
     // Get the Fee Earners for the relevant office, and Map them by contact id.
     final Map<Integer, ContactDetail> feeEarnerById =
@@ -360,8 +363,8 @@ public class EbsApplicationMappingContextBuilder {
 
       // Build the scope limitation search criteria.
       // Only include the emergency flag in the criteria if the app type is classified as emergency.
-      uk.gov.laa.ccms.data.model.ScopeLimitationDetail searchCriteria =
-          new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+      ScopeLimitationDetail searchCriteria =
+          new ScopeLimitationDetail()
               .categoryOfLaw(ebsCase.getApplicationDetails().getCategoryOfLaw()
                   .getCategoryOfLawCode())
               .matterType(proceeding.getMatterType())
@@ -392,7 +395,7 @@ public class EbsApplicationMappingContextBuilder {
 
   protected void addProceedingOutcomeContext(
       final EbsProceedingMappingContext.EbsProceedingMappingContextBuilder contextBuilder,
-      final uk.gov.laa.ccms.data.model.Proceeding ebsProceeding) {
+      final Proceeding ebsProceeding) {
 
     if (ebsProceeding.getOutcome() == null) {
       return; // Nothing to add
@@ -423,13 +426,13 @@ public class EbsApplicationMappingContextBuilder {
 
     // Use the outcome result display data, if we have it.
     final OutcomeResultLookupValueDetail outcomeResultLookup =
-        !combinedOutcomeResults.getT2().getContent().isEmpty()
-            ? combinedOutcomeResults.getT2().getContent().getFirst() : null;
+        combinedOutcomeResults.getT2().getContent().isEmpty()
+            ? null : combinedOutcomeResults.getT2().getContent().getFirst();
 
     // Lookup the stage end display value.
     final StageEndLookupValueDetail stageEndLookup =
-        !combinedOutcomeResults.getT3().getContent().isEmpty()
-            ? combinedOutcomeResults.getT3().getContent().getFirst() : null;
+        combinedOutcomeResults.getT3().getContent().isEmpty()
+            ? null : combinedOutcomeResults.getT3().getContent().getFirst();
 
     // Update the builder with outcome-related lookup data
     contextBuilder.courtLookup(courtLookup)
@@ -488,7 +491,7 @@ public class EbsApplicationMappingContextBuilder {
     return Optional.ofNullable(awardTypes.get(award.getAwardType()))
         .map(AwardTypeLookupValueDetail::getAwardType)
         .orElseThrow(() -> new CaabApplicationException(
-            String.format("Failed to find AwardType with code: %s", award.getAwardType())));
+        "Failed to find AwardType with code: %s".formatted(award.getAwardType())));
   }
 
   /**
@@ -511,21 +514,21 @@ public class EbsApplicationMappingContextBuilder {
                     .description(ebsPriorAuthority.getPriorAuthorityType())))
             .blockOptional()
             .orElseThrow(() -> new CaabApplicationException(
-                String.format("Failed to find PriorAuthorityType with code: %s",
-                    ebsPriorAuthority.getPriorAuthorityType())));
+            "Failed to find PriorAuthorityType with code: %s".formatted(
+                ebsPriorAuthority.getPriorAuthorityType())));
 
     // Build a Map of PriorAuthorityDetail keyed on code
-    Map<String, uk.gov.laa.ccms.data.model.PriorAuthorityDetail> priorAuthDetailMap =
+    Map<String, PriorAuthorityDetail> priorAuthDetailMap =
         priorAuthorityType.getPriorAuthorities().stream().collect(
-            Collectors.toMap(uk.gov.laa.ccms.data.model.PriorAuthorityDetail::getCode,
+            Collectors.toMap(PriorAuthorityDetail::getCode,
                 Function.identity()));
 
     // Build a List of priorAuthorityDetails paired with the common lookup for display info.
-    List<Pair<uk.gov.laa.ccms.data.model.PriorAuthorityDetail,
+    List<Pair<PriorAuthorityDetail,
         CommonLookupValueDetail>> priorAuthorityDetails =
         ebsPriorAuthority.getDetails().stream()
             .map(priorAuthorityAttribute -> {
-              uk.gov.laa.ccms.data.model.PriorAuthorityDetail priorAuthorityDetail =
+              PriorAuthorityDetail priorAuthorityDetail =
                   priorAuthDetailMap.get(priorAuthorityAttribute.getName());
               return Pair.of(
                   priorAuthorityDetail,
@@ -541,7 +544,7 @@ public class EbsApplicationMappingContextBuilder {
   }
 
   private CommonLookupValueDetail getPriorAuthLookup(
-      final uk.gov.laa.ccms.data.model.PriorAuthorityDetail priorAuthorityDetail,
+      final PriorAuthorityDetail priorAuthorityDetail,
       final PriorAuthorityAttribute priorAuthorityAttribute) {
     String description;
 
@@ -556,8 +559,8 @@ public class EbsApplicationMappingContextBuilder {
               .orElse(priorAuthorityAttribute.getValue()))
           .blockOptional()
           .orElseThrow(() -> new CaabApplicationException(
-              String.format("Failed to find common value with code: %s",
-                  priorAuthorityAttribute.getValue())));
+          "Failed to find common value with code: %s".formatted(
+              priorAuthorityAttribute.getValue())));
     } else {
       description = priorAuthorityAttribute.getValue();
     }

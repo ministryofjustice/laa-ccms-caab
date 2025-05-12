@@ -176,7 +176,7 @@ public class ApplicationService {
 
       if (caseDetails.getTotalElements() > searchConstants.getMaxSearchResultsCases()) {
         throw new TooManyResultsException(
-            String.format("Case Search returned %s results", caseDetails.getTotalElements()));
+            "Case Search returned %s results".formatted(caseDetails.getTotalElements()));
       }
 
       searchResults.addAll(caseDetails.getContent().stream()
@@ -232,7 +232,7 @@ public class ApplicationService {
     // Final check of the number of results now that the two searches have been combined.
     if (searchResults.size() > searchConstants.getMaxSearchResultsCases()) {
       throw new TooManyResultsException(
-          String.format("Case Search returned %s results", searchResults.size()));
+          "Case Search returned %s results".formatted(searchResults.size()));
     }
 
     // Sort the combined list by Case Reference
@@ -293,10 +293,8 @@ public class ApplicationService {
       final String caseReferenceNumber,
       final long providerId,
       final String userName) {
-    uk.gov.laa.ccms.data.model.CaseDetail ebsCase = Optional.ofNullable(
-            ebsApiClient.getCase(caseReferenceNumber, providerId, userName).block())
-        .orElseThrow(() -> new CaabApplicationException(
-            String.format("Failed to retrieve EBS Case with ref: %s", caseReferenceNumber)));
+    uk.gov.laa.ccms.data.model.CaseDetail ebsCase =
+        ebsApiClient.getCase(caseReferenceNumber, providerId, userName).block();
 
     return ebsApplicationMapper.toApplicationDetail(ebsApplicationMappingContextBuilder
         .buildApplicationMappingContext(ebsCase));
@@ -730,9 +728,9 @@ public class ApplicationService {
     final ResultsDisplay<LinkedCaseResultRowDisplay> results = new ResultsDisplay<>();
 
     return caabApiClient.getLinkedCases(applicationId)
-        .flatMapMany(Flux::fromIterable) // Convert to Flux<LinkedCaseDetail>
-        .map(resultDisplayMapper::toLinkedCaseResultRowDisplay) // Map to ResultRowDisplay
-        .collectList() // Collect into a List
+        .flatMapMany(Flux::fromIterable)// Convert to Flux<LinkedCaseDetail>
+        .map(resultDisplayMapper::toLinkedCaseResultRowDisplay)// Map to ResultRowDisplay
+        .collectList()// Collect into a List
         .map(list -> {
           results.setContent(list); // Set the content of ResultsDisplay
           return results; // Return the populated ResultsDisplay
@@ -798,7 +796,7 @@ public class ApplicationService {
       final String proceedingCode,
       final String levelOfService,
       final String applicationType,
-      final List<uk.gov.laa.ccms.caab.model.ScopeLimitationDetail> scopeLimitations) {
+      final List<ScopeLimitationDetail> scopeLimitations) {
 
     BigDecimal maxValue = new BigDecimal(0);
     final List<Float> costLimitations = new ArrayList<>();
@@ -1203,7 +1201,7 @@ public class ApplicationService {
     final Mono<Optional<CommonLookupValueDetail>> organisationTypeLookupMono =
         isOrganisation
             ? lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES,
-            String.valueOf(opponent.getOrganisationType())) : Mono.just(Optional.empty());
+            opponent.getOrganisationType()) : Mono.just(Optional.empty());
 
     // Look up the relationship to case display value depending on opponent type.
     final Mono<Optional<RelationshipToCaseLookupValueDetail>> relationshipToCaseMono =
@@ -1234,7 +1232,7 @@ public class ApplicationService {
     final String organisationTypeDisplayValue =
         combinedResult.getT1()
             .map(CommonLookupValueDetail::getDescription)
-            .orElse(isOrganisation ? String.valueOf(opponent.getOrganisationType()) : null);
+            .orElse(isOrganisation ? opponent.getOrganisationType() : null);
 
     final String relationshipToCaseDisplayValue =
         combinedResult.getT2()

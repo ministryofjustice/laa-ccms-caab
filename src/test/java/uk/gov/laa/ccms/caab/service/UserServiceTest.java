@@ -56,7 +56,7 @@ public class UserServiceTest {
     when(ebsApiClient.getUsers(providerId)).thenReturn(Mono.just(userDetails));
     Mono<UserDetails> userDetailsMono = userService.getUsers(providerId);
     StepVerifier.create(userDetailsMono)
-        .expectNextMatches(userList -> userList.getContent().get(0).getLoginId().equals("login1"))
+        .expectNextMatches(userList -> "login1".equals(userList.getContent().getFirst().getLoginId()))
         .verifyComplete();
   }
 

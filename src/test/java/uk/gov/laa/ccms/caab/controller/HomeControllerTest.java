@@ -113,5 +113,3 @@ public class HomeControllerTest {
         .andExpect(model().attributeDoesNotExist("notificationsMsg"));
   }
 }
-
-

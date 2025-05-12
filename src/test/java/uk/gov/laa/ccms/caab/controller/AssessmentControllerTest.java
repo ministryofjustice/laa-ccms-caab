@@ -117,7 +117,7 @@ public class AssessmentControllerTest {
       final String category) throws Exception {
     when(assessmentService.deleteAssessments(any(), any(), any(), any())).thenReturn(Mono.empty());
 
-    this.mockMvc.perform(post(String.format("/assessments/%s/remove", category))
+    this.mockMvc.perform(post("/assessments/%s/remove".formatted(category))
             .sessionAttr(USER_DETAILS, userDetails)
             .sessionAttr(ACTIVE_CASE, activeCase))
         .andDo(print())

@@ -1069,7 +1069,7 @@ public interface SoaApplicationMapper {
     if (opponentDetail == null || opponentDetail.getType() == null) {
       return null;
     }
-    return opponentDetail.getType().equalsIgnoreCase(OPPONENT_TYPE_INDIVIDUAL)
+    return OPPONENT_TYPE_INDIVIDUAL.equalsIgnoreCase(opponentDetail.getType())
         ? toSoaPerson(opponentDetail)
         : null;
   }
@@ -1086,7 +1086,7 @@ public interface SoaApplicationMapper {
     if (opponentDetail == null || opponentDetail.getType() == null) {
       return null;
     }
-    return opponentDetail.getType().equalsIgnoreCase(OPPONENT_TYPE_ORGANISATION)
+    return OPPONENT_TYPE_ORGANISATION.equalsIgnoreCase(opponentDetail.getType())
         ? toSoaOrganisation(opponentDetail)
         : null;
   }
@@ -1102,7 +1102,7 @@ public interface SoaApplicationMapper {
   @Named("mapProceedingId")
   default String proceedingId(final Integer id) {
     return id != null
-        ? String.format("P_%s", id)
+        ? "P_%s".formatted(id)
         : null;
   }
 

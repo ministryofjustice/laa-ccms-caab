@@ -10,7 +10,7 @@ import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 /**
  * Utility class for handling display related operations.
  */
-public class DisplayUtil {
+public final class DisplayUtil {
 
   /**
    * Convenience method to handle concatenating a list of Strings into a comma-separated string,
@@ -58,9 +58,9 @@ public class DisplayUtil {
    * @return formatted name.
    */
   public static String getFullName(final String firstName, final String lastName) {
-    return String.format("%s%s",
-            StringUtils.hasText(firstName) ? firstName + " " : "",
-            StringUtils.hasText(lastName) ? lastName : "").trim();
+    return "%s%s".formatted(
+        StringUtils.hasText(firstName) ? firstName + " " : "",
+        StringUtils.hasText(lastName) ? lastName : "").trim();
   }
 
   /**
@@ -111,6 +111,9 @@ public class DisplayUtil {
     return Optional.ofNullable(intDisplayValue)
         .map(IntDisplayValue::getDisplayValue)
         .orElse(defaultDisplayValue);
+  }
+
+  private DisplayUtil() {
   }
 
 }
