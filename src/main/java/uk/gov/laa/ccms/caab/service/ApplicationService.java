@@ -674,6 +674,85 @@ public class ApplicationService {
         .build();
   }
 
+  public ApplicationSectionDisplay getApplicationSections2(
+      final ApplicationDetail application) {
+
+    String correspondenceMethod = "";
+    if (application.getCorrespondenceAddress() != null
+        && application.getCorrespondenceAddress().getPreferredAddress() != null) {
+      final String correspondenceCode =
+          application.getCorrespondenceAddress().getPreferredAddress();
+      correspondenceMethod = lookupService.getCommonValue(
+              COMMON_VALUE_CASE_ADDRESS_OPTION, correspondenceCode)
+          .blockOptional()
+          .orElseThrow(() -> new CaabApplicationException(
+              "Failed to retrieve correspondence lookup"))
+          .orElse(new CommonLookupValueDetail().description(correspondenceCode))
+          .getDescription();
+    }
+
+
+    final Mono<RelationshipToCaseLookupDetail> orgRelationshipsToCaseMono =
+        lookupService.getOrganisationToCaseRelationships();
+
+    final Mono<RelationshipToCaseLookupDetail> personRelationshipsToCaseMono =
+        lookupService.getPersonToCaseRelationships();
+
+    final Mono<CommonLookupDetail> relationshipsToClientMono =
+        lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT);
+
+    final Mono<CommonLookupDetail> contactTitlesMono =
+        lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE);
+
+
+    final Tuple4<RelationshipToCaseLookupDetail,
+        RelationshipToCaseLookupDetail,
+        CommonLookupDetail,
+        CommonLookupDetail> applicationSummaryMonos = Mono.zip(
+            orgRelationshipsToCaseMono,
+            personRelationshipsToCaseMono,
+            relationshipsToClientMono,
+            contactTitlesMono)
+        .blockOptional().orElseThrow(() ->
+            new CaabApplicationException("Failed to retrieve application summary"));
+
+    final List<RelationshipToCaseLookupValueDetail> organisationRelationships
+        = applicationSummaryMonos.getT1().getContent();
+    final List<RelationshipToCaseLookupValueDetail> personsRelationships
+        = applicationSummaryMonos.getT2().getContent();
+
+    final List<CommonLookupValueDetail> relationshipsToClient
+        = applicationSummaryMonos.getT3().getContent();
+
+    final List<CommonLookupValueDetail> contactTitles
+        = applicationSummaryMonos.getT4().getContent();
+
+
+    return new ApplicationSectionsBuilder()
+        .caseReferenceNumber(
+            application.getCaseReferenceNumber())
+        .applicationType(
+            application.getApplicationType())
+        .client(application.getClient())
+        .provider(application.getProviderDetails())
+        .generalDetails(
+            application.getStatus(),
+            application.getCategoryOfLaw(),
+            correspondenceMethod)
+        .proceedingsPriorAuthsAndCosts(
+            application.getProceedings(),
+            application.getPriorAuthorities(),
+            application.getCosts())
+        .opponentsAndOtherParties(
+            application.getOpponents(),
+            contactTitles,
+            organisationRelationships,
+            personsRelationships,
+            relationshipsToClient)
+        .linkedCases(application.getLinkedCases())
+        .build();
+  }
+
   public ApplicationFormData getApplicationTypeFormData(final String id) {
     return caabApiClient.getApplicationType(id)
         .map(applicationFormDataMapper::toApplicationTypeFormData).block();

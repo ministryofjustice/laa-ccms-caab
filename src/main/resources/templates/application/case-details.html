@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <title th:text="|#{service.name} - #{case.details}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a th:href="@{/case/overview}" class="govuk-back-link">Return to Case Overview</a>
+    </div>
+
+    <div id="main-content">
+        <h1 class="govuk-heading-l" th:text="#{case.details}"></h1>
+        <p class="govuk-body-l">
+            Please view the case details below. To view further details within the case, please click on the links
+            within the page.
+        </p>
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <table class="govuk-table">
+                    <caption class="govuk-table__caption govuk-table__caption--m">General details</caption>
+                    <tbody class="govuk-table__body">
+                    <tr class="govuk-table__row">
+                        <th class="govuk-table__header">Status of case</th>
+                        <td class="govuk-table__cell" th:text="${summary.generalDetails.applicationStatus}"></td>
+                        <th class="govuk-table__header">Preferred address</th>
+                        <td class="govuk-table__cell" th:text="${summary.generalDetails.correspondenceMethod}"></td>
+                    </tr>
+                    <tr class="govuk-table__row">
+                        <th class="govuk-table__header">Client name</th>
+                        <td class="govuk-table__cell" th:text="${summary.client.clientFullName}"></td>
+                        <th class="govuk-table__header">Application type</th>
+                        <td class="govuk-table__cell" th:text="${summary.applicationType.description}"></td>
+                    </tr>
+                    <tr class="govuk-table__row">
+                        <th class="govuk-table__header">Category of law</th>
+                        <td class="govuk-table__cell" th:text="${summary.generalDetails.categoryOfLaw}"></td>
+                        <th class="govuk-table__header">Delegated functions date</th>
+                        <td class="govuk-table__cell" th:if="${summary.applicationType.devolvedPowersUsed}"
+                            th:text="${#dates.format(summary.applicationType.devolvedPowersDate, 'dd/MM/yyyy')}"></td>
+                        <td class="govuk-table__cell" th:unless="${summary.applicationType.devolvedPowersUsed}">&nbsp;
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <table class="govuk-table">
+                    <caption class="govuk-table__caption govuk-table__caption--m">Linked Cases</caption>
+                    <thead>
+                    <tr>
+                        <th class="govuk-table__header">LAA Application / Case reference</th>
+                        <th class="govuk-table__header">Relationship to case / Application</th>
+                    </tr>
+                    </thead>
+                    <tbody class="govuk-table__body">
+                    <tr class="govuk-table__row"
+                        th:each="linkedCase : ${summary.linkedCasesDisplaySection.linkedCases}">
+                        <td class="govuk-table__cell">
+                            <a class="govuk-link govuk-link--no-visited-state"
+                               th:text="${linkedCase.lscCaseReference()}"
+                               href="#"/>
+                        </td>
+                        <td class="govuk-table__cell" th:text="${linkedCase.relationToCase()}"/>
+                    </tr>
+                    <tr class="govuk-table__row" th:if="${summary.linkedCasesDisplaySection.linkedCases.isEmpty()}">
+                        <td class="govuk-table__cell" colspan="4">None</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <table class="govuk-table">
+                    <caption class="govuk-table__caption govuk-table__caption--m">Provider details</caption>
+                    <tbody class="govuk-table__body">
+                    <tr class="govuk-table__row">
+                        <th class="govuk-table__header" nowrap="true">Provider case reference</th>
+                        <td class="govuk-table__cell" th:text="${summary.provider.providerCaseReferenceNumber}"></td>
+                        <th class="govuk-table__header">Fee earner</th>
+                        <td class="govuk-table__cell" th:text="${summary.provider.feeEarner}"></td>
+                    </tr>
+                    <tr class="govuk-table__row">
+                        <th class="govuk-table__header">Provider</th>
+                        <td class="govuk-table__cell" th:text="${summary.provider.providerName}"></td>
+                        <th class="govuk-table__header">Supervisor</th>
+                        <td class="govuk-table__cell" th:text="${summary.provider.supervisorName}"></td>
+                    </tr>
+                    <tr class="govuk-table__row">
+                        <th class="govuk-table__header">Office</th>
+                        <td class="govuk-table__cell" th:text="${summary.provider.officeName}"></td>
+                        <th class="govuk-table__header">Contact name</th>
+                        <td class="govuk-table__cell" th:text="${summary.provider.providerContactName}">&nbsp;</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+        <span class="govuk-heading-m">
+          Proceedings
+        </span>
+                <div>
+                    <table class="govuk-table">
+                        <thead>
+                        <tr>
+                            <th class="govuk-table__header">Proceeding</th>
+                            <th class="govuk-table__header">Matter type</th>
+                            <th class="govuk-table__header">Form of civil legal service</th>
+                            <th class="govuk-table__header">Client involvement type</th>
+                            <th class="govuk-table__header">Status</th>
+                        </tr>
+                        </thead>
+                        <tbody class="govuk-table__body">
+                        <tr th:unless="${summary.proceedingsAndCosts.proceedings.isEmpty()}"
+                            th:each="proceeding : ${summary.proceedingsAndCosts.proceedings}" class="govuk-table__row">
+                            <td class="govuk-table__cell">
+                                <a class="govuk-link govuk-link--no-visited-state"
+                                   th:text="${proceeding.proceedingType}"
+                                   href="#"/>
+                            </td>
+                            <td class="govuk-table__cell" th:text="${proceeding.matterType}"></td>
+                            <td class="govuk-table__cell" th:text="${proceeding.levelOfService}"></td>
+                            <td class="govuk-table__cell" th:text="${proceeding.clientInvolvement}"></td>
+                            <td class="govuk-table__cell" th:text="${proceeding.status}"></td>
+                        </tr>
+
+                        <tr th:if="${summary.proceedingsAndCosts.proceedings.isEmpty()}" class="govuk-table__row">
+                            <td class="govuk-table__cell" colspan="4">None</td>
+                        </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <table class="govuk-table">
+                    <caption class="govuk-table__caption govuk-table__caption--m">Costs</caption>
+                    <thead>
+                    <tr>
+                        <th class="govuk-table__header">Case costs</th>
+                        <th class="govuk-table__header">Requested amount</th>
+                        <th class="govuk-table__header">Granted amount</th>
+                    </tr>
+                    </thead>
+                    <tbody class="govuk-table__body">
+                    <tr class="govuk-table__row">
+                        <td class="govuk-table__cell">
+                            <a class="govuk-link govuk-link--no-visited-state" href="#">
+                                Case cost limitation
+                            </a>
+                        </td>
+                        <td class="govuk-table__cell"
+                            th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)}"></td>
+                        <td class="govuk-table__cell"
+                            th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <table class="govuk-table">
+                    <caption class="govuk-table__caption govuk-table__caption--m">Prior authority</caption>
+                    <thead>
+                    <tr>
+                        <th class="govuk-table__header">Prior authority</th>
+                        <th class="govuk-table__header">Prior authority type</th>
+                        <th class="govuk-table__header">Amount requested</th>
+                        <th class="govuk-table__header">Status</th>
+                    </tr>
+                    </thead>
+                    <tbody class="govuk-table__body">
+                    <tr class="govuk-table__row" th:each="priorAuthority : ${summary.priorAuthorities}">
+                        <td class="govuk-table__cell" th:text="${priorAuthority.description}"/>
+                        <td class="govuk-table__cell" th:text="${priorAuthority.type}"/>
+                        <td class="govuk-table__cell"
+                            th:text="${#numbers.formatCurrency(priorAuthority.amountRequested)}"/>
+                        <td class="govuk-table__cell" th:text="${priorAuthority.status}"/>
+                    </tr>
+                    <tr class="govuk-table__row" th:if="${summary.priorAuthorities.isEmpty()}">
+                        <td class="govuk-table__cell" colspan="4">None</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <table class="govuk-table">
+                    <caption class="govuk-table__caption govuk-table__caption--m">Opponents and other parties</caption>
+                    <thead>
+                    <tr>
+                        <th class="govuk-table__header">Party type</th>
+                        <th class="govuk-table__header">Party name</th>
+                        <th class="govuk-table__header">Relationship to client</th>
+                        <th class="govuk-table__header">Relationship to case</th>
+                    </tr>
+                    </thead>
+                    <tbody class="govuk-table__body">
+                    <tr class="govuk-table__row" th:each="opponent : ${summary.opponentsAndOtherParties.opponents}">
+                        <td class="govuk-table__cell">
+                            <a class="govuk-link govuk-link--no-visited-state"
+                               th:text="${opponent.partyType}"
+                               href="#"/>
+                        </td>
+                        <td class="govuk-table__cell" th:text="${opponent.partyName}"/>
+                        <td class="govuk-table__cell" th:text="${opponent.relationshipToClient}"/>
+                        <td class="govuk-table__cell" th:text="${opponent.relationshipToCase}"/>
+                    </tr>
+                    <tr class="govuk-table__row" th:if="${summary.opponentsAndOtherParties.opponents.isEmpty()}">
+                        <td class="govuk-table__cell" colspan="4">None</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>

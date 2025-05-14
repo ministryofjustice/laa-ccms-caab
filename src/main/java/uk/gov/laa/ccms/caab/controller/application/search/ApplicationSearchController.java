@@ -55,6 +55,7 @@ import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
@@ -235,6 +236,20 @@ public class ApplicationSearchController {
     model.addAttribute("draftCosts", draftCosts);
     session.setAttribute(CASE_REFERENCE_NUMBER, ebsCase.getCaseReferenceNumber());
     return "application/case-overview";
+  }
+
+  @GetMapping("/cases/details")
+  public String caseDetails(
+      @SessionAttribute(CASE) final ApplicationDetail application, Model model) {
+
+    final ApplicationSectionDisplay applicationSectionDisplay =
+        Optional.ofNullable(applicationService.getApplicationSections2(application))
+            .orElseThrow(() -> new CaabApplicationException(
+                "Failed to retrieve application summary"));
+
+    model.addAttribute("summary", applicationSectionDisplay);
+
+    return "application/case-details";
   }
 
   private static boolean hasEbsAmendments(ApplicationDetail ebsCase) {
