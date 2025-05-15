@@ -35,7 +35,7 @@ public class ActionViewHelper {
           "#"),
       new AvailableAction(
           FunctionConstants.VIEW_CASE, "action.viewCase.name", "action.viewCase.description",
-          "#"),
+          "/cases/details"),
       new AvailableAction(
           FunctionConstants.NOTIFICATIONS,
           "action.viewNotifications.name",

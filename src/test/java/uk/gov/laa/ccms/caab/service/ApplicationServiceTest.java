@@ -1,10 +1,12 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.AdditionalAnswers.returnsSecondArg;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,6 +35,8 @@ import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS_PREPOP;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MERITS;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MERITS_PREPOP;
+import static uk.gov.laa.ccms.caab.util.ApplicationDetailUtils.buildFullApplicationDetail;
+import static uk.gov.laa.ccms.caab.util.ApplicationDetailUtils.expectedApplicationSectionDisplay;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationProviderDetails;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
@@ -81,6 +85,7 @@ import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
@@ -99,6 +104,7 @@ import uk.gov.laa.ccms.caab.model.AuditDetail;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ClientDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
@@ -107,6 +113,17 @@ import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionStatusDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ApplicationTypeSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ClientSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.GeneralDetailsSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.LinkedCaseDisplay;
+import uk.gov.laa.ccms.caab.model.sections.LinkedCasesDisplaySection;
+import uk.gov.laa.ccms.caab.model.sections.OpponentSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.OpponentsSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ProceedingSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ProceedingsAndCostsSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ProviderSectionDisplay;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CaseDetail;
@@ -744,6 +761,64 @@ class ApplicationServiceTest {
     assertEquals("Not started", summary.getProceedingsAndCosts().getStatus());
     assertEquals("Not started", summary.getOpponentsAndOtherParties().getStatus());
   }
+
+  @Test
+  void shouldReturnCaseDetailsDisplay() {
+
+    final RelationshipToCaseLookupDetail orgRelationshipsDetail = new RelationshipToCaseLookupDetail();
+    orgRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail().code("SSS"));
+
+    final RelationshipToCaseLookupDetail personRelationshipsDetail = new RelationshipToCaseLookupDetail();
+    personRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail().code("DES"));
+
+    final CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
+        .addContentItem(new CommonLookupValueDetail().code("ABC"));
+
+    final CommonLookupDetail contactTitleLookupDetail = new CommonLookupDetail()
+        .addContentItem(new CommonLookupValueDetail().code("GGG"));
+
+    ApplicationDetail applicationDetail = buildFullApplicationDetail();
+
+    CommonLookupValueDetail correspondenceMethodLookup =
+        new CommonLookupValueDetail()
+            .description("correspondence method1");
+
+    when(lookupService.getCommonValue(COMMON_VALUE_CASE_ADDRESS_OPTION,
+        applicationDetail.getCorrespondenceAddress().getPreferredAddress()))
+        .thenReturn(Mono.just(Optional.of(correspondenceMethodLookup)));
+    when(lookupService.getOrganisationToCaseRelationships()).thenReturn(
+        Mono.just(orgRelationshipsDetail));
+    when(lookupService.getPersonToCaseRelationships()).thenReturn(
+        Mono.just(personRelationshipsDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(
+        Mono.just(relationshipToClientLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(
+        Mono.just(contactTitleLookupDetail));
+
+
+    final ApplicationSectionDisplay summary =
+        applicationService.getCaseDetailsDisplay(applicationDetail);
+
+    assertThat(summary)
+        .isNotNull()
+        .usingRecursiveComparison()
+        .isEqualTo(expectedApplicationSectionDisplay());
+  }
+
+  @Test
+  void getCaseDetailsDisplayThrowsExceptionWhenLookupsMissing() {
+    ApplicationDetail application = new ApplicationDetail();
+    when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.empty());
+    when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.empty());
+    when(lookupService.getCommonValues(any())).thenReturn(Mono.empty());
+    when(lookupService.getCommonValues(any())).thenReturn(Mono.empty());
+
+    assertThatThrownBy(() -> applicationService.getCaseDetailsDisplay(application))
+        .isInstanceOf(CaabApplicationException.class)
+        .hasMessage("Failed to retrieve application summary");
+  }
+
+
 
   @Test
   void testGetApplicationTypeFormData() {
