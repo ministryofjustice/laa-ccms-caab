@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application.client;
+package uk.gov.laa.ccms.caab.controller.client;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;

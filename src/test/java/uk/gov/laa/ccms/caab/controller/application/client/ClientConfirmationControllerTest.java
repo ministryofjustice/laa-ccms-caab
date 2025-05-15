@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
@@ -31,6 +32,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
+import uk.gov.laa.ccms.caab.controller.client.ClientConfirmationController;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ClientService;
@@ -130,7 +132,7 @@ class ClientConfirmationControllerTest {
     }
 
     assertNotNull(exception);
-    assertTrue(exception.getCause() instanceof RuntimeException);
+    assertInstanceOf(RuntimeException.class, exception.getCause());
     assertEquals("Client information does not match", exception.getCause().getMessage());
   }
 

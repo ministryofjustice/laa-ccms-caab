@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application.client;
+package uk.gov.laa.ccms.caab.controller.client;
 
 import java.util.List;
 import java.util.Optional;

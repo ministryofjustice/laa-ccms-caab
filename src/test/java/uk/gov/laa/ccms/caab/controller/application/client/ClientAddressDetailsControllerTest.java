@@ -29,6 +29,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
+import uk.gov.laa.ccms.caab.controller.client.ClientAddressDetailsController;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;

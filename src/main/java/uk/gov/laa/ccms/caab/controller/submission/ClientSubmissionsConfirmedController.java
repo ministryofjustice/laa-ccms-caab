@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
+import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_REFERENCE;
@@ -71,8 +72,8 @@ public class ClientSubmissionsConfirmedController {
    * @param context The context of the application. Should be either "submissions" or "amendments".
    * @return Redirect path to go back to either case sections or amendments summary page.
    */
-  @PostMapping("/{context}/client-update/confirmed")
-  public String clientUpdateSubmitted(@PathVariable("context") final String context) {
+  @PostMapping("/{" + CONTEXT_NAME + "}/client-update/confirmed")
+  public String clientUpdateSubmitted(@PathVariable(CONTEXT_NAME) final String context) {
     return switch (context) {
       case ContextConstants.APPLICATION -> "redirect:/application/sections";
       case ContextConstants.AMENDMENTS -> "redirect:/amendments/summary";

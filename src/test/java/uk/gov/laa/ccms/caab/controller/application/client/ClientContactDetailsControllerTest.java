@@ -29,6 +29,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
+import uk.gov.laa.ccms.caab.controller.client.ClientContactDetailsController;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;

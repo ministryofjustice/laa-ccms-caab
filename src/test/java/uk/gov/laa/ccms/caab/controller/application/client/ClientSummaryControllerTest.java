@@ -45,6 +45,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
+import uk.gov.laa.ccms.caab.controller.client.ClientSummaryController;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;

@@ -26,6 +26,7 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
+import uk.gov.laa.ccms.caab.controller.client.ClientAddressDetailsSearchController;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;

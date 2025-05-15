@@ -3,15 +3,18 @@
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='SUBUC')}"
       xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
 <head>
-  <title th:text="#{service.name} + ' - ' + #{application.create}"></title>
+  <title th:if="${caseContext} == 'application'" th:text="#{service.name} + ' - ' + #{application.create}"></title>
+  <title th:if="${caseContext} == 'amendments'" th:text="#{service.name} + ' - ' + #{client.edit}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections}" class="govuk-back-link" th:text="#{site.cancelAndReturnToApplication}"></a>
+    <a th:href="@{/{caseContext}/sections(caseContext=${caseContext})}" class="govuk-back-link"
+       th:text="#{${@caseContextService.getGoBackText(caseContext)}}"/>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/sections/client/details/summary}" th:object="${clientFlowFormData}" method="post">
+    <form action="#" th:action="@{/{caseContext}/sections/client/details/summary(caseContext=${caseContext})}"
+          th:object="${clientFlowFormData}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <span class="govuk-caption-l" th:text="#{client.edit}"></span>
       <h1 class="govuk-heading-l" th:text="#{client.summary}"></h1>

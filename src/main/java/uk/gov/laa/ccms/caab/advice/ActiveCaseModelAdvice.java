@@ -16,12 +16,12 @@ import uk.gov.laa.ccms.caab.controller.application.section.EditClientBasicDetail
 import uk.gov.laa.ccms.caab.controller.application.section.EditClientContactDetailsController;
 import uk.gov.laa.ccms.caab.controller.application.section.EditClientDeceasedDetailsController;
 import uk.gov.laa.ccms.caab.controller.application.section.EditClientEqualOpportunitiesMonitoringDetailsController;
-import uk.gov.laa.ccms.caab.controller.application.section.EditClientSummaryController;
 import uk.gov.laa.ccms.caab.controller.application.section.EditGeneralDetailsSectionController;
 import uk.gov.laa.ccms.caab.controller.application.section.EditProceedingsAndCostsSectionController;
 import uk.gov.laa.ccms.caab.controller.application.section.EvidenceSectionController;
 import uk.gov.laa.ccms.caab.controller.application.section.OpponentsSectionController;
 import uk.gov.laa.ccms.caab.controller.application.section.ProviderDetailsSectionController;
+import uk.gov.laa.ccms.caab.controller.client.EditClientSummaryController;
 import uk.gov.laa.ccms.caab.controller.submission.CaseSubmissionController;
 
 
