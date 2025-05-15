@@ -84,7 +84,7 @@ public class ApplicationSectionsBuilder {
   }
 
   /**
-   *
+   * Build an empty display.
    */
   public ApplicationSectionsBuilder() {
     this.applicationSections = ApplicationSectionDisplay.builder().build();
@@ -101,9 +101,12 @@ public class ApplicationSectionsBuilder {
     return this;
   }
 
+
   /**
-   * @param linkedCaseDetails
-   * @return
+   * Builder method for linked cases.
+   *
+   * @param linkedCaseDetails the list of linked cases.
+   * @return the builder with amended linked cases details.
    */
   public ApplicationSectionsBuilder linkedCases(final List<LinkedCaseDetail> linkedCaseDetails) {
     List<LinkedCaseDisplay> list = linkedCaseDetails.stream()
@@ -114,6 +117,7 @@ public class ApplicationSectionsBuilder {
     applicationSections.setLinkedCasesDisplaySection(new LinkedCasesDisplaySection(list));
     return this;
   }
+
   /**
    * Builder method for general details.
    *

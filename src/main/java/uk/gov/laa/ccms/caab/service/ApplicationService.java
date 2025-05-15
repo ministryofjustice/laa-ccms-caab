@@ -668,13 +668,12 @@ public class ApplicationService {
    *
    * @param application the application to retrieve a summary for.
    * @return A Mono of ApplicationSectionDisplay representing the application section
-   * display values.
+   *         display values.
    */
-
   public ApplicationSectionDisplay getCaseDetailsDisplay(
       final ApplicationDetail application) {
 
-    String correspondenceMethod = getCorrespondenceMethod(application);
+    final String correspondenceMethod = getCorrespondenceMethod(application);
 
     final Mono<RelationshipToCaseLookupDetail> orgRelationshipsToCaseMono =
         lookupService.getOrganisationToCaseRelationships();

@@ -6,6 +6,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+/**
+ * List of linked cases to display.
+ */
 @Data
 @SuperBuilder
 @NoArgsConstructor
