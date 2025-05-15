@@ -552,19 +552,7 @@ public class ApplicationService {
       final ApplicationDetail application,
       final UserDetail user) {
 
-    String correspondenceMethod = "";
-    if (application.getCorrespondenceAddress() != null
-        && application.getCorrespondenceAddress().getPreferredAddress() != null) {
-      final String correspondenceCode =
-          application.getCorrespondenceAddress().getPreferredAddress();
-      correspondenceMethod = lookupService.getCommonValue(
-              COMMON_VALUE_CASE_ADDRESS_OPTION, correspondenceCode)
-          .blockOptional()
-          .orElseThrow(() -> new CaabApplicationException(
-              "Failed to retrieve correspondence lookup"))
-          .orElse(new CommonLookupValueDetail().description(correspondenceCode))
-          .getDescription();
-    }
+    String correspondenceMethod = getCorrespondenceMethod(application);
 
 
     final Mono<RelationshipToCaseLookupDetail> orgRelationshipsToCaseMono =
@@ -674,23 +662,19 @@ public class ApplicationService {
         .build();
   }
 
-  public ApplicationSectionDisplay getApplicationSections2(
+
+  /**
+   * Retrieves the case details display values.
+   *
+   * @param application the application to retrieve a summary for.
+   * @return A Mono of ApplicationSectionDisplay representing the application section
+   * display values.
+   */
+
+  public ApplicationSectionDisplay getCaseDetailsDisplay(
       final ApplicationDetail application) {
 
-    String correspondenceMethod = "";
-    if (application.getCorrespondenceAddress() != null
-        && application.getCorrespondenceAddress().getPreferredAddress() != null) {
-      final String correspondenceCode =
-          application.getCorrespondenceAddress().getPreferredAddress();
-      correspondenceMethod = lookupService.getCommonValue(
-              COMMON_VALUE_CASE_ADDRESS_OPTION, correspondenceCode)
-          .blockOptional()
-          .orElseThrow(() -> new CaabApplicationException(
-              "Failed to retrieve correspondence lookup"))
-          .orElse(new CommonLookupValueDetail().description(correspondenceCode))
-          .getDescription();
-    }
-
+    String correspondenceMethod = getCorrespondenceMethod(application);
 
     final Mono<RelationshipToCaseLookupDetail> orgRelationshipsToCaseMono =
         lookupService.getOrganisationToCaseRelationships();
@@ -718,6 +702,7 @@ public class ApplicationService {
 
     final List<RelationshipToCaseLookupValueDetail> organisationRelationships
         = applicationSummaryMonos.getT1().getContent();
+
     final List<RelationshipToCaseLookupValueDetail> personsRelationships
         = applicationSummaryMonos.getT2().getContent();
 
@@ -751,6 +736,20 @@ public class ApplicationService {
             relationshipsToClient)
         .linkedCases(application.getLinkedCases())
         .build();
+  }
+
+  private String getCorrespondenceMethod(ApplicationDetail application) {
+    return Optional.ofNullable(application.getCorrespondenceAddress())
+        .map(AddressDetail::getPreferredAddress)
+        .map(correspondenceCode ->
+            lookupService.getCommonValue(COMMON_VALUE_CASE_ADDRESS_OPTION, correspondenceCode)
+                .blockOptional()
+                .orElseThrow(
+                    () -> new CaabApplicationException("Failed to retrieve correspondence lookup"))
+                .orElseGet(() -> new CommonLookupValueDetail().description(correspondenceCode))
+                .getDescription())
+        .orElse("");
+
   }
 
   public ApplicationFormData getApplicationTypeFormData(final String id) {

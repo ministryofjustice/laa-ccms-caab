@@ -238,20 +238,6 @@ public class ApplicationSearchController {
     return "application/case-overview";
   }
 
-  @GetMapping("/cases/details")
-  public String caseDetails(
-      @SessionAttribute(CASE) final ApplicationDetail application, Model model) {
-
-    final ApplicationSectionDisplay applicationSectionDisplay =
-        Optional.ofNullable(applicationService.getApplicationSections2(application))
-            .orElseThrow(() -> new CaabApplicationException(
-                "Failed to retrieve application summary"));
-
-    model.addAttribute("summary", applicationSectionDisplay);
-
-    return "application/case-details";
-  }
-
   private static boolean hasEbsAmendments(ApplicationDetail ebsCase) {
     return ebsCase.getAmendmentProceedingsInEbs() != null
         && !ebsCase.getAmendmentProceedingsInEbs().isEmpty();
