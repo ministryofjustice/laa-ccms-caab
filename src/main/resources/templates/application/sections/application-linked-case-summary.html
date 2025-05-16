@@ -29,6 +29,8 @@
                     <th scope="col" class="govuk-table__header"
                         th:text="#{application.generalDetails.linkCase.providerCaseReference}"/>
                     <th scope="col" class="govuk-table__header"
+                        th:text="#{application.generalDetails.linkCase.relationShip}"/>
+                    <th scope="col" class="govuk-table__header"
                         th:text="#{application.generalDetails.linkCase.categoryOfLaw}"/>
                     <th scope="col" class="govuk-table__header"
                         th:text="#{application.generalDetails.linkCase.feeEarner}"/>
@@ -51,6 +53,9 @@
                     <td class="govuk-table__cell"
                         th:id="|provider-case-reference-${idx.index}|"
                         th:text="${linkedCase.providerCaseReference}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|relationship-${idx.index}|"
+                        th:text="${linkedCase.relationToCase}"/>
                     <td class="govuk-table__cell"
                         th:id="|category-of-law-${idx.index}|"
                         th:text="${linkedCase.categoryOfLaw}"/>
