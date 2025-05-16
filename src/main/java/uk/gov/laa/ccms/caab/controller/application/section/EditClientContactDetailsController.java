@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
+import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import java.util.List;
@@ -13,6 +14,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
@@ -47,8 +49,9 @@ public class EditClientContactDetailsController {
    * @param model The model for the view.
    * @return The view name for the client basic details page
    */
-  @GetMapping("/application/sections/client/details/contact")
+  @GetMapping("/{" + CONTEXT_NAME + "}/sections/client/details/contact")
   public String getClientDetailsContact(
+      @PathVariable(CONTEXT_NAME) final String context,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       Model model) {
 
@@ -70,8 +73,9 @@ public class EditClientContactDetailsController {
    * @param model The model for the view.
    * @return A redirect string to the agreement page.
    */
-  @PostMapping("/application/sections/client/details/contact")
+  @PostMapping("/{" + CONTEXT_NAME + "}/sections/client/details/contact")
   public String postClientDetailsContact(
+      @PathVariable(CONTEXT_NAME) final String context,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @ModelAttribute("contactDetails") ClientFormDataContactDetails contactDetails,
       BindingResult bindingResult,
@@ -95,7 +99,7 @@ public class EditClientContactDetailsController {
     clientFlowFormData.setContactDetails(contactDetails);
     model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
-    return "redirect:/application/sections/client/details/summary";
+    return "redirect:/%s/sections/client/details/summary".formatted(context);
   }
 
   /**

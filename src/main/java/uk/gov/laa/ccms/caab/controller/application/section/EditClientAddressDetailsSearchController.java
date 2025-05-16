@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
+import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
@@ -11,6 +12,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
@@ -48,8 +50,9 @@ public class EditClientAddressDetailsSearchController {
    * @param model The model for the view.
    * @return The view name for the client basic details page
    */
-  @GetMapping("/application/sections/client/details/address/search")
+  @GetMapping("/{" + CONTEXT_NAME + "}/sections/client/details/address/search")
   public String clientDetailsAddressSearch(
+      @PathVariable(CONTEXT_NAME) final String caseContext,
       @SessionAttribute(ADDRESS_SEARCH_RESULTS)
       final ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults,
       @ModelAttribute("addressSearch") final AddressSearchFormData addressSearch,
@@ -71,8 +74,9 @@ public class EditClientAddressDetailsSearchController {
    * @param session The session data for the endpoint.
    * @return A redirect string to the agreement page.
    */
-  @PostMapping("/application/sections/client/details/address/search")
+  @PostMapping("/" + CONTEXT_NAME + "/sections/client/details/address/search")
   public String clientDetailsAddressSearch(
+      @PathVariable(CONTEXT_NAME) final String caseContext,
       @SessionAttribute(ADDRESS_SEARCH_RESULTS) final ResultsDisplay<AddressResultRowDisplay>
           clientAddressSearchResults,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
@@ -97,7 +101,7 @@ public class EditClientAddressDetailsSearchController {
     //Cleanup
     session.removeAttribute(ADDRESS_SEARCH_RESULTS);
 
-    return "redirect:/application/sections/client/details/address";
+    return "redirect:/%s/sections/client/details/address".formatted(caseContext);
   }
 
 }

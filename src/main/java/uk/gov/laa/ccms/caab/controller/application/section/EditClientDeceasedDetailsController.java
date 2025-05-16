@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
+import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
@@ -40,8 +42,9 @@ public class EditClientDeceasedDetailsController {
    * @param model The model for the view.
    * @return The view name for the client basic details page
    */
-  @GetMapping("/application/sections/client/details/deceased")
+  @GetMapping("/{" + CONTEXT_NAME + "}/sections/client/details/deceased")
   public String clientDetailsDeceased(
+      @PathVariable(CONTEXT_NAME) final String context,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @ModelAttribute("deceasedDetails") ClientFormDataDeceasedDetails deceasedDetails,
       Model model) {
@@ -62,8 +65,9 @@ public class EditClientDeceasedDetailsController {
    * @param model The model for the view.
    * @return A redirect string to the agreement page.
    */
-  @PostMapping("/application/sections/client/details/deceased")
+  @PostMapping("/{" + CONTEXT_NAME + "}/sections/client/details/deceased")
   public String postClientDetailsDeceased(
+      @PathVariable(CONTEXT_NAME) final String context,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @ModelAttribute("deceasedDetails") ClientFormDataDeceasedDetails deceasedDetails,
       BindingResult bindingResult,
@@ -78,7 +82,7 @@ public class EditClientDeceasedDetailsController {
     clientFlowFormData.setDeceasedDetails(deceasedDetails);
     model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
-    return "redirect:/application/sections/client/details/summary";
+    return "redirect:/%s/sections/client/details/summary".formatted(context);
   }
 
 }

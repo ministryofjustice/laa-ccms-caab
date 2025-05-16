@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
+import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
@@ -11,6 +12,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
@@ -56,10 +58,11 @@ public class EditClientAddressDetailsController {
    * @param model The model for the view.
    * @return The view name for the client address details page
    */
-  @GetMapping("/application/sections/client/details/address")
+  @GetMapping("/{" + CONTEXT_NAME + "}/sections/client/details/address")
   public String getEditClientDetailsAddress(
-          @SessionAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
-          final Model model) {
+      @PathVariable(CONTEXT_NAME) final String context,
+      @SessionAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
+      final Model model) {
 
     populateDropdowns(model);
 
@@ -82,8 +85,9 @@ public class EditClientAddressDetailsController {
    * @param session The session data for the endpoint.
    * @return A redirect string to the client equal opportunities monitoring page.
    */
-  @PostMapping("/application/sections/client/details/address")
+  @PostMapping("/{" + CONTEXT_NAME + "}/sections/client/details/address")
   public String postEditClientDetailsAddress(
+      @PathVariable(CONTEXT_NAME) final String context,
       @RequestParam final String action,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
       @ModelAttribute("addressDetails") final ClientFormDataAddressDetails addressDetails,
@@ -128,8 +132,8 @@ public class EditClientAddressDetailsController {
     }
 
     return ACTION_FIND_ADDRESS.equals(action)
-        ? "redirect:/application/sections/client/details/address/search"
-        : "redirect:/application/sections/client/details/summary";
+        ? "redirect:/%s/sections/client/details/address/search".formatted(context)
+        : "redirect:/%s/sections/client/details/summary".formatted(context);
   }
 
   private void populateDropdowns(final Model model) {
