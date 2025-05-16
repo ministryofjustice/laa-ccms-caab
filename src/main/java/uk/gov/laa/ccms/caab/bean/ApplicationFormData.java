@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.bean;
 
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
@@ -80,6 +81,7 @@ public class ApplicationFormData {
    * The string containing the provider case reference, used for the edit provider details, part of
    * application summary sections.
    */
+  @Size(max = 35)
   private String providerCaseReference;
 
   /**
