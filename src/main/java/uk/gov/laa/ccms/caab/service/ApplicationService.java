@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_LINK_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
@@ -31,6 +32,7 @@ import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple4;
+import reactor.util.function.Tuple5;
 import reactor.util.function.Tuple6;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
@@ -687,15 +689,18 @@ public class ApplicationService {
     final Mono<CommonLookupDetail> contactTitlesMono =
         lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE);
 
+    final Mono<CommonLookupDetail> linkedCaseLookupMono =
+        lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE);
 
-    final Tuple4<RelationshipToCaseLookupDetail,
-        RelationshipToCaseLookupDetail,
-        CommonLookupDetail,
-        CommonLookupDetail> applicationSummaryMonos = Mono.zip(
+
+    final Tuple5<RelationshipToCaseLookupDetail,
+            RelationshipToCaseLookupDetail,
+            CommonLookupDetail,
+            CommonLookupDetail, CommonLookupDetail> applicationSummaryMonos = Mono.zip(
             orgRelationshipsToCaseMono,
             personRelationshipsToCaseMono,
             relationshipsToClientMono,
-            contactTitlesMono)
+            contactTitlesMono, linkedCaseLookupMono)
         .blockOptional().orElseThrow(() ->
             new CaabApplicationException("Failed to retrieve application summary"));
 
@@ -710,6 +715,9 @@ public class ApplicationService {
 
     final List<CommonLookupValueDetail> contactTitles
         = applicationSummaryMonos.getT4().getContent();
+
+    final List<CommonLookupValueDetail> linkedCaseLookup
+        = applicationSummaryMonos.getT5().getContent();
 
 
     return new ApplicationSectionsBuilder()
@@ -733,7 +741,7 @@ public class ApplicationService {
             organisationRelationships,
             personsRelationships,
             relationshipsToClient)
-        .linkedCases(application.getLinkedCases())
+        .linkedCases(application.getLinkedCases(), linkedCaseLookup)
         .build();
   }
 
