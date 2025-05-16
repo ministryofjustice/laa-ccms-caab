@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.mapper;
 
 import java.util.List;
+import java.util.Map;
 import org.mapstruct.Context;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
@@ -39,7 +40,11 @@ public interface ResultDisplayMapper {
   @Mapping(target = "clientFirstName", source = "client.firstName")
   @Mapping(target = "clientSurname", source = "client.surname")
   @Mapping(target = "clientReferenceNumber", source = "client.reference")
-  LinkedCaseResultRowDisplay toLinkedCaseResultRowDisplay(LinkedCaseDetail linkedCase);
+  @Mapping(target = "relationToCase",
+      expression = "java(ResultDisplayMapper.getValueFromLookup(relationLookup, linkedCase.getRelationToCase()))")
+  LinkedCaseResultRowDisplay toLinkedCaseResultRowDisplay(LinkedCaseDetail linkedCase,
+                                                          @Context
+                                                          Map<String, String> relationLookup);
 
   @Mapping(target = "clientFirstName", source = "client.firstName")
   @Mapping(target = "clientSurname", source = "client.surname")
@@ -66,5 +71,9 @@ public interface ResultDisplayMapper {
       OrganisationDetails organisationDetails,
       @Context List<CommonLookupValueDetail> organisationTypes);
 
+
+  static String getValueFromLookup(Map<String, String> map, String key) {
+    return map.getOrDefault(key, key);
+  }
 
 }

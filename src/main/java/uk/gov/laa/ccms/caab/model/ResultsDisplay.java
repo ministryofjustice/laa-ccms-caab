@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.model;
 
 import java.util.List;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Generic class for encapsulating paginated results display.
@@ -9,6 +10,7 @@ import lombok.Data;
  * @param <T> the type of elements in the results
  */
 @Data
+@NoArgsConstructor
 public class ResultsDisplay<T> {
 
   /** List of elements in the current results display. */
@@ -25,5 +27,9 @@ public class ResultsDisplay<T> {
 
   /** Number of elements per page. */
   private Integer size;
+
+  public ResultsDisplay(List<T> content) {
+    this.content = content;
+  }
 
 }

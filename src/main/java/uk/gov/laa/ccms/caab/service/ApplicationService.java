@@ -793,16 +793,17 @@ public class ApplicationService {
    * @return A {@code ResultsDisplay<LinkedCaseResultRowDisplay>} containing the linked cases.
    */
   public ResultsDisplay<LinkedCaseResultRowDisplay> getLinkedCases(final String applicationId) {
-    final ResultsDisplay<LinkedCaseResultRowDisplay> results = new ResultsDisplay<>();
-
-    return caabApiClient.getLinkedCases(applicationId)
-        .flatMapMany(Flux::fromIterable)// Convert to Flux<LinkedCaseDetail>
-        .map(resultDisplayMapper::toLinkedCaseResultRowDisplay)// Map to ResultRowDisplay
-        .collectList()// Collect into a List
-        .map(list -> {
-          results.setContent(list); // Set the content of ResultsDisplay
-          return results; // Return the populated ResultsDisplay
-        }).block();
+    return lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)
+        .flatMapIterable(CommonLookupDetail::getContent)
+        .collectMap(CommonLookupValueDetail::getCode, CommonLookupValueDetail::getDescription)
+        .flatMap(lookup ->
+            caabApiClient.getLinkedCases(applicationId)
+                .flatMapIterable(Function.identity())
+                .map(detail ->
+                    resultDisplayMapper.toLinkedCaseResultRowDisplay(detail, lookup))
+                .collectList()
+                .map(ResultsDisplay::new))
+        .block();
   }
 
   /**

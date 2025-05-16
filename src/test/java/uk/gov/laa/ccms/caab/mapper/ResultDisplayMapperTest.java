@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -60,7 +61,7 @@ class ResultDisplayMapperTest {
 
     final ClientDetail client = new ClientDetail().firstName("Alice").surname("Brown");
     linkedCase = new LinkedCaseDetail().client(client).id(1).lscCaseReference("LSC123")
-        .relationToCase("Sibling").providerCaseReference("PC123")
+        .relationToCase("LEGAL").providerCaseReference("PC123")
         .categoryOfLaw("Family Law").feeEarner("John Doe").status("Active");
 
     linkedCaseResultRowDisplay = new LinkedCaseResultRowDisplay();
@@ -120,13 +121,14 @@ class ResultDisplayMapperTest {
 
   @Test
   void testToLinkedCaseResultRowDisplay() {
-    final LinkedCaseResultRowDisplay result = mapper.toLinkedCaseResultRowDisplay(linkedCase);
+    final LinkedCaseResultRowDisplay result =
+        mapper.toLinkedCaseResultRowDisplay(linkedCase, Map.of("LEGAL", "Linked Legal Issue"));
 
     assertEquals("Alice", result.getClientFirstName());
     assertEquals("Brown", result.getClientSurname());
     assertEquals(1, result.getId());
     assertEquals("LSC123", result.getLscCaseReference());
-    assertEquals("Sibling", result.getRelationToCase());
+    assertEquals("Linked Legal Issue", result.getRelationToCase());
     assertEquals("PC123", result.getProviderCaseReference());
     assertEquals("Family Law", result.getCategoryOfLaw());
     assertEquals("John Doe", result.getFeeEarner());
