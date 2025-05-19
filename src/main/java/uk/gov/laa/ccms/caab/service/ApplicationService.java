@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_LINK_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
@@ -31,6 +32,7 @@ import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple4;
+import reactor.util.function.Tuple5;
 import reactor.util.function.Tuple6;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
@@ -688,16 +690,25 @@ public class ApplicationService {
         lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE);
 
 
-    final Tuple4<RelationshipToCaseLookupDetail,
+    Mono<Map<String, String>> linkedCaseLookupMono =
+        lookupService
+            .getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)
+            .flatMapIterable(CommonLookupDetail::getContent)
+            .collectMap(CommonLookupValueDetail::getCode, CommonLookupValueDetail::getDescription);
+
+
+    final Tuple5<RelationshipToCaseLookupDetail,
         RelationshipToCaseLookupDetail,
         CommonLookupDetail,
-        CommonLookupDetail> applicationSummaryMonos = Mono.zip(
-            orgRelationshipsToCaseMono,
-            personRelationshipsToCaseMono,
-            relationshipsToClientMono,
-            contactTitlesMono)
-        .blockOptional().orElseThrow(() ->
-            new CaabApplicationException("Failed to retrieve application summary"));
+        CommonLookupDetail, Map<String, String>> applicationSummaryMonos =
+        Mono.zip(
+                orgRelationshipsToCaseMono,
+                personRelationshipsToCaseMono,
+                relationshipsToClientMono,
+                contactTitlesMono,
+                linkedCaseLookupMono)
+            .blockOptional().orElseThrow(() ->
+                new CaabApplicationException("Failed to retrieve application summary"));
 
     final List<RelationshipToCaseLookupValueDetail> organisationRelationships
         = applicationSummaryMonos.getT1().getContent();
@@ -710,6 +721,9 @@ public class ApplicationService {
 
     final List<CommonLookupValueDetail> contactTitles
         = applicationSummaryMonos.getT4().getContent();
+
+    final Map<String, String> linkedCaseLookup
+        = applicationSummaryMonos.getT5();
 
 
     return new ApplicationSectionsBuilder()
@@ -733,7 +747,7 @@ public class ApplicationService {
             organisationRelationships,
             personsRelationships,
             relationshipsToClient)
-        .linkedCases(application.getLinkedCases())
+        .linkedCases(application.getLinkedCases(), linkedCaseLookup)
         .build();
   }
 
@@ -785,16 +799,17 @@ public class ApplicationService {
    * @return A {@code ResultsDisplay<LinkedCaseResultRowDisplay>} containing the linked cases.
    */
   public ResultsDisplay<LinkedCaseResultRowDisplay> getLinkedCases(final String applicationId) {
-    final ResultsDisplay<LinkedCaseResultRowDisplay> results = new ResultsDisplay<>();
-
-    return caabApiClient.getLinkedCases(applicationId)
-        .flatMapMany(Flux::fromIterable)// Convert to Flux<LinkedCaseDetail>
-        .map(resultDisplayMapper::toLinkedCaseResultRowDisplay)// Map to ResultRowDisplay
-        .collectList()// Collect into a List
-        .map(list -> {
-          results.setContent(list); // Set the content of ResultsDisplay
-          return results; // Return the populated ResultsDisplay
-        }).block();
+    return lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)
+        .flatMapIterable(CommonLookupDetail::getContent)
+        .collectMap(CommonLookupValueDetail::getCode, CommonLookupValueDetail::getDescription)
+        .flatMap(lookup ->
+            caabApiClient.getLinkedCases(applicationId)
+                .flatMapIterable(Function.identity())
+                .map(detail ->
+                    resultDisplayMapper.toLinkedCaseResultRowDisplay(detail, lookup))
+                .collectList()
+                .map(ResultsDisplay::new))
+        .block();
   }
 
   /**

@@ -9,6 +9,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
@@ -98,6 +99,25 @@ public class ApplicationSectionsBuilder {
    */
   public ApplicationSectionsBuilder caseReferenceNumber(final String caseReferenceNumber) {
     applicationSections.setCaseReferenceNumber(caseReferenceNumber);
+    return this;
+  }
+
+
+  /**
+   * Builder method for linked cases.
+   *
+   * @param linkedCaseDetails the list of linked cases.
+   * @param linkedCaseLookup the linked case lookup
+   * @return the builder with amended linked cases details.
+   */
+  public ApplicationSectionsBuilder linkedCases(final List<LinkedCaseDetail> linkedCaseDetails,
+                                                Map<String, String> linkedCaseLookup) {
+    List<LinkedCaseDisplay> list =
+        linkedCaseDetails.stream().map(linkedCaseDetail -> new LinkedCaseDisplay(
+                linkedCaseDetail.getLscCaseReference(),
+                linkedCaseLookup.get(linkedCaseDetail.getRelationToCase())))
+            .toList();
+    applicationSections.setLinkedCasesDisplaySection(new LinkedCasesDisplaySection(list));
     return this;
   }
 

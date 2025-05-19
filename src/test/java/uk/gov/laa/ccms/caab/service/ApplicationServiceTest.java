@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.service;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -28,6 +29,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_LINK_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
@@ -56,8 +58,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -777,6 +779,10 @@ class ApplicationServiceTest {
     final CommonLookupDetail contactTitleLookupDetail = new CommonLookupDetail()
         .addContentItem(new CommonLookupValueDetail().code("GGG"));
 
+    final CommonLookupDetail linkedCaseLookupDetail = new CommonLookupDetail()
+        .addContentItem(
+            new CommonLookupValueDetail().code("LEGAL").description("Linked Legal Issue"));
+
     ApplicationDetail applicationDetail = buildFullApplicationDetail();
 
     CommonLookupValueDetail correspondenceMethodLookup =
@@ -794,6 +800,9 @@ class ApplicationServiceTest {
         Mono.just(relationshipToClientLookupDetail));
     when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(
         Mono.just(contactTitleLookupDetail));
+
+    when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(
+        Mono.just(linkedCaseLookupDetail));
 
 
     final ApplicationSectionDisplay summary =
@@ -914,24 +923,46 @@ class ApplicationServiceTest {
   }
 
   @Test
-  void testGetLinkedCases() {
-    final String id = "12345";
-    final List<LinkedCaseDetail> mockLinkedCases = Arrays.asList(new LinkedCaseDetail(), new LinkedCaseDetail());
-    final List<LinkedCaseResultRowDisplay> expectedLinkedCaseDisplays = Arrays.asList(
-        new LinkedCaseResultRowDisplay(), new LinkedCaseResultRowDisplay());
+  void getLinkedCasesShouldReturnMappedResultsWhenAllServicesProvideData() {
+    // Arrange
+    CommonLookupValueDetail lookup1 =
+        new CommonLookupValueDetail().code("LNK01").description("Parent Case");
+    CommonLookupValueDetail lookup2 =
+        new CommonLookupValueDetail().code("LNK02").description("Child Case");
+    CommonLookupDetail commonLookupDetail =
+        new CommonLookupDetail().content(Arrays.asList(lookup1, lookup2));
+    Map<String, String> expectedLookupMap =
+        Map.of("LNK01", "Parent Case", "LNK02", "Child Case");
 
-    when(caabApiClient.getLinkedCases(id)).thenReturn(Mono.just(mockLinkedCases));
+    when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(
+        Mono.just(commonLookupDetail));
 
-    IntStream.range(0, mockLinkedCases.size())
-        .forEach(i -> when(resultDisplayMapper.toLinkedCaseResultRowDisplay(mockLinkedCases.get(i)))
-            .thenReturn(expectedLinkedCaseDisplays.get(i)));
+    LinkedCaseDetail detail1 =
+        new LinkedCaseDetail().lscCaseReference("Case001").relationToCase("LNK01");
+    LinkedCaseDetail detail2 =
+        new LinkedCaseDetail().lscCaseReference("Case002").relationToCase("LNK02");
+    when(caabApiClient.getLinkedCases("APPLICATION_ID")).thenReturn(
+        Mono.just(Arrays.asList(detail1, detail2)));
 
-    final ResultsDisplay<LinkedCaseResultRowDisplay> result = applicationService.getLinkedCases(id);
+    LinkedCaseResultRowDisplay row1 = new LinkedCaseResultRowDisplay();
+    row1.setRelationToCase("Parent Case");
+    row1.setLscCaseReference("Case001");
+    LinkedCaseResultRowDisplay row2 = new LinkedCaseResultRowDisplay();
+    row2.setRelationToCase("Child Case");
+    row2.setLscCaseReference("Case002");
 
-    assertNotNull(result);
-    assertEquals(expectedLinkedCaseDisplays, result.getContent());
+    when(resultDisplayMapper.toLinkedCaseResultRowDisplay(detail1, expectedLookupMap)).thenReturn(
+        row1);
+    when(resultDisplayMapper.toLinkedCaseResultRowDisplay(detail2, expectedLookupMap)).thenReturn(
+        row2);
 
-    verify(caabApiClient).getLinkedCases(id);
+    ResultsDisplay<LinkedCaseResultRowDisplay> actualResults =
+        applicationService.getLinkedCases("APPLICATION_ID");
+
+    assertThat(actualResults.getContent())
+        .isNotNull()
+        .hasSize(2)
+        .containsExactly(row1, row2);
   }
 
   @Test
