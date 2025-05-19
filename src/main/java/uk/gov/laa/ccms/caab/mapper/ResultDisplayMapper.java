@@ -41,7 +41,9 @@ public interface ResultDisplayMapper {
   @Mapping(target = "clientSurname", source = "client.surname")
   @Mapping(target = "clientReferenceNumber", source = "client.reference")
   @Mapping(target = "relationToCase",
-      expression = "java(ResultDisplayMapper.getValueFromLookup(relationLookup, linkedCase.getRelationToCase()))")
+      expression = """
+          java(ResultDisplayMapper
+          .getValueFromLookup(relationLookup, linkedCase.getRelationToCase()))""")
   LinkedCaseResultRowDisplay toLinkedCaseResultRowDisplay(LinkedCaseDetail linkedCase,
                                                           @Context
                                                           Map<String, String> relationLookup);
