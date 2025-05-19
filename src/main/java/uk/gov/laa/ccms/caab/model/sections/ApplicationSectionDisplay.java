@@ -54,4 +54,7 @@ public class ApplicationSectionDisplay {
   private ApplicationSectionStatusDisplay documentUpload =
       new ApplicationSectionStatusDisplay();
 
+  @Builder.Default
+  private LinkedCasesDisplaySection linkedCasesDisplaySection = new LinkedCasesDisplaySection();
+
 }
