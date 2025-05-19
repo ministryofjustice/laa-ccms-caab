@@ -43,8 +43,9 @@ public class ClientSubmissionsConfirmedController {
    * @param session The http session for the view.
    * @return The view name for a client creation submission page.
    */
-  @PostMapping("/application/client-create/confirmed")
+  @PostMapping("/{" + CONTEXT_NAME + "}/client-create/confirmed")
   public String clientCreateSubmitted(
+      @PathVariable(CONTEXT_NAME) final String caseContext,
       @SessionAttribute(APPLICATION_FORM_DATA) final ApplicationFormData applicationFormData,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(CLIENT_REFERENCE) final String clientReference,
@@ -76,7 +77,7 @@ public class ClientSubmissionsConfirmedController {
   public String clientUpdateSubmitted(@PathVariable(CONTEXT_NAME) final String context) {
     return switch (context) {
       case ContextConstants.APPLICATION -> "redirect:/application/sections";
-      case ContextConstants.AMENDMENTS -> "redirect:/amendments/summary";
+      case ContextConstants.AMENDMENTS -> "redirect:/case/overview";
       default -> throw new CaabApplicationException("Unknown context used: " + context);
     };
   }

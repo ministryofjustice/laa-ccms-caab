@@ -74,7 +74,7 @@ public class EditClientAddressDetailsSearchController {
    * @param session The session data for the endpoint.
    * @return A redirect string to the agreement page.
    */
-  @PostMapping("/" + CONTEXT_NAME + "/sections/client/details/address/search")
+  @PostMapping("/{" + CONTEXT_NAME + "}/sections/client/details/address/search")
   public String clientDetailsAddressSearch(
       @PathVariable(CONTEXT_NAME) final String caseContext,
       @SessionAttribute(ADDRESS_SEARCH_RESULTS) final ResultsDisplay<AddressResultRowDisplay>
