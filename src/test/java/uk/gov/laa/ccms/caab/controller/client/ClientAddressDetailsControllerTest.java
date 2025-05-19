@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application.section;
+package uk.gov.laa.ccms.caab.controller.client;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -11,7 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
-import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_EDIT;
+import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 @ExtendWith(MockitoExtension.class)
-class EditClientAddressDetailsControllerTest {
+public class ClientAddressDetailsControllerTest {
 
   @Mock
   private LookupService lookupService;
@@ -52,7 +52,7 @@ class EditClientAddressDetailsControllerTest {
   private AddressService addressService;
 
   @InjectMocks
-  private EditClientAddressDetailsController editClientAddressDetailsController;
+  private ClientAddressDetailsController clientAddressDetailsController;
 
   private MockMvc mockMvc;
 
@@ -66,54 +66,52 @@ class EditClientAddressDetailsControllerTest {
 
   @BeforeEach
   public void setup() {
-    mockMvc = standaloneSetup(editClientAddressDetailsController).build();
+    mockMvc = standaloneSetup(clientAddressDetailsController).build();
 
     basicDetails = new ClientFormDataBasicDetails();
     basicDetails.setVulnerableClient(false);
+    clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
+    clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
 
     addressDetails = new ClientFormDataAddressDetails();
-    addressDetails.setVulnerableClient(false);
-
-    clientFlowFormData = new ClientFlowFormData(ACTION_EDIT);
-    clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
-    clientFlowFormData.setAddressDetails(addressDetails);
 
     countryLookupDetail = new CommonLookupDetail();
     countryLookupDetail.addContentItem(new CommonLookupValueDetail());
   }
 
   @Test
-  void testEditClientDetailsAddress() throws Exception {
+  void testClientDetailsAddress() throws Exception {
     when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
-    this.mockMvc.perform(get("/application/sections/client/details/address")
-            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+    this.mockMvc.perform(get("/application/client/details/address")
+            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+            .flashAttr("addressDetails", addressDetails))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/client-address-details"))
+        .andExpect(view().name("application/client/address-client-details"))
         .andExpect(model().attributeExists("countries"));
   }
 
   @Test
-  void testEditClientDetailsAddressPostFindAddress_NoAddresses() throws Exception {
+  void testClientDetailsAddressPostFindAddress_NoAddresses() throws Exception {
     when(addressService.getAddresses(any())).thenReturn(
         new ResultsDisplay<AddressResultRowDisplay>());
 
     when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
-    this.mockMvc.perform(post("/application/sections/client/details/address")
+    this.mockMvc.perform(post("/application/client/details/address")
             .param("action", "find_address")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("addressDetails", addressDetails))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/client-address-details"));
+        .andExpect(view().name("application/client/address-client-details"));
   }
 
   @Test
-  void testEditClientDetailsAddressPostFindAddress_WithAddresses() throws Exception {
+  void testClientDetailsAddressPostFindAddress_WithAddresses() throws Exception {
     ResultsDisplay<AddressResultRowDisplay> addressResults = new ResultsDisplay<>();
     addressResults.setContent(new ArrayList<>());
     addressResults.getContent().add(new AddressResultRowDisplay());
@@ -124,30 +122,30 @@ class EditClientAddressDetailsControllerTest {
     when(addressService.filterByHouseNumber(any(), any())).thenReturn(
         addressResults);
 
-    this.mockMvc.perform(post("/application/sections/client/details/address")
+    this.mockMvc.perform(post("/application/client/details/address")
             .param("action", "find_address")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("addressDetails", addressDetails))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/sections/client/details/address/search"));
+        .andExpect(redirectedUrl("/application/client/details/address/search"));
   }
 
   @Test
-  void testEditClientDetailsAddressPostNext() throws Exception {
+  void testClientDetailsAddressPostNext() throws Exception {
     ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
 
-    this.mockMvc.perform(post("/application/sections/client/details/address")
+    this.mockMvc.perform(post("/application/client/details/address")
             .param("action", "next")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("addressDetails", addressDetails))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/sections/client/details/summary"));
+        .andExpect(redirectedUrl("/application/client/details/equal-opportunities-monitoring"));
   }
 
   @Test
-  void testEditClientDetailsAddressPostValidationError() throws Exception {
+  void testClientDetailsAddressPostValidationError() throws Exception {
     ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
 
     doAnswer(invocation -> {
@@ -159,18 +157,18 @@ class EditClientAddressDetailsControllerTest {
     when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
-    this.mockMvc.perform(post("/application/sections/client/details/address")
+    this.mockMvc.perform(post("/application/client/details/address")
             .param("action", "next")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("addressDetails", addressDetails))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/client-address-details"))
+        .andExpect(view().name("application/client/address-client-details"))
         .andExpect(model().attributeExists("countries"));
   }
 
   @Test
-  void testEditClientDetailsAddressPostSearchError() throws Exception {
+  void testClientDetailsAddressPostSearchError() throws Exception {
     ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
 
     doAnswer(invocation -> {
@@ -182,13 +180,13 @@ class EditClientAddressDetailsControllerTest {
     when(lookupService.getCountries()).thenReturn(
         Mono.just(countryLookupDetail));
 
-    this.mockMvc.perform(post("/application/sections/client/details/address")
+    this.mockMvc.perform(post("/application/client/details/address")
             .param("action", "find_address")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("addressDetails", addressDetails))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/client-address-details"))
+        .andExpect(view().name("application/client/address-client-details"))
         .andExpect(model().attributeExists("countries"));
   }
 

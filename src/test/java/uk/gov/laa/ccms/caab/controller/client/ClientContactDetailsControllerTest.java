@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab.controller.application.section;
+package uk.gov.laa.ccms.caab.controller.client;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -11,7 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
-import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_EDIT;
+import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
@@ -34,7 +34,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 @ExtendWith(MockitoExtension.class)
-public class EditClientContactDetailsControllerTest {
+public class ClientContactDetailsControllerTest {
 
   @Mock
   private LookupService lookupService;
@@ -43,7 +43,7 @@ public class EditClientContactDetailsControllerTest {
   private ClientContactDetailsValidator clientContactDetailsValidator;
 
   @InjectMocks
-  private EditClientContactDetailsController editClientContactDetailsController;
+  private ClientContactDetailsController clientContactDetailsController;
 
   private MockMvc mockMvc;
 
@@ -58,17 +58,15 @@ public class EditClientContactDetailsControllerTest {
 
   @BeforeEach
   public void setup() {
-    mockMvc = standaloneSetup(editClientContactDetailsController).build();
+    mockMvc = standaloneSetup(clientContactDetailsController).build();
 
     basicDetails = new ClientFormDataBasicDetails();
     basicDetails.setVulnerableClient(false);
+    clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
+    clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
 
     contactDetails = new ClientFormDataContactDetails();
-    
-    clientFlowFormData = new ClientFlowFormData(ACTION_EDIT);
-    clientFlowFormData.setBasicDetails(basicDetails);
-    clientFlowFormData.setContactDetails(contactDetails);
-    
+
     correspondenceMethodLookupDetail = new CommonLookupDetail();
     correspondenceMethodLookupDetail.addContentItem(new CommonLookupValueDetail());
     correspondenceLanguageLookupDetail = new CommonLookupDetail();
@@ -83,23 +81,23 @@ public class EditClientContactDetailsControllerTest {
     when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE)).thenReturn(
         Mono.just(correspondenceLanguageLookupDetail));
 
-    this.mockMvc.perform(get("/application/sections/client/details/contact")
+    this.mockMvc.perform(get("/application/client/details/contact")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("contactDetails", contactDetails))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/client-contact-details"))
+        .andExpect(view().name("application/client/contact-client-details"))
         .andExpect(model().attributeExists("correspondenceMethods", "correspondenceLanguages"));
 
   }
   @Test
   void testClientDetailsContactPost() throws Exception {
 
-    mockMvc.perform(post("/application/sections/client/details/contact")
+    mockMvc.perform(post("/application/client/details/contact")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("contactDetails", contactDetails))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/sections/client/details/summary"));
+        .andExpect(redirectedUrl("/application/client/details/address"));
   }
 
 
@@ -120,12 +118,12 @@ public class EditClientContactDetailsControllerTest {
     when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE)).thenReturn(
         Mono.just(correspondenceLanguageLookupDetail));
 
-    this.mockMvc.perform(post("/application/sections/client/details/contact")
+    this.mockMvc.perform(post("/application/client/details/contact")
             .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
             .flashAttr("contactDetails", contactDetails))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/client-contact-details"))
+        .andExpect(view().name("application/client/contact-client-details"))
         .andExpect(model().attributeExists("correspondenceMethods", "correspondenceLanguages"));
   }
 }
