@@ -689,20 +689,26 @@ public class ApplicationService {
     final Mono<CommonLookupDetail> contactTitlesMono =
         lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE);
 
-    final Mono<CommonLookupDetail> linkedCaseLookupMono =
-        lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE);
+
+    Mono<Map<String, String>> linkedCaseLookupMono =
+        lookupService
+            .getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)
+            .flatMapIterable(CommonLookupDetail::getContent)
+            .collectMap(CommonLookupValueDetail::getCode, CommonLookupValueDetail::getDescription);
 
 
     final Tuple5<RelationshipToCaseLookupDetail,
-            RelationshipToCaseLookupDetail,
-            CommonLookupDetail,
-            CommonLookupDetail, CommonLookupDetail> applicationSummaryMonos = Mono.zip(
-            orgRelationshipsToCaseMono,
-            personRelationshipsToCaseMono,
-            relationshipsToClientMono,
-            contactTitlesMono, linkedCaseLookupMono)
-        .blockOptional().orElseThrow(() ->
-            new CaabApplicationException("Failed to retrieve application summary"));
+        RelationshipToCaseLookupDetail,
+        CommonLookupDetail,
+        CommonLookupDetail, Map<String, String>> applicationSummaryMonos =
+        Mono.zip(
+                orgRelationshipsToCaseMono,
+                personRelationshipsToCaseMono,
+                relationshipsToClientMono,
+                contactTitlesMono,
+                linkedCaseLookupMono)
+            .blockOptional().orElseThrow(() ->
+                new CaabApplicationException("Failed to retrieve application summary"));
 
     final List<RelationshipToCaseLookupValueDetail> organisationRelationships
         = applicationSummaryMonos.getT1().getContent();
@@ -716,8 +722,8 @@ public class ApplicationService {
     final List<CommonLookupValueDetail> contactTitles
         = applicationSummaryMonos.getT4().getContent();
 
-    final List<CommonLookupValueDetail> linkedCaseLookup
-        = applicationSummaryMonos.getT5().getContent();
+    final Map<String, String> linkedCaseLookup
+        = applicationSummaryMonos.getT5();
 
 
     return new ApplicationSectionsBuilder()

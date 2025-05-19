@@ -107,19 +107,15 @@ public class ApplicationSectionsBuilder {
    * Builder method for linked cases.
    *
    * @param linkedCaseDetails the list of linked cases.
-   * @param linkedCaseLookup
+   * @param linkedCaseLookup the linked case lookup
    * @return the builder with amended linked cases details.
    */
   public ApplicationSectionsBuilder linkedCases(final List<LinkedCaseDetail> linkedCaseDetails,
-                                                List<CommonLookupValueDetail> linkedCaseLookup) {
-
-    Map<String, String> relationCodeToDescriptionMap = linkedCaseLookup.stream()
-        .collect(toMap(CommonLookupValueDetail::getCode, CommonLookupValueDetail::getDescription));
-
+                                                Map<String, String> linkedCaseLookup) {
     List<LinkedCaseDisplay> list =
         linkedCaseDetails.stream().map(linkedCaseDetail -> new LinkedCaseDisplay(
                 linkedCaseDetail.getLscCaseReference(),
-                relationCodeToDescriptionMap.get(linkedCaseDetail.getRelationToCase())))
+                linkedCaseLookup.get(linkedCaseDetail.getRelationToCase())))
             .toList();
     applicationSections.setLinkedCasesDisplaySection(new LinkedCasesDisplaySection(list));
     return this;

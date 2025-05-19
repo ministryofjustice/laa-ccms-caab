@@ -100,7 +100,7 @@ public final class ApplicationDetailUtils {
     // Linked Cases
     LinkedCaseDetail linkedCase = new LinkedCaseDetail();
     linkedCase.setLscCaseReference("LINK-CASE-1");
-    linkedCase.setRelationToCase("Family");
+    linkedCase.setRelationToCase("LEGAL");
     applicationDetail.setLinkedCases(List.of(linkedCase));
 
     return applicationDetail;
@@ -198,7 +198,7 @@ public final class ApplicationDetailUtils {
         .linkedCasesDisplaySection(
             LinkedCasesDisplaySection.builder()
                 .linkedCases(List.of(
-                    new LinkedCaseDisplay("LINK-CASE-1", "Family")
+                    new LinkedCaseDisplay("LINK-CASE-1", "Linked Legal Issue")
                 ))
                 .build()
         )

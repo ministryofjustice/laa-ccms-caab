@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.service;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -59,7 +60,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -70,7 +70,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
@@ -780,6 +779,10 @@ class ApplicationServiceTest {
     final CommonLookupDetail contactTitleLookupDetail = new CommonLookupDetail()
         .addContentItem(new CommonLookupValueDetail().code("GGG"));
 
+    final CommonLookupDetail linkedCaseLookupDetail = new CommonLookupDetail()
+        .addContentItem(
+            new CommonLookupValueDetail().code("LEGAL").description("Linked Legal Issue"));
+
     ApplicationDetail applicationDetail = buildFullApplicationDetail();
 
     CommonLookupValueDetail correspondenceMethodLookup =
@@ -797,6 +800,9 @@ class ApplicationServiceTest {
         Mono.just(relationshipToClientLookupDetail));
     when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(
         Mono.just(contactTitleLookupDetail));
+
+    when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(
+        Mono.just(linkedCaseLookupDetail));
 
 
     final ApplicationSectionDisplay summary =
