@@ -145,7 +145,7 @@ class SubmissionSummaryDisplayMapperTest {
     final ProceedingAndCostSubmissionSummaryDisplay result = mapper.toProceedingAndCostSummaryDisplay(applicationDetail, context);
 
     assertNull(result.getCaseCostLimitation(), "Case Cost Limitation should be null when not set.");
-    assertNull(result.getProceedings(), "Proceedings should be null when not set.");
+    assertEquals(0, result.getProceedings().size(), "Proceedings should be an empty list when not set.");
   }
 
   @Test
@@ -229,7 +229,7 @@ class SubmissionSummaryDisplayMapperTest {
 
     final OpponentsAndOtherPartiesSubmissionSummaryDisplay result = mapper.toOpponentsAndOtherPartiesSummaryDisplay(applicationDetail, context);
 
-    assertNull(result.getOpponents(), "Opponents should be null when not set.");
+    assertEquals(0, result.getOpponents().size(), "Opponents should be null when not set.");
   }
 
   @Test
