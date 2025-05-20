@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_LINK_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
@@ -31,6 +32,7 @@ import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple4;
+import reactor.util.function.Tuple5;
 import reactor.util.function.Tuple6;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
@@ -552,19 +554,7 @@ public class ApplicationService {
       final ApplicationDetail application,
       final UserDetail user) {
 
-    String correspondenceMethod = "";
-    if (application.getCorrespondenceAddress() != null
-        && application.getCorrespondenceAddress().getPreferredAddress() != null) {
-      final String correspondenceCode =
-          application.getCorrespondenceAddress().getPreferredAddress();
-      correspondenceMethod = lookupService.getCommonValue(
-              COMMON_VALUE_CASE_ADDRESS_OPTION, correspondenceCode)
-          .blockOptional()
-          .orElseThrow(() -> new CaabApplicationException(
-              "Failed to retrieve correspondence lookup"))
-          .orElse(new CommonLookupValueDetail().description(correspondenceCode))
-          .getDescription();
-    }
+    String correspondenceMethod = getCorrespondenceMethod(application);
 
 
     final Mono<RelationshipToCaseLookupDetail> orgRelationshipsToCaseMono =
@@ -674,6 +664,107 @@ public class ApplicationService {
         .build();
   }
 
+
+  /**
+   * Retrieves the case details display values.
+   *
+   * @param application the application to retrieve a summary for.
+   * @return A Mono of ApplicationSectionDisplay representing the application section
+   *         display values.
+   */
+  public ApplicationSectionDisplay getCaseDetailsDisplay(
+      final ApplicationDetail application) {
+
+    final String correspondenceMethod = getCorrespondenceMethod(application);
+
+    final Mono<RelationshipToCaseLookupDetail> orgRelationshipsToCaseMono =
+        lookupService.getOrganisationToCaseRelationships();
+
+    final Mono<RelationshipToCaseLookupDetail> personRelationshipsToCaseMono =
+        lookupService.getPersonToCaseRelationships();
+
+    final Mono<CommonLookupDetail> relationshipsToClientMono =
+        lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT);
+
+    final Mono<CommonLookupDetail> contactTitlesMono =
+        lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE);
+
+
+    Mono<Map<String, String>> linkedCaseLookupMono =
+        lookupService
+            .getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)
+            .flatMapIterable(CommonLookupDetail::getContent)
+            .collectMap(CommonLookupValueDetail::getCode, CommonLookupValueDetail::getDescription);
+
+
+    final Tuple5<RelationshipToCaseLookupDetail,
+        RelationshipToCaseLookupDetail,
+        CommonLookupDetail,
+        CommonLookupDetail, Map<String, String>> applicationSummaryMonos =
+        Mono.zip(
+                orgRelationshipsToCaseMono,
+                personRelationshipsToCaseMono,
+                relationshipsToClientMono,
+                contactTitlesMono,
+                linkedCaseLookupMono)
+            .blockOptional().orElseThrow(() ->
+                new CaabApplicationException("Failed to retrieve application summary"));
+
+    final List<RelationshipToCaseLookupValueDetail> organisationRelationships
+        = applicationSummaryMonos.getT1().getContent();
+
+    final List<RelationshipToCaseLookupValueDetail> personsRelationships
+        = applicationSummaryMonos.getT2().getContent();
+
+    final List<CommonLookupValueDetail> relationshipsToClient
+        = applicationSummaryMonos.getT3().getContent();
+
+    final List<CommonLookupValueDetail> contactTitles
+        = applicationSummaryMonos.getT4().getContent();
+
+    final Map<String, String> linkedCaseLookup
+        = applicationSummaryMonos.getT5();
+
+
+    return new ApplicationSectionsBuilder()
+        .caseReferenceNumber(
+            application.getCaseReferenceNumber())
+        .applicationType(
+            application.getApplicationType())
+        .client(application.getClient())
+        .provider(application.getProviderDetails())
+        .generalDetails(
+            application.getStatus(),
+            application.getCategoryOfLaw(),
+            correspondenceMethod)
+        .proceedingsPriorAuthsAndCosts(
+            application.getProceedings(),
+            application.getPriorAuthorities(),
+            application.getCosts())
+        .opponentsAndOtherParties(
+            application.getOpponents(),
+            contactTitles,
+            organisationRelationships,
+            personsRelationships,
+            relationshipsToClient)
+        .linkedCases(application.getLinkedCases(), linkedCaseLookup)
+        .build();
+  }
+
+  private String getCorrespondenceMethod(ApplicationDetail application) {
+    return Optional.ofNullable(application.getCorrespondenceAddress())
+        .map(AddressDetail::getPreferredAddress)
+        .map(correspondenceCode ->
+            lookupService.getCommonValue(COMMON_VALUE_CASE_ADDRESS_OPTION, correspondenceCode)
+                .blockOptional()
+                .orElseThrow(
+                    () -> new CaabApplicationException("Failed to retrieve correspondence lookup"))
+                .orElseGet(() -> new CommonLookupValueDetail().description(correspondenceCode))
+                .getDescription())
+        .orElse("");
+
+  }
+
   public ApplicationFormData getApplicationTypeFormData(final String id) {
     return caabApiClient.getApplicationType(id)
         .map(applicationFormDataMapper::toApplicationTypeFormData).block();
@@ -708,16 +799,17 @@ public class ApplicationService {
    * @return A {@code ResultsDisplay<LinkedCaseResultRowDisplay>} containing the linked cases.
    */
   public ResultsDisplay<LinkedCaseResultRowDisplay> getLinkedCases(final String applicationId) {
-    final ResultsDisplay<LinkedCaseResultRowDisplay> results = new ResultsDisplay<>();
-
-    return caabApiClient.getLinkedCases(applicationId)
-        .flatMapMany(Flux::fromIterable)// Convert to Flux<LinkedCaseDetail>
-        .map(resultDisplayMapper::toLinkedCaseResultRowDisplay)// Map to ResultRowDisplay
-        .collectList()// Collect into a List
-        .map(list -> {
-          results.setContent(list); // Set the content of ResultsDisplay
-          return results; // Return the populated ResultsDisplay
-        }).block();
+    return lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)
+        .flatMapIterable(CommonLookupDetail::getContent)
+        .collectMap(CommonLookupValueDetail::getCode, CommonLookupValueDetail::getDescription)
+        .flatMap(lookup ->
+            caabApiClient.getLinkedCases(applicationId)
+                .flatMapIterable(Function.identity())
+                .map(detail ->
+                    resultDisplayMapper.toLinkedCaseResultRowDisplay(detail, lookup))
+                .collectList()
+                .map(ResultsDisplay::new))
+        .block();
   }
 
   /**
