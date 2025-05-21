@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,30 +31,31 @@ class CorrespondenceAddressValidatorTest {
   private Errors errors;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     addressDetails = buildAddressFormData();
     errors = new BeanPropertyBindingResult(addressDetails, "addressDetails");
   }
 
   @Test
-  public void supports_ReturnsTrueForAddressFormDataClass() {
+  void supports_ReturnsTrueForAddressFormDataClass() {
     assertTrue(correspondenceAddressValidator.supports(AddressFormData.class));
   }
 
   @Test
-  public void supports_ReturnsFalseForOtherClasses() {
+  void supports_ReturnsFalseForOtherClasses() {
     assertFalse(correspondenceAddressValidator.supports(Object.class));
   }
 
   @Test
-  public void validate() {
+  void validate() {
     correspondenceAddressValidator.validate(addressDetails, errors);
     assertFalse(errors.hasErrors());
   }
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_countryRequired(String country) {
+  @DisplayName("Returns false if the Country is null")
+  void validate_countryRequired(String country) {
     addressDetails.setCountry(country);
     correspondenceAddressValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
@@ -64,7 +66,8 @@ class CorrespondenceAddressValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_houseNameNumberRequired(String houseNameNumber) {
+  @DisplayName("Returns false if the House name / number is null")
+  void validate_houseNameNumberRequired(String houseNameNumber) {
     addressDetails.setHouseNameNumber(houseNameNumber);
     correspondenceAddressValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
@@ -75,7 +78,8 @@ class CorrespondenceAddressValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_addressLine1Required(String addressLine1) {
+  @DisplayName("Returns false if Address Line 1 is null")
+  void validate_addressLine1Required(String addressLine1) {
     addressDetails.setAddressLine1(addressLine1);
     correspondenceAddressValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
@@ -86,7 +90,8 @@ class CorrespondenceAddressValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_cityTownRequired(String cityTown) {
+  @DisplayName("Returns false if the City / town is null")
+  void validate_cityTownRequired(String cityTown) {
     addressDetails.setCityTown(cityTown);
     correspondenceAddressValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
@@ -100,7 +105,8 @@ class CorrespondenceAddressValidatorTest {
       "USA",
       "GBR"
   })
-  public void validate_validatePostcodeFormat(String country) {
+  @DisplayName("Returns false if the Postcode format is invalid")
+  void validate_validatePostcodeFormat(String country) {
     addressDetails.setCountry(country);
     addressDetails.setPostcode("@@@@@@");
     correspondenceAddressValidator.validate(addressDetails, errors);
@@ -126,6 +132,7 @@ class CorrespondenceAddressValidatorTest {
       "12  The  Street",//Double Spaces
       "12@The :Street"//Invalid Characters
   })
+  @DisplayName("Returns false if Address line 1 has invalid characters or double spaces")
   void validate_InvalidAddressLine1Format(String addressLine1) {
     addressDetails.setAddressLine1(addressLine1);
     correspondenceAddressValidator.validate(addressDetails, errors);
@@ -138,6 +145,7 @@ class CorrespondenceAddressValidatorTest {
       "12  The  Street",//Double Spaces
       "12@The :Street"//Invalid Characters
   })
+  @DisplayName("Returns false if Address line 2 has invalid characters or double spaces")
   void validate_InvalidAddressLine2Format(String addressLine2) {
     addressDetails.setAddressLine2(addressLine2);
     correspondenceAddressValidator.validate(addressDetails, errors);
@@ -150,6 +158,7 @@ class CorrespondenceAddressValidatorTest {
       "South  Cardiff",//Double Spaces
       "North:@Swansea;"//Invalid Characters
   })
+  @DisplayName("Returns false if City / town has invalid characters or double spaces")
   void validate_InvalidCityTownFormat(String cityTown) {
     addressDetails.setCityTown(cityTown);
     correspondenceAddressValidator.validate(addressDetails, errors);
@@ -162,6 +171,7 @@ class CorrespondenceAddressValidatorTest {
       "Vale  of  Glamorgan",//Double Spaces
       "Vale;of@Glamorgan:"//Invalid Characters
   })
+  @DisplayName("Returns false if the County has invalid characters or double spaces")
   void validate_InvalidCountyFormat(String county) {
     addressDetails.setCounty(county);
     correspondenceAddressValidator.validate(addressDetails, errors);

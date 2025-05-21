@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.bean;
 
+import static uk.gov.laa.ccms.caab.constants.CharacterLimitationConstants.DEFAULT_CHARACTER_SIZE;
+
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -81,7 +83,7 @@ public class ApplicationFormData {
    * The string containing the provider case reference, used for the edit provider details, part of
    * application summary sections.
    */
-  @Size(max = 35)
+  @Size(max = DEFAULT_CHARACTER_SIZE)
   private String providerCaseReference;
 
   /**

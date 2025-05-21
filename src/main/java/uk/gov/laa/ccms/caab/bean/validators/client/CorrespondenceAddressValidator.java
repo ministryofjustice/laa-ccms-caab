@@ -64,118 +64,38 @@ public class CorrespondenceAddressValidator extends AbstractValidator {
       validatePostcodeFormat(addressFormData.getCountry(), addressFormData.getPostcode(), errors);
     }
 
-    validateAddressLine1(addressFormData.getAddressLine1(), errors);
-    validateAddressLine2(addressFormData.getAddressLine2(), errors);
-    validateCityTown(addressFormData.getCityTown(), errors);
-    validateCounty(addressFormData.getCounty(), errors);
-    validateCareOf(addressFormData.getCareOf(), errors);
+    validateAddressField(addressFormData.getAddressLine1(), "addressLine1",
+        "Address line 1", errors);
+    validateAddressField(addressFormData.getAddressLine2(), "addressLine2",
+        "Address line 2", errors);
+    validateAddressField(addressFormData.getCityTown(), "cityTown",
+        "City /Town", errors);
+    validateAddressField(addressFormData.getCounty(), "county",
+        "County", errors);
+    validateAddressField(addressFormData.getCareOf(), "careOf",
+        "C/O", errors);
   }
 
   /**
    * Validates the addressLine1 in the {@link uk.gov.laa.ccms.caab.bean.AddressFormData}.
    *
-   * @param addressLine1 The string to be validated.
+   * @param value The string value to be validated.
+   * @param fieldName The field name to be validated.
+   * @param displayFieldName The field name to be displayed in error message.
    * @param errors The Errors object to store validation errors.
    */
-  private void validateAddressLine1(final String addressLine1, Errors errors) {
-    if (StringUtils.hasText(addressLine1)) {
+  private void validateAddressField(final String value, final String fieldName,
+                                    final String displayFieldName, Errors errors) {
+    if (StringUtils.hasText(value)) {
       //check no double spaces
-      if (!addressLine1.matches(ALPHA_NUMERIC_SPACES_COMMAS)) {
-        errors.rejectValue("addressLine1", "invalid.addressLine1",
-            "Your input for 'Address Line 1' contains an "
+      if (!value.matches(ALPHA_NUMERIC_SPACES_COMMAS)) {
+        errors.rejectValue(fieldName, "invalid." + fieldName,
+            "Your input for '" + displayFieldName + "' contains an "
                 + "invalid character. Please amend your entry using numbers, "
                 + "letters and spaces only");
-      } else if (addressLine1.matches(DOUBLE_SPACE)) {
-        errors.rejectValue("addressLine1", "invalid.addressLine1",
-            "Your input for 'Address Line 1'"
-                + " contains double spaces. Please amend your entry.");
-      }
-    }
-  }
-
-  /**
-   * Validates the addressLine2 in the {@link uk.gov.laa.ccms.caab.bean.AddressFormData}.
-   *
-   * @param addressLine2 The string to be validated.
-   * @param errors The Errors object to store validation errors.
-   */
-  private void validateAddressLine2(final String addressLine2, Errors errors) {
-    if (StringUtils.hasText(addressLine2)) {
-      //check no double spaces
-      if (!addressLine2.matches(ALPHA_NUMERIC_SPACES_COMMAS)) {
-        errors.rejectValue("addressLine2", "invalid.addressLine2",
-            "Your input for 'Address Line 2' contains an "
-                + "invalid character. Please amend your entry using numbers, "
-                + "letters and spaces only");
-      } else if (addressLine2.matches(DOUBLE_SPACE)) {
-        errors.rejectValue("addressLine2", "invalid.addressLine2",
-            "Your input for 'Address Line 2'"
-                + " contains double spaces. Please amend your entry.");
-      }
-    }
-  }
-
-  /**
-   * Validates the cityTown in the {@link uk.gov.laa.ccms.caab.bean.AddressFormData}.
-   *
-   * @param cityTown The string to be validated.
-   * @param errors The Errors object to store validation errors.
-   */
-  private void validateCityTown(final String cityTown, Errors errors) {
-    if (StringUtils.hasText(cityTown)) {
-      //check no double spaces
-      if (!cityTown.matches(ALPHA_NUMERIC_SPACES_COMMAS)) {
-        errors.rejectValue("cityTown", "invalid.cityTown",
-            "Your input for 'City /Town' contains an "
-                + "invalid character. Please amend your entry using numbers, "
-                + "letters and spaces only");
-      } else if (cityTown.matches(DOUBLE_SPACE)) {
-        errors.rejectValue("cityTown", "invalid.cityTown",
-            "Your input for 'City /Town'"
-                + " contains double spaces. Please amend your entry.");
-      }
-    }
-  }
-
-  /**
-   * Validates the county in the {@link uk.gov.laa.ccms.caab.bean.AddressFormData}.
-   *
-   * @param county The string to be validated.
-   * @param errors The Errors object to store validation errors.
-   */
-  private void validateCounty(final String county, Errors errors) {
-    if (StringUtils.hasText(county)) {
-      //check no double spaces
-      if (!county.matches(ALPHA_NUMERIC_SPACES_COMMAS)) {
-        errors.rejectValue("county", "invalid.county",
-            "Your input for 'County' contains an "
-                + "invalid character. Please amend your entry using numbers, "
-                + "letters and spaces only");
-      } else if (county.matches(DOUBLE_SPACE)) {
-        errors.rejectValue("county", "invalid.county",
-            "Your input for 'County'"
-                + " contains double spaces. Please amend your entry.");
-      }
-    }
-  }
-
-  /**
-   * Validates the county in the {@link uk.gov.laa.ccms.caab.bean.AddressFormData}.
-   *
-   * @param careOf The string to be validated.
-   * @param errors The Errors object to store validation errors.
-   */
-  private void validateCareOf(final String careOf, Errors errors) {
-    if (StringUtils.hasText(careOf)) {
-      //check no double spaces
-      if (!careOf.matches(ALPHA_NUMERIC_SPACES_COMMAS)) {
-        errors.rejectValue("careOf", "invalid.careOf",
-            "Your input for 'C/O' contains an "
-                + "invalid character. Please amend your entry using numbers, "
-                + "letters and spaces only");
-      } else if (careOf.matches(DOUBLE_SPACE)) {
-        errors.rejectValue("careOf", "invalid.careOf",
-            "Your input for 'C/O'"
+      } else if (value.matches(DOUBLE_SPACE)) {
+        errors.rejectValue(fieldName, "invalid." + fieldName,
+            "Your input for '" + displayFieldName + "'"
                 + " contains double spaces. Please amend your entry.");
       }
     }

@@ -1,5 +1,8 @@
 package uk.gov.laa.ccms.caab.bean.priorauthority;
 
+import static uk.gov.laa.ccms.caab.constants.CharacterLimitationConstants.DEFAULT_CHARACTER_SIZE;
+import static uk.gov.laa.ccms.caab.constants.CharacterLimitationConstants.JUSTIFICATION_CHARACTER_SIZE;
+
 import jakarta.validation.constraints.Size;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,13 +20,13 @@ public class PriorAuthorityDetailsFormData  {
   /**
    * The summary of the prior authority .
    */
-  @Size(max = 35)
+  @Size(max = DEFAULT_CHARACTER_SIZE)
   private String summary;
 
   /**
    * The justification for the prior authority.
    */
-  @Size(max = 8000)
+  @Size(max = JUSTIFICATION_CHARACTER_SIZE)
   private String justification;
 
   /**
