@@ -44,5 +44,12 @@ public class CaseController {
     return "application/case-details";
   }
 
+  @GetMapping("/cases/details/individual")
+  public String caseDetailsIndividual(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase, Model model) {
+
+    return "application/case-details-individual";
+  }
+
 
 }

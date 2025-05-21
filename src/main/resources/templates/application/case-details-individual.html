@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <title th:text="|#{service.name} - #{caseDetails.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a th:href="@{/cases/details}" class="govuk-back-link" th:text="#{caseDetails.details.return}"></a>
+    </div>
+
+    <div id="main-content">
+        <h1 class="govuk-heading-l" th:text="#{caseDetails.otherPartyDetails.title}"></h1>
+        <p class="govuk-body-l" th:text="#{caseDetails.otherPartyDetails.leadParagraph}"></p>
+    </div>
+
+</div>
+</body>
+</html>
