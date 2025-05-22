@@ -201,7 +201,6 @@ public class ApplicationSearchController {
    */
   @GetMapping("/case/overview")
   public String caseOverview(
-      @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(APPLICATION) @Nullable final BaseApplicationDetail tdsApplication,
       @SessionAttribute(NOTIFICATION_ID) @Nullable final String notificationId,
@@ -314,13 +313,20 @@ public class ApplicationSearchController {
 
     if (isDraftApplication) {
       session.setAttribute(APPLICATION_ID, tdsApplication.getId());
+
       return "redirect:/application/sections";
-    } else {
-      session.setAttribute(CASE, ebsCase);
-      session.setAttribute(APPLICATION, tdsApplication);
-      session.setAttribute(NOTIFICATION_ID, notificationId);
-      return "redirect:/case/overview";
     }
+    // Todo: refactor 2nd condition could be redundant
+    if (tdsApplication != null && tdsApplication.getId() != null) {
+      session.setAttribute(APPLICATION_ID, tdsApplication.getId());
+    }
+
+    session.setAttribute(CASE, ebsCase);
+    session.setAttribute(APPLICATION, tdsApplication);
+    session.setAttribute(NOTIFICATION_ID, notificationId);
+
+    return "redirect:/case/overview";
+
   }
 
   private boolean isAmendment(ApplicationDetail ebsCase, BaseApplicationDetail tdsApplication) {

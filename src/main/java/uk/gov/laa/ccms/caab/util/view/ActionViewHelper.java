@@ -75,21 +75,25 @@ public class ActionViewHelper {
    * @return List of available actions.
    */
   public static List<AvailableAction> getAllAvailableActions(boolean openAmendment) {
-
-    AvailableAction amendmentAction = openAmendment
-        ? new AvailableAction(
-        FunctionConstants.AMEND_CASE,
-        "action.amendCase.continue.name",
-        "action.amendCase.continue.description",
-        "#")
-        : new AvailableAction(
-        FunctionConstants.AMEND_CASE,
-        "action.amendCase.new.name",
-        "action.amendCase.new.description",
-        "#");
-
     LinkedList<AvailableAction> availableActions = new LinkedList<>(AVAILABLE_ACTION_LIST);
-    availableActions.addFirst(amendmentAction);
+
+    AvailableAction amendmentAction = new AvailableAction(
+              FunctionConstants.AMEND_CASE,
+              "action.amendCase.continue.name",
+              "action.amendCase.continue.description",
+              "#");
+      availableActions.addFirst(amendmentAction);
+
+    if (openAmendment) {
+      availableActions.removeIf(action -> action.actionCode().equals(FunctionConstants.EDIT_PROVIDER));
+      AvailableAction providerAmendmentAction = new AvailableAction(
+                  FunctionConstants.EDIT_PROVIDER,
+                  "action.amendProviderDetails.name",
+                  "action.amendProviderDetails.description",
+                  "/application/sections/provider-details");
+      availableActions.addFirst(providerAmendmentAction);
+    }
+
     return availableActions;
   }
 }
