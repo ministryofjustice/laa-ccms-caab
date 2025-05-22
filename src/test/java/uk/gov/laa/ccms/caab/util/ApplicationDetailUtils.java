@@ -153,7 +153,7 @@ public final class ApplicationDetailUtils {
                         .levelOfService("")
                         .clientInvolvement("")
                         .status("SUBMITTED")
-                        .scopeLimitations(null)
+                        .scopeLimitations(Collections.emptyList())
                         .build()
                 )).status("Not started")
                 .build()
