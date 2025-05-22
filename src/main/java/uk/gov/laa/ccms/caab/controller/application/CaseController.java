@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 
 /**
@@ -48,6 +49,7 @@ public class CaseController {
   public String caseDetailsIndividual(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase, Model model) {
 
+    model.addAttribute("summary", new IndividualDetailsSectionDisplay(null, null, null));
     return "application/case-details-individual";
   }
 
