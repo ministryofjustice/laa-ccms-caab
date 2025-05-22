@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -45,12 +46,20 @@ public class CaseController {
     return "application/case-details";
   }
 
-  @GetMapping("/cases/details/individual")
-  public String caseDetailsIndividual(
+  @GetMapping("/cases/details/other-party/{index}")
+  public String caseDetailsOtherParty(
+      @PathVariable("index") final int index,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase, Model model) {
 
-    model.addAttribute("summary", new IndividualDetailsSectionDisplay(null, null, null));
-    return "application/case-details-individual";
+    final IndividualDetailsSectionDisplay opponent = ebsCase.getOpponents()
+        .stream()
+        .skip(index)
+        .findFirst()
+        .map(applicationService::getIndividualDetailsSectionDisplay)
+        .orElseThrow(
+            () -> new CaabApplicationException("Could not find opponent with index " + index));
+    model.addAttribute("otherParty", opponent);
+    return "application/case-details-other-party";
   }
 
 

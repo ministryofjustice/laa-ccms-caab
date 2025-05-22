@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.model.sections;
 
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,10 +12,10 @@ public class IndividualGeneralDetailsSectionDisplay {
   private String firstName;
   private String middleNames;
   private String surname;
-  private String dateOfBirth;
+  private LocalDate dateOfBirth;
   private String relationshipToClient;
   private String relationshipToCase;
-  private Boolean previouslyAppliedForPublicFunding;
+  private Boolean publicFundingApplied;
   private String nationalInsuranceNumber;
 
 }

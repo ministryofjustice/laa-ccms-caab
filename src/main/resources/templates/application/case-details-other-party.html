@@ -21,39 +21,34 @@
       <div class="govuk-summary-card__title-wrapper">
         <h2 class="govuk-summary-card__title" th:text="#{caseDetails.otherPartyDetails.general.subHeading}"/>
       </div>
-      <div class="govuk-summary-card__content">
+      <div class="govuk-summary-card__content" th:with="generalDetails=${otherParty.generalDetails()}">
         <div class="govuk-grid-row">
           <div class="govuk-grid-column-one-half">
             <dl class="govuk-summary-list">
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{person.title}"/>
-                <dd class="govuk-summary-list__value" id="general-title-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="general-title-value"
+                  th:text="${generalDetails.getTitle()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{person.firstName}"/>
-                <dd class="govuk-summary-list__value" id="general-first-name-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="general-first-name-value"
+                  th:text="${generalDetails.getFirstName()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{person.middleName}"/>
-                <dd class="govuk-summary-list__value" id="general-middle-names-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="general-middle-names-value"
+                  th:text="${generalDetails.getMiddleNames()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{person.surname}"/>
-                <dd class="govuk-summary-list__value" id="general-surname-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="general-surname-value"
+                    th:text="${generalDetails.getSurname()}">
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{person.dob}"/>
-                <dd class="govuk-summary-list__value" id="general-dob-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="general-dob-value"
+                    th:text="${generalDetails.getDateOfBirth()}"/>
               </div>
             </dl>
           </div>
@@ -63,28 +58,25 @@
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key"
                     th:text="#{caseDetails.otherPartyDetails.general.relationshipToClient}"/>
-                <dd class="govuk-summary-list__value" id="general-relationship-to-client-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="general-relationship-to-client-value"
+                  th:text="${generalDetails.getRelationshipToClient()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key"
                     th:text="#{caseDetails.otherPartyDetails.general.relationshipToCase}"/>
-                <dd class="govuk-summary-list__value" id="general-relationship-to-case-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="general-relationship-to-case-value"
+                  th:text="${generalDetails.getRelationshipToCase()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.general.previouslyAppliedForPublicFunding}"/>
                 <dd class="govuk-summary-list__value" id="general-previous-applied-for-public-funding-value">
-                  CHANGE
-                </dd>
+                  <th:block th:if="${generalDetails.getPublicFundingApplied()}">Yes</th:block>
+                  <th:block th:unless="${generalDetails.getPublicFundingApplied()}">No</th:block>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.general.nationalInsuranceNumber}"/>
-                <dd class="govuk-summary-list__value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value"
+                  th:text="${generalDetails.getNationalInsuranceNumber()}"/>
               </div>
             </dl>
           </div>
@@ -97,53 +89,45 @@
       <div class="govuk-summary-card__title-wrapper">
         <h2 class="govuk-summary-card__title" th:text="#{caseDetails.otherPartyDetails.address.subHeading}"/>
       </div>
-      <div class="govuk-summary-card__content">
+      <div class="govuk-summary-card__content" th:with="addressContactDetails=${otherParty.addressContactDetails()}">
         <div class="govuk-grid-row">
           <div class="govuk-grid-column-one-half">
             <dl class="govuk-summary-list">
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.houseNumber}"/>
-                <dd class="govuk-summary-list__value" id="address-house-number-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="address-house-number-value"
+                  th:text="${addressContactDetails.getHouseNameNumber()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.addressLine1}"/>
-                <dd class="govuk-summary-list__value" id="address-line-1-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="address-line-1-value"
+                  th:text="${addressContactDetails.getAddressLineOne()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.addressLine2}"/>
-                <dd class="govuk-summary-list__value" id="address-line-2-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="address-line-2-value"
+                  th:text="${addressContactDetails.getAddressLineTwo()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.cityTown}"/>
-                <dd class="govuk-summary-list__value" id="address-city-town-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="address-city-town-value"
+                  th:text="${addressContactDetails.getCityTown()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.county}"/>
-                <dd class="govuk-summary-list__value" id="address-county-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="address-county-value"
+                  th:text="${addressContactDetails.getCounty()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.country}"/>
-                <dd class="govuk-summary-list__value" id="address-country-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="address-country-value"
+                  th:text="${addressContactDetails.getCounty()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.postCode}"/>
-                <dd class="govuk-summary-list__value" id="address-postcode-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="address-postcode-value"
+                  th:text="${addressContactDetails.getPostcode()}"/>
               </div>
-
             </dl>
           </div>
 
@@ -152,33 +136,28 @@
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key"
                     th:text="#{caseDetails.otherPartyDetails.contact.homeTelephone}"/>
-                <dd class="govuk-summary-list__value" id="general-home-telephone-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="general-home-telephone-value"
+                  th:text="${addressContactDetails.getTelephoneHome()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.contact.workTelephone}"/>
-                <dd class="govuk-summary-list__value" id="address-work-telephone-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="address-work-telephone-value"
+                  th:text="${addressContactDetails.getTelephoneWork()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.contact.mobileTelephone}"/>
-                <dd class="govuk-summary-list__value" id="address-mobile-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="address-mobile-value"
+                  th:text="${addressContactDetails.getTelephoneMobile()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.contact.email}"/>
-                <dd class="govuk-summary-list__value" id="address-email-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="address-email-value"
+                  th:text="${addressContactDetails.getEmail()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.contact.faxNo}"/>
-                <dd class="govuk-summary-list__value" id="address-fax-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="address-fax-value"
+                  th:text="${addressContactDetails.getFax()}"/>
               </div>
             </dl>
           </div>
@@ -191,44 +170,42 @@
       <div class="govuk-summary-card__title-wrapper">
         <h2 class="govuk-summary-card__title" th:text="#{caseDetails.otherPartyDetails.employment.subHeading}"/>
       </div>
-      <div class="govuk-summary-card__content">
+      <div class="govuk-summary-card__content" th:with="employmentDetails=${otherParty.employmentDetails()}">
         <div class="govuk-grid-row">
           <div class="govuk-grid-column-one-half">
             <dl class="govuk-summary-list">
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.employment.employmentStatus}"/>
-                <dd class="govuk-summary-list__value" id="employment-status-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="employment-status-value"
+                  th:text="${employmentDetails.getEmploymentStatus()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.employment.employersName}"/>
-                <dd class="govuk-summary-list__value" id="employment-employer-name-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="employment-employer-name-value"
+                  th:text="${employmentDetails.getEmployersName()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.employment.employersAddress}"/>
-                <dd class="govuk-summary-list__value" id="employment-employer-address-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="employment-employer-address-value"
+                  th:text="${employmentDetails.getEmployersAddress()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.employment.certificateNumber}"/>
-                <dd class="govuk-summary-list__value" id="employment-certificate-number-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="employment-certificate-number-value"
+                  th:text="${employmentDetails.getCertificateNumber()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.employment.partyIsLegalAided}"/>
                 <dd class="govuk-summary-list__value" id="employment-party-is-legal-aided-value">
-                  CHANGE
+                  <th:block th:if="${employmentDetails.getPartyIsLegalAided()}">Yes</th:block>
+                  <th:block th:unless="${employmentDetails.getPartyIsLegalAided()}">No</th:block>
                 </dd>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.employment.hasHadCourtOrderedMeansAssessment}"/>
                 <dd class="govuk-summary-list__value" id="employment-had-means-assessment-value">
-                  CHANGE
+                  <th:block th:if="${employmentDetails.getHadCourtOrderedMeansAssessment()}">Yes</th:block>
+                  <th:block th:unless="${employmentDetails.getHadCourtOrderedMeansAssessment()}">No</th:block>
                 </dd>
               </div>
 
@@ -239,33 +216,28 @@
             <dl class="govuk-summary-list">
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.employment.assessedIncomeFrequency}"/>
-                <dd class="govuk-summary-list__value" id="employment-assessed-income-frequency-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="employment-assessed-income-frequency-value"
+                  th:text="${employmentDetails.getAssessedIncomeFrequency()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.employment.assessmentDate}"/>
-                <dd class="govuk-summary-list__value" id="employment-assessment-date-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="employment-assessment-date-value"
+                  th:text="${employmentDetails.getAssessmentDate()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.employment.assessedIncome}"/>
-                <dd class="govuk-summary-list__value" id="employment-assessed-income-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="employment-assessed-income-value"
+                  th:text="'£'+${employmentDetails.getAssessedIncome()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.employment.assessedAssets}"/>
-                <dd class="govuk-summary-list__value" id="employment-assessed-assets-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="employment-assessed-assets-value"
+                  th:text="'£'+${employmentDetails.getAssessedAssets()}"/>
               </div>
               <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.employment.otherInformation}"/>
-                <dd class="govuk-summary-list__value" id="employment-other-information-value">
-                  CHANGE
-                </dd>
+                <dd class="govuk-summary-list__value" id="employment-other-information-value"
+                  th:text="${employmentDetails.getOtherInformation()}"/>
               </div>
 
             </dl>

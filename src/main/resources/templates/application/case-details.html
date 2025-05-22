@@ -208,16 +208,11 @@
                     </tr>
                     </thead>
                     <tbody class="govuk-table__body">
-                    <tr class="govuk-table__row" th:each="opponent : ${summary.opponentsAndOtherParties.opponents}">
+                    <tr class="govuk-table__row" th:each="opponent, idx : ${summary.opponentsAndOtherParties.opponents}">
                         <td class="govuk-table__cell">
                             <a class="govuk-link govuk-link--no-visited-state"
-                               th:if="${opponent.partyType == 'Individual'}"
                                th:text="${opponent.partyType}"
-                               th:href="@{/cases/details/individual}"/>
-                            <a class="govuk-link govuk-link--no-visited-state"
-                               th:if="${opponent.partyType == 'Organisation'}"
-                               th:text="${opponent.partyType}"
-                               href="#"/>
+                               th:href="@{/cases/details/other-party/{index}(index=${idx.index})}"/>
                         </td>
                         <td class="govuk-table__cell" th:text="${opponent.partyName}"/>
                         <td class="govuk-table__cell" th:text="${opponent.relationshipToClient}"/>
