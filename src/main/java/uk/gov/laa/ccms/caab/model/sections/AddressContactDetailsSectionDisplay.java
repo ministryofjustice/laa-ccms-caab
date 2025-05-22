@@ -11,8 +11,8 @@ public class AddressContactDetailsSectionDisplay {
   private String addressLineOne;
   private String addressLineTwo;
   private String cityTown;
-  private String country;
   private String county;
+  private String country;
   private String postcode;
   private String telephoneHome;
   private String telephoneWork;
