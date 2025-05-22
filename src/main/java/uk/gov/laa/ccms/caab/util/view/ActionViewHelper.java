@@ -81,13 +81,14 @@ public class ActionViewHelper {
 
     AvailableAction amendmentAction = new AvailableAction(
               FunctionConstants.AMEND_CASE,
-              "action.amendCase." + amendCaseState +".name",
-              "action.amendCase." + amendCaseState +".description",
+              "action.amendCase." + amendCaseState + ".name",
+              "action.amendCase." + amendCaseState + ".description",
               "#");
-      availableActions.addFirst(amendmentAction);
+    availableActions.addFirst(amendmentAction);
 
     if (openAmendment) {
-      availableActions.removeIf(action -> action.actionCode().equals(FunctionConstants.EDIT_PROVIDER));
+      availableActions.removeIf(
+              action -> action.actionCode().equals(FunctionConstants.EDIT_PROVIDER));
       AvailableAction providerAmendmentAction = new AvailableAction(
                   FunctionConstants.EDIT_PROVIDER,
                   "action.amendProviderDetails.name",

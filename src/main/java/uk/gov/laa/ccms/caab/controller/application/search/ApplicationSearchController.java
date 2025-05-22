@@ -193,7 +193,6 @@ public class ApplicationSearchController {
   /**
    * Displays the case overview screen.
    *
-   * @param userDetails     The details of the currently authenticated user.
    * @param ebsCase         The case details from EBS.
    * @param tdsApplication  The application details from TDS, if available.
    * @param notificationId  The ID of the notification, if coming from a notification page.
