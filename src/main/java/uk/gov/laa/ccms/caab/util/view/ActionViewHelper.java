@@ -77,10 +77,12 @@ public class ActionViewHelper {
   public static List<AvailableAction> getAllAvailableActions(boolean openAmendment) {
     LinkedList<AvailableAction> availableActions = new LinkedList<>(AVAILABLE_ACTION_LIST);
 
+    String amendCaseState = openAmendment ? "continue" : "new";
+
     AvailableAction amendmentAction = new AvailableAction(
               FunctionConstants.AMEND_CASE,
-              "action.amendCase.continue.name",
-              "action.amendCase.continue.description",
+              "action.amendCase." + amendCaseState +".name",
+              "action.amendCase." + amendCaseState +".description",
               "#");
       availableActions.addFirst(amendmentAction);
 
@@ -91,7 +93,7 @@ public class ActionViewHelper {
                   "action.amendProviderDetails.name",
                   "action.amendProviderDetails.description",
                   "/application/sections/provider-details");
-      availableActions.addFirst(providerAmendmentAction);
+      availableActions.add(providerAmendmentAction);
     }
 
     return availableActions;
