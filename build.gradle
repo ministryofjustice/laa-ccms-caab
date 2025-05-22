@@ -85,10 +85,10 @@ dependencies {
 	implementation 'org.springframework.data:spring-data-commons'
 
 	// AWS S3 Integration
-	implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.3.0")
+	implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.3.1")
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
-	implementation 'software.amazon.awssdk:sts:2.31.45'
+	implementation 'software.amazon.awssdk:sts:2.31.48'
 
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
