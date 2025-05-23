@@ -105,6 +105,7 @@ dependencies {
 	// Metrics
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'io.micrometer:micrometer-registry-prometheus'
+	implementation 'io.prometheus:prometheus-metrics-tracer-initializer'
 
 	//ClamAV virus scan
 	implementation 'fi.solita.clamav:clamav-client:1.0.1'
