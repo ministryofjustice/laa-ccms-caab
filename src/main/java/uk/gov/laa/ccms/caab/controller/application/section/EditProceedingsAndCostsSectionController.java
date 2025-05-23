@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -1489,11 +1490,10 @@ public class EditProceedingsAndCostsSectionController {
       @SessionAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA)
       final PriorAuthorityFlowFormData priorAuthorityFlow,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @ModelAttribute("priorAuthorityDetails")
+      @Validated @ModelAttribute("priorAuthorityDetails")
       final PriorAuthorityDetailsFormData priorAuthorityDetails,
-      final Model model,
-      final BindingResult bindingResult) {
-
+      final BindingResult bindingResult,
+      final Model model) {
 
     proceedingAndCostsMapper.toPriorAuthorityDetailsFormData(
         priorAuthorityDetails,

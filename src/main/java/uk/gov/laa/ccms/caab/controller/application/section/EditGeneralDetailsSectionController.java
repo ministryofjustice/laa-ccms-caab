@@ -136,10 +136,10 @@ public class EditGeneralDetailsSectionController {
   public String updateCorrespondenceDetails(
       @RequestParam(required = false) final String action,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
-      @ModelAttribute("addressDetails") final AddressFormData addressDetails,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      final Model model,
+      @Validated @ModelAttribute("addressDetails") final AddressFormData addressDetails,
       final BindingResult bindingResult,
+      final Model model,
       final HttpSession session) {
 
     if (ACTION_FIND_ADDRESS.equals(action)) {

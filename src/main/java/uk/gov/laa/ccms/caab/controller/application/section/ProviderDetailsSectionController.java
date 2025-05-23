@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -81,7 +82,7 @@ public class ProviderDetailsSectionController {
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
-      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
+      @Validated @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       BindingResult bindingResult,
       Model model) {
 
