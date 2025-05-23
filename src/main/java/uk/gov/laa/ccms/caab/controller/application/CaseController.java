@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -51,13 +52,17 @@ public class CaseController {
       @PathVariable("index") final int index,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase, Model model) {
 
+    if (Objects.isNull(ebsCase.getOpponents()) || index >= ebsCase.getOpponents().size()) {
+      throw new CaabApplicationException("Could not find opponent with index " + index);
+    }
     final IndividualDetailsSectionDisplay opponent = ebsCase.getOpponents()
         .stream()
         .skip(index)
         .findFirst()
         .map(applicationService::getIndividualDetailsSectionDisplay)
         .orElseThrow(
-            () -> new CaabApplicationException("Could not find opponent with index " + index));
+            () -> new CaabApplicationException("Error occurred when retrieving opponent details"));
+
     model.addAttribute("otherParty", opponent);
     return "application/case-details-other-party";
   }
