@@ -76,6 +76,7 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.metric.PuiMetricService;
 import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
@@ -148,6 +149,10 @@ class ApplicationServiceTest {
   private LookupService lookupService;
   @Mock
   private AssessmentService assessmentService;
+
+  @Mock
+  private PuiMetricService puiMetricService;
+
   @Mock EvidenceService evidenceService;
   @Mock
   private ProviderService providerService;
@@ -489,7 +494,7 @@ class ApplicationServiceTest {
     verify(soaApiClient).getContractDetails(anyInt(), anyInt(), anyString(), anyString());
     verify(ebsApiClient).getAmendmentTypes(any());
     verify(caabApiClient).createApplication(anyString(), any());
-
+    verify(puiMetricService, times(1)).incrementCreatedApplicationsCount("REF123");
   }
 
   @Test
@@ -564,6 +569,9 @@ class ApplicationServiceTest {
     verify(copyApplicationMapper).copyApplication(
         any(ApplicationDetail.class),
         eq(applicationToCopy));
+    verify(puiMetricService, times(1))
+        .incrementCopyAndCreatedCount(eq(applicationFormData.getCopyCaseReferenceNumber()),
+            anyString());
   }
 
 
@@ -1316,6 +1324,7 @@ class ApplicationServiceTest {
 
     verify(assessmentService).deleteAssessments(user, expectedAssessmentNames, application.getCaseReferenceNumber(), null);
 
+    verify(puiMetricService).incrementAbandonedCount(application.getCaseReferenceNumber());
   }
 
   @Test

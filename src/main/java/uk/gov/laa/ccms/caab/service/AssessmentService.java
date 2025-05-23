@@ -511,7 +511,8 @@ public class AssessmentService {
       final ApplicationDetail application,
       final AssessmentEntityTypeDetail proceedingEntityType) {
 
-    if (proceedingEntityType == null && application.getProceedings() == null) {
+    if (proceedingEntityType == null
+        && (application.getProceedings() == null || application.getProceedings().isEmpty())) {
       return true;
     }
 
