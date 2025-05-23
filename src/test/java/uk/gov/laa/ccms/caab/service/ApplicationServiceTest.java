@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.AdditionalAnswers.returnsSecondArg;
 import static org.mockito.ArgumentMatchers.any;
@@ -94,6 +93,7 @@ import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapperImpl;
 import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.IndividualDetailsSectionDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.OpponentMapper;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
@@ -107,7 +107,6 @@ import uk.gov.laa.ccms.caab.model.AuditDetail;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ClientDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
-import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
@@ -116,17 +115,7 @@ import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
-import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionStatusDisplay;
-import uk.gov.laa.ccms.caab.model.sections.ApplicationTypeSectionDisplay;
-import uk.gov.laa.ccms.caab.model.sections.ClientSectionDisplay;
-import uk.gov.laa.ccms.caab.model.sections.GeneralDetailsSectionDisplay;
-import uk.gov.laa.ccms.caab.model.sections.LinkedCaseDisplay;
-import uk.gov.laa.ccms.caab.model.sections.LinkedCasesDisplaySection;
-import uk.gov.laa.ccms.caab.model.sections.OpponentSectionDisplay;
-import uk.gov.laa.ccms.caab.model.sections.OpponentsSectionDisplay;
-import uk.gov.laa.ccms.caab.model.sections.ProceedingSectionDisplay;
-import uk.gov.laa.ccms.caab.model.sections.ProceedingsAndCostsSectionDisplay;
-import uk.gov.laa.ccms.caab.model.sections.ProviderSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CaseDetail;
@@ -184,6 +173,9 @@ class ApplicationServiceTest {
 
   @Mock
   private CopyApplicationMapperImpl copyApplicationMapper;
+
+  @Mock
+  private IndividualDetailsSectionDisplayMapper individualDetailsSectionDisplayMapper;
 
   @Mock
   private OpponentMapper opponentMapper;
@@ -1751,6 +1743,22 @@ class ApplicationServiceTest {
     proceeding.setCostLimitation(new BigDecimal("1500.00")); // This should trigger an update to default cost limitation
     application.setProceedings(List.of(proceeding));
     return application;
+  }
+
+  @Test
+  @DisplayName("Should return mapped response when getting individual details")
+  void shouldReturnMappedResponseWhenGettingIndividualDetailsSectionDisplay(){
+    // Given
+    IndividualDetailsSectionDisplay expected = new IndividualDetailsSectionDisplay(null,
+        null, null);
+    when(individualDetailsSectionDisplayMapper.toIndividualDetailsSectionDisplay(any()))
+        .thenReturn(expected);
+    // When
+    IndividualDetailsSectionDisplay result = applicationService.getIndividualDetailsSectionDisplay(
+        new OpponentDetail());
+    // Then
+    assertNotNull(result);
+    assertThat(result).isEqualTo(expected);
   }
 
 
