@@ -183,7 +183,7 @@
                   <tbody class="govuk-table__body">
                   <tr class="govuk-table__row" th:each="action : ${availableActions}">
                       <td class="govuk-table__cell">
-                          <a class="govuk-link" th:href="@{${action.link()}}"
+                          <a class="govuk-link govuk-link--no-visited-state" th:href="@{${action.link}}"
                              th:text="${#messages.msg(action.actionKey())}">
                           </a>
                       </td>
