@@ -47,10 +47,19 @@ public class CaseController {
     return "application/case-details";
   }
 
+  /**
+   * Returns a display object containing an other party within a case.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param index Index number of the OtherParty within the ebsCase.
+   * @param model The model used to pass data to the view.
+   * @return The case details other party view.
+   */
   @GetMapping("/cases/details/other-party/{index}")
   public String caseDetailsOtherParty(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @PathVariable("index") final int index,
-      @SessionAttribute(CASE) final ApplicationDetail ebsCase, Model model) {
+      Model model) {
 
     if (Objects.isNull(ebsCase.getOpponents()) || index >= ebsCase.getOpponents().size()) {
       throw new CaabApplicationException("Could not find opponent with index " + index);

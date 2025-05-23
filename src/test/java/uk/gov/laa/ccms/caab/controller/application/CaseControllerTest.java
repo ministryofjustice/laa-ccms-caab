@@ -20,8 +20,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
-import uk.gov.laa.ccms.caab.model.sections.AddressContactDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.IndividualAddressContactDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualEmploymentDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualGeneralDetailsSectionDisplay;
@@ -88,7 +88,7 @@ class CaseControllerTest {
       ApplicationSectionDisplay display = ApplicationSectionDisplay.builder().build();
       IndividualDetailsSectionDisplay otherParty = new IndividualDetailsSectionDisplay(
           new IndividualGeneralDetailsSectionDisplay(),
-          new AddressContactDetailsSectionDisplay(),
+          new IndividualAddressContactDetailsSectionDisplay(),
           new IndividualEmploymentDetailsSectionDisplay());
       when(applicationService.getIndividualDetailsSectionDisplay(any())).thenReturn(
           otherParty);

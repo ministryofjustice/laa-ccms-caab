@@ -5,6 +5,11 @@ import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Represents the display properties for an individuals employment details.
+ *
+ * @author Jamie Briggs
+ */
 @Getter
 @Setter
 public class IndividualEmploymentDetailsSectionDisplay {

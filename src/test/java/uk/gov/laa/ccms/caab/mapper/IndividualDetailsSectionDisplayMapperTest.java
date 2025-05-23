@@ -10,7 +10,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
-import uk.gov.laa.ccms.caab.model.sections.AddressContactDetailsSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.IndividualAddressContactDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualEmploymentDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualGeneralDetailsSectionDisplay;
@@ -75,7 +75,7 @@ class IndividualDetailsSectionDisplayMapperTest {
     IndividualDetailsSectionDisplay result
         = mapper.toIndividualDetailsSectionDisplay(individualDetails);
     // Then
-    AddressContactDetailsSectionDisplay addressDetails = result.addressContactDetails();
+    IndividualAddressContactDetailsSectionDisplay addressDetails = result.addressContactDetails();
     assertThat(addressDetails).isNotNull();
     assertThat(addressDetails.getTelephoneHome()).isEqualTo("12345678900");
     assertThat(addressDetails.getHouseNameNumber()).isEqualTo("123");

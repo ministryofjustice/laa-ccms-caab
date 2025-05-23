@@ -4,6 +4,11 @@ import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Represents the display details for an individual's general details.
+ *
+ * @author Jamie Briggs
+ */
 @Getter
 @Setter
 public class IndividualGeneralDetailsSectionDisplay {

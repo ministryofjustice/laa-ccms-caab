@@ -3,7 +3,7 @@ package uk.gov.laa.ccms.caab.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
-import uk.gov.laa.ccms.caab.model.sections.AddressContactDetailsSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.IndividualAddressContactDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualEmploymentDetailsSectionDisplay;
 
@@ -33,12 +33,14 @@ public interface IndividualDetailsSectionDisplayMapper {
   @Mapping(target = "telephoneMobile", source = "opponentDetail.telephoneMobile")
   @Mapping(target = "email", source = "opponentDetail.emailAddress")
   @Mapping(target = "fax", source = "opponentDetail.faxNumber")
-  AddressContactDetailsSectionDisplay toAddressDetails(OpponentDetail opponentDetail);
+  IndividualAddressContactDetailsSectionDisplay toAddressDetails(OpponentDetail opponentDetail);
 
   @Mapping(target = "employersName", source = "opponentDetail.employerName")
   @Mapping(target = "employersAddress", source = "opponentDetail.employerAddress")
-  @Mapping(target = "hadCourtOrderedMeansAssessment", source = "opponentDetail.courtOrderedMeansAssessment")
+  @Mapping(target = "hadCourtOrderedMeansAssessment",
+      source = "opponentDetail.courtOrderedMeansAssessment")
   @Mapping(target = "partyIsLegalAided", source = "opponentDetail.legalAided")
-  IndividualEmploymentDetailsSectionDisplay toIndividualEmploymentDetailsSectionDisplay(OpponentDetail opponentDetail);
+  IndividualEmploymentDetailsSectionDisplay toIndividualEmploymentDetailsSectionDisplay(
+      OpponentDetail opponentDetail);
 
 }
