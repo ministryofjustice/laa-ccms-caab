@@ -5,7 +5,6 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
-
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.model.AvailableAction;
 import uk.gov.laa.ccms.caab.util.view.ActionViewHelper;
@@ -58,7 +57,7 @@ class ActionViewHelperTest {
     assertThat(amendClientAction.actionCode()).isEqualTo(FunctionConstants.AMEND_CLIENT);
     assertThat(amendClientAction.actionKey()).isEqualTo("action.amendClient.name");
     assertThat(amendClientAction.descriptionKey()).isEqualTo("action.amendClient.description");
-    assertThat(amendClientAction.link()).isEqualTo("#");
+    assertThat(amendClientAction.link()).isEqualTo("/amendments/sections/client/details/summary");
 
     // Last static action: MEANS_REASSESSMENT (index 11 of staticActions)
     AvailableAction meansReassessmentAction = staticActions.get(11);
@@ -85,7 +84,7 @@ class ActionViewHelperTest {
     // Define the expected static actions in order based on ActionViewHelper.AVAILABLE_ACTION_LIST
     List<ExpectedAction> expectedStaticActions = List.of(
         new ExpectedAction(FunctionConstants.AMEND_CLIENT, "action.amendClient.name",
-            "action.amendClient.description", "#"),
+            "action.amendClient.description", "/amendments/sections/client/details/summary"),
         new ExpectedAction(FunctionConstants.BILLING, "action.billing.name",
             "action.billing.description", "#"),
         new ExpectedAction(FunctionConstants.OUTCOME_WITH_DISCHARGE, "action.recordOutcome.name",

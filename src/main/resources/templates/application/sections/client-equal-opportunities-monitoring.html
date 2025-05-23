@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title th:text="#{service.name} + ' - ' + #{application.create}"></title>
+  <title th:if="${caseContext} == 'application'" th:text="#{service.name} + ' - ' + #{application.create}"/>
+  <title th:if="${caseContext} == 'amendments'" th:text="#{service.name} + ' - ' + #{client.edit}"/>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-      <a th:href="@{/application/sections/client/details/summary}" class="govuk-back-link" th:text="#{site.cancelAndReturnToClientSearch}"></a>
+      <a th:href="@{/{caseContext}/sections/client/details/summary(caseContext=${caseContext})}" class="govuk-back-link" th:text="#{site.cancelAndReturnToClientSearch}"></a>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/sections/client/details/equal-opportunities-monitoring}" th:object="${monitoringDetails}" method="post">
+    <form action="#" th:action="@{/{caseContext}/sections/client/details/equal-opportunities-monitoring(caseContext=${caseContext})}" th:object="${monitoringDetails}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <span class="govuk-caption-l" th:text="#{client.edit}"></span>
       <h1 class="govuk-heading-l" th:text="#{client.opportunities}"></h1>
