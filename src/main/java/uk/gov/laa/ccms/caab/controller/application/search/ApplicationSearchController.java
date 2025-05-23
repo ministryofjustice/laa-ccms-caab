@@ -353,7 +353,7 @@ public class ApplicationSearchController {
   private void setProceedingDisplayStatuses(ApplicationDetail ebsCase,
       ApplicationDetail amendments) {
     List<ProceedingDetail> proceedings = ebsCase.getProceedings();
-    if (proceedings == null) {
+    if (proceedings == null || proceedings.isEmpty()) {
       return;
     }
 

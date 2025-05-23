@@ -1,6 +1,6 @@
 plugins {
 	id 'net.researchgate.release' version '3.1.0'
-	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.31'
+	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.34'
 }
 
 subprojects {
@@ -47,7 +47,7 @@ dependencies {
 					"CVE-2024-29857, CVE-2023-33201." +
 					"Parent: org.springframework.security:spring-security-saml2-service-provider")
 		}
-		implementation('com.google.guava:guava:32.0.0-jre') {
+		implementation('com.google.guava:guava:33.4.8-jre') {
 			because("Fixes CVE-2023-2976." +
 					"Parent: org.springframework.security:spring-security-saml2-service-provider")
 		}
@@ -60,19 +60,19 @@ dependencies {
 
 	}
 
-	implementation 'uk.gov.laa.ccms.data:data-api:0.0.46'
+	implementation 'uk.gov.laa.ccms.data:data-api:0.0.56'
 
-	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.55'
+	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.67'
 
-	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.46'
+	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.56'
 
-	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.30'
+	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.38'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
-	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
-	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+	implementation 'org.mapstruct:mapstruct:1.6.3'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 
 	// Starters
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
@@ -85,16 +85,16 @@ dependencies {
 	implementation 'org.springframework.data:spring-data-commons'
 
 	// AWS S3 Integration
-	implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.1.1")
+	implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.3.1")
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
-	implementation 'software.amazon.awssdk:sts:2.26.19'
+	implementation 'software.amazon.awssdk:sts:2.31.48'
 
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-	implementation 'org.json:json:20240303'
+	implementation 'org.json:json:20250517'
 
-	implementation 'io.swagger.core.v3:swagger-annotations:2.2.22'
+	implementation 'io.swagger.core.v3:swagger-annotations:2.2.32'
 
 	//SAML security
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
@@ -118,14 +118,14 @@ dependencies {
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
-	testImplementation 'io.projectreactor:reactor-test:3.6.1'
+	testImplementation 'io.projectreactor:reactor-test:3.7.6'
 
-	integrationTestImplementation 'org.wiremock:wiremock-standalone:3.3.1'
+	integrationTestImplementation 'org.wiremock:wiremock-standalone:3.13.0'
 
-	testImplementation platform('org.testcontainers:testcontainers-bom:1.20.6')
+	testImplementation platform('org.testcontainers:testcontainers-bom:1.21.0')
 	testImplementation 'org.testcontainers:testcontainers'
 	testImplementation 'org.testcontainers:junit-jupiter'
-	testImplementation 'org.testcontainers:localstack:1.20.4'
+	testImplementation 'org.testcontainers:localstack:1.21.0'
 
 }
 
