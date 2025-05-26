@@ -77,4 +77,11 @@ public class CaseController {
   }
 
 
+  @GetMapping("/cases/details/prior-authority")
+  public String getCaseDetailsView(@SessionAttribute(CASE) final ApplicationDetail ebsCase,
+                                   Model model) {
+    model.addAttribute("priorAuthority", ebsCase.getPriorAuthorities().getFirst());
+    return "application/prior-authority-review";
+  }
+
 }

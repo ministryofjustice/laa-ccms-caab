@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <title th:text="#{service.name} + ' - ' + #{application.create}"/>
+</head>
+<body>
+
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a th:href="@{/cases/details}" class="govuk-back-link">Case details</a>
+    </div>
+
+    <div id="main-content">
+        <h1 class="govuk-heading-l">Prior authority review</h1>
+        <p class="govuk-body-l">Below is a summary of your Prior Authority request</p>
+        <dl class="govuk-summary-list">
+            <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">
+                    Prior authority type
+                </dt>
+                <dd class="govuk-summary-list__value" th:text="${priorAuthority.type.displayValue}">
+                </dd>
+            </div>
+            <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">
+                    Summary
+                </dt>
+                <dd class="govuk-summary-list__value" th:text="${priorAuthority.summary}">
+                </dd>
+            </div>
+            <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">
+                    Justification
+                </dt>
+                <dd class="govuk-summary-list__value" th:text="${priorAuthority.justification}">
+                </dd>
+            </div>
+            <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">
+                    Amount requested
+                </dt>
+                <dd class="govuk-summary-list__value" th:text="${'&pound;' + priorAuthority.amountRequested}">
+                </dd>
+            </div>
+            <th:block th:each="item : ${priorAuthority.items}">
+                <div class="govuk-summary-list__row">
+                    <dt class="govuk-summary-list__key" th:text="${item.code.displayValue}">
+                    </dt>
+                    <dd class="govuk-summary-list__value" th:text="${item.value.displayValue}">
+                    </dd>
+                </div>
+            </th:block>
+        </dl>
+    </div>
+
+</div>
+</body>
