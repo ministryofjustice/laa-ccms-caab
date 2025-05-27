@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
 import java.util.List;
@@ -14,6 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
@@ -43,15 +45,16 @@ public class ApplicationTypeController {
    * @return The view name for the application type selection page or a redirect if exceptional
    *     funding.
    */
-  @GetMapping("/application/application-type")
+  @GetMapping("/{" + CONTEXT_NAME + "}/application-type")
   public String applicationType(
+      @PathVariable(CONTEXT_NAME) final String caseContext,
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       Model model) {
 
     if (applicationFormData.isExceptionalFunding()) {
       log.warn("ApplicationTypeController hit despite exceptionalFunding being true. "
           + "Redirecting to client-search");
-      return "redirect:/application/client/search";
+      return "redirect:/%s/client/search".formatted(caseContext);
     }
 
     model.addAttribute("applicationTypes", getFilteredApplicationTypes());
