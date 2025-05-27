@@ -101,7 +101,7 @@ class ClientSubmissionsConfirmedControllerTest {
     mockMvc.perform(post("/" + ContextConstants.AMENDMENTS + "/client-update/confirmed"))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/amendments/summary"));
+        .andExpect(redirectedUrl("/case/overview"));
   }
 
   private UserDetail buildUser() {

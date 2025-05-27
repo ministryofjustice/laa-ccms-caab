@@ -1,9 +1,8 @@
-package uk.gov.laa.ccms.caab.controller.application.section;
+package uk.gov.laa.ccms.caab.controller.client;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -20,7 +19,6 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_D
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ETHNIC_ORIGIN;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -38,7 +36,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.ui.Model;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
@@ -48,17 +45,15 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
-import uk.gov.laa.ccms.caab.controller.client.EditClientSummaryController;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 @ExtendWith(MockitoExtension.class)
-class EditClientSummaryControllerTest {
+public class ClientSummaryControllerTest {
 
   @Mock
   private ClientService clientService;
@@ -82,7 +77,7 @@ class EditClientSummaryControllerTest {
   private ClientDetailMapper clientDetailsMapper;
 
   @InjectMocks
-  private EditClientSummaryController editClientSummaryController;
+  private ClientSummaryController clientSummaryController;
 
   private MockMvc mockMvc;
 
@@ -97,8 +92,6 @@ class EditClientSummaryControllerTest {
 
   private ClientFlowFormData clientFlowFormData;
 
-  private ActiveCase activeCase;
-
   private static final UserDetail userDetails = new UserDetail()
       .userId(1)
       .userType("testUserType")
@@ -106,9 +99,9 @@ class EditClientSummaryControllerTest {
 
   @BeforeEach
   public void setup() {
-    mockMvc = MockMvcBuilders.standaloneSetup(editClientSummaryController).build();
+    mockMvc = MockMvcBuilders.standaloneSetup(clientSummaryController).build();
 
-    clientFlowFormData = new ClientFlowFormData("edit");
+    clientFlowFormData = new ClientFlowFormData("create");
     clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
     clientFlowFormData.setContactDetails(new ClientFormDataContactDetails());
     clientFlowFormData.setAddressDetails(new ClientFormDataAddressDetails());
@@ -122,13 +115,11 @@ class EditClientSummaryControllerTest {
     disabilityLookupValueDetail = new CommonLookupValueDetail();
     correspondenceMethodLookupValueDetail = new CommonLookupValueDetail();
     correspondenceLanguageLookupValueDetail = new CommonLookupValueDetail();
-
-    activeCase = ActiveCase.builder().build();
   }
 
   @Test
-  @DisplayName("Test get client details summary with form data in session")
-  void testGetClientDetailsSummary_withFormDataInSession() throws Exception {
+  @DisplayName("Test client details summary without correspondence language")
+  void testClientDetailsSummary_Get() throws Exception {
 
     when(lookupService.getClientLookups(any())).thenReturn(
         List.of(
@@ -145,25 +136,22 @@ class EditClientSummaryControllerTest {
         .thenReturn(Mono.empty());
 
 
-    mockMvc.perform(get("/application/sections/client/details/summary")
-            .sessionAttr(USER_DETAILS, userDetails)
-            .sessionAttr(ACTIVE_CASE, activeCase)
-            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+    mockMvc.perform(get("/application/client/details/summary")
+            .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/client-summary-details"));
+        .andExpect(view().name("application/client/client-summary-details"));
 
     verify(lookupService, times(1)).getClientLookups(any());
     verify(lookupService, times(1)).addCommonLookupsToModel(anyList(), any(Model.class));
     verify(lookupService, never()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_LANGUAGE), any());
-
-    verify(clientService, never()).getClient(any(), any(), any());
-    verify(clientDetailsMapper, never()).toClientFlowFormData(any());
   }
 
 
   @Test
-  @DisplayName("Test get client details summary without form data in session")
-  void testGetClientDetailsSummary_withoutFormDataInSession() throws Exception {
+  @DisplayName("Test client details summary with correspondence language")
+  void testClientDetailsSummary_Get_withCorrespondenceLanguage() throws Exception {
+    final String testLanguage = "TEST";
+    clientFlowFormData.getContactDetails().setCorrespondenceLanguage(testLanguage);
 
     when(lookupService.getClientLookups(any())).thenReturn(
         List.of(
@@ -172,7 +160,8 @@ class EditClientSummaryControllerTest {
             Pair.of(COMMON_VALUE_MARITAL_STATUS, Mono.just(Optional.of(maritalStatusLookupValueDetail))),
             Pair.of(COMMON_VALUE_ETHNIC_ORIGIN, Mono.just(Optional.of(ethnicityLookupValueDetail))),
             Pair.of(COMMON_VALUE_DISABILITY, Mono.just(Optional.of(disabilityLookupValueDetail))),
-            Pair.of(COMMON_VALUE_CORRESPONDENCE_METHOD, Mono.just(Optional.of(correspondenceMethodLookupValueDetail)))
+            Pair.of(COMMON_VALUE_CORRESPONDENCE_METHOD, Mono.just(Optional.of(correspondenceMethodLookupValueDetail))),
+            Pair.of(COMMON_VALUE_CORRESPONDENCE_LANGUAGE, Mono.just(Optional.of(correspondenceLanguageLookupValueDetail)))
         )
     );
 
@@ -180,39 +169,29 @@ class EditClientSummaryControllerTest {
         .thenReturn(Mono.empty());
 
 
-    when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(new ClientDetail()));
-
-    when(clientDetailsMapper.toClientFlowFormData(any())).thenReturn(clientFlowFormData);
-
-    mockMvc.perform(get("/application/sections/client/details/summary")
-            .sessionAttr(USER_DETAILS, userDetails)
-            .sessionAttr(ACTIVE_CASE, activeCase))
+    mockMvc.perform(get("/application/client/details/summary")
+            .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/client-summary-details"));
+        .andExpect(view().name("application/client/client-summary-details"));
 
     verify(lookupService, times(1)).getClientLookups(any());
     verify(lookupService, times(1)).addCommonLookupsToModel(anyList(), any(Model.class));
-    verify(lookupService, never()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_LANGUAGE), any());
-
-    verify(clientService, atLeastOnce()).getClient(any(), any(), any());
-    verify(clientDetailsMapper, atLeastOnce()).toClientFlowFormData(any());
   }
 
-  @Test
-  void testPostClientDetailsSummary() throws Exception {
-    final ClientFlowFormData clientFlowFormData = new ClientFlowFormData("edit");
 
-    when(clientService.updateClient(any(), any(), any())).thenReturn(
+  @Test
+  void testClientDetailsSummary_Post() throws Exception {
+    final ClientFlowFormData clientFlowFormData = new ClientFlowFormData("create");
+
+    when(clientService.createClient(any(), any())).thenReturn(
         Mono.just(new ClientTransactionResponse()));
 
-    mockMvc.perform(post("/application/sections/client/details/summary")
+    mockMvc.perform(post("/application/client/details/summary")
             .sessionAttr(USER_DETAILS, userDetails)
-            .sessionAttr(ACTIVE_CASE, activeCase)
             .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/client-update"));
+        .andExpect(redirectedUrl("/application/client-create"));
 
-    verify(clientService).updateClient(any(), any(), any());
+    verify(clientService).createClient(any(), any());
   }
-
 }

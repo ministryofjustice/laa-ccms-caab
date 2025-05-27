@@ -7,7 +7,7 @@
 <body>
 <!--Client summary fragment-->
 <div th:fragment="clientSummaryFragment"
-     th:with="baseLinkUrl=*{action == 'edit'} ? @{/application/sections/client} :  @{/application/client}"
+     th:with="baseLinkUrl=*{action == 'edit'} ? '/' + ${caseContext} + '/sections/client' :  '/application/client'"
      class="govuk-grid-row">
   <div class="govuk-grid-column-full">
     <div class="govuk-summary-card">
@@ -16,13 +16,13 @@
         <ul class="govuk-summary-card__actions">
           <li th:if="*{action == 'edit'}" class="govuk-summary-card__action">
             <a class="govuk-link"
-               th:href="${baseLinkUrl} + '/details/deceased'"
+               th:href="@{${baseLinkUrl} + '/details/deceased'}"
                th:text="#{client.summary.deceased}">
             </a>
           </li>
           <li class="govuk-summary-card__action">
             <a class="govuk-link"
-               th:href="${baseLinkUrl} + '/details/basic'"
+               th:href="@{${baseLinkUrl} + '/details/basic'}"
                th:text="#{client.summary.basic}"></a>
           </li>
         </ul>
@@ -52,7 +52,7 @@
         <ul class="govuk-summary-card__actions">
           <li class="govuk-summary-card__action">
             <a class="govuk-link"
-               th:href="${baseLinkUrl} + '/details/contact'"
+               th:href="@{${baseLinkUrl} + '/details/contact'}"
                th:text="#{client.summary.contact}">
             </a>
           </li>
@@ -91,7 +91,7 @@
         <ul class="govuk-summary-card__actions">
           <li class="govuk-summary-card__action">
             <a class="govuk-link"
-               th:href="${baseLinkUrl} + '/details/address'"
+               th:href="@{${baseLinkUrl} + '/details/address'}"
                th:text="#{client.summary.address}">
             </a>
           </li>
@@ -115,7 +115,7 @@
         <ul class="govuk-summary-card__actions">
           <li class="govuk-summary-card__action">
             <a class="govuk-link"
-               th:href="${baseLinkUrl} + '/details/equal-opportunities-monitoring'"
+               th:href="@{${baseLinkUrl} + '/details/equal-opportunities-monitoring'}"
                th:text="#{client.summary.opportunities}">
             </a>
           </li>
