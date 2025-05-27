@@ -1,6 +1,6 @@
 plugins {
 	id 'net.researchgate.release' version '3.1.0'
-	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.31'
+	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.34'
 }
 
 subprojects {
@@ -60,13 +60,13 @@ dependencies {
 
 	}
 
-	implementation 'uk.gov.laa.ccms.data:data-api:0.0.46'
+	implementation 'uk.gov.laa.ccms.data:data-api:0.0.56'
 
-	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.55'
+	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.67'
 
-	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.46'
+	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.56'
 
-	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.30'
+	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.38'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -85,10 +85,10 @@ dependencies {
 	implementation 'org.springframework.data:spring-data-commons'
 
 	// AWS S3 Integration
-	implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.3.0")
+	implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.3.1")
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
-	implementation 'software.amazon.awssdk:sts:2.31.45'
+	implementation 'software.amazon.awssdk:sts:2.31.48'
 
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
@@ -105,6 +105,7 @@ dependencies {
 	// Metrics
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'io.micrometer:micrometer-registry-prometheus'
+	implementation 'io.prometheus:prometheus-metrics-tracer-initializer'
 
 	//ClamAV virus scan
 	implementation 'fi.solita.clamav:clamav-client:1.0.1'
@@ -113,7 +114,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.webjars/webjars-locator-lite
 	implementation 'org.webjars:webjars-locator-lite'
 	// https://mvnrepository.com/artifact/org.webjars.npm/govuk-frontend
-	implementation 'org.webjars.npm:govuk-frontend:5.10.0-internal.0'
+	implementation 'org.webjars.npm:govuk-frontend:5.10.0'
 	implementation 'org.webjars.npm:ministryofjustice__frontend:5.1.3'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

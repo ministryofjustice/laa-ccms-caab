@@ -55,7 +55,6 @@ import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
-import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
@@ -354,7 +353,7 @@ public class ApplicationSearchController {
   private void setProceedingDisplayStatuses(ApplicationDetail ebsCase,
       ApplicationDetail amendments) {
     List<ProceedingDetail> proceedings = ebsCase.getProceedings();
-    if (proceedings == null) {
+    if (proceedings == null || proceedings.isEmpty()) {
       return;
     }
 
