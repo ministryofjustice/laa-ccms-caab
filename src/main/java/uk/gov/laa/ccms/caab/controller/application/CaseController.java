@@ -98,10 +98,9 @@ public class CaseController {
                                    @PathVariable int index,
                                    Model model) {
     List<PriorAuthorityDetail> priorAuthorities = ebsCase.getPriorAuthorities();
-    Assert.notEmpty(priorAuthorities,
-        () -> "Could not find prior authority with index: %s".formatted(index));
-    Assert.isTrue(index < priorAuthorities.size(),
-        () -> "Could not find prior authority with index: %s".formatted(index));
+    String errorMessage = "Could not find prior authority with index: %s".formatted(index);
+    Assert.notEmpty(priorAuthorities, () -> errorMessage);
+    Assert.isTrue(index < priorAuthorities.size(), () -> errorMessage);
 
     model.addAttribute("priorAuthority", priorAuthorities.get(index));
     return "application/prior-authority-review";
