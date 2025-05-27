@@ -9,40 +9,28 @@
 
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/cases/details}" class="govuk-back-link">Case details</a>
+        <a th:href="@{/cases/details}" class="govuk-back-link" th:text="#{caseDetails.title}"></a>
     </div>
 
     <div id="main-content">
-        <h1 class="govuk-heading-l">Prior authority review</h1>
-        <p class="govuk-body-l">Below is a summary of your Prior Authority request</p>
+        <h1 class="govuk-heading-l" th:text="#{priorAuthorityReview.heading}"/>
+        <p class="govuk-body-l" th:text="#{priorAuthorityReview.leadParagraph}"/>
         <dl class="govuk-summary-list">
             <div class="govuk-summary-list__row">
-                <dt class="govuk-summary-list__key">
-                    Prior authority type
-                </dt>
-                <dd class="govuk-summary-list__value" th:text="${priorAuthority.type.displayValue}">
-                </dd>
+                <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.type}"/>
+                <dd class="govuk-summary-list__value" th:text="${priorAuthority.type.displayValue}"/>
             </div>
             <div class="govuk-summary-list__row">
-                <dt class="govuk-summary-list__key">
-                    Summary
-                </dt>
-                <dd class="govuk-summary-list__value" th:text="${priorAuthority.summary}">
-                </dd>
+                <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.summary}"/>
+                <dd class="govuk-summary-list__value" th:text="${priorAuthority.summary}"/>
             </div>
             <div class="govuk-summary-list__row">
-                <dt class="govuk-summary-list__key">
-                    Justification
-                </dt>
-                <dd class="govuk-summary-list__value" th:text="${priorAuthority.justification}">
-                </dd>
+                <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.justification}"/>
+                <dd class="govuk-summary-list__value" th:text="${priorAuthority.justification}"/>
             </div>
             <div class="govuk-summary-list__row">
-                <dt class="govuk-summary-list__key">
-                    Amount requested
-                </dt>
-                <dd class="govuk-summary-list__value" th:text="${'&pound;' + priorAuthority.amountRequested}">
-                </dd>
+                <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.amountRequested}"/>
+                <dd class="govuk-summary-list__value" th:text="${'£' + priorAuthority.amountRequested}"/>
             </div>
             <th:block th:each="item : ${priorAuthority.items}">
                 <div class="govuk-summary-list__row">
