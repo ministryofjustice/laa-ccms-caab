@@ -47,7 +47,7 @@ class CaseControllerTest {
 
   @Nested
   @DisplayName("/cases/details tests")
-  class caseDetails {
+  class CaseDetails {
 
     @Test
     @DisplayName("Should return view and model when case details exist")
@@ -78,14 +78,13 @@ class CaseControllerTest {
 
   @Nested
   @DisplayName("/cases/details/other-party/{index} tests")
-  class caseDetailsOtherParty {
+  class CaseDetailsOtherParty {
 
     @Test
     @DisplayName("Should return view and model when case details exist")
     void caseDetailsOtherPartyReturnsViewAndModelWhenCaseDetailsExist() {
       ApplicationDetail ebsCase = new ApplicationDetail();
       ebsCase.setOpponents(Collections.singletonList(new OpponentDetail()));
-      ApplicationSectionDisplay display = ApplicationSectionDisplay.builder().build();
       IndividualDetailsSectionDisplay otherParty = new IndividualDetailsSectionDisplay(
           new IndividualGeneralDetailsSectionDisplay(),
           new IndividualAddressContactDetailsSectionDisplay(),

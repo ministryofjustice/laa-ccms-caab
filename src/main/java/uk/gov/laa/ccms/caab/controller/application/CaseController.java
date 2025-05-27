@@ -66,6 +66,7 @@ public class CaseController {
     }
     final IndividualDetailsSectionDisplay opponent = ebsCase.getOpponents()
         .stream()
+        // Skips the first X element of a list and discards them.
         .skip(index)
         .findFirst()
         .map(applicationService::getIndividualDetailsSectionDisplay)
