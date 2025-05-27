@@ -132,21 +132,21 @@
     </div>
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
-        <h2 class="govuk-heading-m" th:text="#{caseDetails.proceedings.proceeding}"></h2>
+        <h2 class="govuk-heading-m" id="proceeding" th:text="#{caseDetails.proceedings.proceeding}"/>
         <div>
           <table class="govuk-table">
             <thead>
-            <tr>
-              <th class="govuk-table__header"
-                  th:text="#{caseDetails.proceedings.proceeding}"></th>
-              <th class="govuk-table__header"
-                  th:text="#{caseDetails.proceedings.matter.type}"></th>
-              <th class="govuk-table__header"
-                  th:text="#{caseDetails.proceedings.service.type}"></th>
-              <th class="govuk-table__header"
-                  th:text="#{caseDetails.proceedings.client.involvement}"></th>
-              <th class="govuk-table__header" th:text="#{caseDetails.proceedings.status}"></th>
-            </tr>
+              <tr>
+                <th class="govuk-table__header"
+                    th:text="#{caseDetails.proceedings.proceeding}"></th>
+                <th class="govuk-table__header"
+                    th:text="#{caseDetails.proceedings.matter.type}"></th>
+                <th class="govuk-table__header"
+                    th:text="#{caseDetails.proceedings.service.type}"></th>
+                <th class="govuk-table__header"
+                    th:text="#{caseDetails.proceedings.client.involvement}"></th>
+                <th class="govuk-table__header" th:text="#{caseDetails.proceedings.status}"></th>
+              </tr>
             </thead>
             <tbody class="govuk-table__body">
             <tr th:unless="${summary.proceedingsAndCosts.proceedings.isEmpty()}"
@@ -265,112 +265,6 @@
       </div>
     </div>
 
-
-
-    </br>
-    </br>
-    </br>
-    </br>
-    </br>
-    </br>
-    </br>
-
-    <!--old-->
-    <h2 class="govuk-heading-l">OLD</h2>
-
-    <div class="govuk-grid-row">
-
-      <div class="govuk-grid-column-full">
-        <table class="govuk-table">
-          <caption class="govuk-table__caption govuk-table__caption--m"
-                   th:text="#{caseDetails.general.details} + ' OLD'"></caption>
-          <tbody class="govuk-table__body">
-          <tr class="govuk-table__row">
-            <th class="govuk-table__header" th:text="#{caseDetails.general.status}"></th>
-            <td class="govuk-table__cell"
-                th:text="${summary.generalDetails.applicationStatus}"></td>
-            <th class="govuk-table__header"
-                th:text="#{caseDetails.general.preferred.address}"></th>
-            <td class="govuk-table__cell"
-                th:text="${summary.generalDetails.correspondenceMethod}"></td>
-          </tr>
-          <tr class="govuk-table__row">
-            <th class="govuk-table__header" th:text="#{caseDetails.general.client.name}"></th>
-            <td class="govuk-table__cell" th:text="${summary.client.clientFullName}"></td>
-            <th class="govuk-table__header"
-                th:text="#{caseDetails.general.application.type}"></th>
-            <td class="govuk-table__cell" th:text="${summary.applicationType.description}"></td>
-          </tr>
-          <tr class="govuk-table__row">
-            <th class="govuk-table__header" th:text="#{caseDetails.general.category.law}"></th>
-            <td class="govuk-table__cell" th:text="${summary.generalDetails.categoryOfLaw}"></td>
-            <th class="govuk-table__header"
-                th:text="#{caseDetails.general.delegated.functions.date}"></th>
-            <td class="govuk-table__cell" th:if="${summary.applicationType.devolvedPowersUsed}"
-                th:text="${#dates.format(summary.applicationType.devolvedPowersDate, 'dd/MM/yyyy')}"></td>
-            <td class="govuk-table__cell"
-                th:unless="${summary.applicationType.devolvedPowersUsed}">
-              &nbsp;
-            </td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="govuk-grid-column-full">
-        <table class="govuk-table">
-          <caption class="govuk-table__caption govuk-table__caption--m"
-                   th:text="#{caseDetails.provider.details} + ' OLD'"></caption>
-          <tbody class="govuk-table__body">
-          <tr class="govuk-table__row">
-            <th class="govuk-table__header" th:text="#{caseDetails.provider.case.reference}"></th>
-            <td class="govuk-table__cell"
-                th:text="${summary.provider.providerCaseReferenceNumber}"></td>
-            <th class="govuk-table__header" th:text="#{caseDetails.provider.fee.earner}"></th>
-            <td class="govuk-table__cell" th:text="${summary.provider.feeEarner}"></td>
-          </tr>
-          <tr class="govuk-table__row">
-            <th class="govuk-table__header" th:text="#{caseDetails.provider.name}"></th>
-            <td class="govuk-table__cell" th:text="${summary.provider.providerName}"></td>
-            <th class="govuk-table__header" th:text="#{caseDetails.provider.supervisor}"></th>
-            <td class="govuk-table__cell" th:text="${summary.provider.supervisorName}"></td>
-          </tr>
-          <tr class="govuk-table__row">
-            <th class="govuk-table__header" th:text="#{caseDetails.provider.office}"></th>
-            <td class="govuk-table__cell" th:text="${summary.provider.officeName}"></td>
-            <th class="govuk-table__header" th:text="#{caseDetails.provider.contact.name}"></th>
-            <td class="govuk-table__cell" th:text="${summary.provider.providerContactName}">&nbsp;
-            </td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="govuk-grid-column-full">
-        <table class="govuk-table">
-          <caption class="govuk-table__caption govuk-table__caption--m"
-                   th:text="#{caseDetails.costs} + 'OLD'"></caption>
-          <thead>
-          <tr>
-            <th class="govuk-table__header" th:text="#{caseDetails.costs.case}"></th>
-            <th class="govuk-table__header" th:text="#{caseDetails.costs.requested}"></th>
-            <th class="govuk-table__header" th:text="#{caseDetails.costs.granted}"></th>
-          </tr>
-          </thead>
-          <tbody class="govuk-table__body">
-          <tr class="govuk-table__row">
-            <td class="govuk-table__cell">
-              <a class="govuk-link govuk-link--no-visited-state" href="#"
-                 th:text="#{caseDetails.costs.limitation}"></a>
-            </td>
-            <td class="govuk-table__cell"
-                th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)}"></td>
-            <td class="govuk-table__cell"
-                th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)}"></td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
     </div>
   </div>
 
