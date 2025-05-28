@@ -5,7 +5,8 @@ package uk.gov.laa.ccms.caab.model.sections;
  *
  * <p>This record encapsulates two sub-sections:</p>
  * <ol>
- *   <li>Details about the organisation, such as organisation name, currently trading, and organisation type.</li>
+ *   <li>Details about the organisation, such as organisation name, currently trading,
+ *   and organisation type.</li>
  *   <li>Address details and other information for the organisation.</li> *
  * </ol>
  *
@@ -13,5 +14,4 @@ package uk.gov.laa.ccms.caab.model.sections;
  */
 public record OrganisationDetailsSectionDisplay(
     OrganisationOrganisationDetailsSectionDisplay organisationDetails,
-    OrganisationAddressDetailsSectionDisplay addressDetails
-    ) { }
+    OrganisationAddressDetailsSectionDisplay addressDetails) { }

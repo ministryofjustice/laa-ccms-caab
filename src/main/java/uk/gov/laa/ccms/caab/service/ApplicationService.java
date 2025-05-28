@@ -782,7 +782,8 @@ public class ApplicationService {
 
   public OrganisationDetailsSectionDisplay getOrganisationDetailsSectionDisplay(
       final OpponentDetail opponentDetail) {
-    return organisationDetailsSectionDisplayMapper.toOrganisationDetailsSectionDisplay(opponentDetail);
+    return organisationDetailsSectionDisplayMapper.toOrganisationDetailsSectionDisplay(
+        opponentDetail);
   }
 
   private String getCorrespondenceMethod(ApplicationDetail application) {

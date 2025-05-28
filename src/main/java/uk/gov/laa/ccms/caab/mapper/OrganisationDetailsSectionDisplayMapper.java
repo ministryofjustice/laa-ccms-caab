@@ -17,7 +17,8 @@ public interface OrganisationDetailsSectionDisplayMapper {
 
   @Mapping(target = "organisationDetails", source = "opponentDetail")
   @Mapping(target = "addressDetails", source = "opponentDetail")
-  OrganisationDetailsSectionDisplay toOrganisationDetailsSectionDisplay(OpponentDetail opponentDetail);
+  OrganisationDetailsSectionDisplay toOrganisationDetailsSectionDisplay(
+      OpponentDetail opponentDetail);
 
   @Mapping(target = "houseNameNumber", source = "opponentDetail.address.houseNameOrNumber")
   @Mapping(target = "addressLineOne", source = "opponentDetail.address.addressLine1")
@@ -30,6 +31,7 @@ public interface OrganisationDetailsSectionDisplayMapper {
   @Mapping(target = "email", source = "opponentDetail.emailAddress")
   @Mapping(target = "fax", source = "opponentDetail.faxNumber")
   @Mapping(target = "otherInformation", source = "opponentDetail.otherInformation")
-  OrganisationAddressDetailsSectionDisplay toOrganisationAddressDetails(OpponentDetail opponentDetail);
+  OrganisationAddressDetailsSectionDisplay toOrganisationAddressDetails(
+      OpponentDetail opponentDetail);
 
 }
