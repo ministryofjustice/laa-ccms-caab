@@ -308,7 +308,7 @@
                   <a class="govuk-link govuk-link--no-visited-state"
                      th:id="'opponent-party-type-link-'+${idx.index}"
                      th:text="${opponent.partyType}"
-                     href="#"/>
+                     th:href="@{/cases/details/other-party/{index}(index=${idx.index})}"/>
                 </td>
                 <td class="govuk-table__cell"
                     th:id="'opponent-party-name-'+${idx.index}"

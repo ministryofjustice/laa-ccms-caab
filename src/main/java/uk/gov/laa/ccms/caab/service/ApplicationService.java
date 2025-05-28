@@ -29,7 +29,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple4;
 import reactor.util.function.Tuple5;
@@ -56,6 +55,7 @@ import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.IndividualDetailsSectionDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.OpponentMapper;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
@@ -78,6 +78,7 @@ import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
@@ -138,6 +139,8 @@ public class ApplicationService {
   private final ResultDisplayMapper resultDisplayMapper;
 
   private final OpponentMapper opponentMapper;
+
+  private final IndividualDetailsSectionDisplayMapper individualDetailsSectionDisplayMapper;
 
   private final SearchConstants searchConstants;
 
@@ -766,6 +769,11 @@ public class ApplicationService {
             relationshipsToClient)
         .linkedCases(application.getLinkedCases(), linkedCaseLookup)
         .build();
+  }
+
+  public IndividualDetailsSectionDisplay getIndividualDetailsSectionDisplay(
+      final OpponentDetail opponentDetail) {
+    return individualDetailsSectionDisplayMapper.toIndividualDetailsSectionDisplay(opponentDetail);
   }
 
   private String getCorrespondenceMethod(ApplicationDetail application) {
