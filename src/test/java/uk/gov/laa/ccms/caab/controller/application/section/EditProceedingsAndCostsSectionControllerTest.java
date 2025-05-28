@@ -45,7 +45,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -1428,6 +1430,84 @@ class EditProceedingsAndCostsSectionControllerTest {
         } else if ("edit".equals(action)) {
             verify(applicationService, times(1)).updatePriorAuthority(any(), eq(user));
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"add", "edit"})
+    @DisplayName("Prior Authority Details No Validation Errors Max Lengths Not Exceeded")
+    void priorAuthorityDetailsPostNoValidationErrorsMaxLengthsNotExceeded(final String action) throws Exception {
+        final String applicationId = "app123";
+        final UserDetail user = new UserDetail();
+
+        final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
+        typeDetails.setPriorAuthorityType("1");
+
+        final PriorAuthorityDetailsFormData
+            priorAuthorityDetails = new PriorAuthorityDetailsFormData();
+        final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(action);
+        priorAuthorityFlow.setPriorAuthorityTypeFormData(typeDetails);
+        priorAuthorityFlow.setPriorAuthorityDetailsFormData(priorAuthorityDetails);
+
+        priorAuthorityDetails.setJustification(RandomStringUtils.insecure().nextAlphabetic(8000));
+        priorAuthorityDetails.setSummary(RandomStringUtils.insecure().nextAlphabetic(35));
+
+        mockMvc.perform(post("/application/prior-authorities/{action}/details", action)
+                .sessionAttr(APPLICATION_ID, applicationId)
+                .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
+                .sessionAttr(USER_DETAILS, user)
+                .flashAttr("priorAuthorityDetails", priorAuthorityDetails))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/proceedings-and-costs#prior-authority"));
+
+        if ("add".equals(action)) {
+            verify(applicationService, times(1)).addPriorAuthority(eq(applicationId), any(), eq(user));
+        } else if ("edit".equals(action)) {
+            verify(applicationService, times(1)).updatePriorAuthority(any(), eq(user));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"add", "edit"})
+    @DisplayName("Prior Authority Details Validation Errors Max Lengths Exceeded")
+    void priorAuthorityDetailsPostValidationErrorsMaxLengthsExceeded(final String action) throws Exception {
+        final String applicationId = "app123";
+        final UserDetail user = new UserDetail();
+
+        final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
+        typeDetails.setPriorAuthorityType("1");
+
+        final PriorAuthorityTypeDetail priorAuthorityDynamicForm = createPriorAuthorityTypeDetail();
+
+        when(applicationService.getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType()))
+            .thenReturn(priorAuthorityDynamicForm);
+
+        final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
+        final List<CommonLookupValueDetail> commonLookupValues = List.of(new CommonLookupValueDetail().code("1").description("Value 1"));
+        commonLookupDetail.setContent(commonLookupValues);
+        when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupDetail));
+
+        final PriorAuthorityDetailsFormData
+            priorAuthorityDetails = new PriorAuthorityDetailsFormData();
+        final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(action);
+        priorAuthorityFlow.setPriorAuthorityTypeFormData(typeDetails);
+        priorAuthorityFlow.setPriorAuthorityDetailsFormData(priorAuthorityDetails);
+
+        priorAuthorityDetails.setJustification(RandomStringUtils.insecure().nextAlphabetic(8001));
+        priorAuthorityDetails.setSummary(RandomStringUtils.insecure().nextAlphabetic(36));
+
+        mockMvc.perform(post("/application/prior-authorities/{action}/details", action)
+                .sessionAttr(APPLICATION_ID, applicationId)
+                .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
+                .sessionAttr(USER_DETAILS, user)
+                .flashAttr("priorAuthorityDetails", priorAuthorityDetails))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/prior-authority-details"))
+            .andExpect(model().attributeHasFieldErrors("priorAuthorityDetails", "summary"))
+            .andExpect(model().attributeHasFieldErrors("priorAuthorityDetails", "justification"));
+
+        verify(priorAuthorityDetailsValidator, times(1)).validate(eq(priorAuthorityDetails), any(BindingResult.class));
+        verify(applicationService, times(1)).getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType());
+        verify(lookupService, times(1)).getCommonValues("testLovCode");
     }
 
     @Test
