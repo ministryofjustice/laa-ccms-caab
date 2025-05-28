@@ -30,14 +30,16 @@
             </div>
             <div class="govuk-summary-list__row">
                 <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.amountRequested}"/>
-                <dd class="govuk-summary-list__value" th:text="${'£' + priorAuthority.amountRequested}"/>
+                <dd class="govuk-summary-list__value"
+                    th:text="${#numbers.formatCurrency(priorAuthority.amountRequested)}"/>
             </div>
             <th:block th:each="item : ${priorAuthority.items}">
                 <div class="govuk-summary-list__row">
                     <dt class="govuk-summary-list__key" th:text="${item.code.displayValue}">
                     </dt>
                     <dd class="govuk-summary-list__value"
-                        th:text="${item.type =='AMT' ? '£' + item.value.displayValue :  item.value.displayValue}">
+                        th:text="${item.type =='AMT' ?
+                         #numbers.formatCurrency(item.value.displayValue) :  item.value.displayValue}">
                     </dd>
                 </div>
             </th:block>

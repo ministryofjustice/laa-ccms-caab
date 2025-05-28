@@ -95,7 +95,7 @@ public class CaseController {
    */
   @GetMapping("/cases/details/prior-authority/{index}")
   public String getCaseDetailsView(@SessionAttribute(CASE) final ApplicationDetail ebsCase,
-                                   @PathVariable int index,
+                                   @PathVariable final int index,
                                    Model model) {
     List<PriorAuthorityDetail> priorAuthorities = ebsCase.getPriorAuthorities();
     String errorMessage = "Could not find prior authority with index: %s".formatted(index);
