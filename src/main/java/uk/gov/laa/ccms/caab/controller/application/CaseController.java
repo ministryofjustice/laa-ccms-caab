@@ -12,9 +12,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 
 /**
  * Controller responsible for handling requests related to cases.
@@ -24,6 +26,7 @@ import uk.gov.laa.ccms.caab.service.ApplicationService;
 public class CaseController {
 
   private final ApplicationService applicationService;
+  private final LookupService lookupService;
 
   /**
    * Displays the case details screen.
@@ -64,16 +67,12 @@ public class CaseController {
     if (Objects.isNull(ebsCase.getOpponents()) || index >= ebsCase.getOpponents().size()) {
       throw new CaabApplicationException("Could not find opponent with index " + index);
     }
-    final IndividualDetailsSectionDisplay opponent = ebsCase.getOpponents()
-        .stream()
-        // Skips the first X element of a list and discards them.
-        .skip(index)
-        .findFirst()
-        .map(applicationService::getIndividualDetailsSectionDisplay)
-        .orElseThrow(
-            () -> new CaabApplicationException("Error occurred when retrieving opponent details"));
 
-    model.addAttribute("otherParty", opponent);
+    final OpponentDetail opponentDetail = ebsCase.getOpponents().get(index);
+    final IndividualDetailsSectionDisplay opponentDisplay =
+        applicationService.getIndividualDetailsSectionDisplay(opponentDetail);
+
+    model.addAttribute("otherParty", opponentDisplay);
     return "application/case-details-other-party";
   }
 
