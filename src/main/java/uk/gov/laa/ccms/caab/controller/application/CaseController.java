@@ -14,6 +14,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 
 /**
@@ -76,5 +77,33 @@ public class CaseController {
     return "application/case-details-other-party";
   }
 
+  /**
+   * Returns a display object containing an other organisation party within a case.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param index Index number of the OtherParty within the ebsCase.
+   * @param model The model used to pass data to the view.
+   * @return The case details other party view.
+   */
+  @GetMapping("/cases/details/other-party-organisation/{index}")
+  public String caseDetailsOtherPartyOrganisation(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @PathVariable("index") final int index,
+      Model model) {
+
+    if (Objects.isNull(ebsCase.getOpponents()) || index >= ebsCase.getOpponents().size()) {
+      throw new CaabApplicationException("Could not find opponent with index " + index);
+    }
+    final OrganisationDetailsSectionDisplay opponent = ebsCase.getOpponents()
+        .stream()
+        .skip(index)
+        .findFirst()
+        .map(applicationService::getOrganisationDetailsSectionDisplay)
+        .orElseThrow(
+            () -> new CaabApplicationException("Error occurred when retrieving opponent details"));
+
+    model.addAttribute("otherPartyOrganisation", opponent);
+    return "application/case-details-other-party-organisation";
+  }
 
 }
