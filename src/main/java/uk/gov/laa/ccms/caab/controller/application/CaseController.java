@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.List;
 import java.util.Objects;
@@ -11,6 +12,7 @@ import org.springframework.ui.Model;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -19,6 +21,7 @@ import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
  * Controller responsible for handling requests related to cases.
@@ -102,6 +105,18 @@ public class CaseController {
 
     model.addAttribute("priorAuthority", priorAuthorities.get(index));
     return "application/prior-authority-review";
+  }
+
+  @GetMapping("/case/amendment/remove")
+  public String caseOverview() {
+    return "application/amendment-remove";
+  }
+
+  @PostMapping("/case/amendment/abandon/confirmed")
+  public String handleAbandonConfirmed(@SessionAttribute(CASE) final ApplicationDetail ebsCase,
+                                       @SessionAttribute(USER_DETAILS) UserDetail user) {
+    applicationService.abandonAmendments(ebsCase.getId(), user.getLoginId());
+    return "application/amendment-remove";
   }
 
 }

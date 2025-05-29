@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
+<head>
+    <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a th:href="@{/case/overview}" class="govuk-back-link">Return to case overview</a>
+    </div>
+    <div id="main-content">
+        <form action="#" th:action="@{/application/proceedings/{proceedingId}/remove(proceedingId=${proceedingId})}"
+              method="post">
+            <h1 class="govuk-heading-l">
+                Delete amendment
+            </h1>
+            <p class="govuk-body-l">
+                Are you sure you want to delete amendment record? Once deleted, you have re-eneter the data.
+            </p>
+            <div class="govuk-button-group">
+                <govuk:button type="submit" th:text="#{site.confirm}"/>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>
