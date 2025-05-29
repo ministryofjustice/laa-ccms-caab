@@ -19,7 +19,6 @@ import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
-import uk.gov.laa.ccms.caab.service.LookupService;
 
 /**
  * Controller responsible for handling requests related to cases.
@@ -29,7 +28,6 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 public class CaseController {
 
   private final ApplicationService applicationService;
-  private final LookupService lookupService;
 
   /**
    * Displays the case details screen.
