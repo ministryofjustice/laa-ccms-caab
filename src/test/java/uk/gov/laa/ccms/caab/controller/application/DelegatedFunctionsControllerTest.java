@@ -11,12 +11,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,11 +31,12 @@ import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.DelegatedFunctionsValidator;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
-public class DelegatedFunctionsControllerTest {
+class DelegatedFunctionsControllerTest {
 
   @Mock
   private DelegatedFunctionsValidator delegatedFunctionsValidator;
@@ -48,55 +52,78 @@ public class DelegatedFunctionsControllerTest {
   private ApplicationFormData applicationFormData;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = standaloneSetup(delegatedFunctionsController).build();
     applicationFormData = new ApplicationFormData();
   }
 
-  @Test
-  public void testGetDelegatedFunctions() throws Exception {
-    this.mockMvc.perform(get("/application/delegated-functions")
-            .sessionAttr(APPLICATION_FORM_DATA, applicationFormData))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/select-delegated-functions"))
-        .andExpect(model().attribute(APPLICATION_FORM_DATA, applicationFormData));
+  @Nested
+  @DisplayName("GET: /{caseContext}/delegated-functions")
+  class GetDelegatedFunctionsTests {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendment"})
+    @DisplayName("Should return expected view with application form data")
+    void testGetDelegatedFunctions(String caseContext) throws Exception {
+      mockMvc.perform(get("/%s/delegated-functions".formatted(caseContext))
+              .sessionAttr(APPLICATION_FORM_DATA, applicationFormData))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/select-delegated-functions"))
+          .andExpect(model().attribute(APPLICATION_FORM_DATA, applicationFormData));
+    }
   }
 
-  @Test
-  public void testPostDelegatedFunctionsHandlesValidationError() throws Exception {
+  @Nested
+  @DisplayName("POST: /{caseContext}/delegated-functions")
+  class PostDelegatedFunctionsTests{
 
-    doAnswer(invocation -> {
-      Errors errors = (Errors) invocation.getArguments()[1];
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendment"})
+    @DisplayName("Should handle validation error")
+    void testPostDelegatedFunctionsHandlesValidationError(String caseContext) throws Exception {
 
-      errors.rejectValue("delegatedFunctionUsedDate", "invalid.format",
-          "Please enter the date.");
-      return null;
-    }).when(delegatedFunctionsValidator).validate(any(), any());
-    this.mockMvc.perform(post("/application/delegated-functions")
-            .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/select-delegated-functions"));
+      ApplicationDetail applicationDetail = new ApplicationDetail();
+      doAnswer(invocation -> {
+        Errors errors = (Errors) invocation.getArguments()[1];
+
+        errors.rejectValue("delegatedFunctionUsedDate", "invalid.format",
+            "Please enter the date.");
+        return null;
+      }).when(delegatedFunctionsValidator).validate(any(), any());
+      mockMvc.perform(post("/%s/delegated-functions".formatted(caseContext))
+              .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
+              .flashAttr(CASE, applicationDetail))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/select-delegated-functions"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"SUB, true, SUBDP",
+        "SUB, false, SUB",
+        "EMER, true, DP",
+        "EMER, false, EMER"})
+    @DisplayName("Should redirect to client search when new application")
+    void testPostApplicationDelegatedFunctionsIsSuccessful(String category, boolean delegatedFunctions,
+        String expectedApplicationType)
+        throws Exception {
+      applicationFormData.setApplicationTypeCategory(category);
+      applicationFormData.setDelegatedFunctions(delegatedFunctions);
+      ApplicationDetail applicationDetail = new ApplicationDetail();
+
+      mockMvc.perform(post("/application/delegated-functions")
+              .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
+              .flashAttr(CASE, applicationDetail)
+          )
+          .andDo(print())
+          .andExpect(redirectedUrl("/application/client/search"))
+          .andReturn();
+    }
   }
 
-  @ParameterizedTest
-  @CsvSource({"SUB, true, SUBDP",
-      "SUB, false, SUB",
-      "EMER, true, DP",
-      "EMER, false, EMER"})
-  public void testPostDelegatedFunctionsIsSuccessful(String category, boolean delegatedFunctions,
-                                                     String expectedApplicationType)
-      throws Exception {
-    applicationFormData.setApplicationTypeCategory(category);
-    applicationFormData.setDelegatedFunctions(delegatedFunctions);
 
-    this.mockMvc.perform(post("/application/delegated-functions")
-            .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
-        .andDo(print())
-        .andExpect(redirectedUrl("/application/client/search"))
-        .andReturn();
-  }
+
 
 
 }

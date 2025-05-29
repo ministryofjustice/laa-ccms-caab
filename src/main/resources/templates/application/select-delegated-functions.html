@@ -11,7 +11,7 @@
         <a th:href="@{/home}" class="govuk-back-link" th:text="#{site.cancelAndReturnToHome}"></a>
     </div>
     <div id="main-content">
-        <form action="#" th:action="@{/application/delegated-functions}" th:object="${applicationFormData}" method="post">
+        <form action="#" th:action="@{/{caseContext}/delegated-functions(caseContext=${caseContext})}" th:object="${applicationFormData}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l" th:text="#{application.about}"></span>
             <div th:replace="~{application/partials/delegated-functions}"></div>

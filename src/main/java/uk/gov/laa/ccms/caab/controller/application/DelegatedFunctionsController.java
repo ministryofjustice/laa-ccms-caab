@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,10 +10,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.DelegatedFunctionsValidator;
+import uk.gov.laa.ccms.caab.constants.ContextConstants;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 
 /**
  * Controller responsible for handling the application's delegated functions operations.
@@ -19,7 +24,7 @@ import uk.gov.laa.ccms.caab.bean.validators.application.DelegatedFunctionsValida
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(APPLICATION_FORM_DATA)
+@SessionAttributes({APPLICATION_FORM_DATA, CASE})
 public class DelegatedFunctionsController {
 
   private final DelegatedFunctionsValidator delegatedFunctionsValidator;
@@ -30,8 +35,9 @@ public class DelegatedFunctionsController {
    * @param applicationFormData The details of the current application.
    * @return The path to the delegated functions selection view.
    */
-  @GetMapping("/application/delegated-functions")
+  @GetMapping("/{" + CONTEXT_NAME + "}/delegated-functions")
   public String delegatedFunction(
+          @PathVariable(CONTEXT_NAME) final String caseContext,
           @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData) {
     return "application/select-delegated-functions";
   }
@@ -44,8 +50,10 @@ public class DelegatedFunctionsController {
    * @return The path to the next step in the application process or the current page based on
    *         validation.
    */
-  @PostMapping("/application/delegated-functions")
+  @PostMapping("/{" + CONTEXT_NAME + "}/delegated-functions")
   public String delegatedFunction(
+          @PathVariable(CONTEXT_NAME) final String caseContext,
+          @ModelAttribute(CASE) ApplicationDetail applicationDetail,
           @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
           BindingResult bindingResult) {
     delegatedFunctionsValidator.validate(applicationFormData, bindingResult);
@@ -58,6 +66,10 @@ public class DelegatedFunctionsController {
       return "application/select-delegated-functions";
     }
 
+    if (ContextConstants.AMENDMENTS.equals(caseContext)) {
+      // TODO: Create the application in TDS using ApplicationDetail and ApplicationFormData
+      return "redirect:/case/overview";
+    }
     return "redirect:/application/client/search";
   }
 

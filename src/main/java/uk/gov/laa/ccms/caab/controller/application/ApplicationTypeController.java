@@ -4,6 +4,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLI
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,7 +31,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(APPLICATION_FORM_DATA)
+@SessionAttributes({APPLICATION_FORM_DATA, CASE})
 public class ApplicationTypeController {
 
   private final ApplicationTypeValidator applicationTypeValidator;
@@ -54,7 +55,7 @@ public class ApplicationTypeController {
     if (applicationFormData.isExceptionalFunding()) {
       log.warn("ApplicationTypeController hit despite exceptionalFunding being true. "
           + "Redirecting to client-search");
-      return "redirect:/%s/client/search".formatted(caseContext);
+      return "redirect:/application/client/search";
     }
 
     model.addAttribute("applicationTypes", getFilteredApplicationTypes());
@@ -70,8 +71,9 @@ public class ApplicationTypeController {
    * @param model              The model for the view.
    * @return A redirect string or view name based on validation result.
    */
-  @PostMapping("/application/application-type")
+  @PostMapping("/{" + CONTEXT_NAME + "}/application-type")
   public String applicationType(
+      @PathVariable(CONTEXT_NAME) final String caseContext,
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       BindingResult bindingResult,
       Model model) {
@@ -82,7 +84,7 @@ public class ApplicationTypeController {
       return "application/select-application-type";
     }
 
-    return "redirect:/application/delegated-functions";
+    return "redirect:/%s/delegated-functions".formatted(caseContext);
   }
 
   private List<CommonLookupValueDetail> getFilteredApplicationTypes() {

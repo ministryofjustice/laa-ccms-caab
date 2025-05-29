@@ -14,9 +14,17 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.constants.ContextConstants;
 
+/**
+ * Controller responsible for handling the initiation of a new application process.
+ * Manages interactions related to starting a new application, including determining
+ * the appropriate routing based on whether it's a new application, or an amendment to
+ * an existing case.
+ *
+ * @author Jamie Briggs
+ */
+@Slf4j
 @Controller
 @RequiredArgsConstructor
-@Slf4j
 @SessionAttributes(APPLICATION_FORM_DATA)
 public class StartApplicationController {
 
@@ -30,6 +38,15 @@ public class StartApplicationController {
     return new ApplicationFormData();
   }
 
+  /**
+   * Initiates the process for starting a new application or amendment based on the context,
+   * whilst adding the application form data to the model for subsequent use.
+   *
+   * @param model       The model used to store attributes for rendering views.
+   * @param caseContext The context indicating whether the process is for a new application
+   *                    or an amendment. It must match one of the predefined context values.
+   * @return A redirection string to the appropriate route based on the provided context.
+   */
   @GetMapping("/{" + CONTEXT_NAME + "}/new")
   public String startNewApplication(Model model,
       @PathVariable(CONTEXT_NAME) final String caseContext) {
