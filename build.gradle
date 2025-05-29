@@ -43,19 +43,19 @@ dependencies {
 	constraints {
 		// Production dependencies
 		implementation('org.bouncycastle:bcprov-jdk18on:1.80') {
-			because("Fixes CVE-2024-30172, CVE-2024-30171, CVE-2023-33202," +
-					"CVE-2024-29857, CVE-2023-33201." +
-					"Parent: org.springframework.security:spring-security-saml2-service-provider")
+			because("Fixes CVE-2024-30172, CVE-2024-30171, CVE-2023-33202,"
+					+ "CVE-2024-29857, CVE-2023-33201."
+					+ "Parent: org.springframework.security:spring-security-saml2-service-provider")
 		}
 		implementation('com.google.guava:guava:33.4.8-jre') {
-			because("Fixes CVE-2023-2976." +
-					"Parent: org.springframework.security:spring-security-saml2-service-provider")
+			because("Fixes CVE-2023-2976."
+					+ "Parent: org.springframework.security:spring-security-saml2-service-provider")
 		}
 
 		// Test dependencies
 		testImplementation('org.apache.commons:commons-compress:1.27.1') {
-			because("Fixes CVE-2024-25710, CVE-2024-26308." +
-					"Parent: org.testcontainers:testcontainers-bom")
+			because("Fixes CVE-2024-25710, CVE-2024-26308."
+					+ "Parent: org.testcontainers:testcontainers-bom")
 		}
 
 	}

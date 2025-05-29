@@ -5,8 +5,8 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 /**
  * A utility class providing functionality related to Java reflection.
- * <p>
- * This class is used to manipulate object properties using reflection.
+ *
+ * <p>This class is used to manipulate object properties using reflection.
  * </p>
  */
 public final class ReflectionUtils {
@@ -14,8 +14,8 @@ public final class ReflectionUtils {
   /**
    * Iterates over all string fields of a given object. If any string field has a value
    * that is either empty or consists only of whitespace, it sets that field to null.
-   * <p>
-   * For instance, if an object has a string field 'name' with a value of "  ", this
+   *
+   * <p>For instance, if an object has a string field 'name' with a value of "  ", this
    * method will set 'name' to null.
    * </p>
    *
