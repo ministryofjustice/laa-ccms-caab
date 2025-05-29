@@ -2,8 +2,8 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 
-import java.util.Objects;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -57,8 +57,8 @@ public class CaseController {
    * Returns a display object containing an other party within a case.
    *
    * @param ebsCase The case details from EBS.
-   * @param index Index number of the OtherParty within the ebsCase.
-   * @param model The model used to pass data to the view.
+   * @param index   Index number of the OtherParty within the ebsCase.
+   * @param model   The model used to pass data to the view.
    * @return The case details other party view.
    */
   @GetMapping("/cases/details/other-party/{index}")
