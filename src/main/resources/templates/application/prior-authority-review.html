@@ -44,8 +44,12 @@
                             <dt class="govuk-summary-list__key" th:text="${item.code.displayValue}">
                             </dt>
                             <dd class="govuk-summary-list__value"
-                                th:text="${item.type =='AMT' ?
-                                 #numbers.formatCurrency(item.value.displayValue) :  item.value.displayValue}">
+                                th:with="itemCode = ${item.code.displayValue},
+                                         normalisedCode = ${itemCode.toLowerCase().replace(' ', '-')},
+                                         trimmedCode = ${normalisedCode.length() < 15 ? normalisedCode : normalisedCode.substring(0, 15)}"
+                                th:id="${'prior-authority-' + trimmedCode}"
+                                th:text="${item.type == 'AMT' ?
+                                #numbers.formatCurrency(item.value.displayValue) : item.value.displayValue}">
                             </dd>
                         </div>
                     </th:block>
