@@ -56,8 +56,12 @@ public class OfficeControllerTest {
 
   @Test
   public void testGetOfficeAddsOfficesToModel() throws Exception {
+    final ApplicationFormData applicationFormData = new ApplicationFormData();
+    applicationFormData.setOfficeId(1);
+
     this.mockMvc.perform(get("/application/office")
-            .flashAttr("user", user))
+            .flashAttr("user", user)
+            .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/select-office"))

@@ -306,6 +306,41 @@ public class ApplicationService {
   }
 
   /**
+   * Creates and submits an amendment for an existing case using the provided application
+   * details and user information.
+   *
+   * @param applicationFormData the data for the application form, including the application type
+   *                            and delegated function details
+   * @param caseReferenceNumber the reference number of the case for which the amendment
+   *                            will be created
+   * @param userDetail the details of the user submitting the amendment, including provider and
+   *                            login information
+   *
+   * @return the detailed information of the created amendment application
+   */
+  public ApplicationDetail createAndSubmitAmendmentForCase(
+      final ApplicationFormData applicationFormData,
+      final String caseReferenceNumber,
+      final UserDetail userDetail) {
+    ApplicationDetail amendment = getCase(caseReferenceNumber,
+        userDetail.getProvider().getId(), userDetail.getLoginId());
+    amendment.setAmendment(true);
+    ApplicationType amendmentType = new ApplicationTypeBuilder()
+        .applicationType(
+            applicationFormData.getApplicationTypeCategory(),
+            applicationFormData.isDelegatedFunctions())
+        .devolvedPowers(
+            applicationFormData.isDelegatedFunctions(),
+            applicationFormData.getDelegatedFunctionUsedDate())
+        .build();
+    amendment.setApplicationType(amendmentType);
+    // Create application/amendment in TDS.
+    Mono<String> application = caabApiClient.createApplication(userDetail.getLoginId(), amendment);
+    log.info("Application created: {}", application.block());
+    return amendment;
+  }
+
+  /**
    * Fetches a unique case reference.
    *
    * @return A Mono wrapping the CaseReferenceSummary.
