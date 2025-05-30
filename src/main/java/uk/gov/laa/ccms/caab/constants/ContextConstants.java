@@ -11,7 +11,7 @@ public final class ContextConstants {
   /*
    * Context param name
    */
-  public static final String CONTEXT_NAME = "context";
+  public static final String CONTEXT_NAME = "caseContext";
 
   /*
    * Context name for new submissions
