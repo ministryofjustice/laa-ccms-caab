@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,6 +33,7 @@ import org.springframework.web.context.WebApplicationContext;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.DelegatedFunctionsValidator;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -83,7 +85,8 @@ class DelegatedFunctionsControllerTest {
     @DisplayName("Should handle validation error")
     void testPostDelegatedFunctionsHandlesValidationError(String caseContext) throws Exception {
 
-      ApplicationDetail applicationDetail = new ApplicationDetail();
+      final UserDetail userDetail = new UserDetail();
+      final ApplicationDetail applicationDetail = new ApplicationDetail();
       doAnswer(invocation -> {
         Errors errors = (Errors) invocation.getArguments()[1];
 
@@ -93,7 +96,8 @@ class DelegatedFunctionsControllerTest {
       }).when(delegatedFunctionsValidator).validate(any(), any());
       mockMvc.perform(post("/%s/delegated-functions".formatted(caseContext))
               .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
-              .flashAttr(CASE, applicationDetail))
+              .sessionAttr(USER_DETAILS, userDetail)
+              .sessionAttr(CASE, applicationDetail))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/select-delegated-functions"));
@@ -110,12 +114,13 @@ class DelegatedFunctionsControllerTest {
         throws Exception {
       applicationFormData.setApplicationTypeCategory(category);
       applicationFormData.setDelegatedFunctions(delegatedFunctions);
-      ApplicationDetail applicationDetail = new ApplicationDetail();
+      final ApplicationDetail applicationDetail = new ApplicationDetail();
+      final UserDetail userDetail = new UserDetail();
 
       mockMvc.perform(post("/application/delegated-functions")
               .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
-              .flashAttr(CASE, applicationDetail)
-          )
+              .sessionAttr(CASE, applicationDetail)
+              .sessionAttr(USER_DETAILS, userDetail))
           .andDo(print())
           .andExpect(redirectedUrl("/application/client/search"))
           .andReturn();

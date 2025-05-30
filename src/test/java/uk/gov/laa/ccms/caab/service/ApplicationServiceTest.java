@@ -116,8 +116,10 @@ import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
+import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
+import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.CaseDetail;
 import uk.gov.laa.ccms.data.model.CaseDetails;
 import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
@@ -1761,5 +1763,31 @@ class ApplicationServiceTest {
     assertThat(result).isEqualTo(expected);
   }
 
+  @Test
+  @DisplayName("Should create and submit amendment for a case")
+  void shouldCreateAndSubmitAmendmentForACase(){
+    // Given
+    ApplicationFormData applicationFormData = new ApplicationFormData();
+    applicationFormData.setApplicationTypeCategory(APP_TYPE_SUBSTANTIVE);
+    applicationFormData.setDelegatedFunctions(true);
+    applicationFormData.setDelegatedFunctionUsedDate("01/01/2025");
+    String caseRef = "12345";
+    UserDetail userDetails = new UserDetail();
+    userDetails.setProvider(new BaseProvider().id(1001));
+    userDetails.setLoginId("LoginID");
+    when(ebsApiClient.getCase(caseRef, 1001, "LoginID")).thenReturn(Mono.just(new CaseDetail()));
+    when(ebsApplicationMapper.toApplicationDetail(any())).thenReturn(new ApplicationDetail());
+    when(caabApiClient.createApplication(any(), any())).thenReturn(Mono.just("123"));
+    // When
+    ApplicationDetail result = applicationService
+        .createAndSubmitAmendmentForCase(applicationFormData, caseRef, userDetails);
+    // Then
+    assertNotNull(result);
+    assertThat(result.getAmendment()).isTrue();
+    assertThat(result.getApplicationType().getId()).isEqualTo(APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS);
+    assertThat(result.getApplicationType().getDevolvedPowers().getUsed()).isTrue();
+    assertThat(result.getApplicationType().getDevolvedPowers().getDateUsed()).isEqualTo(DateUtils.convertToDate("01/01/2025"));
+
+  }
 
 }

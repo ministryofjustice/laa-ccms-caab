@@ -1,10 +1,13 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.ContextConstants.AMENDMENTS;
 import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,12 +21,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationTypeValidator;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
  * Controller for handling application type selection during the application process.
@@ -31,20 +38,20 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes({APPLICATION_FORM_DATA, CASE})
+@SessionAttributes({APPLICATION_FORM_DATA})
 public class ApplicationTypeController {
 
   private final ApplicationTypeValidator applicationTypeValidator;
-
+  private final ApplicationService applicationService;
   private final LookupService lookupService;
 
   /**
    * Handles the GET request for application type selection page.
    *
    * @param applicationFormData The application details from session.
-   * @param model              The model for the view.
+   * @param model               The model for the view.
    * @return The view name for the application type selection page or a redirect if exceptional
-   *     funding.
+   * funding.
    */
   @GetMapping("/{" + CONTEXT_NAME + "}/application-type")
   public String applicationType(
@@ -67,13 +74,15 @@ public class ApplicationTypeController {
    * Handles the POST request for application type selection form submission.
    *
    * @param applicationFormData The application details from session.
-   * @param bindingResult      The result of data binding/validation.
-   * @param model              The model for the view.
+   * @param bindingResult       The result of data binding/validation.
+   * @param model               The model for the view.
    * @return A redirect string or view name based on validation result.
    */
   @PostMapping("/{" + CONTEXT_NAME + "}/application-type")
   public String applicationType(
       @PathVariable(CONTEXT_NAME) final String caseContext,
+      @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
+      @SessionAttribute(CASE) ApplicationDetail applicationDetail,
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       BindingResult bindingResult,
       Model model) {
@@ -84,12 +93,23 @@ public class ApplicationTypeController {
       return "application/select-application-type";
     }
 
+    // When amendments, if amendment type is substantive, skip delegated functions and create the
+    //  amendment.
+    if (AMENDMENTS.equals(caseContext)
+        && APP_TYPE_SUBSTANTIVE.equals(applicationFormData.getApplicationTypeCategory())) {
+      applicationService.createAndSubmitAmendmentForCase(applicationFormData,
+          applicationDetail.getCaseReferenceNumber(),
+          userDetails);
+      // TODO: Redirect to amend case screen once implemented in CCMSPUI-504
+      return "redirect:/application/%s/view".formatted(applicationDetail.getCaseReferenceNumber());
+    }
+
     return "redirect:/%s/delegated-functions".formatted(caseContext);
   }
 
   private List<CommonLookupValueDetail> getFilteredApplicationTypes() {
     return Optional.ofNullable(lookupService.getCommonValues(
-        COMMON_VALUE_APPLICATION_TYPE).block())
+            COMMON_VALUE_APPLICATION_TYPE).block())
         .orElse(new CommonLookupDetail())
         .getContent()
         .stream()
