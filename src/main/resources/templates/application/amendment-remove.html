@@ -10,20 +10,23 @@
     <div id="breadcrumbs">
         <a th:href="@{/case/overview}" class="govuk-back-link">Return to case overview</a>
     </div>
-    <div id="main-content">
-        <form action="#" th:action="@{/application/proceedings/{proceedingId}/remove(proceedingId=${proceedingId})}"
-              method="post">
-            <h1 class="govuk-heading-l">
-                Delete amendment
-            </h1>
-            <p class="govuk-body-l">
-                Are you sure you want to delete amendment record? Once deleted, you have re-eneter the data.
-            </p>
-            <div class="govuk-button-group">
-                <govuk:button type="submit" th:text="#{site.confirm}"/>
+    <main id="main-content" class="govuk-main-wrapper">
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-two-thirds">
+                <form action="#" th:action="@{/cases/amendment/abandon}" method="post">
+                    <h1 class="govuk-heading-l">
+                        Delete amendment
+                    </h1>
+                    <p class="govuk-body-l">
+                        Are you sure you want to delete amendment record? Once deleted, you have to re-enter the data.
+                    </p>
+                    <div class="govuk-button-group">
+                        <govuk:button type="submit" th:text="#{site.confirm}"/>
+                    </div>
+                </form>
             </div>
-        </form>
-    </div>
+        </div>
+    </main>
 </div>
 </body>
 </html>

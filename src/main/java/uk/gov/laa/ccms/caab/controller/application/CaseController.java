@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.Assert;
@@ -28,6 +29,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
  */
 @RequiredArgsConstructor
 @Controller
+@Slf4j
 public class CaseController {
 
   private final ApplicationService applicationService;
@@ -80,6 +82,15 @@ public class CaseController {
     return "application/case-details-other-party";
   }
 
+  /**
+   * Handles the request to abandon amendments for a specific case.
+   * This method is triggered by a GET request to display the confirmation page
+   * for abandoning amendments.
+   *
+   * @param ebsCase the application details for the current case,
+   *                retrieved from the session attribute
+   * @return a string representing the view name for confirming the abandonment of amendments
+   */
 
   /**
    * Displays the prior authority details for a given case.
@@ -107,15 +118,28 @@ public class CaseController {
     return "application/prior-authority-review";
   }
 
-  @GetMapping("/case/amendment/remove")
-  public String caseOverview() {
+  @GetMapping("/cases/amendment/abandon")
+  public String handleAbandon(@SessionAttribute(CASE) final ApplicationDetail ebsCase) {
+    log.info("Abandoning amendments requested for case id {}", ebsCase.getId());
     return "application/amendment-remove";
   }
 
-  @PostMapping("/case/amendment/abandon/confirmed")
-  public String handleAbandonConfirmed(@SessionAttribute(CASE) final ApplicationDetail ebsCase,
-                                       @SessionAttribute(USER_DETAILS) UserDetail user) {
-    applicationService.abandonAmendments(ebsCase.getId(), user.getLoginId());
+  /**
+   * Handles the confirmation of abandoning amendments for a specific case.
+   * This method processes the request to abandon any ongoing amendments for the given case
+   * and logs the associated information.
+   *
+   * @param ebsCase the application details for the current case,
+   *                retrieved from the session attribute
+   * @param user    the user details of the currently logged-in user,
+   *                retrieved from the session attribute
+   * @return a string representing the view name to be displayed after the amendments are abandoned
+   */
+  @PostMapping("/cases/amendment/abandon")
+  public String handleAbandon(@SessionAttribute(CASE) final ApplicationDetail ebsCase,
+                              @SessionAttribute(USER_DETAILS) UserDetail user) {
+    log.info("Abandoning amendments for case id {}", ebsCase.getId());
+    applicationService.abandonApplication(ebsCase, user);
     return "application/amendment-remove";
   }
 

@@ -564,15 +564,6 @@ public class ApplicationService {
     Mono.when(removeDocsMono, deleteAppMono, deleteAssessmentsMono).block();
   }
 
-  /**
-   * Abandon an application by removing all related data from the TDS.
-   *
-   * @param applicationId - the application to abandon.
-   * @param userId        - the user performing the application abandon.
-   */
-  public void abandonAmendments(final Integer applicationId, final String userId) {
-    caabApiClient.deleteApplication(String.valueOf(applicationId), userId).block();
-  }
 
   /**
    * Retrieves the application section display values.

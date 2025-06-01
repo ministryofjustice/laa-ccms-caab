@@ -17,8 +17,7 @@
        th:href="@{/application/search/results}"
        th:text="#{site.returnToSearchResults}"/>
   </div>
-  <div id="main-content">
-    <form action="#" th:action="@{/case/amendment/remove}" method="get">
+  <main id="main-content" class="govuk-main-wrapper">
     <h1 class="govuk-heading-l" th:text="#{case.overview}"></h1>
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
@@ -198,10 +197,9 @@
           </div>
       </div>
       <div class="govuk-button-group">
-        <govuk:button classes="govuk-button--warning" type="submit" th:text="#{site.abandon}"/>
+        <govuk:button classes="govuk-button--warning" th:href="@{/cases/amendment/abandon}" th:text="#{site.abandon}"/>
       </div>
-    </form>
-  </div>
+  </main>
 </div>
 </body>
 </html>
