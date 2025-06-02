@@ -13,19 +13,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ProviderDetailsValidator;
 import uk.gov.laa.ccms.caab.constants.ContextConstants;
-import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
-import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
-import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
+import uk.gov.laa.ccms.caab.constants.SessionConstants;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
-import uk.gov.laa.ccms.data.model.CaseSummary;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -105,7 +105,8 @@ public class ProviderDetailsSectionController {
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
-      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
+      @ModelAttribute(SessionConstants.APPLICATION_FORM_DATA)
+        ApplicationFormData applicationFormData,
       BindingResult bindingResult,
       Model model) {
 
@@ -149,7 +150,7 @@ public class ProviderDetailsSectionController {
 
     model.addAttribute("feeEarners", feeEarners);
     model.addAttribute("contactNames", contactNames);
-    model.addAttribute(APPLICATION_FORM_DATA, applicationFormData);
+    model.addAttribute(SessionConstants.APPLICATION_FORM_DATA, applicationFormData);
 
   }
 

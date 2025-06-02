@@ -39,10 +39,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
+import uk.gov.laa.ccms.caab.constants.ContextConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.feature.Feature;
@@ -63,6 +65,7 @@ import uk.gov.laa.ccms.caab.util.view.ActionViewHelper;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 /**
  * Controller responsible for managing the searching of applications and cases.
@@ -232,6 +235,7 @@ public class ApplicationSearchController {
     model.addAttribute("draftProceedings", draftProceedings);
     model.addAttribute("draftCosts", draftCosts);
     session.setAttribute(CASE_REFERENCE_NUMBER, ebsCase.getCaseReferenceNumber());
+
     return "application/case-overview";
   }
 
