@@ -8,17 +8,15 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/case/overview}" class="govuk-back-link">Return to case overview</a>
+        <a th:href="@{/case/overview}" class="govuk-back-link" th:text="#{caseDetails.overview.return}"></a>
     </div>
     <main id="main-content" class="govuk-main-wrapper">
         <div class="govuk-grid-row">
             <div class="govuk-grid-column-two-thirds">
                 <form action="#" th:action="@{/cases/amendment/abandon}" method="post">
-                    <h1 class="govuk-heading-l">
-                        Delete amendment
+                    <h1 class="govuk-heading-l" th:text="#{amendment.remove.heading}">
                     </h1>
-                    <p class="govuk-body-l">
-                        Are you sure you want to delete amendment record? Once deleted, you have to re-enter the data.
+                    <p class="govuk-body-l" th:text="#{amendment.remove.body}">
                     </p>
                     <div class="govuk-button-group">
                         <govuk:button type="submit" th:text="#{site.confirm}"/>
