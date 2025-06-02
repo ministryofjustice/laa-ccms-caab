@@ -550,14 +550,8 @@ public class ApplicationService {
         getNonFinancialAssessmentNamesIncludingPrepop(),
         application.getCaseReferenceNumber(),
         null);
-
     /*
-     * TODO: ProviderUI deletes rows from XXCCMS_OPA_ASSESSMENT_LOG here.
-     *  This should be handled in assessment-api via a cascade.
-     */
-
-    /*
-     * Increment relevent metrics
+     * Increment relevant metrics
      */
     puiMetricService.incrementAbandonedCount(application.getCaseReferenceNumber());
 
