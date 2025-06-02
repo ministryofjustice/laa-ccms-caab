@@ -314,10 +314,6 @@ public class ApplicationSearchController {
 
       return "redirect:/application/sections";
     }
-    // Todo: refactor 2nd condition could be redundant
-    if (tdsApplication != null && tdsApplication.getId() != null) {
-      session.setAttribute(APPLICATION_ID, tdsApplication.getId());
-    }
 
     session.setAttribute(CASE, ebsCase);
     session.setAttribute(APPLICATION, tdsApplication);

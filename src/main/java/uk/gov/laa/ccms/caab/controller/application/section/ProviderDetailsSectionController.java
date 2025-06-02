@@ -13,18 +13,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.bind.annotation.*;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ProviderDetailsValidator;
+import uk.gov.laa.ccms.caab.constants.ContextConstants;
+import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
+import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
+import uk.gov.laa.ccms.data.model.CaseSummary;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 /**
  * Controller for the application's provider details section.
@@ -40,6 +45,8 @@ public class ProviderDetailsSectionController {
 
   private final ProviderDetailsValidator providerDetailsValidator;
 
+  private final ClientService clientService;
+
   /**
    * Handles the GET request for the application type section of application summary.
    *
@@ -48,15 +55,32 @@ public class ProviderDetailsSectionController {
    * @param model The model for the view.
    * @return The view name for the application summary page.
    */
-  @GetMapping("/application/sections/provider-details")
+  @GetMapping("/{context}/sections/provider-details")
   public String applicationSummaryProviderDetails(
-      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @SessionAttribute(value = APPLICATION_ID, required = false)  String applicationId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
+      @PathVariable String context,
       Model model) {
 
+    if (context.equals(ContextConstants.AMENDMENTS)) {
+      ApplicationFormData applicationFormData = new ApplicationFormData();
+      applicationFormData.setCopyCaseReferenceNumber(activeCase.getCaseReferenceNumber());
+      ClientDetail clientDetail = clientService.getClient(
+              activeCase.getClientReferenceNumber(),
+              user.getLoginId(),
+              user.getUserType()
+      ).block();
+
+      applicationId = applicationService.createApplication(
+              applicationFormData,
+              clientDetail,
+              user
+              ).block();
+    }
+
     ApplicationFormData applicationFormData =
-        applicationService.getProviderDetailsFormData(applicationId);
+            applicationService.getProviderDetailsFormData(applicationId);
 
     populateDropdowns(applicationFormData, user, model);
     model.addAttribute(ACTIVE_CASE, activeCase);
