@@ -2,15 +2,22 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
+import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 
 /**
@@ -44,5 +51,57 @@ public class CaseController {
     return "application/case-details";
   }
 
+  /**
+   * Returns a display object containing an other party within a case.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param index   Index number of the OtherParty within the ebsCase.
+   * @param model   The model used to pass data to the view.
+   * @return The case details other party view.
+   */
+  @GetMapping("/cases/details/other-party/{index}")
+  public String caseDetailsOtherParty(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @PathVariable("index") final int index,
+      Model model) {
+
+    if (Objects.isNull(ebsCase.getOpponents()) || index >= ebsCase.getOpponents().size()) {
+      throw new CaabApplicationException("Could not find opponent with index " + index);
+    }
+
+    final OpponentDetail opponentDetail = ebsCase.getOpponents().get(index);
+    final IndividualDetailsSectionDisplay opponentDisplay =
+        applicationService.getIndividualDetailsSectionDisplay(opponentDetail);
+
+    model.addAttribute("otherParty", opponentDisplay);
+    return "application/case-details-other-party";
+  }
+
+
+  /**
+   * Displays the prior authority details for a given case.
+   * Retrieves a specific prior authority detail using the provided index and adds it to the model
+   * to be displayed in the view.
+   *
+   * @param ebsCase The case details retrieved from the session.
+   * @param index   The zero-based index of the prior authority to be retrieved from
+   *                the case details.
+   * @param model   The model used to pass data to the view.
+   * @return The view name for the prior authority review page.
+   * @throws IllegalArgumentException if the list of prior authorities is empty or
+   *                                  the specified index is invalid.
+   */
+  @GetMapping("/cases/details/prior-authority/{index}")
+  public String getCaseDetailsView(@SessionAttribute(CASE) final ApplicationDetail ebsCase,
+                                   @PathVariable final int index,
+                                   Model model) {
+    List<PriorAuthorityDetail> priorAuthorities = ebsCase.getPriorAuthorities();
+    String errorMessage = "Could not find prior authority with index: %s".formatted(index);
+    Assert.notEmpty(priorAuthorities, () -> errorMessage);
+    Assert.isTrue(index < priorAuthorities.size(), () -> errorMessage);
+
+    model.addAttribute("priorAuthority", priorAuthorities.get(index));
+    return "application/prior-authority-review";
+  }
 
 }

@@ -251,6 +251,7 @@
         </th:block>
         <th:block th:unless="${summary.priorAuthorities.isEmpty()}">
           <table class="govuk-table">
+            <thead>
             <tr>
               <th class="govuk-table__header" th:text="#{caseDetails.prior.authority}"></th>
               <th class="govuk-table__header" th:text="#{caseDetails.prior.authority.type}"></th>
@@ -261,9 +262,12 @@
             <tbody class="govuk-table__body">
             <tr class="govuk-table__row"
                 th:each="priorAuthority, idx : ${summary.priorAuthorities}">
-              <td class="govuk-table__cell"
-                  th:id="'prior-authority-description-'+${idx.index}"
-                  th:text="${priorAuthority.description}"/>
+              <td class="govuk-table__cell">
+                <a class="govuk-link govuk-link--no-visited-state"
+                   th:id="'prior-authority-description-'+${idx.index}"
+                   th:text="${priorAuthority.description}"
+                   th:href="@{/cases/details/prior-authority/{index}(index=${idx.index})}"/>
+              </td>
               <td class="govuk-table__cell"
                   th:id="'prior-authority-type-'+${idx.index}"
                   th:text="${priorAuthority.type}"/>
@@ -308,7 +312,7 @@
                   <a class="govuk-link govuk-link--no-visited-state"
                      th:id="'opponent-party-type-link-'+${idx.index}"
                      th:text="${opponent.partyType}"
-                     href="#"/>
+                     th:href="@{/cases/details/other-party/{index}(index=${idx.index})}"/>
                 </td>
                 <td class="govuk-table__cell"
                     th:id="'opponent-party-name-'+${idx.index}"
@@ -330,6 +334,5 @@
   </div>
 </div>
 
-</div>
 </body>
 </html>
