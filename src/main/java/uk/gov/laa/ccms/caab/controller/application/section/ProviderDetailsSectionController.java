@@ -48,7 +48,7 @@ public class ProviderDetailsSectionController {
   private final ClientService clientService;
 
   /**
-   * Handles the GET request for the application type section of application summary.
+   * Handles the GET request for the application type section of the application summary.
    *
    * @param applicationId The id of the application
    * @param activeCase The active case details to display in the header
@@ -89,7 +89,7 @@ public class ProviderDetailsSectionController {
   }
 
   /**
-   * Processes the applications provider details selection and redirects accordingly.
+   * Processes the application's provider details selection and redirects accordingly.
    *
    * @param applicationId The id of the application
    * @param activeCase The active case details to display in the header
