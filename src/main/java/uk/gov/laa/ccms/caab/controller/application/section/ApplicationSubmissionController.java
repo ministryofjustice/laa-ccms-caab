@@ -483,15 +483,16 @@ public class ApplicationSubmissionController {
         OpponentSubmissionSummaryMappingContext,
         GeneralDetailsSubmissionSummaryMappingContext> preprocessingData =
         Mono.zip(
-            assessmentDetailsMono,
-            parentMono,
-            childMono,
-            clientMono,
-            applicationMono,
-            proceedingContextMono,
-            opponentContextMono,
-            generalDetailsContextMono).blockOptional().orElseThrow(() ->
-            new CaabApplicationException("Failed to pre-process summary data"));
+                assessmentDetailsMono,
+                parentMono,
+                childMono,
+                clientMono,
+                applicationMono,
+                proceedingContextMono,
+                opponentContextMono,
+                generalDetailsContextMono)
+            .blockOptional()
+            .orElseThrow(() -> new CaabApplicationException("Failed to pre-process summary data"));
 
     final AssessmentDetail meansAssessmentDetail = getAssessment(
         preprocessingData.getT1(), AssessmentRulebase.MEANS);

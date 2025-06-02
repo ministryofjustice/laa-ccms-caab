@@ -531,8 +531,8 @@ public class LookupService {
 
   /**
    * Retrieves the general details submission mapping context.
-   * <p>
-   * This method combines multiple asynchronous calls to fetch various lookup details required
+   *
+   * <p>This method combines multiple asynchronous calls to fetch various lookup details required
    * for mapping general details submission summaries. The following components are included:
    * </p>
    * <ul>
@@ -560,8 +560,8 @@ public class LookupService {
 
   /**
    * Retrieves the proceeding submission mapping context.
-   * <p>
-   * This method fetches the lookup detail for the type of order required for
+   *
+   * <p>This method fetches the lookup detail for the type of order required for
    * mapping proceeding submission summaries. The following component is included:
    * </p>
    * <ul>
@@ -583,8 +583,8 @@ public class LookupService {
 
   /**
    * Retrieves the opponent submission mapping context.
-   * <p>
-   * This method combines multiple asynchronous calls to fetch various lookup details required
+   *
+   * <p>This method combines multiple asynchronous calls to fetch various lookup details required
    * for mapping opponent submission summaries. The following components are included:
    * </p>
    * <ul>
