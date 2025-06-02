@@ -2,9 +2,16 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
 import java.util.Collections;
 import java.util.List;
@@ -19,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
@@ -28,6 +36,7 @@ import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualEmploymentDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualGeneralDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
 class CaseControllerTest {
@@ -125,6 +134,47 @@ class CaseControllerTest {
           .hasViewName("error");
     }
 
+  }
+
+  @Test
+  void handleAbandonGetReturnsCorrectView() {
+    ApplicationDetail ebsCase = new ApplicationDetail();
+    assertThat(mockMvc.perform(get("/cases/amendment/abandon")
+        .sessionAttr(CASE, ebsCase)))
+        .hasStatusOk()
+        .hasViewName("application/amendment-remove");
+  }
+
+  @Test
+  void handleAbandonPostCallsServiceAndReturnsCorrectView() {
+    ApplicationDetail ebsCase = new ApplicationDetail();
+    final UserDetail user = buildUserDetail();
+    doNothing().when(applicationService).abandonApplication(ebsCase, user);
+
+    assertThat(mockMvc.perform(post("/cases/amendment/abandon")
+        .sessionAttr(CASE, ebsCase)
+        .sessionAttr(USER_DETAILS, user)))
+        .hasStatusOk()
+        .hasViewName("application/amendment-remove");
+
+    verify(applicationService, times(1)).abandonApplication(ebsCase, user);
+  }
+
+  @Test
+  void handleAbandonPostCallsServiceAndReturnsErrorView() {
+    ApplicationDetail ebsCase = new ApplicationDetail();
+    final UserDetail user = buildUserDetail();
+
+    doThrow(new CaabApplicationException("Something went wrong")).when(applicationService)
+        .abandonApplication(ebsCase, user);
+
+    assertThat(mockMvc.perform(post("/cases/amendment/abandon")
+        .sessionAttr(CASE, ebsCase)
+        .sessionAttr(USER_DETAILS, user)))
+        .hasStatusOk()
+        .hasViewName("error");
+
+    verify(applicationService, times(1)).abandonApplication(ebsCase, user);
   }
 
   @Test
