@@ -8,17 +8,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.Logger;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.ServletRequestBindingException;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 @ExtendWith(MockitoExtension.class)
-public class GlobalExceptionHandlerTest {
-
-  @Mock
-  private Logger loggerMock;
+class GlobalExceptionHandlerTest {
 
   @Mock
   private Model model;
@@ -30,31 +26,32 @@ public class GlobalExceptionHandlerTest {
   private GlobalExceptionHandler globalExceptionHandler;
 
   @Test
-  public void testHandleDataApiClientException() {
+  void handleDataApiClientException() {
     final String errorMsg = "Test Exception";
-    EbsApiClientException e = new EbsApiClientException(errorMsg);
+    EbsApiClientException ebsApiClientException = new EbsApiClientException(errorMsg);
 
-    globalExceptionHandler.handleDataApiClientException(e, session, model);
+    globalExceptionHandler.handleException(model, session, ebsApiClientException);
 
     verify(model).addAttribute("error", errorMsg);
   }
 
   @Test
-  public void testHandleCaabApplicationException() {
+  void handleCaabApplicationException() {
     final String errorMsg = "Test Exception";
-    CaabApplicationException e = new CaabApplicationException(errorMsg);
+    CaabApplicationException caabApplicationException = new CaabApplicationException(errorMsg);
 
-    globalExceptionHandler.handleCaabApplicationException(e, session, model);
+    globalExceptionHandler.handleException(model, session, caabApplicationException);
 
     verify(model).addAttribute("error", errorMsg);
   }
 
   @Test
-  public void testHandleServletRequestBindingException() {
+  void handleServletRequestBindingException() {
     final String errorMsg = "Test Exception";
-    ServletRequestBindingException e = new ServletRequestBindingException(errorMsg);
+    ServletRequestBindingException servletRequestBindingException =
+        new ServletRequestBindingException(errorMsg);
 
-    globalExceptionHandler.handleServletRequestBindingException(e, session, model);
+    globalExceptionHandler.handleException(model, session, servletRequestBindingException);
 
     verify(model).addAttribute("error", errorMsg);
   }

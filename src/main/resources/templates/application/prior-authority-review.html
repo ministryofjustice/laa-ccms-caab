@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <title th:text="#{service.name} + ' - ' + #{application.create}"/>
+</head>
+<body>
+
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a th:href="@{/cases/details}" class="govuk-back-link" th:text="#{caseDetails.details.return}"></a>
+    </div>
+
+    <div id="main-content">
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <h1 class="govuk-heading-l" id="lead-heading" th:text="#{priorAuthorityReview.heading}"/>
+                <p class="govuk-body-l" th:text="#{priorAuthorityReview.leadParagraph}"/>
+                <dl class="govuk-summary-list">
+                    <div class="govuk-summary-list__row">
+                        <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.type}"/>
+                        <dd class="govuk-summary-list__value" id="prior-authority-type-value"
+                            th:text="${priorAuthority.type.displayValue}"/>
+                    </div>
+                    <div class="govuk-summary-list__row">
+                        <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.summary}"/>
+                        <dd class="govuk-summary-list__value" id="prior-authority-summary"
+                            th:text="${priorAuthority.summary}"/>
+                    </div>
+                    <div class="govuk-summary-list__row">
+                        <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.justification}"/>
+                        <dd class="govuk-summary-list__value" id="prior-authority-justification"
+                            th:text="${priorAuthority.justification}"/>
+                    </div>
+                    <div class="govuk-summary-list__row">
+                        <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.amountRequested}"/>
+                        <dd class="govuk-summary-list__value"
+                            id="prior-authority-amount-requested"
+                            th:text="${#numbers.formatCurrency(priorAuthority.amountRequested)}"/>
+                    </div>
+                    <th:block th:each="item : ${priorAuthority.items}">
+                        <div class="govuk-summary-list__row">
+                            <dt class="govuk-summary-list__key" th:text="${item.code.displayValue}">
+                            </dt>
+                            <dd class="govuk-summary-list__value"
+                                th:with="itemCode = ${item.code.displayValue},
+                                         normalisedCode = ${itemCode.toLowerCase().replace(' ', '-')},
+                                         trimmedCode = ${normalisedCode.length() < 15 ? normalisedCode : normalisedCode.substring(0, 15)}"
+                                th:id="${'prior-authority-' + trimmedCode}"
+                                th:text="${item.type == 'AMT' ?
+                                #numbers.formatCurrency(item.value.displayValue) : item.value.displayValue}">
+                            </dd>
+                        </div>
+                    </th:block>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
