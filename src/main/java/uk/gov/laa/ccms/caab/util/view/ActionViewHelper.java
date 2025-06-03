@@ -87,7 +87,7 @@ public class ActionViewHelper {
         FunctionConstants.AMEND_CASE,
         "action.amendCase.new.name",
         "action.amendCase.new.description",
-        "#");
+        "/" + CaseContext.AMENDMENTS.getPathValue() + "/new");
 
     LinkedList<AvailableAction> availableActions = new LinkedList<>(AVAILABLE_ACTION_LIST);
     availableActions.addFirst(amendmentAction);

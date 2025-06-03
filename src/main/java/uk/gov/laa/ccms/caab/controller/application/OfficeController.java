@@ -28,16 +28,6 @@ public class OfficeController {
   private final OfficeValidator officeValidator;
 
   /**
-   * Creates a new instance of {@link uk.gov.laa.ccms.caab.bean.ApplicationFormData}.
-   *
-   * @return A new instance of {@link uk.gov.laa.ccms.caab.bean.ApplicationFormData}.
-   */
-  @ModelAttribute(APPLICATION_FORM_DATA)
-  public ApplicationFormData getApplicationDetails() {
-    return new ApplicationFormData();
-  }
-
-  /**
    * Displays the office selection page.
    *
    * @param user Current user details.
@@ -48,7 +38,6 @@ public class OfficeController {
   public String selectOffice(
           @ModelAttribute(USER_DETAILS) UserDetail user,
           Model model) {
-    model.addAttribute(APPLICATION_FORM_DATA, getApplicationDetails());
     model.addAttribute("offices", user.getProvider().getOffices());
     return "application/select-office";
   }

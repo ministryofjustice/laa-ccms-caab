@@ -48,7 +48,7 @@ class CaseControllerTest {
   }
 
   @Nested
-  @DisplayName("/cases/details tests")
+  @DisplayName("GET: /cases/details")
   class CaseDetails {
 
     @Test
@@ -79,7 +79,7 @@ class CaseControllerTest {
   }
 
   @Nested
-  @DisplayName("/cases/details/other-party/{index} tests")
+  @DisplayName("GET: /cases/details/other-party/{index}")
   class CaseDetailsOtherParty {
 
     @Test
