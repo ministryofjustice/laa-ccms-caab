@@ -106,7 +106,7 @@ public class ProviderDetailsSectionController {
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
-      @ModelAttribute(SessionConstants.APPLICATION_FORM_DATA)
+      @Validated @ModelAttribute(SessionConstants.APPLICATION_FORM_DATA)
         ApplicationFormData applicationFormData,
       BindingResult bindingResult,
       Model model) {
