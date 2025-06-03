@@ -20,7 +20,9 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.Collections;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -166,5 +168,62 @@ public class ProviderDetailsSectionControllerTest {
     verify(providerDetailsValidator, times(1)).validate(any(), any());
     verify(applicationService, times(1)).updateProviderDetails(any(), any(), any());
     verifyNoInteractions(providerService);
+  }
+
+  @Test
+  @DisplayName("Provider Details No Validation Errors Max Length Not Exceeded = 35")
+  void providerDetailsPostNoValidationErrorsMaxLengthNotExceeded() throws Exception {
+    final String applicationId = "123";
+    final ActiveCase activeCase = ActiveCase.builder().build();
+    final UserDetail user = new UserDetail();
+    final ApplicationFormData applicationFormData = new ApplicationFormData();
+
+    applicationFormData.setProviderCaseReference(RandomStringUtils.insecure().nextAlphabetic(35));
+
+    when(applicationService.getProviderDetailsFormData(applicationId)).thenReturn(applicationFormData);
+
+    this.mockMvc.perform(post("/application/sections/provider-details")
+            .sessionAttr(APPLICATION_ID, applicationId)
+            .sessionAttr(ACTIVE_CASE, activeCase)
+            .sessionAttr(USER_DETAILS, user)
+            .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
+        .andDo(print())
+        .andExpect(redirectedUrl("/application/sections"));
+
+    verify(providerDetailsValidator, times(1)).validate(any(), any());
+    verify(applicationService, times(1)).updateProviderDetails(any(), any(), any());
+    verifyNoInteractions(providerService);
+  }
+
+  @Test
+  @DisplayName("Provider Details Validation Error Max Length Exceeded > 35")
+  void providerDetailsPostValidationErrorMaxLengthExceeded() throws Exception {
+    final String applicationId = "123";
+    final ActiveCase activeCase = ActiveCase.builder().build();
+    final UserDetail user = new UserDetail().provider(new BaseProvider().id(987));
+    ProviderDetail providerDetail = new ProviderDetail().id(987);
+    final ApplicationFormData applicationFormData = new ApplicationFormData();
+
+    applicationFormData.setProviderCaseReference(RandomStringUtils.insecure().nextAlphabetic(36));
+
+    when(providerService.getProvider(any()))
+        .thenReturn(Mono.just(providerDetail));
+    when(providerService.getFeeEarnersByOffice(any(), any()))
+        .thenReturn(Collections.emptyList());
+
+    this.mockMvc.perform(post("/application/sections/provider-details")
+            .sessionAttr(APPLICATION_ID, applicationId)
+            .sessionAttr(ACTIVE_CASE, activeCase)
+            .sessionAttr(USER_DETAILS, user)
+            .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/sections/provider-details-section"))
+        .andExpect(model().attributeHasFieldErrors("applicationFormData", "providerCaseReference"));
+
+    verify(providerDetailsValidator, times(1)).validate(any(), any());
+    verify(providerService, times(1)).getProvider(providerDetail.getId());
+    verify(providerService, times(1)).getFeeEarnersByOffice(providerDetail, applicationFormData.getOfficeId());
+    verifyNoInteractions(applicationService);
   }
 }
