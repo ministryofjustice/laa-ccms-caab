@@ -72,12 +72,9 @@ public class DelegatedFunctionsController {
     }
 
     if (caseContext.isAmendment()) {
-      applicationService.createAndSubmitAmendmentForCase(applicationFormData,
-          applicationDetail.getCaseReferenceNumber(),
-          userDetails);
-      // TODO: Redirect to amend case screen once implemented in CCMSPUI-504
-      return "redirect:/application/%s/view".formatted(applicationDetail.getCaseReferenceNumber());
+      return "redirect:/amendments/create";
     }
+
     return "redirect:/application/client/search";
   }
 

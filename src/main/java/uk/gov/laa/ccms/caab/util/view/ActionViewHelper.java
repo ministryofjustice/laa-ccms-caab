@@ -82,7 +82,7 @@ public class ActionViewHelper {
         FunctionConstants.AMEND_CASE,
         "action.amendCase.continue.name",
         "action.amendCase.continue.description",
-        "#")
+        "/" + CaseContext.AMENDMENTS.getPathValue() + "/continue")
         : new AvailableAction(
         FunctionConstants.AMEND_CASE,
         "action.amendCase.new.name",

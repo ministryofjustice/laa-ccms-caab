@@ -96,11 +96,7 @@ public class ApplicationTypeController {
     //  amendment.
     if (caseContext.isAmendment()
         && APP_TYPE_SUBSTANTIVE.equals(applicationFormData.getApplicationTypeCategory())) {
-      applicationService.createAndSubmitAmendmentForCase(applicationFormData,
-          applicationDetail.getCaseReferenceNumber(),
-          userDetails);
-      // TODO: Redirect to amend case screen once implemented in CCMSPUI-504
-      return "redirect:/application/%s/view".formatted(applicationDetail.getCaseReferenceNumber());
+      return "redirect:/amendments/create";
     }
 
     return "redirect:/%s/delegated-functions".formatted(caseContext.getPathValue());
