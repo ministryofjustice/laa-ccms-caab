@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
-import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -17,7 +16,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.DelegatedFunctionsValidator;
-import uk.gov.laa.ccms.caab.constants.ContextConstants;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -40,9 +39,9 @@ public class DelegatedFunctionsController {
    * @param applicationFormData The details of the current application.
    * @return The path to the delegated functions selection view.
    */
-  @GetMapping("/{" + CONTEXT_NAME + "}/delegated-functions")
+  @GetMapping("/{caseContext}/delegated-functions")
   public String delegatedFunction(
-          @PathVariable(CONTEXT_NAME) final String caseContext,
+          @PathVariable("caseContext") final CaseContext caseContext,
           @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData) {
     return "application/select-delegated-functions";
   }
@@ -55,9 +54,9 @@ public class DelegatedFunctionsController {
    * @return The path to the next step in the application process or the current page based on
    *         validation.
    */
-  @PostMapping("/{" + CONTEXT_NAME + "}/delegated-functions")
+  @PostMapping("/{caseContext}/delegated-functions")
   public String delegatedFunction(
-          @PathVariable(CONTEXT_NAME) final String caseContext,
+          @PathVariable("caseContext") final CaseContext caseContext,
           @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
           @SessionAttribute(CASE) ApplicationDetail applicationDetail,
           @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
@@ -72,7 +71,7 @@ public class DelegatedFunctionsController {
       return "application/select-delegated-functions";
     }
 
-    if (ContextConstants.AMENDMENTS.equals(caseContext)) {
+    if (caseContext.isAmendment()) {
       applicationService.createAndSubmitAmendmentForCase(applicationFormData,
           applicationDetail.getCaseReferenceNumber(),
           userDetails);

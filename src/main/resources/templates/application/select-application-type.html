@@ -8,11 +8,11 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:if="${caseContext == 'application'}" th:href="@{/home}" class="govuk-back-link" th:text="#{site.cancelAndReturnToHome}"/>
-        <a th:if="${caseContext == 'amendments'}" th:href="@{/case/overview}" class="govuk-back-link" th:text="#{site.returnToCaseOverview}"/>
+        <a th:if="${caseContext.isApplication()}" th:href="@{/home}" class="govuk-back-link" th:text="#{site.cancelAndReturnToHome}"/>
+        <a th:if="${caseContext.isAmendment()}" th:href="@{/case/overview}" class="govuk-back-link" th:text="#{site.returnToCaseOverview}"/>
     </div>
     <div id="main-content">
-        <form action="#" th:action="@{/{caseContext}/application-type(caseContext=${caseContext})}"
+        <form action="#" th:action="@{/{caseContext}/application-type(caseContext=${caseContext.pathValue})}"
               th:object="${applicationFormData}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l" th:text="#{application.about}"></span>

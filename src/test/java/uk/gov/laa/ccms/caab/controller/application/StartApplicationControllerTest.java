@@ -1,10 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,7 +13,7 @@ import org.mockito.InjectMocks;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.assertj.MockMvcTester;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -22,31 +21,32 @@ import org.springframework.test.web.servlet.MockMvc;
 @DisplayName("StartApplicationController test")
 class StartApplicationControllerTest {
 
-  private MockMvc mockMvc;
+  private MockMvcTester mockMvc;
 
   @InjectMocks
   private StartApplicationController startApplicationController;
 
   @BeforeEach
   void setup() {
-    mockMvc = standaloneSetup(startApplicationController).build();
+    mockMvc = MockMvcTester.create(standaloneSetup(startApplicationController)
+        .setConversionService(getConversionService()).build());
   }
 
   @Test
   @DisplayName("GET: /application/new should create new application and redirect")
-  void shouldCreateNewApplication() throws Exception {
-    this.mockMvc.perform(get("/application/new"))
-        .andDo(print())
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/office"));
+  void shouldCreateNewApplication()  {
+    assertThat(
+      mockMvc.perform(get("/application/new")))
+        .hasStatus3xxRedirection()
+        .hasRedirectedUrl("/application/office");
   }
 
   @Test
   @DisplayName("GET: /amendments/new should create new application and redirect")
-  void shouldCreateNewAmendment() throws Exception {
-    this.mockMvc.perform(get("/amendments/new"))
-        .andDo(print())
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/amendments/application-type"));
+  void shouldCreateNewAmendment() {
+    assertThat(
+        mockMvc.perform(get("/amendments/new")))
+        .hasStatus3xxRedirection()
+        .hasRedirectedUrl("/amendments/application-type");
   }
 }

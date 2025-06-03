@@ -17,7 +17,6 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
-import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -76,7 +75,7 @@ class ApplicationTypeControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /{" + CONTEXT_NAME + "}/application-type")
+  @DisplayName("GET: /{caseContext}/application-type")
   class GetApplicationTypeTests {
 
     @ParameterizedTest
@@ -147,7 +146,7 @@ class ApplicationTypeControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /{" + CONTEXT_NAME + "}/application-type")
+  @DisplayName("POST: /{caseContext}/application-type")
   class PostApplicationTypeTests {
 
     @ParameterizedTest

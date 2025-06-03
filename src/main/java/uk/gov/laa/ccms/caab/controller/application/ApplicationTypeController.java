@@ -3,8 +3,6 @@ package uk.gov.laa.ccms.caab.controller.application;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
-import static uk.gov.laa.ccms.caab.constants.ContextConstants.AMENDMENTS;
-import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -25,6 +23,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationTypeValidator;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -53,9 +52,9 @@ public class ApplicationTypeController {
    * @return The view name for the application type selection page or a redirect if exceptional
    *     funding.
    */
-  @GetMapping("/{" + CONTEXT_NAME + "}/application-type")
+  @GetMapping("/{caseContext}/application-type")
   public String applicationType(
-      @PathVariable(CONTEXT_NAME) final String caseContext,
+      @PathVariable("caseContext") final CaseContext caseContext,
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       Model model) {
 
@@ -78,9 +77,9 @@ public class ApplicationTypeController {
    * @param model               The model for the view.
    * @return A redirect string or view name based on validation result.
    */
-  @PostMapping("/{" + CONTEXT_NAME + "}/application-type")
+  @PostMapping("/{caseContext}/application-type")
   public String applicationType(
-      @PathVariable(CONTEXT_NAME) final String caseContext,
+      @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
       @SessionAttribute(CASE) ApplicationDetail applicationDetail,
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
@@ -95,7 +94,7 @@ public class ApplicationTypeController {
 
     // When amendments, if amendment type is substantive, skip delegated functions and create the
     //  amendment.
-    if (AMENDMENTS.equals(caseContext)
+    if (caseContext.isAmendment()
         && APP_TYPE_SUBSTANTIVE.equals(applicationFormData.getApplicationTypeCategory())) {
       applicationService.createAndSubmitAmendmentForCase(applicationFormData,
           applicationDetail.getCaseReferenceNumber(),
@@ -104,7 +103,7 @@ public class ApplicationTypeController {
       return "redirect:/application/%s/view".formatted(applicationDetail.getCaseReferenceNumber());
     }
 
-    return "redirect:/%s/delegated-functions".formatted(caseContext);
+    return "redirect:/%s/delegated-functions".formatted(caseContext.getPathValue());
   }
 
   private List<CommonLookupValueDetail> getFilteredApplicationTypes() {
