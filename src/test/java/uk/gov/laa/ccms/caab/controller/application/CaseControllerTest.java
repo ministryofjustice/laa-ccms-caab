@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 
 import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,6 +21,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
+import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualAddressContactDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
@@ -50,7 +52,7 @@ class CaseControllerTest {
 
   @Nested
   @DisplayName("/cases/details tests")
-  class caseDetails {
+  class CaseDetails {
 
     @Test
     @DisplayName("Should return view and model when case details exist")
@@ -81,14 +83,13 @@ class CaseControllerTest {
 
   @Nested
   @DisplayName("/cases/details/other-party/{index} tests")
-  class caseDetailsOtherParty {
+  class CaseDetailsOtherParty {
 
     @Test
     @DisplayName("Should return view and model when case details exist")
     void caseDetailsOtherPartyReturnsViewAndModelWhenCaseDetailsExist() {
       ApplicationDetail ebsCase = new ApplicationDetail();
       ebsCase.setOpponents(Collections.singletonList(new OpponentDetail()));
-      ApplicationSectionDisplay display = ApplicationSectionDisplay.builder().build();
       IndividualDetailsSectionDisplay otherParty = new IndividualDetailsSectionDisplay(
           new IndividualGeneralDetailsSectionDisplay(),
           new IndividualAddressContactDetailsSectionDisplay(),
@@ -128,7 +129,7 @@ class CaseControllerTest {
     }
 
   }
-
+  
   @Nested
   @DisplayName("/cases/details/other-party-organisation/{index} tests")
   class caseDetailsOtherPartyOrganisation {
@@ -177,5 +178,41 @@ class CaseControllerTest {
           .hasViewName("error");
     }
 
+  }
+
+  @Test
+  void getCaseDetailsViewReturnsViewAndModelForValidIndex() {
+    ApplicationDetail ebsCase = new ApplicationDetail();
+    PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
+    ebsCase.setPriorAuthorities(List.of(priorAuthority));
+
+    assertThat(mockMvc.perform(get("/cases/details/prior-authority/0")
+        .sessionAttr(CASE, ebsCase)))
+        .hasStatusOk()
+        .hasViewName("application/prior-authority-review")
+        .model()
+        .containsEntry("priorAuthority", priorAuthority);
+  }
+
+  @Test
+  void getCaseDetailsViewThrowsExceptionWhenPriorAuthoritiesAreEmpty() {
+    ApplicationDetail ebsCase = new ApplicationDetail();
+    ebsCase.setPriorAuthorities(List.of());
+
+    assertThat(mockMvc.perform(get("/cases/details/prior-authority/0")
+        .sessionAttr(CASE, ebsCase)))
+        .hasStatusOk()
+        .hasViewName("error");
+  }
+
+  @Test
+  void getCaseDetailsViewThrowsExceptionForInvalidIndex() {
+    ApplicationDetail ebsCase = new ApplicationDetail();
+    ebsCase.setPriorAuthorities(List.of(new PriorAuthorityDetail()));
+
+    assertThat(mockMvc.perform(get("/cases/details/prior-authority/1")
+        .sessionAttr(CASE, ebsCase)))
+        .hasStatusOk()
+        .hasViewName("error");
   }
 }
