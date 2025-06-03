@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_EDIT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
 import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,7 +69,8 @@ class EditClientAddressDetailsControllerTest {
 
   @BeforeEach
   void setup() {
-    mockMvc = standaloneSetup(editClientAddressDetailsController).build();
+    mockMvc = standaloneSetup(editClientAddressDetailsController)
+        .setConversionService(getConversionService()).build();
 
     basicDetails = new ClientFormDataBasicDetails();
     basicDetails.setVulnerableClient(false);

@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.client;
 
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_EDIT;
-import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_CLIENT_NAMES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
@@ -21,6 +20,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
@@ -55,9 +55,9 @@ public class EditClientSummaryController extends AbstractClientSummaryController
    *
    * @return The view name for the client summary details
    */
-  @GetMapping("/{" + CONTEXT_NAME + "}/sections/client/details/summary")
+  @GetMapping("/{caseContext}/sections/client/details/summary")
   public String getClientDetailsSummary(
-      @PathVariable(CONTEXT_NAME) final String context,
+      @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       final Model model,
@@ -93,9 +93,9 @@ public class EditClientSummaryController extends AbstractClientSummaryController
    *
    * @return The view name for the edit client summary details
    */
-  @PostMapping("/{" + CONTEXT_NAME + "}/sections/client/details/summary")
+  @PostMapping("/{caseContext}/sections/client/details/summary")
   public String postClientDetailsSummary(
-      final @PathVariable(CONTEXT_NAME) String caseContext,
+      final @PathVariable("caseContext") CaseContext caseContext,
       final @ModelAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       final @SessionAttribute(USER_DETAILS) UserDetail user,
       final @SessionAttribute(ACTIVE_CASE) ActiveCase activeCase,
@@ -115,7 +115,7 @@ public class EditClientSummaryController extends AbstractClientSummaryController
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
     session.setAttribute(APPLICATION_CLIENT_NAMES, applicationClientNames);
 
-    return "redirect:/%s/%s".formatted(caseContext, SUBMISSION_UPDATE_CLIENT);
+    return "redirect:/%s/%s".formatted(caseContext.getPathValue(), SUBMISSION_UPDATE_CLIENT);
   }
 
 }

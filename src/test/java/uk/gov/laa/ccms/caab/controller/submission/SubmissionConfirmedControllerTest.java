@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.submission;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,7 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 @ExtendWith(MockitoExtension.class)
-public class SubmissionConfirmedControllerTest {
+class SubmissionConfirmedControllerTest {
 
   @InjectMocks
   private SubmissionConfirmedController submissionConfirmedController;
@@ -21,8 +22,9 @@ public class SubmissionConfirmedControllerTest {
   private MockMvc mockMvc;
 
   @BeforeEach
-  public void setup() {
-    mockMvc = MockMvcBuilders.standaloneSetup(submissionConfirmedController).build();
+  void setup() {
+    mockMvc = MockMvcBuilders.standaloneSetup(submissionConfirmedController)
+        .setConversionService(getConversionService()).build();
   }
 
   @Test

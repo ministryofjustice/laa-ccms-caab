@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.client;
 
-import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import lombok.RequiredArgsConstructor;
@@ -17,6 +16,7 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientDeceasedDetailsValidator;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 
 /**
  * Controller for handling edits to client deceased details during the application summary process.
@@ -42,9 +42,9 @@ public class EditClientDeceasedDetailsController {
    * @param model The model for the view.
    * @return The view name for the client basic details page
    */
-  @GetMapping("/{" + CONTEXT_NAME + "}/sections/client/details/deceased")
+  @GetMapping("/{caseContext}/sections/client/details/deceased")
   public String clientDetailsDeceased(
-      @PathVariable(CONTEXT_NAME) final String context,
+      @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @ModelAttribute("deceasedDetails") ClientFormDataDeceasedDetails deceasedDetails,
       Model model) {
@@ -65,9 +65,9 @@ public class EditClientDeceasedDetailsController {
    * @param model The model for the view.
    * @return A redirect string to the agreement page.
    */
-  @PostMapping("/{" + CONTEXT_NAME + "}/sections/client/details/deceased")
+  @PostMapping("/{caseContext}/sections/client/details/deceased")
   public String postClientDetailsDeceased(
-      @PathVariable(CONTEXT_NAME) final String context,
+      @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @ModelAttribute("deceasedDetails") ClientFormDataDeceasedDetails deceasedDetails,
       BindingResult bindingResult,
@@ -82,7 +82,7 @@ public class EditClientDeceasedDetailsController {
     clientFlowFormData.setDeceasedDetails(deceasedDetails);
     model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
-    return "redirect:/%s/sections/client/details/summary".formatted(context);
+    return "redirect:/%s/sections/client/details/summary".formatted(caseContext.getPathValue());
   }
 
 }
