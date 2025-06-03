@@ -6,7 +6,7 @@ import lombok.Setter;
 /**
  * Represents the display details for an individual's address and contact details.
  *
- * @author Jamie Briggs
+ * @author Geoff Murley
  */
 @Getter
 @Setter

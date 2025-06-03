@@ -10,7 +10,7 @@ package uk.gov.laa.ccms.caab.model.sections;
  *   <li>Address details and other information for the organisation.</li> *
  * </ol>
  *
- * @author Jamie Briggs
+ * @author Geoff Murley
  */
 public record OrganisationDetailsSectionDisplay(
     OrganisationOrganisationDetailsSectionDisplay organisationDetails,
