@@ -105,13 +105,6 @@ public class CaseController {
 
     model.addAttribute("otherPartyOrganisation", opponent);
     return "application/case-details-other-party-organisation";
-
-    final OpponentDetail opponentDetail = ebsCase.getOpponents().get(index);
-    final IndividualDetailsSectionDisplay opponentDisplay =
-        applicationService.getIndividualDetailsSectionDisplay(opponentDetail);
-
-    model.addAttribute("otherParty", opponentDisplay);
-    return "application/case-details-other-party";
   }
 
 
