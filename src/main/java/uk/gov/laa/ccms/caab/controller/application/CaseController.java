@@ -83,16 +83,6 @@ public class CaseController {
   }
 
   /**
-   * Handles the request to abandon amendments for a specific case.
-   * This method is triggered by a GET request to display the confirmation page
-   * for abandoning amendments.
-   *
-   * @param ebsCase the application details for the current case,
-   *                retrieved from the session attribute
-   * @return a string representing the view name for confirming the abandonment of amendments
-   */
-
-  /**
    * Displays the prior authority details for a given case.
    * Retrieves a specific prior authority detail using the provided index and adds it to the model
    * to be displayed in the view.
@@ -118,6 +108,15 @@ public class CaseController {
     return "application/prior-authority-review";
   }
 
+  /**
+   * Handles the request to abandon amendments for a specific case.
+   * This method is triggered by a GET request to display the confirmation page
+   * for abandoning amendments.
+   *
+   * @param ebsCase the application details for the current case,
+   *                retrieved from the session attribute
+   * @return a string representing the view name for confirming the abandonment of amendments
+   */
   @GetMapping("/cases/amendment/abandon")
   public String handleAbandon(@SessionAttribute(CASE) final ApplicationDetail ebsCase) {
     log.info("Abandoning amendments requested for case id {}", ebsCase.getId());
