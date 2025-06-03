@@ -70,6 +70,7 @@ public class CaseController {
     }
 
     final OpponentDetail opponentDetail = ebsCase.getOpponents().get(index);
+
     final IndividualDetailsSectionDisplay opponentDisplay =
         applicationService.getIndividualDetailsSectionDisplay(opponentDetail);
 

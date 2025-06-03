@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
@@ -8,11 +9,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
@@ -20,6 +16,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_A
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,7 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
@@ -64,14 +61,15 @@ class ApplicationTypeControllerTest {
   @InjectMocks
   private ApplicationTypeController applicationTypeController;
 
-  private MockMvc mockMvc;
+  private MockMvcTester mockMvc;
 
   @Autowired
   private WebApplicationContext webApplicationContext;
 
   @BeforeEach
   void setup() {
-    mockMvc = standaloneSetup(applicationTypeController).build();
+    mockMvc = MockMvcTester.create(standaloneSetup(applicationTypeController)
+        .setConversionService(getConversionService()).build());
   }
 
   @Nested
@@ -79,9 +77,9 @@ class ApplicationTypeControllerTest {
   class GetApplicationTypeTests {
 
     @ParameterizedTest
-    @ValueSource(strings = {"application","amendment"})
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return view with application types on model")
-    void testGetApplicationTypeAddsApplicationTypesToModel(String caseContext) throws Exception {
+    void testGetApplicationTypeAddsApplicationTypesToModel(String caseContext) {
       final CommonLookupDetail applicationTypes = new CommonLookupDetail();
       applicationTypes.addContentItem(
           new CommonLookupValueDetail().type("Type 1").code("Code 1"));
@@ -89,13 +87,14 @@ class ApplicationTypeControllerTest {
       when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_TYPE)).thenReturn(
           Mono.just(applicationTypes));
 
-      mockMvc.perform(get("/%s/application-type".formatted(caseContext))
-              .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData()))
-          .andDo(print())
-          .andExpect(status().isOk())
-          .andExpect(view().name("application/select-application-type"))
-          .andExpect(model().attribute(APPLICATION_FORM_DATA, new ApplicationFormData()))
-          .andExpect(model().attribute("applicationTypes", applicationTypes.getContent()));
+      assertThat(
+          mockMvc.perform(get("/%s/application-type".formatted(caseContext))
+              .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())))
+          .hasStatusOk()
+          .hasViewName("application/select-application-type")
+          .model()
+          .containsEntry(APPLICATION_FORM_DATA, new ApplicationFormData())
+          .containsEntry("applicationTypes", applicationTypes.getContent());
 
       verify(lookupService, times(1))
           .getCommonValues(COMMON_VALUE_APPLICATION_TYPE);
@@ -104,22 +103,23 @@ class ApplicationTypeControllerTest {
 
     @Test
     @DisplayName("Should handle exceptional funding when application")
-    void testGetApplicationTypeHandlesExceptionalFundingWhenApplication() throws Exception {
+    void testGetApplicationTypeHandlesExceptionalFundingWhenApplication() {
       final ApplicationFormData applicationFormData = new ApplicationFormData();
       applicationFormData.setApplicationTypeCategory("ECF");
       applicationFormData.setExceptionalFunding(true);
 
-      mockMvc.perform(get("/application/application-type")
-              .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
-          .andDo(print())
-          .andExpect(redirectedUrl("/application/client/search"));
+      assertThat(
+          mockMvc.perform(get("/application/application-type")
+              .flashAttr(APPLICATION_FORM_DATA, applicationFormData)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/application/client/search");
 
       verifyNoInteractions(lookupService);
     }
 
     @Test
     @DisplayName("Should not handle exceptional funding when amendment")
-    void testGetApplicationTypeHandlesExceptionalFundingWhenAmendment() throws Exception {
+    void testGetApplicationTypeHandlesExceptionalFundingWhenAmendment() {
       final CommonLookupDetail applicationTypes = new CommonLookupDetail();
       applicationTypes.addContentItem(
           new CommonLookupValueDetail().type("Type 1").code("Code 1"));
@@ -131,13 +131,14 @@ class ApplicationTypeControllerTest {
       applicationFormData.setApplicationTypeCategory("ECF");
       applicationFormData.setExceptionalFunding(true);
 
-      mockMvc.perform(get("/amendment/application-type")
-              .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData()))
-          .andDo(print())
-          .andExpect(status().isOk())
-          .andExpect(view().name("application/select-application-type"))
-          .andExpect(model().attribute(APPLICATION_FORM_DATA, new ApplicationFormData()))
-          .andExpect(model().attribute("applicationTypes", applicationTypes.getContent()));
+      assertThat(
+          mockMvc.perform(get("/amendments/application-type")
+              .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())))
+          .hasStatusOk()
+          .hasViewName("application/select-application-type")
+          .model()
+          .containsEntry(APPLICATION_FORM_DATA, new ApplicationFormData())
+          .containsEntry("applicationTypes", applicationTypes.getContent());
 
       verify(lookupService, times(1))
           .getCommonValues(COMMON_VALUE_APPLICATION_TYPE);
@@ -150,9 +151,9 @@ class ApplicationTypeControllerTest {
   class PostApplicationTypeTests {
 
     @ParameterizedTest
-    @ValueSource(strings = {"application", "amendment"})
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should having validation error")
-    void testPostApplicationTypeHandlesValidationError(String caseContext) throws Exception {
+    void testPostApplicationTypeHandlesValidationError(String caseContext) {
       final ApplicationFormData applicationFormData = new ApplicationFormData();
       final UserDetail userDetail = new UserDetail();
       final ApplicationDetail ebsCase = new ApplicationDetail();
@@ -170,57 +171,59 @@ class ApplicationTypeControllerTest {
         return null;
       }).when(applicationTypeValidator).validate(any(), any());
 
-      mockMvc.perform(post("/%s/application-type".formatted(caseContext))
+      assertThat(
+          mockMvc.perform(post("/%s/application-type".formatted(caseContext))
               .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
               .sessionAttr(USER_DETAILS, userDetail)
-              .sessionAttr(CASE, ebsCase))
-          .andDo(print())
-          .andExpect(status().isOk())
-          .andExpect(view().name("application/select-application-type"));
+              .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/select-application-type");
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"application", "amendment"})
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should be successful whilst emergency")
-    void testPostApplicationTypeIsSuccessful(String caseContext) throws Exception {
+    void testPostApplicationTypeIsSuccessful(String caseContext) {
 
       final UserDetail userDetail = new UserDetail();
       final ApplicationDetail ebsCase = new ApplicationDetail();
       final ApplicationFormData applicationFormData = new ApplicationFormData();
       applicationFormData.setApplicationTypeCategory(APP_TYPE_EMERGENCY);
 
-      mockMvc.perform(post("/%s/application-type".formatted(caseContext))
+      assertThat(
+          mockMvc.perform(post("/%s/application-type".formatted(caseContext))
               .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
               .sessionAttr(USER_DETAILS, userDetail)
-              .sessionAttr(CASE, ebsCase))
-          .andDo(print())
-          .andExpect(redirectedUrl("/%s/delegated-functions".formatted(caseContext)));
+              .sessionAttr(CASE, ebsCase)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/%s/delegated-functions".formatted(caseContext));
 
       verifyNoInteractions(lookupService);
     }
 
     @Test
     @DisplayName("Should be successful whilst substantive application")
-    void testPostApplicationTypeIsSuccessfulSubstantiveApplication() throws Exception {
+    void testPostApplicationTypeIsSuccessfulSubstantiveApplication() {
 
       final UserDetail userDetail = new UserDetail();
       final ApplicationDetail ebsCase = new ApplicationDetail();
       final ApplicationFormData applicationFormData = new ApplicationFormData();
       applicationFormData.setApplicationTypeCategory(APP_TYPE_SUBSTANTIVE);
 
-      mockMvc.perform(post("/application/application-type")
+      assertThat(
+          mockMvc.perform(post("/application/application-type")
               .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
               .sessionAttr(USER_DETAILS, userDetail)
-              .sessionAttr(CASE, ebsCase))
-          .andDo(print())
-          .andExpect(redirectedUrl("/application/delegated-functions"));
+              .sessionAttr(CASE, ebsCase)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/application/delegated-functions");
 
       verifyNoInteractions(lookupService);
     }
 
     @Test
     @DisplayName("Should be successful whilst substantive amendment")
-    void testPostApplicationTypeIsSuccessfulSubstantiveAmendment() throws Exception {
+    void testPostApplicationTypeIsSuccessfulSubstantiveAmendment() {
 
       final UserDetail userDetail = new UserDetail();
       final ApplicationDetail ebsCase = new ApplicationDetail();
@@ -228,12 +231,13 @@ class ApplicationTypeControllerTest {
       final ApplicationFormData applicationFormData = new ApplicationFormData();
       applicationFormData.setApplicationTypeCategory(APP_TYPE_SUBSTANTIVE);
 
-      mockMvc.perform(post("/amendments/application-type")
+      assertThat(
+          mockMvc.perform(post("/amendments/application-type")
               .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
               .sessionAttr(USER_DETAILS, userDetail)
-              .sessionAttr(CASE, ebsCase))
-          .andDo(print())
-          .andExpect(redirectedUrl("/application/123/view"));
+              .sessionAttr(CASE, ebsCase)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/application/123/view");
 
       verify(applicationService, times(1))
           .createAndSubmitAmendmentForCase(applicationFormData, "123",
