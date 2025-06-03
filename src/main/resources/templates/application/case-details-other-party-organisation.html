@@ -16,115 +16,120 @@
     <h1 class="govuk-heading-l" th:text="#{caseDetails.otherPartyDetails.title}"></h1>
     <p class="govuk-body-l" th:text="#{caseDetails.otherPartyDetails.leadParagraph}"></p>
 
-    <!--Organisation Details-->
-    <div class="govuk-summary-card">
-      <div class="govuk-summary-card__title-wrapper">
-        <h2 class="govuk-summary-card__title" th:text="#{caseDetails.otherPartyDetails.organisationDetails.subHeading}"/>
-      </div>
-      <div class="govuk-summary-card__content" th:with="organisationDetails=${otherPartyOrganisation.organisationDetails()}">
-         <dl class="govuk-summary-list">
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.organisation.organisationName}"/>
-            <dd class="govuk-summary-list__value" id="organisation-details-name-value"
-              th:text="${organisationDetails.organisationName}"/>
-          </div>
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.organisation.currentlyTrading}"/>
-            <dd class="govuk-summary-list__value" id="organisation-details-currently-trading-value">
-              <th:block th:if="${organisationDetails.currentlyTrading}">Yes</th:block>
-              <th:block th:unless="${organisationDetails.currentlyTrading}">No</th:block>
-          </div>
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.organisation.contactNameRole}"/>
-            <dd class="govuk-summary-list__value" id="organisation-details-contact-name-role-value"
-              th:text="${organisationDetails.contactNameRole}"/>
-          </div>
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.organisation.type}"/>
-            <dd class="govuk-summary-list__value" id="organisation-details-organisation-type-value"
-              th:text="${organisationDetails.organisationType}"/>
-          </div>
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key"
-              th:text="#{caseDetails.otherPartyDetails.general.relationshipToCase}"/>
-            <dd class="govuk-summary-list__value" id="organisation-details-relationship-to-case-value"
-              th:text="${organisationDetails.relationshipToCase}"/>
-          </div>
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key"
-              th:text="#{caseDetails.otherPartyDetails.general.relationshipToClient}"/>
-            <dd class="govuk-summary-list__value" id="organisation-details-relationship-to-client-value"
-              th:text="${organisationDetails.relationshipToClient}"/>
-          </div>
-        </dl>
-      </div>
-    </div>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-two-thirds-from-desktop">
 
-    <!--Address Details-->
-    <div class="govuk-summary-card">
-      <div class="govuk-summary-card__title-wrapper">
-        <h2 class="govuk-summary-card__title" th:text="#{caseDetails.otherPartyDetails.address.subHeading}"/>
-      </div>
-      <div class="govuk-summary-card__content" th:with="addressDetails=${otherPartyOrganisation.addressDetails()}">
-         <dl class="govuk-summary-list">
-            <div class="govuk-summary-list__row">
-              <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.organisation.address.buildingNumber}"/>
-              <dd class="govuk-summary-list__value" id="address-house-number-value"
-                th:text="${addressDetails.houseNameNumber}"/>
-            </div>
-            <div class="govuk-summary-list__row">
-              <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.addressLine1}"/>
-              <dd class="govuk-summary-list__value" id="address-line-1-value"
-                th:text="${addressDetails.addressLineOne}"/>
-            </div>
-            <div class="govuk-summary-list__row">
-              <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.addressLine2}"/>
-              <dd class="govuk-summary-list__value" id="address-line-2-value"
-                th:text="${addressDetails.addressLineTwo}"/>
-            </div>
-            <div class="govuk-summary-list__row">
-              <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.cityTown}"/>
-              <dd class="govuk-summary-list__value" id="address-city-town-value"
-                th:text="${addressDetails.cityTown}"/>
-            </div>
-            <div class="govuk-summary-list__row">
-              <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.county}"/>
-              <dd class="govuk-summary-list__value" id="address-county-value"
-                th:text="${addressDetails.county}"/>
-            </div>
-            <div class="govuk-summary-list__row">
-              <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.country}"/>
-              <dd class="govuk-summary-list__value" id="address-country-value"
-                th:text="${addressDetails.country}"/>
-            </div>
-            <div class="govuk-summary-list__row">
-              <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.postCode}"/>
-              <dd class="govuk-summary-list__value" id="address-postcode-value"
-                th:text="${addressDetails.postcode}"/>
-            </div>
-            <div class="govuk-summary-list__row">
-              <dt class="govuk-summary-list__key"
-                th:text="#{caseDetails.otherPartyDetails.organisation.address.telephone}"/>
-              <dd class="govuk-summary-list__value" id="general-home-telephone-value"
-                th:text="${addressDetails.telephone}"/>
-            </div>
-            <div class="govuk-summary-list__row">
-              <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.contact.email}"/>
-              <dd class="govuk-summary-list__value" id="address-email-value"
-                th:text="${addressDetails.email}"/>
-            </div>
-           <div class="govuk-summary-list__row">
-             <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.contact.faxNo}"/>
-             <dd class="govuk-summary-list__value" id="address-fax-value"
-                 th:text="${addressDetails.fax}"/>
-           </div>
-           <div class="govuk-summary-list__row">
-             <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.organisation.otherInformation}"/>
-             <dd class="govuk-summary-list__value" id="address-other-information-value"
-                 th:text="${addressDetails.otherInformation}"/>
-           </div>
-          </dl>
+        <!--Organisation Details-->
+        <div class="govuk-summary-card">
+          <div class="govuk-summary-card__title-wrapper">
+            <h2 class="govuk-summary-card__title" th:text="#{caseDetails.otherPartyDetails.organisationDetails.subHeading}"/>
+          </div>
+          <div class="govuk-summary-card__content" th:with="organisationDetails=${otherPartyOrganisation.organisationDetails()}">
+             <dl class="govuk-summary-list">
+              <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.organisation.organisationName}"/>
+                <dd class="govuk-summary-list__value" id="organisation-details-name-value"
+                  th:text="${organisationDetails.organisationName}"/>
+              </div>
+              <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.organisation.currentlyTrading}"/>
+                <dd class="govuk-summary-list__value" id="organisation-details-currently-trading-value">
+                  <th:block th:if="${organisationDetails.currentlyTrading}">Yes</th:block>
+                  <th:block th:unless="${organisationDetails.currentlyTrading}">No</th:block>
+              </div>
+              <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.organisation.contactNameRole}"/>
+                <dd class="govuk-summary-list__value" id="organisation-details-contact-name-role-value"
+                  th:text="${organisationDetails.contactNameRole}"/>
+              </div>
+              <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.organisation.type}"/>
+                <dd class="govuk-summary-list__value" id="organisation-details-organisation-type-value"
+                  th:text="${organisationDetails.organisationType}"/>
+              </div>
+              <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key"
+                  th:text="#{caseDetails.otherPartyDetails.general.relationshipToCase}"/>
+                <dd class="govuk-summary-list__value" id="organisation-details-relationship-to-case-value"
+                  th:text="${organisationDetails.relationshipToCase}"/>
+              </div>
+              <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key"
+                  th:text="#{caseDetails.otherPartyDetails.general.relationshipToClient}"/>
+                <dd class="govuk-summary-list__value" id="organisation-details-relationship-to-client-value"
+                  th:text="${organisationDetails.relationshipToClient}"/>
+              </div>
+            </dl>
+          </div>
         </div>
+
+        <!--Address Details-->
+        <div class="govuk-summary-card">
+          <div class="govuk-summary-card__title-wrapper">
+            <h2 class="govuk-summary-card__title" th:text="#{caseDetails.otherPartyDetails.address.subHeading}"/>
+          </div>
+          <div class="govuk-summary-card__content" th:with="addressDetails=${otherPartyOrganisation.addressDetails()}">
+             <dl class="govuk-summary-list">
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.organisation.address.buildingNumber}"/>
+                  <dd class="govuk-summary-list__value" id="address-house-number-value"
+                    th:text="${addressDetails.houseNameNumber}"/>
+                </div>
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.addressLine1}"/>
+                  <dd class="govuk-summary-list__value" id="address-line-1-value"
+                    th:text="${addressDetails.addressLineOne}"/>
+                </div>
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.addressLine2}"/>
+                  <dd class="govuk-summary-list__value" id="address-line-2-value"
+                    th:text="${addressDetails.addressLineTwo}"/>
+                </div>
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.cityTown}"/>
+                  <dd class="govuk-summary-list__value" id="address-city-town-value"
+                    th:text="${addressDetails.cityTown}"/>
+                </div>
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.county}"/>
+                  <dd class="govuk-summary-list__value" id="address-county-value"
+                    th:text="${addressDetails.county}"/>
+                </div>
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.country}"/>
+                  <dd class="govuk-summary-list__value" id="address-country-value"
+                    th:text="${addressDetails.country}"/>
+                </div>
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.address.postCode}"/>
+                  <dd class="govuk-summary-list__value" id="address-postcode-value"
+                    th:text="${addressDetails.postcode}"/>
+                </div>
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key"
+                    th:text="#{caseDetails.otherPartyDetails.organisation.address.telephone}"/>
+                  <dd class="govuk-summary-list__value" id="general-home-telephone-value"
+                    th:text="${addressDetails.telephone}"/>
+                </div>
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.contact.email}"/>
+                  <dd class="govuk-summary-list__value" id="address-email-value"
+                    th:text="${addressDetails.email}"/>
+                </div>
+               <div class="govuk-summary-list__row">
+                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.contact.faxNo}"/>
+                 <dd class="govuk-summary-list__value" id="address-fax-value"
+                     th:text="${addressDetails.fax}"/>
+               </div>
+               <div class="govuk-summary-list__row">
+                 <dt class="govuk-summary-list__key" th:text="#{caseDetails.otherPartyDetails.organisation.otherInformation}"/>
+                 <dd class="govuk-summary-list__value" id="address-other-information-value"
+                     th:text="${addressDetails.otherInformation}"/>
+               </div>
+              </dl>
+            </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

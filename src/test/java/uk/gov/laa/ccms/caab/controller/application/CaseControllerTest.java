@@ -88,8 +88,10 @@ class CaseControllerTest {
     @Test
     @DisplayName("Should return view and model when case details exist")
     void caseDetailsOtherPartyReturnsViewAndModelWhenCaseDetailsExist() {
+      OpponentDetail opponent = new OpponentDetail();
+      opponent.setType("Individual");
       ApplicationDetail ebsCase = new ApplicationDetail();
-      ebsCase.setOpponents(Collections.singletonList(new OpponentDetail()));
+      ebsCase.setOpponents(Collections.singletonList(opponent));
       IndividualDetailsSectionDisplay otherParty = new IndividualDetailsSectionDisplay(
           new IndividualGeneralDetailsSectionDisplay(),
           new IndividualAddressContactDetailsSectionDisplay(),
@@ -128,17 +130,13 @@ class CaseControllerTest {
           .hasViewName("error");
     }
 
-  }
-  
-  @Nested
-  @DisplayName("/cases/details/other-party-organisation/{index} tests")
-  class caseDetailsOtherPartyOrganisation {
-
     @Test
-    @DisplayName("Should return view and model when case details exist")
+    @DisplayName("Should return view and model when case details exist for an organisation")
     void caseDetailsOtherPartyOrganisationReturnsViewAndModelWhenCaseDetailsExist() {
+      OpponentDetail opponent = new OpponentDetail();
+      opponent.setType("Organisation");
       ApplicationDetail ebsCase = new ApplicationDetail();
-      ebsCase.setOpponents(Collections.singletonList(new OpponentDetail()));
+      ebsCase.setOpponents(Collections.singletonList(opponent));
       ApplicationSectionDisplay display = ApplicationSectionDisplay.builder().build();
       OrganisationDetailsSectionDisplay otherParty = new OrganisationDetailsSectionDisplay(
           new OrganisationOrganisationDetailsSectionDisplay(),
@@ -146,38 +144,13 @@ class CaseControllerTest {
 
       when(applicationService.getOrganisationDetailsSectionDisplay(any())).thenReturn(
           otherParty);
-      assertThat(mockMvc.perform(get("/cases/details/other-party-organisation/0")
+      assertThat(mockMvc.perform(get("/cases/details/other-party/0")
           .sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/case-details-other-party-organisation")
           .model()
           .containsEntry("otherPartyOrganisation", otherParty);
     }
-
-    @Test
-    @DisplayName("Should throw exception when other party list null")
-    void caseDetailsOtherPartyOrganisationThrowsExceptionWhenOtherPartyListNull() {
-      ApplicationDetail ebsCase = new ApplicationDetail();
-      ebsCase.setOpponents(null);
-
-      assertThat(mockMvc.perform(get("/cases/details/other-party-organisation/0")
-          .sessionAttr(CASE, ebsCase)))
-          .hasStatusOk()
-          .hasViewName("error");
-    }
-
-    @Test
-    @DisplayName("Should throw exception when other party doesn't exist")
-    void caseDetailsOtherPartyOrganisationThrowsExceptionWhenOtherPartyDoesNotExist() {
-      ApplicationDetail ebsCase = new ApplicationDetail();
-      ebsCase.setOpponents(Collections.emptyList());
-
-      assertThat(mockMvc.perform(get("/cases/details/other-party-organisation/0")
-          .sessionAttr(CASE, ebsCase)))
-          .hasStatusOk()
-          .hasViewName("error");
-    }
-
   }
 
   @Test
