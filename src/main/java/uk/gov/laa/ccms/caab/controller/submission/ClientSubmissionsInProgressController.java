@@ -1,8 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
-import static uk.gov.laa.ccms.caab.constants.ContextConstants.AMENDMENTS;
-import static uk.gov.laa.ccms.caab.constants.ContextConstants.APPLICATION;
-import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_CLIENT_NAMES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_REFERENCE;
@@ -22,8 +19,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
@@ -76,18 +73,13 @@ public class ClientSubmissionsInProgressController {
    *
    * @return The view name for the submission in progress.
    */
-  @GetMapping("/{context}/client-update")
+  @GetMapping("/{caseContext}/client-update")
   public String clientUpdateSubmission(
-      @PathVariable(CONTEXT_NAME) final String context,
+      @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(SUBMISSION_TRANSACTION_ID) final String transactionId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(APPLICATION_CLIENT_NAMES) final BaseClientDetail baseClient,
       final HttpSession session, final Model model) {
-
-    if (!APPLICATION.equalsIgnoreCase(context)
-        && !AMENDMENTS.equalsIgnoreCase(context)) {
-      throw new CaabApplicationException("Unknown context");
-    }
 
     model.addAttribute("submissionType", SUBMISSION_UPDATE_CLIENT);
 
@@ -105,7 +97,7 @@ public class ClientSubmissionsInProgressController {
       session.removeAttribute(CLIENT_FLOW_FORM_DATA);
       session.removeAttribute(APPLICATION_CLIENT_NAMES);
 
-      return "redirect:/%s/client-update/confirmed".formatted(context);
+      return "redirect:/%s/client-update/confirmed".formatted(caseContext.getPathValue());
     }
 
     return viewIncludingPollCount(session, SUBMISSION_UPDATE_CLIENT);

@@ -8,6 +8,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.format.FormatterRegistry;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -60,6 +61,11 @@ public class ApplicationConfig implements WebMvcConfigurer {
         .addResourceLocations("classpath:/META-INF/resources/webjars/")
         .resourceChain(true)
         .addResolver(new LiteWebJarsResourceResolver());
+  }
+
+  @Override
+  public void addFormatters(FormatterRegistry registry) {
+    registry.addConverter(new StringToCaseContextConverter());
   }
 
   /**

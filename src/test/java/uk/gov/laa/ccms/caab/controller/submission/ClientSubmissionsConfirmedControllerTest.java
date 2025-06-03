@@ -6,9 +6,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static uk.gov.laa.ccms.caab.constants.CaseContext.AMENDMENTS;
+import static uk.gov.laa.ccms.caab.constants.CaseContext.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_REFERENCE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +28,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
-import uk.gov.laa.ccms.caab.constants.ContextConstants;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.BaseOffice;
@@ -59,8 +61,9 @@ class ClientSubmissionsConfirmedControllerTest {
   private WebApplicationContext webApplicationContext;
 
   @BeforeEach
-  public void setup() {
-    mockMvc = MockMvcBuilders.standaloneSetup(clientSubmissionsConfirmedController).build();
+  void setup() {
+    mockMvc = MockMvcBuilders.standaloneSetup(clientSubmissionsConfirmedController)
+        .setConversionService(getConversionService()).build();
   }
 
   @Test
@@ -90,7 +93,7 @@ class ClientSubmissionsConfirmedControllerTest {
 
   @Test
   void testClientUpdateSubmittedApplication() throws Exception {
-    mockMvc.perform(post("/" + ContextConstants.APPLICATION + "/client-update/confirmed"))
+    mockMvc.perform(post("/" + APPLICATION.getPathValue() + "/client-update/confirmed"))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/sections"));
@@ -98,10 +101,10 @@ class ClientSubmissionsConfirmedControllerTest {
 
   @Test
   void testClientUpdateSubmittedAmendment() throws Exception {
-    mockMvc.perform(post("/" + ContextConstants.AMENDMENTS + "/client-update/confirmed"))
+    mockMvc.perform(post("/" + AMENDMENTS.getPathValue() + "/client-update/confirmed"))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/amendments/summary"));
+        .andExpect(redirectedUrl("/case/overview"));
   }
 
   private UserDetail buildUser() {
