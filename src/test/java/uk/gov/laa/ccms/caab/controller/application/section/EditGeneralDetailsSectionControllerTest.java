@@ -32,7 +32,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -318,6 +320,71 @@ class EditGeneralDetailsSectionControllerTest {
 
     verify(addressService, never()).filterAndUpdateAddressFormData(any(), any(), any());
 
+  }
+
+  @Test
+  @DisplayName("Correspondence Address No Validation Errors Max Lengths Not Exceeded")
+  void correspondenceAddressPostNoValidationErrorsMaxLengthsNotExceeded() throws Exception {
+    final String applicationId = "123";
+    final UserDetail user = new UserDetail();
+    final AddressFormData addressDetails = new AddressFormData();
+    addressDetails.setHouseNameNumber(RandomStringUtils.insecure().nextAlphabetic(35));
+    addressDetails.setPostcode(RandomStringUtils.insecure().nextAlphabetic(15));
+    addressDetails.setCareOf(RandomStringUtils.insecure().nextAlphabetic(35));
+    addressDetails.setAddressLine1(RandomStringUtils.insecure().nextAlphabetic(70));
+    addressDetails.setAddressLine2(RandomStringUtils.insecure().nextAlphabetic(35));
+    addressDetails.setCityTown(RandomStringUtils.insecure().nextAlphabetic(35));
+    addressDetails.setCounty(RandomStringUtils.insecure().nextAlphabetic(35));
+
+    this.mockMvc.perform(post("/application/sections/correspondence-address")
+            .param("action", "update")
+            .sessionAttr(APPLICATION_ID, applicationId)
+            .sessionAttr(USER_DETAILS, user)
+            .flashAttr("addressDetails", addressDetails))
+        .andDo(print())
+        .andExpect(redirectedUrl("/application/sections/linked-cases"));
+
+    verify(applicationService, times(1)).updateCorrespondenceAddress(applicationId, addressDetails, user);
+    verify(addressService, never()).getAddresses(any());
+
+  }
+
+  @Test
+  @DisplayName("Correspondence Address Validation Errors Max Lengths Exceeded")
+  void correspondenceAddressPostValidationErrorsMaxLengthsExceeded() throws Exception {
+    final String applicationId = "123";
+    final UserDetail user = new UserDetail();
+    final AddressFormData addressDetails = new AddressFormData();
+    addressDetails.setHouseNameNumber(RandomStringUtils.insecure().nextAlphabetic(36));
+    addressDetails.setPostcode(RandomStringUtils.insecure().nextAlphabetic(16));
+    addressDetails.setCareOf(RandomStringUtils.insecure().nextAlphabetic(36));
+    addressDetails.setAddressLine1(RandomStringUtils.insecure().nextAlphabetic(71));
+    addressDetails.setAddressLine2(RandomStringUtils.insecure().nextAlphabetic(36));
+    addressDetails.setCityTown(RandomStringUtils.insecure().nextAlphabetic(36));
+    addressDetails.setCounty(RandomStringUtils.insecure().nextAlphabetic(36));
+
+    when(lookupService.getCountries())
+        .thenReturn(Mono.just(mockCommonLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
+        .thenReturn(Mono.just(mockCommonLookupDetail));
+
+    this.mockMvc.perform(post("/application/sections/correspondence-address")
+            .param("action", "update")
+            .sessionAttr(APPLICATION_ID, applicationId)
+            .sessionAttr(USER_DETAILS, user)
+            .flashAttr("addressDetails", addressDetails))
+        .andDo(print())
+        .andExpect(view().name("application/sections/correspondence-address-details"))
+        .andExpect(model().attributeHasFieldErrors("addressDetails", "houseNameNumber"))
+        .andExpect(model().attributeHasFieldErrors("addressDetails", "postcode"))
+        .andExpect(model().attributeHasFieldErrors("addressDetails", "careOf"))
+        .andExpect(model().attributeHasFieldErrors("addressDetails", "addressLine1"))
+        .andExpect(model().attributeHasFieldErrors("addressDetails", "addressLine2"))
+        .andExpect(model().attributeHasFieldErrors("addressDetails", "county"))
+        .andExpect(model().attributeHasFieldErrors("addressDetails", "cityTown"));
+
+    verify(applicationService, never()).updateCorrespondenceAddress(applicationId, addressDetails, user);
+    verify(addressService, never()).getAddresses(any());
   }
 
   @Test
