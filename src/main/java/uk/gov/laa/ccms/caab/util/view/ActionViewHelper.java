@@ -2,7 +2,7 @@ package uk.gov.laa.ccms.caab.util.view;
 
 import java.util.LinkedList;
 import java.util.List;
-import uk.gov.laa.ccms.caab.constants.ContextConstants;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.model.AvailableAction;
 
@@ -16,7 +16,7 @@ public class ActionViewHelper {
           FunctionConstants.AMEND_CLIENT,
           "action.amendClient.name",
           "action.amendClient.description",
-          "/" + ContextConstants.AMENDMENTS + "/sections/client/details/summary"),
+          "/" + CaseContext.AMENDMENTS.getPathValue() + "/sections/client/details/summary"),
       new AvailableAction(
           FunctionConstants.BILLING, "action.billing.name", "action.billing.description", "#"),
       new AvailableAction(
@@ -51,7 +51,7 @@ public class ActionViewHelper {
           FunctionConstants.EDIT_PROVIDER,
           "action.amendProviderDetails.name",
           "action.amendProviderDetails.description",
-              "/" + ContextConstants.AMENDMENTS + "/sections/provider-details"),
+          "/" + CaseContext.AMENDMENTS.getPathValue() + "/sections/provider-details"),
       new AvailableAction(
           FunctionConstants.CASE_CORRESPONDENCE_PREFERENCE,
           "action.amendCorrespondenceAddress.name",
@@ -76,28 +76,21 @@ public class ActionViewHelper {
    * @return List of available actions.
    */
   public static List<AvailableAction> getAllAvailableActions(boolean openAmendment) {
+
+    AvailableAction amendmentAction = openAmendment
+        ? new AvailableAction(
+        FunctionConstants.AMEND_CASE,
+        "action.amendCase.continue.name",
+        "action.amendCase.continue.description",
+        "#")
+        : new AvailableAction(
+        FunctionConstants.AMEND_CASE,
+        "action.amendCase.new.name",
+        "action.amendCase.new.description",
+        "#");
+
     LinkedList<AvailableAction> availableActions = new LinkedList<>(AVAILABLE_ACTION_LIST);
-
-    String amendCaseState = openAmendment ? "continue" : "new";
-
-    AvailableAction amendmentAction = new AvailableAction(
-              FunctionConstants.AMEND_CASE,
-              "action.amendCase." + amendCaseState + ".name",
-              "action.amendCase." + amendCaseState + ".description",
-              "#");
     availableActions.addFirst(amendmentAction);
-
-    if (openAmendment) {
-      availableActions.removeIf(
-              action -> action.actionCode().equals(FunctionConstants.EDIT_PROVIDER));
-      AvailableAction providerAmendmentAction = new AvailableAction(
-                  FunctionConstants.EDIT_PROVIDER,
-                  "action.amendProviderDetails.name",
-                  "action.amendProviderDetails.description",
-                  "/application/sections/provider-details");
-      availableActions.add(providerAmendmentAction);
-    }
-
     return availableActions;
   }
 }

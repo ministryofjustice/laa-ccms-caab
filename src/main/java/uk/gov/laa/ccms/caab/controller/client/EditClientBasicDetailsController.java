@@ -3,7 +3,6 @@ package uk.gov.laa.ccms.caab.controller.client;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
-import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +20,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.service.LookupService;
 
 /**
@@ -48,9 +48,9 @@ public class EditClientBasicDetailsController {
    * @param model The model for the view.
    * @return The view name for the client basic details page
    */
-  @GetMapping("/{" + CONTEXT_NAME + "}/sections/client/details/basic")
+  @GetMapping("/{caseContext}/sections/client/details/basic")
   public String getClientDetailsBasic(
-      @PathVariable(CONTEXT_NAME) final String context,
+      @PathVariable("caseContext") final CaseContext context,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
       final Model model) {
 
@@ -71,9 +71,9 @@ public class EditClientBasicDetailsController {
    * @param model The model for the view.
    * @return A redirect string to the agreement page.
    */
-  @PostMapping("/{" + CONTEXT_NAME + "}/sections/client/details/basic")
+  @PostMapping("/{caseContext}/sections/client/details/basic")
   public String postClientDetailsBasic(
-      @PathVariable(CONTEXT_NAME) final String context,
+      @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) final  ClientFlowFormData clientFlowFormData,
       @ModelAttribute("basicDetails") final ClientFormDataBasicDetails basicDetails,
       final BindingResult bindingResult,
@@ -89,7 +89,7 @@ public class EditClientBasicDetailsController {
     clientFlowFormData.setBasicDetails(basicDetails);
     model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
-    return "redirect:/%s/sections/client/details/summary".formatted(context);
+    return "redirect:/%s/sections/client/details/summary".formatted(caseContext.getPathValue());
   }
 
   /**

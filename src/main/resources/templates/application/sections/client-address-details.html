@@ -2,18 +2,19 @@
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-  <title th:if="${caseContext} == 'application'" th:text="#{service.name} + ' - ' + #{application.create}"/>
-  <title th:if="${caseContext} == 'amendments'" th:text="#{service.name} + ' - ' + #{client.edit}"/>
+  <title th:if="${caseContext.isApplication()}" th:text="#{service.name} + ' - ' + #{application.create}"/>
+  <title th:if="${caseContext.isAmendment()}" th:text="#{service.name} + ' - ' + #{client.edit}"/>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/{caseContext}/sections/client/details/summary(caseContext=${caseContext})}"
+    <a th:href="@{/{caseContext}/sections/client/details/summary(caseContext=${caseContext.pathValue})}"
        class="govuk-back-link"
        th:text="#{site.cancelAndReturnToAmendClient}"></a>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/{caseContext}/sections/client/details/address(caseContext=${caseContext})}" th:object="${addressDetails}" method="post">
+    <form action="#" th:action="@{/{caseContext}/sections/client/details/address(caseContext=${caseContext.pathValue})}"
+          th:object="${addressDetails}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <span class="govuk-caption-l" th:text="#{client.edit}"></span>
       <h1 class="govuk-heading-l" th:text="#{client.address}"></h1>
