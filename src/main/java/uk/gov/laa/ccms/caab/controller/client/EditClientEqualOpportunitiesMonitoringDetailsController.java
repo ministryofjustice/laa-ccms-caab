@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.controller.client;
 
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DISABILITY;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ETHNIC_ORIGIN;
-import static uk.gov.laa.ccms.caab.constants.ContextConstants.CONTEXT_NAME;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
 import lombok.RequiredArgsConstructor;
@@ -20,6 +19,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataMonitoringDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.service.LookupService;
 
 /**
@@ -48,9 +48,9 @@ public class EditClientEqualOpportunitiesMonitoringDetailsController {
    * @param model The model for the view.
    * @return The view name for the client equal opportunities monitoring details page
    */
-  @GetMapping("/{" + CONTEXT_NAME + "}/sections/client/details/equal-opportunities-monitoring")
+  @GetMapping("/{caseContext}/sections/client/details/equal-opportunities-monitoring")
   public String clientDetailsEqualOpportunitiesMonitoring(
-      final @PathVariable(CONTEXT_NAME) String caseContext,
+      final @PathVariable("caseContext") CaseContext caseContext,
       final @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       Model model) {
 
@@ -75,9 +75,9 @@ public class EditClientEqualOpportunitiesMonitoringDetailsController {
    * @param model The model for the view.
    * @return A redirect string to the client summary page.
    */
-  @PostMapping("/{" + CONTEXT_NAME + "}/sections/client/details/equal-opportunities-monitoring")
+  @PostMapping("/{caseContext}/sections/client/details/equal-opportunities-monitoring")
   public String clientDetailsEqualOpportunitiesMonitoring(
-      final @PathVariable(CONTEXT_NAME) String caseContext,
+      final @PathVariable("caseContext") CaseContext caseContext,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @ModelAttribute("monitoringDetails") ClientFormDataMonitoringDetails monitoringDetails,
       BindingResult bindingResult,
@@ -93,7 +93,7 @@ public class EditClientEqualOpportunitiesMonitoringDetailsController {
     clientFlowFormData.setMonitoringDetails(monitoringDetails);
     model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
-    return "redirect:/%s/sections/client/details/summary".formatted(caseContext);
+    return "redirect:/%s/sections/client/details/summary".formatted(caseContext.getPathValue());
   }
 
   private void populateDropdowns(Model model) {

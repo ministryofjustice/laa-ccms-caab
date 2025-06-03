@@ -1,7 +1,7 @@
 package uk.gov.laa.ccms.caab.service.thymeleaf;
 
 import org.springframework.stereotype.Service;
-import uk.gov.laa.ccms.caab.constants.ContextConstants;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 
 /**
  * Service responsible for generating navigation-related text based on the context
@@ -19,11 +19,10 @@ public class CaseContextService {
    * @return a string representing the navigation text; returns "site.returnToCaseOverview" if the
    *         context is "amendments", otherwise returns "site.cancelAndReturnToApplication"
    */
-  public String getGoBackText(String caseContext) {
-    if (ContextConstants.AMENDMENTS.equalsIgnoreCase(caseContext)) {
-      return "site.returnToCaseOverview";
-    } else {
-      return "site.cancelAndReturnToApplication";
-    }
+  public String getGoBackText(CaseContext caseContext) {
+    return switch (caseContext) {
+      case APPLICATION -> "site.cancelAndReturnToApplication";
+      case AMENDMENTS -> "site.returnToCaseOverview";
+    };
   }
 }

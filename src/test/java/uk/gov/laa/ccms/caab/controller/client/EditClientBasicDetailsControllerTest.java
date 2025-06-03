@@ -17,6 +17,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_G
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
 import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,7 +58,8 @@ class EditClientBasicDetailsControllerTest {
 
   @BeforeEach
   void setup() {
-    mockMvc = standaloneSetup(editClientBasicDetailsController).build();
+    mockMvc = standaloneSetup(editClientBasicDetailsController)
+        .setConversionService(getConversionService()).build();
 
     basicDetails = new ClientFormDataBasicDetails();
 

@@ -11,6 +11,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_CLIENT
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,8 +47,9 @@ public class ClientSubmissionsInProgressControllerTest {
   private MockMvc mockMvc;
 
   @BeforeEach
-  public void setup() {
-    mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+  void setup() {
+    mockMvc = MockMvcBuilders.standaloneSetup(controller)
+        .setConversionService(getConversionService()).build();
   }
 
   @Test
