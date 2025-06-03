@@ -106,7 +106,7 @@ public class ProviderDetailsSectionController {
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
-      @Validated @ModelAttribute(SessionConstants.APPLICATION_FORM_DATA)
+      @Validated @ModelAttribute(APPLICATION_FORM_DATA)
         ApplicationFormData applicationFormData,
       BindingResult bindingResult,
       Model model) {
@@ -151,7 +151,7 @@ public class ProviderDetailsSectionController {
 
     model.addAttribute("feeEarners", feeEarners);
     model.addAttribute("contactNames", contactNames);
-    model.addAttribute(SessionConstants.APPLICATION_FORM_DATA, applicationFormData);
+    model.addAttribute(APPLICATION_FORM_DATA, applicationFormData);
 
   }
 
