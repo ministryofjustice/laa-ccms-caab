@@ -23,6 +23,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_M
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +49,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
+import uk.gov.laa.ccms.caab.controller.client.EditClientSummaryController;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -104,8 +106,9 @@ class EditClientSummaryControllerTest {
       .loginId("testLoginId");
 
   @BeforeEach
-  public void setup() {
-    mockMvc = MockMvcBuilders.standaloneSetup(editClientSummaryController).build();
+  void setup() {
+    mockMvc = MockMvcBuilders.standaloneSetup(editClientSummaryController)
+        .setConversionService(getConversionService()).build();
 
     clientFlowFormData = new ClientFlowFormData("edit");
     clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
