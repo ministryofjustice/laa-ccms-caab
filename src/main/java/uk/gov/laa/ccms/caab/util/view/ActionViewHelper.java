@@ -2,7 +2,7 @@ package uk.gov.laa.ccms.caab.util.view;
 
 import java.util.LinkedList;
 import java.util.List;
-import uk.gov.laa.ccms.caab.constants.ContextConstants;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.model.AvailableAction;
 
@@ -16,7 +16,7 @@ public class ActionViewHelper {
           FunctionConstants.AMEND_CLIENT,
           "action.amendClient.name",
           "action.amendClient.description",
-          "/" + ContextConstants.AMENDMENTS + "/sections/client/details/summary"),
+          "/" + CaseContext.AMENDMENTS.getPathValue() + "/sections/client/details/summary"),
       new AvailableAction(
           FunctionConstants.BILLING, "action.billing.name", "action.billing.description", "#"),
       new AvailableAction(
@@ -87,7 +87,7 @@ public class ActionViewHelper {
         FunctionConstants.AMEND_CASE,
         "action.amendCase.new.name",
         "action.amendCase.new.description",
-            "/" + ContextConstants.AMENDMENTS + "/new");
+        "/" + CaseContext.AMENDMENTS.getPathValue() + "/new");
 
     LinkedList<AvailableAction> availableActions = new LinkedList<>(AVAILABLE_ACTION_LIST);
     availableActions.addFirst(amendmentAction);

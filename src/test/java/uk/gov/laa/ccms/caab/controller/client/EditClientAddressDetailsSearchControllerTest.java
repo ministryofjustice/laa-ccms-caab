@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_EDIT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
 import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,7 +54,8 @@ class EditClientAddressDetailsSearchControllerTest {
 
   @BeforeEach
   void setup() {
-    mockMvc = standaloneSetup(editClientAddressDetailsSearchController).build();
+    mockMvc = standaloneSetup(editClientAddressDetailsSearchController)
+        .setConversionService(getConversionService()).build();
 
     addressSearch = new AddressSearchFormData();
 
