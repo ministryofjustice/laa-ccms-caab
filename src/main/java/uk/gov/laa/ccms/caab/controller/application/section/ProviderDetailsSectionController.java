@@ -23,7 +23,6 @@ import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ProviderDetailsValidator;
 import uk.gov.laa.ccms.caab.constants.ContextConstants;
-import uk.gov.laa.ccms.caab.constants.SessionConstants;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
@@ -106,8 +105,7 @@ public class ProviderDetailsSectionController {
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
-      @Validated @ModelAttribute(APPLICATION_FORM_DATA)
-        ApplicationFormData applicationFormData,
+      @Validated @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       BindingResult bindingResult,
       Model model) {
 
