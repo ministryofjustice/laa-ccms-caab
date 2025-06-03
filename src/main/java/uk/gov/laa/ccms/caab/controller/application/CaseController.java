@@ -140,7 +140,7 @@ public class CaseController {
                               @SessionAttribute(USER_DETAILS) UserDetail user) {
     log.info("Abandoning amendments for case id {}", ebsCase.getId());
     applicationService.abandonApplication(ebsCase, user);
-    return "application/amendment-remove";
+    return "home";
   }
 
 }

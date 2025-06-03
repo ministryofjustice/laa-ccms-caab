@@ -155,7 +155,7 @@ class CaseControllerTest {
         .sessionAttr(CASE, ebsCase)
         .sessionAttr(USER_DETAILS, user)))
         .hasStatusOk()
-        .hasViewName("application/amendment-remove");
+        .hasViewName("home");
 
     verify(applicationService, times(1)).abandonApplication(ebsCase, user);
   }
