@@ -192,7 +192,6 @@ public class ApplicationSearchController {
   /**
    * Displays the case overview screen.
    *
-   * @param userDetails     The details of the currently authenticated user.
    * @param ebsCase         The case details from EBS.
    * @param tdsApplication  The application details from TDS, if available.
    * @param notificationId  The ID of the notification, if coming from a notification page.
@@ -200,7 +199,6 @@ public class ApplicationSearchController {
    */
   @GetMapping("/case/overview")
   public String caseOverview(
-      @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(APPLICATION) @Nullable final BaseApplicationDetail tdsApplication,
       @SessionAttribute(NOTIFICATION_ID) @Nullable final String notificationId,
@@ -234,6 +232,7 @@ public class ApplicationSearchController {
     model.addAttribute("draftProceedings", draftProceedings);
     model.addAttribute("draftCosts", draftCosts);
     session.setAttribute(CASE_REFERENCE_NUMBER, ebsCase.getCaseReferenceNumber());
+
     return "application/case-overview";
   }
 
@@ -313,13 +312,16 @@ public class ApplicationSearchController {
 
     if (isDraftApplication) {
       session.setAttribute(APPLICATION_ID, tdsApplication.getId());
+
       return "redirect:/application/sections";
-    } else {
-      session.setAttribute(CASE, ebsCase);
-      session.setAttribute(APPLICATION, tdsApplication);
-      session.setAttribute(NOTIFICATION_ID, notificationId);
-      return "redirect:/case/overview";
     }
+
+    session.setAttribute(CASE, ebsCase);
+    session.setAttribute(APPLICATION, tdsApplication);
+    session.setAttribute(NOTIFICATION_ID, notificationId);
+
+    return "redirect:/case/overview";
+
   }
 
   private boolean isAmendment(ApplicationDetail ebsCase, BaseApplicationDetail tdsApplication) {

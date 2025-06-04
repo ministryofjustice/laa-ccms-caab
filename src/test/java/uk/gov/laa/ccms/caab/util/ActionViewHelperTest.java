@@ -100,7 +100,7 @@ class ActionViewHelperTest {
         new ExpectedAction(FunctionConstants.VIEW_CASE_OUTCOME, "action.viewOutcome.name",
             "action.viewOutcome.description", "#"),
         new ExpectedAction(FunctionConstants.EDIT_PROVIDER, "action.amendProviderDetails.name",
-            "action.amendProviderDetails.description", "#"),
+            "action.amendProviderDetails.description", "/amendments/sections/provider-details"),
         new ExpectedAction(FunctionConstants.CASE_CORRESPONDENCE_PREFERENCE,
             "action.amendCorrespondenceAddress.name",
             "action.amendCorrespondenceAddress.description", "#"),
