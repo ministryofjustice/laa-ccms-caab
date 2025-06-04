@@ -35,6 +35,9 @@ import uk.gov.laa.ccms.caab.model.sections.IndividualAddressContactDetailsSectio
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualEmploymentDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualGeneralDetailsSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.OrganisationAddressDetailsSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.OrganisationOrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -94,8 +97,10 @@ class CaseControllerTest {
     @Test
     @DisplayName("Should return view and model when case details exist")
     void caseDetailsOtherPartyReturnsViewAndModelWhenCaseDetailsExist() {
+      OpponentDetail opponent = new OpponentDetail();
+      opponent.setType("Individual");
       ApplicationDetail ebsCase = new ApplicationDetail();
-      ebsCase.setOpponents(Collections.singletonList(new OpponentDetail()));
+      ebsCase.setOpponents(Collections.singletonList(opponent));
       IndividualDetailsSectionDisplay otherParty = new IndividualDetailsSectionDisplay(
           new IndividualGeneralDetailsSectionDisplay(),
           new IndividualAddressContactDetailsSectionDisplay(),
@@ -134,6 +139,27 @@ class CaseControllerTest {
           .hasViewName("error");
     }
 
+    @Test
+    @DisplayName("Should return view and model when case details exist for an organisation")
+    void caseDetailsOtherPartyOrganisationReturnsViewAndModelWhenCaseDetailsExist() {
+      OpponentDetail opponent = new OpponentDetail();
+      opponent.setType("Organisation");
+      ApplicationDetail ebsCase = new ApplicationDetail();
+      ebsCase.setOpponents(Collections.singletonList(opponent));
+      ApplicationSectionDisplay display = ApplicationSectionDisplay.builder().build();
+      OrganisationDetailsSectionDisplay otherParty = new OrganisationDetailsSectionDisplay(
+          new OrganisationOrganisationDetailsSectionDisplay(),
+          new OrganisationAddressDetailsSectionDisplay());
+
+      when(applicationService.getOrganisationDetailsSectionDisplay(any())).thenReturn(
+          otherParty);
+      assertThat(mockMvc.perform(get("/cases/details/other-party/0")
+          .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/case-details-other-party-organisation")
+          .model()
+          .containsEntry("otherPartyOrganisation", otherParty);
+    }
   }
 
   @Test

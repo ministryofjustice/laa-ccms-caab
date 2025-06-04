@@ -21,6 +21,7 @@ import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -75,11 +76,19 @@ public class CaseController {
     }
 
     final OpponentDetail opponentDetail = ebsCase.getOpponents().get(index);
-    final IndividualDetailsSectionDisplay opponentDisplay =
-        applicationService.getIndividualDetailsSectionDisplay(opponentDetail);
+    if (opponentDetail.getType().equals("Individual")) {
+      final IndividualDetailsSectionDisplay opponentDisplay =
+          applicationService.getIndividualDetailsSectionDisplay(opponentDetail);
+      model.addAttribute("otherParty", opponentDisplay);
+      return "application/case-details-other-party";
+    } else if (opponentDetail.getType().equals("Organisation")) {
+      final OrganisationDetailsSectionDisplay opponentDisplay =
+          applicationService.getOrganisationDetailsSectionDisplay(opponentDetail);
+      model.addAttribute("otherPartyOrganisation", opponentDisplay);
+      return "application/case-details-other-party-organisation";
+    }
 
-    model.addAttribute("otherParty", opponentDisplay);
-    return "application/case-details-other-party";
+    throw new CaabApplicationException("Unknown Opponent Type");
   }
 
   /**
@@ -106,6 +115,7 @@ public class CaseController {
 
     model.addAttribute("priorAuthority", priorAuthorities.get(index));
     return "application/prior-authority-review";
+
   }
 
   /**
