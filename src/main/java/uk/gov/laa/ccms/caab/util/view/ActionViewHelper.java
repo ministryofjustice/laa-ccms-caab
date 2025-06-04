@@ -76,18 +76,12 @@ public class ActionViewHelper {
    * @return List of available actions.
    */
   public static List<AvailableAction> getAllAvailableActions(boolean openAmendment) {
-
-    AvailableAction amendmentAction = openAmendment
-        ? new AvailableAction(
-        FunctionConstants.AMEND_CASE,
-        "action.amendCase.continue.name",
-        "action.amendCase.continue.description",
-        "#")
-        : new AvailableAction(
-        FunctionConstants.AMEND_CASE,
-        "action.amendCase.new.name",
-        "action.amendCase.new.description",
-        "#");
+    String amendmentState = openAmendment ? "continue" : "new";
+    AvailableAction amendmentAction = new AvailableAction(
+            FunctionConstants.AMEND_CASE,
+            "action.amendCase." + amendmentState + ".name",
+            "action.amendCase." + amendmentState + ".description",
+            "#");
 
     LinkedList<AvailableAction> availableActions = new LinkedList<>(AVAILABLE_ACTION_LIST);
     availableActions.addFirst(amendmentAction);

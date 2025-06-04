@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ProviderDetailsValidator;
-import uk.gov.laa.ccms.caab.constants.ContextConstants;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
@@ -55,15 +55,15 @@ public class ProviderDetailsSectionController {
    * @param model The model for the view.
    * @return The view name for the application summary page.
    */
-  @GetMapping("/{context}/sections/provider-details")
+  @GetMapping("/{caseContext}/sections/provider-details")
   public String applicationSummaryProviderDetails(
       @SessionAttribute(value = APPLICATION_ID, required = false)  String applicationId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
-      @PathVariable String context,
+      @PathVariable("caseContext") final CaseContext caseContext,
       Model model) {
 
-    if (context.equals(ContextConstants.AMENDMENTS)) {
+    if (caseContext.isAmendment()) {
       ApplicationFormData applicationFormData = new ApplicationFormData();
       applicationFormData.setCopyCaseReferenceNumber(activeCase.getCaseReferenceNumber());
       ClientDetail clientDetail = clientService.getClient(
@@ -84,6 +84,7 @@ public class ProviderDetailsSectionController {
 
     populateDropdowns(applicationFormData, user, model);
     model.addAttribute(ACTIVE_CASE, activeCase);
+    model.addAttribute("isAmendment", caseContext.isAmendment());
 
     return "application/sections/provider-details-section";
   }
