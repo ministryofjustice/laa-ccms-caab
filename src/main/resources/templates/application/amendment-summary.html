@@ -14,18 +14,24 @@
   </div>
   <div id="main-content">
     <div class="govuk-grid-row">
-      <div class="govuk-grid-column-two-thirds">
+      <div class="govuk-grid-column-two-thirds-from-desktop">
         <span class="govuk-caption-xl" th:text="#{amendCase.caption}"/>
         <h1 class="govuk-heading-xl" th:text="#{amendCase.title}"/>
         <p class="govuk-body-l" th:text="#{amendCase.leadParagraph}"/>
-
+      </div>
+      <!--General details-->
+      <div class="govuk-grid-column-two-thirds-from-desktop">
         <div class="govuk-summary-card">
-          <div class="govuk-summary-card__title-wrapper">
+          <div class="govuk-summary-card__title-wrapper"
+               th:with="heading=#{amendCase.generalDetails}">
             <h2 class="govuk-summary-card__title"
-                th:text="#{amendCase.generalDetails}"/>
+                th:text="${heading}"/>
             <ul class="govuk-summary-card__actions">
-              <li class="govuk-summary-card__action" th:with="title=#{amendCase.generalDetails}">
-                <a class="govuk-link" href="#" th:text="${#strings.toLowerCase(title)}"/>
+              <li class="govuk-summary-card__action">
+                <a class="govuk-link" href="#">
+                  <th:block th:text="#{site.edit}"/>
+                  <span class="govuk-visually-hidden" th:text="${#strings.toLowerCase(heading)}"/>
+                </a>
               </li>
             </ul>
           </div>
@@ -48,6 +54,294 @@
                 </dd>
               </div>
             </dl>
+          </div>
+        </div>
+      </div>
+      <!--Proceedings-->
+      <div class="govuk-grid-column-two-thirds-from-desktop">
+        <div class="govuk-summary-card">
+          <div class="govuk-summary-card__title-wrapper" th:with="heading=#{amendCase.proceedings}">
+            <h2 class="govuk-summary-card__title"
+                th:text="${heading}"/>
+            <ul class="govuk-summary-card__actions">
+              <li class="govuk-summary-card__action">
+                <a class="govuk-link" href="#">
+                  <th:block th:text="#{site.edit}"/>
+                  <span class="govuk-visually-hidden" th:text="${#strings.toLowerCase(heading)}"/>
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div class="govuk-summary-card__content">
+            <table class="govuk-table">
+              <caption class="govuk-table__caption govuk-table__caption--m">App for care order - SCA
+              </caption>
+              <thead class="govuk-table__head">
+              <tr class="govuk-table__row">
+                <th scope="col" class="govuk-table__header">Date</th>
+                <th scope="col" class="govuk-table__header">Amount</th>
+              </tr>
+              </thead>
+              <tbody class="govuk-table__body">
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">First 6 weeks</th>
+                <td class="govuk-table__cell">£109.80 per week</td>
+              </tr>
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">Next 33 weeks</th>
+                <td class="govuk-table__cell">£109.80 per week</td>
+              </tr>
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">Total estimated pay</th>
+                <td class="govuk-table__cell">£4,282.20</td>
+              </tr>
+              </tbody>
+            </table>
+
+            <table class="govuk-table">
+              <caption class="govuk-table__caption govuk-table__caption--m">Scope limitations
+              </caption>
+              <thead class="govuk-table__head">
+              <tr class="govuk-table__row">
+                <th scope="col" class="govuk-table__header">Date</th>
+                <th scope="col" class="govuk-table__header">Amount</th>
+              </tr>
+              </thead>
+              <tbody class="govuk-table__body">
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">First 6 weeks</th>
+                <td class="govuk-table__cell">£109.80 per week</td>
+              </tr>
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">Next 33 weeks</th>
+                <td class="govuk-table__cell">£109.80 per week</td>
+              </tr>
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">Total estimated pay</th>
+                <td class="govuk-table__cell">£4,282.20</td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!--Costs-->
+      <div class="govuk-grid-column-two-thirds-from-desktop">
+        <div class="govuk-summary-card">
+          <div class="govuk-summary-card__title-wrapper" th:with="heading=#{amendCase.costs}">
+            <h2 class="govuk-summary-card__title"
+                th:text="${heading}"/>
+            <ul class="govuk-summary-card__actions">
+              <li class="govuk-summary-card__action">
+                <a class="govuk-link" href="#">
+                  <th:block th:text="#{site.edit}"/>
+                  <span class="govuk-visually-hidden" th:text="${#strings.toLowerCase(heading)}"/>
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div class="govuk-summary-card__content">
+            <dl class="govuk-summary-list">
+              <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">
+                  Course
+                </dt>
+                <dd class="govuk-summary-list__value">
+                  English (3DMD)<br>PGCE with QTS full time
+                </dd>
+              </div>
+              <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">
+                  Location
+                </dt>
+                <dd class="govuk-summary-list__value">
+                  School name<br>Road, City, SW1 1AA
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!--Prior Authority-->
+      <div class="govuk-grid-column-two-thirds-from-desktop">
+        <div class="govuk-summary-card">
+          <div class="govuk-summary-card__title-wrapper"
+               th:with="heading=#{amendCase.priorAuthority}">
+            <h2 class="govuk-summary-card__title"
+                th:text="${heading}"/>
+            <ul class="govuk-summary-card__actions">
+              <li class="govuk-summary-card__action">
+                <a class="govuk-link" href="#">
+                  <th:block th:text="#{site.edit}"/>
+                  <span class="govuk-visually-hidden" th:text="${#strings.toLowerCase(heading)}"/>
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div class="govuk-summary-card__content">
+            <table class="govuk-table">
+              <caption class="govuk-table__caption govuk-table__caption--m">App for care order - SCA
+              </caption>
+              <thead class="govuk-table__head">
+              <tr class="govuk-table__row">
+                <th scope="col" class="govuk-table__header">Date</th>
+                <th scope="col" class="govuk-table__header">Amount</th>
+              </tr>
+              </thead>
+              <tbody class="govuk-table__body">
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">First 6 weeks</th>
+                <td class="govuk-table__cell">£109.80 per week</td>
+              </tr>
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">Next 33 weeks</th>
+                <td class="govuk-table__cell">£109.80 per week</td>
+              </tr>
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">Total estimated pay</th>
+                <td class="govuk-table__cell">£4,282.20</td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!--Opponents and other parties-->
+      <div class="govuk-grid-column-two-thirds-from-desktop">
+        <div class="govuk-summary-card">
+          <div class="govuk-summary-card__title-wrapper"
+               th:with="heading=#{amendCase.opponentsAndOtherParties}">
+            <h2 class="govuk-summary-card__title"
+                th:text="${heading}"/>
+            <ul class="govuk-summary-card__actions">
+              <li class="govuk-summary-card__action">
+                <a class="govuk-link" href="#">
+                  <th:block th:text="#{site.edit}"/>
+                  <span class="govuk-visually-hidden" th:text="${#strings.toLowerCase(heading)}"/>
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div class="govuk-summary-card__content">
+            <table class="govuk-table">
+              <caption class="govuk-table__caption govuk-table__caption--m">App for care order -
+                SCA
+              </caption>
+              <thead class="govuk-table__head">
+              <tr class="govuk-table__row">
+                <th scope="col" class="govuk-table__header">Date</th>
+                <th scope="col" class="govuk-table__header">Amount</th>
+              </tr>
+              </thead>
+              <tbody class="govuk-table__body">
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">First 6 weeks</th>
+                <td class="govuk-table__cell">£109.80 per week</td>
+              </tr>
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">Next 33 weeks</th>
+                <td class="govuk-table__cell">£109.80 per week</td>
+              </tr>
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">Total estimated pay</th>
+                <td class="govuk-table__cell">£4,282.20</td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!--Merits-->
+      <div class="govuk-grid-column-two-thirds-from-desktop">
+        <div class="govuk-summary-card">
+          <div class="govuk-summary-card__title-wrapper" th:with="heading=#{amendCase.merits}">
+            <h2 class="govuk-summary-card__title"
+                th:text="${heading}"/>
+            <ul class="govuk-summary-card__actions">
+              <li class="govuk-summary-card__action">
+                <a class="govuk-link" href="#">
+                  <th:block th:text="#{site.edit}"/>
+                  <span class="govuk-visually-hidden"
+                        th:text="${#strings.toLowerCase(heading)}"/>
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div class="govuk-summary-card__content">
+            <table class="govuk-table">
+              <caption class="govuk-table__caption govuk-table__caption--m">App for care order -
+                SCA
+              </caption>
+              <thead class="govuk-table__head">
+              <tr class="govuk-table__row">
+                <th scope="col" class="govuk-table__header">Date</th>
+                <th scope="col" class="govuk-table__header">Amount</th>
+              </tr>
+              </thead>
+              <tbody class="govuk-table__body">
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">First 6 weeks</th>
+                <td class="govuk-table__cell">£109.80 per week</td>
+              </tr>
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">Next 33 weeks</th>
+                <td class="govuk-table__cell">£109.80 per week</td>
+              </tr>
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">Total estimated pay</th>
+                <td class="govuk-table__cell">£4,282.20</td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!--Documents-->
+      <div class="govuk-grid-column-two-thirds-from-desktop">
+        <div class="govuk-summary-card">
+          <div class="govuk-summary-card__title-wrapper"
+               th:with="heading=#{amendCase.documents}">
+            <h2 class="govuk-summary-card__title"
+                th:text="${heading}"/>
+            <ul class="govuk-summary-card__actions">
+              <li class="govuk-summary-card__action">
+                <a class="govuk-link" href="#">
+                  <th:block th:text="#{site.edit}"/>
+                  <span class="govuk-visually-hidden"
+                        th:text="${#strings.toLowerCase(heading)}"/>
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div class="govuk-summary-card__content">
+            <table class="govuk-table">
+              <caption class="govuk-table__caption govuk-table__caption--m">App for care order -
+                SCA
+              </caption>
+              <thead class="govuk-table__head">
+              <tr class="govuk-table__row">
+                <th scope="col" class="govuk-table__header">Date</th>
+                <th scope="col" class="govuk-table__header">Amount</th>
+              </tr>
+              </thead>
+              <tbody class="govuk-table__body">
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">First 6 weeks</th>
+                <td class="govuk-table__cell">£109.80 per week</td>
+              </tr>
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">Next 33 weeks</th>
+                <td class="govuk-table__cell">£109.80 per week</td>
+              </tr>
+              <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">Total estimated pay</th>
+                <td class="govuk-table__cell">£4,282.20</td>
+              </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
