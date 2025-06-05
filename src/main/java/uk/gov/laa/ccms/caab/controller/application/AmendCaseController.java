@@ -53,10 +53,11 @@ public class AmendCaseController {
   @GetMapping("/amendments/summary")
   public String amendCaseSummary(
       @SessionAttribute(APPLICATION) final ApplicationDetail amendment,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
       Model model) {
 
     final ApplicationSectionDisplay applicationSectionDisplay =
-        Optional.ofNullable(applicationService.getCaseDetailsDisplay(amendment))
+        Optional.ofNullable(applicationService.getApplicationSections(amendment,user))
             .orElseThrow(() -> new CaabApplicationException(
                 "Failed to retrieve application summary"));
 

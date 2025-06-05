@@ -344,7 +344,12 @@
                       th:text="#{common.status}"/>
                   <dd class="govuk-summary-list__value"
                       id="merits-status-value"
-                      th:text="${summary.meritsAssessment}"/>
+                      th:if="${application.meritsReassessmentRequired}"
+                      th:text="#{amendCase.merits.required}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="merits-status-value"
+                      th:unless="${application.meritsReassessmentRequired}"
+                      th:text="#{amendCase.merits.notRequired}"/>
                 </div>
               </dl>
             </div>

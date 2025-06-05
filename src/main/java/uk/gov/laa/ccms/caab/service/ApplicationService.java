@@ -3,8 +3,10 @@ package uk.gov.laa.ccms.caab.service;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EMERGENCY_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.PROCEEDING_STATUS_UNCHANGED_DISPLAY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_LINK_TYPE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
@@ -22,6 +24,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -67,6 +70,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
@@ -306,16 +310,15 @@ public class ApplicationService {
   }
 
   /**
-   * Creates and submits an amendment for an existing case using the provided application
-   * details and user information.
+   * Creates and submits an amendment for an existing case using the provided application details
+   * and user information.
    *
    * @param applicationFormData the data for the application form, including the application type
    *                            and delegated function details
-   * @param caseReferenceNumber the reference number of the case for which the amendment
-   *                            will be created
-   * @param userDetail the details of the user submitting the amendment, including provider and
-   *                            login information
-   *
+   * @param caseReferenceNumber the reference number of the case for which the amendment will be
+   *                            created
+   * @param userDetail          the details of the user submitting the amendment, including provider
+   *                            and login information
    * @return the detailed information of the created amendment application
    */
   public ApplicationDetail createAndSubmitAmendmentForCase(
@@ -324,7 +327,8 @@ public class ApplicationService {
       final UserDetail userDetail) {
     ApplicationDetail amendment = getCase(caseReferenceNumber,
         userDetail.getProvider().getId(), userDetail.getLoginId());
-    amendment.setAmendment(true);
+
+    // Set application type based on previously entered answers prior to creating an amendment.
     ApplicationType amendmentType = new ApplicationTypeBuilder()
         .applicationType(
             applicationFormData.getApplicationTypeCategory(),
@@ -333,7 +337,47 @@ public class ApplicationService {
             applicationFormData.isDelegatedFunctions(),
             applicationFormData.getDelegatedFunctionUsedDate())
         .build();
+
+    // Set the amendment type
     amendment.setApplicationType(amendmentType);
+    amendment.setAmendment(true);
+
+    // Set cost limit changed flag to false if it exists
+    if (!Objects.isNull(amendment.getCostLimit())) {
+      amendment.getCostLimit().setChanged(false);
+    } else {
+      amendment.setCostLimit(new CostLimitDetail().changed(false));
+    }
+
+    // Merits status is unchange, if the requested cost limit is increased then the merits
+    // assessment needs to be redone.
+    amendment.getCostLimit()
+        .setLimitAtTimeOfMerits(amendment.getCosts().getRequestedCostLimitation());
+    amendment.setStatus(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE)
+        .displayValue(STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY));
+
+    // Update all linked cases
+    amendment.getLinkedCases().forEach(x -> x.setId(null));
+
+    // Update all proceedings
+    amendment.getProceedings().forEach(x -> {
+      x.setId(null);
+      x.setStatus(new StringDisplayValue().id(STATUS_DRAFT)
+          .displayValue(PROCEEDING_STATUS_UNCHANGED_DISPLAY));
+    });
+
+    // Update prior authorities
+    amendment.getPriorAuthorities().forEach(x -> x.setId(null));
+
+    // Update opponents
+    amendment.getOpponents().forEach(x -> {
+      x.setConfirmed(true);
+      x.setId(null);
+      x.setAmendment(true);
+      x.setAppMode(false);
+      x.setAward(false);
+    });
+
     // Create application/amendment in TDS.
     Mono<String> application = caabApiClient.createApplication(userDetail.getLoginId(), amendment);
     log.info("Application created: {}", application.block());
@@ -604,7 +648,7 @@ public class ApplicationService {
    *
    * @param application the application to retrieve a summary for.
    * @return A Mono of ApplicationSectionDisplay representing the application section display
-   *     values.
+   * values.
    */
   public ApplicationSectionDisplay getApplicationSections(
       final ApplicationDetail application,
@@ -724,8 +768,8 @@ public class ApplicationService {
    * Retrieves the case details display values.
    *
    * @param application the application to retrieve a summary for.
-   * @return A Mono of ApplicationSectionDisplay representing the application section
-   *         display values.
+   * @return A Mono of ApplicationSectionDisplay representing the application section display
+   * values.
    */
   public ApplicationSectionDisplay getCaseDetailsDisplay(
       final ApplicationDetail application) {
@@ -744,13 +788,11 @@ public class ApplicationService {
     final Mono<CommonLookupDetail> contactTitlesMono =
         lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE);
 
-
     Mono<Map<String, String>> linkedCaseLookupMono =
         lookupService
             .getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)
             .flatMapIterable(CommonLookupDetail::getContent)
             .collectMap(CommonLookupValueDetail::getCode, CommonLookupValueDetail::getDescription);
-
 
     final Tuple5<RelationshipToCaseLookupDetail,
         RelationshipToCaseLookupDetail,
@@ -1614,7 +1656,7 @@ public class ApplicationService {
     puiMetricService.incrementSubmitApplicationsCount(caseToSubmit.getCaseReferenceNumber());
 
     return soaApiClient.createCase(user.getLoginId(), user.getUserType(),
-            caseToSubmit).block();
+        caseToSubmit).block();
 
   }
 
