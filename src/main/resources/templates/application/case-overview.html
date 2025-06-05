@@ -125,7 +125,7 @@
 
           </tr>
           <tr class="govuk-table__row" th:each="draftProceeding: ${draftProceedings}">
-            <td class="govuk-table__cell" th:text="${draftProceeding.description}"/>
+            <td class="govuk-table__cell" th:text="${draftProceeding.proceedingType.displayValue}"/>
             <td class="govuk-table__cell" th:text="${draftProceeding.matterType.displayValue}"/>
             <td class="govuk-table__cell" th:text="${draftProceeding.levelOfService.displayValue}"/>
             <td class="govuk-table__cell" th:text="${draftProceeding.clientInvolvement.displayValue}"/>

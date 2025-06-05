@@ -13,339 +13,381 @@
        th:text="#{site.returnToCaseOverview}"></a>
   </div>
   <div id="main-content">
-    <div class="govuk-grid-row">
-      <div class="govuk-grid-column-two-thirds-from-desktop">
-        <span class="govuk-caption-xl" th:text="#{amendCase.caption}"/>
-        <h1 class="govuk-heading-xl" th:text="#{amendCase.title}"/>
-        <p class="govuk-body-l" th:text="#{amendCase.leadParagraph}"/>
-      </div>
-      <!--General details-->
-      <div class="govuk-grid-column-two-thirds-from-desktop">
-        <div class="govuk-summary-card">
-          <div class="govuk-summary-card__title-wrapper"
-               th:with="heading=#{amendCase.generalDetails}">
-            <h2 class="govuk-summary-card__title"
-                th:text="${heading}"/>
-            <ul class="govuk-summary-card__actions">
-              <li class="govuk-summary-card__action">
-                <a class="govuk-link" href="#">
-                  <th:block th:text="#{site.edit}"/>
-                  <span class="govuk-visually-hidden" th:text="${#strings.toLowerCase(heading)}"/>
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div class="govuk-summary-card__content">
-            <dl class="govuk-summary-list">
-              <div class="govuk-summary-list__row">
-                <dt class="govuk-summary-list__key">
-                  Course
-                </dt>
-                <dd class="govuk-summary-list__value">
-                  English (3DMD)<br>PGCE with QTS full time
-                </dd>
-              </div>
-              <div class="govuk-summary-list__row">
-                <dt class="govuk-summary-list__key">
-                  Location
-                </dt>
-                <dd class="govuk-summary-list__value">
-                  School name<br>Road, City, SW1 1AA
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </div>
-      </div>
-      <!--Proceedings-->
-      <div class="govuk-grid-column-two-thirds-from-desktop">
-        <div class="govuk-summary-card">
-          <div class="govuk-summary-card__title-wrapper" th:with="heading=#{amendCase.proceedings}">
-            <h2 class="govuk-summary-card__title"
-                th:text="${heading}"/>
-            <ul class="govuk-summary-card__actions">
-              <li class="govuk-summary-card__action">
-                <a class="govuk-link" href="#">
-                  <th:block th:text="#{site.edit}"/>
-                  <span class="govuk-visually-hidden" th:text="${#strings.toLowerCase(heading)}"/>
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div class="govuk-summary-card__content">
-            <table class="govuk-table">
-              <caption class="govuk-table__caption govuk-table__caption--m">App for care order - SCA
-              </caption>
-              <thead class="govuk-table__head">
-              <tr class="govuk-table__row">
-                <th scope="col" class="govuk-table__header">Date</th>
-                <th scope="col" class="govuk-table__header">Amount</th>
-              </tr>
-              </thead>
-              <tbody class="govuk-table__body">
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">First 6 weeks</th>
-                <td class="govuk-table__cell">£109.80 per week</td>
-              </tr>
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">Next 33 weeks</th>
-                <td class="govuk-table__cell">£109.80 per week</td>
-              </tr>
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">Total estimated pay</th>
-                <td class="govuk-table__cell">£4,282.20</td>
-              </tr>
-              </tbody>
-            </table>
 
-            <table class="govuk-table">
-              <caption class="govuk-table__caption govuk-table__caption--m">Scope limitations
-              </caption>
-              <thead class="govuk-table__head">
-              <tr class="govuk-table__row">
-                <th scope="col" class="govuk-table__header">Date</th>
-                <th scope="col" class="govuk-table__header">Amount</th>
-              </tr>
-              </thead>
-              <tbody class="govuk-table__body">
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">First 6 weeks</th>
-                <td class="govuk-table__cell">£109.80 per week</td>
-              </tr>
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">Next 33 weeks</th>
-                <td class="govuk-table__cell">£109.80 per week</td>
-              </tr>
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">Total estimated pay</th>
-                <td class="govuk-table__cell">£4,282.20</td>
-              </tr>
-              </tbody>
-            </table>
+    <form method="post" th:action="@{/case/amendment-summary}" th:object="${application}">
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds-from-desktop">
+          <span class="govuk-caption-xl" th:text="#{amendCase.caption}"/>
+          <h1 class="govuk-heading-xl" th:text="#{amendCase.title}"/>
+          <p class="govuk-body-l" th:text="#{amendCase.leadParagraph}"/>
+        </div>
+        <!--General details-->
+        <div class="govuk-grid-column-two-thirds-from-desktop">
+          <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper"
+                 th:with="heading=#{application.section.generalDetails}">
+              <h2 class="govuk-summary-card__title"
+                  th:text="${heading}"/>
+              <ul class="govuk-summary-card__actions">
+                <li class="govuk-summary-card__action">
+                  <a class="govuk-link govuk-link--no-visited-state" href="#"
+                     id="edit-general-details-link"
+                     th:text="|#{site.edit} ${#strings.toLowerCase(heading)}|"/>
+                </li>
+              </ul>
+            </div>
+            <div class="govuk-summary-card__content">
+              <dl class="govuk-summary-list">
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{caseDetails.general.status}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="general-status-value"
+                      th:text="${summary.generalDetails.applicationStatus}"/>
+                </div>
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{caseDetails.general.client.name}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="general-client-name-value"
+                      th:text="${summary.client.clientFullName}"/>
+                </div>
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{caseDetails.general.category.law}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="general-category-of-law-value"
+                      th:text="${summary.generalDetails.categoryOfLaw}"/>
+                </div>
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{caseDetails.general.preferred.address}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="general-preferred-address-value"
+                      th:text="${summary.generalDetails.correspondenceMethod}"/>
+                </div>
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{amendCase.amendmentType}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="general-amendment-type-value"
+                      th:text="${summary.applicationType.description}"/>
+                </div>
+              </dl>
+            </div>
           </div>
         </div>
-      </div>
+        <!--Proceedings-->
+        <div class="govuk-grid-column-full">
+          <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper"
+                 th:with="heading=#{amendCase.proceedings}">
+              <h2 class="govuk-summary-card__title"
+                  th:text="${heading}"/>
+              <ul class="govuk-summary-card__actions">
+                <li class="govuk-summary-card__action"
+                    th:with="proceedingsAndCosts=#{application.section.proceedingsCosts}">
+                  <a class="govuk-link govuk-link--no-visited-state" href="#"
+                     id="edit-proceedings-and-costs-link"
+                     th:text="|#{site.edit} ${#strings.toLowerCase(proceedingsAndCosts)}|"/>
+                </li>
+              </ul>
+            </div>
+            <div class="govuk-summary-card__content">
+              <th:block th:if="${summary.proceedingsAndCosts.proceedings.isEmpty()}">
+                <p class="govuk-body"
+                   id="no-proceedings-text"
+                   th:text="#{caseDetails.proceedings.none}"/>
+              </th:block>
+              <th:block th:unless="${summary.proceedingsAndCosts.proceedings.isEmpty()}"
+                        th:each="proceeding, idx : ${summary.proceedingsAndCosts.proceedings}">
+                <h3 class="govuk-heading-m" th:text="${proceeding.proceedingType}"/>
+                <table class="govuk-table govuk-table--small-text-until-tablet">
+                  <caption class="govuk-table__caption govuk-table__caption--m"
+                           th:text="#{amendCase.proceedings}"/>
+                  <thead>
+                  <tr>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.proceedings.matter.type}"/>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.proceedings.service.type}"/>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.proceedings.client.involvement}"/>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.proceedings.status}"></th>
+                  </tr>
+                  </thead>
+                  <tbody class="govuk-table__body">
+                  <tr class="govuk-table__row">
+                    <td class="govuk-table__cell"
+                        th:id="'proceeding-matter-type-'+${idx.index}+'-value'"
+                        th:text="${proceeding.matterType}"/>
+                    <td class="govuk-table__cell"
+                        th:id="'proceeding-level-of-service-'+${idx.index}+'-value'"
+                        th:text="${proceeding.levelOfService}"/>
+                    <td class="govuk-table__cell"
+                        th:id="'proceeding-client-involvement-'+${idx.index}+'-value'"
+                        th:text="${proceeding.clientInvolvement}"/>
+                    <td class="govuk-table__cell"
+                        th:id="'proceeding-status-'+${idx.index}+'-value'"
+                        th:text="${proceeding.status}"/>
+                  </tr>
+                  </tbody>
+                </table>
 
-      <!--Costs-->
-      <div class="govuk-grid-column-two-thirds-from-desktop">
-        <div class="govuk-summary-card">
-          <div class="govuk-summary-card__title-wrapper" th:with="heading=#{amendCase.costs}">
-            <h2 class="govuk-summary-card__title"
-                th:text="${heading}"/>
-            <ul class="govuk-summary-card__actions">
-              <li class="govuk-summary-card__action">
-                <a class="govuk-link" href="#">
-                  <th:block th:text="#{site.edit}"/>
-                  <span class="govuk-visually-hidden" th:text="${#strings.toLowerCase(heading)}"/>
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div class="govuk-summary-card__content">
-            <dl class="govuk-summary-list">
-              <div class="govuk-summary-list__row">
-                <dt class="govuk-summary-list__key">
-                  Course
-                </dt>
-                <dd class="govuk-summary-list__value">
-                  English (3DMD)<br>PGCE with QTS full time
-                </dd>
-              </div>
-              <div class="govuk-summary-list__row">
-                <dt class="govuk-summary-list__key">
-                  Location
-                </dt>
-                <dd class="govuk-summary-list__value">
-                  School name<br>Road, City, SW1 1AA
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </div>
-      </div>
+                <table class="govuk-table">
+                  <caption class="govuk-table__caption govuk-table__caption--m"
+                           th:text="#{proceedings.scopeLimitations.subHeading}"/>
+                  <thead class="govuk-table__head">
+                  <tr class="govuk-table__row">
+                    <th scope="col" class="govuk-table__header govuk-!-width-one-quarter"
+                        th:text="#{proceedings.scopeLimitations.scopeLimitation}"/>
+                    <th scope="col" class="govuk-table__header govuk-!-width-three-quarters"
+                        th:text="#{proceedings.scopeLimitations.scopeLimitationWording}"/>
+                  </tr>
+                  </thead>
+                  <tbody class="govuk-table__body">
+                  <tr class="govuk-table__row"
+                      th:each="scope, idx2 : ${proceeding.scopeLimitations}">
+                    <th scope="row" class="govuk-table__header"
+                        th:id="|scope-limitaiton-${idx.index}-${idx2.index}-value|"
+                        th:text="${scope.scopeLimitation}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|scope-limitaiton-wording-${idx.index}-${idx2.index}-value|"
+                        th:text="${scope.wording}"/>
+                  </tr>
+                  </tbody>
+                </table>
 
-      <!--Prior Authority-->
-      <div class="govuk-grid-column-two-thirds-from-desktop">
-        <div class="govuk-summary-card">
-          <div class="govuk-summary-card__title-wrapper"
-               th:with="heading=#{amendCase.priorAuthority}">
-            <h2 class="govuk-summary-card__title"
-                th:text="${heading}"/>
-            <ul class="govuk-summary-card__actions">
-              <li class="govuk-summary-card__action">
-                <a class="govuk-link" href="#">
-                  <th:block th:text="#{site.edit}"/>
-                  <span class="govuk-visually-hidden" th:text="${#strings.toLowerCase(heading)}"/>
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div class="govuk-summary-card__content">
-            <table class="govuk-table">
-              <caption class="govuk-table__caption govuk-table__caption--m">App for care order - SCA
-              </caption>
-              <thead class="govuk-table__head">
-              <tr class="govuk-table__row">
-                <th scope="col" class="govuk-table__header">Date</th>
-                <th scope="col" class="govuk-table__header">Amount</th>
-              </tr>
-              </thead>
-              <tbody class="govuk-table__body">
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">First 6 weeks</th>
-                <td class="govuk-table__cell">£109.80 per week</td>
-              </tr>
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">Next 33 weeks</th>
-                <td class="govuk-table__cell">£109.80 per week</td>
-              </tr>
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">Total estimated pay</th>
-                <td class="govuk-table__cell">£4,282.20</td>
-              </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <!--Opponents and other parties-->
-      <div class="govuk-grid-column-two-thirds-from-desktop">
-        <div class="govuk-summary-card">
-          <div class="govuk-summary-card__title-wrapper"
-               th:with="heading=#{amendCase.opponentsAndOtherParties}">
-            <h2 class="govuk-summary-card__title"
-                th:text="${heading}"/>
-            <ul class="govuk-summary-card__actions">
-              <li class="govuk-summary-card__action">
-                <a class="govuk-link" href="#">
-                  <th:block th:text="#{site.edit}"/>
-                  <span class="govuk-visually-hidden" th:text="${#strings.toLowerCase(heading)}"/>
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div class="govuk-summary-card__content">
-            <table class="govuk-table">
-              <caption class="govuk-table__caption govuk-table__caption--m">App for care order -
-                SCA
-              </caption>
-              <thead class="govuk-table__head">
-              <tr class="govuk-table__row">
-                <th scope="col" class="govuk-table__header">Date</th>
-                <th scope="col" class="govuk-table__header">Amount</th>
-              </tr>
-              </thead>
-              <tbody class="govuk-table__body">
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">First 6 weeks</th>
-                <td class="govuk-table__cell">£109.80 per week</td>
-              </tr>
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">Next 33 weeks</th>
-                <td class="govuk-table__cell">£109.80 per week</td>
-              </tr>
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">Total estimated pay</th>
-                <td class="govuk-table__cell">£4,282.20</td>
-              </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <!--Merits-->
-      <div class="govuk-grid-column-two-thirds-from-desktop">
-        <div class="govuk-summary-card">
-          <div class="govuk-summary-card__title-wrapper" th:with="heading=#{amendCase.merits}">
-            <h2 class="govuk-summary-card__title"
-                th:text="${heading}"/>
-            <ul class="govuk-summary-card__actions">
-              <li class="govuk-summary-card__action">
-                <a class="govuk-link" href="#">
-                  <th:block th:text="#{site.edit}"/>
-                  <span class="govuk-visually-hidden"
-                        th:text="${#strings.toLowerCase(heading)}"/>
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div class="govuk-summary-card__content">
-            <table class="govuk-table">
-              <caption class="govuk-table__caption govuk-table__caption--m">App for care order -
-                SCA
-              </caption>
-              <thead class="govuk-table__head">
-              <tr class="govuk-table__row">
-                <th scope="col" class="govuk-table__header">Date</th>
-                <th scope="col" class="govuk-table__header">Amount</th>
-              </tr>
-              </thead>
-              <tbody class="govuk-table__body">
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">First 6 weeks</th>
-                <td class="govuk-table__cell">£109.80 per week</td>
-              </tr>
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">Next 33 weeks</th>
-                <td class="govuk-table__cell">£109.80 per week</td>
-              </tr>
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">Total estimated pay</th>
-                <td class="govuk-table__cell">£4,282.20</td>
-              </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+                <hr th:if="${idx.index < summary.proceedingsAndCosts.proceedings.size() - 1}"
+                    class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+              </th:block>
 
-      <!--Documents-->
-      <div class="govuk-grid-column-two-thirds-from-desktop">
-        <div class="govuk-summary-card">
-          <div class="govuk-summary-card__title-wrapper"
-               th:with="heading=#{amendCase.documents}">
-            <h2 class="govuk-summary-card__title"
-                th:text="${heading}"/>
-            <ul class="govuk-summary-card__actions">
-              <li class="govuk-summary-card__action">
-                <a class="govuk-link" href="#">
-                  <th:block th:text="#{site.edit}"/>
-                  <span class="govuk-visually-hidden"
-                        th:text="${#strings.toLowerCase(heading)}"/>
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div class="govuk-summary-card__content">
-            <table class="govuk-table">
-              <caption class="govuk-table__caption govuk-table__caption--m">App for care order -
-                SCA
-              </caption>
-              <thead class="govuk-table__head">
-              <tr class="govuk-table__row">
-                <th scope="col" class="govuk-table__header">Date</th>
-                <th scope="col" class="govuk-table__header">Amount</th>
-              </tr>
-              </thead>
-              <tbody class="govuk-table__body">
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">First 6 weeks</th>
-                <td class="govuk-table__cell">£109.80 per week</td>
-              </tr>
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">Next 33 weeks</th>
-                <td class="govuk-table__cell">£109.80 per week</td>
-              </tr>
-              <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">Total estimated pay</th>
-                <td class="govuk-table__cell">£4,282.20</td>
-              </tr>
-              </tbody>
-            </table>
+
+            </div>
           </div>
         </div>
+
+        <!--Costs-->
+        <div class="govuk-grid-column-two-thirds-from-desktop">
+          <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper"
+                 th:with="heading=#{caseDetails.costs.limitation}">
+              <h2 class="govuk-summary-card__title"
+                  th:text="${heading}"/>
+              <ul class="govuk-summary-card__actions">
+                <li class="govuk-summary-card__action">
+                  <a class="govuk-link govuk-link--no-visited-state" href="#"
+                     id="edit-case-cost-limitation-link">
+                    <th:block th:text="|#{site.edit} ${#strings.toLowerCase(heading)}|"/>
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div class="govuk-summary-card__content">
+              <dl class="govuk-summary-list">
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{caseDetails.costs.requested}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="costs-requested-amount-value"
+                      th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)}"/>
+                </div>
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{caseDetails.costs.granted}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="costs-granted-amount-value"
+                      th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)}"/>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <!--Prior Authority-->
+        <div class="govuk-grid-column-full">
+          <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper"
+                 th:with="heading=#{amendCase.priorAuthority}">
+              <h2 class="govuk-summary-card__title"
+                  th:text="${heading}"/>
+              <ul class="govuk-summary-card__actions">
+                <li class="govuk-summary-card__action">
+                  <a class="govuk-link govuk-link--no-visited-state" href="#"
+                     id="edit-case-prior-authority-link"
+                     th:text="|#{site.edit} ${#strings.toLowerCase(heading)}|"/>
+                </li>
+              </ul>
+            </div>
+            <div class="govuk-summary-card__content">
+              <th:block th:if="${summary.priorAuthorities.isEmpty()}">
+                <p class="govuk-body"
+                   id="no-prior-authority-text"
+                   th:text="#{caseDetails.prior.authority.none}"/>
+              </th:block>
+              <th:block th:unless="${summary.priorAuthorities.isEmpty()}">
+                <table class="govuk-table">
+                  <caption class="govuk-table__caption govuk-table__caption--m"
+                           th:text="#{proceedings.priorAuthorities.subHeading}"/>
+                  <thead>
+                  <tr>
+                    <th class="govuk-table__header" th:text="#{caseDetails.prior.authority}"></th>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.prior.authority.type}"></th>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.prior.authority.amount}"></th>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.prior.authority.status}"></th>
+                  </tr>
+                  </thead>
+                  <tbody class="govuk-table__body">
+                  <tr class="govuk-table__row"
+                      th:each="priorAuthority, idx : ${summary.priorAuthorities}">
+                    <td class="govuk-table__cell"
+                        th:id="|prior-authority-description-${idx.index}-value|"
+                        th:text="${priorAuthority.description}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|prior-authority-type-${idx.index}-value|"
+                        th:text="${priorAuthority.type}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|prior-amount-requested-${idx.index}+value|"
+                        th:text="${#numbers.formatCurrency(priorAuthority.amountRequested)}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|prior-authority-status-${idx.index}-value|"
+                        th:text="${priorAuthority.status}"/>
+                  </tr>
+                  </tbody>
+                </table>
+              </th:block>
+            </div>
+          </div>
+        </div>
+        <!--Opponents and other parties-->
+        <div class="govuk-grid-column-full">
+          <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper"
+                 th:with="heading=#{amendCase.opponentsAndOtherParties}">
+              <h2 class="govuk-summary-card__title"
+                  th:text="${heading}"/>
+              <ul class="govuk-summary-card__actions">
+                <li class="govuk-summary-card__action">
+                  <a class="govuk-link govuk-link--no-visited-state" href="#"
+                     id="edit-opponents-and-other-parties-link"
+                     th:text="|#{site.edit} ${#strings.toLowerCase(heading)}|"/>
+                </li>
+              </ul>
+            </div>
+            <div class="govuk-summary-card__content">
+              <h2 class="govuk-heading-m"
+                  id="opponents"
+                  th:text="#{caseDetails.opponents}"/>
+              <th:block th:if="${summary.opponentsAndOtherParties.opponents.isEmpty()}">
+                <p class="govuk-body"
+                   id="no-opponents-text"
+                   th:text="#{caseDetails.opponents.none}"/>
+              </th:block>
+              <th:block th:unless="${summary.opponentsAndOtherParties.opponents.isEmpty()}">
+                <table class="govuk-table">
+                  <thead>
+                  <tr>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.opponents.party.type}"></th>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.opponents.party.name}"></th>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.opponents.relationship.client}"></th>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.opponents.relationship.case}"></th>
+                  </tr>
+                  </thead>
+                  <tbody class="govuk-table__body">
+                  <tr class="govuk-table__row"
+                      th:each="opponent, idx : ${summary.opponentsAndOtherParties.opponents}">
+                    <td class="govuk-table__cell"
+                        th:id="|opponent-party-type-link-${idx.index}-value|"
+                        th:text="${opponent.partyType}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|opponent-party-name-${idx.index}-value|"
+                        th:text="${opponent.partyName}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|opponent-relationship-to-client-${idx.index}-value|"
+                        th:text="${opponent.relationshipToClient}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|opponent-relationship-to-case-${idx.index}-value|"
+                        th:text="${opponent.relationshipToCase}"/>
+                  </tr>
+                  </tbody>
+                </table>
+              </th:block>
+            </div>
+          </div>
+        </div>
+        <!--Merits-->
+        <div class="govuk-grid-column-two-thirds-from-desktop">
+          <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper" th:with="heading=#{amendCase.merits}">
+              <h2 class="govuk-summary-card__title"
+                  th:text="${heading}"/>
+              <ul class="govuk-summary-card__actions">
+                <li class="govuk-summary-card__action">
+                  <a class="govuk-link govuk-link--no-visited-state" href="#"
+                     id="edit-merits-link"
+                     th:text="#{amendCase.meritsAssessment}"/>
+                </li>
+              </ul>
+            </div>
+            <div class="govuk-summary-card__content">
+              <dl class="govuk-summary-list">
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{common.status}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="merits-status-value"
+                      th:text="${summary.meritsAssessment}"/>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <!--Documents-->
+        <div class="govuk-grid-column-two-thirds-from-desktop">
+          <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper"
+                 th:with="heading=#{amendCase.documents}">
+              <h2 class="govuk-summary-card__title"
+                  th:text="${heading}"/>
+              <ul class="govuk-summary-card__actions">
+                <li class="govuk-summary-card__action">
+                  <a class="govuk-link govuk-link--no-visited-state" href="#"
+                     id="upload-documents-link"
+                     th:text="|#{site.upload} ${#strings.toLowerCase(heading)}|"/>
+                </li>
+              </ul>
+            </div>
+            <div class="govuk-summary-card__content">
+              <div class="govuk-inset-text" th:text="#{amendCase.documents.guidance}"/>
+              <dl class="govuk-summary-list">
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{common.status}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="documents-status-value"
+                      th:text="${summary.documentUpload}"/>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <!--Submit button-->
+        <div class="govuk-grid-column-full">
+          <button class="govuk-button" type="submit"
+            th:text="#{amendCase.submitAmendments}"/>
+        </div>
       </div>
-    </div>
+    </form>
   </div>
 </div>
 </body>

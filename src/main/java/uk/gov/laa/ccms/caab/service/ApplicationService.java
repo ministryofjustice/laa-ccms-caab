@@ -780,7 +780,6 @@ public class ApplicationService {
     final Map<String, String> linkedCaseLookup
         = applicationSummaryMonos.getT5();
 
-
     return new ApplicationSectionsBuilder()
         .caseReferenceNumber(
             application.getCaseReferenceNumber())
