@@ -88,6 +88,11 @@ public class SessionConstants {
   public static final String CASE = "case";
 
   /**
+   * Session attribute used to keep track of amendment details for the current case.
+   */
+  public static final String CASE_AMENDMENTS = "amendments";
+
+  /**
    * Session attribute used to keep track of the Case Reference Number, used for
    * case summary page.
    */

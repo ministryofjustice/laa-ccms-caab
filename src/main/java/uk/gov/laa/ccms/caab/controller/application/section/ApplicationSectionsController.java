@@ -62,7 +62,7 @@ public class ApplicationSectionsController {
     final ApplicationSectionDisplay sections =
         Optional.ofNullable(applicationService.getApplicationSections(application, user))
             .orElseThrow(() -> new CaabApplicationException(
-                "Failed to retrieve application summary"));
+                "Failed to retrieve section for application summary"));
 
     model.addAttribute("summary", sections);
 
