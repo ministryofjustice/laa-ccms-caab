@@ -4,8 +4,6 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBST
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,17 +17,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationTypeValidator;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
-import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
-import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
  * Controller for handling application type selection during the application process.
@@ -80,8 +75,6 @@ public class ApplicationTypeController {
   @PostMapping("/{caseContext}/application-type")
   public String applicationType(
       @PathVariable("caseContext") final CaseContext caseContext,
-      @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
-      @SessionAttribute(CASE) ApplicationDetail applicationDetail,
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       BindingResult bindingResult,
       Model model) {

@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMENDMENT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
@@ -17,6 +18,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
+import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -25,6 +27,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class AmendCaseController {
 
   private final ApplicationService applicationService;
+  private final AmendmentService amendmentService;
 
   @GetMapping("/amendments/create")
   public String startAmendment(@SessionAttribute(CASE) final ApplicationDetail detail,
@@ -32,35 +35,28 @@ public class AmendCaseController {
       @SessionAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       HttpSession httpSession) {
     // TODO: Check if application already exists
-    ApplicationDetail amendmentApplicationDetail =
-        applicationService.createAndSubmitAmendmentForCase(applicationFormData,
+    amendmentService.createAndSubmitAmendmentForCase(applicationFormData,
         detail.getCaseReferenceNumber(),
         userDetails);
-    httpSession.setAttribute(APPLICATION, amendmentApplicationDetail);
-    return "redirect:/amendments/summary";
-  }
-
-  @GetMapping("/amendments/continue")
-  public String continueAmendment(
-      @SessionAttribute(APPLICATION) final BaseApplicationDetail tdsApplication,
-      final HttpSession httpSession) {
-    ApplicationDetail amendmentApplicationDetail =
-        applicationService.getApplication(String.valueOf(tdsApplication.getId())).block();
-    httpSession.setAttribute(APPLICATION, amendmentApplicationDetail);
     return "redirect:/amendments/summary";
   }
 
   @GetMapping("/amendments/summary")
   public String amendCaseSummary(
-      @SessionAttribute(APPLICATION) final ApplicationDetail amendment,
+      @SessionAttribute(APPLICATION) final BaseApplicationDetail tdsApplication,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final HttpSession httpSession,
       Model model) {
 
+    final ApplicationDetail amendment =
+        applicationService.getApplication(String.valueOf(tdsApplication.getId())).block();
     final ApplicationSectionDisplay applicationSectionDisplay =
-        Optional.ofNullable(applicationService.getApplicationSections(amendment,user))
+        Optional.ofNullable(applicationService.getApplicationSections(amendment, user))
             .orElseThrow(() -> new CaabApplicationException(
                 "Failed to retrieve application summary"));
 
+
+    httpSession.setAttribute(AMENDMENT, amendment);
     model.addAttribute("summary", applicationSectionDisplay);
 
     return "application/amendment-summary";

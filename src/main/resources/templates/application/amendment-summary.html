@@ -14,7 +14,7 @@
   </div>
   <div id="main-content">
 
-    <form method="post" th:action="@{/case/amendment-summary}" th:object="${application}">
+    <form method="post" th:action="@{/case/amendment-summary}" th:object="${amendment}">
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds-from-desktop">
           <span class="govuk-caption-xl" th:text="#{amendCase.caption}"/>
@@ -344,12 +344,7 @@
                       th:text="#{common.status}"/>
                   <dd class="govuk-summary-list__value"
                       id="merits-status-value"
-                      th:if="${application.meritsReassessmentRequired}"
-                      th:text="#{amendCase.merits.required}"/>
-                  <dd class="govuk-summary-list__value"
-                      id="merits-status-value"
-                      th:unless="${application.meritsReassessmentRequired}"
-                      th:text="#{amendCase.merits.notRequired}"/>
+                      th:text="${summary.meritsAssessment.status}"/>
                 </div>
               </dl>
             </div>
@@ -363,7 +358,8 @@
                  th:with="heading=#{amendCase.documents}">
               <h2 class="govuk-summary-card__title"
                   th:text="${heading}"/>
-              <ul class="govuk-summary-card__actions">
+              <ul class="govuk-summary-card__actions"
+                th:if="${summary.documentUpload.enabled}">
                 <li class="govuk-summary-card__action">
                   <a class="govuk-link govuk-link--no-visited-state" href="#"
                      id="upload-documents-link"
@@ -379,7 +375,7 @@
                       th:text="#{common.status}"/>
                   <dd class="govuk-summary-list__value"
                       id="documents-status-value"
-                      th:text="${summary.documentUpload}"/>
+                      th:text="${summary.documentUpload.status}"/>
                 </div>
               </dl>
             </div>

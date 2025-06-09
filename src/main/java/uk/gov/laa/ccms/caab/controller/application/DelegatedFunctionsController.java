@@ -1,8 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,14 +10,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.DelegatedFunctionsValidator;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
-import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
-import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
  * Controller responsible for handling the application's delegated functions operations.
@@ -57,8 +52,6 @@ public class DelegatedFunctionsController {
   @PostMapping("/{caseContext}/delegated-functions")
   public String delegatedFunction(
           @PathVariable("caseContext") final CaseContext caseContext,
-          @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
-          @SessionAttribute(CASE) ApplicationDetail applicationDetail,
           @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
           BindingResult bindingResult) {
     delegatedFunctionsValidator.validate(applicationFormData, bindingResult);
