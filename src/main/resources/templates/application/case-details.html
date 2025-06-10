@@ -21,39 +21,47 @@
             id="general-details"
             th:text="#{caseDetails.general.details}"/>
         <dl class="govuk-summary-list">
-          <div class="govuk-summary-list__row">
+          <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
             <dt class="govuk-summary-list__key" th:text="#{caseDetails.general.status}"/>
             <dd class="govuk-summary-list__value"
                 id="general-application-status-value"
                 th:text="${summary.generalDetails.applicationStatus}"/>
           </div>
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key" th:text="#{caseDetails.general.client.name}"/>
+          <div class="govuk-summary-list__row" th:with="fieldName=#{caseDetails.general.client.name}">
+            <dt class="govuk-summary-list__key" th:text="${fieldName}"/>
             <dd class="govuk-summary-list__value"
                 id="general-client-fullname-value"
                 th:text="${summary.client.clientFullName}"/>
+            <dd class="govuk-summary-list__actions">
+              <a class="govuk-link govuk-link--no-visited-state"
+                 id="amend-client-link"
+                 th:href="@{/amendments/sections/client/details/summary}">
+                <th:block th:text="#{site.amend}"/>
+                <span class="govuk-visually-hidden" th:text="${#strings.toLowerCase(fieldName)}"/>
+              </a>
+            </dd>
           </div>
-          <div class="govuk-summary-list__row">
+          <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
             <dt class="govuk-summary-list__key" th:text="#{caseDetails.general.category.law}"/>
             <dd class="govuk-summary-list__value"
                 id="general-category-of-law-value"
                 th:text="${summary.generalDetails.categoryOfLaw}"/>
           </div>
-          <div class="govuk-summary-list__row">
+          <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
             <dt class="govuk-summary-list__key"
                 th:text="#{caseDetails.general.preferred.address}"/>
             <dd class="govuk-summary-list__value"
                 id="general-correspondence-method-value"
                 th:text="${summary.generalDetails.correspondenceMethod}"/>
           </div>
-          <div class="govuk-summary-list__row">
+          <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
             <dt class="govuk-summary-list__key"
                 th:text="#{caseDetails.general.application.type}"/>
             <dd class="govuk-summary-list__value"
                 id="general-application-type-value"
                 th:text="${summary.applicationType.description}"/>
           </div>
-          <div class="govuk-summary-list__row">
+          <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
             <dt class="govuk-summary-list__key"
                 th:text="#{caseDetails.general.delegated.functions.date}"/>
             <dd
