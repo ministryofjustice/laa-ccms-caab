@@ -44,6 +44,7 @@ public class AmendmentService {
       final ApplicationFormData applicationFormData,
       final String caseReferenceNumber,
       final UserDetail userDetail) {
+    // TODO: Throw exception if an application already exists for this case reference number
     ApplicationDetail amendment = applicationService.getCase(caseReferenceNumber,
         userDetail.getProvider().getId(), userDetail.getLoginId());
 

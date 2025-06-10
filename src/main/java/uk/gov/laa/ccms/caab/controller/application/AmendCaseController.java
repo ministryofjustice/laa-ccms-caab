@@ -37,7 +37,6 @@ public class AmendCaseController {
       @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
       @SessionAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       HttpSession httpSession) {
-    // TODO: Check if application already exists
     amendmentService.createAndSubmitAmendmentForCase(applicationFormData,
         detail.getCaseReferenceNumber(),
         userDetails);
