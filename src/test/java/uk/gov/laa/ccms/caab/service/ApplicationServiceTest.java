@@ -95,6 +95,7 @@ import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapperImpl;
 import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.IndividualDetailsSectionDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.OpponentMapper;
+import uk.gov.laa.ccms.caab.mapper.OrganisationDetailsSectionDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.context.EbsApplicationMappingContext;
@@ -116,6 +117,7 @@ import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CaseDetail;
@@ -176,6 +178,9 @@ class ApplicationServiceTest {
 
   @Mock
   private IndividualDetailsSectionDisplayMapper individualDetailsSectionDisplayMapper;
+
+  @Mock
+  private OrganisationDetailsSectionDisplayMapper organisationDetailsSectionDisplayMapper;
 
   @Mock
   private OpponentMapper opponentMapper;
@@ -1755,6 +1760,22 @@ class ApplicationServiceTest {
         .thenReturn(expected);
     // When
     IndividualDetailsSectionDisplay result = applicationService.getIndividualDetailsSectionDisplay(
+        new OpponentDetail());
+    // Then
+    assertNotNull(result);
+    assertThat(result).isEqualTo(expected);
+  }
+
+  @Test
+  @DisplayName("Should return mapped response when getting organisation details")
+  void shouldReturnMappedResponseWhenGettingOrganisationDetailsSectionDisplay(){
+    // Given
+    OrganisationDetailsSectionDisplay expected = new OrganisationDetailsSectionDisplay(null,
+        null);
+    when(organisationDetailsSectionDisplayMapper.toOrganisationDetailsSectionDisplay(any()))
+        .thenReturn(expected);
+    // When
+    OrganisationDetailsSectionDisplay result = applicationService.getOrganisationDetailsSectionDisplay(
         new OpponentDetail());
     // Then
     assertNotNull(result);

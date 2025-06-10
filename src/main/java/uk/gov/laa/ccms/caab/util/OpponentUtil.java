@@ -205,6 +205,24 @@ public final class OpponentUtil {
             .description(opponent.getRelationshipToClient()));
   }
 
+  /**
+   * Find the relevant relationship to client lookup for the supplied opponent.
+   *
+   * @param opponent - the opponent.
+   * @param relationships - the list of relationship lookups.
+   * @return the relationship lookup.
+   */
+  public static CommonLookupValueDetail getOrganisationType(
+      final OpponentDetail opponent,
+      final List<CommonLookupValueDetail> relationships) {
+    return relationships.stream()
+        .filter(rel -> rel.getCode().equals(opponent.getOrganisationType()))
+        .findFirst()
+        .orElse(new CommonLookupValueDetail()
+            .code(opponent.getOrganisationType())
+            .description(opponent.getOrganisationType()));
+  }
+
   private OpponentUtil() {
   }
 }

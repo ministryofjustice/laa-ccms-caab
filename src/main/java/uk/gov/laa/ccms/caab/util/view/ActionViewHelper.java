@@ -51,7 +51,7 @@ public class ActionViewHelper {
           FunctionConstants.EDIT_PROVIDER,
           "action.amendProviderDetails.name",
           "action.amendProviderDetails.description",
-          "#"),
+          "/" + CaseContext.AMENDMENTS.getPathValue() + "/sections/provider-details"),
       new AvailableAction(
           FunctionConstants.CASE_CORRESPONDENCE_PREFERENCE,
           "action.amendCorrespondenceAddress.name",
