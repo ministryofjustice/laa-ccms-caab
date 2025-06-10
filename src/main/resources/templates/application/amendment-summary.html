@@ -22,7 +22,7 @@
           <p class="govuk-body-l" th:text="#{amendCase.leadParagraph}"/>
         </div>
         <!--General details-->
-        <div class="govuk-grid-column-two-thirds-from-desktop">
+        <div class="govuk-grid-column-full">
           <div class="govuk-summary-card">
             <div class="govuk-summary-card__title-wrapper"
                  th:with="heading=#{application.section.generalDetails}">
@@ -344,7 +344,7 @@
                       th:text="#{common.status}"/>
                   <dd class="govuk-summary-list__value"
                       id="merits-status-value"
-                      th:text="${summary.meritsAssessment.status}"/>
+                      th:text="${summary.meritsAssessment}"/>
                 </div>
               </dl>
             </div>
@@ -368,14 +368,22 @@
               </ul>
             </div>
             <div class="govuk-summary-card__content">
-              <div class="govuk-inset-text" th:text="#{amendCase.documents.guidance}"/>
+              <!--<div class="govuk-inset-text" th:text="#{amendCase.documents.guidance}"/>-->
+              <details class="govuk-details">
+                <summary class="govuk-details__summary">
+              <span class="govuk-details__summary-text">
+                When should I upload documents?
+              </span>
+                </summary>
+                <div class="govuk-details__text" th:text="#{amendCase.documents.guidance}"/>
+              </details>
               <dl class="govuk-summary-list">
                 <div class="govuk-summary-list__row">
                   <dt class="govuk-summary-list__key"
                       th:text="#{common.status}"/>
                   <dd class="govuk-summary-list__value"
                       id="documents-status-value"
-                      th:text="${summary.documentUpload.status}"/>
+                      th:text="${summary.documentUpload}"/>
                 </div>
               </dl>
             </div>

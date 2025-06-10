@@ -38,7 +38,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationTypeValidator;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -53,7 +53,7 @@ class ApplicationTypeControllerTest {
   private LookupService lookupService;
 
   @Mock
-  private ApplicationService applicationService;
+  private AmendmentService amendmentService;
 
   @Mock
   private ApplicationTypeValidator applicationTypeValidator;
@@ -239,7 +239,7 @@ class ApplicationTypeControllerTest {
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/application/123/view");
 
-      verify(applicationService, times(1))
+      verify(amendmentService, times(1))
           .createAndSubmitAmendmentForCase(applicationFormData, "123",
               userDetail);
 
