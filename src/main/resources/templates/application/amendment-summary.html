@@ -2,7 +2,7 @@
 <html lang="en"
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org"
->
+      xmlns:govuk="http://www.thymeleaf.org">
 <head>
   <title th:text="|#{service.name} - #{application.amendment}|"></title>
 </head>
@@ -17,9 +17,9 @@
     <form method="post" th:action="@{/case/amendment-summary}" th:object="${amendment}">
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds-from-desktop">
-          <span class="govuk-caption-xl" th:text="#{amendCase.caption}"/>
-          <h1 class="govuk-heading-xl" th:text="#{amendCase.title}"/>
-          <p class="govuk-body-l" th:text="#{amendCase.leadParagraph}"/>
+          <span class="govuk-caption-xl" th:text="#{amendment.case}"/>
+          <h1 class="govuk-heading-xl" th:text="#{amendment.case.title}"/>
+          <p class="govuk-body-l" th:text="#{amendment.case.leadParagraph}"/>
         </div>
         <!--General details-->
         <div class="govuk-grid-column-full">
@@ -68,7 +68,7 @@
                 </div>
                 <div class="govuk-summary-list__row">
                   <dt class="govuk-summary-list__key"
-                      th:text="#{amendCase.amendmentType}"/>
+                      th:text="#{amendment.case.amendmentType}"/>
                   <dd class="govuk-summary-list__value"
                       id="general-amendment-type-value"
                       th:text="${summary.applicationType.description}"/>
@@ -81,7 +81,7 @@
         <div class="govuk-grid-column-full">
           <div class="govuk-summary-card">
             <div class="govuk-summary-card__title-wrapper"
-                 th:with="heading=#{amendCase.proceedings}">
+                 th:with="heading=#{amendment.case.proceedings}">
               <h2 class="govuk-summary-card__title"
                   th:text="${heading}"/>
               <ul class="govuk-summary-card__actions">
@@ -104,7 +104,7 @@
                 <h3 class="govuk-heading-m" th:text="${proceeding.proceedingType}"/>
                 <table class="govuk-table govuk-table--small-text-until-tablet">
                   <caption class="govuk-table__caption govuk-table__caption--m"
-                           th:text="#{amendCase.proceedings}"/>
+                           th:text="#{amendment.case.proceedings}"/>
                   <thead>
                   <tr>
                     <th class="govuk-table__header"
@@ -209,7 +209,7 @@
         <div class="govuk-grid-column-full">
           <div class="govuk-summary-card">
             <div class="govuk-summary-card__title-wrapper"
-                 th:with="heading=#{amendCase.priorAuthority}">
+                 th:with="heading=#{amendment.case.priorAuthority}">
               <h2 class="govuk-summary-card__title"
                   th:text="${heading}"/>
               <ul class="govuk-summary-card__actions">
@@ -267,7 +267,7 @@
         <div class="govuk-grid-column-full">
           <div class="govuk-summary-card">
             <div class="govuk-summary-card__title-wrapper"
-                 th:with="heading=#{amendCase.opponentsAndOtherParties}">
+                 th:with="heading=#{amendment.case.opponentsAndOtherParties}">
               <h2 class="govuk-summary-card__title"
                   th:text="${heading}"/>
               <ul class="govuk-summary-card__actions">
@@ -326,14 +326,14 @@
         <!--Merits-->
         <div class="govuk-grid-column-two-thirds-from-desktop">
           <div class="govuk-summary-card">
-            <div class="govuk-summary-card__title-wrapper" th:with="heading=#{amendCase.merits}">
+            <div class="govuk-summary-card__title-wrapper" th:with="heading=#{amendment.case.merits}">
               <h2 class="govuk-summary-card__title"
                   th:text="${heading}"/>
               <ul class="govuk-summary-card__actions">
                 <li class="govuk-summary-card__action">
                   <a class="govuk-link govuk-link--no-visited-state" href="#"
                      id="edit-merits-link"
-                     th:text="#{amendCase.meritsAssessment}"/>
+                     th:text="#{amendment.case.meritsAssessment}"/>
                 </li>
               </ul>
             </div>
@@ -343,8 +343,12 @@
                   <dt class="govuk-summary-list__key"
                       th:text="#{common.status}"/>
                   <dd class="govuk-summary-list__value"
-                      id="merits-status-value"
-                      th:text="${summary.meritsAssessment}"/>
+                      id="merits-status-value">
+                    <th:block th:if="${summary.meritsAssessment.enabled}" th:with="status=${summary.meritsAssessment.status}">
+                      <th:block th:if="${status == 'Not started'}" th:text="#{amendment.case.merits.noAssessmentPerformed}"/>
+                      <th:block th:unless="${status == 'Not started'}" th:text="${status}"/>
+                    </th:block>
+                  </dd>
                 </div>
               </dl>
             </div>
@@ -355,7 +359,7 @@
         <div class="govuk-grid-column-two-thirds-from-desktop">
           <div class="govuk-summary-card">
             <div class="govuk-summary-card__title-wrapper"
-                 th:with="heading=#{amendCase.documents}">
+                 th:with="heading=#{amendment.case.documents}">
               <h2 class="govuk-summary-card__title"
                   th:text="${heading}"/>
               <ul class="govuk-summary-card__actions"
@@ -369,21 +373,18 @@
             </div>
             <div class="govuk-summary-card__content">
               <!--<div class="govuk-inset-text" th:text="#{amendCase.documents.guidance}"/>-->
-              <details class="govuk-details">
-                <summary class="govuk-details__summary">
-              <span class="govuk-details__summary-text">
-                When should I upload documents?
-              </span>
-                </summary>
-                <div class="govuk-details__text" th:text="#{amendCase.documents.guidance}"/>
-              </details>
+              <govuk:details th:if="${summary.documentUpload.enabled}"
+                             th:summaryText="#{amendment.case.documents.guidance.title}"
+                             th:text="#{amendment.case.documents.guidance}"/>
               <dl class="govuk-summary-list">
                 <div class="govuk-summary-list__row">
                   <dt class="govuk-summary-list__key"
                       th:text="#{common.status}"/>
                   <dd class="govuk-summary-list__value"
-                      id="documents-status-value"
-                      th:text="${summary.documentUpload}"/>
+                      id="documents-status-value">
+                    <th:block th:if="${summary.documentUpload.enabled}" th:text="${summary.documentUpload.status}"/>
+                    <th:block th:unless="${summary.documentUpload.enabled}" th:text="#{amendment.case.documents.notRequired}"/>
+                  </dd>
                 </div>
               </dl>
             </div>
@@ -393,7 +394,7 @@
         <!--Submit button-->
         <div class="govuk-grid-column-full">
           <button class="govuk-button" type="submit"
-            th:text="#{amendCase.submitAmendments}"/>
+            th:text="#{amendment.case.submitAmendments}"/>
         </div>
       </div>
     </form>

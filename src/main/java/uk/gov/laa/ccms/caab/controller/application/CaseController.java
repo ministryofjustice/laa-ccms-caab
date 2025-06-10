@@ -77,7 +77,7 @@ public class CaseController {
 
     final OpponentDetail opponentDetail = ebsCase.getOpponents().get(index);
 
-if (opponentDetail.getType().equals("Individual")) {
+    if (opponentDetail.getType().equals("Individual")) {
       final IndividualDetailsSectionDisplay opponentDisplay =
           applicationService.getIndividualDetailsSectionDisplay(opponentDetail);
       model.addAttribute("otherParty", opponentDisplay);
@@ -93,22 +93,21 @@ if (opponentDetail.getType().equals("Individual")) {
   }
 
   /**
-   * Displays the prior authority details for a given case.
-   * Retrieves a specific prior authority detail using the provided index and adds it to the model
-   * to be displayed in the view.
+   * Displays the prior authority details for a given case. Retrieves a specific prior authority
+   * detail using the provided index and adds it to the model to be displayed in the view.
    *
    * @param ebsCase The case details retrieved from the session.
-   * @param index   The zero-based index of the prior authority to be retrieved from
-   *                the case details.
+   * @param index   The zero-based index of the prior authority to be retrieved from the case
+   *                details.
    * @param model   The model used to pass data to the view.
    * @return The view name for the prior authority review page.
-   * @throws IllegalArgumentException if the list of prior authorities is empty or
-   *                                  the specified index is invalid.
+   * @throws IllegalArgumentException if the list of prior authorities is empty or the specified
+   *                                  index is invalid.
    */
   @GetMapping("/cases/details/prior-authority/{index}")
   public String getCaseDetailsView(@SessionAttribute(CASE) final ApplicationDetail ebsCase,
-                                   @PathVariable final int index,
-                                   Model model) {
+      @PathVariable final int index,
+      Model model) {
     List<PriorAuthorityDetail> priorAuthorities = ebsCase.getPriorAuthorities();
     String errorMessage = "Could not find prior authority with index: %s".formatted(index);
     Assert.notEmpty(priorAuthorities, () -> errorMessage);
@@ -120,12 +119,11 @@ if (opponentDetail.getType().equals("Individual")) {
   }
 
   /**
-   * Handles the request to abandon amendments for a specific case.
-   * This method is triggered by a GET request to display the confirmation page
-   * for abandoning amendments.
+   * Handles the request to abandon amendments for a specific case. This method is triggered by a
+   * GET request to display the confirmation page for abandoning amendments.
    *
-   * @param ebsCase the application details for the current case,
-   *                retrieved from the session attribute
+   * @param ebsCase the application details for the current case, retrieved from the session
+   *                attribute
    * @return a string representing the view name for confirming the abandonment of amendments
    */
   @GetMapping("/cases/amendment/abandon")
@@ -135,19 +133,19 @@ if (opponentDetail.getType().equals("Individual")) {
   }
 
   /**
-   * Handles the confirmation of abandoning amendments for a specific case.
-   * This method processes the request to abandon any ongoing amendments for the given case
-   * and logs the associated information.
+   * Handles the confirmation of abandoning amendments for a specific case. This method processes
+   * the request to abandon any ongoing amendments for the given case and logs the associated
+   * information.
    *
-   * @param ebsCase the application details for the current case,
-   *                retrieved from the session attribute
-   * @param user    the user details of the currently logged-in user,
-   *                retrieved from the session attribute
+   * @param ebsCase the application details for the current case, retrieved from the session
+   *                attribute
+   * @param user    the user details of the currently logged-in user, retrieved from the session
+   *                attribute
    * @return a string representing the view name to be displayed after the amendments are abandoned
    */
   @PostMapping("/cases/amendment/abandon")
   public String handleAbandon(@SessionAttribute(CASE) final ApplicationDetail ebsCase,
-                              @SessionAttribute(USER_DETAILS) UserDetail user) {
+      @SessionAttribute(USER_DETAILS) UserDetail user) {
     log.info("Abandoning amendments for case id {}", ebsCase.getId());
     applicationService.abandonApplication(ebsCase, user);
     return "home";

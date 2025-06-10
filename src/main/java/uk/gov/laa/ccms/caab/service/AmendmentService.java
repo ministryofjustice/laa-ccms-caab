@@ -17,6 +17,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
+import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @Service
@@ -96,11 +97,30 @@ public class AmendmentService {
       x.setAward(false);
     });
 
+
+    //assessmentService.calculateAssessmentStatuses(amendment, );
     // TODO: Add merits & means assessments ~ Awaiting on CCMSPUI-380
 
     // Create application/amendment in TDS.
     Mono<String> application = caabApiClient.createApplication(userDetail.getLoginId(), amendment);
     log.info("Application created: {}", application.block());
     return amendment;
+  }
+
+  public ApplicationSectionDisplay getAmendmentSections(
+      final ApplicationDetail application,
+      final UserDetail user) {
+    final ApplicationSectionDisplay sectionDisplay =
+        applicationService.getApplicationSections(application, user);
+
+    // Enable document link if either prior authority added or assessment completed
+    boolean isPriorAuthorityAdded =
+        sectionDisplay.getPriorAuthorities().stream()
+            .anyMatch(x -> "Draft".equalsIgnoreCase(x.getStatus()));
+    boolean assessmentComplete = application.getMeansAssessmentAmended() ||
+        application.getMeritsAssessmentAmended();
+    sectionDisplay.getDocumentUpload().setEnabled(isPriorAuthorityAdded || assessmentComplete);
+
+    return sectionDisplay;
   }
 }

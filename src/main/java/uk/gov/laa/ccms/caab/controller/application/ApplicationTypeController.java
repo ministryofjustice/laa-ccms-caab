@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.application;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EXCLUDED_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 
 import java.util.List;
@@ -21,7 +22,6 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationTypeValidator;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
-import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -32,11 +32,10 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes({APPLICATION_FORM_DATA})
+@SessionAttributes({APPLICATION_FORM_DATA, APPLICATION})
 public class ApplicationTypeController {
 
   private final ApplicationTypeValidator applicationTypeValidator;
-  private final ApplicationService applicationService;
   private final LookupService lookupService;
 
   /**
