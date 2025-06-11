@@ -306,24 +306,16 @@
               </tr>
             </thead>
             <tbody class="govuk-table__body">
-              <tr class="govuk-table__row"
-                  th:each="opponent, idx : ${summary.opponentsAndOtherParties.opponents}">
+              <tr class="govuk-table__row" th:each="opponent, idx : ${summary.opponentsAndOtherParties.opponents}">
                 <td class="govuk-table__cell">
-                  <a class="govuk-link govuk-link--no-visited-state"
-                     th:id="'opponent-party-type-link-'+${idx.index}"
-                     th:text="${opponent.partyType}"
-                     th:href="@{/cases/details/other-party/{index}(index=${idx.index})}"/>
+                    <a class="govuk-link govuk-link--no-visited-state"
+                       th:text="${opponent.partyType}"
+                       th:href="@{/cases/details/other-party/{index}(index=${idx.index})}"/>
                 </td>
-                <td class="govuk-table__cell"
-                    th:id="'opponent-party-name-'+${idx.index}"
-                    th:text="${opponent.partyName}"/>
-                <td class="govuk-table__cell"
-                    th:id="'opponent-relationship-to-client-'+${idx.index}"
-                    th:text="${opponent.relationshipToClient}"/>
-                <td class="govuk-table__cell"
-                    th:id="'opponent-relationship-to-case-'+${idx.index}"
-                    th:text="${opponent.relationshipToCase}"/>
-              </tr>
+                <td class="govuk-table__cell" th:text="${opponent.partyName}"/>
+                <td class="govuk-table__cell" th:text="${opponent.relationshipToClient}"/>
+                <td class="govuk-table__cell" th:text="${opponent.relationshipToCase}"/>
+            </tr>
             </tbody>
           </table>
         </th:block>
