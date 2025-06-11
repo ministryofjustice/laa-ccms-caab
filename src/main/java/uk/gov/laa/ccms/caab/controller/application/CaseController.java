@@ -76,6 +76,7 @@ public class CaseController {
     }
 
     final OpponentDetail opponentDetail = ebsCase.getOpponents().get(index);
+
     if (opponentDetail.getType().equals("Individual")) {
       final IndividualDetailsSectionDisplay opponentDisplay =
           applicationService.getIndividualDetailsSectionDisplay(opponentDetail);
