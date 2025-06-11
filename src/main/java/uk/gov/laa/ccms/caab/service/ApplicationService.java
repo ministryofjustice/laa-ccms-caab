@@ -570,7 +570,7 @@ public class ApplicationService {
    *
    * @param application the application to retrieve a summary for.
    * @return A Mono of ApplicationSectionDisplay representing the application section display
-   * values.
+   *     values.
    */
   public ApplicationSectionDisplay getApplicationSections(
       final ApplicationDetail application,
@@ -691,7 +691,7 @@ public class ApplicationService {
    *
    * @param application the application to retrieve a summary for.
    * @return A Mono of ApplicationSectionDisplay representing the application section display
-   * values.
+   *     values.
    */
   public ApplicationSectionDisplay getCaseDetailsDisplay(
       final ApplicationDetail application) {

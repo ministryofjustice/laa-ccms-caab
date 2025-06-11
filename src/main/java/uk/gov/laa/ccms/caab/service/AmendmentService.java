@@ -22,6 +22,15 @@ import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
+/**
+ * Service class responsible for handling amendments to existing legal aid cases.
+ *
+ * <p>This class provides methods for creating and submitting amendments as well as
+ * retrieving application section details specific to amendments. It interacts with the
+ * application service and CAAB API client to perform the necessary operations.</p>
+ *
+ * @author Jamie Briggs
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -53,7 +62,8 @@ public class AmendmentService {
         applicationService.getTdsApplications(caseSearchCriteria, userDetail, 0, 1)
             .getContent().stream().findFirst().isPresent();
     if (applicationExists) {
-      throw new CaabApplicationException("Application already exists for case reference: " + caseReferenceNumber);
+      throw new CaabApplicationException("Application already exists for case reference: "
+          + caseReferenceNumber);
     }
 
     ApplicationDetail amendment = applicationService.getCase(caseReferenceNumber,
@@ -119,6 +129,22 @@ public class AmendmentService {
     return amendment;
   }
 
+  /**
+   * Retrieves the amendment-specific sections of an application. Additionally, enables the
+   * document upload feature if certain conditions related to prior authorities or assessment
+   * completions are met:
+   * <ul>
+   *   <li>There is a draft prior authority.</li>
+   *   <li>Means assessment has been amended.</li>
+   *   <li>Merits assessment has been amended.</li>
+   * </ul>
+   *
+   * @param application The application details for which the amendment sections need to be fetched.
+   * @param user        The user details, providing context for retrieving and tailoring the
+   *                    sections.
+   * @return An ApplicationSectionDisplay object containing the relevant sections for the amendment,
+   *         with document upload enabled based on specific conditions.
+   */
   public ApplicationSectionDisplay getAmendmentSections(
       final ApplicationDetail application,
       final UserDetail user) {
@@ -129,8 +155,8 @@ public class AmendmentService {
     boolean isPriorAuthorityAdded =
         sectionDisplay.getPriorAuthorities().stream()
             .anyMatch(x -> "Draft".equalsIgnoreCase(x.getStatus()));
-    boolean assessmentComplete = application.getMeansAssessmentAmended() ||
-        application.getMeritsAssessmentAmended();
+    boolean assessmentComplete = application.getMeansAssessmentAmended()
+        || application.getMeritsAssessmentAmended();
     sectionDisplay.getDocumentUpload().setEnabled(isPriorAuthorityAdded || assessmentComplete);
 
     return sectionDisplay;

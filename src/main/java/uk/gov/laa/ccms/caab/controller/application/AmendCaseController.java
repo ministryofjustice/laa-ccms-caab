@@ -24,6 +24,12 @@ import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
+/**
+ * Controller handling requests related to the amendment of cases. This controller includes
+ * operations for initializing and summarizing case amendments.
+ *
+ * @author Jamie Briggs
+ */
 @Controller
 @SessionAttributes({APPLICATION, APPLICATION_FORM_DATA})
 @RequiredArgsConstructor
@@ -32,6 +38,20 @@ public class AmendCaseController {
   private final ApplicationService applicationService;
   private final AmendmentService amendmentService;
 
+  /**
+   * Initiates the amendment creation and submission process for a specific case.
+   * This method processes the provided session attributes, creates an amendment,
+   * and redirects to the summary page upon successful completion.
+   *
+   * @param detail            Session attribute containing application details,
+   *                          including the case reference number.
+   * @param userDetails       Session attribute containing user details.
+   * @param applicationFormData Session attribute containing application form data used
+   *                            for the amendment.
+   * @param httpSession       The current HTTP session to manage and store session attributes.
+   *
+   * @return A string representing the redirect URL to the amendments summary page.
+   */
   @GetMapping("/amendments/create")
   public String startAmendment(@SessionAttribute(CASE) final ApplicationDetail detail,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
@@ -52,12 +72,23 @@ public class AmendCaseController {
     return "redirect:/amendments/summary";
   }
 
+  /**
+   * Handles the request to display the summary for a case amendment. Retrieves application details
+   * and amendment sections, setting them in the HTTP session and model for rendering on the view.
+   *
+   * @param tdsApplication the current application details stored in the session
+   * @param user the details of the currently logged-in user stored in the session
+   * @param model the model to which the amendment summary data is added
+   * @param httpSession the HTTP session used to store amendment details
+   * @return the name of the view to be rendered, which displays the amendment summary
+   * @throws CaabApplicationException if the amendment details cannot be retrieved
+   */
   @GetMapping("/amendments/summary")
   public String amendCaseSummary(
       @SessionAttribute(APPLICATION) final BaseApplicationDetail tdsApplication,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      final HttpSession httpSession,
-      Model model) {
+      Model model,
+      final HttpSession httpSession) {
 
     final ApplicationDetail amendment =
         applicationService.getApplication(String.valueOf(tdsApplication.getId())).block();
