@@ -237,11 +237,7 @@ class ApplicationTypeControllerTest {
               .sessionAttr(USER_DETAILS, userDetail)
               .sessionAttr(CASE, ebsCase)))
           .hasStatus3xxRedirection()
-          .hasRedirectedUrl("/application/123/view");
-
-      verify(amendmentService, times(1))
-          .createAndSubmitAmendmentForCase(applicationFormData, "123",
-              userDetail);
+          .hasRedirectedUrl("/amendments/create");
 
       verifyNoInteractions(lookupService);
     }

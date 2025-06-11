@@ -22,9 +22,9 @@ import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class AmendmentService {
 
   private final ApplicationService applicationService;
