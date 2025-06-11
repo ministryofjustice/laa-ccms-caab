@@ -20,7 +20,7 @@ class ActionViewHelperTest {
     assertThat(first.actionCode()).isEqualTo(FunctionConstants.AMEND_CASE);
     assertThat(first.actionKey()).isEqualTo("action.amendCase.continue.name");
     assertThat(first.descriptionKey()).isEqualTo("action.amendCase.continue.description");
-    assertThat(first.link()).isEqualTo("#");
+    assertThat(first.link()).isEqualTo("/amendments/summary");
   }
 
   @Test
@@ -32,7 +32,7 @@ class ActionViewHelperTest {
     assertThat(first.actionCode()).isEqualTo(FunctionConstants.AMEND_CASE);
     assertThat(first.actionKey()).isEqualTo("action.amendCase.new.name");
     assertThat(first.descriptionKey()).isEqualTo("action.amendCase.new.description");
-    assertThat(first.link()).isEqualTo("#");
+    assertThat(first.link()).isEqualTo("/amendments/new");
   }
 
   @Test
