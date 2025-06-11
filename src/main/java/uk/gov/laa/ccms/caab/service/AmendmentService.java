@@ -11,8 +11,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
+import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
@@ -44,7 +46,16 @@ public class AmendmentService {
       final ApplicationFormData applicationFormData,
       final String caseReferenceNumber,
       final UserDetail userDetail) {
-    // TODO: Throw exception if an application already exists for this case reference number
+
+    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    caseSearchCriteria.setCaseReference(caseReferenceNumber);
+    boolean applicationExists =
+        applicationService.getTdsApplications(caseSearchCriteria, userDetail, 0, 1)
+            .getContent().stream().findFirst().isPresent();
+    if (applicationExists) {
+      throw new CaabApplicationException("Application already exists for case reference: " + caseReferenceNumber);
+    }
+
     ApplicationDetail amendment = applicationService.getCase(caseReferenceNumber,
         userDetail.getProvider().getId(), userDetail.getLoginId());
 
