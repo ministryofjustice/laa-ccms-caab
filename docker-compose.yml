@@ -12,7 +12,7 @@ services:
       - 8081:8080
 
   laa-ccms-caab-db:
-    container_name: laa-ccms-caab-db
+    container_name: laa-ccms-caab-db1
     image: 902837325998.dkr.ecr.eu-west-2.amazonaws.com/laa-ccms-pui-oracle-database:latest
     ports:
       - "1521:1521"
