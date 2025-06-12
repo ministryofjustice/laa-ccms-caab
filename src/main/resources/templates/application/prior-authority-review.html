@@ -17,43 +17,44 @@
             <div class="govuk-grid-column-full">
                 <h1 class="govuk-heading-l" id="lead-heading" th:text="#{priorAuthorityReview.heading}"/>
                 <p class="govuk-body-l" th:text="#{priorAuthorityReview.leadParagraph}"/>
-                <dl class="govuk-summary-list">
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.type}"/>
-                        <dd class="govuk-summary-list__value" id="prior-authority-type-value"
-                            th:text="${priorAuthority.type.displayValue}"/>
+                <div class="govuk-summary-card">
+                    <div class="govuk-summary-card__title-wrapper">
+                        <h2 class="govuk-summary-card__title" th:text="#{priorAuthority.review.generalDetails}"></h2>
                     </div>
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.summary}"/>
-                        <dd class="govuk-summary-list__value" id="prior-authority-summary"
-                            th:text="${priorAuthority.summary}"/>
+                    <div class="govuk-summary-card__content">
+                        <dl class="govuk-summary-list">
+                            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{priorAuthorityReview.type}, ${priorAuthority.type.displayValue})}"></div>
+                            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{priorAuthorityReview.summary}, ${priorAuthority.summary})}"></div>
+                            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{priorAuthorityReview.justification}, ${priorAuthority.justification})}"></div>
+                            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{priorAuthorityReview.amountRequested}, ${#numbers.formatCurrency(priorAuthority.amountRequested)})}"></div>
+                        </dl>
                     </div>
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.justification}"/>
-                        <dd class="govuk-summary-list__value" id="prior-authority-justification"
-                            th:text="${priorAuthority.justification}"/>
+                </div>
+                <th:block th:if="${!#lists.isEmpty(group.value)}" th:each="group : ${groupedItems}">
+                <div class="govuk-summary-card">
+                    <div class="govuk-summary-card__title-wrapper">
+                        <h2 class="govuk-summary-card__title" th:text="#{${group.key}}"></h2>
                     </div>
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.amountRequested}"/>
-                        <dd class="govuk-summary-list__value"
-                            id="prior-authority-amount-requested"
-                            th:text="${#numbers.formatCurrency(priorAuthority.amountRequested)}"/>
+                    <div class="govuk-summary-card__content">
+                        <dl class="govuk-summary-list">
+                            <th:block th:each="item : ${group.value}">
+                            <div class="govuk-summary-list__row">
+                                <dt class="govuk-summary-list__key" th:text="${item.code.displayValue}">
+                                </dt>
+                                <dd class="govuk-summary-list__value"
+                                    th:with="itemCode = ${item.code.displayValue},
+                                             normalisedCode = ${itemCode.toLowerCase().replace(' ', '-')},
+                                             trimmedCode = ${normalisedCode.length() < 15 ? normalisedCode : normalisedCode.substring(0, 15)}"
+                                    th:id="${'prior-authority-' + trimmedCode}"
+                                    th:text="${item.type == 'AMT' ?
+                                    #numbers.formatCurrency(item.value.displayValue) : item.value.displayValue}">
+                                </dd>
+                            </div>
+                            </th:block>
+                        </dl>
                     </div>
-                    <th:block th:each="item : ${priorAuthority.items}">
-                        <div class="govuk-summary-list__row">
-                            <dt class="govuk-summary-list__key" th:text="${item.code.displayValue}">
-                            </dt>
-                            <dd class="govuk-summary-list__value"
-                                th:with="itemCode = ${item.code.displayValue},
-                                         normalisedCode = ${itemCode.toLowerCase().replace(' ', '-')},
-                                         trimmedCode = ${normalisedCode.length() < 15 ? normalisedCode : normalisedCode.substring(0, 15)}"
-                                th:id="${'prior-authority-' + trimmedCode}"
-                                th:text="${item.type == 'AMT' ?
-                                #numbers.formatCurrency(item.value.displayValue) : item.value.displayValue}">
-                            </dd>
-                        </div>
-                    </th:block>
-                </dl>
+                </div>
+                </th:block>
             </div>
         </div>
     </div>

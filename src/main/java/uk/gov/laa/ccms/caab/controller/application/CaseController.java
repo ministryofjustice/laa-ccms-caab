@@ -7,11 +7,14 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUM
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -35,6 +38,8 @@ import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.ReferenceDataItemDetail;
+import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
@@ -51,6 +56,60 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class CaseController {
 
   private final ApplicationService applicationService;
+
+  // <Message property key / reference data item code IDs>
+  private LinkedHashMap<String, List<String>> PRIOR_AUTHORITY_ITEM_GROUPS = new LinkedHashMap<>();
+
+  @PostConstruct
+  public void init() {
+    PRIOR_AUTHORITY_ITEM_GROUPS.put(
+        "priorAuthority.review.expert.details", List.of(
+            "E01_EXPERT_TYPE",
+            "E02_EXPERT_NAME",
+            "E03_COMPANY",
+            "E06_EXPERT_REGION",
+            "E05_POST_CODE")
+    );
+    PRIOR_AUTHORITY_ITEM_GROUPS.put(
+        "priorAuthority.review.expert.timeSpent", List.of(
+            "E19_PREPARATION_HOURS",
+            "E20_EXPERT_COURT_HRS",
+            "E21_TRAVEL_TIME",
+            "E26_EXPERT_MILEAGE_NUMBER",
+            "E34_PREPARATION_MINS",
+            "E35_EXPERT_COURT_MINS",
+            "E36_TRAVEL_TIME_MINS",
+            "E18_EXPERT_TOTAL_HOURS",
+            "E33_EXPERT_TOTAL_MIN")
+    );
+    PRIOR_AUTHORITY_ITEM_GROUPS.put(
+        "priorAuthority.review.expert.rates", List.of(
+            "E25_EXPERT_MILEAGE",
+            "E17_EXPERT_HOURLY_RATE",
+            "E28_EXPERT_VAT_RATE")
+    );
+    PRIOR_AUTHORITY_ITEM_GROUPS.put(
+        "priorAuthority.review.expert.costs", List.of(
+            "E11_EXP_BEFORE_APP",
+            "E29_EXPERT_VAT",
+            "E30_EXPERT_TOTAL",
+            "E27_EXPERT_NET")
+    );
+    PRIOR_AUTHORITY_ITEM_GROUPS.put(
+        "priorAuthority.review.expert.reasoning", List.of(
+            "E10_REASON_LA_NOT_BEARING_COST",
+            "E12_BASIS_OF_APPORTIONMENT",
+            "E16_REASON_FOR_SELECTED_QUOTE",
+            "E15_OTHER_QUOTES",
+            "E14_NUMBER_ALTERNATIVE_QUOTES",
+            "E09_CHILDREN_ACT_COURT_PERMI",
+            "E31_EXPERT_COD",
+            "E07_JOINTLY_INSTRUCTED")
+    );
+    PRIOR_AUTHORITY_ITEM_GROUPS.put(
+        "priorAuthority.review.expert.other", new ArrayList<>()
+    );
+  }
 
   /**
    * Displays the case overview screen.
@@ -179,9 +238,32 @@ public class CaseController {
     Assert.notEmpty(priorAuthorities, () -> errorMessage);
     Assert.isTrue(index < priorAuthorities.size(), () -> errorMessage);
 
+    List<String> ids = priorAuthorities.get(index).getItems().stream()
+            .map(ReferenceDataItemDetail::getCode)
+            .map(StringDisplayValue::getId)
+            .toList();
+
+    LinkedHashMap<String, List<ReferenceDataItemDetail>> groupedItems = new LinkedHashMap<>();
+    // Insert keys to maintain order
+    PRIOR_AUTHORITY_ITEM_GROUPS.keySet().forEach(
+        group -> groupedItems.put(group, new ArrayList<>()));
+
+    priorAuthorities.get(index).getItems().forEach(
+        item -> groupedItems.computeIfAbsent(getPriorAuthorityGroup(item.getCode().getId()),
+            value -> new ArrayList<>()).add(item));
+
     model.addAttribute("priorAuthority", priorAuthorities.get(index));
+    model.addAttribute("groupedItems", groupedItems);
     return "application/prior-authority-review";
 
+  }
+
+  private String getPriorAuthorityGroup(String itemCode) {
+    return PRIOR_AUTHORITY_ITEM_GROUPS.entrySet().stream()
+        .filter(entry -> entry.getValue().contains(itemCode))
+        .map(Map.Entry::getKey)
+        .findFirst()
+        .orElse("priorAuthority.review.expert.other");
   }
 
   /**
