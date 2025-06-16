@@ -42,6 +42,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.CorrespondenceAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
@@ -97,8 +98,9 @@ public class EditGeneralDetailsSectionController {
    * @param model The model for the view.
    * @return The view name for the application summary page.
    */
-  @GetMapping("/application/sections/correspondence-address")
+  @GetMapping("/{caseContext}/sections/correspondence-address")
   public String correspondenceDetails(
+      @PathVariable("caseContext") final CaseContext context,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       final Model model,
       final HttpSession session) {
@@ -132,7 +134,7 @@ public class EditGeneralDetailsSectionController {
    * @param session The session data for the endpoint.
    * @return The view name for the application summary page.
    */
-  @PostMapping("/application/sections/correspondence-address")
+  @PostMapping("/{caseContext}/sections/correspondence-address")
   public String updateCorrespondenceDetails(
       @RequestParam(required = false) final String action,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
