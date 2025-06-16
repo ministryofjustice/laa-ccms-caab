@@ -66,7 +66,7 @@ public class ProviderDetailsSectionController {
       HttpSession session,
       Model model) {
 
-    if (caseContext.isAmendment() && null == applicationId) {
+    if (caseContext.isAmendment()) {
       ApplicationFormData applicationFormData = new ApplicationFormData();
       applicationFormData.setCopyCaseReferenceNumber(activeCase.getCaseReferenceNumber());
       ClientDetail clientDetail = clientService.getClient(

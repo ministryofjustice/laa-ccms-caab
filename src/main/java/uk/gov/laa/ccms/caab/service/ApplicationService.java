@@ -57,6 +57,7 @@ import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.IndividualDetailsSectionDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.OpponentMapper;
+import uk.gov.laa.ccms.caab.mapper.OrganisationDetailsSectionDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
@@ -79,6 +80,7 @@ import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
@@ -141,6 +143,8 @@ public class ApplicationService {
   private final OpponentMapper opponentMapper;
 
   private final IndividualDetailsSectionDisplayMapper individualDetailsSectionDisplayMapper;
+
+  private final OrganisationDetailsSectionDisplayMapper organisationDetailsSectionDisplayMapper;
 
   private final SearchConstants searchConstants;
 
@@ -550,19 +554,14 @@ public class ApplicationService {
         getNonFinancialAssessmentNamesIncludingPrepop(),
         application.getCaseReferenceNumber(),
         null);
-
     /*
-     * TODO: ProviderUI deletes rows from XXCCMS_OPA_ASSESSMENT_LOG here.
-     *  This should be handled in assessment-api via a cascade.
-     */
-
-    /*
-     * Increment relevent metrics
+     * Increment relevant metrics
      */
     puiMetricService.incrementAbandonedCount(application.getCaseReferenceNumber());
 
     Mono.when(removeDocsMono, deleteAppMono, deleteAssessmentsMono).block();
   }
+
 
   /**
    * Retrieves the application section display values.
@@ -774,6 +773,12 @@ public class ApplicationService {
   public IndividualDetailsSectionDisplay getIndividualDetailsSectionDisplay(
       final OpponentDetail opponentDetail) {
     return individualDetailsSectionDisplayMapper.toIndividualDetailsSectionDisplay(opponentDetail);
+  }
+
+  public OrganisationDetailsSectionDisplay getOrganisationDetailsSectionDisplay(
+      final OpponentDetail opponentDetail) {
+    return organisationDetailsSectionDisplayMapper.toOrganisationDetailsSectionDisplay(
+        opponentDetail);
   }
 
   private String getCorrespondenceMethod(ApplicationDetail application) {
