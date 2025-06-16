@@ -28,6 +28,9 @@ import uk.gov.laa.ccms.caab.controller.client.EditClientEqualOpportunitiesMonito
 import uk.gov.laa.ccms.caab.controller.client.EditClientSummaryController;
 import uk.gov.laa.ccms.caab.controller.submission.CaseSubmissionController;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
+import uk.gov.laa.ccms.caab.model.ClientDetail;
+import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 
 /**
  * Controller advice class responsible for adding active case to the model of selected controllers.
@@ -68,23 +71,59 @@ public class ActiveCaseModelAdvice {
     if (session.getAttribute(ACTIVE_CASE) != null) {
       model.addAttribute(session.getAttribute(ACTIVE_CASE));
     } else if (session.getAttribute(CASE) != null) {
-      try {
-        ApplicationDetail ebsCase = (ApplicationDetail) session.getAttribute(CASE);
-        String clientSurname = ebsCase.getClient().getSurname();
-        String clientFullName = ebsCase.getClient().getFirstName()
-            + (clientSurname.isEmpty() ? "" : " " + clientSurname);
-        final ActiveCase activeCase = ActiveCase.builder()
-            .caseReferenceNumber(ebsCase.getCaseReferenceNumber())
-            .providerId(ebsCase.getProviderDetails().getProvider().getId())
-            .client(clientFullName)
-            .clientReferenceNumber(ebsCase.getClient().getReference())
-            .providerCaseReferenceNumber(ebsCase.getProviderDetails().getProviderCaseReference())
-            .build();
+      Object sessionCase = session.getAttribute(CASE);
+      if (sessionCase instanceof ApplicationDetail ebsCase) {
+        final ActiveCase activeCase = buildActiveCaseFromSessionCase(ebsCase);
         model.addAttribute(ACTIVE_CASE, activeCase);
         session.setAttribute(ACTIVE_CASE, activeCase);
-      } catch (ClassCastException | NullPointerException e) {
-        log.debug("Failed to set active case from session", e);
+      } else {
+        log.debug(
+            "Case found in session but was incorrect type: '{}'",
+            sessionCase.getClass().getName());
       }
     }
+  }
+
+  private ActiveCase buildActiveCaseFromSessionCase(ApplicationDetail ebsCase) {
+    String caseReference = ebsCase.getCaseReferenceNumber();
+
+    ClientDetail client = ebsCase.getClient();
+    String clientFullName = null;
+    String clientReference = null;
+
+    if (client == null) {
+      log.debug("Unable to find client for case: '{}'", caseReference);
+    } else {
+      String clientSurname = client.getSurname();
+      clientFullName = client.getFirstName()
+          + (clientSurname.isEmpty() ? "" : " " + clientSurname);
+
+      clientReference = client.getReference();
+    }
+
+    ApplicationProviderDetails providerDetails = ebsCase.getProviderDetails();
+    String providerCaseReference = null;
+    Integer providerId = null;
+
+    if (providerDetails == null) {
+      log.debug("Unable to find provider details for case: '{}'", caseReference);
+    } else {
+      providerCaseReference = providerDetails.getProviderCaseReference();
+
+      IntDisplayValue provider = providerDetails.getProvider();
+      if (provider == null) {
+        log.debug("Unable to find provider ID for case: '{}'", caseReference);
+      } else {
+        providerId = provider.getId();
+      }
+    }
+
+    return ActiveCase.builder()
+        .caseReferenceNumber(caseReference)
+        .providerId(providerId)
+        .client(clientFullName)
+        .clientReferenceNumber(clientReference)
+        .providerCaseReferenceNumber(providerCaseReference)
+        .build();
   }
 }

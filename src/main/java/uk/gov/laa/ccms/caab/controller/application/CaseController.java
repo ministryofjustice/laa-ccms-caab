@@ -199,9 +199,10 @@ public class CaseController {
       @PathVariable("index") final int index,
       Model model) {
 
-    if (Objects.isNull(ebsCase.getProceedings()) || index >= ebsCase.getProceedings().size()) {
-      throw new CaabApplicationException("Could not find proceeding with index " + index);
-    }
+    List<ProceedingDetail> proceedings = ebsCase.getProceedings();
+    String errorMessage = "Could not find proceeding with index: %s".formatted(index);
+    Assert.notEmpty(proceedings, () -> errorMessage);
+    Assert.isTrue(index < proceedings.size(), () -> errorMessage);
 
     final ProceedingDetail proceedingDetail = ebsCase.getProceedings().get(index);
 

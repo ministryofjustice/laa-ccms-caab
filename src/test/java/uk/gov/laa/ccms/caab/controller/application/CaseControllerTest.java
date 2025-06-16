@@ -522,8 +522,8 @@ class CaseControllerTest {
 
       assertThat(mockMvc.perform(get("/case/details/proceeding/0").sessionAttr(CASE, ebsCase)))
           .failure()
-          .hasCauseInstanceOf(CaabApplicationException.class)
-          .hasMessageContaining("Could not find proceeding with index 0");
+          .hasCauseInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("Could not find proceeding with index: 0");
     }
 
     @Test
@@ -534,8 +534,8 @@ class CaseControllerTest {
 
       assertThat(mockMvc.perform(get("/case/details/proceeding/1").sessionAttr(CASE, ebsCase)))
           .failure()
-          .hasCauseInstanceOf(CaabApplicationException.class)
-          .hasMessageContaining("Could not find proceeding with index 1");
+          .hasCauseInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("Could not find proceeding with index: 1");
     }
 
     @Test
