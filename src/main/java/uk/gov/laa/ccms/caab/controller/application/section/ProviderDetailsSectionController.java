@@ -8,6 +8,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -61,9 +63,10 @@ public class ProviderDetailsSectionController {
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       @PathVariable("caseContext") final CaseContext caseContext,
+      HttpSession session,
       Model model) {
 
-    if (caseContext.isAmendment()) {
+    if (caseContext.isAmendment() && null == applicationId) {
       ApplicationFormData applicationFormData = new ApplicationFormData();
       applicationFormData.setCopyCaseReferenceNumber(activeCase.getCaseReferenceNumber());
       ClientDetail clientDetail = clientService.getClient(
@@ -85,6 +88,7 @@ public class ProviderDetailsSectionController {
     populateDropdowns(applicationFormData, user, model);
     model.addAttribute(ACTIVE_CASE, activeCase);
     model.addAttribute("isAmendment", caseContext.isAmendment());
+    session.setAttribute(APPLICATION_ID, applicationId);
 
     return "application/sections/provider-details-section";
   }
@@ -101,11 +105,12 @@ public class ProviderDetailsSectionController {
    * @return The path to the next step in the application summary edit or the current page based on
    *         validation.
    */
-  @PostMapping("/application/sections/provider-details")
+  @PostMapping("/{caseContext}/sections/provider-details")
   public String applicationSummaryProviderDetails(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
+      @PathVariable("caseContext") final CaseContext caseContext,
       @Validated @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       BindingResult bindingResult,
       Model model) {
@@ -115,6 +120,7 @@ public class ProviderDetailsSectionController {
     if (bindingResult.hasErrors()) {
       populateDropdowns(applicationFormData, user, model);
       model.addAttribute(ACTIVE_CASE, activeCase);
+      model.addAttribute("isAmendment", caseContext.isAmendment());
 
       return "application/sections/provider-details-section";
     }
