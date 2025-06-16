@@ -101,7 +101,7 @@
       </div>
     </div>
 
-    <div th:if="${case.amendment}"
+    <div th:if="${isAmendment}"
          class="govuk-grid-row">
       <div class="govuk-grid-column-full">
         <h2 class="govuk-heading-m" th:text="#{case.overview.amendmentSummary.title}"/>
@@ -145,7 +145,7 @@
             <th scope="col" class="govuk-table__header"
                 th:text="#{case.overview.costs.title}"/>
             <th scope="col" class="govuk-table__header"
-                th:text="${(case.status.displayValue == 'Submitted' || case.amendment)
+                th:text="${(case.status.displayValue == 'Submitted' || isAmendment)
                 ? #messages.msg('case.overview.costs.requestedAmount')
                 : #messages.msg('case.overview.costs.grantedAmount')}"/>
           </tr>
@@ -153,11 +153,11 @@
           <tbody class="govuk-table__body">
           <tr class="govuk-table__row">
             <td class="govuk-table__cell"
-                th:text="${(case.status.displayValue == 'Submitted'|| (hasEbsAmendments && !case.amendment))
+                th:text="${(case.status.displayValue == 'Submitted'|| (hasEbsAmendments && !isAmendment))
                 ? #messages.msg('case.overview.costs.costLimitation')
                 : #messages.msg('case.overview.costs.caseCostLimitation')}"/>
             <td class="govuk-table__cell"
-                th:text="${(hasEbsAmendments || case.amendment)
+                th:text="${(hasEbsAmendments || isAmendment)
                 ? (draftCosts != null ? #numbers.formatCurrency(draftCosts.requestedCostLimitation) : #numbers.formatCurrency(0))
                 : #numbers.formatCurrency(case.costs.requestedCostLimitation)}"/>
           </tr>
@@ -197,7 +197,7 @@
           </div>
       </div>
       <div class="govuk-button-group">
-        <govuk:button classes="govuk-button--warning" th:href="@{/cases/amendment/abandon}" th:text="#{site.abandon}"/>
+        <govuk:button classes="govuk-button--warning" th:href="@{/case/amendment/abandon}" th:text="#{site.abandon}"/>
       </div>
   </div>
 </div>
