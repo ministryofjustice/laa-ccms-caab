@@ -27,6 +27,21 @@ jobs:
       gh_token: ${{ secrets.GITHUB_TOKEN }}
       aws_region: 'eu-west-2'
 
+  scan-image:
+    needs: [ build ]
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@feature/add-image-scanning
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      image_version: ${{ format('{0}-{1}', vars.IMAGE_PREFIX, needs.build.outputs.published_artifact_version) }}
+      publish: false
+    secrets:
+      gh_token: ${{ secrets.GITHUB_TOKEN }}
+      ecr_repository: ${{ vars.ECR_REPOSITORY }}
+      ecr_region: ${{ vars.ECR_REGION }}
+      ecr_role_to_assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}
+
   vulnerability-scan:
     uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/snyk-vulnerability-scan.yml@v1
     permissions:
