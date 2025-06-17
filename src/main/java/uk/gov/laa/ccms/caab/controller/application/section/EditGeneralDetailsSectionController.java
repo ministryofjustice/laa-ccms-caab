@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -136,6 +137,7 @@ public class EditGeneralDetailsSectionController {
    */
   @PostMapping("/{caseContext}/sections/correspondence-address")
   public String updateCorrespondenceDetails(
+      @PathVariable("caseContext") final CaseContext context,
       @RequestParam(required = false) final String action,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
@@ -143,6 +145,13 @@ public class EditGeneralDetailsSectionController {
       final BindingResult bindingResult,
       final Model model,
       final HttpSession session) {
+
+    //TODO: Submit address amendments: https://dsdmoj.atlassian.net/browse/CCMSPUI-527
+    //TODO: Find address: https://dsdmoj.atlassian.net/browse/CCMSPUI-526
+    if (context.isAmendment()) {
+      throw new NotImplementedException("Submission of correspondence address amendments "
+          + "is not yet implemented.");
+    }
 
     if (ACTION_FIND_ADDRESS.equals(action)) {
       findAddressValidator.validate(addressDetails, bindingResult);
