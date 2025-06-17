@@ -1,0 +1,14 @@
+# commons-io:commons-io (velocity-engine-core-2.3.jar)
+CVE-2024-47554
+
+# org.bouncycastle:bcpkix-jdk18on (bcpkix-jdk18on-1.72.jar)
+CVE-2023-33202
+
+# org.springframework:spring-web (spring-web-6.2.7.jar)
+CVE-2025-41234
+
+# cnb/lifecycle/launcher (gobinary)
+# layers/sbom/launch/buildpacksio_lifecycle/launcher/sbom.spdx.json (gobinary)
+CVE-2025-22874
+CVE-2025-0913
+CVE-2025-4673
