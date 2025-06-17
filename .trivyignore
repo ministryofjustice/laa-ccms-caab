@@ -1,6 +1,10 @@
 # commons-io:commons-io (velocity-engine-core-2.3.jar)
 CVE-2024-47554
 
+# org.apache.tomcat.embed:tomcat-embed-core (tomcat-embed-core-10.1.41.jar)
+CVE-2025-48988
+CVE-2025-49125
+
 # org.bouncycastle:bcpkix-jdk18on (bcpkix-jdk18on-1.72.jar)
 CVE-2023-33202
 
