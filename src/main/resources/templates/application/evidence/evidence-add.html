@@ -1,67 +1,67 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-  <title th:text="#{service.name} + ' - ' + #{application.create}"></title>
+    <title th:text="#{service.name} + ' - ' + #{application.create}"></title>
 
 <body>
 <div class="govuk-width-container">
-  <div id="breadcrumbs">
-    <a th:href="@{/{caseContext}/sections/evidence(caseContext=${caseContext})}" class="govuk-back-link">Return to document summary</a>
-  </div>
-  <div id="main-content">
-    <h1 class="govuk-heading-l">
-      Upload a document
-    </h1>
+    <div id="breadcrumbs">
+        <a th:href="@{/{caseContext}/sections/evidence(caseContext=${caseContext})}" class="govuk-back-link"
+           th:text="#{application.evidence.add.returnToDocumentSummary}"></a>
+    </div>
+    <div id="main-content">
+        <h1 class="govuk-heading-l" th:text="#{application.evidence.add.uploadADocument}"></h1>
 
-    <form action="#" th:action="@{/{caseContext}/evidence/add(caseContext=${caseContext})}" method="post" th:object="${evidenceUploadForm}" enctype="multipart/form-data">
-      <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <div class="govuk-warning-text">
-        <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
-        <strong class="govuk-warning-text__text">
-          <span class="govuk-visually-hidden">Warning</span>
-          We can only accept <span th:text="${validExtensions}"/> files that are less than <span th:text="${maxFileSize}"/>.
-        </strong>
-      </div>
+        <form action="#" th:action="@{/{caseContext}/evidence/add(caseContext=${caseContext})}" method="post"
+              th:object="${evidenceUploadForm}" enctype="multipart/form-data">
+            <div th:replace="~{partials/error-summary :: error-summary}"></div>
+            <div class="govuk-warning-text">
+                <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+                <strong class="govuk-warning-text__text">
+                    <span class="govuk-visually-hidden" th:text="#{site.warning}"></span>
+                    <span th:text="#{application.evidence.add.uploadWarning(${validExtensions}, ${maxFileSize})}"></span>
+                </strong>
+            </div>
 
-      <div class="govuk-form-group" th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
-        <label class="govuk-label" for="file">
-          Choose file
-        </label>
-        <input class="govuk-file-upload" id="file" name="file" type="file">
-      </div>
+            <div class="govuk-form-group"
+                 th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
+                <label class="govuk-label" for="file" th:text="#{application.evidence.add.chooseFile}"></label>
+                <input class="govuk-file-upload" id="file" name="file" type="file">
+            </div>
 
-      <div th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', 'Document type', ${evidenceTypes}, 'code', 'description')}"></div>
-      <div th:replace="~{partials/forms :: largeTextInput('documentDescription', 'Document description', 255)}"></div>
+            <div th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', ${#messages.msg('application.evidence.add.documentType')}, ${evidenceTypes}, 'code', 'description')}"></div>
+            <div th:replace="~{partials/forms :: largeTextInput('documentDescription', ${#messages.msg('application.evidence.add.documentDescription')}, 255)}"></div>
 
-      <div class="govuk-form-group" th:classappend="${#fields.hasErrors('evidenceTypes')} ? 'govuk-form-group--error' : ''">
-        <fieldset class="govuk-fieldset">
-          <legend class="govuk-fieldset__legend">
-            Which evidence documents does this file contain?
-          </legend>
-          <span th:if="${#fields.hasErrors('evidenceTypes')}" th:errors="*{__${'evidenceTypes'}__}" class="govuk-error-message"></span>
-          <p class="govuk-hint">
-            Select all that apply
-          </p>
-          <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
-            <th:block th:each="evidence : ${evidenceRequired}" th:unless="${evidenceRequired.isEmpty()}">
-                <div class="govuk-checkboxes__item">
-                  <input class="govuk-checkboxes__input"
-                         th:id="${'evidenceCB_' + evidenceStat.count}"
-                         th:name="evidenceTypes"
-                         th:value="${evidence.description}"
-                         th:checked="${evidenceUploadForm.evidenceTypes != null && evidenceUploadForm.evidenceTypes.contains(evidence.description)}"
-                         type="checkbox"/>
-                  <label class="govuk-label govuk-checkboxes__label" th:for="${'evidenceCB_' + evidenceStat.count}" th:text="${evidence.description}"></label>
-                </div>
-            </th:block>
-          </div>
-        </fieldset>
-      </div>
-      <govuk:button type="submit" th:text="#{site.upload}"/>
-    </form>
+            <div class="govuk-form-group"
+                 th:classappend="${#fields.hasErrors('evidenceTypes')} ? 'govuk-form-group--error' : ''">
+                <fieldset class="govuk-fieldset">
+                    <legend class="govuk-fieldset__legend" th:text="#{application.evidence.add.whichEvidence}"></legend>
+                    <span th:if="${#fields.hasErrors('evidenceTypes')}" th:errors="*{__${'evidenceTypes'}__}"
+                          class="govuk-error-message"></span>
+                    <p class="govuk-hint" th:text="#{application.evidence.add.selectAllThatApply}"></p>
+                    <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
+                        <th:block th:each="evidence : ${evidenceRequired}" th:unless="${evidenceRequired.isEmpty()}">
+                            <div class="govuk-checkboxes__item">
+                                <input class="govuk-checkboxes__input"
+                                       th:id="${'evidenceCB_' + evidenceStat.count}"
+                                       th:name="evidenceTypes"
+                                       th:value="${evidence.description}"
+                                       th:checked="${evidenceUploadForm.evidenceTypes != null && evidenceUploadForm.evidenceTypes.contains(evidence.description)}"
+                                       type="checkbox"/>
+                                <label class="govuk-label govuk-checkboxes__label"
+                                       th:for="${'evidenceCB_' + evidenceStat.count}"
+                                       th:text="${evidence.description}"></label>
+                            </div>
+                        </th:block>
+                    </div>
+                </fieldset>
+            </div>
+            <govuk:button type="submit" th:text="#{site.upload}"/>
+        </form>
 
-  </div>
+    </div>
 </div>
 </body>
 </html>
