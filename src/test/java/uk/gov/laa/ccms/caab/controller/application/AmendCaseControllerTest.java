@@ -7,6 +7,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
@@ -24,6 +25,7 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
@@ -89,7 +91,7 @@ class AmendCaseControllerTest {
     void shouldReturnExpectedView() {
       UserDetail userDetail = new UserDetail();
       BaseApplicationDetail tdsApplication = new BaseApplicationDetail();
-      ApplicationDetail amendment = new ApplicationDetail().caseReferenceNumber("123");
+      ApplicationDetail amendment = new ApplicationDetail().id(123).caseReferenceNumber("123");
       ApplicationSectionDisplay applicationSectionDisplay = ApplicationSectionDisplay.builder().build();
 
       when(applicationService.getApplication(any())).thenReturn(Mono.just(amendment));
@@ -98,6 +100,7 @@ class AmendCaseControllerTest {
       assertThat(mockMvc.perform(get("/amendments/summary")
           .sessionAttr(USER_DETAILS, userDetail)
           .sessionAttr(APPLICATION, tdsApplication)
+          .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
       ))
           .hasStatusOk()
           .hasViewName("application/amendment-summary")

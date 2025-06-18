@@ -79,7 +79,6 @@ public class EvidenceSectionController {
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @PathVariable CaseContext caseContext,
       final Model model) {
-    log.info("caseContext: {}", caseContext);
     // Get the list of required evidence docs for this application.
     final Mono<List<EvidenceDocumentTypeLookupValueDetail>> evidenceRequiredMono =
         evidenceService.getDocumentsRequired(

@@ -20,6 +20,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_REQUIRED;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
 import java.io.InputStream;
 import java.util.Collections;
@@ -96,6 +97,7 @@ class EvidenceSectionControllerTest {
         mockMvc = MockMvcBuilders
             .standaloneSetup(controller)
             .setControllerAdvice(new GlobalExceptionHandler())
+            .setConversionService(getConversionService())
             .build();
     }
 
