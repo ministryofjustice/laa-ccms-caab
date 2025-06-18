@@ -7,14 +7,14 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections/evidence}" class="govuk-back-link">Return to document summary</a>
+    <a th:href="@{/{caseContext}/sections/evidence(caseContext=${caseContext})}" class="govuk-back-link">Return to document summary</a>
   </div>
   <div id="main-content">
     <h1 class="govuk-heading-l">
       Upload a document
     </h1>
 
-    <form action="#" th:action="@{/application/evidence/add}" method="post" th:object="${evidenceUploadForm}" enctype="multipart/form-data">
+    <form action="#" th:action="@{/{caseContext}/evidence/add(caseContext=${caseContext})}" method="post" th:object="${evidenceUploadForm}" enctype="multipart/form-data">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <div class="govuk-warning-text">
         <span class="govuk-warning-text__icon" aria-hidden="true">!</span>

@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMENDMENT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
@@ -14,6 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -87,6 +89,7 @@ public class AmendCaseController {
   public String amendCaseSummary(
       @SessionAttribute(APPLICATION) final BaseApplicationDetail tdsApplication,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       Model model,
       final HttpSession httpSession) {
 
@@ -97,7 +100,10 @@ public class AmendCaseController {
             .orElseThrow(() -> new CaabApplicationException(
                 "Failed to retrieve application summary"));
 
+    activeCase.setApplicationId(amendment.getId());
+
     httpSession.setAttribute(AMENDMENT, amendment);
+    httpSession.setAttribute(ACTIVE_CASE, activeCase);
     model.addAttribute("summary", applicationSectionDisplay);
 
     return "application/amendment-summary";
