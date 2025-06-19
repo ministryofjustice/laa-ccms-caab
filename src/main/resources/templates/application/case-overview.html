@@ -101,7 +101,7 @@
       </div>
     </div>
 
-    <div th:if="${case.amendment}"
+    <div th:if="${isAmendment}"
          class="govuk-grid-row">
       <div class="govuk-grid-column-full">
         <h2 class="govuk-heading-m" th:text="#{case.overview.amendmentSummary.title}"/>
@@ -125,7 +125,7 @@
 
           </tr>
           <tr class="govuk-table__row" th:each="draftProceeding: ${draftProceedings}">
-            <td class="govuk-table__cell" th:text="${draftProceeding.description}"/>
+            <td class="govuk-table__cell" th:text="${draftProceeding.proceedingType.displayValue}"/>
             <td class="govuk-table__cell" th:text="${draftProceeding.matterType.displayValue}"/>
             <td class="govuk-table__cell" th:text="${draftProceeding.levelOfService.displayValue}"/>
             <td class="govuk-table__cell" th:text="${draftProceeding.clientInvolvement.displayValue}"/>
@@ -145,7 +145,7 @@
             <th scope="col" class="govuk-table__header"
                 th:text="#{case.overview.costs.title}"/>
             <th scope="col" class="govuk-table__header"
-                th:text="${(case.status.displayValue == 'Submitted' || case.amendment)
+                th:text="${(case.status.displayValue == 'Submitted' || isAmendment)
                 ? #messages.msg('case.overview.costs.requestedAmount')
                 : #messages.msg('case.overview.costs.grantedAmount')}"/>
           </tr>
@@ -153,11 +153,11 @@
           <tbody class="govuk-table__body">
           <tr class="govuk-table__row">
             <td class="govuk-table__cell"
-                th:text="${(case.status.displayValue == 'Submitted'|| (hasEbsAmendments && !case.amendment))
+                th:text="${(case.status.displayValue == 'Submitted'|| (hasEbsAmendments && !isAmendment))
                 ? #messages.msg('case.overview.costs.costLimitation')
                 : #messages.msg('case.overview.costs.caseCostLimitation')}"/>
             <td class="govuk-table__cell"
-                th:text="${(hasEbsAmendments || case.amendment)
+                th:text="${(hasEbsAmendments || isAmendment)
                 ? (draftCosts != null ? #numbers.formatCurrency(draftCosts.requestedCostLimitation) : #numbers.formatCurrency(0))
                 : #numbers.formatCurrency(case.costs.requestedCostLimitation)}"/>
           </tr>
@@ -185,6 +185,7 @@
                       <td class="govuk-table__cell">
                           <a class="govuk-link govuk-link--no-visited-state"
                              th:href="@{${action.link()}}"
+                             th:id="|${#strings.replace(#strings.toLowerCase(#messages.msg(action.actionKey())), ' ', '-')}-link|"
                              th:text="${#messages.msg(action.actionKey())}">
                           </a>
                       </td>
@@ -197,7 +198,7 @@
           </div>
       </div>
       <div class="govuk-button-group">
-        <govuk:button classes="govuk-button--warning" th:href="@{/cases/amendment/abandon}" th:text="#{site.abandon}"/>
+        <govuk:button classes="govuk-button--warning" th:href="@{/case/amendment/abandon}" th:text="#{site.abandon}"/>
       </div>
   </div>
 </div>
