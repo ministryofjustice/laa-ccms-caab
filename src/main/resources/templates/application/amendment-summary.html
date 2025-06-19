@@ -16,7 +16,7 @@
 
     <form method="post" th:action="@{/case/amendment-summary}" th:object="${amendment}">
       <div class="govuk-grid-row">
-        <div class="govuk-grid-column-two-thirds-from-desktop">
+        <div class="govuk-grid-column-full">
           <span class="govuk-caption-l" th:text="#{amendment.case}"/>
           <h1 class="govuk-heading-l" th:text="#{amendment.case.title}"/>
           <p class="govuk-body-l" th:text="#{amendment.case.leadParagraph}"/>
@@ -177,7 +177,7 @@
         </div>
 
         <!--Costs-->
-        <div class="govuk-grid-column-two-thirds-from-desktop">
+        <div class="govuk-grid-column-full">
           <div class="govuk-summary-card">
             <div class="govuk-summary-card__title-wrapper"
                  th:with="heading=#{caseDetails.costs.limitation}">
@@ -332,7 +332,7 @@
           </div>
         </div>
         <!--Merits-->
-        <div class="govuk-grid-column-two-thirds-from-desktop">
+        <div class="govuk-grid-column-full">
           <div class="govuk-summary-card">
             <div class="govuk-summary-card__title-wrapper" th:with="heading=#{amendment.case.merits}">
               <h2 class="govuk-summary-card__title"
@@ -364,7 +364,7 @@
         </div>
 
         <!--Documents-->
-        <div class="govuk-grid-column-two-thirds-from-desktop">
+        <div class="govuk-grid-column-full">
           <div class="govuk-summary-card">
             <div class="govuk-summary-card__title-wrapper"
                  th:with="heading=#{amendment.case.documents}">
