@@ -10,7 +10,6 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 import static uk.gov.laa.ccms.caab.util.FileUtil.getFileExtension;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -226,7 +225,6 @@ public class EvidenceSectionController {
    */
   @ExceptionHandler(MaxUploadSizeExceededException.class)
   public String handleUploadFileTooLarge(
-      HttpServletRequest request,
       @SessionAttribute(EVIDENCE_REQUIRED)
       final List<EvidenceRequired> evidenceRequired,
       @SessionAttribute(EVIDENCE_UPLOAD_FORM_DATA)
