@@ -9,7 +9,9 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/{caseContext}/sections(caseContext=${caseContext.pathValue})}" class="govuk-back-link"
+    <a th:if="${caseContext.isApplication()}" th:href="@{/application/sections}" class="govuk-back-link"
+       th:text="#{${@caseContextService.getGoBackText(caseContext)}}"/>
+    <a th:if="${caseContext.isAmendment()}" th:href="@{/case/overview}" class="govuk-back-link"
        th:text="#{${@caseContextService.getGoBackText(caseContext)}}"/>
   </div>
   <div id="main-content">

@@ -8,10 +8,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.DelegatedFunctionsValidator;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
+import uk.gov.laa.ccms.caab.service.ApplicationService;
 
 /**
  * Controller responsible for handling the application's delegated functions operations.
@@ -19,9 +22,10 @@ import uk.gov.laa.ccms.caab.bean.validators.application.DelegatedFunctionsValida
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(APPLICATION_FORM_DATA)
+@SessionAttributes({APPLICATION_FORM_DATA})
 public class DelegatedFunctionsController {
 
+  private final ApplicationService applicationService;
   private final DelegatedFunctionsValidator delegatedFunctionsValidator;
 
   /**
@@ -30,8 +34,9 @@ public class DelegatedFunctionsController {
    * @param applicationFormData The details of the current application.
    * @return The path to the delegated functions selection view.
    */
-  @GetMapping("/application/delegated-functions")
+  @GetMapping("/{caseContext}/delegated-functions")
   public String delegatedFunction(
+          @PathVariable("caseContext") final CaseContext caseContext,
           @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData) {
     return "application/select-delegated-functions";
   }
@@ -44,8 +49,9 @@ public class DelegatedFunctionsController {
    * @return The path to the next step in the application process or the current page based on
    *         validation.
    */
-  @PostMapping("/application/delegated-functions")
+  @PostMapping("/{caseContext}/delegated-functions")
   public String delegatedFunction(
+          @PathVariable("caseContext") final CaseContext caseContext,
           @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
           BindingResult bindingResult) {
     delegatedFunctionsValidator.validate(applicationFormData, bindingResult);
@@ -56,6 +62,10 @@ public class DelegatedFunctionsController {
 
     if (bindingResult.hasErrors()) {
       return "application/select-delegated-functions";
+    }
+
+    if (caseContext.isAmendment()) {
+      return "redirect:/amendments/create";
     }
 
     return "redirect:/application/client/search";

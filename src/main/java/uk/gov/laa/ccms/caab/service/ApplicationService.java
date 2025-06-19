@@ -309,6 +309,8 @@ public class ApplicationService {
         .buildApplicationMappingContext(ebsCase));
   }
 
+
+
   /**
    * Fetches a unique case reference.
    *
@@ -689,8 +691,8 @@ public class ApplicationService {
    * Retrieves the case details display values.
    *
    * @param application the application to retrieve a summary for.
-   * @return A Mono of ApplicationSectionDisplay representing the application section
-   *         display values.
+   * @return A Mono of ApplicationSectionDisplay representing the application section display
+   *     values.
    */
   public ApplicationSectionDisplay getCaseDetailsDisplay(
       final ApplicationDetail application) {
@@ -709,13 +711,11 @@ public class ApplicationService {
     final Mono<CommonLookupDetail> contactTitlesMono =
         lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE);
 
-
     Mono<Map<String, String>> linkedCaseLookupMono =
         lookupService
             .getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)
             .flatMapIterable(CommonLookupDetail::getContent)
             .collectMap(CommonLookupValueDetail::getCode, CommonLookupValueDetail::getDescription);
-
 
     final Tuple5<RelationshipToCaseLookupDetail,
         RelationshipToCaseLookupDetail,
@@ -744,7 +744,6 @@ public class ApplicationService {
 
     final Map<String, String> linkedCaseLookup
         = applicationSummaryMonos.getT5();
-
 
     return new ApplicationSectionsBuilder()
         .caseReferenceNumber(
@@ -1586,7 +1585,7 @@ public class ApplicationService {
     puiMetricService.incrementSubmitApplicationsCount(caseToSubmit.getCaseReferenceNumber());
 
     return soaApiClient.createCase(user.getLoginId(), user.getUserType(),
-            caseToSubmit).block();
+        caseToSubmit).block();
 
   }
 

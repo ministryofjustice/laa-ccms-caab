@@ -125,7 +125,7 @@
 
           </tr>
           <tr class="govuk-table__row" th:each="draftProceeding: ${draftProceedings}">
-            <td class="govuk-table__cell" th:text="${draftProceeding.description}"/>
+            <td class="govuk-table__cell" th:text="${draftProceeding.proceedingType.displayValue}"/>
             <td class="govuk-table__cell" th:text="${draftProceeding.matterType.displayValue}"/>
             <td class="govuk-table__cell" th:text="${draftProceeding.levelOfService.displayValue}"/>
             <td class="govuk-table__cell" th:text="${draftProceeding.clientInvolvement.displayValue}"/>
@@ -185,6 +185,7 @@
                       <td class="govuk-table__cell">
                           <a class="govuk-link govuk-link--no-visited-state"
                              th:href="@{${action.link()}}"
+                             th:id="|${#strings.replace(#strings.toLowerCase(#messages.msg(action.actionKey())), ' ', '-')}-link|"
                              th:text="${#messages.msg(action.actionKey())}">
                           </a>
                       </td>

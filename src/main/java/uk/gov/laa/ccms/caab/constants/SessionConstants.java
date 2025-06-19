@@ -109,6 +109,11 @@ public class SessionConstants {
   public static final String APPLICATION = "application";
 
   /**
+   * Session attribute used to keep track of the application.
+   */
+  public static final String AMENDMENT = "amendment";
+
+  /**
    * Session attribute used to keep track of the active case details, used for application summary
    * page and its sections to render the case details within the header.
    */

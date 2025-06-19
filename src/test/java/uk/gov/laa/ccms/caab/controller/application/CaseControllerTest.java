@@ -416,7 +416,7 @@ class CaseControllerTest {
   }
 
   @Nested
-  @DisplayName("/case/details tests")
+  @DisplayName("GET: /case/details")
   class CaseDetails {
 
     @Test
@@ -447,7 +447,7 @@ class CaseControllerTest {
   }
 
   @Nested
-  @DisplayName("/case/details/other-party/{index} tests")
+  @DisplayName("GET: /case/details/other-party/{index}")
   class CaseDetailsOtherParty {
 
     @Test

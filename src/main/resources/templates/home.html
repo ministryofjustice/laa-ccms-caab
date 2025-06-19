@@ -12,7 +12,7 @@
                 <span class="govuk-caption-l">Civil legal aid applications, amendments and billing.</span>
             </h1>
 
-            <div th:replace="~{partials/actions :: restrictedActionLink(#{application.new}, ${user.functions}, 'CA', true, '', @{/application/office}, false)}"></div>
+            <div th:replace="~{partials/actions :: restrictedActionLink(#{application.new}, ${user.functions}, 'CA', true, '', @{/application/new}, false)}"></div>
 
             <!--  Notifications  -->
             <h2 class="govuk-heading-m">

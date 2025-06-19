@@ -414,7 +414,7 @@ public class AssessmentService {
 
       }
     } else {
-      //todo amendment - need an EBS Case to workout if its required
+      // TODO CCMSPUI-738 - Amend case ~ need an EBS Case to workout if its required
       //if (application.getAmendment()){
       //  if (meansAssessment == null && !ebsCase.hasEbsAmendments()
       //    && application.getApplicationType().getId().equals("SUBSTANTIVE")
