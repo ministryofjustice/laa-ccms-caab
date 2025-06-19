@@ -254,7 +254,7 @@ public class EvidenceService {
             .flatMap(this::flattenAttributes)
             .toList())
         .flatMap(allAttributes -> ebsApiClient.getEvidenceDocumentTypes(
-                COMMON_VALUE_OPA_EVIDENCE_ITEMS, null)
+                COMMON_VALUE_OPA_EVIDENCE_ITEMS, null).log()
             .map(docTypesLookup -> docTypesLookup.getContent().stream()
                 .filter(docType -> isRequiredOpaEvidenceItem(
                     docType, allAttributes)).toList()));
@@ -275,11 +275,12 @@ public class EvidenceService {
     // If the application has prior auths, return all evidence of type XXCCMS_PA_EVIDENCE_ITEMS,
     // otherwise return an empty LookupDetail.
     return caabApiClient.getPriorAuthorities(applicationId)
-        .flatMap(priorAuthorityDetails -> priorAuthorityDetails.isEmpty()
-            ? Mono.just(new EvidenceDocumentTypeLookupDetail()) :
-            ebsApiClient.getEvidenceDocumentTypes(
-                COMMON_VALUE_DOCUMENT_TYPES,
-                COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS))
+        .flatMap(priorAuthorityDetails ->
+            priorAuthorityDetails.isEmpty()
+                ? Mono.just(new EvidenceDocumentTypeLookupDetail()) :
+                ebsApiClient.getEvidenceDocumentTypes(
+                    COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS,
+                    null))
         .map(EvidenceDocumentTypeLookupDetail::getContent);
   }
 

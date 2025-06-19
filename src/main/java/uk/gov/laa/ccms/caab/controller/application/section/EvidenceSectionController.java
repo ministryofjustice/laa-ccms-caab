@@ -32,6 +32,7 @@ import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceRequired;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.validators.evidence.EvidenceUploadValidator;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.AvScanException;
 import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -72,11 +73,11 @@ public class EvidenceSectionController {
    * @param model              The model for the view.
    * @return The view name for the evidence upload view.
    */
-  @GetMapping("/application/sections/evidence")
+  @GetMapping("/{caseContext}/sections/evidence")
   public String viewEvidenceRequired(
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
+      @PathVariable CaseContext caseContext,
       final Model model) {
-
     // Get the list of required evidence docs for this application.
     final Mono<List<EvidenceDocumentTypeLookupValueDetail>> evidenceRequiredMono =
         evidenceService.getDocumentsRequired(
@@ -105,6 +106,7 @@ public class EvidenceSectionController {
 
     model.addAttribute(EVIDENCE_REQUIRED, evidenceRequired);
     model.addAttribute("evidenceUploaded", evidenceUploaded);
+    model.addAttribute("caseContext", caseContext.getPathValue());
 
     return "application/sections/evidence-section";
   }
@@ -118,12 +120,13 @@ public class EvidenceSectionController {
    * @param model              The model for the view.
    * @return The view name for the evidence upload view.
    */
-  @GetMapping("/application/evidence/add")
+  @GetMapping("/{caseContext}/evidence/add")
   public String viewEvidenceUpload(
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       @SessionAttribute(EVIDENCE_REQUIRED)
       final List<EvidenceRequired> evidenceRequired,
+      @PathVariable CaseContext caseContext,
       final Model model) {
 
     // Initialise the form data object.
@@ -135,7 +138,7 @@ public class EvidenceSectionController {
     evidenceUploadFormData.setCcmsModule(APPLICATION);
 
     model.addAttribute(EVIDENCE_UPLOAD_FORM_DATA, evidenceUploadFormData);
-
+    model.addAttribute("caseContext", caseContext.getPathValue());
     populateAddEvidenceModel(evidenceRequired, model);
 
     return "application/evidence/evidence-add";
@@ -151,7 +154,7 @@ public class EvidenceSectionController {
    * @param model         The model for the view.
    * @return The view name for the evidence upload view.
    */
-  @PostMapping("/application/evidence/add")
+  @PostMapping("/{caseContext}/evidence/add")
   public String uploadEvidenceDocument(
       @SessionAttribute(EVIDENCE_REQUIRED)
       final List<EvidenceRequired> evidenceRequired,
@@ -160,6 +163,7 @@ public class EvidenceSectionController {
       @ModelAttribute(EVIDENCE_UPLOAD_FORM_DATA)
       final EvidenceUploadFormData evidenceUploadFormData,
       final BindingResult bindingResult,
+      @PathVariable CaseContext caseContext,
       Model model) {
 
     // Validate the evidence form data
@@ -167,6 +171,7 @@ public class EvidenceSectionController {
 
     if (bindingResult.hasErrors()) {
       populateAddEvidenceModel(evidenceRequired, model);
+      model.addAttribute("caseContext", caseContext.getPathValue());
       return "application/evidence/evidence-add";
     }
 
@@ -181,7 +186,7 @@ public class EvidenceSectionController {
           evidenceUploadFormData.getFile().getInputStream());
     } catch (AvVirusFoundException | AvScanException | IOException e) {
       bindingResult.rejectValue("file", "scan.failure", e.getMessage());
-
+      model.addAttribute("caseContext", caseContext.getPathValue());
       populateAddEvidenceModel(evidenceRequired, model);
       return "application/evidence/evidence-add";
     }
@@ -207,7 +212,7 @@ public class EvidenceSectionController {
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException("Failed to save document"));
 
-    return "redirect:/application/sections/evidence";
+    return "redirect:/%s/sections/evidence".formatted(caseContext.getPathValue());
   }
 
   /**
@@ -251,11 +256,12 @@ public class EvidenceSectionController {
    * @param userDetail The user details.
    * @return Redirect to the evidence summary view.
    */
-  @GetMapping("/application/evidence/{evidence-document-id}/remove")
+  @GetMapping("/{caseContext}/evidence/{evidence-document-id}/remove")
   public String removeEvidenceDocument(
       @PathVariable("evidence-document-id") final Integer evidenceDocumentId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
-      @SessionAttribute(USER_DETAILS) final UserDetail userDetail) {
+      @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
+      @PathVariable CaseContext caseContext) {
 
     evidenceService.removeDocument(
         String.valueOf(activeCase.getApplicationId()),
@@ -263,7 +269,7 @@ public class EvidenceSectionController {
         APPLICATION,
         userDetail.getLoginId());
 
-    return "redirect:/application/sections/evidence";
+    return "redirect:/%s/sections/evidence".formatted(caseContext.getPathValue());
   }
 
   private void populateAddEvidenceModel(

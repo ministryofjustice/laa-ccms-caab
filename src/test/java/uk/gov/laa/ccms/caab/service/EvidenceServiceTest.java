@@ -48,7 +48,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 
 @ExtendWith(MockitoExtension.class)
-public class EvidenceServiceTest {
+class EvidenceServiceTest {
 
   @Mock
   private CaabApiClient caabApiClient;
@@ -86,7 +86,6 @@ public class EvidenceServiceTest {
 
   private final CcmsModule source = CcmsModule.APPLICATION;
 
-  private final String filename = "the file name";
 
   @Test
   void getEvidenceDocumentsForCase_callsApiClient() {
@@ -277,18 +276,22 @@ public class EvidenceServiceTest {
         caseReferenceNumber,
         AssessmentStatus.COMPLETE.getStatus())).thenReturn(Mono.just(assessmentDetails));
 
-    EvidenceDocumentTypeLookupValueDetail requiredDocType1 = new EvidenceDocumentTypeLookupValueDetail()
-        .code(meansFirstAttribute.getName())
-        .description("required evidence 1");
-    EvidenceDocumentTypeLookupValueDetail matchedButNotRequiredDocType = new EvidenceDocumentTypeLookupValueDetail()
-        .code(meansSecondAttribute.getName())
-        .description("not required evidence 1");
-    EvidenceDocumentTypeLookupValueDetail requiredDocType2 = new EvidenceDocumentTypeLookupValueDetail()
-        .code(meritsFirstAttribute.getName())
-        .description("required evidence 2");
-    EvidenceDocumentTypeLookupValueDetail unmatchedNotRequiredDocType = new EvidenceDocumentTypeLookupValueDetail()
-        .code("other")
-        .description("not required evidence 2");
+    EvidenceDocumentTypeLookupValueDetail requiredDocType1 =
+        new EvidenceDocumentTypeLookupValueDetail()
+            .code(meansFirstAttribute.getName())
+            .description("required evidence 1");
+    EvidenceDocumentTypeLookupValueDetail matchedButNotRequiredDocType =
+        new EvidenceDocumentTypeLookupValueDetail()
+            .code(meansSecondAttribute.getName())
+            .description("not required evidence 1");
+    EvidenceDocumentTypeLookupValueDetail requiredDocType2 =
+        new EvidenceDocumentTypeLookupValueDetail()
+            .code(meritsFirstAttribute.getName())
+            .description("required evidence 2");
+    EvidenceDocumentTypeLookupValueDetail unmatchedNotRequiredDocType =
+        new EvidenceDocumentTypeLookupValueDetail()
+            .code("other")
+            .description("not required evidence 2");
 
     final EvidenceDocumentTypeLookupDetail evidenceDocumentTypeLookupDetail =
         new EvidenceDocumentTypeLookupDetail();
@@ -299,7 +302,7 @@ public class EvidenceServiceTest {
 
     when(ebsApiClient.getEvidenceDocumentTypes(
         COMMON_VALUE_OPA_EVIDENCE_ITEMS, null)).thenReturn(
-            Mono.just(evidenceDocumentTypeLookupDetail));
+        Mono.just(evidenceDocumentTypeLookupDetail));
 
     Mono<List<EvidenceDocumentTypeLookupValueDetail>> resultMono =
         evidenceService.getOpaDocumentsRequired(caseReferenceNumber, providerId);
@@ -341,7 +344,8 @@ public class EvidenceServiceTest {
   @Test
   void getOpaDocumentsRequired_noRequiredAttributes_returnsEmptyList() {
     final AssessmentDetails assessmentDetails = new AssessmentDetails()
-        .addContentItem(AssessmentModelUtils.buildAssessmentDetail(new Date()).name(MEANS.getName()));
+        .addContentItem(
+            AssessmentModelUtils.buildAssessmentDetail(new Date()).name(MEANS.getName()));
 
     // Grab the first means attribute in the first entity type, and set its value to 'true'
     AssessmentAttributeDetail meansFirstAttribute = assessmentDetails.getContent().getFirst()
@@ -354,7 +358,7 @@ public class EvidenceServiceTest {
         String.valueOf(providerId),
         caseReferenceNumber,
         AssessmentStatus.COMPLETE.getStatus())).thenReturn(
-            Mono.just(assessmentDetails));
+        Mono.just(assessmentDetails));
 
     // Create an evidence doc type with code matching the first attribute of the means assessment
     // (which isn't set to 'true')
@@ -384,8 +388,7 @@ public class EvidenceServiceTest {
         Mono.just(List.of(new PriorAuthorityDetail())));
 
     when(ebsApiClient.getEvidenceDocumentTypes(
-        COMMON_VALUE_DOCUMENT_TYPES,
-        COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS)).thenReturn(
+        COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS, null)).thenReturn(
         Mono.just(new EvidenceDocumentTypeLookupDetail().addContentItem(
             new EvidenceDocumentTypeLookupValueDetail())));
 
@@ -397,9 +400,7 @@ public class EvidenceServiceTest {
         .verifyComplete();
 
     verify(caabApiClient).getPriorAuthorities(applicationId);
-    verify(ebsApiClient).getEvidenceDocumentTypes(
-        COMMON_VALUE_DOCUMENT_TYPES,
-        COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS);
+    verify(ebsApiClient).getEvidenceDocumentTypes(COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS, null);
   }
 
   @Test

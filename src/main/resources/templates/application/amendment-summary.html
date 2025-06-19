@@ -373,7 +373,7 @@
               <ul class="govuk-summary-card__actions"
                 th:if="${summary.documentUpload.enabled}">
                 <li class="govuk-summary-card__action">
-                  <a class="govuk-link govuk-link--no-visited-state" href="#"
+                  <a class="govuk-link govuk-link--no-visited-state" th:href="@{/amendments/sections/evidence}"
                      id="upload-documents-link"
                      th:text="|#{site.upload} ${#strings.toLowerCase(heading)}|"/>
                 </li>
