@@ -94,7 +94,7 @@ class ActionViewHelperTest {
         new ExpectedAction(FunctionConstants.SUBMIT_CASE_REQUEST, "action.submitCaseQuery.name",
             "action.submitCaseQuery.description", "#"),
         new ExpectedAction(FunctionConstants.VIEW_CASE, "action.viewCase.name",
-            "action.viewCase.description", "/cases/details"),
+            "action.viewCase.description", "/case/details"),
         new ExpectedAction(FunctionConstants.NOTIFICATIONS, "action.viewNotifications.name",
             "action.viewNotifications.description", "#"),
         new ExpectedAction(FunctionConstants.VIEW_CASE_OUTCOME, "action.viewOutcome.name",
