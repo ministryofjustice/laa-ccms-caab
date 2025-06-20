@@ -12,7 +12,8 @@
       th:text="#{proceedings.cancelAndGoBack}"/>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/case-costs}" th:object="${costDetails}" method="post">
+    <form action="#" th:action="@{/{caseContext}/case-costs(caseContext=${caseContext.pathValue})}"
+          th:object="${costDetails}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <span class="govuk-caption-l" th:text="#{proceedings.caseCosts.caption}"/>
       <h1 class="govuk-heading-l" th:text="#{proceedings.caseCosts.heading}"/>
@@ -37,7 +38,7 @@
                 th:text="#{proceedings.caseCosts.defaultCostLimitation}"/>
               <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(costs.defaultCostLimitation)}"/>
             </tr>
-            <tr th:if="${application.amendment}" class="govuk-table__row">
+            <tr th:if="${caseApplication.amendment}" class="govuk-table__row">
               <td class="govuk-table__cell"
                 th:text="#{proceedings.caseCosts.grantedCostLimitation}"/>
               <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(costs.grantedCostLimitation)}"/>
