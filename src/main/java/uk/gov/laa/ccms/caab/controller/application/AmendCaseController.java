@@ -5,6 +5,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMENDMENT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -34,7 +35,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
  * @author Jamie Briggs
  */
 @Controller
-@SessionAttributes({APPLICATION, APPLICATION_FORM_DATA})
+@SessionAttributes({APPLICATION, APPLICATION_ID, APPLICATION_FORM_DATA})
 @RequiredArgsConstructor
 public class AmendCaseController {
 
@@ -104,6 +105,7 @@ public class AmendCaseController {
     activeCase.setApplicationId(amendment.getId());
 
     httpSession.setAttribute(AMENDMENT, amendment);
+    httpSession.setAttribute(APPLICATION_ID, amendment.getId());
     httpSession.setAttribute(ACTIVE_CASE, activeCase);
     httpSession.setAttribute(APPLICATION_COSTS, amendment.getCosts());
 
