@@ -106,7 +106,7 @@ public class SessionConstants {
   /**
    * Session attribute used to keep track of the application.
    */
-  public static final String APPLICATION = "application";
+  public static final String APPLICATION = "caseApplication";
 
   /**
    * Session attribute used to keep track of the application.
