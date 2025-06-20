@@ -8,7 +8,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/proceedings-and-costs#case-costs}" class="govuk-back-link"
+    <a th:href="@{/{caseContext}/proceedings-and-costs#case-costs(caseContext=${caseContext.pathValue})}" class="govuk-back-link"
       th:text="#{proceedings.cancelAndGoBack}"/>
   </div>
   <div id="main-content">
