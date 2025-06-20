@@ -281,7 +281,8 @@ public class EditProceedingsAndCostsSectionController {
     }
 
     model.addAttribute(CURRENT_PROCEEDING, proceeding);
-    model.addAttribute(IS_SUBSTANTIVE_DEVOLVED_POWERS_APP,
+    model.addAttribute(
+        IS_SUBSTANTIVE_DEVOLVED_POWERS_APP,
         APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS.equals(application.getApplicationType().getId()));
 
     //default cost limitations
@@ -319,7 +320,8 @@ public class EditProceedingsAndCostsSectionController {
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
 
       model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
-      model.addAttribute("matterTypeDetails",
+      model.addAttribute(
+          "matterTypeDetails",
           proceedingFlow.getMatterTypeDetails());
 
     } else {
@@ -337,7 +339,8 @@ public class EditProceedingsAndCostsSectionController {
       model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
       model.addAttribute(PROCEEDING_FLOW_FORM_DATA_OLD, proceedingFlow);
 
-      model.addAttribute("matterTypeDetails",
+      model.addAttribute(
+          "matterTypeDetails",
           proceedingFlow.getMatterTypeDetails());
     }
 
@@ -386,7 +389,8 @@ public class EditProceedingsAndCostsSectionController {
       Optional.ofNullable(oldProceedingFlow)
           .map(ProceedingFlowFormData::getMatterTypeDetails)
           .ifPresent(oldMatterTypeDetails ->
-              compareAndSetAmended(oldMatterTypeDetails::getMatterType,
+              compareAndSetAmended(
+                  oldMatterTypeDetails::getMatterType,
                   matterTypeDetails::getMatterType,
                   proceedingFlow));
     }
@@ -437,7 +441,8 @@ public class EditProceedingsAndCostsSectionController {
         proceedingFlow.isLeadProceeding());
 
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
-    model.addAttribute("proceedingTypeDetails",
+    model.addAttribute(
+        "proceedingTypeDetails",
         proceedingFlow.getProceedingDetails());
 
     return "application/proceedings-proceeding-type";
@@ -490,7 +495,8 @@ public class EditProceedingsAndCostsSectionController {
       Optional.ofNullable(oldProceedingFlow)
           .map(ProceedingFlowFormData::getProceedingDetails)
           .ifPresent(oldProceedingDetails ->
-              compareAndSetAmended(oldProceedingDetails::getProceedingType,
+              compareAndSetAmended(
+                  oldProceedingDetails::getProceedingType,
                   proceedingTypeDetails::getProceedingType,
                   proceedingFlow));
 
@@ -550,13 +556,15 @@ public class EditProceedingsAndCostsSectionController {
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
       final Model model) {
 
-    populateFurtherDetailsDropdowns(model,
+    populateFurtherDetailsDropdowns(
+        model,
         application,
         proceedingFlow.getProceedingDetails(),
         proceedingFlow.getMatterTypeDetails().getMatterType());
 
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
-    model.addAttribute("furtherDetails",
+    model.addAttribute(
+        "furtherDetails",
         proceedingFlow.getFurtherDetails());
 
     return "application/proceedings-further-details";
@@ -588,7 +596,8 @@ public class EditProceedingsAndCostsSectionController {
     furtherDetailsValidator.validate(proceedingFlow, bindingResult);
 
     if (bindingResult.hasErrors()) {
-      populateFurtherDetailsDropdowns(model,
+      populateFurtherDetailsDropdowns(
+          model,
           application,
           proceedingFlow.getProceedingDetails(),
           proceedingFlow.getMatterTypeDetails().getMatterType());
@@ -607,11 +616,14 @@ public class EditProceedingsAndCostsSectionController {
       Optional.ofNullable(oldProceedingFlow)
           .map(ProceedingFlowFormData::getFurtherDetails)
           .ifPresent(oldFurtherDetails -> {
-            compareAndSetAmended(oldFurtherDetails::getClientInvolvementType,
+            compareAndSetAmended(
+                oldFurtherDetails::getClientInvolvementType,
                 furtherDetails::getClientInvolvementType, proceedingFlow);
-            compareAndSetAmended(oldFurtherDetails::getLevelOfService,
+            compareAndSetAmended(
+                oldFurtherDetails::getLevelOfService,
                 furtherDetails::getLevelOfService, proceedingFlow);
-            compareAndSetAmended(oldFurtherDetails::getTypeOfOrder,
+            compareAndSetAmended(
+                oldFurtherDetails::getTypeOfOrder,
                 furtherDetails::getTypeOfOrder, proceedingFlow);
           });
 
@@ -681,7 +693,8 @@ public class EditProceedingsAndCostsSectionController {
     if (proceedingDetails.getOrderTypeRequired() != null
         && proceedingDetails.getOrderTypeRequired()) {
       new DropdownBuilder(model)
-          .addDropdown("orderTypes",
+          .addDropdown(
+              "orderTypes",
               lookupService.getCommonValues(COMMON_VALUE_PROCEEDING_ORDER_TYPE))
           .build();
     }
@@ -766,13 +779,15 @@ public class EditProceedingsAndCostsSectionController {
             (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
         model.addAttribute(PROCEEDING_SCOPE_LIMITATIONS, proceeding.getScopeLimitations());
       } else {
-        model.addAttribute(PROCEEDING_SCOPE_LIMITATIONS,
+        model.addAttribute(
+            PROCEEDING_SCOPE_LIMITATIONS,
             session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS));
       }
     }
 
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
-    model.addAttribute(IS_SUBSTANTIVE_DEVOLVED_POWERS_APP,
+    model.addAttribute(
+        IS_SUBSTANTIVE_DEVOLVED_POWERS_APP,
         APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS.equals(application.getApplicationType().getId()));
 
     List<ScopeLimitationDetail> scopeLimitationDetails =
@@ -782,11 +797,13 @@ public class EditProceedingsAndCostsSectionController {
         Optional.ofNullable(scopeLimitationDetails)
             .orElseGet(Collections::emptyList)
             .stream()
-            .map(detail -> new ScopeLimitationDelegatedFunctionApplyFormData(detail.hashCode(),
+            .map(detail -> new ScopeLimitationDelegatedFunctionApplyFormData(
+                detail.hashCode(),
                 detail.getDelegatedFuncApplyInd().getFlag()))
             .toList();
 
-    model.addAttribute(SCOPE_DELEGATED_FUNCTIONS_APPLY_FORM_DATA,
+    model.addAttribute(
+        SCOPE_DELEGATED_FUNCTIONS_APPLY_FORM_DATA,
         new ProceedingScopeLimitationsDelegatedFunctionsApplyFormData(scopeLimitationDataList));
 
     return "application/proceedings-confirm";
@@ -798,7 +815,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param action  The action being performed, retrieved from the session.
    * @param session The HttpSession object representing the current session.
    * @return true if the action is 'edit', the proceedingFlow object exists in the session, and the
-   * matterTypeDetails is not null and its matterType is null. Otherwise, returns false.
+   *     matterTypeDetails is not null and its matterType is null. Otherwise, returns false.
    */
   private boolean isRoutedFromSummaryPage(final String action, final HttpSession session) {
     if (ACTION_EDIT.equals(action)) {
@@ -828,11 +845,13 @@ public class EditProceedingsAndCostsSectionController {
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
-      @SessionAttribute(PROCEEDING_SCOPE_LIMITATIONS) final List<ScopeLimitationDetail> scopeLimitations,
+      @SessionAttribute(PROCEEDING_SCOPE_LIMITATIONS)
+      final List<ScopeLimitationDetail> scopeLimitations,
       @SessionAttribute(APPLICATION_PROCEEDINGS) final List<ProceedingDetail> proceedings,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @PathVariable("action") final String action,
-      @ModelAttribute(SCOPE_DELEGATED_FUNCTIONS_APPLY_FORM_DATA) final ProceedingScopeLimitationsDelegatedFunctionsApplyFormData scopeLimitationFormData,
+      @ModelAttribute(SCOPE_DELEGATED_FUNCTIONS_APPLY_FORM_DATA)
+      final ProceedingScopeLimitationsDelegatedFunctionsApplyFormData scopeLimitationFormData,
       final HttpSession session) {
 
     // update delegatedFuncApplyInd flag
@@ -992,7 +1011,8 @@ public class EditProceedingsAndCostsSectionController {
     }
 
     model.addAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
-    model.addAttribute("scopeLimitationDetails",
+    model.addAttribute(
+        "scopeLimitationDetails",
         scopeLimitationFlow.getScopeLimitationDetails());
 
     populateScopeLimitationDropdown(model, application, proceedingFlow);
@@ -1018,8 +1038,10 @@ public class EditProceedingsAndCostsSectionController {
   public String scopeLimitationDetailsPost(
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
       @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
-      @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA) final ScopeLimitationFlowFormData scopeLimitationFlow,
-      @ModelAttribute("scopeLimitationDetails") final ScopeLimitationFormDataDetails scopeLimitationDetails,
+      @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA)
+      final ScopeLimitationFlowFormData scopeLimitationFlow,
+      @ModelAttribute("scopeLimitationDetails")
+      final ScopeLimitationFormDataDetails scopeLimitationDetails,
       final Model model,
       final BindingResult bindingResult) {
 
@@ -1142,7 +1164,8 @@ public class EditProceedingsAndCostsSectionController {
   @GetMapping("/application/proceedings/scope-limitations/confirm")
   public String scopeLimitationConfirm(
       @SessionAttribute(CURRENT_SCOPE_LIMITATION) final ScopeLimitationDetail scopeLimitation,
-      @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA) final ScopeLimitationFlowFormData scopeLimitationFlow,
+      @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA)
+      final ScopeLimitationFlowFormData scopeLimitationFlow,
       final Model model) {
 
     model.addAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
@@ -1169,7 +1192,8 @@ public class EditProceedingsAndCostsSectionController {
   public String scopeLimitationConfirmPost(
       @SessionAttribute(CURRENT_SCOPE_LIMITATION) final ScopeLimitationDetail scopeLimitation,
       @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
-      @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA) final ScopeLimitationFlowFormData scopeLimitationFlow,
+      @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA)
+      final ScopeLimitationFlowFormData scopeLimitationFlow,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final Model model,
       final HttpSession session) {
@@ -1371,7 +1395,8 @@ public class EditProceedingsAndCostsSectionController {
         = new PriorAuthorityFlowFormData(ACTION_ADD);
 
     model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
-    model.addAttribute("priorAuthorityTypeDetails",
+    model.addAttribute(
+        "priorAuthorityTypeDetails",
         priorAuthorityFlow.getPriorAuthorityTypeFormData());
 
     populatePriorAuthorityTypeDropdown(model);
@@ -1400,8 +1425,10 @@ public class EditProceedingsAndCostsSectionController {
    */
   @PostMapping("/application/prior-authorities/add/type")
   public String priorAuthorityTypePost(
-      @SessionAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA) final PriorAuthorityFlowFormData priorAuthorityFlow,
-      @ModelAttribute("priorAuthorityTypeDetails") final PriorAuthorityTypeFormData priorAuthorityTypeDetails,
+      @SessionAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA)
+      final PriorAuthorityFlowFormData priorAuthorityFlow,
+      @ModelAttribute("priorAuthorityTypeDetails")
+      final PriorAuthorityTypeFormData priorAuthorityTypeDetails,
       final Model model,
       final BindingResult bindingResult) {
 
@@ -1431,7 +1458,8 @@ public class EditProceedingsAndCostsSectionController {
   @GetMapping("/application/prior-authorities/{action}/details")
   public String priorAuthorityDetails(
       @PathVariable("action") final String priorAuthorityAction,
-      @SessionAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA) final PriorAuthorityFlowFormData priorAuthorityFlow,
+      @SessionAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA)
+      final PriorAuthorityFlowFormData priorAuthorityFlow,
       final Model model) {
 
     final PriorAuthorityDetailsFormData priorAuthorityDetails =
@@ -1477,9 +1505,11 @@ public class EditProceedingsAndCostsSectionController {
   public String priorAuthorityDetailsPost(
       @PathVariable("action") final String priorAuthorityAction,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
-      @SessionAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA) final PriorAuthorityFlowFormData priorAuthorityFlow,
+      @SessionAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA)
+      final PriorAuthorityFlowFormData priorAuthorityFlow,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @Validated @ModelAttribute("priorAuthorityDetails") final PriorAuthorityDetailsFormData priorAuthorityDetails,
+      @Validated @ModelAttribute("priorAuthorityDetails")
+      final PriorAuthorityDetailsFormData priorAuthorityDetails,
       final BindingResult bindingResult,
       final Model model) {
 
@@ -1565,7 +1595,8 @@ public class EditProceedingsAndCostsSectionController {
   @GetMapping("/application/prior-authorities/{prior-authority-id}/confirm")
   public String priorAuthorityConfirm(
       @PathVariable("prior-authority-id") final int priorAuthorityId,
-      @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES) final List<PriorAuthorityDetail> priorAuthorities,
+      @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES)
+      final List<PriorAuthorityDetail> priorAuthorities,
       final Model model) {
 
     final PriorAuthorityDetail priorAuthority = priorAuthorities.stream()
@@ -1596,7 +1627,8 @@ public class EditProceedingsAndCostsSectionController {
   @GetMapping("/application/prior-authorities/{prior-authority-id}/remove")
   public String priorAuthorityRemove(
       @PathVariable("prior-authority-id") final int priorAuthorityId,
-      @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES) final List<PriorAuthorityDetail> priorAuthorities,
+      @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES)
+      final List<PriorAuthorityDetail> priorAuthorities,
       final Model model) {
 
     final PriorAuthorityDetail priorAuthority = priorAuthorities.stream()
@@ -1622,7 +1654,8 @@ public class EditProceedingsAndCostsSectionController {
   @PostMapping("/application/prior-authorities/{prior-authority-id}/remove")
   public String priorAuthorityRemovePost(
       @PathVariable("prior-authority-id") final int priorAuthorityId,
-      @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES) final List<PriorAuthorityDetail> priorAuthorities,
+      @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES)
+      final List<PriorAuthorityDetail> priorAuthorities,
       @SessionAttribute(USER_DETAILS) final UserDetail user) {
 
     //existence check
