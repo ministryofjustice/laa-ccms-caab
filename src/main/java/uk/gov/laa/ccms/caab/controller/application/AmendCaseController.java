@@ -2,7 +2,9 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMENDMENT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -31,7 +33,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
  * @author Jamie Briggs
  */
 @Controller
-@SessionAttributes({APPLICATION, APPLICATION_FORM_DATA})
+@SessionAttributes({APPLICATION, APPLICATION_ID, APPLICATION_FORM_DATA})
 @RequiredArgsConstructor
 public class AmendCaseController {
 
@@ -67,7 +69,7 @@ public class AmendCaseController {
         applicationService.getTdsApplications(caseSearchCriteria, userDetails, 0, 1)
             .getContent().stream().findFirst().orElse(null);
 
-    httpSession.setAttribute(APPLICATION, tdsApplication);
+    httpSession.setAttribute(AMENDMENT, tdsApplication);
 
     return "redirect:/amendments/summary";
   }
@@ -85,7 +87,7 @@ public class AmendCaseController {
    */
   @GetMapping("/amendments/summary")
   public String amendCaseSummary(
-      @SessionAttribute(APPLICATION) final BaseApplicationDetail tdsApplication,
+      @SessionAttribute(AMENDMENT) final BaseApplicationDetail tdsApplication,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       Model model,
       final HttpSession httpSession) {
@@ -97,7 +99,9 @@ public class AmendCaseController {
             .orElseThrow(() -> new CaabApplicationException(
                 "Failed to retrieve application summary"));
 
-    httpSession.setAttribute(AMENDMENT, amendment);
+    httpSession.setAttribute(APPLICATION, amendment);
+    httpSession.setAttribute(APPLICATION_ID, amendment.getId());
+    httpSession.setAttribute(APPLICATION_COSTS, amendment.getCosts());
     model.addAttribute("summary", applicationSectionDisplay);
 
     return "application/amendment-summary";
