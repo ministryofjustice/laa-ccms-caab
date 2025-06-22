@@ -65,6 +65,8 @@ public class EvidenceSectionController {
 
   private final EvidenceMapper evidenceMapper;
 
+  private static final String CASE_CONTEXT = "caseContext";
+
 
   /**
    * Handles the GET request for the evidence upload screen.
@@ -76,7 +78,7 @@ public class EvidenceSectionController {
   @GetMapping("/{caseContext}/sections/evidence")
   public String viewEvidenceRequired(
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
-      @PathVariable CaseContext caseContext,
+      @PathVariable(CASE_CONTEXT) CaseContext context,
       final Model model) {
     // Get the list of required evidence docs for this application.
     final Mono<List<EvidenceDocumentTypeLookupValueDetail>> evidenceRequiredMono =
@@ -106,7 +108,7 @@ public class EvidenceSectionController {
 
     model.addAttribute(EVIDENCE_REQUIRED, evidenceRequired);
     model.addAttribute("evidenceUploaded", evidenceUploaded);
-    model.addAttribute("caseContext", caseContext.getPathValue());
+    model.addAttribute(CASE_CONTEXT, context);
 
     return "application/sections/evidence-section";
   }
@@ -126,7 +128,7 @@ public class EvidenceSectionController {
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       @SessionAttribute(EVIDENCE_REQUIRED)
       final List<EvidenceRequired> evidenceRequired,
-      @PathVariable CaseContext caseContext,
+      @PathVariable(CASE_CONTEXT) CaseContext context,
       final Model model) {
 
     // Initialise the form data object.
@@ -138,7 +140,7 @@ public class EvidenceSectionController {
     evidenceUploadFormData.setCcmsModule(APPLICATION);
 
     model.addAttribute(EVIDENCE_UPLOAD_FORM_DATA, evidenceUploadFormData);
-    model.addAttribute("caseContext", caseContext.getPathValue());
+    model.addAttribute(CASE_CONTEXT, context);
     populateAddEvidenceModel(evidenceRequired, model);
 
     return "application/evidence/evidence-add";
@@ -163,7 +165,7 @@ public class EvidenceSectionController {
       @ModelAttribute(EVIDENCE_UPLOAD_FORM_DATA)
       final EvidenceUploadFormData evidenceUploadFormData,
       final BindingResult bindingResult,
-      @PathVariable CaseContext caseContext,
+      @PathVariable(CASE_CONTEXT) CaseContext context,
       Model model) {
 
     // Validate the evidence form data
@@ -171,7 +173,7 @@ public class EvidenceSectionController {
 
     if (bindingResult.hasErrors()) {
       populateAddEvidenceModel(evidenceRequired, model);
-      model.addAttribute("caseContext", caseContext.getPathValue());
+      model.addAttribute(CASE_CONTEXT, context);
       return "application/evidence/evidence-add";
     }
 
@@ -186,7 +188,7 @@ public class EvidenceSectionController {
           evidenceUploadFormData.getFile().getInputStream());
     } catch (AvVirusFoundException | AvScanException | IOException e) {
       bindingResult.rejectValue("file", "scan.failure", e.getMessage());
-      model.addAttribute("caseContext", caseContext.getPathValue());
+      model.addAttribute(CASE_CONTEXT, context);
       populateAddEvidenceModel(evidenceRequired, model);
       return "application/evidence/evidence-add";
     }
@@ -212,7 +214,7 @@ public class EvidenceSectionController {
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException("Failed to save document"));
 
-    return "redirect:/%s/sections/evidence".formatted(caseContext.getPathValue());
+    return "redirect:/%s/sections/evidence".formatted(context.getPathValue());
   }
 
   /**
@@ -261,7 +263,7 @@ public class EvidenceSectionController {
       @PathVariable("evidence-document-id") final Integer evidenceDocumentId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
-      @PathVariable CaseContext caseContext) {
+      @PathVariable(CASE_CONTEXT) CaseContext context) {
 
     evidenceService.removeDocument(
         String.valueOf(activeCase.getApplicationId()),
@@ -269,7 +271,7 @@ public class EvidenceSectionController {
         APPLICATION,
         userDetail.getLoginId());
 
-    return "redirect:/%s/sections/evidence".formatted(caseContext.getPathValue());
+    return "redirect:/%s/sections/evidence".formatted(context.getPathValue());
   }
 
   private void populateAddEvidenceModel(

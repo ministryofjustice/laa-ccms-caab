@@ -8,17 +8,17 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:if="${caseContext == 'application'}" th:href="@{/application/sections}" class="govuk-back-link"
+        <a th:if="${caseContext.isApplication()}" th:href="@{/application/sections}" class="govuk-back-link"
            th:text="#{application.evidence.returnToCreateApplication}"></a>
-        <a th:if="${caseContext == 'amendments'}" th:href="@{/amendments/summary}" class="govuk-back-link"
+        <a th:if="${caseContext.isAmendment()}" th:href="@{/amendments/summary}" class="govuk-back-link"
            th:text="#{application.evidence.returnToAmendments}"></a>
     </div>
     <div id="main-content">
         <h1 class="govuk-heading-l" th:text="#{application.evidence.documentUpload}"></h1>
         <p class="govuk-body-l" th:text="#{application.evidence.uploadHint}"></p>
-        <p th:if="${caseContext == 'application'}" class="govuk-hint"
+        <p th:if="${caseContext.isApplication()}" class="govuk-hint"
            th:text="#{application.evidence.listCreatedFromMeansMerits}"></p>
-        <p th:if="${caseContext == 'amendments'}" class="govuk-hint"
+        <p th:if="${caseContext.isAmendment()}" class="govuk-hint"
            th:text="#{application.evidence.listCreatedFromAmendments}"></p>
         <table class="govuk-table">
             <thead class="govuk-table__head">
@@ -32,7 +32,8 @@
                 <td class="govuk-table__cell" th:text="${documentStat.count}"/>
                 <td class="govuk-table__cell" th:text="${document.description}"></td>
                 <td class="govuk-table__cell">
-                    <img th:if="${document.provided}" th:src="@{/assets/ccms/tick.gif}" th:alt="#{application.evidence.provided}"/>
+                    <img th:if="${document.provided}" th:src="@{/assets/ccms/tick.gif}"
+                         th:alt="#{application.evidence.provided}"/>
                 </td>
             <tr>
             <tr class="govuk-table__row" th:if="${evidenceRequired.isEmpty()}">
@@ -50,7 +51,8 @@
                     <div class="govuk-radios__item">
                         <input class="govuk-radios__input" id="showFileUpload-yes" name="showFileUpload" type="radio"
                                value="yes" data-aria-controls="conditional-add-file"/>
-                        <label class="govuk-label govuk-radios__label" for="showFileUpload-yes" th:text="#{application.evidence.yes}"></label>
+                        <label class="govuk-label govuk-radios__label" for="showFileUpload-yes"
+                               th:text="#{application.evidence.yes}"></label>
                     </div>
                     <div class="govuk-radios__conditional govuk-radios__conditional--hidden" id="conditional-add-file">
                         <div class="govuk-form-group">
@@ -62,7 +64,8 @@
                                     <span th:text="#{application.evidence.uploadWarning}"></span>
                                 </strong>
                             </div>
-                            <a th:href="@{/{caseContext}/evidence/add(caseContext=${caseContext})}" role="button"
+                            <a th:href="@{/{caseContext}/evidence/add(caseContext=${caseContext.getPathValue()})}"
+                               role="button"
                                draggable="false"
                                class="govuk-button" data-module="govuk-button"
                                th:text="#{application.evidence.uploadEvidence}">
@@ -72,22 +75,23 @@
                     <div class="govuk-radios__item">
                         <input class="govuk-radios__input" id="showFileUpload-no" name="showFileUpload" type="radio"
                                value="no" data-aria-controls="conditional-no-evidence"/>
-                        <label class="govuk-label govuk-radios__label" for="showFileUpload-no" th:text="#{application.evidence.no}"></label>
+                        <label class="govuk-label govuk-radios__label" for="showFileUpload-no"
+                               th:text="#{application.evidence.no}"></label>
                     </div>
                     <div class="govuk-radios__conditional govuk-radios__conditional--hidden"
                          id="conditional-no-evidence">
-                        <div th:if="${caseContext == 'application'}" class="govuk-warning-text">
+                        <div th:if="${caseContext.isApplication()}" class="govuk-warning-text">
                             <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
                             <strong class="govuk-warning-text__text">
                                 <span class="govuk-visually-hidden" th:text="#{site.warning}"></span>
                                 <span th:text="#{application.evidence.noEvidenceWarning}"></span>
                             </strong>
                         </div>
-                        <a th:if="${caseContext == 'application'}" th:href="@{/application/sections}" role="button"
+                        <a th:if="${caseContext.isApplication()}" th:href="@{/application/sections}" role="button"
                            draggable="false" class="govuk-button"
                            data-module="govuk-button" th:text="#{application.evidence.returnToApplicationSummary}">
                         </a>
-                        <a th:if="${caseContext == 'amendments'}" th:href="@{/amendments/summary}"
+                        <a th:if="${caseContext.isAmendment()}" th:href="@{/amendments/summary}"
                            role="button" draggable="false" class="govuk-button"
                            data-module="govuk-button" th:text="#{application.evidence.returnToAmendmentsSummary}">
                         </a>
@@ -98,12 +102,14 @@
 
         <th:block th:unless="${evidenceUploaded.isEmpty()}">
             <table class="govuk-table">
-                <caption class="govuk-table__caption govuk-table__caption--s" th:text="#{application.evidence.filesUploaded}"></caption>
+                <caption class="govuk-table__caption govuk-table__caption--s"
+                         th:text="#{application.evidence.filesUploaded}"></caption>
                 <thead class="govuk-table__head">
                 <tr class="govuk-table__row">
                     <th scope="col" class="govuk-table__header" th:text="#{application.evidence.file}"></th>
                     <th scope="col" class="govuk-table__header" th:text="#{application.evidence.type}"></th>
-                    <th scope="col" class="govuk-table__header" th:text="#{application.evidence.documentDescription}"></th>
+                    <th scope="col" class="govuk-table__header"
+                        th:text="#{application.evidence.documentDescription}"></th>
                     <th scope="col" class="govuk-table__header" th:text="#{application.evidence.date}"></th>
                     <th scope="col" class="govuk-table__header"></th>
                 </tr>
@@ -117,14 +123,15 @@
                     <td class="govuk-table__cell"
                         th:text="${#dates.format(uploadedDoc.auditTrail.created, 'dd/MM/yyyy')}"></td>
                     <td class="govuk-table__cell">
-                        <a th:href="@{/${caseContext}/evidence/{id}/remove(id=${uploadedDoc.id})}"
+                        <a th:href="@{/{caseContext}/evidence/{id}/remove(caseContext=${caseContext.getPathValue()}, id=${uploadedDoc.id})}"
                            class="govuk-link"
                            th:text="#{application.evidence.remove}"></a>
                     </td>
                 </tr>
                 </tbody>
             </table>
-            <a th:href="@{/${caseContext}/evidence/add}" role="button" draggable="false" class="govuk-button"
+            <a th:href="@{/{caseContext}/evidence/add(caseContext=${caseContext.getPathValue()})}" role="button"
+               draggable="false" class="govuk-button"
                data-module="govuk-button" th:text="#{application.evidence.addNewFile}">
             </a>
         </th:block>

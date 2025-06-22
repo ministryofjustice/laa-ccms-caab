@@ -8,13 +8,13 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/{caseContext}/sections/evidence(caseContext=${caseContext})}" class="govuk-back-link"
+        <a th:href="@{/{caseContext}/sections/evidence(caseContext=${caseContext.getPathValue()})}" class="govuk-back-link"
            th:text="#{application.evidence.add.returnToDocumentSummary}"></a>
     </div>
     <div id="main-content">
         <h1 class="govuk-heading-l" th:text="#{application.evidence.add.uploadADocument}"></h1>
 
-        <form action="#" th:action="@{/{caseContext}/evidence/add(caseContext=${caseContext})}" method="post"
+        <form action="#" th:action="@{/{caseContext}/evidence/add(caseContext=${caseContext.getPathValue()})}" method="post"
               th:object="${evidenceUploadForm}" enctype="multipart/form-data">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <div class="govuk-warning-text">
