@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:govuk="http://www.thymeleaf.org">
+<head>
+  <title th:text="|#{service.name} - #{application.amendment}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/case/overview}" class="govuk-back-link"
+       th:text="#{site.returnToCaseOverview}"></a>
+  </div>
+  <div id="main-content">
+
+    <form method="post" th:action="@{/case/amendment-summary}" th:object="${amendment}">
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+          <span class="govuk-caption-l" th:text="#{amendment.case}"/>
+          <h1 class="govuk-heading-l" th:text="#{amendment.case.title}"/>
+          <p class="govuk-body-l" th:text="#{amendment.case.leadParagraph}"/>
+        </div>
+        <!--General details-->
+        <div class="govuk-grid-column-full">
+          <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper"
+                 th:with="heading=#{application.section.generalDetails}">
+              <h2 class="govuk-summary-card__title"
+                  th:text="${heading}"/>
+              <ul class="govuk-summary-card__actions">
+                <li class="govuk-summary-card__action">
+                  <a class="govuk-link govuk-link--no-visited-state" href="#"
+                     id="edit-general-details-link"
+                     th:text="|#{site.edit} ${#strings.toLowerCase(heading)}|"/>
+                </li>
+              </ul>
+            </div>
+            <div class="govuk-summary-card__content">
+              <dl class="govuk-summary-list">
+                <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{caseDetails.general.status}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="general-status-value"
+                      th:text="${summary.generalDetails.applicationStatus}"/>
+                </div>
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{caseDetails.general.client.name}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="general-client-name-value"
+                      th:text="${summary.client.clientFullName}"/>
+                  <dd class="govuk-summary-list__actions">
+                    <a class="govuk-link govuk-link--no-visited-state"
+                       id="amend-client-link"
+                       th:href="@{/amendments/sections/client/details/summary}">
+                      <th:block th:text="#{site.amend}"/>
+                      <span class="govuk-visually-hidden" th:text="${#strings.toLowerCase(fieldName)}"/>
+                    </a>
+                  </dd>
+                </div>
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key govuk-summary-list__row--no-actions"
+                      th:text="#{caseDetails.general.category.law}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="general-category-of-law-value"
+                      th:text="${summary.generalDetails.categoryOfLaw}"/>
+                </div>
+                <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{caseDetails.general.preferred.address}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="general-preferred-address-value"
+                      th:text="${summary.generalDetails.correspondenceMethod}"/>
+                </div>
+                <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{amendment.case.amendmentType}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="general-amendment-type-value"
+                      th:text="${summary.applicationType.description}"/>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </div>
+        <!--Proceedings-->
+        <div class="govuk-grid-column-full">
+          <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper"
+                 th:with="heading=#{amendment.case.proceedings}">
+              <h2 class="govuk-summary-card__title"
+                  th:text="${heading}"/>
+              <ul class="govuk-summary-card__actions">
+                <li class="govuk-summary-card__action"
+                    th:with="proceedingsAndCosts=#{application.section.proceedingsCosts}">
+                  <a class="govuk-link govuk-link--no-visited-state" href="#"
+                     id="edit-proceedings-and-costs-link"
+                     th:text="|#{site.edit} ${#strings.toLowerCase(proceedingsAndCosts)}|"/>
+                </li>
+              </ul>
+            </div>
+            <div class="govuk-summary-card__content">
+              <th:block th:if="${summary.proceedingsAndCosts.proceedings.isEmpty()}">
+                <p class="govuk-body"
+                   id="no-proceedings-text"
+                   th:text="#{caseDetails.proceedings.none}"/>
+              </th:block>
+              <th:block th:unless="${summary.proceedingsAndCosts.proceedings.isEmpty()}"
+                        th:each="proceeding, idx : ${summary.proceedingsAndCosts.proceedings}">
+                <h3 class="govuk-heading-m" th:text="${proceeding.proceedingType}"/>
+                <table class="govuk-table govuk-table--small-text-until-tablet">
+                  <caption class="govuk-table__caption govuk-table__caption--m"
+                           th:text="#{amendment.case.proceedings}"/>
+                  <thead>
+                  <tr>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.proceedings.matter.type}"/>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.proceedings.service.type}"/>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.proceedings.client.involvement}"/>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.proceedings.status}"></th>
+                  </tr>
+                  </thead>
+                  <tbody class="govuk-table__body">
+                  <tr class="govuk-table__row">
+                    <td class="govuk-table__cell"
+                        th:id="'proceeding-matter-type-'+${idx.index}+'-value'"
+                        th:text="${proceeding.matterType}"/>
+                    <td class="govuk-table__cell"
+                        th:id="'proceeding-level-of-service-'+${idx.index}+'-value'"
+                        th:text="${proceeding.levelOfService}"/>
+                    <td class="govuk-table__cell"
+                        th:id="'proceeding-client-involvement-'+${idx.index}+'-value'"
+                        th:text="${proceeding.clientInvolvement}"/>
+                    <td class="govuk-table__cell"
+                        th:id="'proceeding-status-'+${idx.index}+'-value'"
+                        th:text="${proceeding.status}"/>
+                  </tr>
+                  </tbody>
+                </table>
+
+                <table class="govuk-table">
+                  <caption class="govuk-table__caption govuk-table__caption--m"
+                           th:text="#{proceedings.scopeLimitations.subHeading}"/>
+                  <thead class="govuk-table__head">
+                  <tr class="govuk-table__row">
+                    <th scope="col" class="govuk-table__header govuk-!-width-one-quarter"
+                        th:text="#{proceedings.scopeLimitations.scopeLimitation}"/>
+                    <th scope="col" class="govuk-table__header govuk-!-width-three-quarters"
+                        th:text="#{proceedings.scopeLimitations.scopeLimitationWording}"/>
+                  </tr>
+                  </thead>
+                  <tbody class="govuk-table__body">
+                  <tr class="govuk-table__row"
+                      th:each="scope, idx2 : ${proceeding.scopeLimitations}">
+                    <th scope="row" class="govuk-table__header"
+                        th:id="|scope-limitaiton-${idx.index}-${idx2.index}-value|"
+                        th:text="${scope.scopeLimitation}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|scope-limitaiton-wording-${idx.index}-${idx2.index}-value|"
+                        th:text="${scope.wording}"/>
+                  </tr>
+                  </tbody>
+                </table>
+
+                <hr th:if="${idx.index < summary.proceedingsAndCosts.proceedings.size() - 1}"
+                    class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+              </th:block>
+
+
+            </div>
+          </div>
+        </div>
+
+        <!--Costs-->
+        <div class="govuk-grid-column-full">
+          <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper"
+                 th:with="heading=#{caseDetails.costs.limitation}">
+              <h2 class="govuk-summary-card__title"
+                  th:text="${heading}"/>
+              <ul class="govuk-summary-card__actions">
+                <li class="govuk-summary-card__action">
+                  <a class="govuk-link govuk-link--no-visited-state" href="#"
+                     id="edit-case-cost-limitation-link">
+                    <th:block th:text="|#{site.edit} ${#strings.toLowerCase(heading)}|"/>
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div class="govuk-summary-card__content">
+              <dl class="govuk-summary-list">
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{caseDetails.costs.requested}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="costs-requested-amount-value"
+                      th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)}"/>
+                </div>
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{caseDetails.costs.granted}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="costs-granted-amount-value"
+                      th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)}"/>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <!--Prior Authority-->
+        <div class="govuk-grid-column-full">
+          <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper"
+                 th:with="heading=#{amendment.case.priorAuthority}">
+              <h2 class="govuk-summary-card__title"
+                  th:text="${heading}"/>
+              <ul class="govuk-summary-card__actions">
+                <li class="govuk-summary-card__action">
+                  <a class="govuk-link govuk-link--no-visited-state" href="#"
+                     id="edit-case-prior-authority-link"
+                     th:text="|#{site.edit} ${#strings.toLowerCase(heading)}|"/>
+                </li>
+              </ul>
+            </div>
+            <div class="govuk-summary-card__content">
+              <th:block th:if="${summary.priorAuthorities.isEmpty()}">
+                <p class="govuk-body"
+                   id="no-prior-authority-text"
+                   th:text="#{caseDetails.prior.authority.none}"/>
+              </th:block>
+              <th:block th:unless="${summary.priorAuthorities.isEmpty()}">
+                <table class="govuk-table">
+                  <caption class="govuk-table__caption govuk-table__caption--m"
+                           th:text="#{proceedings.priorAuthorities.subHeading}"/>
+                  <thead>
+                  <tr>
+                    <th class="govuk-table__header" th:text="#{caseDetails.prior.authority}"></th>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.prior.authority.type}"></th>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.prior.authority.amount}"></th>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.prior.authority.status}"></th>
+                  </tr>
+                  </thead>
+                  <tbody class="govuk-table__body">
+                  <tr class="govuk-table__row"
+                      th:each="priorAuthority, idx : ${summary.priorAuthorities}">
+                    <td class="govuk-table__cell"
+                        th:id="|prior-authority-description-${idx.index}-value|"
+                        th:text="${priorAuthority.description}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|prior-authority-type-${idx.index}-value|"
+                        th:text="${priorAuthority.type}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|prior-amount-requested-${idx.index}+value|"
+                        th:text="${#numbers.formatCurrency(priorAuthority.amountRequested)}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|prior-authority-status-${idx.index}-value|"
+                        th:text="${priorAuthority.status}"/>
+                  </tr>
+                  </tbody>
+                </table>
+              </th:block>
+            </div>
+          </div>
+        </div>
+        <!--Opponents and other parties-->
+        <div class="govuk-grid-column-full">
+          <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper"
+                 th:with="heading=#{amendment.case.opponentsAndOtherParties}">
+              <h2 class="govuk-summary-card__title"
+                  th:text="${heading}"/>
+              <ul class="govuk-summary-card__actions">
+                <li class="govuk-summary-card__action">
+                  <a class="govuk-link govuk-link--no-visited-state" href="#"
+                     id="edit-opponents-and-other-parties-link"
+                     th:text="|#{site.edit} ${#strings.toLowerCase(heading)}|"/>
+                </li>
+              </ul>
+            </div>
+            <div class="govuk-summary-card__content">
+              <h2 class="govuk-heading-m"
+                  id="opponents"
+                  th:text="#{caseDetails.opponents}"/>
+              <th:block th:if="${summary.opponentsAndOtherParties.opponents.isEmpty()}">
+                <p class="govuk-body"
+                   id="no-opponents-text"
+                   th:text="#{caseDetails.opponents.none}"/>
+              </th:block>
+              <th:block th:unless="${summary.opponentsAndOtherParties.opponents.isEmpty()}">
+                <table class="govuk-table">
+                  <thead>
+                  <tr>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.opponents.party.type}"></th>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.opponents.party.name}"></th>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.opponents.relationship.client}"></th>
+                    <th class="govuk-table__header"
+                        th:text="#{caseDetails.opponents.relationship.case}"></th>
+                  </tr>
+                  </thead>
+                  <tbody class="govuk-table__body">
+                  <tr class="govuk-table__row"
+                      th:each="opponent, idx : ${summary.opponentsAndOtherParties.opponents}">
+                    <td class="govuk-table__cell"
+                        th:id="|opponent-party-type-link-${idx.index}-value|"
+                        th:text="${opponent.partyType}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|opponent-party-name-${idx.index}-value|"
+                        th:text="${opponent.partyName}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|opponent-relationship-to-client-${idx.index}-value|"
+                        th:text="${opponent.relationshipToClient}"/>
+                    <td class="govuk-table__cell"
+                        th:id="|opponent-relationship-to-case-${idx.index}-value|"
+                        th:text="${opponent.relationshipToCase}"/>
+                  </tr>
+                  </tbody>
+                </table>
+              </th:block>
+            </div>
+          </div>
+        </div>
+        <!--Merits-->
+        <div class="govuk-grid-column-full">
+          <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper" th:with="heading=#{amendment.case.merits}">
+              <h2 class="govuk-summary-card__title"
+                  th:text="${heading}"/>
+              <ul class="govuk-summary-card__actions">
+                <li class="govuk-summary-card__action">
+                  <a class="govuk-link govuk-link--no-visited-state" href="#"
+                     id="edit-merits-link"
+                     th:text="#{amendment.case.meritsAssessment}"/>
+                </li>
+              </ul>
+            </div>
+            <div class="govuk-summary-card__content">
+              <dl class="govuk-summary-list">
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{common.status}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="merits-status-value">
+                    <th:block th:if="${summary.meritsAssessment.enabled}" th:with="status=${summary.meritsAssessment.status}">
+                      <th:block th:if="${status == 'Not started'}" th:text="#{amendment.case.merits.noAssessmentPerformed}"/>
+                      <th:block th:unless="${status == 'Not started'}" th:text="${status}"/>
+                    </th:block>
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <!--Documents-->
+        <div class="govuk-grid-column-full">
+          <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper"
+                 th:with="heading=#{amendment.case.documents}">
+              <h2 class="govuk-summary-card__title"
+                  th:text="${heading}"/>
+              <ul class="govuk-summary-card__actions"
+                th:if="${summary.documentUpload.enabled}">
+                <li class="govuk-summary-card__action">
+                  <a class="govuk-link govuk-link--no-visited-state" th:href="@{/amendments/sections/evidence}"
+                     id="upload-documents-link"
+                     th:text="|#{site.upload} ${#strings.toLowerCase(heading)}|"/>
+                </li>
+              </ul>
+            </div>
+            <div class="govuk-summary-card__content">
+              <!--<div class="govuk-inset-text" th:text="#{amendCase.documents.guidance}"/>-->
+              <govuk:details th:if="${summary.documentUpload.enabled}"
+                             th:summaryText="#{amendment.case.documents.guidance.title}"
+                             th:text="#{amendment.case.documents.guidance}"/>
+              <dl class="govuk-summary-list">
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{common.status}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="documents-status-value">
+                    <th:block th:if="${summary.documentUpload.enabled}" th:text="${summary.documentUpload.status}"/>
+                    <th:block th:unless="${summary.documentUpload.enabled}" th:text="#{amendment.case.documents.notRequired}"/>
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <!--Submit button-->
+        <div class="govuk-grid-column-full">
+          <button class="govuk-button" type="submit"
+            th:text="#{amendment.case.submitAmendments}"/>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

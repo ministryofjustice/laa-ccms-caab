@@ -21,39 +21,47 @@
             id="general-details"
             th:text="#{caseDetails.general.details}"/>
         <dl class="govuk-summary-list">
-          <div class="govuk-summary-list__row">
+          <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
             <dt class="govuk-summary-list__key" th:text="#{caseDetails.general.status}"/>
             <dd class="govuk-summary-list__value"
                 id="general-application-status-value"
                 th:text="${summary.generalDetails.applicationStatus}"/>
           </div>
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key" th:text="#{caseDetails.general.client.name}"/>
+          <div class="govuk-summary-list__row" th:with="fieldName=#{caseDetails.general.client.name}">
+            <dt class="govuk-summary-list__key" th:text="${fieldName}"/>
             <dd class="govuk-summary-list__value"
                 id="general-client-fullname-value"
                 th:text="${summary.client.clientFullName}"/>
+            <dd class="govuk-summary-list__actions">
+              <a class="govuk-link govuk-link--no-visited-state"
+                 id="amend-client-link"
+                 th:href="@{/amendments/sections/client/details/summary}">
+                <th:block th:text="#{site.amend}"/>
+                <span class="govuk-visually-hidden" th:text="${#strings.toLowerCase(fieldName)}"/>
+              </a>
+            </dd>
           </div>
-          <div class="govuk-summary-list__row">
+          <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
             <dt class="govuk-summary-list__key" th:text="#{caseDetails.general.category.law}"/>
             <dd class="govuk-summary-list__value"
                 id="general-category-of-law-value"
                 th:text="${summary.generalDetails.categoryOfLaw}"/>
           </div>
-          <div class="govuk-summary-list__row">
+          <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
             <dt class="govuk-summary-list__key"
                 th:text="#{caseDetails.general.preferred.address}"/>
             <dd class="govuk-summary-list__value"
                 id="general-correspondence-method-value"
                 th:text="${summary.generalDetails.correspondenceMethod}"/>
           </div>
-          <div class="govuk-summary-list__row">
+          <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
             <dt class="govuk-summary-list__key"
                 th:text="#{caseDetails.general.application.type}"/>
             <dd class="govuk-summary-list__value"
                 id="general-application-type-value"
                 th:text="${summary.applicationType.description}"/>
           </div>
-          <div class="govuk-summary-list__row">
+          <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
             <dt class="govuk-summary-list__key"
                 th:text="#{caseDetails.general.delegated.functions.date}"/>
             <dd
@@ -186,7 +194,7 @@
                 <a class="govuk-link govuk-link--no-visited-state"
                    th:id="'proceeding-reference-link-'+${idx.index}"
                    th:text="${proceeding.proceedingType}"
-                   href="#"/>
+                   th:href="@{/case/details/proceeding/{index}(index=${idx.index})}"/>
               </td>
               <td class="govuk-table__cell"
                   th:id="'proceeding-matter-type-'+${idx.index}"
@@ -266,7 +274,7 @@
                 <a class="govuk-link govuk-link--no-visited-state"
                    th:id="'prior-authority-description-'+${idx.index}"
                    th:text="${priorAuthority.description}"
-                   th:href="@{/cases/details/prior-authority/{index}(index=${idx.index})}"/>
+                   th:href="@{/case/details/prior-authority/{index}(index=${idx.index})}"/>
               </td>
               <td class="govuk-table__cell"
                   th:id="'prior-authority-type-'+${idx.index}"
@@ -310,7 +318,7 @@
                 <td class="govuk-table__cell">
                     <a class="govuk-link govuk-link--no-visited-state"
                        th:text="${opponent.partyType}"
-                       th:href="@{/cases/details/other-party/{index}(index=${idx.index})}"/>
+                       th:href="@{/case/details/other-party/{index}(index=${idx.index})}"/>
                 </td>
                 <td class="govuk-table__cell" th:text="${opponent.partyName}"/>
                 <td class="govuk-table__cell" th:text="${opponent.relationshipToClient}"/>
