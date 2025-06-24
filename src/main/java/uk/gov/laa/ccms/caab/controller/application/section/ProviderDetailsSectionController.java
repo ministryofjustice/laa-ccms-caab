@@ -132,16 +132,16 @@ public class ProviderDetailsSectionController {
     if (caseContext.isAmendment()) {
       applicationService.updateProviderDetails(applicationId, applicationFormData, user);
 
-      CaseTransactionResponse transactionId = applicationService.createCase(
+      CaseTransactionResponse transactionResponse = applicationService.createCase(
               user,
               applicationService.getApplication(applicationId).block(),
               null,
               null,
               null
       );
-      session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
+      session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionResponse.getTransactionId());
 
-      return "redirect:/application/sections";
+      return "redirect:/application/case-create";
     }
 
     applicationService.updateProviderDetails(applicationId, applicationFormData, user);
