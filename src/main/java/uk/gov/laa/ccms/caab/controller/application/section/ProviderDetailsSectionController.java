@@ -1,10 +1,15 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+
+import jakarta.servlet.http.HttpSession;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -29,7 +34,6 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.*;
 
 /**
  * Controller for the application's provider details section.
@@ -128,14 +132,14 @@ public class ProviderDetailsSectionController {
     if (caseContext.isAmendment()) {
       applicationService.updateProviderDetails(applicationId, applicationFormData, user);
 
-      CaseTransactionResponse transactionID = applicationService.createCase(
+      CaseTransactionResponse transactionId = applicationService.createCase(
               user,
               applicationService.getApplication(applicationId).block(),
               null,
               null,
               null
       );
-      session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionID);
+      session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
 
       return "redirect:/application/sections";
     }
