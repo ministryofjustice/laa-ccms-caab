@@ -245,10 +245,14 @@ class ProceedingAndCostsMapperTest {
 
   @Test
   void testToCostsFormData() {
+    final BigDecimal grantedCostLimitation = new BigDecimal("3000.00");
     final BigDecimal costLimitation = new BigDecimal("5000.00");
-    final CostsFormData result = mapper.toCostsFormData(costLimitation);
+    final CostStructureDetail costStructureDetail = new CostStructureDetail()
+        .requestedCostLimitation(costLimitation).grantedCostLimitation(grantedCostLimitation);
+    final CostsFormData result = mapper.toCostsFormData(costStructureDetail);
 
     assertNotNull(result);
+    assertEquals(grantedCostLimitation, result.getGrantedCostLimitation());
     assertEquals(costLimitation.toString(), result.getRequestedCostLimitation());
   }
 
@@ -262,7 +266,7 @@ class ProceedingAndCostsMapperTest {
   @Test
   void testToCostStructure() {
     final CostStructureDetail costStructure = new CostStructureDetail();
-    final CostsFormData costsFormData = new CostsFormData();
+    final CostsFormData costsFormData = new CostsFormData(new BigDecimal("20000.00"));
     costsFormData.setRequestedCostLimitation("10000.00");
 
     mapper.toCostStructure(costStructure, costsFormData);

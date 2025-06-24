@@ -1328,7 +1328,7 @@ public class EditProceedingsAndCostsSectionController {
       final Model model) {
 
     final CostsFormData costsFormData =
-        proceedingAndCostsMapper.toCostsFormData(costs.getRequestedCostLimitation());
+        proceedingAndCostsMapper.toCostsFormData(costs);
 
     model.addAttribute("costDetails", costsFormData);
     model.addAttribute(APPLICATION_COSTS, costs);

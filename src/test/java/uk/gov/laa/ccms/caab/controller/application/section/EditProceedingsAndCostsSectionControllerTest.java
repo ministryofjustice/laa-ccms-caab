@@ -1371,10 +1371,10 @@ class EditProceedingsAndCostsSectionControllerTest {
       final CostStructureDetail costs = new CostStructureDetail();
       costs.setRequestedCostLimitation(new BigDecimal("1000"));
 
-      final CostsFormData costsFormData = new CostsFormData();
+      final CostsFormData costsFormData = new CostsFormData(new BigDecimal("20000.00"));
       costsFormData.setRequestedCostLimitation(String.valueOf(costs.getRequestedCostLimitation()));
 
-      when(proceedingAndCostsMapper.toCostsFormData(any(BigDecimal.class)))
+      when(proceedingAndCostsMapper.toCostsFormData(any(CostStructureDetail.class)))
           .thenReturn(costsFormData);
 
       final MockHttpSession session = new MockHttpSession();
@@ -1393,7 +1393,7 @@ class EditProceedingsAndCostsSectionControllerTest {
           .andExpect(model().attribute(APPLICATION, application));
 
       verify(proceedingAndCostsMapper, times(1))
-          .toCostsFormData(costs.getRequestedCostLimitation());
+          .toCostsFormData(costs);
     }
   }
 
@@ -1408,7 +1408,7 @@ class EditProceedingsAndCostsSectionControllerTest {
       final ApplicationDetail application = new ApplicationDetail();
       final CostStructureDetail costs = new CostStructureDetail();
       final UserDetail user = new UserDetail();
-      final CostsFormData costsFormData = new CostsFormData();
+      final CostsFormData costsFormData = new CostsFormData(new BigDecimal("20000.00"));
 
       final MockHttpSession session = new MockHttpSession();
       session.setAttribute(APPLICATION_ID, applicationId);
@@ -1430,7 +1430,7 @@ class EditProceedingsAndCostsSectionControllerTest {
       final ApplicationDetail application = new ApplicationDetail();
       final CostStructureDetail costs = new CostStructureDetail();
       final UserDetail user = new UserDetail();
-      final CostsFormData costsFormData = new CostsFormData();
+      final CostsFormData costsFormData = new CostsFormData(new BigDecimal("20000.00"));
 
       final MockHttpSession session = new MockHttpSession();
       session.setAttribute(APPLICATION_ID, applicationId);
@@ -1453,7 +1453,7 @@ class EditProceedingsAndCostsSectionControllerTest {
       final ApplicationDetail application = new ApplicationDetail();
       final CostStructureDetail costs = new CostStructureDetail();
       final UserDetail user = new UserDetail();
-      final CostsFormData costsFormData = new CostsFormData();
+      final CostsFormData costsFormData = new CostsFormData(new BigDecimal("20000.00"));
 
       doAnswer(invocation -> {
         final BindingResult errors = invocation.getArgument(1);
