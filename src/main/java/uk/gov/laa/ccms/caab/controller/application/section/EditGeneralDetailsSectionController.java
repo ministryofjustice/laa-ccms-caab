@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -139,7 +140,7 @@ public class EditGeneralDetailsSectionController {
   public String updateCorrespondenceDetails(
       @PathVariable("caseContext") final CaseContext context,
       @RequestParam(required = false) final String action,
-      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @SessionAttribute(APPLICATION_ID) @Nullable final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @Validated @ModelAttribute("addressDetails") final AddressFormData addressDetails,
       final BindingResult bindingResult,
