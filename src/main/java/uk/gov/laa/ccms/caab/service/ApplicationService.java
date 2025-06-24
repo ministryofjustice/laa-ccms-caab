@@ -815,6 +815,10 @@ public class ApplicationService {
         .map(addressFormDataMapper::toAddressFormData).block();
   }
 
+  public AddressFormData getCorrespondenceAddressFormData(final AddressDetail address) {
+    return addressFormDataMapper.toAddressFormData(address);
+  }
+
   public Mono<AddressFormData> getMonoCorrespondenceAddressFormData(final String id) {
     return caabApiClient.getCorrespondenceAddress(id)
         .map(addressFormDataMapper::toAddressFormData);

@@ -7,6 +7,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_C
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -50,6 +51,7 @@ import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
@@ -103,20 +105,25 @@ public class EditGeneralDetailsSectionController {
   @GetMapping("/{caseContext}/sections/correspondence-address")
   public String correspondenceDetails(
       @PathVariable("caseContext") final CaseContext context,
-      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @SessionAttribute(CASE) @Nullable final ApplicationDetail ebsCase,
+      @SessionAttribute(APPLICATION_ID) @Nullable final String applicationId,
       final Model model,
       final HttpSession session) {
 
-    if (session.getAttribute("addressDetails") == null) {
-      final AddressFormData addressDetails =
-          applicationService.getCorrespondenceAddressFormData(applicationId);
-      model.addAttribute("addressDetails", addressDetails);
+    AddressFormData addressDetails =
+        (AddressFormData) session.getAttribute("addressDetails");
+
+    if (addressDetails == null) {
+      if (context.isAmendment()) {
+        addressDetails = applicationService.getCorrespondenceAddressFormData(
+            ebsCase.getCorrespondenceAddress());
+      } else {
+        addressDetails = applicationService.getCorrespondenceAddressFormData(applicationId);
+      }
       session.setAttribute("addressDetails", addressDetails);
-    } else {
-      final AddressFormData addressDetails =
-          (AddressFormData) session.getAttribute("addressDetails");
-      model.addAttribute("addressDetails", addressDetails);
     }
+
+    model.addAttribute("addressDetails", addressDetails);
 
     populateCorrespondenceAddressDropdowns(model);
 
