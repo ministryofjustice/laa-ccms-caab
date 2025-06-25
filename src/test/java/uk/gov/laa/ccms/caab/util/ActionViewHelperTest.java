@@ -103,7 +103,7 @@ class ActionViewHelperTest {
             "action.amendProviderDetails.description", "/amendments/sections/provider-details"),
         new ExpectedAction(FunctionConstants.CASE_CORRESPONDENCE_PREFERENCE,
             "action.amendCorrespondenceAddress.name",
-            "action.amendCorrespondenceAddress.description", "#"),
+            "action.amendCorrespondenceAddress.description", "/amendments/sections/correspondence-address"),
         new ExpectedAction(FunctionConstants.ALLOCATE_COST_LIMIT, "action.allocateCostLimit.name",
             "action.allocateCostLimit.description", "#"),
         new ExpectedAction(FunctionConstants.MEANS_REASSESSMENT,

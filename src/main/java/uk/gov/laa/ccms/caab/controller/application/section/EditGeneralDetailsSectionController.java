@@ -7,6 +7,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_C
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -17,7 +18,9 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -42,11 +45,13 @@ import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.CorrespondenceAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
@@ -97,22 +102,28 @@ public class EditGeneralDetailsSectionController {
    * @param model The model for the view.
    * @return The view name for the application summary page.
    */
-  @GetMapping("/application/sections/correspondence-address")
+  @GetMapping("/{caseContext}/sections/correspondence-address")
   public String correspondenceDetails(
-      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @PathVariable("caseContext") final CaseContext context,
+      @SessionAttribute(CASE) @Nullable final ApplicationDetail ebsCase,
+      @SessionAttribute(APPLICATION_ID) @Nullable final String applicationId,
       final Model model,
       final HttpSession session) {
 
-    if (session.getAttribute("addressDetails") == null) {
-      final AddressFormData addressDetails =
-          applicationService.getCorrespondenceAddressFormData(applicationId);
-      model.addAttribute("addressDetails", addressDetails);
+    AddressFormData addressDetails =
+        (AddressFormData) session.getAttribute("addressDetails");
+
+    if (addressDetails == null) {
+      if (context.isAmendment()) {
+        addressDetails = applicationService.getCorrespondenceAddressFormData(
+            ebsCase.getCorrespondenceAddress());
+      } else {
+        addressDetails = applicationService.getCorrespondenceAddressFormData(applicationId);
+      }
       session.setAttribute("addressDetails", addressDetails);
-    } else {
-      final AddressFormData addressDetails =
-          (AddressFormData) session.getAttribute("addressDetails");
-      model.addAttribute("addressDetails", addressDetails);
     }
+
+    model.addAttribute("addressDetails", addressDetails);
 
     populateCorrespondenceAddressDropdowns(model);
 
@@ -132,15 +143,23 @@ public class EditGeneralDetailsSectionController {
    * @param session The session data for the endpoint.
    * @return The view name for the application summary page.
    */
-  @PostMapping("/application/sections/correspondence-address")
+  @PostMapping("/{caseContext}/sections/correspondence-address")
   public String updateCorrespondenceDetails(
+      @PathVariable("caseContext") final CaseContext context,
       @RequestParam(required = false) final String action,
-      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @SessionAttribute(APPLICATION_ID) @Nullable final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @Validated @ModelAttribute("addressDetails") final AddressFormData addressDetails,
       final BindingResult bindingResult,
       final Model model,
       final HttpSession session) {
+
+    //TODO: Submit address amendments: https://dsdmoj.atlassian.net/browse/CCMSPUI-527
+    //TODO: Find address: https://dsdmoj.atlassian.net/browse/CCMSPUI-526
+    if (context.isAmendment()) {
+      throw new NotImplementedException("Submission of correspondence address amendments "
+          + "is not yet implemented.");
+    }
 
     if (ACTION_FIND_ADDRESS.equals(action)) {
       findAddressValidator.validate(addressDetails, bindingResult);

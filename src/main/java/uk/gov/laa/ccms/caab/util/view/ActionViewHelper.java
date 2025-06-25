@@ -56,7 +56,7 @@ public class ActionViewHelper {
           FunctionConstants.CASE_CORRESPONDENCE_PREFERENCE,
           "action.amendCorrespondenceAddress.name",
           "action.amendCorrespondenceAddress.description",
-          "#"),
+          "/" + CaseContext.AMENDMENTS.getPathValue() + "/sections/correspondence-address"),
       new AvailableAction(
           FunctionConstants.ALLOCATE_COST_LIMIT,
           "action.allocateCostLimit.name",
