@@ -88,6 +88,7 @@ public class ProviderDetailsSectionController {
 
     ApplicationFormData applicationFormData =
             applicationService.getProviderDetailsFormData(applicationId);
+    model.addAttribute(ACTIVE_CASE, activeCase);
 
     populateDropdowns(applicationFormData, user, model);
 
@@ -141,7 +142,7 @@ public class ProviderDetailsSectionController {
     }
 
     applicationService.updateProviderDetails(applicationId, applicationFormData, user);
-
+    
     return "redirect:/application/sections";
   }
 
