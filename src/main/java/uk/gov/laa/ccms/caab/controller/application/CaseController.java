@@ -220,13 +220,14 @@ public class CaseController {
    * Handles the request to abandon amendments for a specific case. This method is triggered by a
    * GET request to display the confirmation page for abandoning amendments.
    *
-   * @param ebsCase the application details for the current case, retrieved from the session
+   * @param amendments the application details for the current case, retrieved from the session
    *                attribute
    * @return a string representing the view name for confirming the abandonment of amendments
    */
   @GetMapping("/case/amendment/abandon")
-  public String handleAbandon(@SessionAttribute(CASE) final ApplicationDetail ebsCase) {
-    log.info("Abandoning amendments requested for case id {}", ebsCase.getId());
+  public String handleAbandon(
+      @SessionAttribute(CASE_AMENDMENTS) @Nullable final ApplicationDetail amendments) {
+    log.info("Abandoning amendments requested for application id {}", amendments.getId());
     return "application/amendment-remove";
   }
 
@@ -235,17 +236,19 @@ public class CaseController {
    * the request to abandon any ongoing amendments for the given case and logs the associated
    * information.
    *
-   * @param ebsCase the application details for the current case, retrieved from the session
+   * @param amendments the application details for the current case, retrieved from the session
    *                attribute
    * @param user    the user details of the currently logged-in user, retrieved from the session
    *                attribute
    * @return a string representing the view name to be displayed after the amendments are abandoned
    */
   @PostMapping("/case/amendment/abandon")
-  public String handleAbandon(@SessionAttribute(CASE) final ApplicationDetail ebsCase,
+  public String handleAbandon(
+      @SessionAttribute(CASE_AMENDMENTS) @Nullable final ApplicationDetail amendments,
       @SessionAttribute(USER_DETAILS) UserDetail user) {
-    log.info("Abandoning amendments for case id {}", ebsCase.getId());
-    applicationService.abandonApplication(ebsCase, user);
+    Assert.notNull(amendments, "Amendments must not be null");
+    log.info("Abandoning amendments for case id {}", amendments.getId());
+    applicationService.abandonApplication(amendments, user);
     return "home";
   }
 

@@ -197,8 +197,10 @@
               </table>
           </div>
       </div>
-      <div class="govuk-button-group">
-        <govuk:button classes="govuk-button--warning" th:href="@{/case/amendment/abandon}" th:text="#{site.abandon}"/>
+      <div th:if="${isAmendment}" class="govuk-button-group">
+        <govuk:button classes="govuk-button--warning"
+                      th:href="@{/case/amendment/abandon}"
+                      th:text="#{site.abandon}"/>
       </div>
   </div>
 </div>

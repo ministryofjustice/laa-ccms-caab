@@ -13,6 +13,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMI
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_AMENDMENTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
@@ -564,7 +565,7 @@ class CaseControllerTest {
   void handleAbandonGetReturnsCorrectView() {
     ApplicationDetail ebsCase = new ApplicationDetail();
     assertThat(mockMvc.perform(get("/case/amendment/abandon")
-        .sessionAttr(CASE, ebsCase)))
+        .sessionAttr(CASE_AMENDMENTS, ebsCase)))
         .hasStatusOk()
         .hasViewName("application/amendment-remove");
   }
@@ -576,7 +577,7 @@ class CaseControllerTest {
     doNothing().when(applicationService).abandonApplication(ebsCase, user);
 
     assertThat(mockMvc.perform(post("/case/amendment/abandon")
-        .sessionAttr(CASE, ebsCase)
+        .sessionAttr(CASE_AMENDMENTS, ebsCase)
         .sessionAttr(USER_DETAILS, user)))
         .hasStatusOk()
         .hasViewName("home");
@@ -593,7 +594,7 @@ class CaseControllerTest {
         .abandonApplication(ebsCase, user);
 
     assertThat(mockMvc.perform(post("/case/amendment/abandon")
-        .sessionAttr(CASE, ebsCase)
+        .sessionAttr(CASE_AMENDMENTS, ebsCase)
         .sessionAttr(USER_DETAILS, user)))
         .failure()
         .hasCauseInstanceOf(CaabApplicationException.class)
