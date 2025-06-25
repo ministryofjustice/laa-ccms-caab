@@ -15,7 +15,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
-import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_APPLICATION_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_LINK_TYPE;
@@ -26,6 +25,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITER
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.application.section.EditGeneralDetailsSectionController.CASE_RESULTS_PAGE;
+import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
 import java.util.ArrayList;
@@ -44,10 +44,12 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
@@ -123,12 +125,17 @@ class EditGeneralDetailsSectionControllerTest {
 
   @BeforeEach
   public void setup() {
-    mockMvc = standaloneSetup(editGeneralDetailsSectionController).build();
+    mockMvc = MockMvcBuilders
+        .standaloneSetup(editGeneralDetailsSectionController)
+        .setControllerAdvice(new GlobalExceptionHandler())
+        .setConversionService(getConversionService())
+        .build();
     mockCommonLookupDetail = new CommonLookupDetail();
     mockCommonLookupDetail.addContentItem(new CommonLookupValueDetail());
   }
 
   @Test
+  @DisplayName("Correspondence address screen is returned correctly")
   public void testCorrespondenceDetailsGet() throws Exception {
     final String applicationId = "123";
     final AddressFormData addressFormData = new AddressFormData();
@@ -153,6 +160,7 @@ class EditGeneralDetailsSectionControllerTest {
 
 
   @Test
+  @DisplayName("Correspondence address form details are populated from the session")
   public void testCorrespondenceDetailsGet_withSessionData() throws Exception {
     final String applicationId = "123";
     final AddressFormData addressFormData = new AddressFormData();
@@ -174,6 +182,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Submitting correspondence address details correctly redirects to linked cases screen")
   public void testUpdateCorrespondenceDetailsPost_next() throws Exception {
     final String applicationId = "123";
     final UserDetail user = new UserDetail();
@@ -192,6 +201,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Submission of invalid correspondence address details redirects the user to the form screen")
   public void testUpdateCorrespondenceDetailsPost_next_handlesValidationError() throws Exception {
     final String applicationId = "123";
     final UserDetail user = new UserDetail();
@@ -221,6 +231,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Search for correspondence address returns search screen")
   public void testUpdateCorrespondenceDetailsPost_findAddress_successful() throws Exception {
     final String applicationId = "123";
     final UserDetail user = new UserDetail();
@@ -245,6 +256,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Search for correspondence address handles no results")
   public void testUpdateCorrespondenceDetailsPost_findAddress_noResults() throws Exception {
     final String applicationId = "123";
     final UserDetail user = new UserDetail();
@@ -272,6 +284,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Search for correspondence address screen is returned correctly")
   public void testCorrespondenceAddressSearchGet() throws Exception {
     final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
 
@@ -285,6 +298,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Selection of correspondence address search result redirects the user to the form screen")
   public void testCorrespondenceAddressSearchPost_successful() throws Exception {
     final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
 
@@ -300,6 +314,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Selection of correspondence address search result handles validation errors")
   public void testCorrespondenceAddressSearchPost_handlesValidationError() throws Exception {
     final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
 
@@ -388,6 +403,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Linked cases screen is returned correctly")
   public void testLinkedCasesGet() throws Exception {
     final String applicationId = "123";
     final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases = new ResultsDisplay<>();
@@ -405,6 +421,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Remove linked case screen is returned correctly")
   public void testRemoveLinkedCaseGet() throws Exception {
     final Integer linkedCaseId = 1;
     final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
@@ -422,6 +439,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Removal of linked case redirects the user to the linked case screen")
   public void testRemoveLinkedCasePost() throws Exception {
     final String applicationId = "123";
     final String linkedCaseId = "1";
@@ -438,6 +456,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Confirm linked case screen is returned correctly")
   public void testConfirmLinkedCaseGet() throws Exception {
     final Integer linkedCaseId = 1;
     final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
@@ -457,6 +476,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Confirmation of linked case redirects the user to the linked case screen")
   public void testConfirmLinkedCasePost() throws Exception {
     final String applicationId = "123";
     final String linkedCaseId = "1";
@@ -475,6 +495,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Confirmation of linked case handles validation errors")
   public void testConfirmLinkedCasePost_validationError() throws Exception {
     final String applicationId = "123";
     final String linkedCaseId = "1";
@@ -501,6 +522,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Search for linked cases screen is returned correctly")
   public void testLinkedCasesSearchGet() throws Exception {
     final ProviderDetail mockProviderDetail = new ProviderDetail();
     final CaseStatusLookupDetail mockCaseStatusValues = new CaseStatusLookupDetail();
@@ -517,6 +539,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Selection of linked case handles validation errors")
   public void testLinkedCasesSearchPost_validationError() throws Exception {
 
     final ProviderDetail mockProviderDetail = new ProviderDetail();
@@ -544,6 +567,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Search for linked cases handles empty search results")
   public void testLinkedCasesSearchPost_emptySearchResults() throws Exception {
     final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     when(applicationService.getCases(any(), any())).thenReturn(Collections.emptyList());
@@ -559,6 +583,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Search for linked cases handles too many results")
   public void testLinkedCasesSearchPost_tooManyResults() throws Exception {
     // Arrange
     final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
@@ -579,6 +604,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Search for linked cases correctly returns search results")
   public void testLinkedCasesSearchResults() throws Exception {
     final int page = 0;
     final int size = 10;
@@ -600,6 +626,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Add linked case screen is returned correctly")
   public void testAddLinkedCaseGet_Success() throws Exception {
     final String caseReferenceId = "123456789";
     final ApplicationDetails linkedCaseSearchResults = new ApplicationDetails();
@@ -624,6 +651,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Adding a linked case redirects the user to the linked case screen")
   public void testAddLinkedCasePost_Success() throws Exception {
     final String applicationId = "app123";
     final UserDetail user = new UserDetail();
@@ -642,6 +670,7 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Test
+  @DisplayName("Adding a linked case handles validation errors")
   public void testAddLinkedCasePost_ValidationError() throws Exception {
     final String applicationId = "app123";
     final UserDetail user = new UserDetail();

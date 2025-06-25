@@ -64,8 +64,7 @@ public class ProviderDetailsSectionController {
       @SessionAttribute(value = APPLICATION_ID, required = false)  String applicationId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
-      @PathVariable("caseContext") final CaseContext caseContext,
-      HttpSession session,
+      @PathVariable final CaseContext caseContext,
       Model model) {
 
     if (caseContext.isAmendment()) {
@@ -89,8 +88,6 @@ public class ProviderDetailsSectionController {
 
     populateDropdowns(applicationFormData, user, model);
     model.addAttribute(ACTIVE_CASE, activeCase);
-    model.addAttribute("isAmendment", caseContext.isAmendment());
-    session.setAttribute(APPLICATION_ID, applicationId);
 
     return "application/sections/provider-details-section";
   }
@@ -109,6 +106,7 @@ public class ProviderDetailsSectionController {
    */
   @PostMapping("/{caseContext}/sections/provider-details")
   public String applicationSummaryProviderDetails(
+      @PathVariable final CaseContext caseContext,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,

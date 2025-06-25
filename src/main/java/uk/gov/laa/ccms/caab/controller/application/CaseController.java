@@ -1,8 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_AMENDMENTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
@@ -63,7 +63,7 @@ public class CaseController {
   @GetMapping("/case/overview")
   public String caseOverview(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
-      @SessionAttribute(APPLICATION) @Nullable final BaseApplicationDetail tdsApplication,
+      @SessionAttribute(APPLICATION_SUMMARY) @Nullable final BaseApplicationDetail tdsApplication,
       @SessionAttribute(NOTIFICATION_ID) @Nullable final String notificationId,
       Model model,
       HttpSession session,
@@ -76,7 +76,7 @@ public class CaseController {
     ApplicationDetail amendments = null;
     List<ProceedingDetail> draftProceedings = new ArrayList<>();
     CostStructureDetail draftCosts = null;
-    if (Boolean.TRUE.equals(isAmendment)) {
+    if (isAmendment) {
       amendments = applicationService.getApplication(tdsApplication.getId().toString()).block();
       draftProceedings = amendments != null
           ? amendments.getProceedings() : ebsCase.getAmendmentProceedingsInEbs();
@@ -94,7 +94,7 @@ public class CaseController {
     model.addAttribute("draftProceedings", draftProceedings);
     model.addAttribute("draftCosts", draftCosts);
     session.setAttribute(CASE_REFERENCE_NUMBER, ebsCase.getCaseReferenceNumber());
-    session.setAttribute(CASE_AMENDMENTS, amendments);
+    session.setAttribute(APPLICATION, amendments);
     return "application/case-overview";
   }
 
@@ -195,7 +195,7 @@ public class CaseController {
   @GetMapping("/case/details/proceeding/{index}")
   public String caseDetailsProceeding(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
-      @SessionAttribute(CASE_AMENDMENTS) @Nullable final ApplicationDetail amendments,
+      @SessionAttribute(APPLICATION) @Nullable final ApplicationDetail amendments,
       @PathVariable("index") final int index,
       Model model) {
 

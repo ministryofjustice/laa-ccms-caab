@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.bean.validators.costs;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
@@ -19,8 +20,7 @@ public class CostDetailsValidator extends AbstractValidator {
    *
    * @param clazz The class to check for support.
    * @return {@code true} if the class is assignable from
-   *         {@link uk.gov.laa.ccms.caab.bean.costs.CostsFormData},
-   *         {@code false} otherwise.
+   *     {@link uk.gov.laa.ccms.caab.bean.costs.CostsFormData}, {@code false} otherwise.
    */
   @Override
   public boolean supports(final Class<?> clazz) {
@@ -28,8 +28,7 @@ public class CostDetailsValidator extends AbstractValidator {
   }
 
   /**
-   * Validates the cost details in the
-   * {@link uk.gov.laa.ccms.caab.bean.costs.CostsFormData}.
+   * Validates the cost details in the {@link uk.gov.laa.ccms.caab.bean.costs.CostsFormData}.
    *
    * @param target The object to be validated.
    * @param errors The Errors object to store validation errors.
@@ -38,19 +37,37 @@ public class CostDetailsValidator extends AbstractValidator {
   public void validate(final Object target, final Errors errors) {
     final CostsFormData costDetails = (CostsFormData) target;
 
-    validateRequiredField("requestedCostLimitation",
+    validateRequiredField(
+        "requestedCostLimitation",
         costDetails.getRequestedCostLimitation(),
         "Requested cost limitation", errors);
 
     if (costDetails.getRequestedCostLimitation() != null) {
-      validateCurrencyField("requestedCostLimitation",
+      validateCurrencyField(
+          "requestedCostLimitation",
           costDetails.getRequestedCostLimitation(),
           "Requested cost limitation", errors);
 
-      validateNumericLimit("requestedCostLimitation", costDetails.getRequestedCostLimitation(),
+      validateNumericLimit(
+          "requestedCostLimitation", costDetails.getRequestedCostLimitation(),
           "Requested cost limitation", MAX_COST_LIMIT, errors);
+
+      validateRequestedAmountNotLessThanGrantedAmount(errors, costDetails);
     }
 
+  }
+
+  private static void validateRequestedAmountNotLessThanGrantedAmount(Errors errors,
+      CostsFormData costDetails) {
+    if (!errors.hasErrors()
+        && !Objects.isNull(costDetails.getRequestedCostLimitation())
+        && !Objects.isNull(costDetails.getGrantedCostLimitation())
+        && new BigDecimal(costDetails.getRequestedCostLimitation()).compareTo(
+        costDetails.getGrantedCostLimitation()) < 0) {
+      errors.rejectValue(
+          "requestedCostLimitation",
+          "caseCostLimitation.requestedAmount.belowGrantedAmount");
+    }
   }
 
 }

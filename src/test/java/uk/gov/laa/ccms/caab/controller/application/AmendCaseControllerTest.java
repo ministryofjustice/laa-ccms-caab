@@ -8,11 +8,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -30,6 +31,8 @@ import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CostEntryDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
@@ -90,17 +93,22 @@ class AmendCaseControllerTest {
     @DisplayName("Should return expected view")
     void shouldReturnExpectedView() {
       UserDetail userDetail = new UserDetail();
-      BaseApplicationDetail tdsApplication = new BaseApplicationDetail();
-      ApplicationDetail amendment = new ApplicationDetail().id(123).caseReferenceNumber("123");
-      ApplicationSectionDisplay applicationSectionDisplay = ApplicationSectionDisplay.builder().build();
+      BaseApplicationDetail tdsApplication = new BaseApplicationDetail().id(123);
+      CostStructureDetail costs = new CostStructureDetail().addCostEntriesItem(
+          new CostEntryDetail().costCategory("Test cat").requestedCosts(
+              BigDecimal.ONE));
+      ApplicationDetail amendment = new ApplicationDetail().id(123).caseReferenceNumber("123")
+          .costs(costs);
+      ApplicationSectionDisplay applicationSectionDisplay =
+          ApplicationSectionDisplay.builder().build();
 
       when(applicationService.getApplication(any())).thenReturn(Mono.just(amendment));
       when(amendmentService.getAmendmentSections(amendment, userDetail))
           .thenReturn(applicationSectionDisplay);
       assertThat(mockMvc.perform(get("/amendments/summary")
-          .sessionAttr(USER_DETAILS, userDetail)
-          .sessionAttr(APPLICATION, tdsApplication)
+          .sessionAttr(APPLICATION_SUMMARY, tdsApplication)
           .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
+          .sessionAttr(USER_DETAILS, userDetail)
       ))
           .hasStatusOk()
           .hasViewName("application/amendment-summary")
