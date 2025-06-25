@@ -1,7 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMENDMENT_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -63,7 +63,7 @@ public class CaseController {
   @GetMapping("/case/overview")
   public String caseOverview(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
-      @SessionAttribute(AMENDMENT_SUMMARY) @Nullable final BaseApplicationDetail tdsApplication,
+      @SessionAttribute(APPLICATION_SUMMARY) @Nullable final BaseApplicationDetail tdsApplication,
       @SessionAttribute(NOTIFICATION_ID) @Nullable final String notificationId,
       Model model,
       HttpSession session,

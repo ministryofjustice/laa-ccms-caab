@@ -9,8 +9,8 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMENDMENT_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
@@ -353,7 +353,7 @@ public class ApplicationSearchControllerTest {
         .hasRedirectedUrl("/case/overview")
         .request().sessionAttributes()
         .hasEntrySatisfying(CASE, value -> assertThat(value).isEqualTo(ebsCase))
-        .hasEntrySatisfying(AMENDMENT_SUMMARY, value -> assertThat(value).isEqualTo(tdsApplication));
+        .hasEntrySatisfying(APPLICATION_SUMMARY, value -> assertThat(value).isEqualTo(tdsApplication));
   }
 
   @Test

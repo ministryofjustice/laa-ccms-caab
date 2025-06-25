@@ -104,9 +104,9 @@ public class SessionConstants {
   public static final String APPLICATION = "caseApplication";
 
   /**
-   * Session attribute used to keep track of the application.
+   * Session attribute used to display a summary of the application.
    */
-  public static final String AMENDMENT_SUMMARY = "amendment";
+  public static final String APPLICATION_SUMMARY = "amendment";
 
   /**
    * Session attribute used to keep track of the active case details, used for application summary

@@ -1,11 +1,11 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMENDMENT_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -71,7 +71,7 @@ public class AmendCaseController {
         applicationService.getTdsApplications(caseSearchCriteria, userDetails, 0, 1)
             .getContent().stream().findFirst().orElse(null);
 
-    httpSession.setAttribute(AMENDMENT_SUMMARY, tdsApplication);
+    httpSession.setAttribute(APPLICATION_SUMMARY, tdsApplication);
 
     return "redirect:/amendments/summary";
   }
@@ -89,7 +89,7 @@ public class AmendCaseController {
    */
   @GetMapping("/amendments/summary")
   public String amendCaseSummary(
-      @SessionAttribute(AMENDMENT_SUMMARY) final BaseApplicationDetail tdsApplication,
+      @SessionAttribute(APPLICATION_SUMMARY) final BaseApplicationDetail tdsApplication,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       Model model,

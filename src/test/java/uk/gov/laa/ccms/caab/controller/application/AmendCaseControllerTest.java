@@ -8,8 +8,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMENDMENT_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -106,7 +106,7 @@ class AmendCaseControllerTest {
       when(amendmentService.getAmendmentSections(amendment, userDetail))
           .thenReturn(applicationSectionDisplay);
       assertThat(mockMvc.perform(get("/amendments/summary")
-          .sessionAttr(AMENDMENT_SUMMARY, tdsApplication)
+          .sessionAttr(APPLICATION_SUMMARY, tdsApplication)
           .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
           .sessionAttr(USER_DETAILS, userDetail)
       ))

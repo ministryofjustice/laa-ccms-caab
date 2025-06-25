@@ -1,8 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMENDMENT_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
@@ -240,7 +240,7 @@ public class ApplicationSearchController {
     }
 
     session.setAttribute(CASE, ebsCase);
-    session.setAttribute(AMENDMENT_SUMMARY, tdsApplication);
+    session.setAttribute(APPLICATION_SUMMARY, tdsApplication);
     session.setAttribute(NOTIFICATION_ID, notificationId);
 
     return "redirect:/case/overview";
