@@ -65,6 +65,7 @@ public class ProviderDetailsSectionController {
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       @PathVariable final CaseContext caseContext,
+      HttpSession session,
       Model model) {
 
     if (caseContext.isAmendment()) {
@@ -81,13 +82,14 @@ public class ProviderDetailsSectionController {
               clientDetail,
               user
               ).block();
+
+      session.setAttribute(APPLICATION_ID, applicationId);
     }
 
     ApplicationFormData applicationFormData =
             applicationService.getProviderDetailsFormData(applicationId);
 
     populateDropdowns(applicationFormData, user, model);
-    model.addAttribute(ACTIVE_CASE, activeCase);
 
     return "application/sections/provider-details-section";
   }
@@ -110,7 +112,6 @@ public class ProviderDetailsSectionController {
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
-      @PathVariable("caseContext") final CaseContext caseContext,
       @Validated @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       BindingResult bindingResult,
       HttpSession session,
@@ -120,9 +121,6 @@ public class ProviderDetailsSectionController {
 
     if (bindingResult.hasErrors()) {
       populateDropdowns(applicationFormData, user, model);
-      model.addAttribute(ACTIVE_CASE, activeCase);
-      model.addAttribute("isAmendment", caseContext.isAmendment());
-      model.addAttribute("caseContext", caseContext);
 
       return "application/sections/provider-details-section";
     }
