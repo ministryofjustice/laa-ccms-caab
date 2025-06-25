@@ -98,13 +98,14 @@ public class EditGeneralDetailsSectionController {
   /**
    * Handles the GET request for editing an application's correspondence address.
    *
+   * @param caseContext the context for the application (e.g. application or amendments)
    * @param applicationId The id of the application
    * @param model         The model for the view.
    * @return The view name for the application summary page.
    */
   @GetMapping("/{caseContext}/sections/correspondence-address")
   public String correspondenceDetails(
-      @PathVariable("caseContext") final CaseContext context,
+      @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(CASE) @Nullable final ApplicationDetail ebsCase,
       @SessionAttribute(APPLICATION_ID) @Nullable final String applicationId,
       final Model model,
@@ -114,7 +115,7 @@ public class EditGeneralDetailsSectionController {
         (AddressFormData) session.getAttribute("addressDetails");
 
     if (addressDetails == null) {
-      if (context.isAmendment()) {
+      if (caseContext.isAmendment()) {
         addressDetails = applicationService.getCorrespondenceAddressFormData(
             ebsCase.getCorrespondenceAddress());
       } else {
@@ -133,6 +134,7 @@ public class EditGeneralDetailsSectionController {
   /**
    * Handles the POST request for editing an application's correspondence address.
    *
+   * @param caseContext the context for the application (e.g. application or amendments)
    * @param action         The action performed, which button pressed. Either "find_address" or
    *                       "save_address".
    * @param applicationId  The id of the application
@@ -218,6 +220,7 @@ public class EditGeneralDetailsSectionController {
   /**
    * Handles the GET request for edit correspondence address search page.
    *
+   * @param caseContext the context for the application (e.g. application or amendments)
    * @param addressResultsDisplay the address results from ordinance survey api.
    * @param addressSearch         The address search model containing the uprn.
    * @param model                 The model for the view.
@@ -242,6 +245,7 @@ public class EditGeneralDetailsSectionController {
   /**
    * Handles the correspondence address results submission.
    *
+   * @param caseContext the context for the application (e.g. application or amendments)
    * @param addressResultsDisplay the address results from ordinance survey api.
    * @param addressSearch         The address search model containing the uprn.
    * @param model                 The model for the view.
@@ -566,7 +570,7 @@ public class EditGeneralDetailsSectionController {
    * @param bindingResult Binding result for validation.
    * @param model         Spring MVC model.
    * @return The redirection view name upon successful addition, or the view name to re-add upon
-   * validation errors.
+   *     validation errors.
    */
   @PostMapping("/application/sections/linked-cases/add")
   public String addLinkedCasePost(
@@ -600,7 +604,7 @@ public class EditGeneralDetailsSectionController {
         Optional.ofNullable(Mono.zip(
             providerService.getProvider(user.getProvider().getId()),
             lookupService.getCaseStatusValues()).block()).orElseThrow(
-            () -> new CaabApplicationException("Failed to retrieve lookup data"));
+              () -> new CaabApplicationException("Failed to retrieve lookup data"));
 
     final ProviderDetail providerDetail = combinedResults.getT1();
     final CaseStatusLookupDetail caseStatusLookupDetail = combinedResults.getT2();
