@@ -11,9 +11,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_AMENDMENTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
@@ -565,7 +565,7 @@ class CaseControllerTest {
   void handleAbandonGetReturnsCorrectView() {
     ApplicationDetail ebsCase = new ApplicationDetail();
     assertThat(mockMvc.perform(get("/case/amendment/abandon")
-        .sessionAttr(CASE_AMENDMENTS, ebsCase)))
+        .sessionAttr(APPLICATION, ebsCase)))
         .hasStatusOk()
         .hasViewName("application/amendment-remove");
   }
@@ -577,10 +577,10 @@ class CaseControllerTest {
     doNothing().when(applicationService).abandonApplication(ebsCase, user);
 
     assertThat(mockMvc.perform(post("/case/amendment/abandon")
-        .sessionAttr(CASE_AMENDMENTS, ebsCase)
+        .sessionAttr(APPLICATION, ebsCase)
         .sessionAttr(USER_DETAILS, user)))
-        .hasStatusOk()
-        .hasViewName("home");
+        .hasStatus3xxRedirection()
+        .hasRedirectedUrl("/case/overview");
 
     verify(applicationService, times(1)).abandonApplication(ebsCase, user);
   }
@@ -594,7 +594,7 @@ class CaseControllerTest {
         .abandonApplication(ebsCase, user);
 
     assertThat(mockMvc.perform(post("/case/amendment/abandon")
-        .sessionAttr(CASE_AMENDMENTS, ebsCase)
+        .sessionAttr(APPLICATION, ebsCase)
         .sessionAttr(USER_DETAILS, user)))
         .failure()
         .hasCauseInstanceOf(CaabApplicationException.class)

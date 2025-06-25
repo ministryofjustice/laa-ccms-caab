@@ -226,7 +226,8 @@ public class CaseController {
    */
   @GetMapping("/case/amendment/abandon")
   public String handleAbandon(
-      @SessionAttribute(CASE_AMENDMENTS) @Nullable final ApplicationDetail amendments) {
+      @SessionAttribute(APPLICATION) @Nullable final ApplicationDetail amendments) {
+    Assert.notNull(amendments, "Amendments must not be null");
     log.info("Abandoning amendments requested for application id {}", amendments.getId());
     return "application/amendment-remove";
   }
@@ -244,12 +245,16 @@ public class CaseController {
    */
   @PostMapping("/case/amendment/abandon")
   public String handleAbandon(
-      @SessionAttribute(CASE_AMENDMENTS) @Nullable final ApplicationDetail amendments,
-      @SessionAttribute(USER_DETAILS) UserDetail user) {
+      @SessionAttribute(APPLICATION) @Nullable final ApplicationDetail amendments,
+      @SessionAttribute(USER_DETAILS) UserDetail user,
+      final HttpSession httpSession) {
     Assert.notNull(amendments, "Amendments must not be null");
     log.info("Abandoning amendments for case id {}", amendments.getId());
     applicationService.abandonApplication(amendments, user);
-    return "home";
+
+    httpSession.removeAttribute(APPLICATION_SUMMARY);
+
+    return "redirect:/case/overview";
   }
 
   private static List<AvailableAction> getAvailableActions(ApplicationDetail ebsCase,

@@ -254,7 +254,7 @@ public class EvidenceService {
             .flatMap(this::flattenAttributes)
             .toList())
         .flatMap(allAttributes -> ebsApiClient.getEvidenceDocumentTypes(
-                COMMON_VALUE_OPA_EVIDENCE_ITEMS, null).log()
+                COMMON_VALUE_OPA_EVIDENCE_ITEMS, null)
             .map(docTypesLookup -> docTypesLookup.getContent().stream()
                 .filter(docType -> isRequiredOpaEvidenceItem(
                     docType, allAttributes)).toList()));
