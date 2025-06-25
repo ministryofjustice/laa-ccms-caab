@@ -29,7 +29,7 @@ jobs:
 
   scan-image:
     needs: [ build ]
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@feature/add-image-scanning
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@v1
     permissions:
       contents: read
       id-token: write
