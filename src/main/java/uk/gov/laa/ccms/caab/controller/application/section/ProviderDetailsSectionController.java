@@ -60,7 +60,7 @@ public class ProviderDetailsSectionController {
       @SessionAttribute(value = APPLICATION_ID, required = false)  String applicationId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
-      @PathVariable("caseContext") final CaseContext caseContext,
+      @PathVariable final CaseContext caseContext,
       Model model) {
 
     if (caseContext.isAmendment()) {
@@ -84,7 +84,6 @@ public class ProviderDetailsSectionController {
 
     populateDropdowns(applicationFormData, user, model);
     model.addAttribute(ACTIVE_CASE, activeCase);
-    model.addAttribute("isAmendment", caseContext.isAmendment());
 
     return "application/sections/provider-details-section";
   }
@@ -101,8 +100,9 @@ public class ProviderDetailsSectionController {
    * @return The path to the next step in the application summary edit or the current page based on
    *         validation.
    */
-  @PostMapping("/application/sections/provider-details")
+  @PostMapping("/{caseContext}/sections/provider-details")
   public String applicationSummaryProviderDetails(
+      @PathVariable final CaseContext caseContext,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,

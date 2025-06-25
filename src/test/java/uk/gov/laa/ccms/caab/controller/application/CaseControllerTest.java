@@ -11,7 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
@@ -217,7 +217,7 @@ class CaseControllerTest {
               get("/case/overview", selectedCaseRef)
                   .sessionAttr(USER_DETAILS, user)
                   .sessionAttr(CASE, applicationDetail)
-                  .sessionAttr(APPLICATION, tdsApplication)))
+                  .sessionAttr(APPLICATION_SUMMARY, tdsApplication)))
           .hasViewName("application/case-overview")
           .satisfies(response -> {
             assertThat(response).request().sessionAttributes()
@@ -283,7 +283,7 @@ class CaseControllerTest {
               get("/case/overview", selectedCaseRef)
                   .sessionAttr(USER_DETAILS, user)
                   .sessionAttr(CASE, applicationDetail)
-                  .sessionAttr(APPLICATION, tdsApplication)))
+                  .sessionAttr(APPLICATION_SUMMARY, tdsApplication)))
           .hasViewName("application/case-overview")
           .satisfies(response -> {
             assertThat(response).request().sessionAttributes()
@@ -354,7 +354,7 @@ class CaseControllerTest {
               get("/case/overview")
                   .sessionAttr(USER_DETAILS, user)
                   .sessionAttr(CASE, ebsCase)
-                  .sessionAttr(APPLICATION, tdsApplication)))
+                  .sessionAttr(APPLICATION_SUMMARY, tdsApplication)))
           .hasStatusOk()
           .model()
           .hasEntrySatisfying("availableActions", value -> assertThat(value).asInstanceOf(

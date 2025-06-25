@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.bean.costs;
 
+import java.math.BigDecimal;
 import lombok.Data;
 
 /**
@@ -8,6 +9,10 @@ import lombok.Data;
 @Data
 public class CostsFormData {
 
+  /**
+   * The granted cost limitation amount.
+   */
+  private final BigDecimal grantedCostLimitation;
   /**
    * The requested cost limitation amount.
    */

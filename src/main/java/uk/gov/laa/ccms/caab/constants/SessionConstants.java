@@ -88,11 +88,6 @@ public class SessionConstants {
   public static final String CASE = "case";
 
   /**
-   * Session attribute used to keep track of amendment details for the current case.
-   */
-  public static final String CASE_AMENDMENTS = "amendments";
-
-  /**
    * Session attribute used to keep track of the Case Reference Number, used for
    * case summary page.
    */
@@ -106,12 +101,12 @@ public class SessionConstants {
   /**
    * Session attribute used to keep track of the application.
    */
-  public static final String APPLICATION = "application";
+  public static final String APPLICATION = "caseApplication";
 
   /**
-   * Session attribute used to keep track of the application.
+   * Session attribute used to display a summary of the application.
    */
-  public static final String AMENDMENT = "amendment";
+  public static final String APPLICATION_SUMMARY = "amendment";
 
   /**
    * Session attribute used to keep track of the active case details, used for application summary

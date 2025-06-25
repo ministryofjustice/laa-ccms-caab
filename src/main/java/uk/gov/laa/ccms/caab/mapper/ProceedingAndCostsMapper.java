@@ -184,8 +184,9 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "scopeLimitationIndex", ignore = true)
   ScopeLimitationFlowFormData toScopeLimitationFlow(ScopeLimitationDetail scopeLimitation);
 
-  @Mapping(target = "requestedCostLimitation", source = "costLimitation")
-  CostsFormData toCostsFormData(BigDecimal costLimitation);
+  @Mapping(target = "requestedCostLimitation", source = "requestedCostLimitation")
+  @Mapping(target = "grantedCostLimitation", source = "grantedCostLimitation")
+  CostsFormData toCostsFormData(CostStructureDetail costLimitation);
 
   @Mapping(target = "defaultCostLimitation", ignore = true)
   @Mapping(target = "grantedCostLimitation", ignore = true)
