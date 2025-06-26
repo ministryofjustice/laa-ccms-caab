@@ -98,13 +98,14 @@ public class EditGeneralDetailsSectionController {
   /**
    * Handles the GET request for editing an application's correspondence address.
    *
+   * @param caseContext the context for the application (e.g. application or amendments)
    * @param applicationId The id of the application
-   * @param model The model for the view.
+   * @param model         The model for the view.
    * @return The view name for the application summary page.
    */
   @GetMapping("/{caseContext}/sections/correspondence-address")
   public String correspondenceDetails(
-      @PathVariable("caseContext") final CaseContext context,
+      @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(CASE) @Nullable final ApplicationDetail ebsCase,
       @SessionAttribute(APPLICATION_ID) @Nullable final String applicationId,
       final Model model,
@@ -114,7 +115,7 @@ public class EditGeneralDetailsSectionController {
         (AddressFormData) session.getAttribute("addressDetails");
 
     if (addressDetails == null) {
-      if (context.isAmendment()) {
+      if (caseContext.isAmendment()) {
         addressDetails = applicationService.getCorrespondenceAddressFormData(
             ebsCase.getCorrespondenceAddress());
       } else {
@@ -133,19 +134,20 @@ public class EditGeneralDetailsSectionController {
   /**
    * Handles the POST request for editing an application's correspondence address.
    *
-   * @param action The action performed, which button pressed.
-   *               Either "find_address" or "save_address".
-   * @param applicationId The id of the application
+   * @param caseContext the context for the application (e.g. application or amendments)
+   * @param action         The action performed, which button pressed. Either "find_address" or
+   *                       "save_address".
+   * @param applicationId  The id of the application
    * @param addressDetails The address details model.
-   * @param user The user details.
-   * @param model The model for the view.
-   * @param bindingResult Validation result.
-   * @param session The session data for the endpoint.
+   * @param user           The user details.
+   * @param model          The model for the view.
+   * @param bindingResult  Validation result.
+   * @param session        The session data for the endpoint.
    * @return The view name for the application summary page.
    */
   @PostMapping("/{caseContext}/sections/correspondence-address")
   public String updateCorrespondenceDetails(
-      @PathVariable("caseContext") final CaseContext context,
+      @PathVariable final CaseContext caseContext,
       @RequestParam(required = false) final String action,
       @SessionAttribute(APPLICATION_ID) @Nullable final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
@@ -153,13 +155,6 @@ public class EditGeneralDetailsSectionController {
       final BindingResult bindingResult,
       final Model model,
       final HttpSession session) {
-
-    //TODO: Submit address amendments: https://dsdmoj.atlassian.net/browse/CCMSPUI-527
-    //TODO: Find address: https://dsdmoj.atlassian.net/browse/CCMSPUI-526
-    if (context.isAmendment()) {
-      throw new NotImplementedException("Submission of correspondence address amendments "
-          + "is not yet implemented.");
-    }
 
     if (ACTION_FIND_ADDRESS.equals(action)) {
       findAddressValidator.validate(addressDetails, bindingResult);
@@ -180,7 +175,7 @@ public class EditGeneralDetailsSectionController {
       if (addressSearchResults.getContent() == null) {
         bindingResult.reject(
             "address.none",
-            "Your input for address details has not returned any results.");
+            "Your input for address details has not returned any results");
       } else {
         addressSearchResults = addressService.filterByHouseNumber(
             addressDetails.getHouseNameNumber(),
@@ -195,9 +190,15 @@ public class EditGeneralDetailsSectionController {
       }
 
       session.setAttribute("addressDetails", addressDetails);
-      return "redirect:/application/sections/correspondence-address/search";
+      return "redirect:/%s/sections/correspondence-address/search".formatted(
+          caseContext.getPathValue());
 
     } else {
+      //TODO: Submit address amendments: https://dsdmoj.atlassian.net/browse/CCMSPUI-527
+      if (caseContext.isAmendment()) {
+        throw new NotImplementedException("Submission of correspondence address amendments "
+            + "is not yet implemented.");
+      }
       applicationService.updateCorrespondenceAddress(applicationId, addressDetails, user);
       session.removeAttribute("addressDetails");
 
@@ -207,9 +208,11 @@ public class EditGeneralDetailsSectionController {
 
   private void populateCorrespondenceAddressDropdowns(final Model model) {
     new DropdownBuilder(model)
-        .addDropdown("countries",
+        .addDropdown(
+            "countries",
             lookupService.getCountries())
-        .addDropdown("caseAddressOptions",
+        .addDropdown(
+            "caseAddressOptions",
             lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
         .build();
   }
@@ -217,21 +220,24 @@ public class EditGeneralDetailsSectionController {
   /**
    * Handles the GET request for edit correspondence address search page.
    *
+   * @param caseContext the context for the application (e.g. application or amendments)
    * @param addressResultsDisplay the address results from ordinance survey api.
-   * @param addressSearch The address search model containing the uprn.
-   * @param model The model for the view.
+   * @param addressSearch         The address search model containing the uprn.
+   * @param model                 The model for the view.
    * @return The view name for the client basic details page
    */
-  @GetMapping("/application/sections/correspondence-address/search")
+  @GetMapping("/{caseContext}/sections/correspondence-address/search")
   public String correspondenceAddressGet(
+      @PathVariable final CaseContext caseContext,
       @SessionAttribute(ADDRESS_SEARCH_RESULTS)
       final ResultsDisplay<AddressResultRowDisplay> addressResultsDisplay,
       @ModelAttribute("addressSearch") final AddressSearchFormData addressSearch,
       final Model model) {
 
     model.addAttribute(ADDRESS_SEARCH_RESULTS, addressResultsDisplay);
-    model.addAttribute("formAction",
-        "application/sections/correspondence-address/search");
+    model.addAttribute(
+        "formAction",
+        "%s/sections/correspondence-address/search".formatted(caseContext.getPathValue()));
 
     return "application/sections/address-search-results";
   }
@@ -239,15 +245,17 @@ public class EditGeneralDetailsSectionController {
   /**
    * Handles the correspondence address results submission.
    *
+   * @param caseContext the context for the application (e.g. application or amendments)
    * @param addressResultsDisplay the address results from ordinance survey api.
-   * @param addressSearch The address search model containing the uprn.
-   * @param model The model for the view.
-   * @param bindingResult Validation result.
-   * @param session The session data for the endpoint.
+   * @param addressSearch         The address search model containing the uprn.
+   * @param model                 The model for the view.
+   * @param bindingResult         Validation result.
+   * @param session               The session data for the endpoint.
    * @return A redirect string to the agreement page.
    */
-  @PostMapping("/application/sections/correspondence-address/search")
+  @PostMapping("/{caseContext}/sections/correspondence-address/search")
   public String correspondenceAddressSearchPost(
+      @PathVariable final CaseContext caseContext,
       @SessionAttribute(ADDRESS_SEARCH_RESULTS) final ResultsDisplay<AddressResultRowDisplay>
           addressResultsDisplay,
       @SessionAttribute("addressDetails") final AddressFormData addressDetails,
@@ -260,8 +268,9 @@ public class EditGeneralDetailsSectionController {
     addressSearchValidator.validate(addressSearch, bindingResult);
     if (bindingResult.hasErrors()) {
       model.addAttribute(ADDRESS_SEARCH_RESULTS, addressResultsDisplay);
-      model.addAttribute("formAction",
-          "application/sections/correspondence-address/search");
+      model.addAttribute(
+          "formAction",
+          "%s/sections/correspondence-address/search".formatted(caseContext.getPathValue()));
       return "application/sections/address-search-results";
     }
 
@@ -269,18 +278,18 @@ public class EditGeneralDetailsSectionController {
     session.removeAttribute(ADDRESS_SEARCH_RESULTS);
 
     addressService.filterAndUpdateAddressFormData(
-            addressSearch.getUprn(),
-            addressResultsDisplay, addressDetails);
+        addressSearch.getUprn(),
+        addressResultsDisplay, addressDetails);
 
-    return "redirect:/application/sections/correspondence-address";
+    return "redirect:/%s/sections/correspondence-address".formatted(caseContext.getPathValue());
   }
 
   /**
    * Handles the GET request for retrieving linked cases associated with an application.
    *
    * @param applicationId the ID of the application, retrieved from the session attribute
-   * @param model the Spring Model to pass attributes to the view
-   * @param session the HttpSession object
+   * @param model         the Spring Model to pass attributes to the view
+   * @param session       the HttpSession object
    * @return the path to the linked cases summary view
    */
   @GetMapping("/application/sections/linked-cases")
@@ -303,8 +312,8 @@ public class EditGeneralDetailsSectionController {
    * Handles the GET request for displaying the page to remove a linked case.
    *
    * @param linkedCaseId the ID of the linked case to remove
-   * @param linkedCases the ResultsDisplay object containing linked case information
-   * @param model the Spring Model to pass attributes to the view
+   * @param linkedCases  the ResultsDisplay object containing linked case information
+   * @param model        the Spring Model to pass attributes to the view
    * @return the path to the linked case removal view
    */
   @GetMapping("/application/sections/linked-cases/{linked-case-id}/remove")
@@ -328,7 +337,7 @@ public class EditGeneralDetailsSectionController {
    * Handles the POST request for removing a linked case.
    *
    * @param linkedCaseId the ID of the linked case to remove
-   * @param user the user details from the session attribute
+   * @param user         the user details from the session attribute
    * @return a redirect path to the linked cases summary
    */
   @PostMapping("/application/sections/linked-cases/{linked-case-id}/remove")
@@ -345,8 +354,8 @@ public class EditGeneralDetailsSectionController {
    * Handles the GET request for displaying the page to confirm details of a linked case.
    *
    * @param linkedCaseId the ID of the linked case to confirm
-   * @param linkedCases the ResultsDisplay object containing linked case information
-   * @param model the Spring Model to pass attributes to the view
+   * @param linkedCases  the ResultsDisplay object containing linked case information
+   * @param model        the Spring Model to pass attributes to the view
    * @return the path to the linked case confirmation view
    */
   @GetMapping("/application/sections/linked-cases/{linked-case-id}/confirm")
@@ -372,11 +381,11 @@ public class EditGeneralDetailsSectionController {
   /**
    * Handles the POST request for confirming details of a linked case.
    *
-   * @param linkedCaseId the ID of the linked case to confirm
-   * @param user the user details from the session attribute
-   * @param linkedCase the LinkedCaseResultRowDisplay object containing linked case details
+   * @param linkedCaseId  the ID of the linked case to confirm
+   * @param user          the user details from the session attribute
+   * @param linkedCase    the LinkedCaseResultRowDisplay object containing linked case details
    * @param bindingResult the BindingResult to capture validation errors
-   * @param model the Spring Model to pass attributes to the view
+   * @param model         the Spring Model to pass attributes to the view
    * @return a redirect path to the linked cases summary or the confirmation view on error
    */
   @PostMapping("/application/sections/linked-cases/{linked-case-id}/confirm")
@@ -408,7 +417,8 @@ public class EditGeneralDetailsSectionController {
    */
   private void populateLinkedCasesConfirmDropdowns(final Model model) {
     new DropdownBuilder(model)
-        .addDropdown("caseLinkOptions",
+        .addDropdown(
+            "caseLinkOptions",
             lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE))
         .build();
   }
@@ -431,16 +441,16 @@ public class EditGeneralDetailsSectionController {
   }
 
   /**
-   * Handles the POST request for searching linked cases, validates the search criteria,
-   * and processes search results.
+   * Handles the POST request for searching linked cases, validates the search criteria, and
+   * processes search results.
    *
-   * @param activeCase           Active case details from session attribute.
-   * @param caseSearchCriteria   Search criteria model attribute.
-   * @param user                 User details from session attribute.
-   * @param currentlinkedCases   The current Linked cases for the application.
-   * @param redirectAttributes   Redirect attributes.
-   * @param bindingResult        Binding result for validation.
-   * @param model                Spring MVC model.
+   * @param activeCase         Active case details from session attribute.
+   * @param caseSearchCriteria Search criteria model attribute.
+   * @param user               User details from session attribute.
+   * @param currentlinkedCases The current Linked cases for the application.
+   * @param redirectAttributes Redirect attributes.
+   * @param bindingResult      Binding result for validation.
+   * @param model              Spring MVC model.
    * @return The view name for redirection or linked case search view.
    */
   @PostMapping("/application/sections/linked-cases/search")
@@ -516,12 +526,12 @@ public class EditGeneralDetailsSectionController {
   }
 
   /**
-   * Handles the GET request to initiate the addition of a linked case based on
-   * selected case reference ID.
+   * Handles the GET request to initiate the addition of a linked case based on selected case
+   * reference ID.
    *
-   * @param caseReferenceId    The case reference ID path variable.
+   * @param caseReferenceId         The case reference ID path variable.
    * @param linkedCaseSearchResults the results from the linked case search.=.
-   * @param model              Spring MVC model.
+   * @param model                   Spring MVC model.
    * @return The view name for adding a linked case.
    */
   @GetMapping("/application/sections/linked-cases/{case-reference-id}/add")
@@ -534,11 +544,11 @@ public class EditGeneralDetailsSectionController {
     final BaseApplicationDetail baseApplication =
         linkedCaseSearchResults.getContent() == null ? null :
             linkedCaseSearchResults.getContent().stream()
-            .filter(lc -> caseReferenceId.equals(lc.getCaseReferenceNumber()))
-            .findFirst()
-            .orElseThrow(() -> new CaabApplicationException(
-                "Unable to add linked case with case reference: %s".formatted(
-                    caseReferenceId)));
+                .filter(lc -> caseReferenceId.equals(lc.getCaseReferenceNumber()))
+                .findFirst()
+                .orElseThrow(() -> new CaabApplicationException(
+                    "Unable to add linked case with case reference: %s".formatted(
+                        caseReferenceId)));
 
     //map base application to linked case
     final LinkedCaseResultRowDisplay linkedCase =
@@ -551,16 +561,16 @@ public class EditGeneralDetailsSectionController {
   }
 
   /**
-   * Processes the POST request for adding a linked case, validating the provided
-   * linked case details.
+   * Processes the POST request for adding a linked case, validating the provided linked case
+   * details.
    *
    * @param applicationId Application ID from session attribute.
    * @param user          User details from session attribute.
    * @param linkedCase    Linked case model attribute.
    * @param bindingResult Binding result for validation.
    * @param model         Spring MVC model.
-   * @return The redirection view name upon successful addition, or the view name
-   *         to re-add upon validation errors.
+   * @return The redirection view name upon successful addition, or the view name to re-add upon
+   *     validation errors.
    */
   @PostMapping("/application/sections/linked-cases/add")
   public String addLinkedCasePost(
@@ -586,7 +596,7 @@ public class EditGeneralDetailsSectionController {
   /**
    * Populates the model with dropdown options and additional attributes for linked case search.
    *
-   * @param user the user details containing provider information
+   * @param user  the user details containing provider information
    * @param model the Spring Model to pass attributes for dropdowns and additional data
    */
   private void populateLinkedCasesSearchDropdowns(final UserDetail user, final Model model) {
@@ -599,15 +609,19 @@ public class EditGeneralDetailsSectionController {
     final ProviderDetail providerDetail = combinedResults.getT1();
     final CaseStatusLookupDetail caseStatusLookupDetail = combinedResults.getT2();
 
-    model.addAttribute("feeEarners",
+    model.addAttribute(
+        "feeEarners",
         providerService.getAllFeeEarners(providerDetail));
-    model.addAttribute("offices",
+    model.addAttribute(
+        "offices",
         user.getProvider().getOffices());
-    model.addAttribute("statuses",
+    model.addAttribute(
+        "statuses",
         caseStatusLookupDetail.getContent());
 
     new DropdownBuilder(model)
-        .addDropdown("Status",
+        .addDropdown(
+            "Status",
             lookupService.getCommonValues(COMMON_VALUE_APPLICATION_STATUS))
         .build();
 

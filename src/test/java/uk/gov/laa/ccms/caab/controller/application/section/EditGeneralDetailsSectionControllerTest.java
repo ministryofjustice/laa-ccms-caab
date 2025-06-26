@@ -35,8 +35,11 @@ import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,7 +99,7 @@ class EditGeneralDetailsSectionControllerTest {
   private CaseSearchCriteriaValidator searchCriteriaValidator;
 
   @Mock
-  private  FindAddressValidator findAddressValidator;
+  private FindAddressValidator findAddressValidator;
 
   @Mock
   private AddressSearchValidator addressSearchValidator;
@@ -124,7 +127,7 @@ class EditGeneralDetailsSectionControllerTest {
   private CommonLookupDetail mockCommonLookupDetail;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockMvc = MockMvcBuilders
         .standaloneSetup(editGeneralDetailsSectionController)
         .setControllerAdvice(new GlobalExceptionHandler())
@@ -134,569 +137,676 @@ class EditGeneralDetailsSectionControllerTest {
     mockCommonLookupDetail.addContentItem(new CommonLookupValueDetail());
   }
 
-  @Test
-  @DisplayName("Correspondence address screen is returned correctly")
-  public void testCorrespondenceDetailsGet() throws Exception {
-    final String applicationId = "123";
-    final AddressFormData addressFormData = new AddressFormData();
+  @Nested
+  @DisplayName("GET: /{caseContext}/sections/correspondence-address")
+  class GetCorrespondenceAddressTests {
 
-    when(lookupService.getCountries())
-        .thenReturn(Mono.just(mockCommonLookupDetail));
-    when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
-        .thenReturn(Mono.just(mockCommonLookupDetail));
+    @Test
+    @DisplayName("Should return expected result")
+    void shouldReturnExpectedResult() throws Exception {
+      final String applicationId = "123";
+      final AddressFormData addressFormData = new AddressFormData();
 
-    when(applicationService.getCorrespondenceAddressFormData(applicationId)).thenReturn(addressFormData);
+      when(lookupService.getCountries())
+          .thenReturn(Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
+          .thenReturn(Mono.just(mockCommonLookupDetail));
 
-    this.mockMvc.perform(get("/application/sections/correspondence-address")
-            .sessionAttr(APPLICATION_ID, applicationId))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/correspondence-address-details"))
-        .andExpect(model().attribute("addressDetails", addressFormData));
+      when(applicationService.getCorrespondenceAddressFormData(applicationId)).thenReturn(
+          addressFormData);
 
-    verify(applicationService, times(1)).getCorrespondenceAddressFormData(applicationId);
+      mockMvc.perform(get("/application/sections/correspondence-address")
+              .sessionAttr(APPLICATION_ID, applicationId))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/correspondence-address-details"))
+          .andExpect(model().attribute("addressDetails", addressFormData));
+
+      verify(applicationService, times(1)).getCorrespondenceAddressFormData(applicationId);
+    }
+
+    @Test
+    @DisplayName("Should populate session data")
+    void shouldPopulateSessionData() throws Exception {
+      final String applicationId = "123";
+      final AddressFormData addressFormData = new AddressFormData();
+
+      when(lookupService.getCountries())
+          .thenReturn(Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
+          .thenReturn(Mono.just(mockCommonLookupDetail));
+
+      mockMvc.perform(get("/application/sections/correspondence-address")
+              .sessionAttr(APPLICATION_ID, applicationId)
+              .sessionAttr("addressDetails", addressFormData))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/correspondence-address-details"))
+          .andExpect(model().attribute("addressDetails", addressFormData));
+
+      verify(applicationService, never()).getCorrespondenceAddressFormData(applicationId);
+    }
+  }
+
+  @Nested
+  @DisplayName("POST: /{caseContext}/application/sections/correspondence-address")
+  class PostCorrespondenceAddressTests {
+
+    @Test
+    @DisplayName("Should redirect to linked cases")
+    void shouldRedirectToLinkedCases() throws Exception {
+      final String applicationId = "123";
+      final UserDetail user = new UserDetail();
+      final AddressFormData addressDetails = new AddressFormData();
+
+      mockMvc.perform(post("/application/sections/correspondence-address")
+              .param("action", "update")
+              .sessionAttr(APPLICATION_ID, applicationId)
+              .sessionAttr(USER_DETAILS, user)
+              .flashAttr("addressDetails", addressDetails))
+          .andDo(print())
+          .andExpect(redirectedUrl("/application/sections/linked-cases"));
+
+      verify(applicationService, times(1)).updateCorrespondenceAddress(
+          applicationId, addressDetails, user);
+      verify(addressService, never()).getAddresses(any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    @DisplayName("Should redirect to find address screen")
+    void shouldRedirectToFindAddressScreen(String caseContext) throws Exception {
+      final String applicationId = "123";
+      final UserDetail user = new UserDetail();
+      final AddressFormData addressDetails = new AddressFormData();
+      final ResultsDisplay<AddressResultRowDisplay> addressSearchResults = new ResultsDisplay<>();
+
+      addressSearchResults.setContent(Collections.singletonList(new AddressResultRowDisplay()));
+
+      when(addressService.getAddresses(addressDetails.getPostcode())).thenReturn(
+          addressSearchResults);
+
+      mockMvc.perform(post("/%s/sections/correspondence-address".formatted(caseContext))
+              .param("action", "find_address")
+              .sessionAttr(APPLICATION_ID, applicationId)
+              .sessionAttr(USER_DETAILS, user)
+              .flashAttr("addressDetails", addressDetails))
+          .andDo(print())
+          .andExpect(redirectedUrl("/%s/sections/correspondence-address/search".formatted(caseContext)));
+
+      verify(addressService, times(1)).getAddresses(any());
+      verify(addressService, times(1)).filterByHouseNumber(any(), any());
+      verify(applicationService, never()).updateCorrespondenceAddress(
+          applicationId, addressDetails, user);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    @DisplayName("Find address should redirect back when no results")
+    void findAddressShouldRedirectBackWhenNoResults(String caseContext) throws Exception {
+      final String applicationId = "123";
+      final UserDetail user = new UserDetail();
+      final AddressFormData addressDetails = new AddressFormData();
+      final ResultsDisplay<AddressResultRowDisplay> addressSearchResults = new ResultsDisplay<>();
+
+      when(addressService.getAddresses(addressDetails.getPostcode())).thenReturn(
+          addressSearchResults);
+
+      when(lookupService.getCountries())
+          .thenReturn(Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
+          .thenReturn(Mono.just(mockCommonLookupDetail));
+
+      mockMvc.perform(post("/%s/sections/correspondence-address".formatted(caseContext))
+              .param("action", "find_address")
+              .sessionAttr(APPLICATION_ID, applicationId)
+              .sessionAttr(USER_DETAILS, user)
+              .flashAttr("addressDetails", addressDetails))
+          .andDo(print())
+          .andExpect(view().name("application/sections/correspondence-address-details"));
+
+      verify(addressService, times(1)).getAddresses(any());
+      verify(addressService, never()).filterByHouseNumber(any(), any());
+      verify(applicationService, never()).updateCorrespondenceAddress(
+          applicationId, addressDetails, user);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    @DisplayName("Should have validation errors")
+    void shouldHaveValidationErrors(String caseContext) throws Exception {
+      final String applicationId = "123";
+      final UserDetail user = new UserDetail();
+      final AddressFormData addressDetails = new AddressFormData();
+
+      when(lookupService.getCountries())
+          .thenReturn(Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
+          .thenReturn(Mono.just(mockCommonLookupDetail));
+
+      doAnswer(invocation -> {
+        final Errors errors = (Errors) invocation.getArguments()[1];
+        errors.rejectValue(
+            "preferredAddress", "required.preferredAddress", "Please select an Preferred address.");
+        return null;
+      }).when(correspondenceAddressValidator).validate(any(), any());
+
+      mockMvc.perform(post("/%s/sections/correspondence-address".formatted(caseContext))
+              .param("action", "update")
+              .sessionAttr(APPLICATION_ID, applicationId)
+              .sessionAttr(USER_DETAILS, user)
+              .flashAttr("addressDetails", addressDetails))
+          .andDo(print())
+          .andExpect(view().name("application/sections/correspondence-address-details"));
+
+      verify(applicationService, never()).updateCorrespondenceAddress(
+          applicationId, addressDetails, user);
+      verify(addressService, never()).getAddresses(any());
+    }
+
+    @Test
+    @DisplayName("Should contain no validation errors max lengths not exceeded")
+    void correspondenceAddressPostNoValidationErrorsMaxLengthsNotExceeded() throws Exception {
+      final String applicationId = "123";
+      final UserDetail user = new UserDetail();
+      final AddressFormData addressDetails = new AddressFormData();
+      addressDetails.setHouseNameNumber(RandomStringUtils.insecure().nextAlphabetic(35));
+      addressDetails.setPostcode(RandomStringUtils.insecure().nextAlphabetic(15));
+      addressDetails.setCareOf(RandomStringUtils.insecure().nextAlphabetic(35));
+      addressDetails.setAddressLine1(RandomStringUtils.insecure().nextAlphabetic(70));
+      addressDetails.setAddressLine2(RandomStringUtils.insecure().nextAlphabetic(35));
+      addressDetails.setCityTown(RandomStringUtils.insecure().nextAlphabetic(35));
+      addressDetails.setCounty(RandomStringUtils.insecure().nextAlphabetic(35));
+
+      mockMvc.perform(post("/application/sections/correspondence-address")
+              .param("action", "update")
+              .sessionAttr(APPLICATION_ID, applicationId)
+              .sessionAttr(USER_DETAILS, user)
+              .flashAttr("addressDetails", addressDetails))
+          .andDo(print())
+          .andExpect(redirectedUrl("/application/sections/linked-cases"));
+
+      verify(applicationService, times(1)).updateCorrespondenceAddress(
+          applicationId, addressDetails, user);
+      verify(addressService, never()).getAddresses(any());
+
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    @DisplayName("Should contain validation errors max lengths exceeded")
+    void correspondenceAddressPostValidationErrorsMaxLengthsExceeded(String caseContext) throws Exception {
+      final String applicationId = "123";
+      final UserDetail user = new UserDetail();
+      final AddressFormData addressDetails = new AddressFormData();
+      addressDetails.setHouseNameNumber(RandomStringUtils.insecure().nextAlphabetic(36));
+      addressDetails.setPostcode(RandomStringUtils.insecure().nextAlphabetic(16));
+      addressDetails.setCareOf(RandomStringUtils.insecure().nextAlphabetic(36));
+      addressDetails.setAddressLine1(RandomStringUtils.insecure().nextAlphabetic(71));
+      addressDetails.setAddressLine2(RandomStringUtils.insecure().nextAlphabetic(36));
+      addressDetails.setCityTown(RandomStringUtils.insecure().nextAlphabetic(36));
+      addressDetails.setCounty(RandomStringUtils.insecure().nextAlphabetic(36));
+
+      when(lookupService.getCountries())
+          .thenReturn(Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
+          .thenReturn(Mono.just(mockCommonLookupDetail));
+
+      mockMvc.perform(post("/%s/sections/correspondence-address".formatted(caseContext))
+              .param("action", "update")
+              .sessionAttr(APPLICATION_ID, applicationId)
+              .sessionAttr(USER_DETAILS, user)
+              .flashAttr("addressDetails", addressDetails))
+          .andDo(print())
+          .andExpect(view().name("application/sections/correspondence-address-details"))
+          .andExpect(model().attributeHasFieldErrors("addressDetails", "houseNameNumber"))
+          .andExpect(model().attributeHasFieldErrors("addressDetails", "postcode"))
+          .andExpect(model().attributeHasFieldErrors("addressDetails", "careOf"))
+          .andExpect(model().attributeHasFieldErrors("addressDetails", "addressLine1"))
+          .andExpect(model().attributeHasFieldErrors("addressDetails", "addressLine2"))
+          .andExpect(model().attributeHasFieldErrors("addressDetails", "county"))
+          .andExpect(model().attributeHasFieldErrors("addressDetails", "cityTown"));
+
+      verify(applicationService, never()).updateCorrespondenceAddress(
+          applicationId, addressDetails, user);
+      verify(addressService, never()).getAddresses(any());
+    }
+
+  }
+
+  @Nested
+  @DisplayName("GET: /{caseContext}/sections/correspondence-address/search")
+  class GetSearchResultsTests {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    @DisplayName("Should return expected result")
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
+      final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
+
+      mockMvc.perform(get("/%s/sections/correspondence-address/search".formatted(caseContext))
+              .sessionAttr(ADDRESS_SEARCH_RESULTS, results))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/address-search-results"))
+          .andExpect(
+              model().attribute("formAction", "%s/sections/correspondence-address/search".formatted(caseContext)))
+          .andExpect(model().attribute("addressSearchResults", results));
+    }
+  }
+
+  @Nested
+  @DisplayName("POST: /{caseContext}/application/sections/correspondence-address/search")
+  class PostSearchResultsTests {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    @DisplayName("Should return expected result")
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
+      final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
+
+      mockMvc.perform(post("/%s/sections/correspondence-address/search".formatted(caseContext))
+              .sessionAttr(ADDRESS_SEARCH_RESULTS, results)
+              .sessionAttr("addressDetails", new AddressFormData()))
+          .andDo(print())
+          .andExpect(status().is3xxRedirection())
+          .andExpect(redirectedUrl("/%s/sections/correspondence-address".formatted(caseContext)));
+
+      verify(addressService, times(1)).filterAndUpdateAddressFormData(any(), any(), any());
+
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    @DisplayName("Should have validation errors")
+    void shouldHaveValidationErrors(String caseContext) throws Exception {
+      final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
+
+      doAnswer(invocation -> {
+        final Errors errors = (Errors) invocation.getArguments()[1];
+        errors.reject("required.uprn", "Please select an address");
+        return null;
+      }).when(addressSearchValidator).validate(any(), any());
+
+      mockMvc.perform(post("/%s/sections/correspondence-address/search".formatted(caseContext))
+              .sessionAttr(ADDRESS_SEARCH_RESULTS, results)
+              .sessionAttr("addressDetails", new AddressFormData()))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/address-search-results"))
+          .andExpect(
+              model().attribute(
+                  "formAction", "%s/sections/correspondence-address/search".formatted(caseContext)))
+          .andExpect(model().attribute("addressSearchResults", results));
+
+      verify(addressService, never()).filterAndUpdateAddressFormData(any(), any(), any());
+
+    }
+  }
+
+  @Nested
+  @DisplayName("GET: /application/sections/linked-cases")
+  class GetLinkedCasesTests {
+
+    @Test
+    @DisplayName("Should return expected result")
+    void shouldReturnExpectedResult() throws Exception {
+      final String applicationId = "123";
+      final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases = new ResultsDisplay<>();
+
+      when(applicationService.getLinkedCases(applicationId)).thenReturn(linkedCases);
+
+      mockMvc.perform(get("/application/sections/linked-cases")
+              .sessionAttr(APPLICATION_ID, applicationId))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/application-linked-case-summary"))
+          .andExpect(model().attribute("linkedCases", linkedCases));
+
+      verify(applicationService, times(1)).getLinkedCases(applicationId);
+    }
+  }
+
+  @Nested
+  @DisplayName("GET: /application/sections/linked-cases/{linked-case-id}/remove")
+  class GetRemoveLinkedCaseTests {
+
+    @Test
+    @DisplayName("Should return expected result")
+    void shouldReturnExpectedResult() throws Exception {
+      final Integer linkedCaseId = 1;
+      final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
+      linkedCase.setId(linkedCaseId);
+
+      final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases = new ResultsDisplay<>();
+      linkedCases.setContent(Collections.singletonList(linkedCase));
+
+      mockMvc
+          .perform(get("/application/sections/linked-cases/{linked-case-id}/remove", linkedCaseId)
+              .sessionAttr("linkedCases", linkedCases))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/application-linked-case-remove"))
+          .andExpect(model().attribute("linkedCase", linkedCase));
+    }
+  }
+
+
+  @Nested
+  @DisplayName("POST: /application/sections/linked-cases/{linked-case-id}/remove")
+  class PostRemoveLinkedCaseTests {
+
+    @Test
+    @DisplayName("Should return expected result")
+    void shouldReturnExpectedResult() throws Exception {
+      final String applicationId = "123";
+      final String linkedCaseId = "1";
+      final UserDetail user = new UserDetail();
+
+      mockMvc
+          .perform(post("/application/sections/linked-cases/{linked-case-id}/remove", linkedCaseId)
+              .sessionAttr(APPLICATION_ID, applicationId)
+              .sessionAttr(USER_DETAILS, user))
+          .andDo(print())
+          .andExpect(status().is3xxRedirection())
+          .andExpect(redirectedUrl("/application/sections/linked-cases"));
+
+      verify(applicationService, times(1)).removeLinkedCase(linkedCaseId, user);
+    }
+  }
+
+  @Nested
+  @DisplayName("GET: /application/sections/linked-cases/{linked-case-id}/confirm")
+  class GetConfirmLinkedCaseTests {
+
+    @Test
+    @DisplayName("Should return expected result")
+    void shouldReturnExpectedResult() throws Exception {
+      final Integer linkedCaseId = 1;
+      final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
+      linkedCase.setId(linkedCaseId);
+
+      final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases = new ResultsDisplay<>();
+      linkedCases.setContent(Collections.singletonList(linkedCase));
+
+      when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(
+          Mono.just(mockCommonLookupDetail));
+
+      mockMvc
+          .perform(get("/application/sections/linked-cases/{linked-case-id}/confirm", linkedCaseId)
+              .sessionAttr("linkedCases", linkedCases))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/application-linked-case-confirm"))
+          .andExpect(model().attribute("currentLinkedCase", linkedCase));
+    }
+  }
+
+  @Nested
+  @DisplayName("POST: /application/sections/linked-cases/{linked-case-id}/confirm")
+  class PostConfirmLinkedCaseTests {
+
+    @Test
+    @DisplayName("Should return expected result")
+    void shouldReturnExpectedResult() throws Exception {
+      final String applicationId = "123";
+      final String linkedCaseId = "1";
+      final UserDetail user = new UserDetail();
+      final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
+
+      mockMvc
+          .perform(post("/application/sections/linked-cases/{linked-case-id}/confirm", linkedCaseId)
+              .sessionAttr(APPLICATION_ID, applicationId)
+              .sessionAttr(USER_DETAILS, user)
+              .flashAttr("linkedCase", linkedCase))
+          .andDo(print())
+          .andExpect(status().is3xxRedirection())
+          .andExpect(redirectedUrl("/application/sections/linked-cases"));
+
+      verify(applicationService, times(1)).updateLinkedCase(linkedCaseId, linkedCase, user);
+    }
+
+    @Test
+    @DisplayName("Should handle validation errors")
+    void shouldHandleValidationErrors() throws Exception {
+      final String applicationId = "123";
+      final String linkedCaseId = "1";
+      final UserDetail user = new UserDetail();
+      final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
+
+      when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(
+          Mono.just(mockCommonLookupDetail));
+
+      doAnswer(invocation -> {
+        final Errors errors = (Errors) invocation.getArguments()[1];
+        errors.reject("error.code", "Error message");
+        return null;
+      }).when(linkedCaseValidator).validate(any(), any());
+
+      mockMvc
+          .perform(post("/application/sections/linked-cases/{linked-case-id}/confirm", linkedCaseId)
+              .sessionAttr(APPLICATION_ID, applicationId)
+              .sessionAttr(USER_DETAILS, user)
+              .flashAttr("linkedCase", linkedCase))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/application-linked-case-confirm"));
+
+      verify(applicationService, never()).updateLinkedCase(linkedCaseId, linkedCase, user);
+    }
+  }
+
+  @Nested
+  @DisplayName("GET: /application/sections/linked-cases/search")
+  class GetLinkedCasesSearchTests {
+
+    @Test
+    @DisplayName("Should return expected result")
+    void shouldReturnExpectedResult() throws Exception {
+      final ProviderDetail mockProviderDetail = new ProviderDetail();
+      final CaseStatusLookupDetail mockCaseStatusValues = new CaseStatusLookupDetail();
+
+      when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_STATUS)).thenReturn(
+          Mono.just(mockCommonLookupDetail));
+      when(providerService.getProvider(any())).thenReturn(Mono.just(mockProviderDetail));
+      when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(mockCaseStatusValues));
+
+      mockMvc.perform(get("/application/sections/linked-cases/search")
+              .sessionAttr(USER_DETAILS, buildUserDetail()))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/application-linked-case-search"));
+    }
+  }
+
+  @Nested
+  @DisplayName("POST: /application/sections/linked-cases/search")
+  class PostLinkedCasesSearchTests {
+
+    @Test
+    @DisplayName("Should handle validation errors")
+    void shouldHandleValidationErrors() throws Exception {
+
+      final ProviderDetail mockProviderDetail = new ProviderDetail();
+      final CaseStatusLookupDetail mockCaseStatusValues = new CaseStatusLookupDetail();
+
+      when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_STATUS)).thenReturn(
+          Mono.just(mockCommonLookupDetail));
+      when(providerService.getProvider(any())).thenReturn(Mono.just(mockProviderDetail));
+      when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(mockCaseStatusValues));
+
+      final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+      doAnswer(invocation -> {
+        final Errors errors = (Errors) invocation.getArguments()[1];
+        errors.reject("error.code", "Error message");
+        return null;
+      }).when(searchCriteriaValidator).validate(any(), any());
+
+      mockMvc.perform(post("/application/sections/linked-cases/search")
+              .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
+              .sessionAttr(USER_DETAILS, buildUserDetail())
+              .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
+              .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/application-linked-case-search"));
+    }
+
+    @Test
+    @DisplayName("Should handle no search results")
+    void shouldHandleNoSearchResults() throws Exception {
+      final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+      when(applicationService.getCases(any(), any())).thenReturn(Collections.emptyList());
+
+      mockMvc.perform(post("/application/sections/linked-cases/search")
+              .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
+              .sessionAttr(USER_DETAILS, buildUserDetail())
+              .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
+              .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/application-linked-case-search-no-results"));
+    }
+    @Test
+    @DisplayName("Should handle too many results")
+    void shouldHandleTooManyResults() throws Exception {
+      // Arrange
+      final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+
+      // Mock the applicationService to throw TooManyResultsException
+      when(applicationService.getCases(any(), any()))
+          .thenThrow(new TooManyResultsException("test"));
+
+      // Act & Assert
+      mockMvc.perform(post("/application/sections/linked-cases/search")
+              .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
+              .sessionAttr(USER_DETAILS, buildUserDetail())
+              .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
+              .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(
+              view().name("application/sections/application-linked-case-search-too-many-results"));
+    }
+  }
+
+  @Nested
+  @DisplayName("GET: /application/sections/linked-cases/search/results")
+  class GetLinkedCasesSearchResultsTests{
+    @Test
+    @DisplayName("Should return expected result")
+    void shouldReturnExpectedResult() throws Exception {
+      final int page = 0;
+      final int size = 10;
+      final List<BaseApplicationDetail> caseSearchResults =
+          Arrays.asList(new BaseApplicationDetail(), new BaseApplicationDetail());
+      final ApplicationDetails linkedCaseSearchResults = new ApplicationDetails();
+
+      when(applicationMapper.toApplicationDetails(any())).thenReturn(linkedCaseSearchResults);
+
+      mockMvc.perform(get("/application/sections/linked-cases/search/results")
+              .param("page", String.valueOf(page))
+              .param("size", String.valueOf(size))
+              .flashAttr(CASE_SEARCH_RESULTS, caseSearchResults))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/application-linked-case-search-results"))
+          .andExpect(model().attribute(CASE_RESULTS_PAGE, linkedCaseSearchResults));
+
+      verify(applicationMapper, times(1)).toApplicationDetails(any());
+    }
+  }
+
+  @Nested
+  @DisplayName("GET: /application/sections/linked-cases/{case-reference-id}/add")
+  class GetAddLinkedCaseTests{
+    @Test
+    @DisplayName("Should return expected result")
+    void shouldReturnExpectedResult() throws Exception {
+      final String caseReferenceId = "123456789";
+      final ApplicationDetails linkedCaseSearchResults = new ApplicationDetails();
+      final List<BaseApplicationDetail> applications = new ArrayList<>();
+      final BaseApplicationDetail baseApplication = new BaseApplicationDetail();
+      baseApplication.setCaseReferenceNumber(caseReferenceId);
+      applications.add(baseApplication);
+      linkedCaseSearchResults.setContent(applications);
+      final LinkedCaseResultRowDisplay linkedCaseResultRowDisplay = new LinkedCaseResultRowDisplay();
+
+      when(resultDisplayMapper.toLinkedCaseResultRowDisplay(baseApplication)).thenReturn(
+          linkedCaseResultRowDisplay);
+      when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(
+          Mono.just(mockCommonLookupDetail));
+
+      mockMvc
+          .perform(get("/application/sections/linked-cases/{case-reference-id}/add", caseReferenceId)
+              .sessionAttr(CASE_RESULTS_PAGE, linkedCaseSearchResults))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/application-linked-case-add"))
+          .andExpect(model().attribute("currentLinkedCase", linkedCaseResultRowDisplay));
+
+      verify(resultDisplayMapper, times(1)).toLinkedCaseResultRowDisplay(baseApplication);
+    }
+  }
+
+  @Nested
+  @DisplayName("POST: /application/sections/linked-cases/{case-reference-id}/add")
+  class PostAddLinkedCaseTests {
+    @Test
+    @DisplayName("Should return expected result")
+    void shouldReturnExpectedResult() throws Exception {
+      final String applicationId = "app123";
+      final UserDetail user = new UserDetail();
+      final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
+
+      mockMvc.perform(post("/application/sections/linked-cases/add")
+              .sessionAttr(APPLICATION_ID, applicationId)
+              .sessionAttr(USER_DETAILS, user)
+              .flashAttr("currentLinkedCase", linkedCase))
+          .andDo(print())
+          .andExpect(status().is3xxRedirection())
+          .andExpect(redirectedUrl("/application/sections/linked-cases"));
+
+      verify(linkedCaseValidator, times(1)).validate(eq(linkedCase), any(BindingResult.class));
+      verify(applicationService, times(1)).addLinkedCase(eq(applicationId), eq(linkedCase), eq(user));
+    }
+
+    @Test
+    @DisplayName("Should handle validation errors")
+    void shouldHandleValidationErrors() throws Exception {
+      final String applicationId = "app123";
+      final UserDetail user = new UserDetail();
+      final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
+
+      doAnswer(invocation -> {
+        final BindingResult bindingResult = invocation.getArgument(1);
+        bindingResult.rejectValue(
+            "relationToCase", "required.relationToCase",
+            "Please complete 'How is this application / case related to your application?'.");
+        return null;
+      }).when(linkedCaseValidator).validate(eq(linkedCase), any(BindingResult.class));
+
+      when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(
+          Mono.just(mockCommonLookupDetail));
+
+      // When & Then
+      mockMvc.perform(post("/application/sections/linked-cases/add")
+              .sessionAttr(APPLICATION_ID, applicationId)
+              .sessionAttr(USER_DETAILS, user)
+              .flashAttr("currentLinkedCase", linkedCase))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/application-linked-case-add"))
+          .andExpect(model().attributeHasFieldErrors("currentLinkedCase", "relationToCase"));
+
+      verify(applicationService, never()).addLinkedCase(
+          anyString(), any(LinkedCaseResultRowDisplay.class), any(UserDetail.class));
+    }
   }
 
 
 
-  @Test
-  @DisplayName("Correspondence address form details are populated from the session")
-  public void testCorrespondenceDetailsGet_withSessionData() throws Exception {
-    final String applicationId = "123";
-    final AddressFormData addressFormData = new AddressFormData();
 
-    when(lookupService.getCountries())
-        .thenReturn(Mono.just(mockCommonLookupDetail));
-    when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
-        .thenReturn(Mono.just(mockCommonLookupDetail));
-
-    this.mockMvc.perform(get("/application/sections/correspondence-address")
-            .sessionAttr(APPLICATION_ID, applicationId)
-            .sessionAttr("addressDetails", addressFormData))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/correspondence-address-details"))
-        .andExpect(model().attribute("addressDetails", addressFormData));
-
-    verify(applicationService, never()).getCorrespondenceAddressFormData(applicationId);
-  }
-
-  @Test
-  @DisplayName("Submitting correspondence address details correctly redirects to linked cases screen")
-  public void testUpdateCorrespondenceDetailsPost_next() throws Exception {
-    final String applicationId = "123";
-    final UserDetail user = new UserDetail();
-    final AddressFormData addressDetails = new AddressFormData();
-
-    this.mockMvc.perform(post("/application/sections/correspondence-address")
-            .param("action", "update")
-            .sessionAttr(APPLICATION_ID, applicationId)
-            .sessionAttr(USER_DETAILS, user)
-            .flashAttr("addressDetails", addressDetails))
-        .andDo(print())
-        .andExpect(redirectedUrl("/application/sections/linked-cases"));
-
-    verify(applicationService, times(1)).updateCorrespondenceAddress(applicationId, addressDetails, user);
-    verify(addressService, never()).getAddresses(any());
-  }
-
-  @Test
-  @DisplayName("Submission of invalid correspondence address details redirects the user to the form screen")
-  public void testUpdateCorrespondenceDetailsPost_next_handlesValidationError() throws Exception {
-    final String applicationId = "123";
-    final UserDetail user = new UserDetail();
-    final AddressFormData addressDetails = new AddressFormData();
-
-    when(lookupService.getCountries())
-        .thenReturn(Mono.just(mockCommonLookupDetail));
-    when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
-        .thenReturn(Mono.just(mockCommonLookupDetail));
-
-    doAnswer(invocation -> {
-      final Errors errors = (Errors) invocation.getArguments()[1];
-      errors.rejectValue("preferredAddress", "required.preferredAddress", "Please select an Preferred address.");
-      return null;
-    }).when(correspondenceAddressValidator).validate(any(), any());
-
-    this.mockMvc.perform(post("/application/sections/correspondence-address")
-            .param("action", "update")
-            .sessionAttr(APPLICATION_ID, applicationId)
-            .sessionAttr(USER_DETAILS, user)
-            .flashAttr("addressDetails", addressDetails))
-        .andDo(print())
-        .andExpect(view().name("application/sections/correspondence-address-details"));
-
-    verify(applicationService, never()).updateCorrespondenceAddress(applicationId, addressDetails, user);
-    verify(addressService, never()).getAddresses(any());
-  }
-
-  @Test
-  @DisplayName("Search for correspondence address returns search screen")
-  public void testUpdateCorrespondenceDetailsPost_findAddress_successful() throws Exception {
-    final String applicationId = "123";
-    final UserDetail user = new UserDetail();
-    final AddressFormData addressDetails = new AddressFormData();
-    final ResultsDisplay<AddressResultRowDisplay> addressSearchResults = new ResultsDisplay<>();
-
-    addressSearchResults.setContent(Collections.singletonList(new AddressResultRowDisplay()));
-
-    when(addressService.getAddresses(addressDetails.getPostcode())).thenReturn(addressSearchResults);
-
-    this.mockMvc.perform(post("/application/sections/correspondence-address")
-            .param("action", "find_address")
-            .sessionAttr(APPLICATION_ID, applicationId)
-            .sessionAttr(USER_DETAILS, user)
-            .flashAttr("addressDetails", addressDetails))
-        .andDo(print())
-        .andExpect(redirectedUrl("/application/sections/correspondence-address/search"));
-
-    verify(addressService, times(1)).getAddresses(any());
-    verify(addressService, times(1)).filterByHouseNumber(any(), any());
-    verify(applicationService, never()).updateCorrespondenceAddress(applicationId, addressDetails, user);
-  }
-
-  @Test
-  @DisplayName("Search for correspondence address handles no results")
-  public void testUpdateCorrespondenceDetailsPost_findAddress_noResults() throws Exception {
-    final String applicationId = "123";
-    final UserDetail user = new UserDetail();
-    final AddressFormData addressDetails = new AddressFormData();
-    final ResultsDisplay<AddressResultRowDisplay> addressSearchResults = new ResultsDisplay<>();
-
-    when(addressService.getAddresses(addressDetails.getPostcode())).thenReturn(addressSearchResults);
-
-    when(lookupService.getCountries())
-        .thenReturn(Mono.just(mockCommonLookupDetail));
-    when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
-        .thenReturn(Mono.just(mockCommonLookupDetail));
-
-    this.mockMvc.perform(post("/application/sections/correspondence-address")
-            .param("action", "find_address")
-            .sessionAttr(APPLICATION_ID, applicationId)
-            .sessionAttr(USER_DETAILS, user)
-            .flashAttr("addressDetails", addressDetails))
-        .andDo(print())
-        .andExpect(view().name("application/sections/correspondence-address-details"));
-
-    verify(addressService, times(1)).getAddresses(any());
-    verify(addressService, never()).filterByHouseNumber(any(), any());
-    verify(applicationService, never()).updateCorrespondenceAddress(applicationId, addressDetails, user);
-  }
-
-  @Test
-  @DisplayName("Search for correspondence address screen is returned correctly")
-  public void testCorrespondenceAddressSearchGet() throws Exception {
-    final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
-
-    this.mockMvc.perform(get("/application/sections/correspondence-address/search")
-            .sessionAttr(ADDRESS_SEARCH_RESULTS, results))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/address-search-results"))
-        .andExpect(model().attribute("formAction", "application/sections/correspondence-address/search"))
-        .andExpect(model().attribute("addressSearchResults", results));
-  }
-
-  @Test
-  @DisplayName("Selection of correspondence address search result redirects the user to the form screen")
-  public void testCorrespondenceAddressSearchPost_successful() throws Exception {
-    final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
-
-    this.mockMvc.perform(post("/application/sections/correspondence-address/search")
-            .sessionAttr(ADDRESS_SEARCH_RESULTS, results)
-            .sessionAttr("addressDetails", new AddressFormData()))
-        .andDo(print())
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/sections/correspondence-address"));
-
-    verify(addressService, times(1)).filterAndUpdateAddressFormData(any(), any(), any());
-
-  }
-
-  @Test
-  @DisplayName("Selection of correspondence address search result handles validation errors")
-  public void testCorrespondenceAddressSearchPost_handlesValidationError() throws Exception {
-    final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
-
-    doAnswer(invocation -> {
-      final Errors errors = (Errors) invocation.getArguments()[1];
-      errors.reject("required.uprn", "Please select an address.");
-      return null;
-    }).when(addressSearchValidator).validate(any(), any());
-
-    this.mockMvc.perform(post("/application/sections/correspondence-address/search")
-            .sessionAttr(ADDRESS_SEARCH_RESULTS, results)
-            .sessionAttr("addressDetails", new AddressFormData()))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/address-search-results"))
-        .andExpect(model().attribute("formAction", "application/sections/correspondence-address/search"))
-        .andExpect(model().attribute("addressSearchResults", results));
-
-    verify(addressService, never()).filterAndUpdateAddressFormData(any(), any(), any());
-
-  }
-
-  @Test
-  @DisplayName("Correspondence Address No Validation Errors Max Lengths Not Exceeded")
-  void correspondenceAddressPostNoValidationErrorsMaxLengthsNotExceeded() throws Exception {
-    final String applicationId = "123";
-    final UserDetail user = new UserDetail();
-    final AddressFormData addressDetails = new AddressFormData();
-    addressDetails.setHouseNameNumber(RandomStringUtils.insecure().nextAlphabetic(35));
-    addressDetails.setPostcode(RandomStringUtils.insecure().nextAlphabetic(15));
-    addressDetails.setCareOf(RandomStringUtils.insecure().nextAlphabetic(35));
-    addressDetails.setAddressLine1(RandomStringUtils.insecure().nextAlphabetic(70));
-    addressDetails.setAddressLine2(RandomStringUtils.insecure().nextAlphabetic(35));
-    addressDetails.setCityTown(RandomStringUtils.insecure().nextAlphabetic(35));
-    addressDetails.setCounty(RandomStringUtils.insecure().nextAlphabetic(35));
-
-    this.mockMvc.perform(post("/application/sections/correspondence-address")
-            .param("action", "update")
-            .sessionAttr(APPLICATION_ID, applicationId)
-            .sessionAttr(USER_DETAILS, user)
-            .flashAttr("addressDetails", addressDetails))
-        .andDo(print())
-        .andExpect(redirectedUrl("/application/sections/linked-cases"));
-
-    verify(applicationService, times(1)).updateCorrespondenceAddress(applicationId, addressDetails, user);
-    verify(addressService, never()).getAddresses(any());
-
-  }
-
-  @Test
-  @DisplayName("Correspondence Address Validation Errors Max Lengths Exceeded")
-  void correspondenceAddressPostValidationErrorsMaxLengthsExceeded() throws Exception {
-    final String applicationId = "123";
-    final UserDetail user = new UserDetail();
-    final AddressFormData addressDetails = new AddressFormData();
-    addressDetails.setHouseNameNumber(RandomStringUtils.insecure().nextAlphabetic(36));
-    addressDetails.setPostcode(RandomStringUtils.insecure().nextAlphabetic(16));
-    addressDetails.setCareOf(RandomStringUtils.insecure().nextAlphabetic(36));
-    addressDetails.setAddressLine1(RandomStringUtils.insecure().nextAlphabetic(71));
-    addressDetails.setAddressLine2(RandomStringUtils.insecure().nextAlphabetic(36));
-    addressDetails.setCityTown(RandomStringUtils.insecure().nextAlphabetic(36));
-    addressDetails.setCounty(RandomStringUtils.insecure().nextAlphabetic(36));
-
-    when(lookupService.getCountries())
-        .thenReturn(Mono.just(mockCommonLookupDetail));
-    when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
-        .thenReturn(Mono.just(mockCommonLookupDetail));
-
-    this.mockMvc.perform(post("/application/sections/correspondence-address")
-            .param("action", "update")
-            .sessionAttr(APPLICATION_ID, applicationId)
-            .sessionAttr(USER_DETAILS, user)
-            .flashAttr("addressDetails", addressDetails))
-        .andDo(print())
-        .andExpect(view().name("application/sections/correspondence-address-details"))
-        .andExpect(model().attributeHasFieldErrors("addressDetails", "houseNameNumber"))
-        .andExpect(model().attributeHasFieldErrors("addressDetails", "postcode"))
-        .andExpect(model().attributeHasFieldErrors("addressDetails", "careOf"))
-        .andExpect(model().attributeHasFieldErrors("addressDetails", "addressLine1"))
-        .andExpect(model().attributeHasFieldErrors("addressDetails", "addressLine2"))
-        .andExpect(model().attributeHasFieldErrors("addressDetails", "county"))
-        .andExpect(model().attributeHasFieldErrors("addressDetails", "cityTown"));
-
-    verify(applicationService, never()).updateCorrespondenceAddress(applicationId, addressDetails, user);
-    verify(addressService, never()).getAddresses(any());
-  }
-
-  @Test
-  @DisplayName("Linked cases screen is returned correctly")
-  public void testLinkedCasesGet() throws Exception {
-    final String applicationId = "123";
-    final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases = new ResultsDisplay<>();
-
-    when(applicationService.getLinkedCases(applicationId)).thenReturn(linkedCases);
-
-    this.mockMvc.perform(get("/application/sections/linked-cases")
-            .sessionAttr(APPLICATION_ID, applicationId))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/application-linked-case-summary"))
-        .andExpect(model().attribute("linkedCases", linkedCases));
-
-    verify(applicationService, times(1)).getLinkedCases(applicationId);
-  }
-
-  @Test
-  @DisplayName("Remove linked case screen is returned correctly")
-  public void testRemoveLinkedCaseGet() throws Exception {
-    final Integer linkedCaseId = 1;
-    final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
-    linkedCase.setId(linkedCaseId);
-
-    final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases = new ResultsDisplay<>();
-    linkedCases.setContent(Collections.singletonList(linkedCase));
-
-    this.mockMvc.perform(get("/application/sections/linked-cases/{linked-case-id}/remove", linkedCaseId)
-            .sessionAttr("linkedCases", linkedCases))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/application-linked-case-remove"))
-        .andExpect(model().attribute("linkedCase", linkedCase));
-  }
-
-  @Test
-  @DisplayName("Removal of linked case redirects the user to the linked case screen")
-  public void testRemoveLinkedCasePost() throws Exception {
-    final String applicationId = "123";
-    final String linkedCaseId = "1";
-    final UserDetail user = new UserDetail();
-
-    this.mockMvc.perform(post("/application/sections/linked-cases/{linked-case-id}/remove", linkedCaseId)
-            .sessionAttr(APPLICATION_ID, applicationId)
-            .sessionAttr(USER_DETAILS, user))
-        .andDo(print())
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/sections/linked-cases"));
-
-    verify(applicationService, times(1)).removeLinkedCase(linkedCaseId, user);
-  }
-
-  @Test
-  @DisplayName("Confirm linked case screen is returned correctly")
-  public void testConfirmLinkedCaseGet() throws Exception {
-    final Integer linkedCaseId = 1;
-    final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
-    linkedCase.setId(linkedCaseId);
-
-    final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases = new ResultsDisplay<>();
-    linkedCases.setContent(Collections.singletonList(linkedCase));
-
-    when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(Mono.just(mockCommonLookupDetail));
-
-    this.mockMvc.perform(get("/application/sections/linked-cases/{linked-case-id}/confirm", linkedCaseId)
-            .sessionAttr("linkedCases", linkedCases))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/application-linked-case-confirm"))
-        .andExpect(model().attribute("currentLinkedCase", linkedCase));
-  }
-
-  @Test
-  @DisplayName("Confirmation of linked case redirects the user to the linked case screen")
-  public void testConfirmLinkedCasePost() throws Exception {
-    final String applicationId = "123";
-    final String linkedCaseId = "1";
-    final UserDetail user = new UserDetail();
-    final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
-
-    this.mockMvc.perform(post("/application/sections/linked-cases/{linked-case-id}/confirm", linkedCaseId)
-            .sessionAttr(APPLICATION_ID, applicationId)
-            .sessionAttr(USER_DETAILS, user)
-            .flashAttr("linkedCase", linkedCase))
-        .andDo(print())
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/sections/linked-cases"));
-
-    verify(applicationService, times(1)).updateLinkedCase(linkedCaseId, linkedCase, user);
-  }
-
-  @Test
-  @DisplayName("Confirmation of linked case handles validation errors")
-  public void testConfirmLinkedCasePost_validationError() throws Exception {
-    final String applicationId = "123";
-    final String linkedCaseId = "1";
-    final UserDetail user = new UserDetail();
-    final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
-
-    when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(Mono.just(mockCommonLookupDetail));
-
-    doAnswer(invocation -> {
-      final Errors errors = (Errors) invocation.getArguments()[1];
-      errors.reject("error.code", "Error message");
-      return null;
-    }).when(linkedCaseValidator).validate(any(), any());
-
-    this.mockMvc.perform(post("/application/sections/linked-cases/{linked-case-id}/confirm", linkedCaseId)
-            .sessionAttr(APPLICATION_ID, applicationId)
-            .sessionAttr(USER_DETAILS, user)
-            .flashAttr("linkedCase", linkedCase))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/application-linked-case-confirm"));
-
-    verify(applicationService, never()).updateLinkedCase(linkedCaseId, linkedCase, user);
-  }
-
-  @Test
-  @DisplayName("Search for linked cases screen is returned correctly")
-  public void testLinkedCasesSearchGet() throws Exception {
-    final ProviderDetail mockProviderDetail = new ProviderDetail();
-    final CaseStatusLookupDetail mockCaseStatusValues = new CaseStatusLookupDetail();
-
-    when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_STATUS)).thenReturn(Mono.just(mockCommonLookupDetail));
-    when(providerService.getProvider(any())).thenReturn(Mono.just(mockProviderDetail));
-    when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(mockCaseStatusValues));
-
-    this.mockMvc.perform(get("/application/sections/linked-cases/search")
-            .sessionAttr(USER_DETAILS, buildUserDetail()))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/application-linked-case-search"));
-  }
-
-  @Test
-  @DisplayName("Selection of linked case handles validation errors")
-  public void testLinkedCasesSearchPost_validationError() throws Exception {
-
-    final ProviderDetail mockProviderDetail = new ProviderDetail();
-    final CaseStatusLookupDetail mockCaseStatusValues = new CaseStatusLookupDetail();
-
-    when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_STATUS)).thenReturn(Mono.just(mockCommonLookupDetail));
-    when(providerService.getProvider(any())).thenReturn(Mono.just(mockProviderDetail));
-    when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(mockCaseStatusValues));
-
-    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
-    doAnswer(invocation -> {
-      final Errors errors = (Errors) invocation.getArguments()[1];
-      errors.reject("error.code", "Error message");
-      return null;
-    }).when(searchCriteriaValidator).validate(any(), any());
-
-    this.mockMvc.perform(post("/application/sections/linked-cases/search")
-            .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
-            .sessionAttr(USER_DETAILS, buildUserDetail())
-            .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
-            .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/application-linked-case-search"));
-  }
-
-  @Test
-  @DisplayName("Search for linked cases handles empty search results")
-  public void testLinkedCasesSearchPost_emptySearchResults() throws Exception {
-    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
-    when(applicationService.getCases(any(), any())).thenReturn(Collections.emptyList());
-
-    this.mockMvc.perform(post("/application/sections/linked-cases/search")
-            .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
-            .sessionAttr(USER_DETAILS, buildUserDetail())
-            .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
-            .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/application-linked-case-search-no-results"));
-  }
-
-  @Test
-  @DisplayName("Search for linked cases handles too many results")
-  public void testLinkedCasesSearchPost_tooManyResults() throws Exception {
-    // Arrange
-    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
-
-    // Mock the applicationService to throw TooManyResultsException
-    when(applicationService.getCases(any(), any()))
-        .thenThrow(new TooManyResultsException("test"));
-
-    // Act & Assert
-    this.mockMvc.perform(post("/application/sections/linked-cases/search")
-            .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
-            .sessionAttr(USER_DETAILS, buildUserDetail())
-            .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
-            .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/application-linked-case-search-too-many-results"));
-  }
-
-  @Test
-  @DisplayName("Search for linked cases correctly returns search results")
-  public void testLinkedCasesSearchResults() throws Exception {
-    final int page = 0;
-    final int size = 10;
-    final List<BaseApplicationDetail> caseSearchResults = Arrays.asList(new BaseApplicationDetail(), new BaseApplicationDetail());
-    final ApplicationDetails linkedCaseSearchResults = new ApplicationDetails();
-
-    when(applicationMapper.toApplicationDetails(any())).thenReturn(linkedCaseSearchResults);
-
-    this.mockMvc.perform(get("/application/sections/linked-cases/search/results")
-            .param("page", String.valueOf(page))
-            .param("size", String.valueOf(size))
-            .flashAttr(CASE_SEARCH_RESULTS, caseSearchResults))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/application-linked-case-search-results"))
-        .andExpect(model().attribute(CASE_RESULTS_PAGE, linkedCaseSearchResults));
-
-    verify(applicationMapper, times(1)).toApplicationDetails(any());
-  }
-
-  @Test
-  @DisplayName("Add linked case screen is returned correctly")
-  public void testAddLinkedCaseGet_Success() throws Exception {
-    final String caseReferenceId = "123456789";
-    final ApplicationDetails linkedCaseSearchResults = new ApplicationDetails();
-    final List<BaseApplicationDetail> applications = new ArrayList<>();
-    final BaseApplicationDetail baseApplication = new BaseApplicationDetail();
-    baseApplication.setCaseReferenceNumber(caseReferenceId);
-    applications.add(baseApplication);
-    linkedCaseSearchResults.setContent(applications);
-    final LinkedCaseResultRowDisplay linkedCaseResultRowDisplay = new LinkedCaseResultRowDisplay();
-
-    when(resultDisplayMapper.toLinkedCaseResultRowDisplay(baseApplication)).thenReturn(linkedCaseResultRowDisplay);
-    when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(Mono.just(mockCommonLookupDetail));
-
-    this.mockMvc.perform(get("/application/sections/linked-cases/{case-reference-id}/add", caseReferenceId)
-            .sessionAttr(CASE_RESULTS_PAGE, linkedCaseSearchResults))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/application-linked-case-add"))
-        .andExpect(model().attribute("currentLinkedCase", linkedCaseResultRowDisplay));
-
-    verify(resultDisplayMapper, times(1)).toLinkedCaseResultRowDisplay(baseApplication);
-  }
-
-  @Test
-  @DisplayName("Adding a linked case redirects the user to the linked case screen")
-  public void testAddLinkedCasePost_Success() throws Exception {
-    final String applicationId = "app123";
-    final UserDetail user = new UserDetail();
-    final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
-
-    this.mockMvc.perform(post("/application/sections/linked-cases/add")
-            .sessionAttr(APPLICATION_ID, applicationId)
-            .sessionAttr(USER_DETAILS, user)
-            .flashAttr("currentLinkedCase", linkedCase))
-        .andDo(print())
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/sections/linked-cases"));
-
-    verify(linkedCaseValidator, times(1)).validate(eq(linkedCase), any(BindingResult.class));
-    verify(applicationService, times(1)).addLinkedCase(eq(applicationId), eq(linkedCase), eq(user));
-  }
-
-  @Test
-  @DisplayName("Adding a linked case handles validation errors")
-  public void testAddLinkedCasePost_ValidationError() throws Exception {
-    final String applicationId = "app123";
-    final UserDetail user = new UserDetail();
-    final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
-
-    doAnswer(invocation -> {
-      final BindingResult bindingResult = invocation.getArgument(1);
-      bindingResult.rejectValue("relationToCase", "required.relationToCase",
-          "Please complete 'How is this application / case related to your application?'.");
-      return null;
-    }).when(linkedCaseValidator).validate(eq(linkedCase), any(BindingResult.class));
-
-    when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(Mono.just(mockCommonLookupDetail));
-
-    // When & Then
-    this.mockMvc.perform(post("/application/sections/linked-cases/add")
-            .sessionAttr(APPLICATION_ID, applicationId)
-            .sessionAttr(USER_DETAILS, user)
-            .flashAttr("currentLinkedCase", linkedCase))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/sections/application-linked-case-add"))
-        .andExpect(model().attributeHasFieldErrors("currentLinkedCase", "relationToCase"));
-
-    verify(applicationService, never()).addLinkedCase(anyString(), any(LinkedCaseResultRowDisplay.class), any(UserDetail.class));
-  }
 
 
 }
