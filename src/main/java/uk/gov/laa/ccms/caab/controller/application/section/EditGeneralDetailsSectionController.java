@@ -175,7 +175,7 @@ public class EditGeneralDetailsSectionController {
       if (addressSearchResults.getContent() == null) {
         bindingResult.reject(
             "address.none",
-            "Your input for address details has not returned any results.");
+            "Your input for address details has not returned any results");
       } else {
         addressSearchResults = addressService.filterByHouseNumber(
             addressDetails.getHouseNameNumber(),

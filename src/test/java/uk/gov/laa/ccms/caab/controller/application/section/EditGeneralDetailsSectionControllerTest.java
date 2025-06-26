@@ -424,7 +424,7 @@ class EditGeneralDetailsSectionControllerTest {
 
       doAnswer(invocation -> {
         final Errors errors = (Errors) invocation.getArguments()[1];
-        errors.reject("required.uprn", "Please select an address.");
+        errors.reject("required.uprn", "Please select an address");
         return null;
       }).when(addressSearchValidator).validate(any(), any());
 

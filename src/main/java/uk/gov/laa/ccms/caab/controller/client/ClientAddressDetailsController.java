@@ -119,7 +119,7 @@ public class ClientAddressDetailsController {
       if (clientAddressSearchResults.getContent() == null) {
         bindingResult.reject(
             "address.none",
-            "Your input for address details has not returned any results.");
+            "Your input for address details has not returned any results");
       } else {
         clientAddressSearchResults = addressService.filterByHouseNumber(
             clientFlowFormData.getAddressDetails().getHouseNameNumber(),
