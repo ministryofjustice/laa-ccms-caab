@@ -292,12 +292,13 @@ public class EditGeneralDetailsSectionController {
    * @param session       the HttpSession object
    * @return the path to the linked cases summary view
    */
-  @GetMapping("/application/sections/linked-cases")
+  @GetMapping("/{caseContext}/sections/linked-cases")
   public String linkedCasesGet(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @PathVariable final CaseContext caseContext,
       final Model model,
       final HttpSession session) {
-
+    log.info("Getting linked-cases for context {}", caseContext);
     final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases =
         applicationService.getLinkedCases(applicationId);
 
@@ -316,12 +317,15 @@ public class EditGeneralDetailsSectionController {
    * @param model        the Spring Model to pass attributes to the view
    * @return the path to the linked case removal view
    */
-  @GetMapping("/application/sections/linked-cases/{linked-case-id}/remove")
+  @GetMapping("/{caseContext}/sections/linked-cases/{linked-case-id}/remove")
   public String removeLinkedCaseGet(
       @PathVariable("linked-case-id") final Integer linkedCaseId,
+      @PathVariable final CaseContext caseContext,
       @SessionAttribute(LINKED_CASES) final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases,
       final Model model) {
 
+    log.info("Getting linked-case to remove with id: {} caseContext: {}", linkedCaseId,
+        caseContext);
     final LinkedCaseResultRowDisplay linkedCase = linkedCases.getContent() == null ? null :
         linkedCases.getContent().stream()
             .filter(lc -> linkedCaseId.equals(lc.getId()))
@@ -340,14 +344,17 @@ public class EditGeneralDetailsSectionController {
    * @param user         the user details from the session attribute
    * @return a redirect path to the linked cases summary
    */
-  @PostMapping("/application/sections/linked-cases/{linked-case-id}/remove")
+  @PostMapping("/{caseContext}/sections/linked-cases/{linked-case-id}/remove")
   public String removeLinkedCasePost(
       @PathVariable("linked-case-id") final String linkedCaseId,
+      @PathVariable final CaseContext caseContext,
       @SessionAttribute(USER_DETAILS) final UserDetail user) {
 
+    log.info("Removing linked-case to remove with id: {} caseContext: {}", linkedCaseId,
+        caseContext);
     applicationService.removeLinkedCase(linkedCaseId, user);
 
-    return "redirect:/application/sections/linked-cases";
+    return "redirect:/%s/sections/linked-cases".formatted(caseContext.getPathValue());
   }
 
   /**
@@ -358,12 +365,15 @@ public class EditGeneralDetailsSectionController {
    * @param model        the Spring Model to pass attributes to the view
    * @return the path to the linked case confirmation view
    */
-  @GetMapping("/application/sections/linked-cases/{linked-case-id}/confirm")
+  @GetMapping("/{caseContext}/sections/linked-cases/{linked-case-id}/confirm")
   public String confirmLinkedCaseGet(
       @PathVariable("linked-case-id") final Integer linkedCaseId,
+      @PathVariable final CaseContext caseContext,
       @SessionAttribute(LINKED_CASES) final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases,
       final Model model) {
 
+    log.info("Getting linked-case to confirm with id: {} caseContext: {}", linkedCaseId,
+        caseContext);
     final LinkedCaseResultRowDisplay linkedCase = linkedCases.getContent() == null ? null :
         linkedCases.getContent().stream()
             .filter(lc -> linkedCaseId.equals(lc.getId()))
@@ -388,14 +398,16 @@ public class EditGeneralDetailsSectionController {
    * @param model         the Spring Model to pass attributes to the view
    * @return a redirect path to the linked cases summary or the confirmation view on error
    */
-  @PostMapping("/application/sections/linked-cases/{linked-case-id}/confirm")
+  @PostMapping("/{caseContext}/sections/linked-cases/{linked-case-id}/confirm")
   public String confirmLinkedCasePost(
       @PathVariable("linked-case-id") final String linkedCaseId,
+      @PathVariable final CaseContext caseContext,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @ModelAttribute("currentLinkedCase") final LinkedCaseResultRowDisplay linkedCase,
       final BindingResult bindingResult,
       final Model model) {
 
+    log.info("Confirming linked-case with id: {} caseContext: {}", linkedCaseId, caseContext);
     linkedCaseValidator.validate(linkedCase, bindingResult);
 
     if (bindingResult.hasErrors()) {
@@ -407,7 +419,7 @@ public class EditGeneralDetailsSectionController {
 
     applicationService.updateLinkedCase(linkedCaseId, linkedCase, user);
 
-    return "redirect:/application/sections/linked-cases";
+    return "redirect:/%s/sections/linked-cases".formatted(caseContext.getPathValue());
   }
 
   /**
@@ -430,9 +442,10 @@ public class EditGeneralDetailsSectionController {
    * @param model       The UI model to add attributes to.
    * @return String     The view name for linked cases search.
    */
-  @GetMapping("/application/sections/linked-cases/search")
+  @GetMapping("/{caseContext}/sections/linked-cases/search")
   public String linkedCasesSearchGet(
       @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
+      @PathVariable final CaseContext caseContext,
       final Model model) {
 
     populateLinkedCasesSearchDropdowns(userDetails, model);
@@ -453,17 +466,19 @@ public class EditGeneralDetailsSectionController {
    * @param model              Spring MVC model.
    * @return The view name for redirection or linked case search view.
    */
-  @PostMapping("/application/sections/linked-cases/search")
-  public String linkedCasesSearchPost(
-      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
-      @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @SessionAttribute(LINKED_CASES)
-      final ResultsDisplay<LinkedCaseResultRowDisplay> currentlinkedCases,
-      final RedirectAttributes redirectAttributes,
-      @Validated @ModelAttribute(CASE_SEARCH_CRITERIA) final CaseSearchCriteria caseSearchCriteria,
-      final BindingResult bindingResult,
-      final Model model) {
+  @PostMapping("/{caseContext}/sections/linked-cases/search")
+  public String linkedCasesSearchPost(@PathVariable final CaseContext caseContext,
+                                      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
+                                      @SessionAttribute(USER_DETAILS) final UserDetail user,
+                                      @SessionAttribute(LINKED_CASES)
+                                      final ResultsDisplay<LinkedCaseResultRowDisplay> currentlinkedCases,
+                                      final RedirectAttributes redirectAttributes,
+                                      @Validated @ModelAttribute(CASE_SEARCH_CRITERIA)
+                                      final CaseSearchCriteria caseSearchCriteria,
+                                      final BindingResult bindingResult,
+                                      final Model model) {
 
+    log.info("Searching for linked-case with id: {} caseContext: {}", caseContext, caseContext);
     searchCriteriaValidator.validate(caseSearchCriteria, bindingResult);
     if (bindingResult.hasErrors()) {
       populateLinkedCasesSearchDropdowns(user, model);
@@ -491,7 +506,8 @@ public class EditGeneralDetailsSectionController {
 
     redirectAttributes.addFlashAttribute(CASE_SEARCH_RESULTS, searchResults);
 
-    return "redirect:/application/sections/linked-cases/search/results";
+    return "redirect:/%s/sections/linked-cases/search/results"
+        .formatted(caseContext.getPathValue());
   }
 
   /**
@@ -505,15 +521,17 @@ public class EditGeneralDetailsSectionController {
    * @param session           HTTP session.
    * @return The view name for search results.
    */
-  @GetMapping("/application/sections/linked-cases/search/results")
+  @GetMapping("/{caseContext}/sections/linked-cases/search/results")
   public String linkedCasesSearchResults(
       @RequestParam(value = "page", defaultValue = "0") final int page,
       @RequestParam(value = "size", defaultValue = "10") final int size,
+      @PathVariable final CaseContext caseContext,
       @ModelAttribute(CASE_SEARCH_RESULTS) final List<BaseApplicationDetail> caseSearchResults,
       final HttpServletRequest request,
       final Model model,
       final HttpSession session) {
 
+    log.info("Displaying linked cases search results for caseContext: {}", caseContext);
     // Paginate the results list, and convert to the Page wrapper object for display
     final ApplicationDetails linkedCaseSearchResults = applicationMapper.toApplicationDetails(
         PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), caseSearchResults));
@@ -534,13 +552,15 @@ public class EditGeneralDetailsSectionController {
    * @param model                   Spring MVC model.
    * @return The view name for adding a linked case.
    */
-  @GetMapping("/application/sections/linked-cases/{case-reference-id}/add")
+  @GetMapping("/{caseContext}/sections/linked-cases/{case-reference-id}/add")
   public String addLinkedCaseGet(
       @PathVariable("case-reference-id") final String caseReferenceId,
+      @PathVariable final CaseContext caseContext,
       @SessionAttribute(CASE_RESULTS_PAGE) final ApplicationDetails linkedCaseSearchResults,
-      final Model model
-  ) {
+      final Model model) {
 
+    log.info("Adding linked case with case reference: {} for caseContext: {}", caseReferenceId,
+        caseContext);
     final BaseApplicationDetail baseApplication =
         linkedCaseSearchResults.getContent() == null ? null :
             linkedCaseSearchResults.getContent().stream()
@@ -572,14 +592,17 @@ public class EditGeneralDetailsSectionController {
    * @return The redirection view name upon successful addition, or the view name to re-add upon
    *     validation errors.
    */
-  @PostMapping("/application/sections/linked-cases/add")
+  @PostMapping("/{caseContext}/sections/linked-cases/add")
   public String addLinkedCasePost(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @PathVariable final CaseContext caseContext,
       @ModelAttribute("currentLinkedCase") final LinkedCaseResultRowDisplay linkedCase,
       final BindingResult bindingResult,
       final Model model) {
 
+    log.info("Adding linked case with case reference: {} for caseContext: {}", applicationId,
+        caseContext);
     linkedCaseValidator.validate(linkedCase, bindingResult);
 
     if (bindingResult.hasErrors()) {
@@ -590,7 +613,7 @@ public class EditGeneralDetailsSectionController {
 
     applicationService.addLinkedCase(applicationId, linkedCase, user);
 
-    return "redirect:/application/sections/linked-cases";
+    return "redirect:/%s/sections/linked-cases".formatted(caseContext.getPathValue());
   }
 
   /**

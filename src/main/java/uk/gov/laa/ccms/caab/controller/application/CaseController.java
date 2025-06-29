@@ -257,6 +257,23 @@ public class CaseController {
     return "redirect:/case/overview";
   }
 
+  /**
+   * Displays the general details edit page for an amendment case. This method is used to
+   *
+   * @param ebsCase the application details for the current case, retrieved from the session
+   * @return the view name for editing general details of the case
+   */
+  @GetMapping("/case/amendment/edit-general-details")
+  public String editGeneralDetails(@SessionAttribute(APPLICATION) final ApplicationDetail ebsCase,
+                                   HttpSession session) {
+    log.info("Editing general details for case id {}", ebsCase.getId());
+
+    //return "redirect:/amendments/delegated-functions";
+
+    return "redirect:/amendments/sections/linked-cases";
+
+  }
+
   private static List<AvailableAction> getAvailableActions(ApplicationDetail ebsCase,
       boolean amendment) {
 

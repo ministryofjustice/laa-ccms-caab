@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/sections/linked-cases/search}" class="govuk-back-link"
+        <a th:href="@{/{caseContext}/sections/linked-cases/search(caseContext=${caseContext.getPathValue()})}" class="govuk-back-link"
         th:text="#{application.generalDetails.linkCase.search.goBack}"/>
     </div>
     <div id="main-content">
@@ -48,7 +48,8 @@
                     <td class="govuk-table__cell" th:text="${case.providerDetails.feeEarner.displayValue}"></td>
                     <td class="govuk-table__cell" th:text="${case.status.displayValue}"></td>
                     <td class="govuk-table__cell">
-                        <a th:href="@{/application/sections/linked-cases/{id}/add(id=${case.caseReferenceNumber})}" class="govuk-link">Link case</a>
+                        <a th:href="@{/{caseContext}/sections/linked-cases/{id}/add(caseContext=${caseContext.getPathValue()},id=${case.caseReferenceNumber})}"
+                           class="govuk-link">Link case</a>
                     </td>
                 </tr>
             </tbody>
