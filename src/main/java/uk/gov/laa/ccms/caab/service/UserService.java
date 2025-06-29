@@ -11,9 +11,7 @@ import uk.gov.laa.ccms.data.model.UserDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
 
-/**
- * Service class to handle Users.
- */
+/** Service class to handle Users. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -32,7 +30,6 @@ public class UserService {
     return ebsApiClient.getUser(loginId);
   }
 
-
   /**
    * Retrieves the list of users for the given provider ID.
    *
@@ -47,15 +44,14 @@ public class UserService {
    * Updates the user profile options.
    *
    * @param providerId The ID of the provider.
-   * @param loginId    The login ID of the user.
-   * @param userType   The type of the logged-in user.
+   * @param loginId The login ID of the user.
+   * @param userType The type of the logged-in user.
    * @return A Mono wrapping a {@link ClientTransactionResponse}.
    */
-  public Mono<ClientTransactionResponse> updateUserOptions(Integer providerId, String loginId,
-      String userType) {
-    UserOptions userOptions = new UserOptions()
-        .providerFirmId(String.valueOf(providerId))
-        .userLoginId(loginId);
+  public Mono<ClientTransactionResponse> updateUserOptions(
+      Integer providerId, String loginId, String userType) {
+    UserOptions userOptions =
+        new UserOptions().providerFirmId(String.valueOf(providerId)).userLoginId(loginId);
     return soaApiClient.updateUserOptions(userOptions, loginId, userType);
   }
 }

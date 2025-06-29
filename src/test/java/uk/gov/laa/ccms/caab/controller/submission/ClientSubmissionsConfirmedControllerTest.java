@@ -43,49 +43,47 @@ import uk.gov.laa.ccms.soa.gateway.model.RecordHistory;
 @WebAppConfiguration
 class ClientSubmissionsConfirmedControllerTest {
 
-  @Mock
-  private HttpSession httpSession;
+  @Mock private HttpSession httpSession;
 
-  @Mock
-  private ApplicationService applicationService;
+  @Mock private ApplicationService applicationService;
 
-  @Mock
-  private ClientService clientService;
+  @Mock private ClientService clientService;
 
-  @InjectMocks
-  private ClientSubmissionsConfirmedController clientSubmissionsConfirmedController;
+  @InjectMocks private ClientSubmissionsConfirmedController clientSubmissionsConfirmedController;
 
   private MockMvc mockMvc;
 
-  @Autowired
-  private WebApplicationContext webApplicationContext;
+  @Autowired private WebApplicationContext webApplicationContext;
 
   @BeforeEach
   void setup() {
-    mockMvc = MockMvcBuilders.standaloneSetup(clientSubmissionsConfirmedController)
-        .setConversionService(getConversionService()).build();
+    mockMvc =
+        MockMvcBuilders.standaloneSetup(clientSubmissionsConfirmedController)
+            .setConversionService(getConversionService())
+            .build();
   }
 
   @Test
   void testSubmissionsConfirmed() throws Exception {
-    final ApplicationFormData mockApplicationFormData = new ApplicationFormData(); // Assuming you have a constructor or a mock object
+    final ApplicationFormData mockApplicationFormData =
+        new ApplicationFormData(); // Assuming you have a constructor or a mock object
     final UserDetail user = buildUser();
     final String clientReferenceNumber = "TEST-REF";
     final ClientDetail clientInformation = buildClientInformation();
 
+    when(clientService.getClient(clientReferenceNumber, user.getLoginId(), user.getUserType()))
+        .thenReturn(Mono.just(clientInformation));
 
-    when(clientService.getClient(clientReferenceNumber, user.getLoginId(),
-        user.getUserType())).thenReturn(Mono.just(clientInformation));
-
-    when(applicationService.createApplication(eq(mockApplicationFormData), eq(clientInformation), eq(user)))
+    when(applicationService.createApplication(
+            eq(mockApplicationFormData), eq(clientInformation), eq(user)))
         .thenReturn(Mono.empty());
 
-    mockMvc.perform(
+    mockMvc
+        .perform(
             post("/application/client-create/confirmed")
                 .sessionAttr(APPLICATION_FORM_DATA, mockApplicationFormData)
                 .sessionAttr(USER_DETAILS, user)
-                .sessionAttr(CLIENT_REFERENCE, clientReferenceNumber)
-        )
+                .sessionAttr(CLIENT_REFERENCE, clientReferenceNumber))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/sections"));
@@ -93,7 +91,8 @@ class ClientSubmissionsConfirmedControllerTest {
 
   @Test
   void testClientUpdateSubmittedApplication() throws Exception {
-    mockMvc.perform(post("/" + APPLICATION.getPathValue() + "/client-update/confirmed"))
+    mockMvc
+        .perform(post("/" + APPLICATION.getPathValue() + "/client-update/confirmed"))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/sections"));
@@ -101,7 +100,8 @@ class ClientSubmissionsConfirmedControllerTest {
 
   @Test
   void testClientUpdateSubmittedAmendment() throws Exception {
-    mockMvc.perform(post("/" + AMENDMENTS.getPathValue() + "/client-update/confirmed"))
+    mockMvc
+        .perform(post("/" + AMENDMENTS.getPathValue() + "/client-update/confirmed"))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/case/overview"));
@@ -116,20 +116,14 @@ class ClientSubmissionsConfirmedControllerTest {
   }
 
   private BaseProvider buildProvider() {
-    return new BaseProvider()
-        .id(123)
-        .addOfficesItem(
-            new BaseOffice()
-                .id(1)
-                .name("Office 1"));
+    return new BaseProvider().id(123).addOfficesItem(new BaseOffice().id(1).name("Office 1"));
   }
 
   public ClientDetail buildClientInformation() {
     final String clientReferenceNumber = "12345";
     return new ClientDetail()
         .clientReferenceNumber(clientReferenceNumber)
-        .details(new ClientDetailDetails()
-            .name(new NameDetail()))
+        .details(new ClientDetailDetails().name(new NameDetail()))
         .recordHistory(new RecordHistory());
   }
 }

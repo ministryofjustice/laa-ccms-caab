@@ -5,65 +5,46 @@ import static uk.gov.laa.ccms.caab.constants.CharacterLimitationConstants.DEFAUL
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-/**
- * Represents the details of an application.
- */
+/** Represents the details of an application. */
 @Data
 public class ApplicationFormData {
 
-  /**
-   * The caseReferenceNumber selected for a Copy Case.
-   */
+  /** The caseReferenceNumber selected for a Copy Case. */
   private String copyCaseReferenceNumber;
 
-  /**
-   * The ID of the office related to this application.
-   */
+  /** The ID of the office related to this application. */
   private Integer officeId;
 
   /**
-   * The name of the office related to this application, used for the edit provider details, part
-   * of application summary sections.
+   * The name of the office related to this application, used for the edit provider details, part of
+   * application summary sections.
    */
   private String officeName;
 
-  /**
-   * The ID of the category of law related to this application.
-   */
+  /** The ID of the category of law related to this application. */
   private String categoryOfLawId;
 
-  /**
-   * Flag indicating whether exceptional funding has been requested for this application.
-   */
+  /** Flag indicating whether exceptional funding has been requested for this application. */
   private boolean exceptionalFunding;
 
-  /**
-   * The category of the application type.
-   */
+  /** The category of the application type. */
   private String applicationTypeCategory;
 
-  /**
-   * The option for delegated functions.
-   */
+  /** The option for delegated functions. */
   private boolean delegatedFunctions;
 
-  /**
-   * The date when delegated function was used.
-   */
+  /** The date when delegated function was used. */
   private String delegatedFunctionUsedDate;
-  /**
-   * The option for privacy notice agreement.
-   */
+
+  /** The option for privacy notice agreement. */
   private boolean agreementAccepted;
 
-  /**
-   * The boolean to control the routing after the privacy notice agreement.
-   */
+  /** The boolean to control the routing after the privacy notice agreement. */
   private boolean applicationCreated;
 
   /**
-   * The string to control contractual devolved powers flag, used for edit application type, not
-   * on creation of an application.
+   * The string to control contractual devolved powers flag, used for edit application type, not on
+   * creation of an application.
    */
   private String devolvedPowersContractFlag;
 
@@ -91,5 +72,4 @@ public class ApplicationFormData {
    * application summary sections.
    */
   private String contactNameId;
-
 }

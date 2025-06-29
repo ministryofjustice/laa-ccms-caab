@@ -26,9 +26,7 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.utils.builder.SdkBuilder;
 import uk.gov.laa.ccms.caab.config.S3DocumentBucketProperties;
 
-/**
- * Client to handle interactions with AWS S3 buckets.
- */
+/** Client to handle interactions with AWS S3 buckets. */
 @Service
 @RequiredArgsConstructor
 @EnableConfigurationProperties({S3DocumentBucketProperties.class})
@@ -54,8 +52,10 @@ public class S3ApiClient {
   public Optional<String> downloadDocument(String documentId) {
     String content = null;
     try {
-      content = s3Template.download(documentBucketProperties.getName(), documentId)
-          .getContentAsString(StandardCharsets.UTF_8);
+      content =
+          s3Template
+              .download(documentBucketProperties.getName(), documentId)
+              .getContentAsString(StandardCharsets.UTF_8);
     } catch (NoSuchKeyException e) {
       errorHandler.handleFileNotFoundError(e);
     } catch (SdkException | IOException e) {
@@ -70,9 +70,7 @@ public class S3ApiClient {
    * @param documentIds the set of IDs of the draft documents to remove.
    */
   public void removeDraftDocuments(Set<String> documentIds) {
-    removeDocuments(documentIds.stream()
-        .map(this::getDraftId)
-        .collect(Collectors.toSet()));
+    removeDocuments(documentIds.stream().map(this::getDraftId).collect(Collectors.toSet()));
   }
 
   /**
@@ -81,17 +79,18 @@ public class S3ApiClient {
    * @param documentIds the set of IDs of the documents to remove.
    */
   public void removeDocuments(Set<String> documentIds) {
-    DeleteObjectsRequest deleteObjectsRequest = DeleteObjectsRequest
-        .builder()
-        .bucket(documentBucketProperties.getName())
-        .delete(
-            Delete.builder().objects(
-                    documentIds.stream()
-                        .map(ObjectIdentifier.builder()::key)
-                        .map(SdkBuilder::build)
-                        .toList())
-                .build()
-        ).build();
+    DeleteObjectsRequest deleteObjectsRequest =
+        DeleteObjectsRequest.builder()
+            .bucket(documentBucketProperties.getName())
+            .delete(
+                Delete.builder()
+                    .objects(
+                        documentIds.stream()
+                            .map(ObjectIdentifier.builder()::key)
+                            .map(SdkBuilder::build)
+                            .toList())
+                    .build())
+            .build();
     try {
       s3Client.deleteObjects(deleteObjectsRequest);
     } catch (SdkException e) {
@@ -143,9 +142,12 @@ public class S3ApiClient {
     return s3Template.listObjects(documentBucketProperties.getName(), documentId).stream()
         .findFirst()
         .map(S3Resource::getFilename)
-        .map(filename -> s3Template
-            .createSignedGetURL(documentBucketProperties.getName(), filename,
-                Duration.ofMinutes(documentBucketProperties.getUrlDuration())))
+        .map(
+            filename ->
+                s3Template.createSignedGetURL(
+                    documentBucketProperties.getName(),
+                    filename,
+                    Duration.ofMinutes(documentBucketProperties.getUrlDuration())))
         .map(URL::toString);
   }
 
@@ -153,8 +155,8 @@ public class S3ApiClient {
    * Upload a draft document to S3.
    *
    * @param documentId the ID of the document.
-   * @param fileData   the content of the document.
-   * @param extension  the extension of the document
+   * @param fileData the content of the document.
+   * @param extension the extension of the document
    */
   public void uploadDraftDocument(String documentId, String fileData, String extension) {
     uploadDocument(documentId, fileData, extension, true);
@@ -164,8 +166,8 @@ public class S3ApiClient {
    * Upload a document to S3.
    *
    * @param documentId the ID of the document.
-   * @param fileData   the content of the document.
-   * @param extension  the extension of the document
+   * @param fileData the content of the document.
+   * @param extension the extension of the document
    */
   public void uploadDocument(String documentId, String fileData, String extension) {
     uploadDocument(documentId, fileData, extension, false);
@@ -175,14 +177,13 @@ public class S3ApiClient {
    * Upload a document to S3.
    *
    * @param documentId The id of the document to upload.
-   * @param fileData   The content of the document to upload.
-   * @param extension  The extension of the document to upload.
-   * @param isDraft    Whether the document is a draft.
+   * @param fileData The content of the document to upload.
+   * @param extension The extension of the document to upload.
+   * @param isDraft Whether the document is a draft.
    */
-  private void uploadDocument(String documentId, String fileData, String extension,
-      boolean isDraft) {
-    InputStream contentInputStream = new ByteArrayInputStream(
-        Base64.getDecoder().decode(fileData));
+  private void uploadDocument(
+      String documentId, String fileData, String extension, boolean isDraft) {
+    InputStream contentInputStream = new ByteArrayInputStream(Base64.getDecoder().decode(fileData));
     String filename = getFilename(documentId, extension);
     if (isDraft) {
       filename = getDraftId(filename);
@@ -199,5 +200,4 @@ public class S3ApiClient {
   private String getDraftId(String id) {
     return DRAFT_PREFIX + id;
   }
-
 }

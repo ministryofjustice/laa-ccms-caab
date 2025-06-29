@@ -86,54 +86,39 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 @WebAppConfiguration
 class ActionsAndNotificationsControllerTest {
 
-  private static final UserDetail userDetails = new UserDetail()
-      .userId(1)
-      .userType("testUserType")
-      .loginId("testLoginId")
-      .provider(buildBaseProvider());
-  @InjectMocks
-  ActionsAndNotificationsController actionsAndNotificationsController;
-  @Mock
-  private NotificationService notificationService;
-  @Mock
-  private ProviderService providerService;
-  @Mock
-  private LookupService lookupService;
-  @Mock
-  private UserService userService;
-  @Mock
-  private NotificationSearchValidator notificationSearchValidator;
-  @Mock
-  private NotificationAttachmentMapper notificationAttachmentMapper;
-  @Mock
-  private NotificationAttachmentUploadValidator notificationAttachmentUploadValidator;
-  @Mock
-  private NotificationResponseValidator notificationResponseValidator;
-  @Mock
-  private AvScanService avScanService;
-  @Autowired
-  private WebApplicationContext webApplicationContext;
+  private static final UserDetail userDetails =
+      new UserDetail()
+          .userId(1)
+          .userType("testUserType")
+          .loginId("testLoginId")
+          .provider(buildBaseProvider());
+  @InjectMocks ActionsAndNotificationsController actionsAndNotificationsController;
+  @Mock private NotificationService notificationService;
+  @Mock private ProviderService providerService;
+  @Mock private LookupService lookupService;
+  @Mock private UserService userService;
+  @Mock private NotificationSearchValidator notificationSearchValidator;
+  @Mock private NotificationAttachmentMapper notificationAttachmentMapper;
+  @Mock private NotificationAttachmentUploadValidator notificationAttachmentUploadValidator;
+  @Mock private NotificationResponseValidator notificationResponseValidator;
+  @Mock private AvScanService avScanService;
+  @Autowired private WebApplicationContext webApplicationContext;
   private MockMvc mockMvc;
 
   private static Notifications getNotificationsMock() {
-    return new Notifications()
-        .addContentItem(buildNotificationInfo());
+    return new Notifications().addContentItem(buildNotificationInfo());
   }
 
   private static NotificationInfo buildNotificationInfo() {
     return new NotificationInfo()
-        .user(new UserDetail()
-            .loginId("user1")
-            .userType("user1"))
+        .user(new UserDetail().loginId("user1").userType("user1"))
         .notificationId("234")
         .notificationType("N");
   }
 
   private static Notification buildNotification() {
     return new Notification()
-        .user(new UserDetail()
-            .loginId("user1")
-            .userType("user1"))
+        .user(new UserDetail().loginId("user1").userType("user1"))
         .notificationId("234")
         .notificationType("N")
         .attachedDocuments(buildAttachedDocuments())
@@ -145,8 +130,11 @@ class ActionsAndNotificationsControllerTest {
   }
 
   private static List<uk.gov.laa.ccms.soa.gateway.model.Document> buildUploadedDocumentsSoa() {
-    return List.of(new uk.gov.laa.ccms.soa.gateway.model.Document().documentId("890").channel("P")
-        .documentType("TST_DOC"));
+    return List.of(
+        new uk.gov.laa.ccms.soa.gateway.model.Document()
+            .documentId("890")
+            .channel("P")
+            .documentType("TST_DOC"));
   }
 
   private static List<Document> buildAttachedDocuments() {
@@ -154,8 +142,11 @@ class ActionsAndNotificationsControllerTest {
   }
 
   private static List<uk.gov.laa.ccms.soa.gateway.model.Document> buildAttachedDocumentsSoa() {
-    return List.of(new uk.gov.laa.ccms.soa.gateway.model.Document().documentId("567").channel("E")
-        .documentType("TST_DOC"));
+    return List.of(
+        new uk.gov.laa.ccms.soa.gateway.model.Document()
+            .documentId("567")
+            .channel("E")
+            .documentType("TST_DOC"));
   }
 
   private static NotificationSearchCriteria buildNotificationSearchCritieria() {
@@ -165,12 +156,7 @@ class ActionsAndNotificationsControllerTest {
   }
 
   private static BaseProvider buildBaseProvider() {
-    return new BaseProvider()
-        .id(123)
-        .addOfficesItem(
-            new BaseOffice()
-                .id(1)
-                .name("Office 1"));
+    return new BaseProvider().id(123).addOfficesItem(new BaseOffice().id(1).name("Office 1"));
   }
 
   @BeforeEach
@@ -186,8 +172,8 @@ class ActionsAndNotificationsControllerTest {
     Mockito.when(notificationService.getNotifications(any(), anyInt(), any(), any()))
         .thenReturn(Mono.just(notificationsMock));
 
-    this.mockMvc.perform(
-            get("/notifications/search?notification_type=N").flashAttr("user", userDetails))
+    this.mockMvc
+        .perform(get("/notifications/search?notification_type=N").flashAttr("user", userDetails))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(view().name("redirect:/notifications/search-results"));
@@ -201,17 +187,17 @@ class ActionsAndNotificationsControllerTest {
     flashMap.put("user", userDetails);
     flashMap.put("notificationSearchCriteria", criteria);
 
-    this.mockMvc.perform(get("/notifications/search?notification_type=all")
-            .flashAttrs(flashMap))
+    this.mockMvc
+        .perform(get("/notifications/search?notification_type=all").flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(view().name("redirect:/notifications/search-results"));
   }
 
-
   @Test
-  void testNotificationsFromHeaderEndpoint_dropdownCodeExecutes_andRedirectsToSearchResultsEndpoint()
-      throws Exception {
+  void
+      testNotificationsFromHeaderEndpoint_dropdownCodeExecutes_andRedirectsToSearchResultsEndpoint()
+          throws Exception {
 
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Map<String, Object> flashMap = new HashMap<>();
@@ -222,39 +208,32 @@ class ActionsAndNotificationsControllerTest {
     List<ContactDetail> feeEarners = buildFeeEarners();
 
     CommonLookupDetail notificationTypes = new CommonLookupDetail();
-    notificationTypes
-        .addContentItem(
-            new CommonLookupValueDetail().type("N").code("code n").description("description")
-        );
+    notificationTypes.addContentItem(
+        new CommonLookupValueDetail().type("N").code("code n").description("description"));
 
-    UserDetails baseUsers = new UserDetails()
-        .addContentItem(new BaseUser()
-            .userId(123)
-            .userType("type1")
-            .loginId("login1"));
+    UserDetails baseUsers =
+        new UserDetails()
+            .addContentItem(new BaseUser().userId(123).userType("type1").loginId("login1"));
 
-    when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE)).thenReturn(
-        Mono.just(notificationTypes));
+    when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE))
+        .thenReturn(Mono.just(notificationTypes));
     when(providerService.getProvider(userDetails.getProvider().getId()))
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
     when(userService.getUsers(any())).thenReturn(Mono.just(baseUsers));
     /**/
 
-    Notifications notificationsMock = new Notifications()
-        .content(new ArrayList<>());
+    Notifications notificationsMock = new Notifications().content(new ArrayList<>());
 
     Mockito.when(notificationService.getNotifications(any(), anyInt(), any(), any()))
         .thenReturn(Mono.just(notificationsMock));
 
-    this.mockMvc.perform(get("/notifications/search")
-            .flashAttrs(flashMap))
+    this.mockMvc
+        .perform(get("/notifications/search").flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("notifications/actions-and-notifications-search"));
-
   }
-
 
   @Test
   void testNotificationsSearchValidationForcesReturnToSearchPage() throws Exception {
@@ -267,34 +246,34 @@ class ActionsAndNotificationsControllerTest {
     List<ContactDetail> feeEarners = buildFeeEarners();
 
     CommonLookupDetail notificationTypes = new CommonLookupDetail();
-    notificationTypes
-        .addContentItem(
-            new CommonLookupValueDetail().type("N").code("code n").description("description")
-        );
+    notificationTypes.addContentItem(
+        new CommonLookupValueDetail().type("N").code("code n").description("description"));
 
-    UserDetails baseUsers = new UserDetails()
-        .addContentItem(new BaseUser()
-            .userId(123)
-            .userType("type1")
-            .loginId("login1"));
+    UserDetails baseUsers =
+        new UserDetails()
+            .addContentItem(new BaseUser().userId(123).userType("type1").loginId("login1"));
 
-    when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE)).thenReturn(
-        Mono.just(notificationTypes));
+    when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE))
+        .thenReturn(Mono.just(notificationTypes));
     when(providerService.getProvider(userDetails.getProvider().getId()))
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
     when(userService.getUsers(any())).thenReturn(Mono.just(baseUsers));
 
-    doAnswer(invocation -> {
-      Errors errors = (Errors) invocation.getArguments()[1];
-      errors.rejectValue("notificationToDate",
-          "validation.date.range-exceeds-three-years.error-text",
-          "Your date range is invalid.");
-      return null;
-    }).when(notificationSearchValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue(
+                  "notificationToDate",
+                  "validation.date.range-exceeds-three-years.error-text",
+                  "Your date range is invalid.");
+              return null;
+            })
+        .when(notificationSearchValidator)
+        .validate(any(), any());
 
-    mockMvc.perform(post("/notifications/search")
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(post("/notifications/search").flashAttrs(flashMap))
         .andDo(print())
         .andExpect(
             model().attribute("notificationSearchCriteria", hasProperty("notificationToDate")))
@@ -314,26 +293,22 @@ class ActionsAndNotificationsControllerTest {
     List<ContactDetail> feeEarners = buildFeeEarners();
 
     CommonLookupDetail notificationTypes = new CommonLookupDetail();
-    notificationTypes
-        .addContentItem(
-            new CommonLookupValueDetail().type("N").code("code n").description("description")
-        );
+    notificationTypes.addContentItem(
+        new CommonLookupValueDetail().type("N").code("code n").description("description"));
 
-    UserDetails baseUsers = new UserDetails()
-        .addContentItem(new BaseUser()
-            .userId(123)
-            .userType("type1")
-            .loginId("login1")
-            .username("login1"));
+    UserDetails baseUsers =
+        new UserDetails()
+            .addContentItem(
+                new BaseUser().userId(123).userType("type1").loginId("login1").username("login1"));
 
-    when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE)).thenReturn(
-        Mono.just(notificationTypes));
+    when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE))
+        .thenReturn(Mono.just(notificationTypes));
     when(providerService.getProvider(userDetails.getProvider().getId()))
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
     when(userService.getUsers(any())).thenReturn(Mono.just(baseUsers));
-    mockMvc.perform(get("/notifications/search")
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(get("/notifications/search").flashAttrs(flashMap))
         .andDo(print())
         .andExpect(
             model().attribute("notificationSearchCriteria", hasProperty("notificationToDate")))
@@ -347,8 +322,8 @@ class ActionsAndNotificationsControllerTest {
     flashMap.put("user", userDetails);
     flashMap.put("notificationSearchCriteria", criteria);
 
-    mockMvc.perform(post("/notifications/search")
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(post("/notifications/search").flashAttrs(flashMap))
         .andDo(print())
         .andExpect(view().name("redirect:/notifications/search-results"));
   }
@@ -359,15 +334,16 @@ class ActionsAndNotificationsControllerTest {
     Notification notification = buildNotification();
     Notifications notificationsMock = getNotificationsMock();
 
-    when(notificationService.getNotification("234", userDetails.getUserId(), userDetails.getProvider().getId()))
+    when(notificationService.getNotification(
+            "234", userDetails.getUserId(), userDetails.getProvider().getId()))
         .thenReturn(Mono.just(notification));
 
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
     flashMap.put("notificationSearchCriteria", criteria);
     flashMap.put("notificationsSearchResults", notificationsMock);
-    mockMvc.perform(get("/notifications/234")
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(get("/notifications/234").flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(model().attributeExists("notification"));
@@ -381,14 +357,14 @@ class ActionsAndNotificationsControllerTest {
     flashMap.put("user", userDetails);
     flashMap.put("notificationSearchCriteria", criteria);
     flashMap.put("notificationsSearchResults", notificationsMock);
-    when(notificationService.getNotification("123", userDetails.getUserId(), userDetails.getProvider().getId()))
+    when(notificationService.getNotification(
+            "123", userDetails.getUserId(), userDetails.getProvider().getId()))
         .thenReturn(Mono.empty());
-    Exception exception = assertThrows(Exception.class, () ->
-        mockMvc.perform(get("/notifications/123")
-            .flashAttrs(flashMap)));
+    Exception exception =
+        assertThrows(
+            Exception.class, () -> mockMvc.perform(get("/notifications/123").flashAttrs(flashMap)));
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals("Notification with id 123 not found", exception.getCause().getMessage());
-
   }
 
   @Test
@@ -397,24 +373,24 @@ class ActionsAndNotificationsControllerTest {
     Notifications notificationsMock = getNotificationsMock();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("notificationSearchCriteria", criteria);
-    mockMvc.perform(get("/notifications")
-            .sessionAttr(NOTIFICATIONS_SEARCH_RESULTS, notificationsMock)
-            .sessionAttr("user", userDetails)
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(
+            get("/notifications")
+                .sessionAttr(NOTIFICATIONS_SEARCH_RESULTS, notificationsMock)
+                .sessionAttr("user", userDetails)
+                .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("notifications/actions-and-notifications"));
   }
-
 
   @Test
   void testReturnToNotifications_noData_redirectsToResultsPage() throws Exception {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("notificationSearchCriteria", criteria);
-    mockMvc.perform(get("/notifications")
-            .sessionAttr("user", userDetails)
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(get("/notifications").sessionAttr("user", userDetails).flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/notifications/search?notification_type=all"));
@@ -428,10 +404,12 @@ class ActionsAndNotificationsControllerTest {
     flashMap.put("user", userDetails);
     flashMap.put("notificationSearchCriteria", criteria);
     flashMap.put("notificationsSearchResults", notificationsMock);
-    mockMvc.perform(get("/notifications/234/attachments/567/retrieve")
-            .sessionAttr("user", userDetails)
-            .header(HttpHeaders.REFERER, "/notifications/234")
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(
+            get("/notifications/234/attachments/567/retrieve")
+                .sessionAttr("user", userDetails)
+                .header(HttpHeaders.REFERER, "/notifications/234")
+                .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/notifications/234"));
@@ -445,10 +423,12 @@ class ActionsAndNotificationsControllerTest {
     flashMap.put("user", userDetails);
     flashMap.put("notificationSearchCriteria", criteria);
     flashMap.put("notificationsSearchResults", notificationsMock);
-    mockMvc.perform(get("/notifications/234/attachments/567/retrieve")
-            .sessionAttr("user", userDetails)
-            .header(HttpHeaders.REFERER, "/notifications/234/provide-documents-or-evidence")
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(
+            get("/notifications/234/attachments/567/retrieve")
+                .sessionAttr("user", userDetails)
+                .header(HttpHeaders.REFERER, "/notifications/234/provide-documents-or-evidence")
+                .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/notifications/234/provide-documents-or-evidence"));
@@ -461,15 +441,18 @@ class ActionsAndNotificationsControllerTest {
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
 
-    mockMvc.perform(get("/notifications/234/attachments/567/remove")
-            .sessionAttr("user", userDetails)
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(
+            get("/notifications/234/attachments/567/remove")
+                .sessionAttr("user", userDetails)
+                .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/notifications/234/provide-documents-or-evidence"));
 
-    verify(notificationService).removeDraftNotificationAttachment("234", 567,
-        userDetails.getLoginId(), userDetails.getUserId());
+    verify(notificationService)
+        .removeDraftNotificationAttachment(
+            "234", 567, userDetails.getLoginId(), userDetails.getUserId());
   }
 
   @Test
@@ -480,9 +463,11 @@ class ActionsAndNotificationsControllerTest {
     flashMap.put("user", userDetails);
     flashMap.put("notificationSearchCriteria", criteria);
     flashMap.put("notificationsSearchResults", notificationsMock);
-    mockMvc.perform(get("/notifications/234/attachments/567/retrieveDraft")
-            .sessionAttr("user", userDetails)
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(
+            get("/notifications/234/attachments/567/retrieveDraft")
+                .sessionAttr("user", userDetails)
+                .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/notifications/234/provide-documents-or-evidence"));
@@ -494,25 +479,26 @@ class ActionsAndNotificationsControllerTest {
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
 
-    NotificationAttachmentDetail notificationAttachmentDetail =
-        new NotificationAttachmentDetail();
+    NotificationAttachmentDetail notificationAttachmentDetail = new NotificationAttachmentDetail();
     notificationAttachmentDetail.setSendBy("E");
 
     NotificationAttachmentUploadFormData notificationAttachmentUploadFormData =
         new NotificationAttachmentUploadFormData();
     notificationAttachmentUploadFormData.setSendBy(SendBy.ELECTRONIC);
 
-    when(notificationService.getDraftNotificationAttachment(567)).thenReturn(
-        Mono.just(notificationAttachmentDetail));
+    when(notificationService.getDraftNotificationAttachment(567))
+        .thenReturn(Mono.just(notificationAttachmentDetail));
     when(notificationAttachmentMapper.toNotificationAttachmentUploadFormData(
-        notificationAttachmentDetail))
+            notificationAttachmentDetail))
         .thenReturn(notificationAttachmentUploadFormData);
 
-    mockMvc.perform(get("/notifications/234/attachments/567/edit")
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(get("/notifications/234/attachments/567/edit").flashAttrs(flashMap))
         .andDo(print())
-        .andExpect(flash().attribute("notificationAttachmentUploadFormData",
-            notificationAttachmentUploadFormData))
+        .andExpect(
+            flash()
+                .attribute(
+                    "notificationAttachmentUploadFormData", notificationAttachmentUploadFormData))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/notifications/234/attachments/upload?sendBy=ELECTRONIC"));
   }
@@ -521,32 +507,33 @@ class ActionsAndNotificationsControllerTest {
   void testGetUploadNotificationAttachment_createsDropsDownAndDisplaysUploadForm()
       throws Exception {
 
-    CommonLookupValueDetail documentType = new CommonLookupValueDetail()
-        .type(COMMON_VALUE_DOCUMENT_TYPES).code("TST_DOC").description(
-            "Test Document");
+    CommonLookupValueDetail documentType =
+        new CommonLookupValueDetail()
+            .type(COMMON_VALUE_DOCUMENT_TYPES)
+            .code("TST_DOC")
+            .description("Test Document");
 
     CommonLookupDetail documentTypes = new CommonLookupDetail();
-    documentTypes
-        .addContentItem(documentType);
+    documentTypes.addContentItem(documentType);
 
     List<String> validExtensions = List.of("ext");
     String maxFileSize = "8MB";
 
     when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
         .thenReturn(Mono.just(documentTypes));
-    when(notificationAttachmentUploadValidator.getValidExtensions())
-        .thenReturn(validExtensions);
-    when(notificationAttachmentUploadValidator.getMaxFileSize())
-        .thenReturn(maxFileSize);
+    when(notificationAttachmentUploadValidator.getValidExtensions()).thenReturn(validExtensions);
+    when(notificationAttachmentUploadValidator.getMaxFileSize()).thenReturn(maxFileSize);
 
     Notification notification = buildNotification();
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
 
-    mockMvc.perform(get("/notifications/234/attachments/upload")
-            .sessionAttr("notification", notification)
-            .queryParam("sendBy", "ELECTRONIC")
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(
+            get("/notifications/234/attachments/upload")
+                .sessionAttr("notification", notification)
+                .queryParam("sendBy", "ELECTRONIC")
+                .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(model().attribute("documentTypes", documentTypes.getContent()))
         .andExpect(model().attribute("validExtensions", validExtensions.getFirst()))
@@ -555,8 +542,9 @@ class ActionsAndNotificationsControllerTest {
   }
 
   @Test
-  void testPostUploadNotificationAttachment_newPostalAttachment_uploadsAndReturnsToProvideDocumentsPage()
-      throws Exception {
+  void
+      testPostUploadNotificationAttachment_newPostalAttachment_uploadsAndReturnsToProvideDocumentsPage()
+          throws Exception {
 
     NotificationAttachmentUploadFormData attachmentUploadFormData =
         new NotificationAttachmentUploadFormData();
@@ -583,20 +571,23 @@ class ActionsAndNotificationsControllerTest {
     flashMap.put("user", userDetails);
     flashMap.put("attachmentUploadFormData", attachmentUploadFormData);
 
-    mockMvc.perform(post("/notifications/234/attachments/upload")
-            .sessionAttr("notification", notification)
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(
+            post("/notifications/234/attachments/upload")
+                .sessionAttr("notification", notification)
+                .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/notifications/234/provide-documents-or-evidence"));
 
-    verify(notificationService).addDraftNotificationAttachment(notificationAttachment,
-        userDetails.getLoginId());
+    verify(notificationService)
+        .addDraftNotificationAttachment(notificationAttachment, userDetails.getLoginId());
   }
 
   @Test
-  void testPostUploadNotificationAttachment_editPostalAttachment_updatesAndReturnsToProvideDocumentsPage()
-      throws Exception {
+  void
+      testPostUploadNotificationAttachment_editPostalAttachment_updatesAndReturnsToProvideDocumentsPage()
+          throws Exception {
 
     NotificationAttachmentUploadFormData attachmentUploadFormData =
         new NotificationAttachmentUploadFormData();
@@ -625,20 +616,23 @@ class ActionsAndNotificationsControllerTest {
     flashMap.put("user", userDetails);
     flashMap.put("attachmentUploadFormData", attachmentUploadFormData);
 
-    mockMvc.perform(post("/notifications/234/attachments/upload")
-            .sessionAttr("notification", notification)
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(
+            post("/notifications/234/attachments/upload")
+                .sessionAttr("notification", notification)
+                .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/notifications/234/provide-documents-or-evidence"));
 
-    verify(notificationService).updateDraftNotificationAttachment(notificationAttachment,
-        userDetails.getLoginId());
+    verify(notificationService)
+        .updateDraftNotificationAttachment(notificationAttachment, userDetails.getLoginId());
   }
 
   @Test
-  void testPostUploadNotificationAttachment_newElectronicAttachment_runsVirusScan_uploadsAndReturnsToProvideDocumentsPage()
-      throws Exception {
+  void
+      testPostUploadNotificationAttachment_newElectronicAttachment_runsVirusScan_uploadsAndReturnsToProvideDocumentsPage()
+          throws Exception {
 
     String filename = "filename";
     byte[] content = "content".getBytes();
@@ -671,17 +665,19 @@ class ActionsAndNotificationsControllerTest {
     flashMap.put("user", userDetails);
     flashMap.put("attachmentUploadFormData", attachmentUploadFormData);
 
-    mockMvc.perform(post("/notifications/234/attachments/upload")
-            .sessionAttr("notification", notification)
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(
+            post("/notifications/234/attachments/upload")
+                .sessionAttr("notification", notification)
+                .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/notifications/234/provide-documents-or-evidence"));
 
-    verify(avScanService).performAvScan(any(), any(), any(), any(), eq(file.getOriginalFilename()),
-        any());
-    verify(notificationService).addDraftNotificationAttachment(notificationAttachment,
-        userDetails.getLoginId());
+    verify(avScanService)
+        .performAvScan(any(), any(), any(), any(), eq(file.getOriginalFilename()), any());
+    verify(notificationService)
+        .addDraftNotificationAttachment(notificationAttachment, userDetails.getLoginId());
   }
 
   @Test
@@ -701,47 +697,53 @@ class ActionsAndNotificationsControllerTest {
     Map<String, String> draftDocumentLinks = Map.of("draft doc 1", "link 1");
     Map<String, String> documentLinks = Map.of("uploaded doc 1", "link 1");
 
-    CommonLookupValueDetail documentType = new CommonLookupValueDetail()
-        .type(COMMON_VALUE_DOCUMENT_TYPES).code("TST_DOC").description(
-            "Test Document");
+    CommonLookupValueDetail documentType =
+        new CommonLookupValueDetail()
+            .type(COMMON_VALUE_DOCUMENT_TYPES)
+            .code("TST_DOC")
+            .description("Test Document");
 
     CommonLookupDetail documentTypes = new CommonLookupDetail();
-    documentTypes
-        .addContentItem(documentType);
+    documentTypes.addContentItem(documentType);
 
     when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
         .thenReturn(Mono.just(documentTypes));
 
-    when(notificationService.getDraftNotificationAttachments(notification.getNotificationId(),
-        userDetails.getUserId())).thenReturn(Mono.just(notificationAttachmentDetails));
-    when(notificationService.getDraftDocumentLinks(List.of(baseNotificationAttachment))).thenReturn(
-        draftDocumentLinks);
-    when(notificationService.getDocumentLinks(notification.getUploadedDocuments())).thenReturn(documentLinks);
+    when(notificationService.getDraftNotificationAttachments(
+            notification.getNotificationId(), userDetails.getUserId()))
+        .thenReturn(Mono.just(notificationAttachmentDetails));
+    when(notificationService.getDraftDocumentLinks(List.of(baseNotificationAttachment)))
+        .thenReturn(draftDocumentLinks);
+    when(notificationService.getDocumentLinks(notification.getUploadedDocuments()))
+        .thenReturn(documentLinks);
     when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
-        any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
+            any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
         .thenReturn(new BaseNotificationAttachmentDetail());
 
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
 
-    mockMvc.perform(get("/notifications/234/provide-documents-or-evidence")
-            .sessionAttr("notification", notification)
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(
+            get("/notifications/234/provide-documents-or-evidence")
+                .sessionAttr("notification", notification)
+                .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(model().attribute("notificationAttachments", hasSize(2)))
         .andExpect(model().attribute("documentLinks", hasEntry("draft doc 1", "link 1")))
         .andExpect(model().attribute("documentLinks", hasEntry("uploaded doc 1", "link 1")))
         .andExpect(view().name("notifications/provide-documents-or-evidence"));
 
-    verify(notificationService).getDraftNotificationAttachments(notification.getNotificationId(),
-        userDetails.getUserId());
+    verify(notificationService)
+        .getDraftNotificationAttachments(notification.getNotificationId(), userDetails.getUserId());
     verify(notificationService).getDraftDocumentLinks(List.of(baseNotificationAttachment));
     verify(notificationService).getDocumentLinks(notification.getUploadedDocuments());
   }
 
   @Test
-  void testPostProvideDocumentsOrEvidence_submitsDraftAttachments_andRedirectsToSubmissionConfirmation()
-      throws Exception {
+  void
+      testPostProvideDocumentsOrEvidence_submitsDraftAttachments_andRedirectsToSubmissionConfirmation()
+          throws Exception {
 
     Notification notification = buildNotification();
 
@@ -753,49 +755,59 @@ class ActionsAndNotificationsControllerTest {
         new NotificationAttachmentDetails();
     notificationAttachmentDetails.setContent(List.of(baseNotificationAttachment));
 
-    when(notificationService.getDraftNotificationAttachments(notification.getNotificationId(),
-        userDetails.getUserId())).thenReturn(Mono.just(notificationAttachmentDetails));
+    when(notificationService.getDraftNotificationAttachments(
+            notification.getNotificationId(), userDetails.getUserId()))
+        .thenReturn(Mono.just(notificationAttachmentDetails));
 
     when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
-        any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
+            any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
         .thenReturn(new BaseNotificationAttachmentDetail());
 
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
 
-    mockMvc.perform(post("/notifications/234/provide-documents-or-evidence")
-            .sessionAttr("notification", notification)
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(
+            post("/notifications/234/provide-documents-or-evidence")
+                .sessionAttr("notification", notification)
+                .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/notification-attachments/confirmed"));
 
-    verify(notificationService).submitNotificationAttachments(notification.getNotificationId(),
-        userDetails.getLoginId(), userDetails.getUserType(), userDetails.getUserId());
+    verify(notificationService)
+        .submitNotificationAttachments(
+            notification.getNotificationId(),
+            userDetails.getLoginId(),
+            userDetails.getUserType(),
+            userDetails.getUserId());
   }
 
   @Test
-  void testPostNotificationAttachmentsSubmissionConfirmed_redirectsToProvideDocumentsOrEvidencePage()
-      throws Exception {
+  void
+      testPostNotificationAttachmentsSubmissionConfirmed_redirectsToProvideDocumentsOrEvidencePage()
+          throws Exception {
 
     Notification notification = buildNotification();
 
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
-    when(notificationService.getNotification("234", userDetails.getUserId(), userDetails.getProvider().getId()))
+    when(notificationService.getNotification(
+            "234", userDetails.getUserId(), userDetails.getProvider().getId()))
         .thenReturn(Mono.just(notification));
 
-    mockMvc.perform(post("/application/notification-attachments/confirmed")
-            .sessionAttr("notification", notification)
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(
+            post("/application/notification-attachments/confirmed")
+                .sessionAttr("notification", notification)
+                .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/notifications/234/provide-documents-or-evidence"));
   }
 
   @Test
-  void testPostProvideDocumentsOrEvidence_noDocumentsToSubmit()
-      throws Exception {
+  void testPostProvideDocumentsOrEvidence_noDocumentsToSubmit() throws Exception {
 
     Notification notification = buildNotification();
 
@@ -803,36 +815,39 @@ class ActionsAndNotificationsControllerTest {
         new NotificationAttachmentDetails();
     notificationAttachmentDetails.setContent(Collections.emptyList());
 
-    CommonLookupValueDetail documentType = new CommonLookupValueDetail()
-        .type(COMMON_VALUE_DOCUMENT_TYPES).code("TST_DOC").description(
-            "Test Document");
+    CommonLookupValueDetail documentType =
+        new CommonLookupValueDetail()
+            .type(COMMON_VALUE_DOCUMENT_TYPES)
+            .code("TST_DOC")
+            .description("Test Document");
 
     CommonLookupDetail documentTypes = new CommonLookupDetail();
-    documentTypes
-        .addContentItem(documentType);
+    documentTypes.addContentItem(documentType);
 
     when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
         .thenReturn(Mono.just(documentTypes));
 
-    when(notificationService.getDraftNotificationAttachments(notification.getNotificationId(),
-        userDetails.getUserId())).thenReturn(Mono.just(notificationAttachmentDetails));
+    when(notificationService.getDraftNotificationAttachments(
+            notification.getNotificationId(), userDetails.getUserId()))
+        .thenReturn(Mono.just(notificationAttachmentDetails));
     when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
-        any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
+            any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
         .thenReturn(new BaseNotificationAttachmentDetail());
 
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
 
-    mockMvc.perform(post("/notifications/234/provide-documents-or-evidence")
-            .sessionAttr("notification", notification)
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(
+            post("/notifications/234/provide-documents-or-evidence")
+                .sessionAttr("notification", notification)
+                .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(model().attributeExists("errorMessage"))
         .andExpect(view().name("notifications/provide-documents-or-evidence"));
 
-    verify(notificationService,
-        times(2)).getDraftNotificationAttachments(notification.getNotificationId(),
-        userDetails.getUserId());
+    verify(notificationService, times(2))
+        .getDraftNotificationAttachments(notification.getNotificationId(), userDetails.getUserId());
   }
 
   @Test
@@ -840,7 +855,8 @@ class ActionsAndNotificationsControllerTest {
     NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
     Notifications notificationsMock = getNotificationsMock();
     Notification notification = buildNotification();
-    when(notificationService.getNotification("234", userDetails.getUserId(), userDetails.getProvider().getId()))
+    when(notificationService.getNotification(
+            "234", userDetails.getUserId(), userDetails.getProvider().getId()))
         .thenReturn(Mono.just(notification));
     Map<String, Object> flashMap = new HashMap<>();
     flashMap.put("user", userDetails);
@@ -851,12 +867,11 @@ class ActionsAndNotificationsControllerTest {
 
     when(notificationService.getDocumentLinks(documents)).thenReturn(Map.of("567", "doc-url"));
 
-    mockMvc.perform(get("/notifications/234")
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(get("/notifications/234").flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().isOk())
-        .andExpect(
-            model().attribute("documentLinks", hasEntry("567", "doc-url")))
+        .andExpect(model().attribute("documentLinks", hasEntry("567", "doc-url")))
         .andExpect(model().attributeExists("notification"));
   }
 
@@ -875,20 +890,31 @@ class ActionsAndNotificationsControllerTest {
 
     String notificationId = "12345";
 
-    when(notificationService.submitNotificationResponse(notificationId, formData.getAction(),
-        formData.getMessage(), userDetails.getLoginId(), userDetails.getUserType()))
+    when(notificationService.submitNotificationResponse(
+            notificationId,
+            formData.getAction(),
+            formData.getMessage(),
+            userDetails.getLoginId(),
+            userDetails.getUserType()))
         .thenReturn(Mono.just(new ClientTransactionResponse()));
 
-    mockMvc.perform(post("/notifications/{notification-id}", notificationId)
-            .sessionAttr("user", userDetails)
-            .sessionAttr("notification", notification)
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(
+            post("/notifications/{notification-id}", notificationId)
+                .sessionAttr("user", userDetails)
+                .sessionAttr("notification", notification)
+                .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("notifications/notification"));
 
-    verify(notificationService).submitNotificationResponse(notificationId, formData.getAction(),
-        formData.getMessage(), userDetails.getLoginId(), userDetails.getUserType());
+    verify(notificationService)
+        .submitNotificationResponse(
+            notificationId,
+            formData.getAction(),
+            formData.getMessage(),
+            userDetails.getLoginId(),
+            userDetails.getUserType());
   }
 
   @Test
@@ -906,16 +932,25 @@ class ActionsAndNotificationsControllerTest {
 
     String notificationId = "12345";
 
-    when(notificationService.submitNotificationResponse(notificationId, formData.getAction(),
-        formData.getMessage(), userDetails.getLoginId(), userDetails.getUserType()))
+    when(notificationService.submitNotificationResponse(
+            notificationId,
+            formData.getAction(),
+            formData.getMessage(),
+            userDetails.getLoginId(),
+            userDetails.getUserType()))
         .thenReturn(Mono.empty());
 
-    Exception exception = assertThrows(Exception.class, () ->
-        mockMvc.perform(post("/notifications/{notification-id}", notificationId)
-            .sessionAttr("user", userDetails)
-            .sessionAttr("notification", notification)
-            .flashAttrs(flashMap))
-          .andExpect(status().isInternalServerError()));
+    Exception exception =
+        assertThrows(
+            Exception.class,
+            () ->
+                mockMvc
+                    .perform(
+                        post("/notifications/{notification-id}", notificationId)
+                            .sessionAttr("user", userDetails)
+                            .sessionAttr("notification", notification)
+                            .flashAttrs(flashMap))
+                    .andExpect(status().isInternalServerError()));
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals("Failed to submit notification response", exception.getCause().getMessage());
@@ -934,35 +969,36 @@ class ActionsAndNotificationsControllerTest {
 
     String notificationId = "12345";
 
-    doAnswer(invocation -> {
-      Errors errors = (Errors) invocation.getArguments()[1];
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
 
-      errors.rejectValue("action", "required.action",
-          "Please complete 'Notification response action'.");
-      return null;
-    }).when(notificationResponseValidator).validate(any(), any());
+              errors.rejectValue(
+                  "action", "required.action", "Please complete 'Notification response action'.");
+              return null;
+            })
+        .when(notificationResponseValidator)
+        .validate(any(), any());
 
-    mockMvc.perform(post("/notifications/{notification-id}", notificationId)
-            .sessionAttr("user", userDetails)
-            .sessionAttr("notification", notification)
-            .flashAttrs(flashMap))
+    mockMvc
+        .perform(
+            post("/notifications/{notification-id}", notificationId)
+                .sessionAttr("user", userDetails)
+                .sessionAttr("notification", notification)
+                .flashAttrs(flashMap))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(model().attributeHasFieldErrors("notificationResponseFormData", "action"))
         .andExpect(view().name("notifications/notification"));
 
-    verify(notificationService, never()).submitNotificationResponse(
-        any(), any(), any(), any(), any());
+    verify(notificationService, never())
+        .submitNotificationResponse(any(), any(), any(), any(), any());
   }
 
   private List<ContactDetail> buildFeeEarners() {
     List<ContactDetail> feeEarners = new ArrayList<>();
-    feeEarners.add(new ContactDetail()
-        .id(1)
-        .name("FeeEarner1"));
-    feeEarners.add(new ContactDetail()
-        .id(2)
-        .name("FeeEarner2"));
+    feeEarners.add(new ContactDetail().id(1).name("FeeEarner1"));
+    feeEarners.add(new ContactDetail().id(2).name("FeeEarner2"));
     return feeEarners;
   }
 }

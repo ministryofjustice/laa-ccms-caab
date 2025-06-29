@@ -53,8 +53,7 @@ class InitialApplicationBuilderTest {
   void testCategoryOfLaw() {
     String categoryId = "CATEGORY1";
     CategoryOfLawLookupValueDetail lookupValueDetail =
-        new CategoryOfLawLookupValueDetail()
-            .code(categoryId).matterTypeDescription("Description");
+        new CategoryOfLawLookupValueDetail().code(categoryId).matterTypeDescription("Description");
 
     ApplicationDetail detail = builder.categoryOfLaw(categoryId, lookupValueDetail).build();
     assertEquals(categoryId, detail.getCategoryOfLaw().getId());
@@ -74,9 +73,11 @@ class InitialApplicationBuilderTest {
     List<ContractDetail> contractDetails = Collections.singletonList(contractDetail);
 
     // Perform the contractualDevolvedPower operation
-    ApplicationDetail application = builder.contractualDevolvedPower(contractDetails, "CATEGORY1").build();
+    ApplicationDetail application =
+        builder.contractualDevolvedPower(contractDetails, "CATEGORY1").build();
 
-    // Verify that application.getApplicationType() and applicationType.getDevolvedPowers() were called
+    // Verify that application.getApplicationType() and applicationType.getDevolvedPowers() were
+    // called
     // Verify that the contractFlag was set in the DevolvedPowers object
     assertEquals(
         "CONTRACTUAL_DEVOLVED_POWERS",
@@ -113,6 +114,4 @@ class InitialApplicationBuilderTest {
     assertEquals(STATUS_UNSUBMITTED_ACTUAL_VALUE, detail.getStatus().getId());
     assertEquals(STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY, detail.getStatus().getDisplayValue());
   }
-
-
 }

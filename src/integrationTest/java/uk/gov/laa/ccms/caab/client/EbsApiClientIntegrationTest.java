@@ -53,17 +53,15 @@ import uk.gov.laa.ccms.data.model.UserDetails;
 public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
   @RegisterExtension
-  protected static WireMockExtension wiremock = WireMockExtension.newInstance()
-      .options(wireMockConfig().dynamicPort())
-      .build();
+  protected static WireMockExtension wiremock =
+      WireMockExtension.newInstance().options(wireMockConfig().dynamicPort()).build();
 
   @DynamicPropertySource
   public static void properties(final DynamicPropertyRegistry registry) {
     registry.add("laa.ccms.ebs-api.port", wiremock::getPort);
   }
 
-  @Autowired
-  private EbsApiClient ebsApiClient;
+  @Autowired private EbsApiClient ebsApiClient;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -75,8 +73,8 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     final UserDetail expectedUserDetail = buildUserDetail();
     final String userJson = objectMapper.writeValueAsString(expectedUserDetail);
 
-    wiremock.stubFor(get("/users/%s".formatted(expectedUserDetail.getLoginId()))
-        .willReturn(okJson(userJson)));
+    wiremock.stubFor(
+        get("/users/%s".formatted(expectedUserDetail.getLoginId())).willReturn(okJson(userJson)));
 
     final Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(expectedUserDetail.getLoginId());
 
@@ -90,15 +88,16 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     final String loginId = "user1";
     final String expectedMessage = USER_ERROR_MESSAGE.formatted(loginId);
 
-    wiremock.stubFor(get("/users/%s".formatted(loginId))
-        .willReturn(notFound()));
+    wiremock.stubFor(get("/users/%s".formatted(loginId)).willReturn(notFound()));
 
     final Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(loginId);
 
     StepVerifier.create(userDetailsMono)
-        .expectErrorMatches(throwable -> throwable instanceof EbsApiClientException
-            && throwable.getMessage().equals(expectedMessage)
-        ).verify();
+        .expectErrorMatches(
+            throwable ->
+                throwable instanceof EbsApiClientException
+                    && throwable.getMessage().equals(expectedMessage))
+        .verify();
   }
 
   @Test
@@ -111,15 +110,16 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     final String descr = "testDescr";
     final String sort = "testSort";
 
-    wiremock.stubFor(get(urlPathMatching("/lookup/common.*"))
-        .withQueryParam("type", equalTo(type))
-        .withQueryParam("code", equalTo(code))
-        .withQueryParam("description", equalTo(descr))
-        .withQueryParam("sort", equalTo(sort))
-        .willReturn(okJson(commonValuesJson)));
+    wiremock.stubFor(
+        get(urlPathMatching("/lookup/common.*"))
+            .withQueryParam("type", equalTo(type))
+            .withQueryParam("code", equalTo(code))
+            .withQueryParam("description", equalTo(descr))
+            .withQueryParam("sort", equalTo(sort))
+            .willReturn(okJson(commonValuesJson)));
 
-    final Mono<CommonLookupDetail> commonValuesMono = ebsApiClient.getCommonValues(type, code,
-        descr, sort);
+    final Mono<CommonLookupDetail> commonValuesMono =
+        ebsApiClient.getCommonValues(type, code, descr, sort);
 
     final CommonLookupDetail commonValues = commonValuesMono.block();
 
@@ -128,17 +128,18 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
   @Test
   public void testGetCaseStatusValues_returnData() throws Exception {
-    final String caseStatusValuesJson = objectMapper.writeValueAsString(
-        buildCaseStatusLookupDetail());
+    final String caseStatusValuesJson =
+        objectMapper.writeValueAsString(buildCaseStatusLookupDetail());
 
     final Boolean copyAllowed = true;
 
-    wiremock.stubFor(get(urlPathMatching("/lookup/case-status.*"))
-        .withQueryParam("copy-allowed", equalTo(copyAllowed.toString()))
-        .willReturn(okJson(caseStatusValuesJson)));
+    wiremock.stubFor(
+        get(urlPathMatching("/lookup/case-status.*"))
+            .withQueryParam("copy-allowed", equalTo(copyAllowed.toString()))
+            .willReturn(okJson(caseStatusValuesJson)));
 
-    final Mono<CaseStatusLookupDetail> lookupDetailMono = ebsApiClient.getCaseStatusValues(
-        copyAllowed);
+    final Mono<CaseStatusLookupDetail> lookupDetailMono =
+        ebsApiClient.getCaseStatusValues(copyAllowed);
 
     final CaseStatusLookupDetail response = lookupDetailMono.block();
 
@@ -150,8 +151,8 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     final ProviderDetail provider = buildProviderDetail();
     final String providerJson = objectMapper.writeValueAsString(provider);
 
-    wiremock.stubFor(get("/providers/%s".formatted(provider.getId()))
-        .willReturn(okJson(providerJson)));
+    wiremock.stubFor(
+        get("/providers/%s".formatted(provider.getId())).willReturn(okJson(providerJson)));
 
     final ProviderDetail result = ebsApiClient.getProvider(provider.getId()).block();
 
@@ -165,9 +166,10 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     final String amendmentTypesJson = objectMapper.writeValueAsString(expectedAmendmentTypes);
     final String applicationType = "testApplicationType";
 
-    wiremock.stubFor(get(urlPathEqualTo("/lookup/amendment-types"))
-        .withQueryParam("application-type", equalTo(applicationType))
-        .willReturn(okJson(amendmentTypesJson)));
+    wiremock.stubFor(
+        get(urlPathEqualTo("/lookup/amendment-types"))
+            .withQueryParam("application-type", equalTo(applicationType))
+            .willReturn(okJson(amendmentTypesJson)));
 
     final Mono<AmendmentTypeLookupDetail> amendmentTypesMono =
         ebsApiClient.getAmendmentTypes(applicationType);
@@ -181,51 +183,49 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   void testGetUsers_returnsData() throws JsonProcessingException {
     final String username = "user1";
     final Integer providerId = 123;
-    final BaseUser user = new BaseUser()
-        .username(username)
-        .userId(123);
-    final UserDetails userDetails = new UserDetails()
-        .addContentItem(user);
+    final BaseUser user = new BaseUser().username(username).userId(123);
+    final UserDetails userDetails = new UserDetails().addContentItem(user);
 
     final String userDetailsJson = objectMapper.writeValueAsString(userDetails);
-    wiremock.stubFor(get("/users?size=1000&provider-id=%s".formatted(providerId))
-        .willReturn(okJson(userDetailsJson)));
+    wiremock.stubFor(
+        get("/users?size=1000&provider-id=%s".formatted(providerId))
+            .willReturn(okJson(userDetailsJson)));
     final UserDetails result = ebsApiClient.getUsers(providerId).block();
 
     assertNotNull(result);
     assertEquals(userDetailsJson, objectMapper.writeValueAsString(result));
-
   }
 
   @Test
   public void testGetUsers_notFound() {
     final Integer providerId = 123;
-    final String expectedMessage = "Failed to retrieve Users with parameters: size=1000, "
-        + "provider-id=123";
-    wiremock.stubFor(get("/users?size=1000&provider-id=%s".formatted(providerId))
-        .willReturn(notFound()));
+    final String expectedMessage =
+        "Failed to retrieve Users with parameters: size=1000, " + "provider-id=123";
+    wiremock.stubFor(
+        get("/users?size=1000&provider-id=%s".formatted(providerId)).willReturn(notFound()));
     final Mono<UserDetails> userDetailsMono = ebsApiClient.getUsers(providerId);
 
     StepVerifier.create(userDetailsMono)
-        .expectErrorMatches(throwable -> throwable instanceof EbsApiClientException
-            && throwable.getMessage().equals(expectedMessage)
-        ).verify();
+        .expectErrorMatches(
+            throwable ->
+                throwable instanceof EbsApiClientException
+                    && throwable.getMessage().equals(expectedMessage))
+        .verify();
   }
-
 
   @Test
   public void testGetUserNotificationSummary_returnData() throws Exception {
     final String loginId = "user1";
     final NotificationSummary expectedNotificationsummary = buildUserNotificationSummary();
-    final String notificationSummaryJson = objectMapper.writeValueAsString(
-        expectedNotificationsummary);
+    final String notificationSummaryJson =
+        objectMapper.writeValueAsString(expectedNotificationsummary);
 
-    wiremock.stubFor(get("/users/%s/notifications/summary".formatted(loginId))
-        .willReturn(okJson(notificationSummaryJson)));
+    wiremock.stubFor(
+        get("/users/%s/notifications/summary".formatted(loginId))
+            .willReturn(okJson(notificationSummaryJson)));
 
     final Mono<NotificationSummary> userNotificationSummary =
-        ebsApiClient.getUserNotificationSummary(
-            loginId);
+        ebsApiClient.getUserNotificationSummary(loginId);
 
     final NotificationSummary userDetails = userNotificationSummary.block();
 
@@ -237,16 +237,18 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     final String loginId = "user1";
     final String expectedMessage = USER_ERROR_MESSAGE.formatted(loginId);
 
-    wiremock.stubFor(get("/users/%s/notifications/summary".formatted(loginId))
-        .willReturn(notFound()));
+    wiremock.stubFor(
+        get("/users/%s/notifications/summary".formatted(loginId)).willReturn(notFound()));
 
-    final Mono<NotificationSummary> notificationSummary = ebsApiClient.getUserNotificationSummary(
-        loginId);
+    final Mono<NotificationSummary> notificationSummary =
+        ebsApiClient.getUserNotificationSummary(loginId);
 
     StepVerifier.create(notificationSummary)
-        .expectErrorMatches(throwable -> throwable instanceof EbsApiClientException
-            && throwable.getMessage().equals(expectedMessage)
-        ).verify();
+        .expectErrorMatches(
+            throwable ->
+                throwable instanceof EbsApiClientException
+                    && throwable.getMessage().equals(expectedMessage))
+        .verify();
   }
 
   @Test
@@ -263,15 +265,12 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     int size = 10;
 
     wiremock.stubFor(
-        get(String.format("/notifications?provider-id=20&assigned-to-user-id=%s&include-closed=%s&page=%s&"
-                + "size=%s",
-            criteria.getAssignedToUserId(),
-            criteria.isIncludeClosed(),
-            page,
-            size))
+        get(String.format(
+                "/notifications?provider-id=20&assigned-to-user-id=%s&include-closed=%s&page=%s&"
+                    + "size=%s",
+                criteria.getAssignedToUserId(), criteria.isIncludeClosed(), page, size))
             .willReturn(okJson(notificationsJson)));
-    Mono<Notifications> notificationsMono =
-        ebsApiClient.getNotifications(criteria, 20, page, size);
+    Mono<Notifications> notificationsMono = ebsApiClient.getNotifications(criteria, 20, page, size);
     Notifications response = notificationsMono.block();
     assertEquals(notifications, response);
   }
@@ -279,12 +278,10 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   @Test
   public void testPostAllocateCaseReference_createsNewReference() throws JsonProcessingException {
     // Given
-    CaseReferenceSummary expected =
-        new CaseReferenceSummary().caseReferenceNumber("1234567890");
+    CaseReferenceSummary expected = new CaseReferenceSummary().caseReferenceNumber("1234567890");
     String caseReferenceJson = objectMapper.writeValueAsString(expected);
 
-    wiremock.stubFor(post("/case-reference")
-        .willReturn(okJson(caseReferenceJson)));
+    wiremock.stubFor(post("/case-reference").willReturn(okJson(caseReferenceJson)));
 
     // When
     Mono<CaseReferenceSummary> caseReferenceSummaryMono =
@@ -298,12 +295,10 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   @Test
   public void testPostAllocateCaseReference_handlesError() throws JsonProcessingException {
     // Given
-    CaseReferenceSummary expected =
-        new CaseReferenceSummary().caseReferenceNumber("1234567890");
+    CaseReferenceSummary expected = new CaseReferenceSummary().caseReferenceNumber("1234567890");
     final String expectedMessage = CASE_REFERENCE_MESSAGE.formatted();
 
-    wiremock.stubFor(post("/case-reference")
-        .willReturn(serverError()));
+    wiremock.stubFor(post("/case-reference").willReturn(serverError()));
 
     // When
     Mono<CaseReferenceSummary> caseReferenceSummaryMono =
@@ -311,9 +306,11 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
     // Then
     StepVerifier.create(caseReferenceSummaryMono)
-        .expectErrorMatches(throwable -> throwable instanceof EbsApiClientException
-            && throwable.getMessage().equals(expectedMessage)
-        ).verify();
+        .expectErrorMatches(
+            throwable ->
+                throwable instanceof EbsApiClientException
+                    && throwable.getMessage().equals(expectedMessage))
+        .verify();
   }
 
   @Test
@@ -326,28 +323,29 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     CaseDetails caseDetails = buildCaseDetails();
     String caseDetailsJson = objectMapper.writeValueAsString(caseDetails);
 
-    wiremock.stubFor(get(String.format("/cases?provider-id=%s&"
-            + "case-reference-number=%s&"
-            + "provider-case-reference=%s&"
-            + "case-status=%s&"
-            + "fee-earner-id=%s&"
-            + "office-id=%s&"
-            + "client-surname=%s&"
-            + "page=%s&"
-            + "size=%s",
-        providerId,
-        searchCriteria.getCaseReference(),
-        searchCriteria.getProviderCaseReference(),
-        searchCriteria.getStatus(),
-        searchCriteria.getFeeEarnerId(),
-        searchCriteria.getOfficeId(),
-        searchCriteria.getClientSurname(),
-        page,
-        size))
-        .willReturn(okJson(caseDetailsJson)));
+    wiremock.stubFor(
+        get(String.format(
+                "/cases?provider-id=%s&"
+                    + "case-reference-number=%s&"
+                    + "provider-case-reference=%s&"
+                    + "case-status=%s&"
+                    + "fee-earner-id=%s&"
+                    + "office-id=%s&"
+                    + "client-surname=%s&"
+                    + "page=%s&"
+                    + "size=%s",
+                providerId,
+                searchCriteria.getCaseReference(),
+                searchCriteria.getProviderCaseReference(),
+                searchCriteria.getStatus(),
+                searchCriteria.getFeeEarnerId(),
+                searchCriteria.getOfficeId(),
+                searchCriteria.getClientSurname(),
+                page,
+                size))
+            .willReturn(okJson(caseDetailsJson)));
 
-    CaseDetails response =
-        ebsApiClient.getCases(searchCriteria, providerId, page, size).block();
+    CaseDetails response = ebsApiClient.getCases(searchCriteria, providerId, page, size).block();
 
     assertNotNull(response);
     assertEquals(1, response.getContent().size());
@@ -358,12 +356,13 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   @DisplayName("Get client status should return data")
   public void testGetClientStatus_returnData() throws JsonProcessingException {
     // Given
-    TransactionStatus expected = new TransactionStatus().submissionStatus("Success").referenceNumber("123");
+    TransactionStatus expected =
+        new TransactionStatus().submissionStatus("Success").referenceNumber("123");
     String transactionDetailsJson = objectMapper.writeValueAsString(expected);
     String transactionId = "1234567890";
-    wiremock.stubFor(get("/clients/status/%s".formatted(transactionId)).willReturn(
-        okJson(transactionDetailsJson)
-    ));
+    wiremock.stubFor(
+        get("/clients/status/%s".formatted(transactionId))
+            .willReturn(okJson(transactionDetailsJson)));
     // When
     TransactionStatus response = ebsApiClient.getClientStatus(transactionId).block();
     // Then
@@ -376,17 +375,23 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     final AmendmentTypeLookupDetail detail = new AmendmentTypeLookupDetail();
     detail.setContent(new ArrayList<>());
 
-    detail.getContent().add(new AmendmentTypeLookupValueDetail()
-        .applicationTypeCode("DP")
-        .applicationTypeDescription("Del. Functions")
-        .costLimitCap("1350.00")
-        .devolvedPowersIndicator("Y")
-        .defaultLarScopeFlag("Y"));
+    detail
+        .getContent()
+        .add(
+            new AmendmentTypeLookupValueDetail()
+                .applicationTypeCode("DP")
+                .applicationTypeDescription("Del. Functions")
+                .costLimitCap("1350.00")
+                .devolvedPowersIndicator("Y")
+                .defaultLarScopeFlag("Y"));
 
-    detail.getContent().add(new AmendmentTypeLookupValueDetail()
-        .applicationTypeCode("ECF")
-        .applicationTypeDescription("ECF")
-        .defaultLarScopeFlag("Y"));
+    detail
+        .getContent()
+        .add(
+            new AmendmentTypeLookupValueDetail()
+                .applicationTypeCode("ECF")
+                .applicationTypeDescription("ECF")
+                .defaultLarScopeFlag("Y"));
 
     return detail;
   }
@@ -394,10 +399,14 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   private CaseStatusLookupDetail buildCaseStatusLookupDetail() {
     return new CaseStatusLookupDetail()
         .addContentItem(
-            new CaseStatusLookupValueDetail().code("CODE1").description("Description 1")
+            new CaseStatusLookupValueDetail()
+                .code("CODE1")
+                .description("Description 1")
                 .copyAllowed(Boolean.FALSE))
         .addContentItem(
-            new CaseStatusLookupValueDetail().code("CODE2").description("Description 2")
+            new CaseStatusLookupValueDetail()
+                .code("CODE2")
+                .description("Description 2")
                 .copyAllowed(Boolean.TRUE));
   }
 
@@ -415,15 +424,8 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
         .userId(1)
         .userType("testUserType")
         .loginId("user1")
-        .addFirmsItem(
-            new BaseProvider()
-                .id(1)
-                .name("testProvider"))
-        .provider(new BaseProvider()
-            .id(2)
-            .addOfficesItem(new BaseOffice()
-                .id(1)
-                .name("Office 1")))
+        .addFirmsItem(new BaseProvider().id(1).name("testProvider"))
+        .provider(new BaseProvider().id(2).addOfficesItem(new BaseOffice().id(1).name("Office 1")))
         .addFunctionsItem("testFunction");
   }
 
@@ -431,12 +433,11 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     return new ProviderDetail()
         .id(123)
         .name("provider1")
-        .addOfficesItem(new OfficeDetail()
-            .id(10)
-            .name("Office 1")
-            .addFeeEarnersItem(new ContactDetail()
-                .id(1)
-                .name("FeeEarner1")));
+        .addOfficesItem(
+            new OfficeDetail()
+                .id(10)
+                .name("Office 1")
+                .addFeeEarnersItem(new ContactDetail().id(1).name("FeeEarner1")));
   }
 
   private NotificationSummary buildUserNotificationSummary() {
@@ -452,21 +453,19 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
                     new UserDetail()
                         .username("testUserName")
                         .userType("testUserType")
-                        .loginId("testUserName")
-                )
-        );
+                        .loginId("testUserName")));
   }
 
   private CaseDetails buildCaseDetails() {
     return new CaseDetails()
-        .addContentItem(new CaseSummary()
-            .caseReferenceNumber("caseref1")
-            .providerCaseReferenceNumber("provcaseref")
-            .caseStatusDisplay("app")
-            .client(new BaseClient().firstName("firstname")
-                .surname("thesurname"))
-            .feeEarnerName("feeEarner")
-            .categoryOfLaw("CAT1"));
+        .addContentItem(
+            new CaseSummary()
+                .caseReferenceNumber("caseref1")
+                .providerCaseReferenceNumber("provcaseref")
+                .caseStatusDisplay("app")
+                .client(new BaseClient().firstName("firstname").surname("thesurname"))
+                .feeEarnerName("feeEarner")
+                .categoryOfLaw("CAT1"));
   }
 
   private CaseSearchCriteria buildCaseSearchCriteria() {
@@ -479,5 +478,4 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     searchCriteria.setClientSurname("clientSurname");
     return searchCriteria;
   }
-
 }

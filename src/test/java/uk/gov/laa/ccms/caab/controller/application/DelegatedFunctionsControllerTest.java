@@ -47,27 +47,26 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @WebAppConfiguration
 class DelegatedFunctionsControllerTest {
 
-  @Mock
-  private DelegatedFunctionsValidator delegatedFunctionsValidator;
+  @Mock private DelegatedFunctionsValidator delegatedFunctionsValidator;
 
-  @Mock
-  private ApplicationService applicationService;
+  @Mock private ApplicationService applicationService;
 
-  @InjectMocks
-  private DelegatedFunctionsController delegatedFunctionsController;
+  @InjectMocks private DelegatedFunctionsController delegatedFunctionsController;
 
   private MockMvcTester mockMvc;
 
-  @Autowired
-  private WebApplicationContext webApplicationContext;
+  @Autowired private WebApplicationContext webApplicationContext;
 
   private ApplicationFormData applicationFormData;
 
   @BeforeEach
   void setup() {
-    mockMvc = MockMvcTester.create(standaloneSetup(delegatedFunctionsController)
-        .setControllerAdvice(new GlobalExceptionHandler())
-        .setConversionService(getConversionService()).build());
+    mockMvc =
+        MockMvcTester.create(
+            standaloneSetup(delegatedFunctionsController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .setConversionService(getConversionService())
+                .build());
     applicationFormData = new ApplicationFormData();
   }
 
@@ -79,8 +78,10 @@ class DelegatedFunctionsControllerTest {
     @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected view with application form data")
     void testGetDelegatedFunctions(String caseContext) {
-      assertThat(mockMvc.perform(get("/%s/delegated-functions".formatted(caseContext))
-          .sessionAttr(APPLICATION_FORM_DATA, applicationFormData)))
+      assertThat(
+              mockMvc.perform(
+                  get("/%s/delegated-functions".formatted(caseContext))
+                      .sessionAttr(APPLICATION_FORM_DATA, applicationFormData)))
           .hasStatusOk()
           .hasViewName("application/select-delegated-functions")
           .model()
@@ -99,52 +100,51 @@ class DelegatedFunctionsControllerTest {
 
       final UserDetail userDetail = new UserDetail();
       final ApplicationDetail applicationDetail = new ApplicationDetail();
-      doAnswer(invocation -> {
-        Errors errors = (Errors) invocation.getArguments()[1];
+      doAnswer(
+              invocation -> {
+                Errors errors = (Errors) invocation.getArguments()[1];
 
-        errors.rejectValue("delegatedFunctionUsedDate", "invalid.format",
-            "Please enter the date.");
-        return null;
-      }).when(delegatedFunctionsValidator).validate(any(), any());
+                errors.rejectValue(
+                    "delegatedFunctionUsedDate", "invalid.format", "Please enter the date.");
+                return null;
+              })
+          .when(delegatedFunctionsValidator)
+          .validate(any(), any());
 
       assertThat(
-          mockMvc.perform(post("/%s/delegated-functions".formatted(caseContext))
-              .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
-              .sessionAttr(USER_DETAILS, userDetail)
-              .sessionAttr(CASE, applicationDetail)))
+              mockMvc.perform(
+                  post("/%s/delegated-functions".formatted(caseContext))
+                      .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
+                      .sessionAttr(USER_DETAILS, userDetail)
+                      .sessionAttr(CASE, applicationDetail)))
           .hasStatusOk()
           .hasViewName("application/select-delegated-functions");
     }
 
     @ParameterizedTest
-    @CsvSource({"SUB, true, SUBDP",
-        "SUB, false, SUB",
-        "EMER, true, DP",
-        "EMER, false, EMER"})
+    @CsvSource({"SUB, true, SUBDP", "SUB, false, SUB", "EMER, true, DP", "EMER, false, EMER"})
     @DisplayName("Should redirect to client search when new application")
-    void testPostApplicationDelegatedFunctionsIsSuccessful(String category,
-        boolean delegatedFunctions,
-        String expectedApplicationType) {
+    void testPostApplicationDelegatedFunctionsIsSuccessful(
+        String category, boolean delegatedFunctions, String expectedApplicationType) {
       applicationFormData.setApplicationTypeCategory(category);
       applicationFormData.setDelegatedFunctions(delegatedFunctions);
       final ApplicationDetail applicationDetail = new ApplicationDetail();
       final UserDetail userDetail = new UserDetail();
 
       assertThat(
-          mockMvc.perform(post("/application/delegated-functions")
-              .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
-              .sessionAttr(CASE, applicationDetail)
-              .sessionAttr(USER_DETAILS, userDetail)))
+              mockMvc.perform(
+                  post("/application/delegated-functions")
+                      .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
+                      .sessionAttr(CASE, applicationDetail)
+                      .sessionAttr(USER_DETAILS, userDetail)))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/application/client/search");
     }
   }
 
-
   @Nested
   @DisplayName("GET: /amendments/edit-delegated-functions")
   class GetEditDelegatedFunctionsTests {
-
 
     @Test
     @DisplayName("Should use existing applicationFormData if present in session")
@@ -162,9 +162,11 @@ class DelegatedFunctionsControllerTest {
       formData.setDelegatedFunctions(true);
       formData.setDelegatedFunctionUsedDate(DateUtils.convertToComponentDate(dateUsed));
 
-      assertThat(mockMvc.perform(get("/amendments/edit-delegated-functions")
-          .sessionAttr(APPLICATION, tdsApplication)
-          .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())))
+      assertThat(
+              mockMvc.perform(
+                  get("/amendments/edit-delegated-functions")
+                      .sessionAttr(APPLICATION, tdsApplication)
+                      .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())))
           .hasStatusOk()
           .hasViewName("application/select-delegated-functions")
           .model()
@@ -184,13 +186,14 @@ class DelegatedFunctionsControllerTest {
       ApplicationDetail tdsApplication = new ApplicationDetail();
       tdsApplication.setApplicationType(applicationType);
 
-
       ApplicationFormData formData = new ApplicationFormData();
       formData.setDelegatedFunctions(false);
       formData.setDelegatedFunctionUsedDate(null);
 
-      assertThat(mockMvc.perform(get("/amendments/edit-delegated-functions")
-          .sessionAttr(APPLICATION, tdsApplication)))
+      assertThat(
+              mockMvc.perform(
+                  get("/amendments/edit-delegated-functions")
+                      .sessionAttr(APPLICATION, tdsApplication)))
           .hasStatusOk()
           .hasViewName("application/select-delegated-functions")
           .model()
@@ -204,12 +207,13 @@ class DelegatedFunctionsControllerTest {
     void testEditDelegatedFunction_ApplicationTypeNull() {
       ApplicationDetail tdsApplication = new ApplicationDetail();
 
-      assertThat(mockMvc.perform(get("/amendments/edit-delegated-functions")
-          .sessionAttr(APPLICATION, tdsApplication)))
+      assertThat(
+              mockMvc.perform(
+                  get("/amendments/edit-delegated-functions")
+                      .sessionAttr(APPLICATION, tdsApplication)))
           .hasViewName("error");
     }
   }
-
 
   @Nested
   @DisplayName("POST: /amendments/edit-delegated-functions")
@@ -223,17 +227,22 @@ class DelegatedFunctionsControllerTest {
       applicationType.setDevolvedPowers(new DevolvedPowersDetail());
       tdsApplication.setApplicationType(applicationType);
       UserDetail user = new UserDetail();
-      doAnswer(invocation -> {
-        Errors errors = (Errors) invocation.getArguments()[1];
-        errors.rejectValue("delegatedFunctionUsedDate", "invalid.format", "Please enter the date.");
-        return null;
-      }).when(delegatedFunctionsValidator).validate(any(), any());
+      doAnswer(
+              invocation -> {
+                Errors errors = (Errors) invocation.getArguments()[1];
+                errors.rejectValue(
+                    "delegatedFunctionUsedDate", "invalid.format", "Please enter the date.");
+                return null;
+              })
+          .when(delegatedFunctionsValidator)
+          .validate(any(), any());
 
       assertThat(
-          mockMvc.perform(post("/amendments/edit-delegated-functions")
-              .sessionAttr(APPLICATION, tdsApplication)
-              .sessionAttr(USER_DETAILS, user)
-              .flashAttr(APPLICATION_FORM_DATA, applicationFormData)))
+              mockMvc.perform(
+                  post("/amendments/edit-delegated-functions")
+                      .sessionAttr(APPLICATION, tdsApplication)
+                      .sessionAttr(USER_DETAILS, user)
+                      .flashAttr(APPLICATION_FORM_DATA, applicationFormData)))
           .hasStatusOk()
           .hasViewName("application/select-delegated-functions")
           .model()
@@ -255,17 +264,15 @@ class DelegatedFunctionsControllerTest {
       applicationFormData.setDelegatedFunctionUsedDate("1/7/2025");
 
       assertThat(
-          mockMvc.perform(post("/amendments/edit-delegated-functions")
-              .sessionAttr(APPLICATION, tdsApplication)
-              .sessionAttr(USER_DETAILS, user)
-              .flashAttr(APPLICATION_FORM_DATA, applicationFormData)))
+              mockMvc.perform(
+                  post("/amendments/edit-delegated-functions")
+                      .sessionAttr(APPLICATION, tdsApplication)
+                      .sessionAttr(USER_DETAILS, user)
+                      .flashAttr(APPLICATION_FORM_DATA, applicationFormData)))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/amendments/sections/linked-cases");
 
       verify(applicationService).putApplicationTypeFormData(123, applicationType, user);
     }
-
   }
-
-
 }

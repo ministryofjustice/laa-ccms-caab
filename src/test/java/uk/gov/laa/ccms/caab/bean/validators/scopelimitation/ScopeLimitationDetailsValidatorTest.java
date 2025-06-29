@@ -17,8 +17,7 @@ import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails;
 @ExtendWith(SpringExtension.class)
 class ScopeLimitationDetailsValidatorTest {
 
-  @InjectMocks
-  private ScopeLimitationDetailsValidator scopeLimitationDetailsValidator;
+  @InjectMocks private ScopeLimitationDetailsValidator scopeLimitationDetailsValidator;
 
   private ScopeLimitationFormDataDetails scopeLimitationDetails;
 
@@ -55,5 +54,4 @@ class ScopeLimitationDetailsValidatorTest {
     scopeLimitationDetailsValidator.validate(scopeLimitationDetails, errors);
     assertFalse(errors.hasErrors());
   }
-
 }

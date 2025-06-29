@@ -59,29 +59,20 @@ import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
 
-
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class EbsApiClientTest {
 
-  @Mock
-  private WebClient webClientMock;
-  @Mock
-  private WebClient.RequestHeadersSpec requestHeadersMock;
-  @Mock
-  private WebClient.RequestHeadersUriSpec requestHeadersUriMock;
-  @Mock
-  private WebClient.RequestBodyUriSpec requestBodyUriMock;
-  @Mock
-  private WebClient.RequestBodySpec requestBodySpec;
-  @Mock
-  private WebClient.ResponseSpec responseMock;
+  @Mock private WebClient webClientMock;
+  @Mock private WebClient.RequestHeadersSpec requestHeadersMock;
+  @Mock private WebClient.RequestHeadersUriSpec requestHeadersUriMock;
+  @Mock private WebClient.RequestBodyUriSpec requestBodyUriMock;
+  @Mock private WebClient.RequestBodySpec requestBodySpec;
+  @Mock private WebClient.ResponseSpec responseMock;
 
-  @Mock
-  private EbsApiClientErrorHandler apiClientErrorHandler;
+  @Mock private EbsApiClientErrorHandler apiClientErrorHandler;
 
-  @InjectMocks
-  private EbsApiClient ebsApiClient;
+  @InjectMocks private EbsApiClient ebsApiClient;
 
   ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
@@ -120,18 +111,20 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(UserDetail.class)).thenReturn(Mono.error(
-          new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+      when(responseMock.bodyToMono(UserDetail.class))
+          .thenReturn(
+              Mono.error(
+                  new WebClientResponseException(
+                      HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
       when(apiClientErrorHandler.handleApiRetrieveError(
-          any(), eq("User"), eq("login id"), eq(loginId))).thenReturn(Mono.empty());
+              any(), eq("User"), eq("login id"), eq(loginId)))
+          .thenReturn(Mono.empty());
 
       final Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(loginId);
 
-      StepVerifier.create(userDetailsMono)
-          .verifyComplete();
+      StepVerifier.create(userDetailsMono).verifyComplete();
     }
-
   }
 
   @Nested
@@ -152,18 +145,18 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(NotificationSummary.class)).thenReturn(
-          Mono.just(mockNotificationSummary));
+      when(responseMock.bodyToMono(NotificationSummary.class))
+          .thenReturn(Mono.just(mockNotificationSummary));
 
-      final Mono<NotificationSummary> notificationSummary = ebsApiClient.getUserNotificationSummary(
-          loginId);
+      final Mono<NotificationSummary> notificationSummary =
+          ebsApiClient.getUserNotificationSummary(loginId);
 
       StepVerifier.create(notificationSummary)
-          .expectNextMatches(summary ->
-              summary.getNotifications().equals(1)
-                  && summary.getStandardActions().equals(3)
-                  && summary.getOverdueActions().equals(2)
-          )
+          .expectNextMatches(
+              summary ->
+                  summary.getNotifications().equals(1)
+                      && summary.getStandardActions().equals(3)
+                      && summary.getOverdueActions().equals(2))
           .verifyComplete();
     }
 
@@ -181,45 +174,46 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(NotificationSummary.class)).thenReturn(
-          Mono.just(mockNotificationSummary));
+      when(responseMock.bodyToMono(NotificationSummary.class))
+          .thenReturn(Mono.just(mockNotificationSummary));
 
-      final Mono<NotificationSummary> notificationSummary = ebsApiClient.getUserNotificationSummary(
-          loginId);
+      final Mono<NotificationSummary> notificationSummary =
+          ebsApiClient.getUserNotificationSummary(loginId);
 
       StepVerifier.create(notificationSummary)
-          .expectNextMatches(summary ->
-              summary.getNotifications().equals(1)
-                  && summary.getStandardActions().equals(3)
-                  && summary.getOverdueActions().equals(2)
-          )
+          .expectNextMatches(
+              summary ->
+                  summary.getNotifications().equals(1)
+                      && summary.getStandardActions().equals(3)
+                      && summary.getOverdueActions().equals(2))
           .verifyComplete();
     }
   }
 
   @Nested
   @DisplayName("getNotification() Tests")
-  class GetNotificationTests{
+  class GetNotificationTests {
 
     @Test
     @DisplayName("Should return successfully")
     void getNotification_successful() {
       // Given
-      String  notificationId = "123";
+      String notificationId = "123";
       int userId = 876;
       int providerId = 456;
-      String expectedUri = "/notifications/%s?user-id=%s&provider-id=%s".formatted(notificationId, userId, providerId);
+      String expectedUri =
+          "/notifications/%s?user-id=%s&provider-id=%s"
+              .formatted(notificationId, userId, providerId);
       ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
-      Notification notificationInfo = new Notification().notificationId("123").providerFirmId("456");
+      Notification notificationInfo =
+          new Notification().notificationId("123").providerFirmId("456");
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(Notification.class)).thenReturn(
-          Mono.just(notificationInfo));
+      when(responseMock.bodyToMono(Notification.class)).thenReturn(Mono.just(notificationInfo));
       // When
-      Mono<Notification> notificationMono = ebsApiClient.getNotification(notificationId,
-          userId,
-          providerId);
+      Mono<Notification> notificationMono =
+          ebsApiClient.getNotification(notificationId, userId, providerId);
       // Then
       StepVerifier.create(notificationMono)
           .expectNextMatches(notification -> notification == notificationInfo)
@@ -236,25 +230,25 @@ public class EbsApiClientTest {
       String notificationId = "123";
       int userId = 876;
       int providerId = 456;
-      String expectedUri = "/notifications/%s?user-id=%s&provider-id=%s".formatted(notificationId, userId, providerId);
+      String expectedUri =
+          "/notifications/%s?user-id=%s&provider-id=%s"
+              .formatted(notificationId, userId, providerId);
       ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(Notification.class)).thenReturn(
-          Mono.error(
-              new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
-      when(
-          apiClientErrorHandler.handleApiRetrieveError(any(), eq("Notifications"),
-              any())).thenReturn(
-          Mono.empty());
+      when(responseMock.bodyToMono(Notification.class))
+          .thenReturn(
+              Mono.error(
+                  new WebClientResponseException(
+                      HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+      when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("Notifications"), any()))
+          .thenReturn(Mono.empty());
       // When
-      Mono<Notification> notificationMono = ebsApiClient.getNotification(notificationId,
-          userId,
-          providerId);
+      Mono<Notification> notificationMono =
+          ebsApiClient.getNotification(notificationId, userId, providerId);
       // Then
-      StepVerifier.create(notificationMono)
-          .verifyComplete();
+      StepVerifier.create(notificationMono).verifyComplete();
       Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
       URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
       assertEquals(expectedUri, actualUri.toString());
@@ -275,13 +269,11 @@ public class EbsApiClientTest {
       criteria.setUserType("testUserType");
       int page = 10;
       int size = 10;
-      String expectedUri = String.format(
-          "/notifications?provider-id=1&assigned-to-user-id=%s&include-closed=%s&page=%s&"
-              + "size=%s",
-          criteria.getAssignedToUserId(),
-          criteria.isIncludeClosed(),
-          page,
-          size);
+      String expectedUri =
+          String.format(
+              "/notifications?provider-id=1&assigned-to-user-id=%s&include-closed=%s&page=%s&"
+                  + "size=%s",
+              criteria.getAssignedToUserId(), criteria.isIncludeClosed(), page, size);
 
       ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
@@ -291,12 +283,9 @@ public class EbsApiClientTest {
       Notifications notificationsObj = new Notifications();
 
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(Notifications.class)).thenReturn(
-          Mono.just(notificationsObj));
+      when(responseMock.bodyToMono(Notifications.class)).thenReturn(Mono.just(notificationsObj));
       Mono<Notifications> notificationsMono =
-          ebsApiClient.getNotifications(
-              criteria, 1, page,
-              size);
+          ebsApiClient.getNotifications(criteria, 1, page, size);
 
       StepVerifier.create(notificationsMono)
           .expectNextMatches(notifications -> notifications == notificationsObj)
@@ -316,37 +305,34 @@ public class EbsApiClientTest {
       criteria.setUserType("testUserType");
       int page = 10;
       int size = 10;
-      String expectedUri = String.format(
-          "/notifications?provider-id=1&assigned-to-user-id=%s&include-closed=%s&page=%s&"
-              + "size=%s",
-          criteria.getAssignedToUserId(),
-          criteria.isIncludeClosed(),
-          page,
-          size);
+      String expectedUri =
+          String.format(
+              "/notifications?provider-id=1&assigned-to-user-id=%s&include-closed=%s&page=%s&"
+                  + "size=%s",
+              criteria.getAssignedToUserId(), criteria.isIncludeClosed(), page, size);
 
       ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(Notifications.class)).thenReturn(Mono.error(
-          new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+      when(responseMock.bodyToMono(Notifications.class))
+          .thenReturn(
+              Mono.error(
+                  new WebClientResponseException(
+                      HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-      when(
-          apiClientErrorHandler.handleApiRetrieveError(any(), eq("Notifications"),
-              any())).thenReturn(
-          Mono.empty());
+      when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("Notifications"), any()))
+          .thenReturn(Mono.empty());
 
       Mono<Notifications> notificationsMono =
           ebsApiClient.getNotifications(criteria, 1, page, size);
 
-      StepVerifier.create(notificationsMono)
-          .verifyComplete();
+      StepVerifier.create(notificationsMono).verifyComplete();
       Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
       URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
       assertEquals(expectedUri, actualUri.toString());
     }
-
   }
 
   @Nested
@@ -366,28 +352,27 @@ public class EbsApiClientTest {
         final String sort = "sort1";
         final CommonLookupDetail commonValues = new CommonLookupDetail();
 
-        final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(
-            Function.class);
+        final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor =
+            ArgumentCaptor.forClass(Function.class);
 
         when(webClientMock.get()).thenReturn(requestHeadersUriMock);
         when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
         when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(commonValues));
 
-        final Mono<CommonLookupDetail> commonValuesMono = ebsApiClient.getCommonValues(type, code,
-            descr, sort);
+        final Mono<CommonLookupDetail> commonValuesMono =
+            ebsApiClient.getCommonValues(type, code, descr, sort);
 
-        StepVerifier.create(commonValuesMono)
-            .expectNext(commonValues)
-            .verifyComplete();
+        StepVerifier.create(commonValuesMono).expectNext(commonValues).verifyComplete();
 
         final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
         final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
         // Assert the URI
         assertEquals(
-            "/lookup/common?size=1000&type=%s&code=%s&description=%s&sort=%s".formatted(
-                type, code, descr, sort), actualUri.toString());
+            "/lookup/common?size=1000&type=%s&code=%s&description=%s&sort=%s"
+                .formatted(type, code, descr, sort),
+            actualUri.toString());
       }
 
       @Test
@@ -398,31 +383,34 @@ public class EbsApiClientTest {
         final String descr = "desc1";
         final String sort = "sort1";
 
-        final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(
-            Function.class);
+        final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor =
+            ArgumentCaptor.forClass(Function.class);
 
         when(webClientMock.get()).thenReturn(requestHeadersUriMock);
         when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.error(
-            new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+        when(responseMock.bodyToMono(CommonLookupDetail.class))
+            .thenReturn(
+                Mono.error(
+                    new WebClientResponseException(
+                        HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-        when(apiClientErrorHandler.handleApiRetrieveError(
-            any(), eq("Common values"), any())).thenReturn(Mono.empty());
+        when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("Common values"), any()))
+            .thenReturn(Mono.empty());
 
-        final Mono<CommonLookupDetail> commonValuesMono = ebsApiClient.getCommonValues(
-            type, code, descr, sort);
+        final Mono<CommonLookupDetail> commonValuesMono =
+            ebsApiClient.getCommonValues(type, code, descr, sort);
 
-        StepVerifier.create(commonValuesMono)
-            .verifyComplete();
+        StepVerifier.create(commonValuesMono).verifyComplete();
 
         final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
         final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
         // Assert the URI
         assertEquals(
-            "/lookup/common?size=1000&type=%s&code=%s&description=%s&sort=%s".formatted(
-                type, code, descr, sort), actualUri.toString());
+            "/lookup/common?size=1000&type=%s&code=%s&description=%s&sort=%s"
+                .formatted(type, code, descr, sort),
+            actualUri.toString());
       }
     }
 
@@ -443,12 +431,10 @@ public class EbsApiClientTest {
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
         when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.just(mockDetail));
 
-        final Mono<CommonLookupDetail> result = ebsApiClient.getCommonValues(type, code,
-            description);
+        final Mono<CommonLookupDetail> result =
+            ebsApiClient.getCommonValues(type, code, description);
 
-        StepVerifier.create(result)
-            .expectNext(mockDetail)
-            .verifyComplete();
+        StepVerifier.create(result).expectNext(mockDetail).verifyComplete();
 
         verify(responseMock).bodyToMono(CommonLookupDetail.class);
       }
@@ -463,15 +449,13 @@ public class EbsApiClientTest {
         when(webClientMock.get()).thenReturn(requestHeadersUriMock);
         when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
         when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(
-            Mono.error(new RuntimeException("Error")));
+        when(responseMock.bodyToMono(CommonLookupDetail.class))
+            .thenReturn(Mono.error(new RuntimeException("Error")));
 
-        final Mono<CommonLookupDetail> result = ebsApiClient.getCommonValues(type, code,
-            description);
+        final Mono<CommonLookupDetail> result =
+            ebsApiClient.getCommonValues(type, code, description);
 
-        StepVerifier.create(result)
-            .expectError(RuntimeException.class)
-            .verify();
+        StepVerifier.create(result).expectError(RuntimeException.class).verify();
 
         verify(responseMock).bodyToMono(CommonLookupDetail.class);
       }
@@ -494,9 +478,7 @@ public class EbsApiClientTest {
 
         final Mono<CommonLookupDetail> result = ebsApiClient.getCommonValues(type, code);
 
-        StepVerifier.create(result)
-            .expectNext(mockDetail)
-            .verifyComplete();
+        StepVerifier.create(result).expectNext(mockDetail).verifyComplete();
 
         verify(responseMock).bodyToMono(CommonLookupDetail.class);
       }
@@ -519,9 +501,7 @@ public class EbsApiClientTest {
 
         final Mono<CommonLookupDetail> result = ebsApiClient.getCommonValues(type);
 
-        StepVerifier.create(result)
-            .expectNext(mockDetail)
-            .verifyComplete();
+        StepVerifier.create(result).expectNext(mockDetail).verifyComplete();
 
         verify(responseMock).bodyToMono(CommonLookupDetail.class);
       }
@@ -537,20 +517,18 @@ public class EbsApiClientTest {
     void getCaseStatusValuesCopyAllowed_returnsData() {
       final CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail();
 
-      final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(
-          Function.class);
+      final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor =
+          ArgumentCaptor.forClass(Function.class);
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(CaseStatusLookupDetail.class)).thenReturn(
-          Mono.just(caseStatusLookupDetail));
+      when(responseMock.bodyToMono(CaseStatusLookupDetail.class))
+          .thenReturn(Mono.just(caseStatusLookupDetail));
 
       final Mono<CaseStatusLookupDetail> lookupDetailMono = ebsApiClient.getCaseStatusValues(true);
 
-      StepVerifier.create(lookupDetailMono)
-          .expectNext(caseStatusLookupDetail)
-          .verifyComplete();
+      StepVerifier.create(lookupDetailMono).expectNext(caseStatusLookupDetail).verifyComplete();
 
       final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
@@ -573,16 +551,14 @@ public class EbsApiClientTest {
       final String expectedUri = "/providers/{providerId}";
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-      when(requestHeadersUriMock.uri(expectedUri, String.valueOf(providerId))).thenReturn(
-          requestHeadersMock);
+      when(requestHeadersUriMock.uri(expectedUri, String.valueOf(providerId)))
+          .thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
       when(responseMock.bodyToMono(ProviderDetail.class)).thenReturn(Mono.just(providerDetail));
 
       final Mono<ProviderDetail> providerDetailMono = ebsApiClient.getProvider(providerId);
 
-      StepVerifier.create(providerDetailMono)
-          .expectNext(providerDetail)
-          .verifyComplete();
+      StepVerifier.create(providerDetailMono).expectNext(providerDetail).verifyComplete();
     }
   }
 
@@ -593,8 +569,8 @@ public class EbsApiClientTest {
     @Test
     @DisplayName("Should return data")
     void getPersonRelationshipsToCaseValues_returnsData() {
-      final RelationshipToCaseLookupDetail relationshipToCaseLookupDetail
-          = new RelationshipToCaseLookupDetail();
+      final RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+          new RelationshipToCaseLookupDetail();
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
@@ -615,7 +591,6 @@ public class EbsApiClientTest {
       // Assert the URI
       assertEquals("/lookup/person-to-case-relationships", actualUri.toString());
     }
-
   }
 
   @Nested
@@ -625,8 +600,8 @@ public class EbsApiClientTest {
     @Test
     @DisplayName("Should return data")
     void getOrganisationRelationshipsToCaseValues_returnsData() {
-      final RelationshipToCaseLookupDetail relationshipToCaseLookupDetail
-          = new RelationshipToCaseLookupDetail();
+      final RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+          new RelationshipToCaseLookupDetail();
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
@@ -662,8 +637,8 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(AmendmentTypeLookupDetail.class)).thenReturn(
-          Mono.just(amendmentTypeLookupDetail));
+      when(responseMock.bodyToMono(AmendmentTypeLookupDetail.class))
+          .thenReturn(Mono.just(amendmentTypeLookupDetail));
 
       final Mono<AmendmentTypeLookupDetail> amendmentTypesMono =
           ebsApiClient.getAmendmentTypes(applicationType);
@@ -676,8 +651,8 @@ public class EbsApiClientTest {
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
       // Assert the URI
-      assertEquals("/lookup/amendment-types?size=1000&application-type=appType1",
-          actualUri.toString());
+      assertEquals(
+          "/lookup/amendment-types?size=1000&application-type=appType1", actualUri.toString());
     }
 
     @Test
@@ -688,24 +663,26 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(AmendmentTypeLookupDetail.class)).thenReturn(Mono.error(
-          new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+      when(responseMock.bodyToMono(AmendmentTypeLookupDetail.class))
+          .thenReturn(
+              Mono.error(
+                  new WebClientResponseException(
+                      HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-      when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("Amendment types"),
-          any())).thenReturn(Mono.empty());
+      when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("Amendment types"), any()))
+          .thenReturn(Mono.empty());
 
       final Mono<AmendmentTypeLookupDetail> amendmentTypesMono =
           ebsApiClient.getAmendmentTypes(applicationType);
 
-      StepVerifier.create(amendmentTypesMono)
-          .verifyComplete();
+      StepVerifier.create(amendmentTypesMono).verifyComplete();
 
       final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
       // Assert the URI
-      assertEquals("/lookup/amendment-types?size=1000&application-type=appType1",
-          actualUri.toString());
+      assertEquals(
+          "/lookup/amendment-types?size=1000&application-type=appType1", actualUri.toString());
     }
   }
 
@@ -726,9 +703,7 @@ public class EbsApiClientTest {
 
       final Mono<CommonLookupDetail> countriesMono = ebsApiClient.getCountries();
 
-      StepVerifier.create(countriesMono)
-          .expectNext(commonValues)
-          .verifyComplete();
+      StepVerifier.create(countriesMono).expectNext(commonValues).verifyComplete();
 
       final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
@@ -743,16 +718,18 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(CommonLookupDetail.class)).thenReturn(Mono.error(
-          new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+      when(responseMock.bodyToMono(CommonLookupDetail.class))
+          .thenReturn(
+              Mono.error(
+                  new WebClientResponseException(
+                      HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-      when(apiClientErrorHandler.handleApiRetrieveError(
-          any(), eq("Countries"), any())).thenReturn(Mono.empty());
+      when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("Countries"), any()))
+          .thenReturn(Mono.empty());
 
       final Mono<CommonLookupDetail> countriesMono = ebsApiClient.getCountries();
 
-      StepVerifier.create(countriesMono)
-          .verifyComplete();
+      StepVerifier.create(countriesMono).verifyComplete();
 
       final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
@@ -779,12 +756,10 @@ public class EbsApiClientTest {
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
       when(responseMock.bodyToMono(ProceedingDetail.class)).thenReturn(Mono.just(proceedingDetail));
 
-      final Mono<ProceedingDetail> proceedingDetailMono = ebsApiClient.getProceeding(
-          proceedingCode);
+      final Mono<ProceedingDetail> proceedingDetailMono =
+          ebsApiClient.getProceeding(proceedingCode);
 
-      StepVerifier.create(proceedingDetailMono)
-          .expectNext(proceedingDetail)
-          .verifyComplete();
+      StepVerifier.create(proceedingDetailMono).expectNext(proceedingDetail).verifyComplete();
     }
   }
 
@@ -799,11 +774,8 @@ public class EbsApiClientTest {
       final String username = "user1";
       final String expectedUri = "/users?size=1000&provider-id=123";
       final Integer providerId = 123;
-      final BaseUser mockUser = new BaseUser()
-          .username(username)
-          .userId(123);
-      final UserDetails mockDetails = new UserDetails()
-          .addContentItem(mockUser);
+      final BaseUser mockUser = new BaseUser().username(username).userId(123);
+      final UserDetails mockDetails = new UserDetails().addContentItem(mockUser);
 
       // Stubs
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
@@ -815,13 +787,10 @@ public class EbsApiClientTest {
       final Mono<UserDetails> userDetailsMono = ebsApiClient.getUsers(providerId);
 
       // Assertions
-      StepVerifier.create(userDetailsMono)
-          .expectNext(mockDetails)
-          .verifyComplete();
+      StepVerifier.create(userDetailsMono).expectNext(mockDetails).verifyComplete();
       final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
       assertEquals(expectedUri, actualUri.toString());
-
     }
 
     @Test
@@ -835,20 +804,21 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(UserDetails.class)).thenReturn(Mono.error(
-          new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+      when(responseMock.bodyToMono(UserDetails.class))
+          .thenReturn(
+              Mono.error(
+                  new WebClientResponseException(
+                      HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
       when(apiClientErrorHandler.handleApiRetrieveError(any(), any(), any()))
           .thenReturn(Mono.empty());
 
       final Mono<UserDetails> userDetailsMono = ebsApiClient.getUsers(providerId);
-      StepVerifier.create(userDetailsMono)
-          .verifyComplete();
+      StepVerifier.create(userDetailsMono).verifyComplete();
       final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
       assertEquals(expectedUri, actualUri.toString());
     }
-
   }
 
   @Nested
@@ -880,38 +850,37 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(ScopeLimitationDetails.class)).thenReturn(
-          Mono.just(expectedResponse));
+      when(responseMock.bodyToMono(ScopeLimitationDetails.class))
+          .thenReturn(Mono.just(expectedResponse));
 
       final Mono<ScopeLimitationDetails> resultsMono =
           ebsApiClient.getScopeLimitations(scopeLimitationDetail);
 
-      StepVerifier.create(resultsMono)
-          .expectNext(expectedResponse)
-          .verifyComplete();
+      StepVerifier.create(resultsMono).expectNext(expectedResponse).verifyComplete();
 
       final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
-      final String expectedUri = String.format(
-          "/scope-limitations?size=1000&scope-limitations=%s&category-of-law=%s&matter-type=%s"
-              + "&proceeding-code=%s&level-of-service=%s&default-wording=%s"
-              + "&stage=%s&cost-limitation=%s&emergency-cost-limitation=%s&non-standard-wording=%s"
-              + "&emergency-scope-default=%s&emergency=%s&default-code=%s&scope-default=%s",
-          scopeLimitationDetail.getScopeLimitations(),
-          scopeLimitationDetail.getCategoryOfLaw(),
-          scopeLimitationDetail.getMatterType(),
-          scopeLimitationDetail.getProceedingCode(),
-          scopeLimitationDetail.getLevelOfService(),
-          scopeLimitationDetail.getDefaultWording(),
-          scopeLimitationDetail.getStage(),
-          scopeLimitationDetail.getCostLimitation(),
-          scopeLimitationDetail.getEmergencyCostLimitation(),
-          scopeLimitationDetail.getNonStandardWordingRequired(),
-          scopeLimitationDetail.getEmergencyScopeDefault(),
-          scopeLimitationDetail.getEmergency(),
-          scopeLimitationDetail.getDefaultCode(),
-          scopeLimitationDetail.getScopeDefault());
+      final String expectedUri =
+          String.format(
+              "/scope-limitations?size=1000&scope-limitations=%s&category-of-law=%s&matter-type=%s"
+                  + "&proceeding-code=%s&level-of-service=%s&default-wording=%s"
+                  + "&stage=%s&cost-limitation=%s&emergency-cost-limitation=%s&non-standard-wording=%s"
+                  + "&emergency-scope-default=%s&emergency=%s&default-code=%s&scope-default=%s",
+              scopeLimitationDetail.getScopeLimitations(),
+              scopeLimitationDetail.getCategoryOfLaw(),
+              scopeLimitationDetail.getMatterType(),
+              scopeLimitationDetail.getProceedingCode(),
+              scopeLimitationDetail.getLevelOfService(),
+              scopeLimitationDetail.getDefaultWording(),
+              scopeLimitationDetail.getStage(),
+              scopeLimitationDetail.getCostLimitation(),
+              scopeLimitationDetail.getEmergencyCostLimitation(),
+              scopeLimitationDetail.getNonStandardWordingRequired(),
+              scopeLimitationDetail.getEmergencyScopeDefault(),
+              scopeLimitationDetail.getEmergency(),
+              scopeLimitationDetail.getDefaultCode(),
+              scopeLimitationDetail.getScopeDefault());
 
       // Assert the URI
       assertEquals(expectedUri, actualUri.toString());
@@ -933,8 +902,8 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(PriorAuthorityTypeDetails.class)).thenReturn(
-          Mono.just(priorAuthorityTypeDetails));
+      when(responseMock.bodyToMono(PriorAuthorityTypeDetails.class))
+          .thenReturn(Mono.just(priorAuthorityTypeDetails));
 
       final Mono<PriorAuthorityTypeDetails> priorAuthorityTypeDetailsMono =
           ebsApiClient.getPriorAuthorityTypes(code, valueRequired);
@@ -947,10 +916,11 @@ public class EbsApiClientTest {
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
       // Assert the URI
-      assertEquals("/prior-authority-types?size=1000&code=%s&value-required=%s".formatted(
-          code, valueRequired), actualUri.toString());
+      assertEquals(
+          "/prior-authority-types?size=1000&code=%s&value-required=%s"
+              .formatted(code, valueRequired),
+          actualUri.toString());
     }
-
   }
 
   @Nested
@@ -968,8 +938,8 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(OutcomeResultLookupDetail.class)).thenReturn(
-          Mono.just(outcomeResultLookupDetail));
+      when(responseMock.bodyToMono(OutcomeResultLookupDetail.class))
+          .thenReturn(Mono.just(outcomeResultLookupDetail));
 
       final Mono<OutcomeResultLookupDetail> outcomeResultLookupDetailMono =
           ebsApiClient.getOutcomeResults(proceedingCode, outcomeResult);
@@ -983,8 +953,9 @@ public class EbsApiClientTest {
 
       // Assert the URI
       assertEquals(
-          "/lookup/outcome-results?size=1000&proceeding-code=%s&outcome-result=%s".formatted(
-              proceedingCode, outcomeResult), actualUri.toString());
+          "/lookup/outcome-results?size=1000&proceeding-code=%s&outcome-result=%s"
+              .formatted(proceedingCode, outcomeResult),
+          actualUri.toString());
     }
   }
 
@@ -1002,8 +973,8 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(StageEndLookupDetail.class)).thenReturn(
-          Mono.just(stageEndLookupDetail));
+      when(responseMock.bodyToMono(StageEndLookupDetail.class))
+          .thenReturn(Mono.just(stageEndLookupDetail));
 
       final Mono<StageEndLookupDetail> stageEndLookupDetailMono =
           ebsApiClient.getStageEnds(proceedingCode, stageEnd);
@@ -1016,8 +987,10 @@ public class EbsApiClientTest {
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
       // Assert the URI
-      assertEquals("/lookup/stage-ends?size=1000&proceeding-code=%s&stage-end=%s".formatted(
-          proceedingCode, stageEnd), actualUri.toString());
+      assertEquals(
+          "/lookup/stage-ends?size=1000&proceeding-code=%s&stage-end=%s"
+              .formatted(proceedingCode, stageEnd),
+          actualUri.toString());
     }
   }
 
@@ -1036,8 +1009,8 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(AwardTypeLookupDetail.class)).thenReturn(
-          Mono.just(awardTypeLookupDetail));
+      when(responseMock.bodyToMono(AwardTypeLookupDetail.class))
+          .thenReturn(Mono.just(awardTypeLookupDetail));
 
       final Mono<AwardTypeLookupDetail> awardTypeLookupDetailMono =
           ebsApiClient.getAwardTypes(code, awardType);
@@ -1050,8 +1023,8 @@ public class EbsApiClientTest {
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
       // Assert the URI
-      assertEquals("/lookup/award-types?size=1000&code=code1&award-type=type1",
-          actualUri.toString());
+      assertEquals(
+          "/lookup/award-types?size=1000&code=code1&award-type=type1", actualUri.toString());
     }
   }
 
@@ -1071,15 +1044,13 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(CategoryOfLawLookupDetail.class)).thenReturn(
-          Mono.just(lookupDetail));
+      when(responseMock.bodyToMono(CategoryOfLawLookupDetail.class))
+          .thenReturn(Mono.just(lookupDetail));
 
-      final Mono<CategoryOfLawLookupDetail> result = ebsApiClient.getCategoriesOfLaw(code,
-          matterTypeDescription, copyCostLimit);
+      final Mono<CategoryOfLawLookupDetail> result =
+          ebsApiClient.getCategoriesOfLaw(code, matterTypeDescription, copyCostLimit);
 
-      StepVerifier.create(result)
-          .expectNext(lookupDetail)
-          .verifyComplete();
+      StepVerifier.create(result).expectNext(lookupDetail).verifyComplete();
 
       verify(responseMock).bodyToMono(CategoryOfLawLookupDetail.class);
     }
@@ -1094,19 +1065,16 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(CategoryOfLawLookupDetail.class)).thenReturn(
-          Mono.error(new RuntimeException("Error")));
+      when(responseMock.bodyToMono(CategoryOfLawLookupDetail.class))
+          .thenReturn(Mono.error(new RuntimeException("Error")));
 
-      final Mono<CategoryOfLawLookupDetail> result = ebsApiClient.getCategoriesOfLaw(code,
-          matterTypeDescription, copyCostLimit);
+      final Mono<CategoryOfLawLookupDetail> result =
+          ebsApiClient.getCategoriesOfLaw(code, matterTypeDescription, copyCostLimit);
 
-      StepVerifier.create(result)
-          .expectError(RuntimeException.class)
-          .verify();
+      StepVerifier.create(result).expectError(RuntimeException.class).verify();
 
       verify(responseMock).bodyToMono(CategoryOfLawLookupDetail.class);
     }
-
   }
 
   @Nested
@@ -1124,15 +1092,13 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(RelationshipToCaseLookupDetail.class)).thenReturn(
-          Mono.just(lookupDetail));
+      when(responseMock.bodyToMono(RelationshipToCaseLookupDetail.class))
+          .thenReturn(Mono.just(lookupDetail));
 
-      final Mono<RelationshipToCaseLookupDetail> result = ebsApiClient.getPersonToCaseRelationships(
-          code, description);
+      final Mono<RelationshipToCaseLookupDetail> result =
+          ebsApiClient.getPersonToCaseRelationships(code, description);
 
-      StepVerifier.create(result)
-          .expectNext(lookupDetail)
-          .verifyComplete();
+      StepVerifier.create(result).expectNext(lookupDetail).verifyComplete();
 
       verify(responseMock).bodyToMono(RelationshipToCaseLookupDetail.class);
     }
@@ -1146,15 +1112,13 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(RelationshipToCaseLookupDetail.class)).thenReturn(
-          Mono.error(new RuntimeException("Error")));
+      when(responseMock.bodyToMono(RelationshipToCaseLookupDetail.class))
+          .thenReturn(Mono.error(new RuntimeException("Error")));
 
-      final Mono<RelationshipToCaseLookupDetail> result = ebsApiClient.getPersonToCaseRelationships(
-          code, description);
+      final Mono<RelationshipToCaseLookupDetail> result =
+          ebsApiClient.getPersonToCaseRelationships(code, description);
 
-      StepVerifier.create(result)
-          .expectError(RuntimeException.class)
-          .verify();
+      StepVerifier.create(result).expectError(RuntimeException.class).verify();
 
       verify(responseMock).bodyToMono(RelationshipToCaseLookupDetail.class);
     }
@@ -1182,9 +1146,8 @@ public class EbsApiClientTest {
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
       when(responseMock.bodyToMono(ProceedingDetails.class)).thenReturn(Mono.just(mockDetails));
 
-      final Mono<ProceedingDetails> result = ebsApiClient.getProceedings(searchCriteria,
-          larScopeFlag,
-          applicationType, isLead);
+      final Mono<ProceedingDetails> result =
+          ebsApiClient.getProceedings(searchCriteria, larScopeFlag, applicationType, isLead);
 
       StepVerifier.create(result)
           .expectNextMatches(details -> details.equals(mockDetails))
@@ -1205,13 +1168,10 @@ public class EbsApiClientTest {
       when(responseMock.bodyToMono(ProceedingDetails.class))
           .thenReturn(Mono.error(new RuntimeException("Unexpected error")));
 
-      final Mono<ProceedingDetails> result = ebsApiClient.getProceedings(searchCriteria,
-          larScopeFlag,
-          applicationType, isLead);
+      final Mono<ProceedingDetails> result =
+          ebsApiClient.getProceedings(searchCriteria, larScopeFlag, applicationType, isLead);
 
-      StepVerifier.create(result)
-          .expectError(RuntimeException.class)
-          .verify();
+      StepVerifier.create(result).expectError(RuntimeException.class).verify();
     }
   }
 
@@ -1229,11 +1189,11 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(ClientInvolvementTypeLookupDetail.class)).thenReturn(
-          Mono.just(mockDetail));
+      when(responseMock.bodyToMono(ClientInvolvementTypeLookupDetail.class))
+          .thenReturn(Mono.just(mockDetail));
 
-      final Mono<ClientInvolvementTypeLookupDetail> result = ebsApiClient.getClientInvolvementTypes(
-          proceedingCode);
+      final Mono<ClientInvolvementTypeLookupDetail> result =
+          ebsApiClient.getClientInvolvementTypes(proceedingCode);
 
       StepVerifier.create(result)
           .expectNextMatches(detail -> detail.equals(mockDetail))
@@ -1251,12 +1211,10 @@ public class EbsApiClientTest {
       when(responseMock.bodyToMono(ClientInvolvementTypeLookupDetail.class))
           .thenReturn(Mono.error(new RuntimeException("Unexpected error")));
 
-      final Mono<ClientInvolvementTypeLookupDetail> result = ebsApiClient.getClientInvolvementTypes(
-          proceedingCode);
+      final Mono<ClientInvolvementTypeLookupDetail> result =
+          ebsApiClient.getClientInvolvementTypes(proceedingCode);
 
-      StepVerifier.create(result)
-          .expectError(RuntimeException.class)
-          .verify();
+      StepVerifier.create(result).expectError(RuntimeException.class).verify();
     }
   }
 
@@ -1276,11 +1234,11 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(LevelOfServiceLookupDetail.class)).thenReturn(
-          Mono.just(mockDetail));
+      when(responseMock.bodyToMono(LevelOfServiceLookupDetail.class))
+          .thenReturn(Mono.just(mockDetail));
 
-      final Mono<LevelOfServiceLookupDetail> result = ebsApiClient.getLevelOfServiceTypes(
-          proceedingCode, categoryOfLaw, matterType);
+      final Mono<LevelOfServiceLookupDetail> result =
+          ebsApiClient.getLevelOfServiceTypes(proceedingCode, categoryOfLaw, matterType);
 
       StepVerifier.create(result)
           .expectNextMatches(detail -> detail.equals(mockDetail))
@@ -1300,12 +1258,10 @@ public class EbsApiClientTest {
       when(responseMock.bodyToMono(LevelOfServiceLookupDetail.class))
           .thenReturn(Mono.error(new RuntimeException("Unexpected error")));
 
-      final Mono<LevelOfServiceLookupDetail> result = ebsApiClient.getLevelOfServiceTypes(
-          proceedingCode, categoryOfLaw, matterType);
+      final Mono<LevelOfServiceLookupDetail> result =
+          ebsApiClient.getLevelOfServiceTypes(proceedingCode, categoryOfLaw, matterType);
 
-      StepVerifier.create(result)
-          .expectError(RuntimeException.class)
-          .verify();
+      StepVerifier.create(result).expectError(RuntimeException.class).verify();
     }
   }
 
@@ -1323,11 +1279,11 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(EvidenceDocumentTypeLookupDetail.class)).thenReturn(
-          Mono.just(mockDetail));
+      when(responseMock.bodyToMono(EvidenceDocumentTypeLookupDetail.class))
+          .thenReturn(Mono.just(mockDetail));
 
-      final Mono<EvidenceDocumentTypeLookupDetail> result = ebsApiClient.getEvidenceDocumentTypes(
-          type, code);
+      final Mono<EvidenceDocumentTypeLookupDetail> result =
+          ebsApiClient.getEvidenceDocumentTypes(type, code);
 
       StepVerifier.create(result)
           .expectNextMatches(detail -> detail.equals(mockDetail))
@@ -1336,8 +1292,8 @@ public class EbsApiClientTest {
       final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
-      assertEquals("/lookup/evidence-document-types?size=1000&type=type1&code=code1",
-          actualUri.toString());
+      assertEquals(
+          "/lookup/evidence-document-types?size=1000&type=type1&code=code1", actualUri.toString());
     }
 
     @Test
@@ -1349,23 +1305,26 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(EvidenceDocumentTypeLookupDetail.class)).thenReturn(Mono.error(
-          new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+      when(responseMock.bodyToMono(EvidenceDocumentTypeLookupDetail.class))
+          .thenReturn(
+              Mono.error(
+                  new WebClientResponseException(
+                      HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-      when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("Evidence document types"),
-          any())).thenReturn(Mono.empty());
+      when(apiClientErrorHandler.handleApiRetrieveError(
+              any(), eq("Evidence document types"), any()))
+          .thenReturn(Mono.empty());
 
-      final Mono<EvidenceDocumentTypeLookupDetail> result = ebsApiClient.getEvidenceDocumentTypes(
-          type, code);
+      final Mono<EvidenceDocumentTypeLookupDetail> result =
+          ebsApiClient.getEvidenceDocumentTypes(type, code);
 
-      StepVerifier.create(result)
-          .verifyComplete();
+      StepVerifier.create(result).verifyComplete();
 
       final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
-      assertEquals("/lookup/evidence-document-types?size=1000&type=type1&code=code1",
-          actualUri.toString());
+      assertEquals(
+          "/lookup/evidence-document-types?size=1000&type=type1&code=code1", actualUri.toString());
     }
   }
 
@@ -1383,12 +1342,11 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(AssessmentSummaryEntityLookupDetail.class)).thenReturn(
-          Mono.just(mockDetail));
+      when(responseMock.bodyToMono(AssessmentSummaryEntityLookupDetail.class))
+          .thenReturn(Mono.just(mockDetail));
 
       final Mono<AssessmentSummaryEntityLookupDetail> result =
-          ebsApiClient.getAssessmentSummaryAttributes(
-              summaryType);
+          ebsApiClient.getAssessmentSummaryAttributes(summaryType);
 
       StepVerifier.create(result)
           .expectNextMatches(detail -> detail.equals(mockDetail))
@@ -1397,7 +1355,8 @@ public class EbsApiClientTest {
       final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
-      assertEquals("/lookup/assessment-summary-attributes?size=1000&summary-type=summary1",
+      assertEquals(
+          "/lookup/assessment-summary-attributes?size=1000&summary-type=summary1",
           actualUri.toString());
     }
 
@@ -1409,24 +1368,26 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(AssessmentSummaryEntityLookupDetail.class)).thenReturn(
-          Mono.error(
-              new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+      when(responseMock.bodyToMono(AssessmentSummaryEntityLookupDetail.class))
+          .thenReturn(
+              Mono.error(
+                  new WebClientResponseException(
+                      HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-      when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("Assessment summary attributes"),
-          any())).thenReturn(Mono.empty());
+      when(apiClientErrorHandler.handleApiRetrieveError(
+              any(), eq("Assessment summary attributes"), any()))
+          .thenReturn(Mono.empty());
 
       final Mono<AssessmentSummaryEntityLookupDetail> result =
-          ebsApiClient.getAssessmentSummaryAttributes(
-              summaryType);
+          ebsApiClient.getAssessmentSummaryAttributes(summaryType);
 
-      StepVerifier.create(result)
-          .verifyComplete();
+      StepVerifier.create(result).verifyComplete();
 
       final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
-      assertEquals("/lookup/assessment-summary-attributes?size=1000&summary-type=summary1",
+      assertEquals(
+          "/lookup/assessment-summary-attributes?size=1000&summary-type=summary1",
           actualUri.toString());
     }
   }
@@ -1449,9 +1410,7 @@ public class EbsApiClientTest {
 
       final Mono<MatterTypeLookupDetail> result = ebsApiClient.getMatterTypes(categoryOfLaw);
 
-      StepVerifier.create(result)
-          .expectNext(mockDetail)
-          .verifyComplete();
+      StepVerifier.create(result).expectNext(mockDetail).verifyComplete();
 
       verify(responseMock).bodyToMono(MatterTypeLookupDetail.class);
     }
@@ -1464,14 +1423,12 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(MatterTypeLookupDetail.class)).thenReturn(
-          Mono.error(new RuntimeException("Error")));
+      when(responseMock.bodyToMono(MatterTypeLookupDetail.class))
+          .thenReturn(Mono.error(new RuntimeException("Error")));
 
       final Mono<MatterTypeLookupDetail> result = ebsApiClient.getMatterTypes(categoryOfLaw);
 
-      StepVerifier.create(result)
-          .expectError(RuntimeException.class)
-          .verify();
+      StepVerifier.create(result).expectError(RuntimeException.class).verify();
 
       verify(responseMock).bodyToMono(MatterTypeLookupDetail.class);
     }
@@ -1483,11 +1440,11 @@ public class EbsApiClientTest {
 
     @ParameterizedTest
     @CsvSource({
-        "DECLARATION_TYPE, BILL_TYPE, /lookup/declarations?size=1000&type=DECLARATION_TYPE&billType"
-            + "=BILL_TYPE",
-        "DECLARATION_TYPE, , /lookup/declarations?size=1000&type=DECLARATION_TYPE",
-        ", BILL_TYPE, /lookup/declarations?size=1000&billType=BILL_TYPE",
-        ", , /lookup/declarations?size=1000"
+      "DECLARATION_TYPE, BILL_TYPE, /lookup/declarations?size=1000&type=DECLARATION_TYPE&billType"
+          + "=BILL_TYPE",
+      "DECLARATION_TYPE, , /lookup/declarations?size=1000&type=DECLARATION_TYPE",
+      ", BILL_TYPE, /lookup/declarations?size=1000&billType=BILL_TYPE",
+      ", , /lookup/declarations?size=1000"
     })
     @DisplayName("getDeclarations parameterized test")
     void testGetDeclarations(final String type, final String billType, final String expectedUri) {
@@ -1496,17 +1453,15 @@ public class EbsApiClientTest {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(DeclarationLookupDetail.class)).thenReturn(
-          Mono.just(mockDeclarationDetail));
+      when(responseMock.bodyToMono(DeclarationLookupDetail.class))
+          .thenReturn(Mono.just(mockDeclarationDetail));
 
       final Mono<DeclarationLookupDetail> result = ebsApiClient.getDeclarations(type, billType);
 
-      StepVerifier.create(result)
-          .expectNext(mockDeclarationDetail)
-          .verifyComplete();
+      StepVerifier.create(result).expectNext(mockDeclarationDetail).verifyComplete();
 
-      final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(
-          Function.class);
+      final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor =
+          ArgumentCaptor.forClass(Function.class);
       verify(requestHeadersUriMock).uri(uriCaptor.capture());
 
       final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
@@ -1517,30 +1472,28 @@ public class EbsApiClientTest {
 
     @ParameterizedTest
     @CsvSource({
-        "DECLARATION_TYPE, BILL_TYPE, /lookup/declarations?size=1000&type=DECLARATION_TYPE&billType"
-            + "=BILL_TYPE",
-        "DECLARATION_TYPE, , /lookup/declarations?size=1000&type=DECLARATION_TYPE"
+      "DECLARATION_TYPE, BILL_TYPE, /lookup/declarations?size=1000&type=DECLARATION_TYPE&billType"
+          + "=BILL_TYPE",
+      "DECLARATION_TYPE, , /lookup/declarations?size=1000&type=DECLARATION_TYPE"
     })
     @DisplayName("getDeclarations handles errors in a parameterized test")
-    void testGetDeclarations_handlesError(final String type, final String billType,
-        final String expectedUri) {
+    void testGetDeclarations_handlesError(
+        final String type, final String billType, final String expectedUri) {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(DeclarationLookupDetail.class)).thenReturn(
-          Mono.error(new RuntimeException("Error")));
+      when(responseMock.bodyToMono(DeclarationLookupDetail.class))
+          .thenReturn(Mono.error(new RuntimeException("Error")));
 
-      when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("Declarations"),
-          any())).thenReturn(
-          Mono.empty());
+      when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("Declarations"), any()))
+          .thenReturn(Mono.empty());
 
       final Mono<DeclarationLookupDetail> result = ebsApiClient.getDeclarations(type, billType);
 
-      StepVerifier.create(result)
-          .verifyComplete();
+      StepVerifier.create(result).verifyComplete();
 
-      final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(
-          Function.class);
+      final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor =
+          ArgumentCaptor.forClass(Function.class);
       verify(requestHeadersUriMock).uri(uriCaptor.capture());
 
       final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
@@ -1556,31 +1509,29 @@ public class EbsApiClientTest {
 
     @ParameterizedTest
     @CsvSource({
-        "true, type1, /lookup/provider-request-types?size=1000&is-case-related=true&type=type1",
-        "true, , /lookup/provider-request-types?size=1000&is-case-related=true",
-        ", type1, /lookup/provider-request-types?size=1000&type=type1",
-        ", , /lookup/provider-request-types?size=1000"
+      "true, type1, /lookup/provider-request-types?size=1000&is-case-related=true&type=type1",
+      "true, , /lookup/provider-request-types?size=1000&is-case-related=true",
+      ", type1, /lookup/provider-request-types?size=1000&type=type1",
+      ", , /lookup/provider-request-types?size=1000"
     })
     @DisplayName("Should match URI")
-    void testGetProviderRequestTypes(final Boolean isCaseRelated, final String type,
-        final String expectedUri) {
+    void testGetProviderRequestTypes(
+        final Boolean isCaseRelated, final String type, final String expectedUri) {
       final ProviderRequestTypeLookupDetail mockDetail = new ProviderRequestTypeLookupDetail();
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(ProviderRequestTypeLookupDetail.class)).thenReturn(
-          Mono.just(mockDetail));
+      when(responseMock.bodyToMono(ProviderRequestTypeLookupDetail.class))
+          .thenReturn(Mono.just(mockDetail));
 
-      final Mono<ProviderRequestTypeLookupDetail> result = ebsApiClient.getProviderRequestTypes(
-          isCaseRelated, type);
+      final Mono<ProviderRequestTypeLookupDetail> result =
+          ebsApiClient.getProviderRequestTypes(isCaseRelated, type);
 
-      StepVerifier.create(result)
-          .expectNext(mockDetail)
-          .verifyComplete();
+      StepVerifier.create(result).expectNext(mockDetail).verifyComplete();
 
-      final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(
-          Function.class);
+      final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor =
+          ArgumentCaptor.forClass(Function.class);
       verify(requestHeadersUriMock).uri(uriCaptor.capture());
 
       final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
@@ -1591,29 +1542,28 @@ public class EbsApiClientTest {
 
     @ParameterizedTest
     @CsvSource({
-        "true, type1, /lookup/provider-request-types?size=1000&is-case-related=true&type=type1",
-        "true, , /lookup/provider-request-types?size=1000&is-case-related=true"
+      "true, type1, /lookup/provider-request-types?size=1000&is-case-related=true&type=type1",
+      "true, , /lookup/provider-request-types?size=1000&is-case-related=true"
     })
     @DisplayName("Should handle error")
-    void testGetProviderRequestTypes_handlesError(final Boolean isCaseRelated, final String type,
-        final String expectedUri) {
+    void testGetProviderRequestTypes_handlesError(
+        final Boolean isCaseRelated, final String type, final String expectedUri) {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.bodyToMono(ProviderRequestTypeLookupDetail.class)).thenReturn(
-          Mono.error(new RuntimeException("Error")));
+      when(responseMock.bodyToMono(ProviderRequestTypeLookupDetail.class))
+          .thenReturn(Mono.error(new RuntimeException("Error")));
 
-      when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("Provider request types"),
-          any())).thenReturn(Mono.empty());
+      when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("Provider request types"), any()))
+          .thenReturn(Mono.empty());
 
-      final Mono<ProviderRequestTypeLookupDetail> result = ebsApiClient.getProviderRequestTypes(
-          isCaseRelated, type);
+      final Mono<ProviderRequestTypeLookupDetail> result =
+          ebsApiClient.getProviderRequestTypes(isCaseRelated, type);
 
-      StepVerifier.create(result)
-          .verifyComplete();
+      StepVerifier.create(result).verifyComplete();
 
-      final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(
-          Function.class);
+      final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor =
+          ArgumentCaptor.forClass(Function.class);
       verify(requestHeadersUriMock).uri(uriCaptor.capture());
 
       final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
@@ -1633,16 +1583,14 @@ public class EbsApiClientTest {
       when(webClientMock.post()).thenReturn(requestBodyUriMock);
       when(requestBodyUriMock.uri("/case-reference")).thenReturn(requestBodySpec);
       when(requestBodySpec.retrieve()).thenReturn(responseMock);
-      CaseReferenceSummary caseReferenceSummary = new CaseReferenceSummary().caseReferenceNumber(
-          "123");
-      when(responseMock.bodyToMono(CaseReferenceSummary.class)).thenReturn(
-          Mono.just(caseReferenceSummary));
+      CaseReferenceSummary caseReferenceSummary =
+          new CaseReferenceSummary().caseReferenceNumber("123");
+      when(responseMock.bodyToMono(CaseReferenceSummary.class))
+          .thenReturn(Mono.just(caseReferenceSummary));
 
       final Mono<CaseReferenceSummary> result = ebsApiClient.postAllocateNextCaseReference();
 
-      StepVerifier.create(result)
-          .expectNext(caseReferenceSummary)
-          .verifyComplete();
+      StepVerifier.create(result).expectNext(caseReferenceSummary).verifyComplete();
 
       verify(responseMock).bodyToMono(CaseReferenceSummary.class);
     }
@@ -1653,24 +1601,25 @@ public class EbsApiClientTest {
       when(webClientMock.post()).thenReturn(requestBodyUriMock);
       when(requestBodyUriMock.uri("/case-reference")).thenReturn(requestBodySpec);
       when(requestBodySpec.retrieve()).thenReturn(responseMock);
-      CaseReferenceSummary caseReferenceSummary = new CaseReferenceSummary().caseReferenceNumber(
-          "123");
+      CaseReferenceSummary caseReferenceSummary =
+          new CaseReferenceSummary().caseReferenceNumber("123");
       when(responseMock.bodyToMono(CaseReferenceSummary.class))
-          .thenReturn(Mono.error(
-              new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+          .thenReturn(
+              Mono.error(
+                  new WebClientResponseException(
+                      HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
-      when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("case reference"),
-          any())).thenReturn(Mono.empty());
+      when(apiClientErrorHandler.handleApiRetrieveError(any(), eq("case reference"), any()))
+          .thenReturn(Mono.empty());
 
       final Mono<CaseReferenceSummary> result = ebsApiClient.postAllocateNextCaseReference();
 
-      StepVerifier.create(result)
-          .verifyComplete();
+      StepVerifier.create(result).verifyComplete();
 
       verify(responseMock).bodyToMono(CaseReferenceSummary.class);
     }
   }
-  
+
   @Nested
   @DisplayName("getClientStatus() Tests")
   class GetClientStatusTests {
@@ -1684,12 +1633,11 @@ public class EbsApiClientTest {
       TransactionStatus mockTransactionStatus = new TransactionStatus();
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-      when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(
-          requestHeadersMock);
+      when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
       when(responseMock.onStatus(any(), any())).thenReturn(responseMock);
-      when(responseMock.bodyToMono(TransactionStatus.class)).thenReturn(
-          Mono.just(mockTransactionStatus));
+      when(responseMock.bodyToMono(TransactionStatus.class))
+          .thenReturn(Mono.just(mockTransactionStatus));
 
       Mono<TransactionStatus> transactionStatusMono = ebsApiClient.getClientStatus(transactionId);
 
@@ -1705,32 +1653,34 @@ public class EbsApiClientTest {
       String expectedUri = "/clients/status/{transactionId}";
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-      when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(
-          requestHeadersMock);
+      when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
       when(responseMock.onStatus(any(), any())).thenReturn(responseMock);
-      when(responseMock.bodyToMono(TransactionStatus.class)).thenReturn(Mono.error(
-          new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+      when(responseMock.bodyToMono(TransactionStatus.class))
+          .thenReturn(
+              Mono.error(
+                  new WebClientResponseException(
+                      HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
       when(apiClientErrorHandler.handleApiRetrieveError(
-          any(), eq("client transaction status"), eq("transaction id"), eq(transactionId)))
+              any(), eq("client transaction status"), eq("transaction id"), eq(transactionId)))
           .thenReturn(Mono.empty());
 
       Mono<TransactionStatus> transactionStatusMono = ebsApiClient.getClientStatus(transactionId);
 
-      StepVerifier.create(transactionStatusMono)
-          .verifyComplete();
+      StepVerifier.create(transactionStatusMono).verifyComplete();
     }
   }
-  
+
   @Nested
   @DisplayName("getClients() Tests")
   class GetClientsTests {
-    
+
     @Test
     @DisplayName("Should return successfully")
     void getClients_Successful() {
-      String expectedUri = "/clients?first-name=John&surname=Doe&date-of-birth=2000-01-01&page=0&size=10";
+      String expectedUri =
+          "/clients?first-name=John&surname=Doe&date-of-birth=2000-01-01&page=0&size=10";
 
       ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
       String firstName = "John";
@@ -1769,7 +1719,7 @@ public class EbsApiClientTest {
       assertEquals(expectedUri, actualUri.toString());
     }
   }
-  
+
   @Nested
   @DisplayName("getCaseStatus() Tests")
   class GetCaseStatusTests {
@@ -1783,12 +1733,11 @@ public class EbsApiClientTest {
       TransactionStatus mockTransactionStatus = new TransactionStatus();
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-      when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(
-          requestHeadersMock);
+      when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
       when(responseMock.onStatus(any(), any())).thenReturn(responseMock);
-      when(responseMock.bodyToMono(TransactionStatus.class)).thenReturn(
-          Mono.just(mockTransactionStatus));
+      when(responseMock.bodyToMono(TransactionStatus.class))
+          .thenReturn(Mono.just(mockTransactionStatus));
 
       Mono<TransactionStatus> transactionStatusMono = ebsApiClient.getCaseStatus(transactionId);
 
@@ -1804,21 +1753,22 @@ public class EbsApiClientTest {
       String expectedUri = "/cases/status/{transactionId}";
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-      when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(
-          requestHeadersMock);
+      when(requestHeadersUriMock.uri(expectedUri, transactionId)).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
       when(responseMock.onStatus(any(), any())).thenReturn(responseMock);
-      when(responseMock.bodyToMono(TransactionStatus.class)).thenReturn(Mono.error(
-          new WebClientResponseException(HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+      when(responseMock.bodyToMono(TransactionStatus.class))
+          .thenReturn(
+              Mono.error(
+                  new WebClientResponseException(
+                      HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
       when(apiClientErrorHandler.handleApiRetrieveError(
-          any(), eq("case transaction status"), eq("transaction id"), eq(transactionId)))
+              any(), eq("case transaction status"), eq("transaction id"), eq(transactionId)))
           .thenReturn(Mono.empty());
 
       Mono<TransactionStatus> transactionStatusMono = ebsApiClient.getCaseStatus(transactionId);
 
-      StepVerifier.create(transactionStatusMono)
-          .verifyComplete();
+      StepVerifier.create(transactionStatusMono).verifyComplete();
     }
   }
 }

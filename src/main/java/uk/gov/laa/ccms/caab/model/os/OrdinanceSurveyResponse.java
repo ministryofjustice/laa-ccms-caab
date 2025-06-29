@@ -5,9 +5,7 @@ import java.util.List;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
-/**
- * Represents the response returned by the ordinance survey api.
- */
+/** Represents the response returned by the ordinance survey api. */
 @Data
 @RequiredArgsConstructor
 public class OrdinanceSurveyResponse {

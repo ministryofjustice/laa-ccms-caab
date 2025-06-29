@@ -39,9 +39,7 @@ import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
-/**
- * Controller handling assessment requests.
- */
+/** Controller handling assessment requests. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -84,8 +82,7 @@ public class AssessmentController {
    */
   @GetMapping("/assessments/{assessment}/remove")
   public String assessmentRemove(
-      @PathVariable("assessment") final String assessment,
-      final Model model) {
+      @PathVariable("assessment") final String assessment, final Model model) {
 
     model.addAttribute("assessment", assessment);
 
@@ -112,18 +109,13 @@ public class AssessmentController {
     if (assessmentCategories.isEmpty()) {
       throw new CaabApplicationException("Invalid assessment type");
     } else {
-      assessmentService.deleteAssessments(
-          user,
-          assessmentCategories,
-          activeCase.getCaseReferenceNumber(),
-          null)
+      assessmentService
+          .deleteAssessments(user, assessmentCategories, activeCase.getCaseReferenceNumber(), null)
           .block();
-
     }
 
     return "redirect:/application/sections";
   }
-
 
   /**
    * Displays the assessment page.
@@ -144,99 +136,112 @@ public class AssessmentController {
 
     final ApplicationDetail application;
 
-    //get the assessment or case data, check if application id is in the session if is then we get
+    // get the assessment or case data, check if application id is in the session if is then we get
     // the application, otherwise it's a case
     if (session.getAttribute(APPLICATION_ID) != null) {
       final String applicationId = String.valueOf(session.getAttribute(APPLICATION_ID));
       application =
           Optional.ofNullable(applicationService.getApplication(applicationId).block())
-              .orElseThrow(() -> new CaabApplicationException(
-                  "Failed to retrieve application"));
+              .orElseThrow(() -> new CaabApplicationException("Failed to retrieve application"));
     } else {
       application = null;
-      //todo - get case details (not part of application process)
+      // todo - get case details (not part of application process)
       // map case into application object
     }
 
-    //get rulebase from the assessment passed as the parameter
+    // get rulebase from the assessment passed as the parameter
     final AssessmentRulebase assessmentRulebase = AssessmentRulebase.findByType(assessment);
 
     if (assessmentRulebase == null) {
       throw new CaabApplicationException("Invalid assessment type");
     }
 
-    //amendment stuff
-    //todo - later implementation
+    // amendment stuff
+    // todo - later implementation
 
-    //delete opponents and proceedings that have been removed from the application
+    // delete opponents and proceedings that have been removed from the application
     // if not a financial assessment type (aka means or merits)
     if (!assessmentRulebase.isFinancialAssessment()) {
-      final AssessmentDetails assessmentDetails = assessmentService.getAssessments(
-          List.of(assessmentRulebase.getPrePopAssessmentName()),
-          String.valueOf(user.getProvider().getId()),
-          application.getCaseReferenceNumber()).block();
+      final AssessmentDetails assessmentDetails =
+          assessmentService
+              .getAssessments(
+                  List.of(assessmentRulebase.getPrePopAssessmentName()),
+                  String.valueOf(user.getProvider().getId()),
+                  application.getCaseReferenceNumber())
+              .block();
 
       if (assessmentDetails != null && assessmentDetails.getContent() != null) {
-        assessmentDetails.getContent().stream().findFirst().ifPresent(prepopAssessment -> {
-          //is deletion of checkpoint required
-          if (assessmentService.isAssessmentCheckpointToBeDeleted(application, prepopAssessment)) {
-            if (prepopAssessment.getCheckpoint() != null) {
-              prepopAssessment.setCheckpoint(null);
-            }
-            //cleanup data
-            assessmentService.cleanupData(prepopAssessment, application);
-            //save the assessment
-            assessmentService.saveAssessment(user, prepopAssessment).block();
-          }
-        });
+        assessmentDetails.getContent().stream()
+            .findFirst()
+            .ifPresent(
+                prepopAssessment -> {
+                  // is deletion of checkpoint required
+                  if (assessmentService.isAssessmentCheckpointToBeDeleted(
+                      application, prepopAssessment)) {
+                    if (prepopAssessment.getCheckpoint() != null) {
+                      prepopAssessment.setCheckpoint(null);
+                    }
+                    // cleanup data
+                    assessmentService.cleanupData(prepopAssessment, application);
+                    // save the assessment
+                    assessmentService.saveAssessment(user, prepopAssessment).block();
+                  }
+                });
       }
     }
 
-    //get full client details from soa
-    final ClientDetail client = clientService.getClient(
-        application.getClient().getReference(),
-        user.getLoginId(),
-        user.getUserType()).block();
+    // get full client details from soa
+    final ClientDetail client =
+        clientService
+            .getClient(
+                application.getClient().getReference(), user.getLoginId(), user.getUserType())
+            .block();
 
     if (client == null) {
       throw new CaabApplicationException("Failed to retrieve client details");
     }
 
-    //if means or merits assessment
+    // if means or merits assessment
     if (!assessmentRulebase.isFinancialAssessment()) {
 
-      //Required for the connector
+      // Required for the connector
       final String ezgovId = UUID.randomUUID().toString();
 
-      //Create context token
-      final String contextToken = contextSecurityUtil.createHubContext(
-          application.getCaseReferenceNumber(), assessmentRulebase.getId(), user.getUsername(),
-          user.getProvider().getId().longValue(), session.getId(), invokedFrom,
-          ezgovId);
+      // Create context token
+      final String contextToken =
+          contextSecurityUtil.createHubContext(
+              application.getCaseReferenceNumber(),
+              assessmentRulebase.getId(),
+              user.getUsername(),
+              user.getProvider().getId().longValue(),
+              session.getId(),
+              invokedFrom,
+              ezgovId);
 
-      //start opa assessment
-      assessmentService.startAssessment(
-          application,
-          assessmentRulebase,
-          client,
-          user);
+      // start opa assessment
+      assessmentService.startAssessment(application, assessmentRulebase, client, user);
 
-      final AssessmentDetail prepopAssessment = Optional.ofNullable(
-          assessmentService.getAssessments(
-              List.of(assessmentRulebase.getPrePopAssessmentName()),
-              String.valueOf(user.getProvider().getId()),
-              application.getCaseReferenceNumber()).block())
-          .map(AssessmentDetails::getContent)
-          .filter(content -> !content.isEmpty()).flatMap(content -> content.stream().findFirst())
-          .orElseThrow(() -> new CaabApplicationException("Failed to retrieve assessment details"));
+      final AssessmentDetail prepopAssessment =
+          Optional.ofNullable(
+                  assessmentService
+                      .getAssessments(
+                          List.of(assessmentRulebase.getPrePopAssessmentName()),
+                          String.valueOf(user.getProvider().getId()),
+                          application.getCaseReferenceNumber())
+                      .block())
+              .map(AssessmentDetails::getContent)
+              .filter(content -> !content.isEmpty())
+              .flatMap(content -> content.stream().findFirst())
+              .orElseThrow(
+                  () -> new CaabApplicationException("Failed to retrieve assessment details"));
 
       populateOpaModel(contextToken, prepopAssessment, user, assessmentRulebase, model);
 
     } else if ("billing".equalsIgnoreCase(assessment)) {
-      //todo - later implementation
+      // todo - later implementation
 
     } else if ("poa".equalsIgnoreCase(assessment)) {
-      //todo - later implementation
+      // todo - later implementation
     }
 
     return "application/assessments/assessment-get";
@@ -258,11 +263,10 @@ public class AssessmentController {
       final AssessmentRulebase assessmentRulebase,
       final Model model) {
 
+    final String submitReturnUrl = RETURN_URL.formatted(contextToken);
 
-    final String submitReturnUrl =
-        RETURN_URL.formatted(contextToken);
-
-    model.addAttribute("checkpoint",
+    model.addAttribute(
+        "checkpoint",
         prepopAssessment.getCheckpoint() != null ? CHECKPOINT_RESUME : CHECKPOINT_START);
 
     model.addAttribute("cancelUrl", CANCEL_LINK_URL);
@@ -278,70 +282,68 @@ public class AssessmentController {
     model.addAttribute("username", user.getUsername());
     model.addAttribute("resumeId", prepopAssessment.getId().toString());
     model.addAttribute("assessmentType", assessmentRulebase.getType());
-
   }
-
 
   /**
    * Confirms the assessment.
    *
-   * @return the view that displays the confirmation of the assessment,
-   *         listing the answers to the questions the user has provided.
+   * @return the view that displays the confirmation of the assessment, listing the answers to the
+   *     questions the user has provided.
    */
   @GetMapping("/assessments/confirm")
   public String assessmentConfirm(
-      @RequestParam(value = "val") final String token,
-      final Model model
-  ) {
+      @RequestParam(value = "val") final String token, final Model model) {
     final ContextToken contextToken = contextSecurityUtil.createContextToken(token);
     final Long rulebaseId = contextToken.getRulebaseId();
     final String providerId = contextToken.getProviderId();
     final String caseReferenceNumber = contextToken.getCaseId();
 
-    //get the rulebase from the token
+    // get the rulebase from the token
     final AssessmentRulebase assessmentRulebase = AssessmentRulebase.findById(rulebaseId);
 
-    //get the assessment details mono
-    final Mono<AssessmentDetails> assessmentDetailsMono = assessmentService.getAssessments(
-            List.of(assessmentRulebase.getName()),
-            providerId,
-            caseReferenceNumber);
+    // get the assessment details mono
+    final Mono<AssessmentDetails> assessmentDetailsMono =
+        assessmentService.getAssessments(
+            List.of(assessmentRulebase.getName()), providerId, caseReferenceNumber);
 
-    //get the parent and child lookups
+    // get the parent and child lookups
     final Mono<List<AssessmentSummaryEntityLookupValueDetail>> parentMono =
-        lookupService.getAssessmentSummaryAttributes(PARENT_LOOKUP)
+        lookupService
+            .getAssessmentSummaryAttributes(PARENT_LOOKUP)
             .map(AssessmentSummaryEntityLookupDetail::getContent);
     final Mono<List<AssessmentSummaryEntityLookupValueDetail>> childMono =
-        lookupService.getAssessmentSummaryAttributes(CHILD_LOOKUP)
+        lookupService
+            .getAssessmentSummaryAttributes(CHILD_LOOKUP)
             .map(AssessmentSummaryEntityLookupDetail::getContent);
 
-    //zip all the data monos
-    final Tuple3<AssessmentDetails,
-        List<AssessmentSummaryEntityLookupValueDetail>,
-        List<AssessmentSummaryEntityLookupValueDetail>> assessmentDataMonos = Mono.zip(
-            assessmentDetailsMono,
-            parentMono,
-            childMono)
-        .blockOptional().orElseThrow(() ->
-            new CaabApplicationException("Failed to retrieve assessment data"));
+    // zip all the data monos
+    final Tuple3<
+            AssessmentDetails,
+            List<AssessmentSummaryEntityLookupValueDetail>,
+            List<AssessmentSummaryEntityLookupValueDetail>>
+        assessmentDataMonos =
+            Mono.zip(assessmentDetailsMono, parentMono, childMono)
+                .blockOptional()
+                .orElseThrow(
+                    () -> new CaabApplicationException("Failed to retrieve assessment data"));
 
-    final AssessmentDetail assessment = assessmentDataMonos.getT1().getContent().stream()
-        .findFirst().orElseThrow(() -> new CaabApplicationException(
-            "Failed to retrieve assessment details"));
+    final AssessmentDetail assessment =
+        assessmentDataMonos.getT1().getContent().stream()
+            .findFirst()
+            .orElseThrow(
+                () -> new CaabApplicationException("Failed to retrieve assessment details"));
     final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups =
         assessmentDataMonos.getT2();
     final List<AssessmentSummaryEntityLookupValueDetail> childSummaryLookups =
         assessmentDataMonos.getT3();
 
-    //need to make sure the assessment is saved before we can display the confirmation screen
+    // need to make sure the assessment is saved before we can display the confirmation screen
     final List<AssessmentSummaryEntityDisplay> assessmentSummaryToDisplay =
-        assessmentService.getAssessmentSummaryToDisplay(assessment,
-            parentSummaryLookups, childSummaryLookups);
+        assessmentService.getAssessmentSummaryToDisplay(
+            assessment, parentSummaryLookups, childSummaryLookups);
 
     model.addAttribute("summary", assessmentSummaryToDisplay);
 
     return "application/assessments/assessment-confirm";
-
   }
-
 }

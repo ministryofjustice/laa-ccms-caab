@@ -7,9 +7,7 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
-/**
- * Validates the cost details form.
- */
+/** Validates the cost details form. */
 @Component
 public class CostDetailsValidator extends AbstractValidator {
 
@@ -19,8 +17,8 @@ public class CostDetailsValidator extends AbstractValidator {
    * Determines if the Validator supports the provided class.
    *
    * @param clazz The class to check for support.
-   * @return {@code true} if the class is assignable from
-   *     {@link uk.gov.laa.ccms.caab.bean.costs.CostsFormData}, {@code false} otherwise.
+   * @return {@code true} if the class is assignable from {@link
+   *     uk.gov.laa.ccms.caab.bean.costs.CostsFormData}, {@code false} otherwise.
    */
   @Override
   public boolean supports(final Class<?> clazz) {
@@ -40,34 +38,37 @@ public class CostDetailsValidator extends AbstractValidator {
     validateRequiredField(
         "requestedCostLimitation",
         costDetails.getRequestedCostLimitation(),
-        "Requested cost limitation", errors);
+        "Requested cost limitation",
+        errors);
 
     if (costDetails.getRequestedCostLimitation() != null) {
       validateCurrencyField(
           "requestedCostLimitation",
           costDetails.getRequestedCostLimitation(),
-          "Requested cost limitation", errors);
+          "Requested cost limitation",
+          errors);
 
       validateNumericLimit(
-          "requestedCostLimitation", costDetails.getRequestedCostLimitation(),
-          "Requested cost limitation", MAX_COST_LIMIT, errors);
+          "requestedCostLimitation",
+          costDetails.getRequestedCostLimitation(),
+          "Requested cost limitation",
+          MAX_COST_LIMIT,
+          errors);
 
       validateRequestedAmountNotLessThanGrantedAmount(errors, costDetails);
     }
-
   }
 
-  private static void validateRequestedAmountNotLessThanGrantedAmount(Errors errors,
-      CostsFormData costDetails) {
+  private static void validateRequestedAmountNotLessThanGrantedAmount(
+      Errors errors, CostsFormData costDetails) {
     if (!errors.hasErrors()
         && !Objects.isNull(costDetails.getRequestedCostLimitation())
         && !Objects.isNull(costDetails.getGrantedCostLimitation())
-        && new BigDecimal(costDetails.getRequestedCostLimitation()).compareTo(
-        costDetails.getGrantedCostLimitation()) < 0) {
+        && new BigDecimal(costDetails.getRequestedCostLimitation())
+                .compareTo(costDetails.getGrantedCostLimitation())
+            < 0) {
       errors.rejectValue(
-          "requestedCostLimitation",
-          "caseCostLimitation.requestedAmount.belowGrantedAmount");
+          "requestedCostLimitation", "caseCostLimitation.requestedAmount.belowGrantedAmount");
     }
   }
-
 }

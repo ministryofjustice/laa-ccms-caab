@@ -26,9 +26,7 @@ import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-/**
- * Controller for handling category of law selection in the application process.
- */
+/** Controller for handling category of law selection in the application process. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -53,12 +51,12 @@ public class CategoryOfLawController {
    */
   @GetMapping("/application/category-of-law")
   public String categoryOfLaw(
-          @RequestParam(value = "exceptional_funding", defaultValue = "false")
-                boolean exceptionalFunding,
-          @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
-          @SessionAttribute(USER_DETAILS) UserDetail userDetails,
-          BindingResult bindingResult,
-          Model model) {
+      @RequestParam(value = "exceptional_funding", defaultValue = "false")
+          boolean exceptionalFunding,
+      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
+      @SessionAttribute(USER_DETAILS) UserDetail userDetails,
+      BindingResult bindingResult,
+      Model model) {
 
     applicationFormData.setExceptionalFunding(exceptionalFunding);
 
@@ -66,7 +64,6 @@ public class CategoryOfLawController {
 
     return "application/select-category-of-law";
   }
-
 
   /**
    * Handles the POST request for category of law selection form submission.
@@ -79,10 +76,10 @@ public class CategoryOfLawController {
    */
   @PostMapping("/application/category-of-law")
   public String categoryOfLaw(
-          @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
-          @SessionAttribute(USER_DETAILS) UserDetail userDetails,
-          BindingResult bindingResult,
-          Model model) {
+      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
+      @SessionAttribute(USER_DETAILS) UserDetail userDetails,
+      BindingResult bindingResult,
+      Model model) {
     categoryOfLawValidator.validate(applicationFormData, bindingResult);
 
     String viewName = "redirect:/application/application-type";
@@ -119,22 +116,26 @@ public class CategoryOfLawController {
             .getContent();
 
     if (!applicationFormData.isExceptionalFunding()) {
-      List<String> categoryOfLawCodes = providerService.getCategoryOfLawCodes(
+      List<String> categoryOfLawCodes =
+          providerService.getCategoryOfLawCodes(
               user.getProvider().getId(),
               applicationFormData.getOfficeId(),
               user.getLoginId(),
               user.getUserType(),
               Boolean.TRUE);
 
-      categoriesOfLaw.retainAll(categoriesOfLaw
-          .stream().filter(category -> categoryOfLawCodes.contains(category.getCode()))
-          .collect(Collectors.toList()));
+      categoriesOfLaw.retainAll(
+          categoriesOfLaw.stream()
+              .filter(category -> categoryOfLawCodes.contains(category.getCode()))
+              .collect(Collectors.toList()));
     }
 
     model.addAttribute("categoriesOfLaw", categoriesOfLaw);
 
     if (categoriesOfLaw.isEmpty()) {
-      bindingResult.rejectValue("categoryOfLawId", "no.categoriesOfLaw",
+      bindingResult.rejectValue(
+          "categoryOfLawId",
+          "no.categoriesOfLaw",
           "Warning: The Office selected is not contracted in any Category of Law, "
               + "it is therefore only possible to make applications for 'Exceptional Funding' "
               + "under this Office.");

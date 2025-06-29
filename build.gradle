@@ -1,6 +1,7 @@
 plugins {
 	id 'net.researchgate.release' version '3.1.0'
 	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.36'
+	id("com.diffplug.spotless") version "7.0.4"
 }
 
 subprojects {
@@ -152,5 +153,16 @@ jacocoTestCoverageVerification {
 		classDirectories.setFrom(files(classDirectories.files.collect {
 			fileTree(dir: it, exclude: ['**/CaabApplication.class', '**/SecurityConfiguration.class'])
 		}))
+	}
+}
+
+spotless {
+	java {
+		target 'src/*/java/**/*.java'
+		// Use the default importOrder configuration
+		importOrder()
+		removeUnusedImports()
+		cleanthat()
+		googleJavaFormat()
 	}
 }

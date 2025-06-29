@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.util;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -19,11 +18,17 @@ class DisplayUtilTest {
     final String result = DisplayUtil.getDelimitedString(items, delimiter, lastDelim);
 
     assertNotNull(result);
-    assertEquals("%s%s%s%s%s%s%s".formatted(
-        items.getFirst(), delimiter,
-        items.get(1), delimiter,
-        items.get(2), lastDelim,
-        items.get(3)), result);
+    assertEquals(
+        "%s%s%s%s%s%s%s"
+            .formatted(
+                items.getFirst(),
+                delimiter,
+                items.get(1),
+                delimiter,
+                items.get(2),
+                lastDelim,
+                items.get(3)),
+        result);
   }
 
   @Test
@@ -47,10 +52,16 @@ class DisplayUtilTest {
     final String result = DisplayUtil.getCommaDelimitedString(items);
 
     assertNotNull(result);
-    assertEquals("%s%s%s%s%s%s%s".formatted(
-        items.getFirst(), delimiter,
-        items.get(1), delimiter,
-        items.get(2), lastDelim,
-        items.get(3)), result);
+    assertEquals(
+        "%s%s%s%s%s%s%s"
+            .formatted(
+                items.getFirst(),
+                delimiter,
+                items.get(1),
+                delimiter,
+                items.get(2),
+                lastDelim,
+                items.get(3)),
+        result);
   }
 }

@@ -53,15 +53,11 @@ import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-/**
- * Controller responsible for managing the searching of applications and cases.
- */
+/** Controller responsible for managing the searching of applications and cases. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(value = {
-    CASE_SEARCH_CRITERIA,
-    CASE_SEARCH_RESULTS})
+@SessionAttributes(value = {CASE_SEARCH_CRITERIA, CASE_SEARCH_RESULTS})
 public class ApplicationSearchController {
   private final ProviderService providerService;
 
@@ -92,15 +88,15 @@ public class ApplicationSearchController {
   protected void initBinder(WebDataBinder binder) {
     binder.addValidators(caseSearchCriteriaValidator);
   }
+
   /**
    * Displays the application or case search form.
    *
    * @param searchCriteria The search criteria used for finding applications and cases.
-   * @param userDetails    The details of the currently authenticated user.
-   * @param model          The model used to pass data to the view.
+   * @param userDetails The details of the currently authenticated user.
+   * @param model The model used to pass data to the view.
    * @return The application case search view.
    */
-
   @GetMapping("/application/search")
   public String applicationSearch(
       @ModelAttribute(CASE_SEARCH_CRITERIA) final CaseSearchCriteria searchCriteria,
@@ -116,16 +112,17 @@ public class ApplicationSearchController {
    * Processes the search form submission for applications and cases.
    *
    * @param caseSearchCriteria The criteria used to search for applications and cases.
-   * @param user               The details of the currently authenticated user.
-   * @param bindingResult      Validation result of the search criteria form.
-   * @param model              The model used to pass data to the view.
+   * @param user The details of the currently authenticated user.
+   * @param bindingResult Validation result of the search criteria form.
+   * @param model The model used to pass data to the view.
    * @return Either redirects to the search results or reloads the form with validation errors.
    */
   @PostMapping("/application/search")
   public String applicationSearch(
       @SessionAttribute(USER_DETAILS) UserDetail user,
       @Validated @ModelAttribute(CASE_SEARCH_CRITERIA) final CaseSearchCriteria caseSearchCriteria,
-      BindingResult bindingResult, Model model,
+      BindingResult bindingResult,
+      Model model,
       final RedirectAttributes redirectAttributes) {
 
     if (bindingResult.hasErrors()) {
@@ -153,11 +150,11 @@ public class ApplicationSearchController {
   /**
    * Displays the search results of applications and cases.
    *
-   * @param page              Page number for pagination.
-   * @param size              Size of results per page.
+   * @param page Page number for pagination.
+   * @param size Size of results per page.
    * @param caseSearchResults The full un-paginated search results list.
-   * @param request           The HTTP request.
-   * @param model             Model to store attributes for the view.
+   * @param request The HTTP request.
+   * @param model Model to store attributes for the view.
    * @return The appropriate view based on the search results.
    */
   @GetMapping("/application/search/results")
@@ -169,8 +166,9 @@ public class ApplicationSearchController {
       final Model model) {
 
     // Paginate the results list, and convert to the Page wrapper object for display
-    ApplicationDetails applicationDetails = applicationMapper.toApplicationDetails(
-        PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), caseSearchResults));
+    ApplicationDetails applicationDetails =
+        applicationMapper.toApplicationDetails(
+            PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), caseSearchResults));
 
     model.addAttribute(CURRENT_URL, request.getRequestURL().toString());
     model.addAttribute(CASE_RESULTS_PAGE, applicationDetails);
@@ -200,9 +198,7 @@ public class ApplicationSearchController {
               caseReferenceNumber, userDetails.getProvider().getId(), userDetails.getUsername());
     } catch (EbsApiClientException e) {
       if (!e.hasHttpStatus(HttpStatus.NOT_FOUND)) {
-        throw new CaabApplicationException(
-            "Failed to retrieve EBS case "
-                + caseReferenceNumber);
+        throw new CaabApplicationException("Failed to retrieve EBS case " + caseReferenceNumber);
       }
       log.debug("Case not found in EBS.", e);
     }
@@ -211,8 +207,12 @@ public class ApplicationSearchController {
     caseSearchCriteria.setCaseReference(caseReferenceNumber);
 
     BaseApplicationDetail tdsApplication =
-        applicationService.getTdsApplications(caseSearchCriteria, userDetails, 0, 1)
-            .getContent().stream().findFirst().orElse(null);
+        applicationService
+            .getTdsApplications(caseSearchCriteria, userDetails, 0, 1)
+            .getContent()
+            .stream()
+            .findFirst()
+            .orElse(null);
 
     if (ebsCase == null && tdsApplication == null) {
       throw new CaabApplicationException(
@@ -223,8 +223,7 @@ public class ApplicationSearchController {
     // An amendment consists of a submitted case and a draft application (for amendments)
     boolean isAmendment = applicationService.isAmendment(ebsCase, tdsApplication);
 
-    featureService.featureRequired(Feature.AMENDMENTS,
-        () -> isAmendment);
+    featureService.featureRequired(Feature.AMENDMENTS, () -> isAmendment);
 
     //
     // TODO: Spike CCMSPUI-339 to investigate poll and cleanup of pending submissions.
@@ -244,24 +243,22 @@ public class ApplicationSearchController {
     session.setAttribute(NOTIFICATION_ID, notificationId);
 
     return "redirect:/case/overview";
-
   }
 
   private void populateDropdowns(UserDetail user, Model model) {
     Tuple2<ProviderDetail, CaseStatusLookupDetail> combinedResults =
-        Optional.ofNullable(Mono.zip(
-            providerService.getProvider(user.getProvider().getId()),
-            lookupService.getCaseStatusValues()).block()).orElseThrow(
-              () -> new CaabApplicationException("Failed to retrieve lookup data"));
+        Optional.ofNullable(
+                Mono.zip(
+                        providerService.getProvider(user.getProvider().getId()),
+                        lookupService.getCaseStatusValues())
+                    .block())
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
 
     ProviderDetail providerDetail = combinedResults.getT1();
     CaseStatusLookupDetail caseStatusLookupDetail = combinedResults.getT2();
 
-    model.addAttribute("feeEarners",
-        providerService.getAllFeeEarners(providerDetail));
-    model.addAttribute("offices",
-        user.getProvider().getOffices());
-    model.addAttribute("statuses",
-        caseStatusLookupDetail.getContent());
+    model.addAttribute("feeEarners", providerService.getAllFeeEarners(providerDetail));
+    model.addAttribute("offices", user.getProvider().getOffices());
+    model.addAttribute("statuses", caseStatusLookupDetail.getContent());
   }
 }

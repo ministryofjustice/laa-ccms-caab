@@ -4,8 +4,7 @@ import org.springframework.stereotype.Service;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 
 /**
- * Service responsible for generating navigation-related text based on the context
- * of the case.
+ * Service responsible for generating navigation-related text based on the context of the case.
  *
  * @author Jamie Briggs
  */
@@ -17,7 +16,7 @@ public class CaseContextService {
    *
    * @param caseContext the context of the case, e.g., "amendments" or "application"
    * @return a string representing the navigation text; returns "site.returnToCaseOverview" if the
-   *         context is "amendments", otherwise returns "site.cancelAndReturnToApplication"
+   *     context is "amendments", otherwise returns "site.cancelAndReturnToApplication"
    */
   public String getGoBackText(CaseContext caseContext) {
     return switch (caseContext) {

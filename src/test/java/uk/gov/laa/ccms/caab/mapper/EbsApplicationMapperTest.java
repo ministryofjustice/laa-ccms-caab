@@ -126,8 +126,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @DisplayName("EBS Application mapper test")
 class EbsApplicationMapperTest {
 
-  private final EbsApplicationMapper applicationMapper = new EbsApplicationMapperImpl() {
-  };
+  private final EbsApplicationMapper applicationMapper = new EbsApplicationMapperImpl() {};
 
   private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -136,23 +135,24 @@ class EbsApplicationMapperTest {
     CaseDetail ebsCaseDetail = buildCaseDetail(APP_TYPE_EMERGENCY_DEVOLVED_POWERS);
     EbsApplicationMappingContext applicationMappingContext =
         buildApplicationMappingContext(
-            ebsCaseDetail,
-            true,
-            ebsCaseDetail.getApplicationDetails().getDevolvedPowersDate());
+            ebsCaseDetail, true, ebsCaseDetail.getApplicationDetails().getDevolvedPowersDate());
     ApplicationDetail result = applicationMapper.toApplicationDetail(applicationMappingContext);
 
     assertNotNull(result);
     assertEquals(ebsCaseDetail.getCaseReferenceNumber(), result.getCaseReferenceNumber());
-    assertEquals(applicationMappingContext.getCertificate().getCode(),
-        result.getCertificate().getId());
-    assertEquals(applicationMappingContext.getCertificate().getDescription(),
+    assertEquals(
+        applicationMappingContext.getCertificate().getCode(), result.getCertificate().getId());
+    assertEquals(
+        applicationMappingContext.getCertificate().getDescription(),
         result.getCertificate().getDisplayValue());
-    assertEquals(ebsCaseDetail.getApplicationDetails().getApplicationAmendmentType(),
+    assertEquals(
+        ebsCaseDetail.getApplicationDetails().getApplicationAmendmentType(),
         result.getApplicationType().getId());
-    assertEquals(applicationMappingContext.getApplicationType().getDescription(),
+    assertEquals(
+        applicationMappingContext.getApplicationType().getDescription(),
         result.getApplicationType().getDisplayValue());
-    assertEquals(toDate(ebsCaseDetail.getRecordHistory().getDateCreated()),
-        result.getDateCreated());
+    assertEquals(
+        toDate(ebsCaseDetail.getRecordHistory().getDateCreated()), result.getDateCreated());
     assertEquals(
         ebsCaseDetail.getApplicationDetails().getProviderDetails().getProviderCaseReferenceNumber(),
         result.getProviderDetails().getProviderCaseReference());
@@ -163,26 +163,30 @@ class EbsApplicationMapperTest {
         applicationMappingContext.getProviderDetail().getName(),
         result.getProviderDetails().getProvider().getDisplayValue());
     assertEquals(
-        ebsCaseDetail.getApplicationDetails().getProviderDetails()
-            .getContactUserId().getLoginId(),
+        ebsCaseDetail.getApplicationDetails().getProviderDetails().getContactUserId().getLoginId(),
         result.getProviderDetails().getProviderContact().getId());
     assertEquals(
-        ebsCaseDetail.getApplicationDetails().getProviderDetails()
-            .getContactUserId().getUsername(),
+        ebsCaseDetail.getApplicationDetails().getProviderDetails().getContactUserId().getUsername(),
         result.getProviderDetails().getProviderContact().getDisplayValue());
-    assertEquals(applicationMappingContext.getProviderOffice().getId(),
+    assertEquals(
+        applicationMappingContext.getProviderOffice().getId(),
         result.getProviderDetails().getOffice().getId());
-    assertEquals(applicationMappingContext.getProviderOffice().getName(),
+    assertEquals(
+        applicationMappingContext.getProviderOffice().getName(),
         result.getProviderDetails().getOffice().getDisplayValue());
-    assertEquals(applicationMappingContext.getSupervisorContact().getId().toString(),
+    assertEquals(
+        applicationMappingContext.getSupervisorContact().getId().toString(),
         result.getProviderDetails().getSupervisor().getId());
-    assertEquals(applicationMappingContext.getSupervisorContact().getName(),
+    assertEquals(
+        applicationMappingContext.getSupervisorContact().getName(),
         result.getProviderDetails().getSupervisor().getDisplayValue());
-    assertEquals(applicationMappingContext.getFeeEarnerContact().getId().toString(),
+    assertEquals(
+        applicationMappingContext.getFeeEarnerContact().getId().toString(),
         result.getProviderDetails().getFeeEarner().getId());
-    assertEquals(applicationMappingContext.getFeeEarnerContact().getName(),
+    assertEquals(
+        applicationMappingContext.getFeeEarnerContact().getName(),
         result.getProviderDetails().getFeeEarner().getDisplayValue());
-    assertNotNull(result.getCorrespondenceAddress());  // Detail tested in specific test case
+    assertNotNull(result.getCorrespondenceAddress()); // Detail tested in specific test case
     assertNotNull(result.getClient()); // Detail tested in specific test case
     assertEquals(
         ebsCaseDetail.getApplicationDetails().getCategoryOfLaw().getCategoryOfLawCode(),
@@ -208,17 +212,13 @@ class EbsApplicationMapperTest {
     assertEquals(
         ebsCaseDetail.getApplicationDetails().getLarDetails().getLarScopeFlag(),
         result.getLarScopeFlag());
+    assertEquals(ebsCaseDetail.getCaseStatus().getActualCaseStatus(), result.getStatus().getId());
     assertEquals(
-        ebsCaseDetail.getCaseStatus().getActualCaseStatus(),
-        result.getStatus().getId());
-    assertEquals(
-        ebsCaseDetail.getCaseStatus().getDisplayCaseStatus(),
-        result.getStatus().getDisplayValue());
-    assertEquals(
-        ebsCaseDetail.getAvailableFunctions(),
-        result.getAvailableFunctions());
+        ebsCaseDetail.getCaseStatus().getDisplayCaseStatus(), result.getStatus().getDisplayValue());
+    assertEquals(ebsCaseDetail.getAvailableFunctions(), result.getAvailableFunctions());
     assertTrue(result.getApplicationType().getDevolvedPowers().getUsed());
-    assertEquals(toDate(ebsCaseDetail.getApplicationDetails().getDevolvedPowersDate()),
+    assertEquals(
+        toDate(ebsCaseDetail.getApplicationDetails().getDevolvedPowersDate()),
         result.getApplicationType().getDevolvedPowers().getDateUsed());
     assertNotNull(result.getCorrespondenceAddress());
     assertNotNull(result.getMeansAssessment());
@@ -228,16 +228,12 @@ class EbsApplicationMapperTest {
     assertEquals(2, result.getOpponents().size());
     assertEquals(OPPONENT_TYPE_INDIVIDUAL, result.getOpponents().getFirst().getType());
     assertEquals(OPPONENT_TYPE_ORGANISATION, result.getOpponents().get(1).getType());
-
   }
 
   @Test
   void testToApplicationDetailNonDevolvedPowers() {
     EbsApplicationMappingContext applicationMappingContext =
-        buildApplicationMappingContext(
-            buildCaseDetail(APP_TYPE_EMERGENCY),
-            false,
-            null);
+        buildApplicationMappingContext(buildCaseDetail(APP_TYPE_EMERGENCY), false, null);
 
     ApplicationDetail result = applicationMapper.toApplicationDetail(applicationMappingContext);
 
@@ -249,35 +245,33 @@ class EbsApplicationMapperTest {
   @Test
   void testToCorrespondenceAddress() {
     EbsApplicationMappingContext applicationMappingContext =
-        buildApplicationMappingContext(
-            buildCaseDetail(APP_TYPE_EMERGENCY),
-            false,
-            null);
-    @Valid SubmittedApplicationDetails ebsApplicationDetails =
+        buildApplicationMappingContext(buildCaseDetail(APP_TYPE_EMERGENCY), false, null);
+    @Valid
+    SubmittedApplicationDetails ebsApplicationDetails =
         applicationMappingContext.getEbsCaseDetail().getApplicationDetails();
 
     AddressDetail result = applicationMapper.toCorrespondenceAddress(applicationMappingContext);
 
     assertNotNull(result);
-    assertEquals(ebsApplicationDetails.getCorrespondenceAddress().getAddressLine1(),
+    assertEquals(
+        ebsApplicationDetails.getCorrespondenceAddress().getAddressLine1(),
         result.getAddressLine1());
-    assertEquals(ebsApplicationDetails.getCorrespondenceAddress().getAddressLine2(),
+    assertEquals(
+        ebsApplicationDetails.getCorrespondenceAddress().getAddressLine2(),
         result.getAddressLine2());
-    assertEquals(ebsApplicationDetails.getCorrespondenceAddress().getCareOfName(),
-        result.getCareOf());
-    assertEquals(ebsApplicationDetails.getCorrespondenceAddress().getCity(),
-        result.getCity());
-    assertEquals(ebsApplicationDetails.getCorrespondenceAddress().getCountry(),
-        result.getCountry());
-    assertEquals(ebsApplicationDetails.getCorrespondenceAddress().getCounty(),
-        result.getCounty());
-    assertEquals(ebsApplicationDetails.getCorrespondenceAddress().getHouse(),
-        result.getHouseNameOrNumber());
+    assertEquals(
+        ebsApplicationDetails.getCorrespondenceAddress().getCareOfName(), result.getCareOf());
+    assertEquals(ebsApplicationDetails.getCorrespondenceAddress().getCity(), result.getCity());
+    assertEquals(
+        ebsApplicationDetails.getCorrespondenceAddress().getCountry(), result.getCountry());
+    assertEquals(ebsApplicationDetails.getCorrespondenceAddress().getCounty(), result.getCounty());
+    assertEquals(
+        ebsApplicationDetails.getCorrespondenceAddress().getHouse(), result.getHouseNameOrNumber());
     assertFalse(result.getNoFixedAbode());
     assertEquals(ebsApplicationDetails.getPreferredAddress(), result.getPreferredAddress());
   }
 
-    @Test
+  @Test
   void testToCostEntry() {
     CostLimitation ebsCostLimitation = buildCostLimitation("");
 
@@ -296,8 +290,7 @@ class EbsApplicationMapperTest {
 
   @Test
   void testToProceeding() {
-    Proceeding ebsProceeding =
-        buildProceedingDetail(STATUS_DRAFT);
+    Proceeding ebsProceeding = buildProceedingDetail(STATUS_DRAFT);
     EbsProceedingMappingContext proceedingMappingContext =
         buildProceedingMappingContext(ebsProceeding);
 
@@ -305,47 +298,45 @@ class EbsApplicationMapperTest {
 
     assertNotNull(result);
     assertFalse(result.getEdited());
-    assertEquals(ebsProceeding.getAvailableFunctions(),
-        result.getAvailableFunctions());
-    assertEquals(ebsProceeding.getStage(),
-        result.getStage());
-    assertEquals(toDate(ebsProceeding.getDateGranted()),
-        result.getDateGranted());
-    assertEquals(toDate(ebsProceeding.getDateCostsValid()),
-        result.getDateCostsValid());
-    assertEquals(ebsProceeding.getAvailableFunctions(),
-        result.getAvailableFunctions());
+    assertEquals(ebsProceeding.getAvailableFunctions(), result.getAvailableFunctions());
+    assertEquals(ebsProceeding.getStage(), result.getStage());
+    assertEquals(toDate(ebsProceeding.getDateGranted()), result.getDateGranted());
+    assertEquals(toDate(ebsProceeding.getDateCostsValid()), result.getDateCostsValid());
+    assertEquals(ebsProceeding.getAvailableFunctions(), result.getAvailableFunctions());
 
-    assertEquals(ebsProceeding.getProceedingCaseId(),
-        result.getEbsId());
-    assertEquals(ebsProceeding.getLeadProceedingIndicator(),
-        result.getLeadProceedingInd());
-    assertEquals(proceedingMappingContext.getMatterType().getCode(),
-        result.getMatterType().getId());
-    assertEquals(proceedingMappingContext.getMatterType().getDescription(),
+    assertEquals(ebsProceeding.getProceedingCaseId(), result.getEbsId());
+    assertEquals(ebsProceeding.getLeadProceedingIndicator(), result.getLeadProceedingInd());
+    assertEquals(
+        proceedingMappingContext.getMatterType().getCode(), result.getMatterType().getId());
+    assertEquals(
+        proceedingMappingContext.getMatterType().getDescription(),
         result.getMatterType().getDisplayValue());
-    assertEquals(proceedingMappingContext.getProceedingLookup().getCode(),
+    assertEquals(
+        proceedingMappingContext.getProceedingLookup().getCode(),
         result.getProceedingType().getId());
-    assertEquals(proceedingMappingContext.getProceedingLookup().getName(),
+    assertEquals(
+        proceedingMappingContext.getProceedingLookup().getName(),
         result.getProceedingType().getDisplayValue());
-    assertEquals(ebsProceeding.getProceedingDescription(),
-        result.getDescription());
-    assertEquals(proceedingMappingContext.getProceedingLookup().getLarScope(),
-        result.getLarScope());
-    assertEquals(proceedingMappingContext.getLevelOfService().getCode(),
-        result.getLevelOfService().getId());
-    assertEquals(proceedingMappingContext.getLevelOfService().getDescription(),
+    assertEquals(ebsProceeding.getProceedingDescription(), result.getDescription());
+    assertEquals(
+        proceedingMappingContext.getProceedingLookup().getLarScope(), result.getLarScope());
+    assertEquals(
+        proceedingMappingContext.getLevelOfService().getCode(), result.getLevelOfService().getId());
+    assertEquals(
+        proceedingMappingContext.getLevelOfService().getDescription(),
         result.getLevelOfService().getDisplayValue());
-    assertEquals(proceedingMappingContext.getClientInvolvement().getCode(),
+    assertEquals(
+        proceedingMappingContext.getClientInvolvement().getCode(),
         result.getClientInvolvement().getId());
-    assertEquals(proceedingMappingContext.getClientInvolvement().getDescription(),
+    assertEquals(
+        proceedingMappingContext.getClientInvolvement().getDescription(),
         result.getClientInvolvement().getDisplayValue());
-    assertEquals(proceedingMappingContext.getProceedingStatusLookup().getCode(),
-        result.getStatus().getId());
-    assertEquals(proceedingMappingContext.getProceedingStatusLookup().getDescription(),
+    assertEquals(
+        proceedingMappingContext.getProceedingStatusLookup().getCode(), result.getStatus().getId());
+    assertEquals(
+        proceedingMappingContext.getProceedingStatusLookup().getDescription(),
         result.getStatus().getDisplayValue());
-    assertEquals(ebsProceeding.getOrderType(),
-        result.getTypeOfOrder().getId());
+    assertEquals(ebsProceeding.getOrderType(), result.getTypeOfOrder().getId());
 
     assertNotNull(result.getScopeLimitations());
     assertEquals(1, result.getScopeLimitations().size());
@@ -363,22 +354,21 @@ class EbsApplicationMapperTest {
   @Test
   void testToScopeLimitation() {
     ScopeLimitation ebsScopeLimitation = buildScopeLimitation("");
-    CommonLookupValueDetail scopeLimitationLookup = new CommonLookupValueDetail()
-        .code("scopecode")
-        .description("scopedesc");
+    CommonLookupValueDetail scopeLimitationLookup =
+        new CommonLookupValueDetail().code("scopecode").description("scopedesc");
 
     ScopeLimitationDetail result =
-        applicationMapper.toScopeLimitation(
-            Pair.of(ebsScopeLimitation, scopeLimitationLookup));
+        applicationMapper.toScopeLimitation(Pair.of(ebsScopeLimitation, scopeLimitationLookup));
 
     assertNotNull(result);
     assertEquals(ebsScopeLimitation.getScopeLimitationId(), result.getEbsId());
     assertEquals(scopeLimitationLookup.getCode(), result.getScopeLimitation().getId());
-    assertEquals(scopeLimitationLookup.getDescription(),
-        result.getScopeLimitation().getDisplayValue());
-    assertEquals(ebsScopeLimitation.getScopeLimitationWording(),
-        result.getScopeLimitationWording());
-    assertEquals(ebsScopeLimitation.getDelegatedFunctionsApply(),
+    assertEquals(
+        scopeLimitationLookup.getDescription(), result.getScopeLimitation().getDisplayValue());
+    assertEquals(
+        ebsScopeLimitation.getScopeLimitationWording(), result.getScopeLimitationWording());
+    assertEquals(
+        ebsScopeLimitation.getDelegatedFunctionsApply(),
         result.getDelegatedFuncApplyInd().getFlag());
     assertNull(result.getDefaultInd());
     assertNull(result.getNonDefaultWordingReqd());
@@ -387,24 +377,27 @@ class EbsApplicationMapperTest {
 
   @Test
   void testToProceedingOutcome() {
-    Proceeding ebsProceeding =
-        buildProceedingDetail(STATUS_DRAFT);
+    Proceeding ebsProceeding = buildProceedingDetail(STATUS_DRAFT);
     EbsProceedingMappingContext proceedingMappingContext =
         buildProceedingMappingContext(ebsProceeding);
     OutcomeDetail ebsOutcomeDetail = ebsProceeding.getOutcome();
 
-    ProceedingOutcomeDetail result = applicationMapper.toProceedingOutcome(proceedingMappingContext);
+    ProceedingOutcomeDetail result =
+        applicationMapper.toProceedingOutcome(proceedingMappingContext);
 
     assertNotNull(result);
     assertEquals(ebsProceeding.getProceedingDescription(), result.getDescription());
-    assertEquals(proceedingMappingContext.getMatterType().getCode(),
-        result.getMatterType().getId());
-    assertEquals(proceedingMappingContext.getMatterType().getDescription(),
+    assertEquals(
+        proceedingMappingContext.getMatterType().getCode(), result.getMatterType().getId());
+    assertEquals(
+        proceedingMappingContext.getMatterType().getDescription(),
         result.getMatterType().getDisplayValue());
     assertEquals(ebsProceeding.getProceedingCaseId(), result.getProceedingCaseId());
-    assertEquals(proceedingMappingContext.getProceedingLookup().getCode(),
+    assertEquals(
+        proceedingMappingContext.getProceedingLookup().getCode(),
         result.getProceedingType().getId());
-    assertEquals(proceedingMappingContext.getProceedingLookup().getName(),
+    assertEquals(
+        proceedingMappingContext.getProceedingLookup().getName(),
         result.getProceedingType().getDisplayValue());
     assertEquals(ebsOutcomeDetail.getAltAcceptanceReason(), result.getAdrInfo());
     assertEquals(ebsOutcomeDetail.getAltDisputeResolution(), result.getAlternativeResolution());
@@ -413,13 +406,16 @@ class EbsApplicationMapperTest {
     assertEquals(toDate(ebsOutcomeDetail.getFinalWorkDate()), result.getDateOfFinalWork());
     assertNull(result.getDateOfIssue());
     assertEquals(ebsOutcomeDetail.getResolutionMethod(), result.getResolutionMethod());
-    assertEquals(proceedingMappingContext.getOutcomeResultLookup().getOutcomeResult(),
+    assertEquals(
+        proceedingMappingContext.getOutcomeResultLookup().getOutcomeResult(),
         result.getResult().getId());
-    assertEquals(proceedingMappingContext.getOutcomeResultLookup().getOutcomeResultDescription(),
+    assertEquals(
+        proceedingMappingContext.getOutcomeResultLookup().getOutcomeResultDescription(),
         result.getResult().getDisplayValue());
     assertEquals(ebsOutcomeDetail.getAdditionalResultInfo(), result.getResultInfo());
     assertEquals(ebsOutcomeDetail.getStageEnd(), result.getStageEnd().getId());
-    assertEquals(proceedingMappingContext.getStageEndLookup().getDescription(),
+    assertEquals(
+        proceedingMappingContext.getStageEndLookup().getDescription(),
         result.getStageEnd().getDisplayValue());
     assertEquals(ebsOutcomeDetail.getWiderBenefits(), result.getWiderBenefits());
     assertEquals(ebsOutcomeDetail.getOutcomeCourtCaseNumber(), result.getOutcomeCourtCaseNo());
@@ -427,65 +423,182 @@ class EbsApplicationMapperTest {
 
   @Test
   void testMapMostRecentAssessment_SingleAssessment() {
-    uk.gov.laa.ccms.data.model.AssessmentResult ebsAssessmentResult =
-        buildAssessmentResult("");
+    uk.gov.laa.ccms.data.model.AssessmentResult ebsAssessmentResult = buildAssessmentResult("");
 
     AssessmentResult result = applicationMapper.toAssessmentResult(ebsAssessmentResult);
 
     assertNotNull(result);
-    assertEquals(ebsAssessmentResult.getAssessmentId(),
-        result.getAssessmentId());
-    assertEquals(toDate(ebsAssessmentResult.getDate()),
-        result.getDate());
-    assertEquals(ebsAssessmentResult.getAssessmentDetails().getFirst().getCaption(),
+    assertEquals(ebsAssessmentResult.getAssessmentId(), result.getAssessmentId());
+    assertEquals(toDate(ebsAssessmentResult.getDate()), result.getDate());
+    assertEquals(
+        ebsAssessmentResult.getAssessmentDetails().getFirst().getCaption(),
         result.getAssessmentDetails().getFirst().getCaption());
-    assertEquals(ebsAssessmentResult.getAssessmentDetails().getFirst().getScreenName(),
+    assertEquals(
+        ebsAssessmentResult.getAssessmentDetails().getFirst().getScreenName(),
         result.getAssessmentDetails().getFirst().getScreenName());
-    assertEquals(ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getCaption(),
+    assertEquals(
+        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getCaption(),
         result.getAssessmentDetails().getFirst().getEntity().getFirst().getCaption());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getEntityName(),
+        ebsAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getEntityName(),
         result.getAssessmentDetails().getFirst().getEntity().getFirst().getEntityName());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getSequenceNumber(),
+        ebsAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getSequenceNumber(),
         result.getAssessmentDetails().getFirst().getEntity().getFirst().getSequenceNumber());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+        ebsAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
             .getCaption(),
-        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst().getCaption());
+        result
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getCaption());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+        ebsAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
             .getInstanceLabel(),
-        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+        result
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
             .getInstanceLabel());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getAttribute(),
-        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getAttribute());
+        ebsAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getAttribute(),
+        result
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getAttribute());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getCaption(),
-        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getCaption());
+        ebsAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getCaption(),
+        result
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getCaption());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getResponseText(),
-        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getResponseText());
+        ebsAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getResponseText(),
+        result
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getResponseText());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getResponseType(),
-        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getResponseType());
+        ebsAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getResponseType(),
+        result
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getResponseType());
     assertEquals(
-        ebsAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getResponseValue(),
-        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getResponseValue());
-    assertEquals(ebsAssessmentResult.getResults().getFirst().getAttribute(),
+        ebsAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getResponseValue(),
+        result
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getResponseValue());
+    assertEquals(
+        ebsAssessmentResult.getResults().getFirst().getAttribute(),
         result.getResults().getFirst().getAttribute());
-    assertEquals(ebsAssessmentResult.getResults().getFirst().getAttributeValue(),
+    assertEquals(
+        ebsAssessmentResult.getResults().getFirst().getAttributeValue(),
         result.getResults().getFirst().getAttributeValue());
   }
 
@@ -509,13 +622,10 @@ class EbsApplicationMapperTest {
     ClientDetail result = applicationMapper.toClient(ebsBaseClient);
 
     assertNotNull(result);
-    assertEquals(ebsBaseClient.getClientReferenceNumber(),
-        result.getReference());
+    assertEquals(ebsBaseClient.getClientReferenceNumber(), result.getReference());
 
-    assertEquals(ebsBaseClient.getFirstName(),
-        result.getFirstName());
-    assertEquals(ebsBaseClient.getSurname(),
-        result.getSurname());
+    assertEquals(ebsBaseClient.getFirstName(), result.getFirstName());
+    assertEquals(ebsBaseClient.getSurname(), result.getSurname());
   }
 
   @Test
@@ -527,61 +637,48 @@ class EbsApplicationMapperTest {
     assertNotNull(result);
     assertEquals(OPPONENT_TYPE_INDIVIDUAL, result.getType());
     assertEquals(ebsOtherParty.getOtherPartyId(), result.getEbsId());
-    assertEquals(ebsOtherParty.getPerson().getCourtOrderedMeansAssessment(),
+    assertEquals(
+        ebsOtherParty.getPerson().getCourtOrderedMeansAssessment(),
         result.getCourtOrderedMeansAssessment());
-    assertEquals(ebsOtherParty.getPerson().getOrganisationAddress(),
-        result.getEmployerAddress());
-    assertEquals(ebsOtherParty.getPerson().getOrganisationName(),
-        result.getEmployerName());
-    assertEquals(ebsOtherParty.getPerson().getPartyLegalAidedInd(),
-        result.getLegalAided());
-    assertEquals(ebsOtherParty.getPerson().getNiNumber(),
-        result.getNationalInsuranceNumber());
-    assertEquals(ebsOtherParty.getPerson().getRelationToCase(),
-        result.getRelationshipToCase());
-    assertEquals(ebsOtherParty.getPerson().getRelationToClient(),
-        result.getRelationshipToClient());
-    assertEquals(ebsOtherParty.getPerson().getContactDetails().getMobileNumber(),
+    assertEquals(ebsOtherParty.getPerson().getOrganisationAddress(), result.getEmployerAddress());
+    assertEquals(ebsOtherParty.getPerson().getOrganisationName(), result.getEmployerName());
+    assertEquals(ebsOtherParty.getPerson().getPartyLegalAidedInd(), result.getLegalAided());
+    assertEquals(ebsOtherParty.getPerson().getNiNumber(), result.getNationalInsuranceNumber());
+    assertEquals(ebsOtherParty.getPerson().getRelationToCase(), result.getRelationshipToCase());
+    assertEquals(ebsOtherParty.getPerson().getRelationToClient(), result.getRelationshipToClient());
+    assertEquals(
+        ebsOtherParty.getPerson().getContactDetails().getMobileNumber(),
         result.getTelephoneMobile());
-    assertEquals(ebsOtherParty.getPerson().getContactDetails().getFax(),
-        result.getFaxNumber());
-    assertEquals(ebsOtherParty.getPerson().getPublicFundingAppliedInd(),
-        result.getPublicFundingApplied());
+    assertEquals(ebsOtherParty.getPerson().getContactDetails().getFax(), result.getFaxNumber());
+    assertEquals(
+        ebsOtherParty.getPerson().getPublicFundingAppliedInd(), result.getPublicFundingApplied());
     assertFalse(result.getDeleteInd());
 
-    assertEquals(toDate(ebsOtherParty.getPerson().getDateOfBirth()),
-        result.getDateOfBirth());
+    assertEquals(toDate(ebsOtherParty.getPerson().getDateOfBirth()), result.getDateOfBirth());
     assertNotNull(result.getAddress()); // Detail tested elsewhere
-    assertEquals(ebsOtherParty.getPerson().getEmploymentStatus(),
-        result.getEmploymentStatus());
-    assertEquals(ebsOtherParty.getPerson().getCertificateNumber(),
-        result.getCertificateNumber());
-    assertEquals(ebsOtherParty.getPerson().getAssessedIncomeFrequency(),
+    assertEquals(ebsOtherParty.getPerson().getEmploymentStatus(), result.getEmploymentStatus());
+    assertEquals(ebsOtherParty.getPerson().getCertificateNumber(), result.getCertificateNumber());
+    assertEquals(
+        ebsOtherParty.getPerson().getAssessedIncomeFrequency(),
         result.getAssessedIncomeFrequency());
-    assertEquals(ebsOtherParty.getPerson().getAssessedIncome(),
-        result.getAssessedIncome());
-    assertEquals(ebsOtherParty.getPerson().getAssessedAssets(),
-        result.getAssessedAssets());
-    assertEquals(toDate(ebsOtherParty.getPerson().getAssessmentDate()),
-        result.getAssessmentDate());
-    assertEquals(ebsOtherParty.getPerson().getOtherInformation(),
-        result.getOtherInformation());
+    assertEquals(ebsOtherParty.getPerson().getAssessedIncome(), result.getAssessedIncome());
+    assertEquals(ebsOtherParty.getPerson().getAssessedAssets(), result.getAssessedAssets());
+    assertEquals(toDate(ebsOtherParty.getPerson().getAssessmentDate()), result.getAssessmentDate());
+    assertEquals(ebsOtherParty.getPerson().getOtherInformation(), result.getOtherInformation());
 
-    assertEquals(ebsOtherParty.getPerson().getContactDetails().getTelephoneHome(),
+    assertEquals(
+        ebsOtherParty.getPerson().getContactDetails().getTelephoneHome(),
         result.getTelephoneHome());
-    assertEquals(ebsOtherParty.getPerson().getContactDetails().getTelephoneWork(),
+    assertEquals(
+        ebsOtherParty.getPerson().getContactDetails().getTelephoneWork(),
         result.getTelephoneWork());
-    assertEquals(ebsOtherParty.getPerson().getContactDetails().getEmailAddress(),
-        result.getEmailAddress());
+    assertEquals(
+        ebsOtherParty.getPerson().getContactDetails().getEmailAddress(), result.getEmailAddress());
 
-    assertEquals(ebsOtherParty.getPerson().getName().getTitle(),
-        result.getTitle());
-    assertEquals(ebsOtherParty.getPerson().getName().getFirstName(),
-        result.getFirstName());
-    assertEquals(ebsOtherParty.getPerson().getName().getSurname(),
-        result.getSurname());
-    assertEquals(ebsOtherParty.getPerson().getName().getMiddleName(),
-        result.getMiddleNames());
+    assertEquals(ebsOtherParty.getPerson().getName().getTitle(), result.getTitle());
+    assertEquals(ebsOtherParty.getPerson().getName().getFirstName(), result.getFirstName());
+    assertEquals(ebsOtherParty.getPerson().getName().getSurname(), result.getSurname());
+    assertEquals(ebsOtherParty.getPerson().getName().getMiddleName(), result.getMiddleNames());
   }
 
   @Test
@@ -593,37 +690,39 @@ class EbsApplicationMapperTest {
     assertNotNull(result);
     assertEquals(OPPONENT_TYPE_ORGANISATION, result.getType());
     assertEquals(ebsOtherParty.getOtherPartyId(), result.getEbsId());
-    assertEquals(ebsOtherParty.getOrganisation().getOrganisationName(),
-        result.getOrganisationName());
-    assertEquals(ebsOtherParty.getOrganisation().getOrganisationType(),
-        result.getOrganisationType());
-    assertEquals(ebsOtherParty.getOrganisation().getContactName(),
-        result.getContactNameRole());
-    assertEquals(ebsOtherParty.getOrganisation().getRelationToCase(),
-        result.getRelationshipToCase());
-    assertEquals(ebsOtherParty.getOrganisation().getRelationToClient(),
-        result.getRelationshipToClient());
-    assertEquals(ebsOtherParty.getOrganisation().getContactDetails().getMobileNumber(),
+    assertEquals(
+        ebsOtherParty.getOrganisation().getOrganisationName(), result.getOrganisationName());
+    assertEquals(
+        ebsOtherParty.getOrganisation().getOrganisationType(), result.getOrganisationType());
+    assertEquals(ebsOtherParty.getOrganisation().getContactName(), result.getContactNameRole());
+    assertEquals(
+        ebsOtherParty.getOrganisation().getRelationToCase(), result.getRelationshipToCase());
+    assertEquals(
+        ebsOtherParty.getOrganisation().getRelationToClient(), result.getRelationshipToClient());
+    assertEquals(
+        ebsOtherParty.getOrganisation().getContactDetails().getMobileNumber(),
         result.getTelephoneMobile());
-    assertEquals(ebsOtherParty.getOrganisation().getContactDetails().getFax(),
-        result.getFaxNumber());
-    assertEquals(ebsOtherParty.getOrganisation().getRelationToCase(),
-        result.getRelationshipToCase());
+    assertEquals(
+        ebsOtherParty.getOrganisation().getContactDetails().getFax(), result.getFaxNumber());
+    assertEquals(
+        ebsOtherParty.getOrganisation().getRelationToCase(), result.getRelationshipToCase());
     assertFalse(result.getDeleteInd());
 
-    assertEquals(ebsOtherParty.getOrganisation().getCurrentlyTrading(),
-        result.getCurrentlyTrading());
-    assertEquals(ebsOtherParty.getOrganisation().getOtherInformation(),
-        result.getOtherInformation());
+    assertEquals(
+        ebsOtherParty.getOrganisation().getCurrentlyTrading(), result.getCurrentlyTrading());
+    assertEquals(
+        ebsOtherParty.getOrganisation().getOtherInformation(), result.getOtherInformation());
     assertNotNull(result.getAddress()); // Detail tested elsewhere
-    assertEquals(ebsOtherParty.getOrganisation().getContactDetails().getEmailAddress(),
+    assertEquals(
+        ebsOtherParty.getOrganisation().getContactDetails().getEmailAddress(),
         result.getEmailAddress());
-    assertEquals(ebsOtherParty.getOrganisation().getContactDetails().getTelephoneHome(),
+    assertEquals(
+        ebsOtherParty.getOrganisation().getContactDetails().getTelephoneHome(),
         result.getTelephoneHome());
-    assertEquals(ebsOtherParty.getOrganisation().getContactDetails().getTelephoneWork(),
+    assertEquals(
+        ebsOtherParty.getOrganisation().getContactDetails().getTelephoneWork(),
         result.getTelephoneWork());
   }
-
 
   @Test
   void testToLinkedCase() {
@@ -633,12 +732,10 @@ class EbsApplicationMapperTest {
 
     assertNotNull(result);
     assertEquals(ebsLinkedCase.getCaseReferenceNumber(), result.getLscCaseReference());
-    assertEquals(ebsLinkedCase.getClient().getClientReferenceNumber(),
-        result.getClient().getReference());
-    assertEquals(ebsLinkedCase.getClient().getFirstName(),
-        result.getClient().getFirstName());
-    assertEquals(ebsLinkedCase.getClient().getSurname(),
-        result.getClient().getSurname());
+    assertEquals(
+        ebsLinkedCase.getClient().getClientReferenceNumber(), result.getClient().getReference());
+    assertEquals(ebsLinkedCase.getClient().getFirstName(), result.getClient().getFirstName());
+    assertEquals(ebsLinkedCase.getClient().getSurname(), result.getClient().getSurname());
     assertEquals(ebsLinkedCase.getCategoryOfLawDesc(), result.getCategoryOfLaw());
     assertEquals(ebsLinkedCase.getProviderReferenceNumber(), result.getProviderCaseReference());
     assertEquals(ebsLinkedCase.getFeeEarnerName(), result.getFeeEarner());
@@ -648,8 +745,7 @@ class EbsApplicationMapperTest {
 
   @Test
   void testToPriorAuthority() {
-   PriorAuthority ebsPriorAuthority =
-        buildPriorAuthority();
+    PriorAuthority ebsPriorAuthority = buildPriorAuthority();
     EbsPriorAuthorityMappingContext priorAuthorityMappingContext =
         buildPriorAuthorityMappingContext(ebsPriorAuthority);
     PriorAuthorityTypeDetail priorAuthorityTypeDetail =
@@ -675,8 +771,8 @@ class EbsApplicationMapperTest {
         buildPriorAuthorityDetail("dataType");
     CommonLookupValueDetail priorAuthLookup = new CommonLookupValueDetail();
 
-    ReferenceDataItemDetail result = applicationMapper.toReferenceDataItem(
-        Pair.of(priorAuthorityDetail, priorAuthLookup));
+    ReferenceDataItemDetail result =
+        applicationMapper.toReferenceDataItem(Pair.of(priorAuthorityDetail, priorAuthLookup));
 
     assertNotNull(result);
     assertEquals(priorAuthorityDetail.getCode(), result.getCode().getId());
@@ -689,24 +785,25 @@ class EbsApplicationMapperTest {
   @Test
   void testToCaseOutcome() {
     CaseDetail ebsCaseDetail = buildCaseDetail(APP_TYPE_EMERGENCY);
-    EbsCaseOutcomeMappingContext caseOutcomeMappingContext = buildCaseOutcomeMappingContext(ebsCaseDetail);
+    EbsCaseOutcomeMappingContext caseOutcomeMappingContext =
+        buildCaseOutcomeMappingContext(ebsCaseDetail);
 
     CaseOutcomeDetail result = applicationMapper.toCaseOutcome(caseOutcomeMappingContext);
 
     assertNotNull(result);
     assertEquals(ebsCaseDetail.getLegalHelpCosts(), result.getLegalCosts());
-    assertEquals(ebsCaseDetail.getApplicationDetails().getLarDetails().getLegalHelpOfficeCode(),
+    assertEquals(
+        ebsCaseDetail.getApplicationDetails().getLarDetails().getLegalHelpOfficeCode(),
         result.getOfficeCode());
-    assertEquals(ebsCaseDetail.getApplicationDetails().getLarDetails().getLegalHelpUfn(),
+    assertEquals(
+        ebsCaseDetail.getApplicationDetails().getLarDetails().getLegalHelpUfn(),
         result.getUniqueFileNo());
-    assertEquals(ebsCaseDetail.getDischargeStatus().getOtherDetails(),
-        result.getOtherDetails());
-    assertEquals(ebsCaseDetail.getDischargeStatus().getReason(),
-        result.getDischargeReason());
-    assertEquals(ebsCaseDetail.getDischargeStatus().getClientContinuePvtInd(),
+    assertEquals(ebsCaseDetail.getDischargeStatus().getOtherDetails(), result.getOtherDetails());
+    assertEquals(ebsCaseDetail.getDischargeStatus().getReason(), result.getDischargeReason());
+    assertEquals(
+        ebsCaseDetail.getDischargeStatus().getClientContinuePvtInd(),
         result.getClientContinueInd());
   }
-
 
   @Test
   void testToTimeRecovery() {
@@ -732,27 +829,34 @@ class EbsApplicationMapperTest {
 
     assertNotNull(result);
     assertEquals(ebsRecovery.getAwardValue(), result.getAwardAmount());
-    assertEquals(ebsRecovery.getRecoveredAmount().getClient().getPaidToLsc(),
+    assertEquals(
+        ebsRecovery.getRecoveredAmount().getClient().getPaidToLsc(),
         result.getClientAmountPaidToLsc());
-    assertEquals(ebsRecovery.getRecoveredAmount().getClient().getAmount(),
-        result.getClientRecoveryAmount());
-    assertEquals(toDate(ebsRecovery.getRecoveredAmount().getClient().getDateReceived()),
+    assertEquals(
+        ebsRecovery.getRecoveredAmount().getClient().getAmount(), result.getClientRecoveryAmount());
+    assertEquals(
+        toDate(ebsRecovery.getRecoveredAmount().getClient().getDateReceived()),
         result.getClientRecoveryDate());
-    assertEquals(ebsRecovery.getRecoveredAmount().getCourt().getPaidToLsc(),
+    assertEquals(
+        ebsRecovery.getRecoveredAmount().getCourt().getPaidToLsc(),
         result.getCourtAmountPaidToLsc());
-    assertEquals(ebsRecovery.getRecoveredAmount().getCourt().getAmount(),
-        result.getCourtRecoveryAmount());
-    assertEquals(toDate(ebsRecovery.getRecoveredAmount().getCourt().getDateReceived()),
+    assertEquals(
+        ebsRecovery.getRecoveredAmount().getCourt().getAmount(), result.getCourtRecoveryAmount());
+    assertEquals(
+        toDate(ebsRecovery.getRecoveredAmount().getCourt().getDateReceived()),
         result.getCourtRecoveryDate());
-    assertEquals(ebsRecovery.getRecoveredAmount().getSolicitor().getPaidToLsc(),
+    assertEquals(
+        ebsRecovery.getRecoveredAmount().getSolicitor().getPaidToLsc(),
         result.getSolicitorAmountPaidToLsc());
-    assertEquals(ebsRecovery.getRecoveredAmount().getSolicitor().getAmount(),
+    assertEquals(
+        ebsRecovery.getRecoveredAmount().getSolicitor().getAmount(),
         result.getSolicitorRecoveryAmount());
-    assertEquals(toDate(ebsRecovery.getRecoveredAmount().getSolicitor().getDateReceived()),
+    assertEquals(
+        toDate(ebsRecovery.getRecoveredAmount().getSolicitor().getDateReceived()),
         result.getSolicitorRecoveryDate());
     assertEquals(ebsRecovery.getOfferedAmount().getAmount(), result.getOfferedAmount());
-    assertEquals(ebsRecovery.getOfferedAmount().getConditionsOfOffer(),
-        result.getConditionsOfOffer());
+    assertEquals(
+        ebsRecovery.getOfferedAmount().getConditionsOfOffer(), result.getConditionsOfOffer());
     assertEquals(ebsRecovery.getOfferedAmount().getConditionsOfOffer(), result.getOfferDetails());
     assertEquals(ebsRecovery.getLeaveOfCourtReqdInd(), result.getLeaveOfCourtRequiredInd());
     assertNull(result.getAwardType()); // Populated by a specific award mapper method
@@ -760,11 +864,15 @@ class EbsApplicationMapperTest {
 
     // From the afterMapping, the sum of recovered amounts
     assertEquals(
-        ebsRecovery.getRecoveredAmount().getClient().getAmount()
+        ebsRecovery
+            .getRecoveredAmount()
+            .getClient()
+            .getAmount()
             .add(ebsRecovery.getRecoveredAmount().getCourt().getAmount())
             .add(ebsRecovery.getRecoveredAmount().getSolicitor().getAmount()),
         result.getRecoveredAmount());
-    assertEquals(result.getAwardAmount().subtract(result.getRecoveredAmount()),
+    assertEquals(
+        result.getAwardAmount().subtract(result.getRecoveredAmount()),
         result.getUnrecoveredAmount());
   }
 
@@ -792,51 +900,53 @@ class EbsApplicationMapperTest {
     assertEquals(AWARD_TYPE_COST_DESCRIPTION, result.getDescription());
     assertEquals(ebsAward.getAwardType(), result.getAwardCode());
     assertEquals(toDate(ebsAward.getCostAward().getOrderDate()), result.getDateOfOrder());
-    assertEquals(ebsAward.getCostAward().getPreCertificateAwardLsc(),
-        result.getPreCertificateLscCost());
-    assertEquals(ebsAward.getCostAward().getPreCertificateAwardOth(),
-        result.getPreCertificateOtherCost());
-    assertEquals(ebsAward.getCostAward().getCertificateCostRateLsc(),
-        result.getCertificateCostLsc());
+    assertEquals(
+        ebsAward.getCostAward().getPreCertificateAwardLsc(), result.getPreCertificateLscCost());
+    assertEquals(
+        ebsAward.getCostAward().getPreCertificateAwardOth(), result.getPreCertificateOtherCost());
+    assertEquals(
+        ebsAward.getCostAward().getCertificateCostRateLsc(), result.getCertificateCostLsc());
     assertNotNull(result.getRecovery()); // detail tested separately
     assertNotNull(result.getLiableParties()); // detail tested separately
-    assertEquals(ebsAward.getCostAward().getLiableParties().size(),
-        result.getLiableParties().size());
+    assertEquals(
+        ebsAward.getCostAward().getLiableParties().size(), result.getLiableParties().size());
 
     // Like for like mappings
     assertEquals(ebsAward.getDeleteAllowed(), result.getDeleteAllowed());
     assertEquals(ebsAward.getUpdateAllowed(), result.getUpdateAllowed());
-    assertEquals(ebsAward.getCostAward().getServiceAddress().getAddressLine1(),
-        result.getAddressLine1());
-    assertEquals(ebsAward.getCostAward().getServiceAddress().getAddressLine2(),
-        result.getAddressLine2());
-    assertEquals(ebsAward.getCostAward().getServiceAddress().getAddressLine3(),
-        result.getAddressLine3());
-    assertEquals(ebsAward.getCostAward().getCertificateCostRateMarket(),
-        result.getCertificateCostMarket());
-    assertEquals(ebsAward.getCostAward().getCourtAssessmentStatus(),
-        result.getCourtAssessmentStatus());
-    assertEquals(toDate(ebsAward.getCostAward().getOrderDateServed()),
-        result.getOrderServedDate());
-    assertEquals(ebsAward.getCostAward().getInterestAwardedRate(),
-        result.getInterestAwardedRate());
-    assertEquals(toDate(ebsAward.getCostAward().getInterestAwardedStartDate()),
+    assertEquals(
+        ebsAward.getCostAward().getServiceAddress().getAddressLine1(), result.getAddressLine1());
+    assertEquals(
+        ebsAward.getCostAward().getServiceAddress().getAddressLine2(), result.getAddressLine2());
+    assertEquals(
+        ebsAward.getCostAward().getServiceAddress().getAddressLine3(), result.getAddressLine3());
+    assertEquals(
+        ebsAward.getCostAward().getCertificateCostRateMarket(), result.getCertificateCostMarket());
+    assertEquals(
+        ebsAward.getCostAward().getCourtAssessmentStatus(), result.getCourtAssessmentStatus());
+    assertEquals(toDate(ebsAward.getCostAward().getOrderDateServed()), result.getOrderServedDate());
+    assertEquals(ebsAward.getCostAward().getInterestAwardedRate(), result.getInterestAwardedRate());
+    assertEquals(
+        toDate(ebsAward.getCostAward().getInterestAwardedStartDate()),
         result.getInterestStartDate());
-    assertEquals(ebsAward.getCostAward().getAwardedBy(),
-        result.getAwardedBy());
+    assertEquals(ebsAward.getCostAward().getAwardedBy(), result.getAwardedBy());
 
     assertEquals(ebsAward.getCostAward().getOtherDetails(), result.getOtherDetails());
 
     // afterMapping
     assertEquals(AWARD_TYPE_COST, result.getRecovery().getAwardType());
     assertEquals(AWARD_TYPE_COST_DESCRIPTION, result.getRecovery().getDescription());
-    assertEquals(ebsAward.getCostAward().getCertificateCostRateLsc()
+    assertEquals(
+        ebsAward
+            .getCostAward()
+            .getCertificateCostRateLsc()
             .add(ebsAward.getCostAward().getCertificateCostRateMarket()),
         result.getTotalCertCostsAwarded());
 
     // afterMapping (baseAward)
-    result.getLiableParties().forEach(
-        liableParty -> assertEquals(AWARD_TYPE_COST, liableParty.getAwardType()));
+    result
+        .getLiableParties()
+        .forEach(liableParty -> assertEquals(AWARD_TYPE_COST, liableParty.getAwardType()));
   }
 
   @Test
@@ -851,35 +961,38 @@ class EbsApplicationMapperTest {
     assertEquals(AWARD_TYPE_FINANCIAL_DESCRIPTION, result.getDescription());
     assertEquals(ebsAward.getAwardType(), result.getAwardCode());
     assertEquals(toDate(ebsAward.getFinancialAward().getOrderDate()), result.getDateOfOrder());
-    assertEquals(ebsAward.getFinancialAward().getAmount(),
-        result.getAwardAmount());
-    assertEquals(toDate(ebsAward.getFinancialAward().getOrderDateServed()),
-        result.getOrderServedDate());
-    assertEquals(ebsAward.getFinancialAward().getStatutoryChangeReason(),
+    assertEquals(ebsAward.getFinancialAward().getAmount(), result.getAwardAmount());
+    assertEquals(
+        toDate(ebsAward.getFinancialAward().getOrderDateServed()), result.getOrderServedDate());
+    assertEquals(
+        ebsAward.getFinancialAward().getStatutoryChangeReason(),
         result.getStatutoryChargeExemptReason());
 
     assertNotNull(result.getRecovery()); // detail tested separately
 
     assertNotNull(result.getLiableParties());
-    assertEquals(ebsAward.getFinancialAward().getLiableParties().size(),
-        result.getLiableParties().size());
+    assertEquals(
+        ebsAward.getFinancialAward().getLiableParties().size(), result.getLiableParties().size());
 
     // Like for like mappings
     assertEquals(ebsAward.getDeleteAllowed(), result.getDeleteAllowed());
     assertEquals(ebsAward.getUpdateAllowed(), result.getUpdateAllowed());
-    assertEquals(ebsAward.getFinancialAward().getServiceAddress().getAddressLine1(),
+    assertEquals(
+        ebsAward.getFinancialAward().getServiceAddress().getAddressLine1(),
         result.getAddressLine1());
-    assertEquals(ebsAward.getFinancialAward().getServiceAddress().getAddressLine2(),
+    assertEquals(
+        ebsAward.getFinancialAward().getServiceAddress().getAddressLine2(),
         result.getAddressLine2());
-    assertEquals(ebsAward.getFinancialAward().getServiceAddress().getAddressLine3(),
+    assertEquals(
+        ebsAward.getFinancialAward().getServiceAddress().getAddressLine3(),
         result.getAddressLine3());
-    assertEquals(ebsAward.getFinancialAward().getInterimAward().toString(),
-        result.getInterimAward());
+    assertEquals(
+        ebsAward.getFinancialAward().getInterimAward().toString(), result.getInterimAward());
     assertEquals(ebsAward.getFinancialAward().getAwardedBy(), result.getAwardedBy());
-    assertEquals(toDate(ebsAward.getFinancialAward().getOrderDateServed()),
-        result.getOrderServedDate());
-    assertEquals(ebsAward.getFinancialAward().getAwardJustifications(),
-        result.getAwardJustifications());
+    assertEquals(
+        toDate(ebsAward.getFinancialAward().getOrderDateServed()), result.getOrderServedDate());
+    assertEquals(
+        ebsAward.getFinancialAward().getAwardJustifications(), result.getAwardJustifications());
     assertEquals(ebsAward.getFinancialAward().getOtherDetails(), result.getOtherDetails());
 
     // afterMapping
@@ -887,8 +1000,9 @@ class EbsApplicationMapperTest {
     assertEquals(AWARD_TYPE_FINANCIAL_DESCRIPTION, result.getRecovery().getDescription());
 
     // afterMapping (baseAward)
-    result.getLiableParties().forEach(
-        liableParty -> assertEquals(AWARD_TYPE_FINANCIAL, liableParty.getAwardType()));
+    result
+        .getLiableParties()
+        .forEach(liableParty -> assertEquals(AWARD_TYPE_FINANCIAL, liableParty.getAwardType()));
   }
 
   @Test
@@ -902,50 +1016,50 @@ class EbsApplicationMapperTest {
     assertEquals(ebsAward.getAwardId(), result.getEbsId());
     assertEquals(toDate(ebsAward.getLandAward().getOrderDate()), result.getDateOfOrder());
     assertEquals(AWARD_TYPE_LAND, result.getAwardType());
-    assertEquals(ebsAward.getLandAward().getValuation().getAmount(),
-        result.getValuationAmount());
-    assertEquals(ebsAward.getLandAward().getValuation().getCriteria(),
-        result.getValuationCriteria());
-    assertEquals(toDate(ebsAward.getLandAward().getValuation().getDate()),
-        result.getValuationDate());
+    assertEquals(ebsAward.getLandAward().getValuation().getAmount(), result.getValuationAmount());
+    assertEquals(
+        ebsAward.getLandAward().getValuation().getCriteria(), result.getValuationCriteria());
+    assertEquals(
+        toDate(ebsAward.getLandAward().getValuation().getDate()), result.getValuationDate());
     assertNotNull(result.getTimeRecovery());
     assertNotNull(result.getLiableParties());
-    assertEquals(ebsAward.getLandAward().getOtherProprietors().size(),
-        result.getLiableParties().size());
+    assertEquals(
+        ebsAward.getLandAward().getOtherProprietors().size(), result.getLiableParties().size());
 
     // Like for like mappings
     assertEquals(ebsAward.getDeleteAllowed(), result.getDeleteAllowed());
     assertEquals(ebsAward.getUpdateAllowed(), result.getUpdateAllowed());
     assertEquals(ebsAward.getLandAward().getDescription(), result.getDescription());
     assertEquals(ebsAward.getLandAward().getTitleNo(), result.getTitleNumber());
-    assertEquals(ebsAward.getLandAward().getPropertyAddress().getAddressLine1(),
-        result.getAddressLine1());
-    assertEquals(ebsAward.getLandAward().getPropertyAddress().getAddressLine2(),
-        result.getAddressLine2());
-    assertEquals(ebsAward.getLandAward().getPropertyAddress().getAddressLine3(),
-        result.getAddressLine3());
+    assertEquals(
+        ebsAward.getLandAward().getPropertyAddress().getAddressLine1(), result.getAddressLine1());
+    assertEquals(
+        ebsAward.getLandAward().getPropertyAddress().getAddressLine2(), result.getAddressLine2());
+    assertEquals(
+        ebsAward.getLandAward().getPropertyAddress().getAddressLine3(), result.getAddressLine3());
     assertEquals(ebsAward.getLandAward().getDisputedPercentage(), result.getDisputedPercentage());
     assertEquals(ebsAward.getLandAward().getAwardedPercentage(), result.getAwardedPercentage());
     assertEquals(ebsAward.getLandAward().getMortgageAmountDue(), result.getMortgageAmountDue());
     assertEquals(ebsAward.getLandAward().getAwardedBy(), result.getAwardedBy());
     assertEquals(ebsAward.getLandAward().getRecovery(), result.getRecovery());
     assertEquals(ebsAward.getLandAward().getNoRecoveryDetails(), result.getNoRecoveryDetails());
-    assertEquals(ebsAward.getLandAward().getStatChargeExemptReason(),
+    assertEquals(
+        ebsAward.getLandAward().getStatChargeExemptReason(),
         result.getStatutoryChargeExemptReason());
-    assertEquals(ebsAward.getLandAward().getLandChargeRegistration(),
-        result.getLandChargeRegistration());
-    assertEquals(ebsAward.getLandAward().getRegistrationRef(),
-        result.getRegistrationReference());
+    assertEquals(
+        ebsAward.getLandAward().getLandChargeRegistration(), result.getLandChargeRegistration());
+    assertEquals(ebsAward.getLandAward().getRegistrationRef(), result.getRegistrationReference());
 
     // afterMapping
     assertTrue(result.getRecoveryOfAwardTimeRelated());
     assertEquals(AWARD_TYPE_LAND, result.getTimeRecovery().getAwardType());
-    assertEquals(result.getValuationAmount().subtract(result.getMortgageAmountDue()),
-        result.getEquity());
+    assertEquals(
+        result.getValuationAmount().subtract(result.getMortgageAmountDue()), result.getEquity());
 
     // afterMapping (baseAward)
-    result.getLiableParties().forEach(
-        liableParty -> assertEquals(AWARD_TYPE_LAND, liableParty.getAwardType()));
+    result
+        .getLiableParties()
+        .forEach(liableParty -> assertEquals(AWARD_TYPE_LAND, liableParty.getAwardType()));
   }
 
   @Test
@@ -959,16 +1073,14 @@ class EbsApplicationMapperTest {
     assertEquals(toDate(ebsAward.getOtherAsset().getOrderDate()), result.getDateOfOrder());
     assertEquals(AWARD_TYPE_OTHER_ASSET, result.getAwardType());
     assertEquals(ebsAward.getAwardType(), result.getAwardCode());
-    assertEquals(ebsAward.getOtherAsset().getValuation().getAmount(),
-        result.getValuationAmount());
-    assertEquals(ebsAward.getOtherAsset().getValuation().getCriteria(),
-        result.getValuationCriteria());
-    assertEquals(toDate(ebsAward.getOtherAsset().getValuation().getDate()),
-        result.getValuationDate());
+    assertEquals(ebsAward.getOtherAsset().getValuation().getAmount(), result.getValuationAmount());
+    assertEquals(
+        ebsAward.getOtherAsset().getValuation().getCriteria(), result.getValuationCriteria());
+    assertEquals(
+        toDate(ebsAward.getOtherAsset().getValuation().getDate()), result.getValuationDate());
     assertNotNull(result.getTimeRecovery());
     assertNotNull(result.getLiableParties());
-    assertEquals(ebsAward.getOtherAsset().getHeldBy().size(),
-        result.getLiableParties().size());
+    assertEquals(ebsAward.getOtherAsset().getHeldBy().size(), result.getLiableParties().size());
 
     // Like for like mappings
     assertEquals(ebsAward.getDeleteAllowed(), result.getDeleteAllowed());
@@ -978,13 +1090,14 @@ class EbsApplicationMapperTest {
     assertEquals(ebsAward.getOtherAsset().getAwardedAmount(), result.getAwardedAmount());
     assertEquals(ebsAward.getOtherAsset().getAwardedPercentage(), result.getAwardedPercentage());
     assertEquals(ebsAward.getOtherAsset().getRecoveredAmount(), result.getRecoveredAmount());
-    assertEquals(ebsAward.getOtherAsset().getRecoveredPercentage(),
-        result.getRecoveredPercentage());
+    assertEquals(
+        ebsAward.getOtherAsset().getRecoveredPercentage(), result.getRecoveredPercentage());
     assertEquals(ebsAward.getOtherAsset().getDisputedAmount(), result.getDisputedAmount());
     assertEquals(ebsAward.getOtherAsset().getDisputedPercentage(), result.getDisputedPercentage());
     assertEquals(ebsAward.getOtherAsset().getRecovery(), result.getRecovery());
     assertEquals(ebsAward.getOtherAsset().getNoRecoveryDetails(), result.getNoRecoveryDetails());
-    assertEquals(ebsAward.getOtherAsset().getStatChargeExemptReason(),
+    assertEquals(
+        ebsAward.getOtherAsset().getStatChargeExemptReason(),
         result.getStatutoryChargeExemptReason());
 
     // afterMapping
@@ -992,15 +1105,15 @@ class EbsApplicationMapperTest {
     assertEquals(AWARD_TYPE_OTHER_ASSET, result.getTimeRecovery().getAwardType());
 
     // afterMapping (baseAward)
-    result.getLiableParties().forEach(
-        liableParty -> assertEquals(AWARD_TYPE_OTHER_ASSET, liableParty.getAwardType()));
+    result
+        .getLiableParties()
+        .forEach(liableParty -> assertEquals(AWARD_TYPE_OTHER_ASSET, liableParty.getAwardType()));
   }
 
   @Test
   public void testToApplicationDetails() {
-    List<BaseApplicationDetail> baseApplicationList = List.of(
-        buildBaseApplication(1),
-        buildBaseApplication(2));
+    List<BaseApplicationDetail> baseApplicationList =
+        List.of(buildBaseApplication(1), buildBaseApplication(2));
 
     ApplicationDetails result =
         applicationMapper.toApplicationDetails(new PageImpl<>(baseApplicationList));
@@ -1021,85 +1134,79 @@ class EbsApplicationMapperTest {
     assertEquals(ebsCaseSummary.getCaseReferenceNumber(), result.getCaseReferenceNumber());
     assertEquals(ebsCaseSummary.getCaseStatusDisplay(), result.getStatus().getDisplayValue());
     assertEquals(ebsCaseSummary.getCategoryOfLaw(), result.getCategoryOfLaw().getDisplayValue());
-    assertEquals(ebsCaseSummary.getClient().getClientReferenceNumber(), result.getClient().getReference());
+    assertEquals(
+        ebsCaseSummary.getClient().getClientReferenceNumber(), result.getClient().getReference());
     assertEquals(ebsCaseSummary.getClient().getFirstName(), result.getClient().getFirstName());
     assertEquals(ebsCaseSummary.getClient().getSurname(), result.getClient().getSurname());
     assertNotNull(result.getProviderDetails());
-    assertEquals(ebsCaseSummary.getFeeEarnerName(), result.getProviderDetails().getFeeEarner().getDisplayValue());
-    assertEquals(ebsCaseSummary.getProviderCaseReferenceNumber(), result.getProviderDetails().getProviderCaseReference());
+    assertEquals(
+        ebsCaseSummary.getFeeEarnerName(),
+        result.getProviderDetails().getFeeEarner().getDisplayValue());
+    assertEquals(
+        ebsCaseSummary.getProviderCaseReferenceNumber(),
+        result.getProviderDetails().getProviderCaseReference());
   }
 
   private EbsApplicationMappingContext buildApplicationMappingContext(
-      CaseDetail ebsCaseDetail,
-      Boolean devolvedPowers,
-      LocalDate devolvedPowersDate) {
+      CaseDetail ebsCaseDetail, Boolean devolvedPowers, LocalDate devolvedPowersDate) {
     return EbsApplicationMappingContext.builder()
         .ebsCaseDetail(ebsCaseDetail)
-        .applicationType(new CommonLookupValueDetail()
-            .code("apptypecode")
-            .description("apptypedesc"))
-        .amendmentProceedingsInEbs(Collections.singletonList(
-            buildProceedingMappingContext(ebsCaseDetail.getApplicationDetails().getProceedings().getFirst())))
+        .applicationType(
+            new CommonLookupValueDetail().code("apptypecode").description("apptypedesc"))
+        .amendmentProceedingsInEbs(
+            Collections.singletonList(
+                buildProceedingMappingContext(
+                    ebsCaseDetail.getApplicationDetails().getProceedings().getFirst())))
         .caseOutcome(buildCaseOutcomeMappingContext(ebsCaseDetail))
         .caseWithOnlyDraftProceedings(Boolean.TRUE)
-        .certificate(new CommonLookupValueDetail()
-            .code("certcode")
-            .description("certificate descr"))
+        .certificate(
+            new CommonLookupValueDetail().code("certcode").description("certificate descr"))
         .currentProviderBilledAmount(BigDecimal.ONE)
         .devolvedPowers(Pair.of(devolvedPowers, devolvedPowersDate))
-        .feeEarnerContact(new ContactDetail()
-            .id(100)
-            .name("feeEarnerName"))
-        .supervisorContact(new ContactDetail()
-            .id(101)
-            .name("supName"))
+        .feeEarnerContact(new ContactDetail().id(100).name("feeEarnerName"))
+        .supervisorContact(new ContactDetail().id(101).name("supName"))
         .meansAssessment(ebsCaseDetail.getApplicationDetails().getMeansAssessments().getFirst())
         .meritsAssessment(ebsCaseDetail.getApplicationDetails().getMeritsAssessments().getFirst())
-        .priorAuthorities(Collections.singletonList(buildPriorAuthorityMappingContext(
-            ebsCaseDetail.getPriorAuthorities().getFirst())))
-        .proceedings(Collections.singletonList(
-            buildProceedingMappingContext(ebsCaseDetail.getApplicationDetails().getProceedings().getFirst())))
-        .providerDetail(new ProviderDetail()
-            .id(1)
-            .name("provname"))
+        .priorAuthorities(
+            Collections.singletonList(
+                buildPriorAuthorityMappingContext(ebsCaseDetail.getPriorAuthorities().getFirst())))
+        .proceedings(
+            Collections.singletonList(
+                buildProceedingMappingContext(
+                    ebsCaseDetail.getApplicationDetails().getProceedings().getFirst())))
+        .providerDetail(new ProviderDetail().id(1).name("provname"))
         .providerOffice(new OfficeDetail().id(1000).name("offName"))
         .build();
   }
 
-  private EbsProceedingMappingContext buildProceedingMappingContext(
-      Proceeding ebsProceeding) {
+  private EbsProceedingMappingContext buildProceedingMappingContext(Proceeding ebsProceeding) {
     return EbsProceedingMappingContext.builder()
         .ebsProceeding(ebsProceeding)
-        .clientInvolvement(new CommonLookupValueDetail()
-            .code("clientInv")
-            .description("clientDesc"))
+        .clientInvolvement(
+            new CommonLookupValueDetail().code("clientInv").description("clientDesc"))
         .proceedingCostLimitation(BigDecimal.TEN)
-        .proceedingStatusLookup(new CommonLookupValueDetail()
-            .code("procStatCode")
-            .description("procStatDesc"))
-        .levelOfService(new CommonLookupValueDetail()
-            .code("losCode")
-            .description("losDescr"))
-        .proceedingLookup(new uk.gov.laa.ccms.data.model.ProceedingDetail()
-            .code("procCode")
-            .name("procName")
-            .larScope("procLarScope"))
-        .scopeLimitations(Collections.singletonList(Pair.of(buildScopeLimitation(""),
-            new CommonLookupValueDetail()
-                .code("scopeLimitCode")
-                .description("scopeLimitDescr"))))
-        .outcomeResultLookup(new OutcomeResultLookupValueDetail()
-            .outcomeResult("or")
-            .outcomeResultDescription("orDesc"))
-        .courtLookup(new CommonLookupValueDetail()
-            .code("crt")
-            .description("crtDescr"))
-        .stageEndLookup(new StageEndLookupValueDetail()
-            .stageEnd("se")
-            .description("seDescr"))
-        .matterType(new CommonLookupValueDetail()
-            .code("mat")
-            .description("matDescr"))
+        .proceedingStatusLookup(
+            new CommonLookupValueDetail().code("procStatCode").description("procStatDesc"))
+        .levelOfService(new CommonLookupValueDetail().code("losCode").description("losDescr"))
+        .proceedingLookup(
+            new uk.gov.laa.ccms.data.model.ProceedingDetail()
+                .code("procCode")
+                .name("procName")
+                .larScope("procLarScope"))
+        .scopeLimitations(
+            Collections.singletonList(
+                Pair.of(
+                    buildScopeLimitation(""),
+                    new CommonLookupValueDetail()
+                        .code("scopeLimitCode")
+                        .description("scopeLimitDescr"))))
+        .outcomeResultLookup(
+            new OutcomeResultLookupValueDetail()
+                .outcomeResult("or")
+                .outcomeResultDescription("orDesc"))
+        .courtLookup(new CommonLookupValueDetail().code("crt").description("crtDescr"))
+        .stageEndLookup(new StageEndLookupValueDetail().stageEnd("se").description("seDescr"))
+        .matterType(new CommonLookupValueDetail().code("mat").description("matDescr"))
         .build();
   }
 
@@ -1110,8 +1217,10 @@ class EbsApplicationMapperTest {
         .financialAwards(Collections.singletonList(ebsCase.getAwards().get(1)))
         .landAwards(Collections.singletonList(ebsCase.getAwards().get(2)))
         .otherAssetAwards(Collections.singletonList(ebsCase.getAwards().get(3)))
-        .proceedingOutcomes(Collections.singletonList(buildProceedingMappingContext(
-            ebsCase.getApplicationDetails().getProceedings().getFirst())))
+        .proceedingOutcomes(
+            Collections.singletonList(
+                buildProceedingMappingContext(
+                    ebsCase.getApplicationDetails().getProceedings().getFirst())))
         .build();
   }
 
@@ -1120,10 +1229,13 @@ class EbsApplicationMapperTest {
     return EbsPriorAuthorityMappingContext.builder()
         .ebsPriorAuthority(ebsPriorAuthority)
         .priorAuthorityTypeLookup(buildPriorAuthorityTypeDetail("dataType"))
-        .items(Collections.singletonList(Pair.of(buildPriorAuthorityDetail("dataType"),
-            new CommonLookupValueDetail()
-                .code("priorAuthCode")
-                .description("priorAuthDesc"))))
+        .items(
+            Collections.singletonList(
+                Pair.of(
+                    buildPriorAuthorityDetail("dataType"),
+                    new CommonLookupValueDetail()
+                        .code("priorAuthCode")
+                        .description("priorAuthDesc"))))
         .build();
   }
 
@@ -1131,16 +1243,20 @@ class EbsApplicationMapperTest {
   @DisplayName("Test toCaseDetail with valid CaseMappingContext")
   void testToEbsCaseDetail_Valid() {
     final ApplicationDetail applicationDetail = buildApplicationDetail(1, false, new Date());
-    final LinkedCaseDetail linkedCaseDetail = new LinkedCaseDetail().lscCaseReference("LC123").relationToCase("Related");
-    final PriorAuthorityDetail priorAuthorityDetail = new PriorAuthorityDetail().summary("Test Prior Authority");
-    final BaseEvidenceDocumentDetail caseDocDetail = new BaseEvidenceDocumentDetail().registeredDocumentId("DOC123");
+    final LinkedCaseDetail linkedCaseDetail =
+        new LinkedCaseDetail().lscCaseReference("LC123").relationToCase("Related");
+    final PriorAuthorityDetail priorAuthorityDetail =
+        new PriorAuthorityDetail().summary("Test Prior Authority");
+    final BaseEvidenceDocumentDetail caseDocDetail =
+        new BaseEvidenceDocumentDetail().registeredDocumentId("DOC123");
     applicationDetail.setLinkedCases(Collections.singletonList(linkedCaseDetail));
     applicationDetail.setPriorAuthorities(Collections.singletonList(priorAuthorityDetail));
 
-    final CaseMappingContext context = CaseMappingContext.builder()
-        .tdsApplication(applicationDetail)
-        .caseDocs(Collections.singletonList(caseDocDetail))
-        .build();
+    final CaseMappingContext context =
+        CaseMappingContext.builder()
+            .tdsApplication(applicationDetail)
+            .caseDocs(Collections.singletonList(caseDocDetail))
+            .build();
 
     final CaseDetail result = applicationMapper.toEbsCaseDetail(context);
 
@@ -1165,15 +1281,13 @@ class EbsApplicationMapperTest {
     assertNull(applicationMapper.toEbsCaseDetail(null));
   }
 
-
   @Test
   @DisplayName("Test toEbsCaseDoc with valid BaseEvidenceDocumentDetail")
   void testToEbsCaseDoc_Valid() {
-    final BaseEvidenceDocumentDetail evidenceDocumentDetail
-        = new BaseEvidenceDocumentDetail()
-        .documentType(new StringDisplayValue()
-            .displayValue("Test Document"))
-        .registeredDocumentId("12345");
+    final BaseEvidenceDocumentDetail evidenceDocumentDetail =
+        new BaseEvidenceDocumentDetail()
+            .documentType(new StringDisplayValue().displayValue("Test Document"))
+            .registeredDocumentId("12345");
 
     final CaseDoc result = applicationMapper.toEbsCaseDoc(evidenceDocumentDetail);
 
@@ -1191,13 +1305,17 @@ class EbsApplicationMapperTest {
   @Test
   @DisplayName("Test toEbsPriorAuthority with valid PriorAuthorityDetail")
   void testToEbsPriorAuthority_Valid() {
-    final PriorAuthorityDetail priorAuthorityDetail = new PriorAuthorityDetail()
-        .summary("Test Summary")
-        .justification("Test Justification")
-        .amountRequested(new BigDecimal("1000.00"))
-        .status("Approved")
-        .items(Collections.singletonList(new ReferenceDataItemDetail()
-            .code(new StringDisplayValue().id("PA123").displayValue("Test Attribute"))));
+    final PriorAuthorityDetail priorAuthorityDetail =
+        new PriorAuthorityDetail()
+            .summary("Test Summary")
+            .justification("Test Justification")
+            .amountRequested(new BigDecimal("1000.00"))
+            .status("Approved")
+            .items(
+                Collections.singletonList(
+                    new ReferenceDataItemDetail()
+                        .code(
+                            new StringDisplayValue().id("PA123").displayValue("Test Attribute"))));
 
     final PriorAuthority result = applicationMapper.toEbsPriorAuthority(priorAuthorityDetail);
 
@@ -1217,15 +1335,16 @@ class EbsApplicationMapperTest {
     assertNull(applicationMapper.toEbsPriorAuthority(null));
   }
 
-
   @Test
   @DisplayName("Test toEbsPriorAuthorityAttribute with valid ReferenceDataItemDetail")
   void testToEbsPriorAuthorityAttribute_Valid() {
-    final ReferenceDataItemDetail referenceDataItemDetail = new ReferenceDataItemDetail()
-        .code(new StringDisplayValue().id("AttributeName"))
-        .value(new StringDisplayValue().id("AttributeValue"));
+    final ReferenceDataItemDetail referenceDataItemDetail =
+        new ReferenceDataItemDetail()
+            .code(new StringDisplayValue().id("AttributeName"))
+            .value(new StringDisplayValue().id("AttributeValue"));
 
-    final PriorAuthorityAttribute result = applicationMapper.toEbsPriorAuthorityAttribute(referenceDataItemDetail);
+    final PriorAuthorityAttribute result =
+        applicationMapper.toEbsPriorAuthorityAttribute(referenceDataItemDetail);
 
     assertNotNull(result);
     assertEquals("AttributeName", result.getName());
@@ -1238,14 +1357,12 @@ class EbsApplicationMapperTest {
     assertNull(applicationMapper.toEbsPriorAuthorityAttribute(null));
   }
 
-
   @Test
   @DisplayName("Test toEbsLinkedCase with valid LinkedCaseDetail")
   void testToEbsLinkedCase_Valid() {
 
-    final LinkedCaseDetail linkedCaseDetail = new LinkedCaseDetail()
-        .lscCaseReference("LSC123")
-        .relationToCase("Related Case");
+    final LinkedCaseDetail linkedCaseDetail =
+        new LinkedCaseDetail().lscCaseReference("LSC123").relationToCase("Related Case");
 
     final LinkedCase result = applicationMapper.toEbsLinkedCase(linkedCaseDetail);
 
@@ -1260,7 +1377,6 @@ class EbsApplicationMapperTest {
     assertNull(applicationMapper.toEbsLinkedCase(null));
   }
 
-
   @Test
   @DisplayName("Test toSubmittedApplicationDetails with valid CaseMappingContext")
   void testToSubmittedApplicationDetails_Valid() {
@@ -1268,18 +1384,22 @@ class EbsApplicationMapperTest {
     applicationDetail.setApplicationType(new ApplicationType().id("type123"));
     applicationDetail.setCorrespondenceAddress(new AddressDetail().preferredAddress("preferred"));
     applicationDetail.setClient(new ClientDetail().reference("client123"));
-    applicationDetail.setProviderDetails(new ApplicationProviderDetails().providerCaseReference("CASE123"));
+    applicationDetail.setProviderDetails(
+        new ApplicationProviderDetails().providerCaseReference("CASE123"));
     applicationDetail.setCategoryOfLaw(new StringDisplayValue().id("category123"));
-    applicationDetail.setCosts(new CostStructureDetail().requestedCostLimitation(new BigDecimal("1000.00")));
+    applicationDetail.setCosts(
+        new CostStructureDetail().requestedCostLimitation(new BigDecimal("1000.00")));
 
-    final CaseMappingContext context = CaseMappingContext.builder()
-        .tdsApplication(applicationDetail)
-        .meansAssessment(new AssessmentDetail())
-        .meritsAssessment(new AssessmentDetail())
-        .caseDocs(Collections.singletonList(new BaseEvidenceDocumentDetail()))
-        .build();
+    final CaseMappingContext context =
+        CaseMappingContext.builder()
+            .tdsApplication(applicationDetail)
+            .meansAssessment(new AssessmentDetail())
+            .meritsAssessment(new AssessmentDetail())
+            .caseDocs(Collections.singletonList(new BaseEvidenceDocumentDetail()))
+            .build();
 
-    final SubmittedApplicationDetails result = applicationMapper.toSubmittedApplicationDetails(context);
+    final SubmittedApplicationDetails result =
+        applicationMapper.toSubmittedApplicationDetails(context);
 
     assertNotNull(result);
     assertNotNull(result.getLarDetails());
@@ -1295,7 +1415,6 @@ class EbsApplicationMapperTest {
   void testToSubmittedApplicationDetails_Null() {
     assertNull(applicationMapper.toSubmittedApplicationDetails(null));
   }
-
 
   @Test
   @DisplayName("Test toBaseClient with valid ClientDetail")
@@ -1350,12 +1469,12 @@ class EbsApplicationMapperTest {
     assertNull(applicationMapper.toEbsProviderDetail(null));
   }
 
-
   @ParameterizedTest
   @CsvSource({
-      "'LAW123', 'Test Law Description', '1000', '500', '1000'",  // Case with requested amount
-      "'LAW124', 'Another Law Description', '', '500', '500'",    // Case with default amount (requested amount is null)
-      "'LAW125', 'Third Law Description', '', '', ''"             // Case with no costs (null amounts)
+    "'LAW123', 'Test Law Description', '1000', '500', '1000'", // Case with requested amount
+    "'LAW124', 'Another Law Description', '', '500', '500'", // Case with default amount (requested
+    // amount is null)
+    "'LAW125', 'Third Law Description', '', '', ''" // Case with no costs (null amounts)
   })
   @DisplayName("Parameterized Test toEbsCategoryOfLaw with different ApplicationDetail inputs")
   void testToEbsCategoryOfLaw_Parameterized(
@@ -1371,8 +1490,10 @@ class EbsApplicationMapperTest {
     categoryOfLaw.setDisplayValue(lawDescription);
 
     final CostStructureDetail costStructureDetail = new CostStructureDetail();
-    costStructureDetail.setRequestedCostLimitation(requestedCostStr.isEmpty() ? null : new BigDecimal(requestedCostStr));
-    costStructureDetail.setDefaultCostLimitation(defaultCostStr.isEmpty() ? null : new BigDecimal(defaultCostStr));
+    costStructureDetail.setRequestedCostLimitation(
+        requestedCostStr.isEmpty() ? null : new BigDecimal(requestedCostStr));
+    costStructureDetail.setDefaultCostLimitation(
+        defaultCostStr.isEmpty() ? null : new BigDecimal(defaultCostStr));
 
     final ApplicationDetail applicationDetail = new ApplicationDetail();
     applicationDetail.setCategoryOfLaw(categoryOfLaw);
@@ -1383,7 +1504,8 @@ class EbsApplicationMapperTest {
 
     // Assertions
     if (expectedCostStr.isEmpty()) {
-      assertNull(result.getRequestedAmount());  // No costs provided, so requested amount should be null
+      assertNull(
+          result.getRequestedAmount()); // No costs provided, so requested amount should be null
     } else {
       assertNotNull(result);
       assertEquals(lawCode, result.getCategoryOfLawCode());
@@ -1397,7 +1519,6 @@ class EbsApplicationMapperTest {
   void testToEbsCategoryOfLaw_Null() {
     assertNull(applicationMapper.toEbsCategoryOfLaw(null));
   }
-
 
   @Test
   @DisplayName("Test toEbsAddressDetail with valid AddressDetail")
@@ -1413,7 +1534,8 @@ class EbsApplicationMapperTest {
     addressDetail.setCountry("Test Country");
     addressDetail.setCounty("Test County");
 
-    final uk.gov.laa.ccms.data.model.AddressDetail result = applicationMapper.toEbsAddressDetail(addressDetail);
+    final uk.gov.laa.ccms.data.model.AddressDetail result =
+        applicationMapper.toEbsAddressDetail(addressDetail);
 
     assertNotNull(result);
     assertEquals("123", result.getAddressId());
@@ -1477,7 +1599,8 @@ class EbsApplicationMapperTest {
   @DisplayName("Test toEbsScopeLimitation with valid ScopeLimitationDetail")
   void testToEbsScopeLimitation_Valid() {
     final ScopeLimitationDetail scopeLimitationDetail = new ScopeLimitationDetail();
-    scopeLimitationDetail.setScopeLimitation(new StringDisplayValue().id("scopeId").displayValue("Scope Description"));
+    scopeLimitationDetail.setScopeLimitation(
+        new StringDisplayValue().id("scopeId").displayValue("Scope Description"));
     scopeLimitationDetail.setScopeLimitationWording("Scope Limitation Wording");
     scopeLimitationDetail.setDelegatedFuncApplyInd(new BooleanDisplayValue().flag(true));
 
@@ -1494,7 +1617,6 @@ class EbsApplicationMapperTest {
   void testToEbsScopeLimitation_Null() {
     assertNull(applicationMapper.toEbsScopeLimitation(null));
   }
-
 
   @Test
   @DisplayName("Test toEbsOtherParty with individual type OpponentDetail")
@@ -1560,14 +1682,27 @@ class EbsApplicationMapperTest {
   @ParameterizedTest
   @DisplayName("Test toEbsPerson with valid OpponentDetail inputs")
   @CsvSource({
-      "'TestClientRel', 'TestCaseRel', '123456', 'true', 'true', 'John Doe', 'Test Employer', 'Employer Address', '1000', '500', '1990-01-01', 'Employed', 'Cert123', 'Monthly', '2023-10-12', 'OtherInfo'",
-      "'ClientRel2', 'CaseRel2', '987654', 'false', 'false', 'Jane Smith', 'Another Employer', 'Another Address', '2000', '1000', '1985-05-05', 'Unemployed', 'Cert456', 'Weekly', '2023-08-20', 'Info2'"
+    "'TestClientRel', 'TestCaseRel', '123456', 'true', 'true', 'John Doe', 'Test Employer', 'Employer Address', '1000', '500', '1990-01-01', 'Employed', 'Cert123', 'Monthly', '2023-10-12', 'OtherInfo'",
+    "'ClientRel2', 'CaseRel2', '987654', 'false', 'false', 'Jane Smith', 'Another Employer', 'Another Address', '2000', '1000', '1985-05-05', 'Unemployed', 'Cert456', 'Weekly', '2023-08-20', 'Info2'"
   })
-  void testToEbsPerson_Valid(final String relationToClient, final String relationToCase, final String niNumber, final boolean legalAided,
-                             final boolean courtOrderedMeansAssesment, final String contactName, final String employerName,
-                             final String employerAddress, final String assessedIncome, final String assessedAssets, final String dateOfBirth,
-                             final String employmentStatus, final String certificateNumber, final String assessedIncomeFrequency,
-                             final String assessmentDate, final String otherInformation) throws ParseException {
+  void testToEbsPerson_Valid(
+      final String relationToClient,
+      final String relationToCase,
+      final String niNumber,
+      final boolean legalAided,
+      final boolean courtOrderedMeansAssesment,
+      final String contactName,
+      final String employerName,
+      final String employerAddress,
+      final String assessedIncome,
+      final String assessedAssets,
+      final String dateOfBirth,
+      final String employmentStatus,
+      final String certificateNumber,
+      final String assessedIncomeFrequency,
+      final String assessmentDate,
+      final String otherInformation)
+      throws ParseException {
 
     final Date parsedDateOfBirth = dateFormat.parse(dateOfBirth);
     final Date parsedAssessmentDate = dateFormat.parse(assessmentDate);
@@ -1621,11 +1756,17 @@ class EbsApplicationMapperTest {
   @ParameterizedTest
   @DisplayName("Test toEbsOrganisation with valid OpponentDetail inputs")
   @CsvSource({
-      "'ClientRelation', 'CaseRelation', 'OrgName', 'OrgType', 'ContactName', 'true', 'OtherInfo'",
-      "'ClientRelation2', 'CaseRelation2', 'OrgName2', 'OrgType2', 'ContactName2', 'false', 'OtherInfo2'"
+    "'ClientRelation', 'CaseRelation', 'OrgName', 'OrgType', 'ContactName', 'true', 'OtherInfo'",
+    "'ClientRelation2', 'CaseRelation2', 'OrgName2', 'OrgType2', 'ContactName2', 'false', 'OtherInfo2'"
   })
-  void testToEbsOrganisation_Valid(final String relationToClient, final String relationToCase, final String organisationName, final String organisationType,
-                                   final String contactName, final boolean currentlyTrading, final String otherInformation) {
+  void testToEbsOrganisation_Valid(
+      final String relationToClient,
+      final String relationToCase,
+      final String organisationName,
+      final String organisationType,
+      final String contactName,
+      final boolean currentlyTrading,
+      final String otherInformation) {
     final OpponentDetail opponentDetail = new OpponentDetail();
     opponentDetail.setRelationshipToClient(relationToClient);
     opponentDetail.setRelationshipToCase(relationToCase);
@@ -1655,16 +1796,21 @@ class EbsApplicationMapperTest {
   }
 
   @ParameterizedTest
-  @DisplayName("Test toOpaAttribute with different AssessmentAttributeDetail inputs, with different user defined indicator values")
+  @DisplayName(
+      "Test toOpaAttribute with different AssessmentAttributeDetail inputs, with different user defined indicator values")
   @CsvSource({
-      "'TestName', 'TestType', 'TestValue', 'nonIntermediate', true",
-      "'SA_TestName', 'TestType', 'TestValue', 'intermediate', false",
-      "'TestName', 'TestType', 'TestValue', 'intermediate', false",
-      "'SA_TestName', 'TestType', 'TestValue', 'nonIntermediate', false",
-      "'TestName', 'TestType', 'TestValue', 'nonIntermediate', true"
+    "'TestName', 'TestType', 'TestValue', 'nonIntermediate', true",
+    "'SA_TestName', 'TestType', 'TestValue', 'intermediate', false",
+    "'TestName', 'TestType', 'TestValue', 'intermediate', false",
+    "'SA_TestName', 'TestType', 'TestValue', 'nonIntermediate', false",
+    "'TestName', 'TestType', 'TestValue', 'nonIntermediate', true"
   })
-  void testToOpaAttribute_Valid_userDefinedIndicator(final String name, final String type, final String value,
-                                final String inferencingType, final boolean expectedUserDefinedInd) {
+  void testToOpaAttribute_Valid_userDefinedIndicator(
+      final String name,
+      final String type,
+      final String value,
+      final String inferencingType,
+      final boolean expectedUserDefinedInd) {
     final AssessmentAttributeDetail assessmentAttributeDetail =
         new AssessmentAttributeDetail()
             .name(name)
@@ -1698,10 +1844,8 @@ class EbsApplicationMapperTest {
 
     final UserDetail user = buildUserDetail();
 
-    final CaseMappingContext caseMappingContext = CaseMappingContext.builder()
-        .tdsApplication(application)
-        .user(user)
-        .build();
+    final CaseMappingContext caseMappingContext =
+        CaseMappingContext.builder().tdsApplication(application).user(user).build();
 
     final RecordHistory result = applicationMapper.toEbsRecordHistory(caseMappingContext);
 
@@ -1732,6 +1876,4 @@ class EbsApplicationMapperTest {
   private LocalDate toDate(Date date) {
     return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
   }
-
-
 }

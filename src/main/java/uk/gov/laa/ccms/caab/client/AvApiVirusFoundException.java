@@ -1,8 +1,8 @@
 package uk.gov.laa.ccms.caab.client;
 
 /**
- * Custom exception class to indicate that the ClamAV service call has
- * returned a non-clean response to its scan.
+ * Custom exception class to indicate that the ClamAV service call has returned a non-clean response
+ * to its scan.
  */
 public class AvApiVirusFoundException extends AvApiClientException {
   /**

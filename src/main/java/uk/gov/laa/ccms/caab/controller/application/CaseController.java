@@ -19,7 +19,6 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Scope;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -45,9 +44,7 @@ import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.util.view.ActionViewHelper;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-/**
- * Controller responsible for handling requests related to cases.
- */
+/** Controller responsible for handling requests related to cases. */
 @RequiredArgsConstructor
 @Controller
 @Slf4j
@@ -58,9 +55,9 @@ public class CaseController {
   /**
    * Displays the case overview screen.
    *
-   * @param ebsCase         The case details from EBS.
-   * @param tdsApplication  The application details from TDS, if available.
-   * @param notificationId  The ID of the notification, if coming from a notification page.
+   * @param ebsCase The case details from EBS.
+   * @param tdsApplication The application details from TDS, if available.
+   * @param notificationId The ID of the notification, if coming from a notification page.
    * @return The case overview view.
    */
   @GetMapping("/case/overview")
@@ -81,10 +78,9 @@ public class CaseController {
     CostStructureDetail draftCosts = null;
     if (isAmendment) {
       amendments = applicationService.getApplication(tdsApplication.getId().toString()).block();
-      draftProceedings = amendments != null
-          ? amendments.getProceedings() : ebsCase.getAmendmentProceedingsInEbs();
-      draftCosts = amendments != null
-          ? amendments.getCosts() : ebsCase.getCosts();
+      draftProceedings =
+          amendments != null ? amendments.getProceedings() : ebsCase.getAmendmentProceedingsInEbs();
+      draftCosts = amendments != null ? amendments.getCosts() : ebsCase.getCosts();
     }
     setProceedingDisplayStatuses(ebsCase, amendments);
 
@@ -105,20 +101,16 @@ public class CaseController {
    * Displays the case details screen.
    *
    * @param ebsCase The case details from EBS.
-   * @param model   The model used to pass data to the view.
+   * @param model The model used to pass data to the view.
    * @return The case details view.
    */
-
   @GetMapping("/case/details")
   public String caseDetails(
-      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
-      Model model,
-      HttpSession session) {
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase, Model model, HttpSession session) {
 
     final ApplicationSectionDisplay applicationSectionDisplay =
         Optional.ofNullable(applicationService.getCaseDetailsDisplay(ebsCase))
-            .orElseThrow(() -> new CaabApplicationException(
-                "Failed to retrieve case details"));
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve case details"));
 
     model.addAttribute("summary", applicationSectionDisplay);
 
@@ -129,8 +121,8 @@ public class CaseController {
    * Returns a display object containing an other party within a case.
    *
    * @param ebsCase The case details from EBS.
-   * @param index   Index number of the OtherParty within the ebsCase.
-   * @param model   The model used to pass data to the view.
+   * @param index Index number of the OtherParty within the ebsCase.
+   * @param model The model used to pass data to the view.
    * @return The case details other party view.
    */
   @GetMapping("/case/details/other-party/{index}")
@@ -166,15 +158,15 @@ public class CaseController {
    * detail using the provided index and adds it to the model to be displayed in the view.
    *
    * @param ebsCase The case details retrieved from the session.
-   * @param index   The zero-based index of the prior authority to be retrieved from the case
-   *                details.
-   * @param model   The model used to pass data to the view.
+   * @param index The zero-based index of the prior authority to be retrieved from the case details.
+   * @param model The model used to pass data to the view.
    * @return The view name for the prior authority review page.
    * @throws IllegalArgumentException if the list of prior authorities is empty or the specified
-   *                                  index is invalid.
+   *     index is invalid.
    */
   @GetMapping("/case/details/prior-authority/{index}")
-  public String getCaseDetailsView(@SessionAttribute(CASE) final ApplicationDetail ebsCase,
+  public String getCaseDetailsView(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @PathVariable final int index,
       Model model) {
     List<PriorAuthorityDetail> priorAuthorities = ebsCase.getPriorAuthorities();
@@ -184,15 +176,14 @@ public class CaseController {
 
     model.addAttribute("priorAuthority", priorAuthorities.get(index));
     return "application/prior-authority-review";
-
   }
 
   /**
    * Displays the details for an individual proceeding.
    *
-   * @param ebsCase   The case details from EBS.
-   * @param index     Index number of the Proceeding within the ebsCase.
-   * @param model     The model used to pass data to the view.
+   * @param ebsCase The case details from EBS.
+   * @param index Index number of the Proceeding within the ebsCase.
+   * @param model The model used to pass data to the view.
    * @return The proceeding details view.
    */
   @GetMapping("/case/details/proceeding/{index}")
@@ -216,7 +207,6 @@ public class CaseController {
     model.addAttribute("applicationType", ebsCase.getApplicationType().getId());
     model.addAttribute("categoryOfLaw", ebsCase.getCategoryOfLaw().getDisplayValue());
     return "application/proceeding-details";
-
   }
 
   /**
@@ -224,7 +214,7 @@ public class CaseController {
    * GET request to display the confirmation page for abandoning amendments.
    *
    * @param amendments the application details for the current case, retrieved from the session
-   *                attribute
+   *     attribute
    * @return a string representing the view name for confirming the abandonment of amendments
    */
   @GetMapping("/case/amendment/abandon")
@@ -241,9 +231,9 @@ public class CaseController {
    * information.
    *
    * @param amendments the application details for the current case, retrieved from the session
-   *                attribute
-   * @param user    the user details of the currently logged-in user, retrieved from the session
-   *                attribute
+   *     attribute
+   * @param user the user details of the currently logged-in user, retrieved from the session
+   *     attribute
    * @return a string representing the view name to be displayed after the amendments are abandoned
    */
   @PostMapping("/case/amendment/abandon")
@@ -280,11 +270,10 @@ public class CaseController {
     return "redirect:/amendments/sections/linked-cases";
   }
 
-  private static List<AvailableAction> getAvailableActions(ApplicationDetail ebsCase,
-      boolean amendment) {
+  private static List<AvailableAction> getAvailableActions(
+      ApplicationDetail ebsCase, boolean amendment) {
 
-    if (ebsCase.getAvailableFunctions() == null
-        || ebsCase.getAvailableFunctions().isEmpty()) {
+    if (ebsCase.getAvailableFunctions() == null || ebsCase.getAvailableFunctions().isEmpty()) {
       return Collections.emptyList();
     }
 
@@ -303,23 +292,21 @@ public class CaseController {
 
   private void setReturnDetails(Model model, String notificationId, HttpServletRequest request) {
     String referer = request.getHeader("referer");
-    String returnTo = referer != null && referer.contains("notifications")
-        ? "notification" : "caseSearchResults";
+    String returnTo =
+        referer != null && referer.contains("notifications") ? "notification" : "caseSearchResults";
     model.addAttribute("returnTo", returnTo);
     model.addAttribute(NOTIFICATION_ID, notificationId);
   }
 
-  private void setProceedingDisplayStatuses(ApplicationDetail ebsCase,
-      ApplicationDetail amendments) {
+  private void setProceedingDisplayStatuses(
+      ApplicationDetail ebsCase, ApplicationDetail amendments) {
     List<ProceedingDetail> proceedings = ebsCase.getProceedings();
     if (proceedings == null || proceedings.isEmpty()) {
       return;
     }
 
     for (ProceedingDetail proceeding : proceedings) {
-      proceeding.getStatus().setDisplayValue(
-          getProceedingStatus(proceeding, amendments, ebsCase)
-      );
+      proceeding.getStatus().setDisplayValue(getProceedingStatus(proceeding, amendments, ebsCase));
     }
 
     List<ProceedingDetail> amendmentProceedingsInEbs = ebsCase.getAmendmentProceedingsInEbs();
@@ -330,8 +317,8 @@ public class CaseController {
     }
   }
 
-  private String getProceedingStatus(ProceedingDetail proceeding, ApplicationDetail amendments,
-      ApplicationDetail ebsCase) {
+  private String getProceedingStatus(
+      ProceedingDetail proceeding, ApplicationDetail amendments, ApplicationDetail ebsCase) {
     if (proceeding.getStatus() == null) {
       return null;
     }
@@ -343,8 +330,8 @@ public class CaseController {
     };
   }
 
-  private String handleLiveProceeding(ProceedingDetail proceeding, ApplicationDetail amendments,
-      ApplicationDetail ebsCase) {
+  private String handleLiveProceeding(
+      ProceedingDetail proceeding, ApplicationDetail amendments, ApplicationDetail ebsCase) {
     if (proceeding.getOutcome() != null) {
       return CaseProceedingDisplayStatus.OUTCOME.getStatus();
     }
@@ -355,14 +342,16 @@ public class CaseController {
         : ebsCase.getStatus().getDisplayValue();
   }
 
-  private ProceedingOutcomeDetail getProceedingOutcome(ApplicationDetail amendments,
-      String proceedingCaseId) {
+  private ProceedingOutcomeDetail getProceedingOutcome(
+      ApplicationDetail amendments, String proceedingCaseId) {
     if (amendments == null || amendments.getProceedings() == null) {
       return null;
     }
     return amendments.getProceedings().stream()
-        .filter(proceeding -> proceeding.getProceedingCaseId() != null
-            && proceeding.getProceedingCaseId().equals(proceedingCaseId))
+        .filter(
+            proceeding ->
+                proceeding.getProceedingCaseId() != null
+                    && proceeding.getProceedingCaseId().equals(proceedingCaseId))
         .findFirst()
         .map(ProceedingDetail::getOutcome)
         .orElse(null);

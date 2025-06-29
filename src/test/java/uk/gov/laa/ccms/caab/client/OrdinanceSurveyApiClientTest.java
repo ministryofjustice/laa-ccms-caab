@@ -22,14 +22,10 @@ import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResponse;
 @SuppressWarnings({"unchecked", "rawtypes"})
 class OrdinanceSurveyApiClientTest {
 
-  @Mock
-  private WebClient webClientMock;
-  @Mock
-  private WebClient.RequestHeadersSpec requestHeadersMock;
-  @Mock
-  private WebClient.RequestHeadersUriSpec requestHeadersUriMock;
-  @Mock
-  private WebClient.ResponseSpec responseMock;
+  @Mock private WebClient webClientMock;
+  @Mock private WebClient.RequestHeadersSpec requestHeadersMock;
+  @Mock private WebClient.RequestHeadersUriSpec requestHeadersUriMock;
+  @Mock private WebClient.ResponseSpec responseMock;
 
   private OrdinanceSurveyApiClient ordinanceSurveyApiClient;
 
@@ -51,9 +47,11 @@ class OrdinanceSurveyApiClientTest {
     when(webClientMock.get()).thenReturn(requestHeadersUriMock);
     when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(OrdinanceSurveyResponse.class)).thenReturn(Mono.just(ordinanceSurveyResponse));
+    when(responseMock.bodyToMono(OrdinanceSurveyResponse.class))
+        .thenReturn(Mono.just(ordinanceSurveyResponse));
 
-    Mono<OrdinanceSurveyResponse> ordinanceSurveyResponseMono = ordinanceSurveyApiClient.getAddresses(postcode);
+    Mono<OrdinanceSurveyResponse> ordinanceSurveyResponseMono =
+        ordinanceSurveyApiClient.getAddresses(postcode);
 
     StepVerifier.create(ordinanceSurveyResponseMono)
         .expectNext(ordinanceSurveyResponse)
@@ -64,8 +62,6 @@ class OrdinanceSurveyApiClientTest {
 
     // Assert the URI
     assertEquals(
-        "%s?postcode=%s&key=%s".formatted(expectedUri, postcode, testKey),
-        actualUri.toString());
+        "%s?postcode=%s&key=%s".formatted(expectedUri, postcode, testKey), actualUri.toString());
   }
-
 }

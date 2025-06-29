@@ -18,8 +18,7 @@ import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 @ExtendWith(SpringExtension.class)
 class ApplicationTypeValidatorTest {
 
-  @InjectMocks
-  private ApplicationTypeValidator applicationTypeValidator;
+  @InjectMocks private ApplicationTypeValidator applicationTypeValidator;
 
   private ApplicationFormData applicationFormData;
 
@@ -47,7 +46,8 @@ class ApplicationTypeValidatorTest {
     applicationTypeValidator.validate(applicationFormData, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("applicationTypeCategory"));
-    assertEquals("required.applicationTypeCategory", errors.getFieldError("applicationTypeCategory").getCode());
+    assertEquals(
+        "required.applicationTypeCategory",
+        errors.getFieldError("applicationTypeCategory").getCode());
   }
-
 }

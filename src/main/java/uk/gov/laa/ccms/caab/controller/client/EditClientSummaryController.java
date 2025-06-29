@@ -38,16 +38,12 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 @SessionAttributes({CLIENT_FLOW_FORM_DATA})
 public class EditClientSummaryController extends AbstractClientSummaryController {
 
-  /**
-   * Default constructor method implementing the abstract controller's constructor.
-   */
+  /** Default constructor method implementing the abstract controller's constructor. */
   public EditClientSummaryController(
       final LookupService lookupService,
       final ClientService clientService,
       final ClientDetailMapper clientDetailsMapper) {
-    super(lookupService,
-        clientService,
-        clientDetailsMapper);
+    super(lookupService, clientService, clientDetailsMapper);
   }
 
   /**
@@ -68,15 +64,15 @@ public class EditClientSummaryController extends AbstractClientSummaryController
     if (session.getAttribute(CLIENT_FLOW_FORM_DATA) != null) {
       clientFlowFormData = (ClientFlowFormData) session.getAttribute(CLIENT_FLOW_FORM_DATA);
     } else {
-      //if session contains clientDetails
-      final ClientDetail clientInformation = clientService.getClient(
-          activeCase.getClientReferenceNumber(),
-          user.getLoginId(),
-          user.getUserType())
-          .blockOptional()
-          .orElseThrow(() -> new CaabApplicationException("Failed to retrieve client"));
+      // if session contains clientDetails
+      final ClientDetail clientInformation =
+          clientService
+              .getClient(
+                  activeCase.getClientReferenceNumber(), user.getLoginId(), user.getUserType())
+              .blockOptional()
+              .orElseThrow(() -> new CaabApplicationException("Failed to retrieve client"));
 
-      //map data to the view
+      // map data to the view
       clientFlowFormData = clientDetailsMapper.toClientFlowFormData(clientInformation.getDetails());
       clientFlowFormData.setAction(ACTION_EDIT);
       session.setAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
@@ -102,10 +98,8 @@ public class EditClientSummaryController extends AbstractClientSummaryController
       final HttpSession session) {
 
     final ClientTransactionResponse response =
-        clientService.updateClient(
-            activeCase.getClientReferenceNumber(),
-            clientFlowFormData,
-            user)
+        clientService
+            .updateClient(activeCase.getClientReferenceNumber(), clientFlowFormData, user)
             .blockOptional()
             .orElseThrow(() -> new CaabApplicationException("Failed to update Client"));
 
@@ -117,5 +111,4 @@ public class EditClientSummaryController extends AbstractClientSummaryController
 
     return "redirect:/%s/%s".formatted(caseContext.getPathValue(), SUBMISSION_UPDATE_CLIENT);
   }
-
 }

@@ -26,12 +26,12 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
  *
  * @author Jamie Briggs
  */
-@Mapper(componentModel = "spring",
+@Mapper(
+    componentModel = "spring",
     uses = {LookupService.class})
 public abstract class IndividualDetailsSectionDisplayMapper {
 
-  @Autowired
-  protected LookupService lookupService;
+  @Autowired protected LookupService lookupService;
 
   @Mapping(target = "generalDetails", source = "opponentDetail")
   @Mapping(target = "employmentDetails", source = "opponentDetail")
@@ -39,9 +39,13 @@ public abstract class IndividualDetailsSectionDisplayMapper {
   public abstract IndividualDetailsSectionDisplay toIndividualDetailsSectionDisplay(
       OpponentDetail opponentDetail);
 
-  @Mapping(target = "relationshipToClient", source = "opponentDetail",
+  @Mapping(
+      target = "relationshipToClient",
+      source = "opponentDetail",
       qualifiedByName = "mapRelationshipToClient")
-  @Mapping(target = "relationshipToCase", source = "opponentDetail",
+  @Mapping(
+      target = "relationshipToCase",
+      source = "opponentDetail",
       qualifiedByName = "mapRelationshipToCase")
   public abstract IndividualGeneralDetailsSectionDisplay toIndividualGeneralDetailsSectionDisplay(
       OpponentDetail opponentDetail);
@@ -63,7 +67,8 @@ public abstract class IndividualDetailsSectionDisplayMapper {
 
   @Mapping(target = "employersName", source = "opponentDetail.employerName")
   @Mapping(target = "employersAddress", source = "opponentDetail.employerAddress")
-  @Mapping(target = "hadCourtOrderedMeansAssessment",
+  @Mapping(
+      target = "hadCourtOrderedMeansAssessment",
       source = "opponentDetail.courtOrderedMeansAssessment")
   @Mapping(target = "partyIsLegalAided", source = "opponentDetail.legalAided")
   public abstract IndividualEmploymentDetailsSectionDisplay
@@ -74,10 +79,11 @@ public abstract class IndividualDetailsSectionDisplayMapper {
     final Mono<CommonLookupDetail> relationshipsToClientMono =
         lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT);
 
-    return relationshipsToClientMono.blockOptional()
-        .map(x ->
-            OpponentUtil.getRelationshipToClient(opponentDetail, x.getContent()))
-        .map(CommonLookupValueDetail::getDescription).orElse("");
+    return relationshipsToClientMono
+        .blockOptional()
+        .map(x -> OpponentUtil.getRelationshipToClient(opponentDetail, x.getContent()))
+        .map(CommonLookupValueDetail::getDescription)
+        .orElse("");
   }
 
   @Named("mapRelationshipToCase")
@@ -86,11 +92,14 @@ public abstract class IndividualDetailsSectionDisplayMapper {
         lookupService.getPersonToCaseRelationships();
 
     return personRelationshipsToCaseMono
-        .map(personRelationshipsToCase
-            -> OpponentUtil.getRelationshipToCase(opponentDetail, Collections.emptyList(),
-            personRelationshipsToCase.getContent()))
+        .map(
+            personRelationshipsToCase ->
+                OpponentUtil.getRelationshipToCase(
+                    opponentDetail,
+                    Collections.emptyList(),
+                    personRelationshipsToCase.getContent()))
         .map(RelationshipToCaseLookupValueDetail::getDescription)
-        .blockOptional().orElse("");
+        .blockOptional()
+        .orElse("");
   }
-
 }

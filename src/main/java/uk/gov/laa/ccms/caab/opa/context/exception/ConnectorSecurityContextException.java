@@ -1,15 +1,10 @@
 package uk.gov.laa.ccms.caab.opa.context.exception;
 
-/**
- * Exception thrown when there is a security context issue in the connector.
- */
+/** Exception thrown when there is a security context issue in the connector. */
 public class ConnectorSecurityContextException extends Exception {
 
-  /**
-   * Constructs a new exception with {@code null} as its detail message.
-   */
-  public ConnectorSecurityContextException() {
-  }
+  /** Constructs a new exception with {@code null} as its detail message. */
+  public ConnectorSecurityContextException() {}
 
   /**
    * Constructs a new exception with the specified detail message.
@@ -33,10 +28,9 @@ public class ConnectorSecurityContextException extends Exception {
    * Constructs a new exception with the specified detail message and cause.
    *
    * @param message the detail message
-   * @param cause   the cause of the exception
+   * @param cause the cause of the exception
    */
   public ConnectorSecurityContextException(final String message, final Throwable cause) {
     super(message, cause);
   }
-
 }

@@ -13,8 +13,8 @@ import uk.gov.laa.ccms.caab.bean.request.ProviderRequestDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.validators.file.FileUploadValidator;
 
 /**
- * Validator component responsible for validating
- * {@link uk.gov.laa.ccms.caab.bean.request.ProviderRequestDetailsFormData} objects.
+ * Validator component responsible for validating {@link
+ * uk.gov.laa.ccms.caab.bean.request.ProviderRequestDetailsFormData} objects.
  */
 @Component
 @Slf4j
@@ -56,60 +56,68 @@ public class ProviderRequestDetailsValidator extends FileUploadValidator {
     validateAdditionalInformation(formData, errors);
   }
 
-  private void validateDynamicOptions(final ProviderRequestDetailsFormData formData,
-                                      final Errors errors) {
-    formData.getDynamicOptions().entrySet().stream().sorted(Map.Entry.comparingByKey())
-        .forEach(entry -> {
-          String key = entry.getKey();
-          DynamicOptionFormData value = entry.getValue();
-          String fieldPath = "dynamicOptions[%s].fieldValue".formatted(key);
+  private void validateDynamicOptions(
+      final ProviderRequestDetailsFormData formData, final Errors errors) {
+    formData.getDynamicOptions().entrySet().stream()
+        .sorted(Map.Entry.comparingByKey())
+        .forEach(
+            entry -> {
+              String key = entry.getKey();
+              DynamicOptionFormData value = entry.getValue();
+              String fieldPath = "dynamicOptions[%s].fieldValue".formatted(key);
 
-          if (value.isMandatory()) {
-            validateRequiredField(fieldPath, value.getFieldValue(), value.getFieldDescription(),
-                errors);
-          }
+              if (value.isMandatory()) {
+                validateRequiredField(
+                    fieldPath, value.getFieldValue(), value.getFieldDescription(), errors);
+              }
 
-          if (StringUtils.hasText(value.getFieldValue())) {
-            validateFieldByType(fieldPath, value, errors);
-          }
-        });
+              if (StringUtils.hasText(value.getFieldValue())) {
+                validateFieldByType(fieldPath, value, errors);
+              }
+            });
   }
 
   private void validateFieldByType(String fieldPath, DynamicOptionFormData value, Errors errors) {
     switch (value.getFieldType()) {
       case FIELD_TYPE_AMT -> {
-        validateCurrencyField(fieldPath, value.getFieldValue(), value.getFieldDescription(),
-            errors);
-        validateNumericLimit(fieldPath, value.getFieldValue(), value.getFieldDescription(),
-            MAX_COST_LIMIT, errors);
+        validateCurrencyField(
+            fieldPath, value.getFieldValue(), value.getFieldDescription(), errors);
+        validateNumericLimit(
+            fieldPath, value.getFieldValue(), value.getFieldDescription(), MAX_COST_LIMIT, errors);
       }
       case FIELD_TYPE_INT -> {
-        validateFieldMaxLength(fieldPath, value.getFieldValue(), 30, value.getFieldDescription(),
-            errors);
+        validateFieldMaxLength(
+            fieldPath, value.getFieldValue(), 30, value.getFieldDescription(), errors);
         validateNumericField(fieldPath, value.getFieldValue(), value.getFieldDescription(), errors);
       }
       case FIELD_TYPE_DATE ->
-          validateValidDateField(value.getFieldValue(), fieldPath, value.getFieldDescription(),
-              DATE_FORMAT, errors);
+          validateValidDateField(
+              value.getFieldValue(), fieldPath, value.getFieldDescription(), DATE_FORMAT, errors);
       case FIELD_TYPE_FTS ->
-          validateFieldMaxLength(fieldPath, value.getFieldValue(), 30, value.getFieldDescription(),
-              errors);
+          validateFieldMaxLength(
+              fieldPath, value.getFieldValue(), 30, value.getFieldDescription(), errors);
       case FIELD_TYPE_FTL ->
-          validateFieldMaxLength(fieldPath, value.getFieldValue(), 80, value.getFieldDescription(),
-              errors);
+          validateFieldMaxLength(
+              fieldPath, value.getFieldValue(), 80, value.getFieldDescription(), errors);
       default -> log.warn("Unsupported field type: {}", value.getFieldType());
     }
   }
 
-  private void validateAdditionalInformation(final ProviderRequestDetailsFormData formData,
-                                             final Errors errors) {
+  private void validateAdditionalInformation(
+      final ProviderRequestDetailsFormData formData, final Errors errors) {
     if (Boolean.TRUE.equals(formData.getIsAdditionalInformationPromptRequired())) {
-      validateRequiredField("additionalInformation", formData.getAdditionalInformation(),
-          formData.getAdditionalInformationLabel(), errors);
+      validateRequiredField(
+          "additionalInformation",
+          formData.getAdditionalInformation(),
+          formData.getAdditionalInformationLabel(),
+          errors);
     }
 
-    validateFieldMaxLength("additionalInformation", formData.getAdditionalInformation(), 8000,
-        formData.getAdditionalInformationLabel(), errors);
+    validateFieldMaxLength(
+        "additionalInformation",
+        formData.getAdditionalInformation(),
+        8000,
+        formData.getAdditionalInformationLabel(),
+        errors);
   }
-
 }

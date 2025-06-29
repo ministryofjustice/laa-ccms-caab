@@ -22,32 +22,27 @@ import org.springframework.web.servlet.ModelAndView;
 @Component
 public class LoggingInterceptor implements HandlerInterceptor {
 
-  @Setter
-  private Logger log = LoggerFactory.getLogger(LoggingInterceptor.class);
+  @Setter private Logger log = LoggerFactory.getLogger(LoggingInterceptor.class);
 
   /**
    * Logs the request method and URI before the controller method is invoked.
    *
    * @param request The incoming HTTP request.
    * @param response The outgoing HTTP response.
-   * @param handler The object that is handling the current request.
-   *                This could be a controller or any other type of handler.
-   * @return true to indicate processing should continue, false to indicate processing of
-   *         the current request should stop.
+   * @param handler The object that is handling the current request. This could be a controller or
+   *     any other type of handler.
+   * @return true to indicate processing should continue, false to indicate processing of the
+   *     current request should stop.
    */
   @Override
   public boolean preHandle(
-      HttpServletRequest request,
-      HttpServletResponse response,
-      Object handler) {
+      HttpServletRequest request, HttpServletResponse response, Object handler) {
     if (handler instanceof HandlerMethod handlerMethod) {
       Class<?> beanType = handlerMethod.getBeanType();
 
       // Check if it's a controller or rest controller
       if (beanType.isAnnotationPresent(Controller.class)) {
-        log.info("[{}] {}",
-            request.getMethod(),
-            request.getRequestURI());
+        log.info("[{}] {}", request.getMethod(), request.getRequestURI());
       }
     }
 
@@ -72,16 +67,15 @@ public class LoggingInterceptor implements HandlerInterceptor {
 
       // Check if it's a controller or rest controller
       if ((beanType.isAnnotationPresent(Controller.class))
-          && modelAndView != null && modelAndView.getViewName() != null) {
+          && modelAndView != null
+          && modelAndView.getViewName() != null) {
 
         printAllSessionAttributeNames(request.getSession());
 
-        log.debug("[DISPLAY] {}",
-            modelAndView.getViewName());
+        log.debug("[DISPLAY] {}", modelAndView.getViewName());
       }
     }
   }
-
 
   /**
    * Prints the names of all attributes stored in the provided HttpSession.

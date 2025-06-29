@@ -28,5 +28,4 @@ class CaabApplicationExceptionTest {
     assertEquals(expectedMessage, exception.getMessage());
     assertEquals(cause, exception.getCause());
   }
-
 }

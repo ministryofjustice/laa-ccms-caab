@@ -1,8 +1,6 @@
 package uk.gov.laa.ccms.caab.client;
 
-/**
- * Custom exception class representing AWS S3 related exceptions.
- */
+/** Custom exception class representing AWS S3 related exceptions. */
 public class S3ApiClientException extends RuntimeException {
 
   /**
@@ -23,5 +21,4 @@ public class S3ApiClientException extends RuntimeException {
   public S3ApiClientException(final String message, final Throwable cause) {
     super(message, cause);
   }
-
 }

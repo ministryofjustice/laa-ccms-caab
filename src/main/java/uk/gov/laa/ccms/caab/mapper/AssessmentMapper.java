@@ -82,9 +82,7 @@ import uk.gov.laa.ccms.caab.util.ProceedingUtil;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 
-/**
- * Mapper for converting assessment mapping contexts to assessment details.
- */
+/** Mapper for converting assessment mapping contexts to assessment details. */
 @Mapper(componentModel = "spring")
 public interface AssessmentMapper {
 
@@ -95,15 +93,15 @@ public interface AssessmentMapper {
   @Mapping(target = "checkpoint", ignore = true)
   @Mapping(target = "auditDetail", ignore = true)
   @Mapping(target = "status", ignore = true)
-  @Mapping(target = "entityTypes", source = "context",
+  @Mapping(
+      target = "entityTypes",
+      source = "context",
       qualifiedByName = "toAssessmentEntityTypeList")
   void toAssessmentDetail(
-      @MappingTarget AssessmentDetail assessment,
-      AssessmentMappingContext context);
+      @MappingTarget AssessmentDetail assessment, AssessmentMappingContext context);
 
   /**
-   * Converts the given assessment mapping context to a list of
-   * {@link AssessmentEntityTypeDetail}.
+   * Converts the given assessment mapping context to a list of {@link AssessmentEntityTypeDetail}.
    *
    * @param context the assessment mapping context containing application, client, and user details
    * @return a list of assessment entity type details
@@ -119,13 +117,12 @@ public interface AssessmentMapper {
     return List.of(
         toAssessmentEntityTypeDetailGlobal(context),
         toAssessmentEntityTypeDetailProceeding(context),
-        toAssessmentEntityTypeDetailOpponent(context)
-    );
+        toAssessmentEntityTypeDetailOpponent(context));
   }
 
   /**
-   * Converts the global context within the given assessment mapping context to an
-   * {@link AssessmentEntityTypeDetail}.
+   * Converts the global context within the given assessment mapping context to an {@link
+   * AssessmentEntityTypeDetail}.
    *
    * @param context the assessment mapping context containing application, client, and user details
    * @return the assessment entity type detail for global entities
@@ -144,49 +141,52 @@ public interface AssessmentMapper {
       return existingEntityType;
     } else {
 
-      //opponent relationships
+      // opponent relationships
       final List<AssessmentRelationshipTargetDetail> opponentRelationshipTargets =
           context.getApplication().getOpponents().stream()
-              .map(opponent -> new AssessmentRelationshipTargetDetail()
-                  .targetEntityId(getOpponentOpaInstanceMappingId(opponent)))
+              .map(
+                  opponent ->
+                      new AssessmentRelationshipTargetDetail()
+                          .targetEntityId(getOpponentOpaInstanceMappingId(opponent)))
               .collect(Collectors.toList());
 
-      final AssessmentRelationshipDetail opponentRelationship = new AssessmentRelationshipDetail()
-          .name(OPPONENT.getType().toLowerCase().replace("_", ""))
-          .relationshipTargets(opponentRelationshipTargets)
-          .prepopulated(true);
+      final AssessmentRelationshipDetail opponentRelationship =
+          new AssessmentRelationshipDetail()
+              .name(OPPONENT.getType().toLowerCase().replace("_", ""))
+              .relationshipTargets(opponentRelationshipTargets)
+              .prepopulated(true);
 
-
-      //proceeding relationships
+      // proceeding relationships
       final List<AssessmentRelationshipTargetDetail> proceedingRelationshipTargets =
           context.getApplication().getProceedings().stream()
-              .map(proceeding -> new AssessmentRelationshipTargetDetail()
-                  .targetEntityId(getProceedingOpaInstanceMappingId(proceeding)))
+              .map(
+                  proceeding ->
+                      new AssessmentRelationshipTargetDetail()
+                          .targetEntityId(getProceedingOpaInstanceMappingId(proceeding)))
               .collect(Collectors.toList());
 
-      final AssessmentRelationshipDetail proceedingRelationship = new AssessmentRelationshipDetail()
-          .name(PROCEEDING.getType().toLowerCase())
-          .relationshipTargets(proceedingRelationshipTargets)
-          .prepopulated(true);
+      final AssessmentRelationshipDetail proceedingRelationship =
+          new AssessmentRelationshipDetail()
+              .name(PROCEEDING.getType().toLowerCase())
+              .relationshipTargets(proceedingRelationshipTargets)
+              .prepopulated(true);
 
-      //global entities
-      final List<AssessmentEntityDetail> globalEntityList = List.of(new AssessmentEntityDetail()
-          .name(context.getApplication().getCaseReferenceNumber())
-          .attributes(globalToAttributeList(context))
-          .relations(List.of(
-              opponentRelationship,
-              proceedingRelationship))
-          .prepopulated(false));
+      // global entities
+      final List<AssessmentEntityDetail> globalEntityList =
+          List.of(
+              new AssessmentEntityDetail()
+                  .name(context.getApplication().getCaseReferenceNumber())
+                  .attributes(globalToAttributeList(context))
+                  .relations(List.of(opponentRelationship, proceedingRelationship))
+                  .prepopulated(false));
 
-      return new AssessmentEntityTypeDetail()
-          .name(GLOBAL.getType())
-          .entities(globalEntityList);
+      return new AssessmentEntityTypeDetail().name(GLOBAL.getType()).entities(globalEntityList);
     }
   }
 
   /**
-   * Converts the proceeding context within the given assessment mapping context to an
-   * {@link AssessmentEntityTypeDetail}.
+   * Converts the proceeding context within the given assessment mapping context to an {@link
+   * AssessmentEntityTypeDetail}.
    *
    * @param context the assessment mapping context containing proceeding details
    * @return the assessment entity type detail for proceedings
@@ -209,8 +209,7 @@ public interface AssessmentMapper {
       final List<AssessmentEntityDetail> proceedingEntityList = new ArrayList<>();
 
       if (proceedings != null && !proceedings.isEmpty()) {
-        proceedingEntityList.addAll(
-            toAssessmentEntityDetailListProceeding(proceedings));
+        proceedingEntityList.addAll(toAssessmentEntityDetailListProceeding(proceedings));
       }
 
       return new AssessmentEntityTypeDetail()
@@ -220,8 +219,8 @@ public interface AssessmentMapper {
   }
 
   /**
-   * Converts the opponent context within the given assessment mapping context to an
-   * {@link AssessmentEntityTypeDetail}.
+   * Converts the opponent context within the given assessment mapping context to an {@link
+   * AssessmentEntityTypeDetail}.
    *
    * @param context the assessment mapping context containing opponent contexts
    * @return the assessment entity type detail for opponents
@@ -233,8 +232,7 @@ public interface AssessmentMapper {
       return null;
     }
 
-    final List<AssessmentOpponentMappingContext> opponentContextList =
-        context.getOpponentContext();
+    final List<AssessmentOpponentMappingContext> opponentContextList = context.getOpponentContext();
 
     final AssessmentEntityTypeDetail existingEntityType =
         getAssessmentEntityType(context.getAssessment(), OPPONENT);
@@ -245,8 +243,7 @@ public interface AssessmentMapper {
       final List<AssessmentEntityDetail> opponentsEntityList = new ArrayList<>();
 
       if (opponentContextList != null && !opponentContextList.isEmpty()) {
-        opponentsEntityList.addAll(
-            toAssessmentEntityDetailListOpponent(opponentContextList));
+        opponentsEntityList.addAll(toAssessmentEntityDetailListOpponent(opponentContextList));
       }
 
       return new AssessmentEntityTypeDetail()
@@ -257,7 +254,6 @@ public interface AssessmentMapper {
 
   List<AssessmentEntityDetail> toAssessmentEntityDetailListProceeding(
       final List<ProceedingDetail> proceedings);
-
 
   /**
    * Converts proceeding data to a list of {@link AssessmentAttributeDetail} objects.
@@ -310,8 +306,7 @@ public interface AssessmentMapper {
       ProceedingDetail proceeding, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "value", source = "proceeding",
-      qualifiedByName = "mapNewOrExistingAttribute")
+  @Mapping(target = "value", source = "proceeding", qualifiedByName = "mapNewOrExistingAttribute")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toNewOrExistingAttribute(
@@ -323,16 +318,14 @@ public interface AssessmentMapper {
   }
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "value", source = "proceeding",
-      qualifiedByName = "mapProceedingIdAttribute")
+  @Mapping(target = "value", source = "proceeding", qualifiedByName = "mapProceedingIdAttribute")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toProceedingIdAttribute(
       ProceedingDetail proceeding, AssessmentAttribute attribute);
 
   @Named("mapProceedingIdAttribute")
-  default String mapProceedingIdAttribute(
-      final ProceedingDetail proceeding) {
+  default String mapProceedingIdAttribute(final ProceedingDetail proceeding) {
     return ProceedingUtil.getAssessmentMappingId(proceeding);
   }
 
@@ -351,21 +344,21 @@ public interface AssessmentMapper {
       ProceedingDetail proceeding, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "value", source = "proceeding",
-      qualifiedByName = "mapRequestedScopeAttribute")
+  @Mapping(target = "value", source = "proceeding", qualifiedByName = "mapRequestedScopeAttribute")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toRequestedScopeAttribute(
       ProceedingDetail proceeding, AssessmentAttribute attribute);
 
   @Named("mapRequestedScopeAttribute")
-  default String mapRequestedScopeAttribute(
-      final ProceedingDetail proceeding) {
+  default String mapRequestedScopeAttribute(final ProceedingDetail proceeding) {
     return ProceedingUtil.getRequestedScopeForAssessmentInput(proceeding);
   }
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "value", source = "proceeding",
+  @Mapping(
+      target = "value",
+      source = "proceeding",
       qualifiedByName = "mapScopeLimitIsDefaultAttribute")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "inferencingType", ignore = true)
@@ -373,15 +366,18 @@ public interface AssessmentMapper {
       ProceedingDetail proceeding, AssessmentAttribute attribute);
 
   @Named("mapScopeLimitIsDefaultAttribute")
-  default boolean mapScopeLimitIsDefaultAttribute(
-      final ProceedingDetail proceeding) {
+  default boolean mapScopeLimitIsDefaultAttribute(final ProceedingDetail proceeding) {
     return ProceedingUtil.isScopeLimitDefault(proceeding);
   }
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "name", source = "proceeding",
+  @Mapping(
+      target = "name",
+      source = "proceeding",
       qualifiedByName = "getProceedingOpaInstanceMappingId")
-  @Mapping(target = "attributes", source = "proceeding",
+  @Mapping(
+      target = "attributes",
+      source = "proceeding",
       qualifiedByName = "proceedingToAttributeList")
   @Mapping(target = "prepopulated", constant = "true")
   @Mapping(target = "relations", ignore = true)
@@ -389,9 +385,13 @@ public interface AssessmentMapper {
   AssessmentEntityDetail toAssessmentEntityDetail(ProceedingDetail proceeding);
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "name", source = "opponentContext.opponent",
+  @Mapping(
+      target = "name",
+      source = "opponentContext.opponent",
       qualifiedByName = "getOpponentOpaInstanceMappingId")
-  @Mapping(target = "attributes", source = "opponentContext",
+  @Mapping(
+      target = "attributes",
+      source = "opponentContext",
       qualifiedByName = "opponentToAttributeList")
   @Mapping(target = "prepopulated", constant = "true")
   @Mapping(target = "relations", ignore = true)
@@ -438,8 +438,7 @@ public interface AssessmentMapper {
         toOtherPartyNameAttribute(opponentContext, OTHER_PARTY_NAME),
         toOtherPartyTypeAttribute(opponent, OTHER_PARTY_TYPE),
         toRelationshipToCaseAttribute(opponent, RELATIONSHIP_TO_CASE),
-        toRelationshipToClientAttribute(opponent, RELATIONSHIP_TO_CLIENT)
-    );
+        toRelationshipToClientAttribute(opponent, RELATIONSHIP_TO_CLIENT));
   }
 
   @Mapping(target = "id", ignore = true)
@@ -451,7 +450,9 @@ public interface AssessmentMapper {
       OpponentDetail opponent, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "value", source = "opponent",
+  @Mapping(
+      target = "value",
+      source = "opponent",
       qualifiedByName = "mapOpponentOpaInstanceMappingId")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
@@ -550,8 +551,7 @@ public interface AssessmentMapper {
         toSurnameAttribute(client, SURNAME),
         toSurnameAtBirthAttribute(client, SURNAME_AT_BIRTH),
         toUserProviderFirmIdAttribute(user, USER_PROVIDER_FIRM_ID),
-        toUserTypeAttribute(user, USER_TYPE)
-    );
+        toUserTypeAttribute(user, USER_TYPE));
   }
 
   @Mapping(target = "id", ignore = true)
@@ -616,7 +616,9 @@ public interface AssessmentMapper {
       ClientDetailDetails client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "value", source = "attribute",
+  @Mapping(
+      target = "value",
+      source = "attribute",
       qualifiedByName = "mapDateAssessmentStarted",
       dateFormat = "dd-MM-yyyy")
   @Mapping(target = "name", source = "attribute")
@@ -630,8 +632,10 @@ public interface AssessmentMapper {
   }
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "value",
-      source = "client.personalInformation.dateOfBirth", dateFormat = "dd-MM-yyyy")
+  @Mapping(
+      target = "value",
+      source = "client.personalInformation.dateOfBirth",
+      dateFormat = "dd-MM-yyyy")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
@@ -647,8 +651,10 @@ public interface AssessmentMapper {
       ApplicationDetail application, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "value",
-      source = "application.applicationType.devolvedPowers.dateUsed", dateFormat = "dd-MM-yyyy")
+  @Mapping(
+      target = "value",
+      source = "application.applicationType.devolvedPowers.dateUsed",
+      dateFormat = "dd-MM-yyyy")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
@@ -755,8 +761,7 @@ public interface AssessmentMapper {
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
-  AssessmentAttributeDetail toPoaOrBillFlagAttribute(
-      AssessmentAttribute attribute);
+  AssessmentAttributeDetail toPoaOrBillFlagAttribute(AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "client.address.postalCode")
@@ -824,8 +829,7 @@ public interface AssessmentMapper {
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
-  AssessmentAttributeDetail toUserTypeAttribute(
-      UserDetail user, AssessmentAttribute attribute);
+  AssessmentAttributeDetail toUserTypeAttribute(UserDetail user, AssessmentAttribute attribute);
 
   @Named("getOpponentOpaInstanceMappingId")
   default String getOpponentOpaInstanceMappingId(final OpponentDetail opponent) {
@@ -836,5 +840,4 @@ public interface AssessmentMapper {
   default String getProceedingOpaInstanceMappingId(final ProceedingDetail proceeding) {
     return ProceedingUtil.getAssessmentMappingId(proceeding);
   }
-
 }

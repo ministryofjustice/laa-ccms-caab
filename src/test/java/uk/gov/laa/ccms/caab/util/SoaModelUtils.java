@@ -69,10 +69,7 @@ public final class SoaModelUtils {
         .assessedAmount(BigDecimal.TEN)
         .decisionStatus("dstat")
         .description("descr")
-        .addDetailsItem(
-            new PriorAuthorityAttribute()
-                .name("thecode")
-                .value("attval"))
+        .addDetailsItem(new PriorAuthorityAttribute().name("thecode").value("attval"))
         .priorAuthorityType("prauthtype")
         .reasonForRequest("requestreason")
         .requestAmount(BigDecimal.ONE);
@@ -100,9 +97,9 @@ public final class SoaModelUtils {
                 .devolvedPowersDate(new Date())
                 .addExternalResourcesItem(
                     new ExternalResource()
-                        .costCeiling(Arrays.asList(
-                            buildCostLimitation("ext1"),
-                            buildCostLimitation("ext2"))))
+                        .costCeiling(
+                            Arrays.asList(
+                                buildCostLimitation("ext1"), buildCostLimitation("ext2"))))
                 .fixedHearingDateInd(Boolean.TRUE)
                 .highProfileCaseInd(Boolean.TRUE)
                 .larDetails(
@@ -121,7 +118,7 @@ public final class SoaModelUtils {
                         .contactDetails(buildContactDetail("prov"))
                         .providerOfficeId("11111")
                         .contactUserId(buildUserDetail("contact"))
-                        .providerFirmId("12345")// Defined as String, but data is numeric in db!
+                        .providerFirmId("12345") // Defined as String, but data is numeric in db!
                         .providerCaseReferenceNumber("provcaseref123")
                         .feeEarnerContactId("22222")
                         .supervisorContactId("33333"))
@@ -132,15 +129,13 @@ public final class SoaModelUtils {
         .addAwardsItem(buildFinancialAward())
         .addAwardsItem(buildLandAward())
         .addAwardsItem(buildOtherAssetAward())
-        .addCaseDocsItem(
-            new CaseDoc()
-                .ccmsDocumentId("docId")
-                .documentSubject("thesub"))
+        .addCaseDocsItem(new CaseDoc().ccmsDocumentId("docId").documentSubject("thesub"))
         .caseReferenceNumber("caseref")
-        .caseStatus(new CaseStatus()
-            .actualCaseStatus("actualstat")
-            .displayCaseStatus("displaystat")
-            .statusUpdateInd(Boolean.TRUE))
+        .caseStatus(
+            new CaseStatus()
+                .actualCaseStatus("actualstat")
+                .displayCaseStatus("displaystat")
+                .statusUpdateInd(Boolean.TRUE))
         .certificateDate(new Date())
         .certificateType("certtype")
         .dischargeStatus(
@@ -159,7 +154,6 @@ public final class SoaModelUtils {
                 .dateLastUpdated(new Date())
                 .lastUpdatedBy(buildUserDetail("lastUpd")))
         .undertakingAmount(BigDecimal.TEN);
-
   }
 
   public static ProceedingDetail buildProceedingDetail(String status) {
@@ -325,16 +319,12 @@ public final class SoaModelUtils {
         .billingProviderName(prefix + "billprovname");
   }
 
-  public static AssessmentResult buildAssessmentResult(
-      String prefix) {
+  public static AssessmentResult buildAssessmentResult(String prefix) {
     return new AssessmentResult()
         .defaultInd(Boolean.TRUE)
         .date(new Date())
         .assessmentId(prefix + "assessid")
-        .addResultsItem(
-            new OpaGoal()
-                .attributeValue(prefix + "val")
-                .attribute(prefix + "att"))
+        .addResultsItem(new OpaGoal().attributeValue(prefix + "val").attribute(prefix + "att"))
         .addAssessmentDetailsItem(
             new AssessmentScreen()
                 .caption(prefix + "cap")
@@ -348,8 +338,7 @@ public final class SoaModelUtils {
                             new OpaInstance()
                                 .caption(prefix + "capti")
                                 .instanceLabel(prefix + "label")
-                                .addAttributesItem(
-                                    buildOpaAttribute(prefix)))));
+                                .addAttributesItem(buildOpaAttribute(prefix)))));
   }
 
   public static OpaAttribute buildOpaAttribute(final String prefix) {
@@ -434,11 +423,7 @@ public final class SoaModelUtils {
                         .addressLine1("add1")
                         .addressLine2("add2")
                         .addressLine3("add3"))
-                .valuation(
-                    new Valuation()
-                        .amount(BigDecimal.TEN)
-                        .criteria("crit")
-                        .date(new Date()))
+                .valuation(new Valuation().amount(BigDecimal.TEN).criteria("crit").date(new Date()))
                 .disputedPercentage(BigDecimal.ZERO)
                 .awardedPercentage(BigDecimal.TEN)
                 .mortgageAmountDue(BigDecimal.ONE)
@@ -477,10 +462,7 @@ public final class SoaModelUtils {
                 .statChargeExemptReason("exempt")
                 .timeRelatedAward(buildTimeRelatedAward())
                 .valuation(
-                    new Valuation()
-                        .amount(BigDecimal.TEN)
-                        .criteria("crit")
-                        .date(new Date())));
+                    new Valuation().amount(BigDecimal.TEN).criteria("crit").date(new Date())));
   }
 
   public static TimeRelatedAward buildTimeRelatedAward() {
@@ -497,10 +479,7 @@ public final class SoaModelUtils {
     return new Recovery()
         .awardValue(BigDecimal.ONE)
         .leaveOfCourtReqdInd(Boolean.TRUE)
-        .offeredAmount(
-            new OfferedAmount()
-                .amount(BigDecimal.TEN)
-                .conditionsOfOffer("cond1"))
+        .offeredAmount(new OfferedAmount().amount(BigDecimal.TEN).conditionsOfOffer("cond1"))
         .recoveredAmount(
             new RecoveredAmount()
                 .client(
@@ -538,53 +517,60 @@ public final class SoaModelUtils {
   public static ClientDetail buildClientDetail() {
     return new ClientDetail()
         .clientReferenceNumber("12345")
-        .details(new ClientDetailDetails()
-            .name(new NameDetail()
-                .firstName("firstname")
-                .surname("surname")
-                .fullName("the full name")
-                .title("mr")
-                .middleName("middle")
-                .surnameAtBirth("birth"))
-            .address(buildAddressDetail("client"))
-            .contacts(buildContactDetail("client"))
-            .disabilityMonitoring(new ClientDetailDetailsDisabilityMonitoring()
-                .addDisabilityTypeItem("item"))
-            .ethnicMonitoring("ethnic")
-            .noFixedAbode(Boolean.FALSE)
-            .personalInformation(new ClientPersonalDetail()
-                .countryOfOrigin("origin")
-                .dateOfBirth(new Date())
-                .gender("gender")
-                .highProfileClient(Boolean.FALSE)
-                .homeOfficeNumber("123")
-                .maritalStatus("status")
-                .mentalCapacityInd(Boolean.FALSE)
-                .nationalInsuranceNumber("nino")
-                .vexatiousLitigant(Boolean.FALSE)
-                .vulnerableClient(Boolean.FALSE))
-            .specialConsiderations("special"))
+        .details(
+            new ClientDetailDetails()
+                .name(
+                    new NameDetail()
+                        .firstName("firstname")
+                        .surname("surname")
+                        .fullName("the full name")
+                        .title("mr")
+                        .middleName("middle")
+                        .surnameAtBirth("birth"))
+                .address(buildAddressDetail("client"))
+                .contacts(buildContactDetail("client"))
+                .disabilityMonitoring(
+                    new ClientDetailDetailsDisabilityMonitoring().addDisabilityTypeItem("item"))
+                .ethnicMonitoring("ethnic")
+                .noFixedAbode(Boolean.FALSE)
+                .personalInformation(
+                    new ClientPersonalDetail()
+                        .countryOfOrigin("origin")
+                        .dateOfBirth(new Date())
+                        .gender("gender")
+                        .highProfileClient(Boolean.FALSE)
+                        .homeOfficeNumber("123")
+                        .maritalStatus("status")
+                        .mentalCapacityInd(Boolean.FALSE)
+                        .nationalInsuranceNumber("nino")
+                        .vexatiousLitigant(Boolean.FALSE)
+                        .vulnerableClient(Boolean.FALSE))
+                .specialConsiderations("special"))
         .recordHistory(new RecordHistory());
   }
 
   public static AwardTypeLookupDetail buildAwardTypeLookupDetail(CaseDetail soaCase) {
     return new AwardTypeLookupDetail()
-        .addContentItem(new AwardTypeLookupValueDetail()
-            .awardType(AWARD_TYPE_COST)
-            .code(soaCase.getAwards().getFirst().getAwardType()))
-        .addContentItem(new AwardTypeLookupValueDetail()
-            .awardType(AWARD_TYPE_FINANCIAL)
-            .code(soaCase.getAwards().get(1).getAwardType()))
-        .addContentItem(new AwardTypeLookupValueDetail()
-            .awardType(AWARD_TYPE_LAND)
-            .code(soaCase.getAwards().get(2).getAwardType()))
-        .addContentItem(new AwardTypeLookupValueDetail()
-            .awardType(AWARD_TYPE_OTHER_ASSET)
-            .code(soaCase.getAwards().get(3).getAwardType()));
+        .addContentItem(
+            new AwardTypeLookupValueDetail()
+                .awardType(AWARD_TYPE_COST)
+                .code(soaCase.getAwards().getFirst().getAwardType()))
+        .addContentItem(
+            new AwardTypeLookupValueDetail()
+                .awardType(AWARD_TYPE_FINANCIAL)
+                .code(soaCase.getAwards().get(1).getAwardType()))
+        .addContentItem(
+            new AwardTypeLookupValueDetail()
+                .awardType(AWARD_TYPE_LAND)
+                .code(soaCase.getAwards().get(2).getAwardType()))
+        .addContentItem(
+            new AwardTypeLookupValueDetail()
+                .awardType(AWARD_TYPE_OTHER_ASSET)
+                .code(soaCase.getAwards().get(3).getAwardType()));
   }
 
-  public static ContractDetail createContractDetail(String cat, Boolean createNewMatters,
-      Boolean remainderAuth) {
+  public static ContractDetail createContractDetail(
+      String cat, Boolean createNewMatters, Boolean remainderAuth) {
     return new ContractDetail()
         .categoryofLaw(cat)
         .subCategory("SUBCAT1")
@@ -615,6 +601,5 @@ public final class SoaModelUtils {
         .type("thetype");
   }
 
-  private SoaModelUtils() {
-  }
+  private SoaModelUtils() {}
 }

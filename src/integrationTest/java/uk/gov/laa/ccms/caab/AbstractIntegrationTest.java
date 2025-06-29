@@ -11,10 +11,7 @@ import uk.gov.laa.ccms.caab.config.SecurityConfiguration;
 @EnableAutoConfiguration(exclude = {Saml2RelyingPartyAutoConfiguration.class})
 public abstract class AbstractIntegrationTest {
 
-  @MockitoBean
-  private SecurityConfiguration securityConfiguration;
+  @MockitoBean private SecurityConfiguration securityConfiguration;
 
-  @MockitoBean
-  private PuiMetricService puiMetricService;
-
+  @MockitoBean private PuiMetricService puiMetricService;
 }

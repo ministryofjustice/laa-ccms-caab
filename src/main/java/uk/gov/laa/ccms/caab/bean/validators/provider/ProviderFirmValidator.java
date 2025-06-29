@@ -5,9 +5,7 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.provider.ProviderFirmFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
-/**
- * Validator component responsible for validating {@link ProviderFirmFormData} objects.
- */
+/** Validator component responsible for validating {@link ProviderFirmFormData} objects. */
 @Component
 public class ProviderFirmValidator extends AbstractValidator {
 
@@ -17,19 +15,16 @@ public class ProviderFirmValidator extends AbstractValidator {
   }
 
   /**
-   * Validates the details in
-   * {@link uk.gov.laa.ccms.caab.bean.provider.ProviderFirmFormData}.
+   * Validates the details in {@link uk.gov.laa.ccms.caab.bean.provider.ProviderFirmFormData}.
    *
    * @param target The object to be validated.
    * @param errors The Errors object to store validation errors.
    */
   @Override
   public void validate(final Object target, final Errors errors) {
-    final ProviderFirmFormData providerFirmFormData =
-        (ProviderFirmFormData) target;
+    final ProviderFirmFormData providerFirmFormData = (ProviderFirmFormData) target;
 
-    validateRequiredField("providerFirmId", providerFirmFormData.getProviderFirmId(),
-        "Provider firm", errors);
+    validateRequiredField(
+        "providerFirmId", providerFirmFormData.getProviderFirmId(), "Provider firm", errors);
   }
-
 }

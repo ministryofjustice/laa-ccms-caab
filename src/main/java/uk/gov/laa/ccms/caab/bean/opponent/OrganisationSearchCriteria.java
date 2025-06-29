@@ -8,33 +8,22 @@ import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 import lombok.Data;
 
-/**
- * Represents the criteria to search for an Organisation opponent.
- */
+/** Represents the criteria to search for an Organisation opponent. */
 @Data
 public class OrganisationSearchCriteria implements Serializable {
 
-  /**
-   * The name of the organisation.
-   */
+  /** The name of the organisation. */
   @Size(max = ORGANISATION_NAME_CHARACTER_SIZE)
   private String name;
 
-  /**
-   * The type of the organisation.
-   */
+  /** The type of the organisation. */
   private String type;
 
-  /**
-   * The organisation city.
-   */
+  /** The organisation city. */
   @Size(max = DEFAULT_CHARACTER_SIZE)
   private String city;
 
-  /**
-   * The organisation postcode.
-   */
+  /** The organisation postcode. */
   @Size(max = POSTCODE_CHARACTER_SIZE)
   private String postcode;
-
 }

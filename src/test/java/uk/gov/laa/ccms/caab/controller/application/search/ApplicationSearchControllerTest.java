@@ -56,29 +56,21 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @SpringJUnitConfig
 @WebAppConfiguration
 public class ApplicationSearchControllerTest {
-  @Mock
-  private CaseSearchCriteriaValidator validator;
+  @Mock private CaseSearchCriteriaValidator validator;
 
-  @Mock
-  private FeatureService featureService;
+  @Mock private FeatureService featureService;
 
-  @Mock
-  private ProviderService providerService;
+  @Mock private ProviderService providerService;
 
-  @Mock
-  private LookupService lookupService;
+  @Mock private LookupService lookupService;
 
-  @Mock
-  private ApplicationService applicationService;
+  @Mock private ApplicationService applicationService;
 
-  @Mock
-  private EbsApplicationMapper applicationMapper;
+  @Mock private EbsApplicationMapper applicationMapper;
 
-  @Mock
-  private SearchConstants searchConstants;
+  @Mock private SearchConstants searchConstants;
 
-  @InjectMocks
-  private ApplicationSearchController applicationSearchController;
+  @InjectMocks private ApplicationSearchController applicationSearchController;
 
   private MockMvcTester mockMvc;
 
@@ -86,10 +78,11 @@ public class ApplicationSearchControllerTest {
 
   @BeforeEach
   public void setup() {
-    mockMvc = MockMvcTester.create(MockMvcBuilders
-        .standaloneSetup(applicationSearchController)
-        .setControllerAdvice(new GlobalExceptionHandler())
-        .build());
+    mockMvc =
+        MockMvcTester.create(
+            MockMvcBuilders.standaloneSetup(applicationSearchController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build());
     this.user = ApplicationTestUtils.buildUser();
 
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(200);
@@ -102,16 +95,15 @@ public class ApplicationSearchControllerTest {
   public void getApplicationSearchPopulatesDropdowns() throws Exception {
     ProviderDetail providerDetail = new ProviderDetail();
     List<ContactDetail> feeEarners = ApplicationTestUtils.buildFeeEarners();
-    CaseStatusLookupDetail caseStatuses = new CaseStatusLookupDetail()
-        .addContentItem(new CaseStatusLookupValueDetail());
+    CaseStatusLookupDetail caseStatuses =
+        new CaseStatusLookupDetail().addContentItem(new CaseStatusLookupValueDetail());
 
     when(providerService.getProvider(user.getProvider().getId()))
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
     when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(caseStatuses));
 
-    assertThat(this.mockMvc.perform(get("/application/search")
-            .sessionAttr("user", user)))
+    assertThat(this.mockMvc.perform(get("/application/search").sessionAttr("user", user)))
         .hasStatusOk()
         .hasViewName("application/application-search")
         .model()
@@ -123,13 +115,10 @@ public class ApplicationSearchControllerTest {
   @Test
   @DisplayName("Application search handles missing lookup data")
   public void getApplicationSearchHandlesMissingLookupData() throws Exception {
-    when(providerService.getProvider(user.getProvider().getId()))
-        .thenReturn(Mono.empty());
-    when(lookupService.getCaseStatusValues())
-        .thenReturn(Mono.empty());
+    when(providerService.getProvider(user.getProvider().getId())).thenReturn(Mono.empty());
+    when(lookupService.getCaseStatusValues()).thenReturn(Mono.empty());
 
-    assertThat(this.mockMvc.perform(get("/application/search")
-            .sessionAttr(USER_DETAILS, user)))
+    assertThat(this.mockMvc.perform(get("/application/search").sessionAttr(USER_DETAILS, user)))
         .failure()
         .isInstanceOf(CaabApplicationException.class)
         .hasMessage("Failed to retrieve lookup data");
@@ -140,23 +129,27 @@ public class ApplicationSearchControllerTest {
   public void postApplicationSearchHandlesValidationFailure() throws Exception {
     ProviderDetail providerDetail = new ProviderDetail();
     List<ContactDetail> feeEarners = ApplicationTestUtils.buildFeeEarners();
-    CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail()
-        .addContentItem(new CaseStatusLookupValueDetail());
+    CaseStatusLookupDetail caseStatusLookupDetail =
+        new CaseStatusLookupDetail().addContentItem(new CaseStatusLookupValueDetail());
 
     when(providerService.getProvider(user.getProvider().getId()))
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
     when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(caseStatusLookupDetail));
 
-    doAnswer(invocation -> {
-      Errors errors = (Errors) invocation.getArguments()[1];
-      errors.rejectValue(null, "required.atLeastOneSearchCriteria",
-          "You must provide at least one search criteria below. Please amend your entry.");
-      return null;
-    }).when(validator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue(
+                  null,
+                  "required.atLeastOneSearchCriteria",
+                  "You must provide at least one search criteria below. Please amend your entry.");
+              return null;
+            })
+        .when(validator)
+        .validate(any(), any());
 
-    assertThat(this.mockMvc.perform(post("/application/search")
-            .sessionAttr(USER_DETAILS, user)))
+    assertThat(this.mockMvc.perform(post("/application/search").sessionAttr(USER_DETAILS, user)))
         .hasStatusOk()
         .hasViewName("application/application-search")
         .model()
@@ -173,9 +166,11 @@ public class ApplicationSearchControllerTest {
     when(applicationService.getCases(any(), any())).thenReturn(baseApplications);
 
     CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
-    assertThat(this.mockMvc.perform(post("/application/search")
-            .sessionAttr(USER_DETAILS, user)
-            .sessionAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria)))
+    assertThat(
+            this.mockMvc.perform(
+                post("/application/search")
+                    .sessionAttr(USER_DETAILS, user)
+                    .sessionAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria)))
         .hasStatusOk()
         .hasViewName("application/application-search-no-results");
 
@@ -183,14 +178,16 @@ public class ApplicationSearchControllerTest {
   }
 
   @Test
-  @DisplayName("Application search redirects to 'too many results' screen when result limit exceeded")
+  @DisplayName(
+      "Application search redirects to 'too many results' screen when result limit exceeded")
   public void postApplicationSearchWithTooManyResults() throws Exception {
-    when(applicationService.getCases(any(), any())).thenThrow(
-        new TooManyResultsException(""));
+    when(applicationService.getCases(any(), any())).thenThrow(new TooManyResultsException(""));
 
-    assertThat(this.mockMvc.perform(post("/application/search")
-            .sessionAttr(USER_DETAILS, user)
-            .sessionAttr(CASE_SEARCH_CRITERIA, new CaseSearchCriteria())))
+    assertThat(
+            this.mockMvc.perform(
+                post("/application/search")
+                    .sessionAttr(USER_DETAILS, user)
+                    .sessionAttr(CASE_SEARCH_CRITERIA, new CaseSearchCriteria())))
         .hasStatusOk()
         .hasViewName("application/application-search-too-many-results");
   }
@@ -220,9 +217,11 @@ public class ApplicationSearchControllerTest {
     caseSearchCriteria.setCaseReference(RandomStringUtils.insecure().nextAlphabetic(35));
     caseSearchCriteria.setProviderCaseReference(RandomStringUtils.insecure().nextAlphabetic(35));
 
-    assertThat(mockMvc.perform(post("/application/search")
-            .sessionAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria)
-            .sessionAttr(USER_DETAILS, user)))
+    assertThat(
+            mockMvc.perform(
+                post("/application/search")
+                    .sessionAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria)
+                    .sessionAttr(USER_DETAILS, user)))
         .hasStatusOk()
         .hasViewName("application/application-search-no-results");
   }
@@ -238,17 +237,19 @@ public class ApplicationSearchControllerTest {
 
     ProviderDetail providerDetail = new ProviderDetail();
     List<ContactDetail> feeEarners = ApplicationTestUtils.buildFeeEarners();
-    CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail()
-        .addContentItem(new CaseStatusLookupValueDetail());
+    CaseStatusLookupDetail caseStatusLookupDetail =
+        new CaseStatusLookupDetail().addContentItem(new CaseStatusLookupValueDetail());
 
     when(providerService.getProvider(user.getProvider().getId()))
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
     when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(caseStatusLookupDetail));
 
-    assertThat(mockMvc.perform(post("/application/search")
-            .sessionAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria)
-            .sessionAttr(USER_DETAILS, user)))
+    assertThat(
+            mockMvc.perform(
+                post("/application/search")
+                    .sessionAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria)
+                    .sessionAttr(USER_DETAILS, user)))
         .hasStatusOk()
         .hasViewName("application/application-search")
         .model()
@@ -262,18 +263,18 @@ public class ApplicationSearchControllerTest {
   @Test
   @DisplayName("Application search results are paginated")
   public void applicationSearchResultsPaginatesResults() throws Exception {
-    List<BaseApplicationDetail> caseSearchResults = List.of(
-        new BaseApplicationDetail(),
-        new BaseApplicationDetail());
+    List<BaseApplicationDetail> caseSearchResults =
+        List.of(new BaseApplicationDetail(), new BaseApplicationDetail());
 
-    when(applicationMapper.toApplicationDetails(any()))
-        .thenReturn(new ApplicationDetails());
+    when(applicationMapper.toApplicationDetails(any())).thenReturn(new ApplicationDetails());
 
-    assertThat(this.mockMvc.perform(get("/application/search/results")
-            .param("page", "0")
-            .param("size", "1")
-            .sessionAttr(USER_DETAILS, user)
-            .sessionAttr(CASE_SEARCH_RESULTS, caseSearchResults)))
+    assertThat(
+            this.mockMvc.perform(
+                get("/application/search/results")
+                    .param("page", "0")
+                    .param("size", "1")
+                    .sessionAttr(USER_DETAILS, user)
+                    .sessionAttr(CASE_SEARCH_RESULTS, caseSearchResults)))
         .hasStatusOk()
         .hasViewName("application/application-search-results")
         .model()
@@ -289,82 +290,95 @@ public class ApplicationSearchControllerTest {
     when(applicationService.getTdsApplications(any(), any(), any(), any()))
         .thenReturn(new ApplicationDetails().content(Collections.emptyList()));
 
-    assertThat(mockMvc.perform(get("/application/{case-reference-number}/view", caseReference)
-            .sessionAttr(USER_DETAILS, user)))
+    assertThat(
+            mockMvc.perform(
+                get("/application/{case-reference-number}/view", caseReference)
+                    .sessionAttr(USER_DETAILS, user)))
         .failure()
         .isInstanceOf(CaabApplicationException.class)
-        .hasMessage("Unable to find case in EBS or application in TDS with case reference " + caseReference);
+        .hasMessage(
+            "Unable to find case in EBS or application in TDS with case reference "
+                + caseReference);
   }
 
   @Test
-  @DisplayName("Selecting an application with unsubmitted status which is not under amendment"
-      + "redirects the user to the application sections screen")
-  public void selectApplicationWithUnsubmittedStatusRedirectsToCaseOverview()
-      throws Exception {
+  @DisplayName(
+      "Selecting an application with unsubmitted status which is not under amendment"
+          + "redirects the user to the application sections screen")
+  public void selectApplicationWithUnsubmittedStatusRedirectsToCaseOverview() throws Exception {
     final String selectedCaseRef = "1";
     final String appRef = "2";
 
     // TDS application
-    ApplicationDetails applicationDetails = new ApplicationDetails()
-        .addContentItem(new BaseApplicationDetail()
-            .id(Integer.parseInt(appRef))
-            .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
-            .caseReferenceNumber(selectedCaseRef));
+    ApplicationDetails applicationDetails =
+        new ApplicationDetails()
+            .addContentItem(
+                new BaseApplicationDetail()
+                    .id(Integer.parseInt(appRef))
+                    .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
+                    .caseReferenceNumber(selectedCaseRef));
 
     when(applicationService.getTdsApplications(any(), any(), any(), any()))
         .thenReturn(applicationDetails);
 
-    assertThat(mockMvc.perform(get("/application/{case-reference-number}/view", selectedCaseRef)
-            .sessionAttr(USER_DETAILS, user)))
+    assertThat(
+            mockMvc.perform(
+                get("/application/{case-reference-number}/view", selectedCaseRef)
+                    .sessionAttr(USER_DETAILS, user)))
         .hasStatus3xxRedirection()
         .hasRedirectedUrl("/application/sections")
-        .request().sessionAttributes()
-        .hasEntrySatisfying(APPLICATION_ID, value -> assertThat(value).isEqualTo(Integer.parseInt(appRef)));
+        .request()
+        .sessionAttributes()
+        .hasEntrySatisfying(
+            APPLICATION_ID, value -> assertThat(value).isEqualTo(Integer.parseInt(appRef)));
   }
 
   @Test
-  @DisplayName("Selecting an application with a status other than unsubmitted"
-      + "redirects the user to the case overview screen")
+  @DisplayName(
+      "Selecting an application with a status other than unsubmitted"
+          + "redirects the user to the case overview screen")
   public void selectApplicationWithOtherStatusRedirectsToCaseOverview() throws Exception {
     final String selectedCaseRef = "2";
     final String appRef = "3";
 
     // EBS Case
-    ApplicationDetail ebsCase = new ApplicationDetail()
-        .caseReferenceNumber(selectedCaseRef);
+    ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber(selectedCaseRef);
 
     when(applicationService.getCase(any(), any(Long.class), any())).thenReturn(ebsCase);
 
     // TDS application
-    BaseApplicationDetail tdsApplication = new BaseApplicationDetail()
-        .id(Integer.parseInt(appRef))
-        .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
-        .caseReferenceNumber(selectedCaseRef);
+    BaseApplicationDetail tdsApplication =
+        new BaseApplicationDetail()
+            .id(Integer.parseInt(appRef))
+            .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
+            .caseReferenceNumber(selectedCaseRef);
 
-    ApplicationDetails appDetails = new ApplicationDetails()
-        .addContentItem(tdsApplication);
+    ApplicationDetails appDetails = new ApplicationDetails().addContentItem(tdsApplication);
 
-    when(applicationService.getTdsApplications(any(), any(), any(), any()))
-        .thenReturn(appDetails);
+    when(applicationService.getTdsApplications(any(), any(), any(), any())).thenReturn(appDetails);
 
-    assertThat(mockMvc.perform(get("/application/{case-reference-number}/view", selectedCaseRef)
-            .sessionAttr(USER_DETAILS, user)))
+    assertThat(
+            mockMvc.perform(
+                get("/application/{case-reference-number}/view", selectedCaseRef)
+                    .sessionAttr(USER_DETAILS, user)))
         .hasStatus3xxRedirection()
         .hasRedirectedUrl("/case/overview")
-        .request().sessionAttributes()
+        .request()
+        .sessionAttributes()
         .hasEntrySatisfying(CASE, value -> assertThat(value).isEqualTo(ebsCase))
-        .hasEntrySatisfying(APPLICATION_SUMMARY, value -> assertThat(value).isEqualTo(tdsApplication));
+        .hasEntrySatisfying(
+            APPLICATION_SUMMARY, value -> assertThat(value).isEqualTo(tdsApplication));
   }
 
   @Test
-  @DisplayName("Selecting an application under amendment redirects"
-      + "the user to the case overview screen")
+  @DisplayName(
+      "Selecting an application under amendment redirects" + "the user to the case overview screen")
   public void selectApplicationAmendmentRedirectsToCaseOverview() throws Exception {
     final String selectedCaseRef = "2";
 
     // EBS Case
-    ApplicationDetail applicationDetail = new ApplicationDetail()
-        .caseReferenceNumber(selectedCaseRef);
+    ApplicationDetail applicationDetail =
+        new ApplicationDetail().caseReferenceNumber(selectedCaseRef);
 
     // No TDS applications
     when(applicationService.getTdsApplications(any(), any(), any(), any()))
@@ -372,11 +386,14 @@ public class ApplicationSearchControllerTest {
 
     when(applicationService.getCase(any(), any(Long.class), any())).thenReturn(applicationDetail);
 
-    assertThat(mockMvc.perform(get("/application/{case-reference-number}/view", selectedCaseRef)
-            .sessionAttr(USER_DETAILS, user)))
+    assertThat(
+            mockMvc.perform(
+                get("/application/{case-reference-number}/view", selectedCaseRef)
+                    .sessionAttr(USER_DETAILS, user)))
         .hasStatus3xxRedirection()
         .hasRedirectedUrl("/case/overview")
-        .request().sessionAttributes()
+        .request()
+        .sessionAttributes()
         .hasEntrySatisfying(CASE, value -> assertThat(value).isEqualTo(applicationDetail));
   }
 }

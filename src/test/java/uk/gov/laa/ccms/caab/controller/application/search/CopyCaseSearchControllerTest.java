@@ -61,30 +61,23 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ContextConfiguration
 @WebAppConfiguration
 public class CopyCaseSearchControllerTest {
-  @Mock
-  private CaseSearchCriteriaValidator validator;
+  @Mock private CaseSearchCriteriaValidator validator;
 
-  @Mock
-  private ProviderService providerService;
+  @Mock private ProviderService providerService;
 
-  @Mock
-  private ApplicationService applicationService;
+  @Mock private ApplicationService applicationService;
 
-  @Mock
-  private EbsApplicationMapper applicationMapper;
+  @Mock private EbsApplicationMapper applicationMapper;
 
-  @Mock
-  private SearchConstants searchConstants;
+  @Mock private SearchConstants searchConstants;
 
-  @InjectMocks
-  private CopyCaseSearchController copyCaseSearchController;
+  @InjectMocks private CopyCaseSearchController copyCaseSearchController;
 
   private MockMvc mockMvc;
 
   private UserDetail user;
 
-  @Autowired
-  private WebApplicationContext webApplicationContext;
+  @Autowired private WebApplicationContext webApplicationContext;
 
   @BeforeEach
   public void setup() {
@@ -103,8 +96,8 @@ public class CopyCaseSearchControllerTest {
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
 
-    this.mockMvc.perform(get("/application/copy-case/search")
-            .sessionAttr("user", user))
+    this.mockMvc
+        .perform(get("/application/copy-case/search").sessionAttr("user", user))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-copy-case-search"))
@@ -114,15 +107,19 @@ public class CopyCaseSearchControllerTest {
 
   @Test
   public void testGetCopyCaseSearchNoFeeEarners() {
-    when(providerService.getProvider(user.getProvider().getId()))
-        .thenReturn(Mono.empty());
+    when(providerService.getProvider(user.getProvider().getId())).thenReturn(Mono.empty());
 
-    Exception exception = assertThrows(Exception.class, () ->
-        this.mockMvc.perform(get("/application/copy-case/search")
-            .sessionAttr(USER_DETAILS, user)));
+    Exception exception =
+        assertThrows(
+            Exception.class,
+            () ->
+                this.mockMvc.perform(
+                    get("/application/copy-case/search").sessionAttr(USER_DETAILS, user)));
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
-    assertEquals("Failed to retrieve Provider with id: %s".formatted(user.getProvider().getId()), exception.getCause().getMessage());
+    assertEquals(
+        "Failed to retrieve Provider with id: %s".formatted(user.getProvider().getId()),
+        exception.getCause().getMessage());
   }
 
   @Test
@@ -134,15 +131,20 @@ public class CopyCaseSearchControllerTest {
         .thenReturn(Mono.just(providerDetail));
     when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
 
-    doAnswer(invocation -> {
-      Errors errors = (Errors) invocation.getArguments()[1];
-      errors.rejectValue(null, "required.atLeastOneSearchCriteria",
-          "You must provide at least one search criteria below. Please amend your entry.");
-      return null;
-    }).when(validator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue(
+                  null,
+                  "required.atLeastOneSearchCriteria",
+                  "You must provide at least one search criteria below. Please amend your entry.");
+              return null;
+            })
+        .when(validator)
+        .validate(any(), any());
 
-    this.mockMvc.perform(post("/application/copy-case/search")
-            .sessionAttr(USER_DETAILS, user))
+    this.mockMvc
+        .perform(post("/application/copy-case/search").sessionAttr(USER_DETAILS, user))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-copy-case-search"))
@@ -157,9 +159,11 @@ public class CopyCaseSearchControllerTest {
     when(applicationService.getCases(any(), any())).thenReturn(baseApplications);
 
     CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
-    this.mockMvc.perform(post("/application/copy-case/search")
-            .sessionAttr(USER_DETAILS, user)
-            .sessionAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
+    this.mockMvc
+        .perform(
+            post("/application/copy-case/search")
+                .sessionAttr(USER_DETAILS, user)
+                .sessionAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-copy-case-search-no-results"));
@@ -177,13 +181,15 @@ public class CopyCaseSearchControllerTest {
     when(applicationService.getCases(any(), any())).thenReturn(baseApplications);
 
     String copyStatusCode = "APP";
-    when(applicationService.getCopyCaseStatus()).thenReturn(
-        new CaseStatusLookupValueDetail().code(copyStatusCode));
+    when(applicationService.getCopyCaseStatus())
+        .thenReturn(new CaseStatusLookupValueDetail().code(copyStatusCode));
 
     CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
-    this.mockMvc.perform(post("/application/copy-case/search")
-            .sessionAttr(USER_DETAILS, user)
-            .sessionAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
+    this.mockMvc
+        .perform(
+            post("/application/copy-case/search")
+                .sessionAttr(USER_DETAILS, user)
+                .sessionAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-copy-case-search-no-results"));
 
@@ -194,15 +200,15 @@ public class CopyCaseSearchControllerTest {
 
   @Test
   public void testPostCopyCaseSearch_WithTooManyResults() throws Exception {
-    when(applicationService.getCases(any(), any())).thenThrow(
-        new TooManyResultsException(""));
+    when(applicationService.getCases(any(), any())).thenThrow(new TooManyResultsException(""));
 
-    this.mockMvc.perform(post("/application/copy-case/search")
-            .sessionAttr(USER_DETAILS, user)
-            .sessionAttr(CASE_SEARCH_CRITERIA, new CaseSearchCriteria()))
+    this.mockMvc
+        .perform(
+            post("/application/copy-case/search")
+                .sessionAttr(USER_DETAILS, user)
+                .sessionAttr(CASE_SEARCH_CRITERIA, new CaseSearchCriteria()))
         .andExpect(status().isOk())
-        .andExpect(view().name(
-            "application/application-copy-case-search-too-many-results"));
+        .andExpect(view().name("application/application-copy-case-search-too-many-results"));
   }
 
   @Test
@@ -211,40 +217,45 @@ public class CopyCaseSearchControllerTest {
 
     when(applicationService.getCases(any(), any())).thenReturn(caseSearchResults);
 
-    this.mockMvc.perform(post("/application/copy-case/search")
-            .sessionAttr(USER_DETAILS, user)
-            .sessionAttr(CASE_SEARCH_CRITERIA, new CaseSearchCriteria()))
+    this.mockMvc
+        .perform(
+            post("/application/copy-case/search")
+                .sessionAttr(USER_DETAILS, user)
+                .sessionAttr(CASE_SEARCH_CRITERIA, new CaseSearchCriteria()))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/copy-case/results"));
   }
 
   @Test
   public void testGetCopyCaseSearchResults_PaginatesResults() throws Exception {
-    List<BaseApplicationDetail> caseSearchResults = List.of(
-        new BaseApplicationDetail(),
-        new BaseApplicationDetail());
+    List<BaseApplicationDetail> caseSearchResults =
+        List.of(new BaseApplicationDetail(), new BaseApplicationDetail());
 
-    when(applicationMapper.toApplicationDetails(any()))
-        .thenReturn(new ApplicationDetails());
+    when(applicationMapper.toApplicationDetails(any())).thenReturn(new ApplicationDetails());
 
-    this.mockMvc.perform(get("/application/copy-case/results")
-            .param("page", "0")
-            .param("size", "1")
-            .sessionAttr(USER_DETAILS, user)
-            .sessionAttr(CASE_SEARCH_RESULTS, caseSearchResults))
+    this.mockMvc
+        .perform(
+            get("/application/copy-case/results")
+                .param("page", "0")
+                .param("size", "1")
+                .sessionAttr(USER_DETAILS, user)
+                .sessionAttr(CASE_SEARCH_RESULTS, caseSearchResults))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-copy-case-search-results"))
         .andExpect(model().attributeExists(CopyCaseSearchController.CASE_RESULTS_PAGE));
   }
 
-
   @Test
   public void testSelectCopyCaseReferenceNumber_InvalidCaseRef() {
-    Exception exception = assertThrows(ServletException.class, () ->
-        this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm", "123")
-            .sessionAttr(CASE_SEARCH_RESULTS, new ArrayList<BaseApplicationDetail>())
-            .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())));
+    Exception exception =
+        assertThrows(
+            ServletException.class,
+            () ->
+                this.mockMvc.perform(
+                    get("/application/copy-case/{caseRef}/confirm", "123")
+                        .sessionAttr(CASE_SEARCH_RESULTS, new ArrayList<BaseApplicationDetail>())
+                        .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())));
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
 
@@ -260,9 +271,11 @@ public class CopyCaseSearchControllerTest {
         List.of(new BaseApplicationDetail().caseReferenceNumber("123"));
 
     ApplicationFormData applicationFormData = new ApplicationFormData();
-    this.mockMvc.perform(get("/application/copy-case/{caseRef}/confirm", "123")
-            .sessionAttr(CASE_SEARCH_RESULTS, caseSearchResults)
-            .sessionAttr(APPLICATION_FORM_DATA, applicationFormData))
+    this.mockMvc
+        .perform(
+            get("/application/copy-case/{caseRef}/confirm", "123")
+                .sessionAttr(CASE_SEARCH_RESULTS, caseSearchResults)
+                .sessionAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/client/search"));
 
@@ -281,22 +294,14 @@ public class CopyCaseSearchControllerTest {
     return new BaseProvider()
         .id(123)
         .name("provider1")
-        .addOfficesItem(new BaseOffice()
-            .id(10)
-            .name("Office 1"))
-        .addOfficesItem(new BaseOffice()
-            .id(11)
-            .name("Office 2"));
+        .addOfficesItem(new BaseOffice().id(10).name("Office 1"))
+        .addOfficesItem(new BaseOffice().id(11).name("Office 2"));
   }
 
   private List<ContactDetail> buildFeeEarners() {
     List<ContactDetail> feeEarners = new ArrayList<>();
-    feeEarners.add(new ContactDetail()
-            .id(1)
-            .name("FeeEarner1"));
-    feeEarners.add(new ContactDetail()
-            .id(2)
-            .name("FeeEarner2"));
+    feeEarners.add(new ContactDetail().id(1).name("FeeEarner1"));
+    feeEarners.add(new ContactDetail().id(2).name("FeeEarner2"));
     return feeEarners;
   }
 }

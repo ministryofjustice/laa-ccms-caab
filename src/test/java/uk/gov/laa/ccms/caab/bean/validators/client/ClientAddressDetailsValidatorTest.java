@@ -21,11 +21,9 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 @ExtendWith(SpringExtension.class)
 class ClientAddressDetailsValidatorTest {
 
-  @InjectMocks
-  private ClientAddressDetailsValidator clientAddressDetailsValidator;
+  @InjectMocks private ClientAddressDetailsValidator clientAddressDetailsValidator;
 
-  @Mock
-  private ClientFormDataAddressDetails addressDetails;
+  @Mock private ClientFormDataAddressDetails addressDetails;
 
   private Errors errors;
 
@@ -53,14 +51,14 @@ class ClientAddressDetailsValidatorTest {
 
   @ParameterizedTest
   @CsvSource({
-      "country, test, 1",
-      "country, GBR, 1",
-      "houseNameNumber, test, 1",
-      "postcode, SW1A 1AA, 1",
-      "addressLine1, test, 1",
-      "addressLine2, test, 1",
-      "cityTown, test, 1",
-      "county, test, 1"
+    "country, test, 1",
+    "country, GBR, 1",
+    "houseNameNumber, test, 1",
+    "postcode, SW1A 1AA, 1",
+    "addressLine1, test, 1",
+    "addressLine2, test, 1",
+    "cityTown, test, 1",
+    "county, test, 1"
   })
   public void validate_noFixedAbode_invalid(String field, String value, int numberOfErrors) {
     addressDetails = new ClientFormDataAddressDetails();
@@ -146,10 +144,7 @@ class ClientAddressDetailsValidatorTest {
   }
 
   @ParameterizedTest
-  @CsvSource({
-      "USA",
-      "GBR"
-  })
+  @CsvSource({"USA", "GBR"})
   public void validate_validatePostcodeFormat(String country) {
     addressDetails.setCountry(country);
     addressDetails.setPostcode("@@@@@@");
@@ -174,8 +169,8 @@ class ClientAddressDetailsValidatorTest {
 
   @ParameterizedTest
   @CsvSource({
-      "12  The  Street",//Double Spaces
-      "12@The :Street"//Invalid Characters
+    "12  The  Street", // Double Spaces
+    "12@The :Street" // Invalid Characters
   })
   void validate_InvalidAddressLine1Format(String addressLine1) {
     addressDetails.setAddressLine1(addressLine1);
@@ -186,8 +181,8 @@ class ClientAddressDetailsValidatorTest {
 
   @ParameterizedTest
   @CsvSource({
-      "12  The  Street",//Double Spaces
-      "12@The :Street"//Invalid Characters
+    "12  The  Street", // Double Spaces
+    "12@The :Street" // Invalid Characters
   })
   void validate_InvalidAddressLine2Format(String addressLine2) {
     addressDetails.setAddressLine2(addressLine2);
@@ -198,8 +193,8 @@ class ClientAddressDetailsValidatorTest {
 
   @ParameterizedTest
   @CsvSource({
-      "South  Cardiff",//Double Spaces
-      "North:@Swansea;"//Invalid Characters
+    "South  Cardiff", // Double Spaces
+    "North:@Swansea;" // Invalid Characters
   })
   void validate_InvalidCityTownFormat(String cityTown) {
     addressDetails.setCityTown(cityTown);
@@ -210,8 +205,8 @@ class ClientAddressDetailsValidatorTest {
 
   @ParameterizedTest
   @CsvSource({
-      "Vale  of  Glamorgan",//Double Spaces
-      "Vale;of@Glamorgan:"//Invalid Characters
+    "Vale  of  Glamorgan", // Double Spaces
+    "Vale;of@Glamorgan:" // Invalid Characters
   })
   void validate_InvalidCountyFormat(String county) {
     addressDetails.setCounty(county);

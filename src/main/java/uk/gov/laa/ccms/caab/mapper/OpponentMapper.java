@@ -12,9 +12,7 @@ import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 
-/**
- * Mapper class to convert Opponents between various formats.
- */
+/** Mapper class to convert Opponents between various formats. */
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface OpponentMapper {
 
@@ -36,8 +34,8 @@ public interface OpponentMapper {
   @Mapping(target = "emailAddress", source = "organisation.contactDetails.emailAddress")
   @Mapping(target = "shared", constant = "true")
   @Mapping(target = "type", ignore = true)
-  OrganisationOpponentFormData toOrganisationOpponentFormData(OrganisationDetail organisation,
-      CommonLookupValueDetail orgTypeLookup);
+  OrganisationOpponentFormData toOrganisationOpponentFormData(
+      OrganisationDetail organisation, CommonLookupValueDetail orgTypeLookup);
 
   @Mapping(target = "id", source = "opponent.id")
   @Mapping(target = ".", source = "opponent")
@@ -75,7 +73,6 @@ public interface OpponentMapper {
       final String relationshipToClientDisplayValue,
       final boolean editable);
 
-
   /**
    * Convert an opponent to its form data version, depending on opponent type.
    *
@@ -96,10 +93,18 @@ public interface OpponentMapper {
       final boolean editable) {
     return OPPONENT_TYPE_ORGANISATION.equals(opponent.getType())
         ? toOrganisationOpponentFormData(
-        opponent, partyName, organisationTypeDisplayValue, relationshipToCaseDisplayValue,
-        relationshipToClientDisplayValue, editable)
-        : toIndividualOpponentFormData(opponent, partyName, relationshipToCaseDisplayValue,
-            relationshipToClientDisplayValue, editable);
+            opponent,
+            partyName,
+            organisationTypeDisplayValue,
+            relationshipToCaseDisplayValue,
+            relationshipToClientDisplayValue,
+            editable)
+        : toIndividualOpponentFormData(
+            opponent,
+            partyName,
+            relationshipToCaseDisplayValue,
+            relationshipToClientDisplayValue,
+            editable);
   }
 
   @Mapping(target = "type", source = "type", defaultValue = "Organisation")
@@ -148,12 +153,9 @@ public interface OpponentMapper {
    * @param opponentFormData - the opponent form data.
    * @return mapped OpponentDetail.
    */
-  default OpponentDetail toOpponent(
-      final AbstractOpponentFormData opponentFormData) {
+  default OpponentDetail toOpponent(final AbstractOpponentFormData opponentFormData) {
     return opponentFormData instanceof OrganisationOpponentFormData formData
         ? toOrganisationOpponent(formData)
         : toIndividualOpponent((IndividualOpponentFormData) opponentFormData);
   }
-
-
 }

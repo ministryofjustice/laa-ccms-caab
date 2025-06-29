@@ -22,17 +22,15 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 public class CaabApiClientIntegrationTest extends AbstractIntegrationTest {
 
   @RegisterExtension
-  protected static WireMockExtension wiremock = WireMockExtension.newInstance()
-      .options(wireMockConfig().dynamicPort())
-      .build();
+  protected static WireMockExtension wiremock =
+      WireMockExtension.newInstance().options(wireMockConfig().dynamicPort()).build();
 
   @DynamicPropertySource
   public static void properties(DynamicPropertyRegistry registry) {
     registry.add("laa.ccms.caab-api.port", wiremock::getPort);
   }
 
-  @Autowired
-  private CaabApiClient caabApiClient;
+  @Autowired private CaabApiClient caabApiClient;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -43,11 +41,11 @@ public class CaabApiClientIntegrationTest extends AbstractIntegrationTest {
         new ApplicationDetail(); // Populate this object with appropriate test data
     String applicationDetailJson = objectMapper.writeValueAsString(applicationDetail);
 
-    wiremock.stubFor(post("/applications")
-        .withHeader("Caab-User-Login-Id", equalTo(loginId))
-        .withRequestBody(equalToJson(applicationDetailJson))
-        .willReturn(ok()
-            .withHeader("Location", "https://laa-ccms-caab-api/applications/123")));
+    wiremock.stubFor(
+        post("/applications")
+            .withHeader("Caab-User-Login-Id", equalTo(loginId))
+            .withRequestBody(equalToJson(applicationDetailJson))
+            .willReturn(ok().withHeader("Location", "https://laa-ccms-caab-api/applications/123")));
 
     Mono<String> responseMono = caabApiClient.createApplication(loginId, applicationDetail);
     responseMono.block();

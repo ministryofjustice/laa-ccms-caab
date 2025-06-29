@@ -18,5 +18,4 @@ public class OrganisationOrganisationDetailsSectionDisplay {
   private String organisationType;
   private String relationshipToCase;
   private String relationshipToClient;
-
 }

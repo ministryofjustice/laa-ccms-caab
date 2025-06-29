@@ -5,9 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/**
- * Configuration properties for the S3 Document Bucket.
- */
+/** Configuration properties for the S3 Document Bucket. */
 @Getter
 @Setter
 @AllArgsConstructor
@@ -17,5 +15,4 @@ public class S3DocumentBucketProperties {
   private final String name;
 
   private final Long urlDuration;
-
 }

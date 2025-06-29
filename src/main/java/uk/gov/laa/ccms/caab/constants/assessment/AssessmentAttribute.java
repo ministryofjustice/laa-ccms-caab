@@ -5,13 +5,13 @@ import lombok.Getter;
 /**
  * Defines the attributes associated with an assessment.
  *
- * <p>These attributes listed are the ones mapped from application data into the assessment,
- * not the ones mapped from the assessment to the application.</p>
+ * <p>These attributes listed are the ones mapped from application data into the assessment, not the
+ * ones mapped from the assessment to the application.
  */
 @Getter
 public enum AssessmentAttribute {
 
-  //proceedings
+  // proceedings
   CLIENT_INVOLVEMENT_TYPE("text", true, true),
   LEAD_PROCEEDING("boolean", true, true),
   LEVEL_OF_SERVICE("text", true, true),
@@ -23,7 +23,7 @@ public enum AssessmentAttribute {
   REQUESTED_SCOPE("text", true, true),
   SCOPE_LIMIT_IS_DEFAULT("boolean", true, true),
 
-  //opponents
+  // opponents
   OPPONENT_DOB("date", true, true),
   OTHER_PARTY_ID("text", true, true),
   OTHER_PARTY_NAME("text", true, true),
@@ -31,7 +31,7 @@ public enum AssessmentAttribute {
   RELATIONSHIP_TO_CASE("text", true, true),
   RELATIONSHIP_TO_CLIENT("text", true, true),
 
-  //global
+  // global
   APPLICATION_CASE_REF("text", true, true),
   APP_AMEND_TYPE("text", true, true),
   CATEGORY_OF_LAW("text", true, true),
@@ -65,7 +65,6 @@ public enum AssessmentAttribute {
   USER_PROVIDER_FIRM_ID("number", true, true),
   USER_TYPE("text", true, true);
 
-
   private final String type;
   private final boolean prepopulated;
   private final boolean asked;
@@ -77,10 +76,7 @@ public enum AssessmentAttribute {
    * @param prepopulated whether the attribute is prepopulated
    * @param asked whether the attribute is asked
    */
-  AssessmentAttribute(
-      final String type,
-      final boolean prepopulated,
-      final boolean asked) {
+  AssessmentAttribute(final String type, final boolean prepopulated, final boolean asked) {
     this.type = type;
     this.prepopulated = prepopulated;
     this.asked = asked;

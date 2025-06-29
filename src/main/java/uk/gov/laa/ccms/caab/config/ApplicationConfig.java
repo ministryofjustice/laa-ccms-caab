@@ -22,12 +22,14 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import uk.gov.laa.ccms.caab.util.UserRoleUtil;
 
-/**
- * Configuration class for creating WebClient instances used for making HTTP requests.
- */
+/** Configuration class for creating WebClient instances used for making HTTP requests. */
 @Configuration
-@EnableConfigurationProperties({AssessmentApiProperties.class, CaabApiProperties.class,
-    EbsApiProperties.class, SoaApiProperties.class})
+@EnableConfigurationProperties({
+  AssessmentApiProperties.class,
+  CaabApiProperties.class,
+  EbsApiProperties.class,
+  SoaApiProperties.class
+})
 public class ApplicationConfig implements WebMvcConfigurer {
 
   private final EbsApiProperties ebsApiProperties;
@@ -47,7 +49,6 @@ public class ApplicationConfig implements WebMvcConfigurer {
   private final Integer avApiTimeout;
 
   private final LoggingInterceptor loggingInterceptor;
-
 
   @Override
   public void addInterceptors(InterceptorRegistry registry) {
@@ -71,21 +72,22 @@ public class ApplicationConfig implements WebMvcConfigurer {
   /**
    * Constructs the ApplicationConfig instance with API URLs.
    *
-   * @param ebsApiProperties        The connection details for the data API.
-   * @param soaApiProperties        The connection details for the SOA Gateway API.
-   * @param caabApiProperties       The connection details for the CAAB API.
-   * @param osApiUrl                The URL of the ordinance survey API.
-   * @param loggingInterceptor      A logging interceptor for the caab.
+   * @param ebsApiProperties The connection details for the data API.
+   * @param soaApiProperties The connection details for the SOA Gateway API.
+   * @param caabApiProperties The connection details for the CAAB API.
+   * @param osApiUrl The URL of the ordinance survey API.
+   * @param loggingInterceptor A logging interceptor for the caab.
    */
-  public ApplicationConfig(final EbsApiProperties ebsApiProperties,
-                           final SoaApiProperties soaApiProperties,
-                           final CaabApiProperties caabApiProperties,
-                           final AssessmentApiProperties assessmentApiProperties,
-                           @Value("${os.api.url}") final String osApiUrl,
-                           @Value("${av.api.hostname}") final String avApiHostName,
-                           @Value("${av.api.port}") final Integer avApiPort,
-                           @Value("${av.api.timeout}") final Integer avApiTimeout,
-                           final LoggingInterceptor loggingInterceptor) {
+  public ApplicationConfig(
+      final EbsApiProperties ebsApiProperties,
+      final SoaApiProperties soaApiProperties,
+      final CaabApiProperties caabApiProperties,
+      final AssessmentApiProperties assessmentApiProperties,
+      @Value("${os.api.url}") final String osApiUrl,
+      @Value("${av.api.hostname}") final String avApiHostName,
+      @Value("${av.api.port}") final Integer avApiPort,
+      @Value("${av.api.timeout}") final Integer avApiTimeout,
+      final LoggingInterceptor loggingInterceptor) {
     this.ebsApiProperties = ebsApiProperties;
     this.soaApiProperties = soaApiProperties;
     this.caabApiProperties = caabApiProperties;
@@ -198,14 +200,14 @@ public class ApplicationConfig implements WebMvcConfigurer {
 
   private WebClient createWebClient(final ApiProperties apiProperties, WebClient.Builder builder) {
     final int size = 16 * 1024 * 1024;
-    final ExchangeStrategies strategies = ExchangeStrategies.builder()
-        .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(size))
-        .build();
+    final ExchangeStrategies strategies =
+        ExchangeStrategies.builder()
+            .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(size))
+            .build();
     return builder
         .baseUrl(apiProperties.getUrl())
         .defaultHeader(HttpHeaders.AUTHORIZATION, apiProperties.getAccessToken())
         .exchangeStrategies(strategies)
         .build();
   }
-
 }

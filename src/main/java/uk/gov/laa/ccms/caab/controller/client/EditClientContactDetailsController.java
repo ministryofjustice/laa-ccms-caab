@@ -24,9 +24,7 @@ import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.service.LookupService;
 
-/**
- * Controller for handling edits to client basic details during the application summary process.
- */
+/** Controller for handling edits to client basic details during the application summary process. */
 @Controller
 @Slf4j
 @RequiredArgsConstructor
@@ -89,9 +87,8 @@ public class EditClientContactDetailsController {
     if (bindingResult.hasErrors()) {
       populateDropdowns(model);
       // Extract global error codes for checkboxes to show error messages
-      List<String> globalErrorCodes = bindingResult.getGlobalErrors().stream()
-          .map(ObjectError::getCode)
-          .toList();
+      List<String> globalErrorCodes =
+          bindingResult.getGlobalErrors().stream().map(ObjectError::getCode).toList();
       model.addAttribute("globalErrorCodes", globalErrorCodes);
       return "application/sections/client-contact-details";
     }
@@ -111,11 +108,12 @@ public class EditClientContactDetailsController {
     DropdownBuilder builder = new DropdownBuilder(model);
 
     builder
-        .addDropdown("correspondenceMethods",
+        .addDropdown(
+            "correspondenceMethods",
             lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD))
-        .addDropdown("correspondenceLanguages",
+        .addDropdown(
+            "correspondenceLanguages",
             lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE))
         .build();
   }
-
 }

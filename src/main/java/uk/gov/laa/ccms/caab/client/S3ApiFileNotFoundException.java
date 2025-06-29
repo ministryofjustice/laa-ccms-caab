@@ -1,8 +1,6 @@
 package uk.gov.laa.ccms.caab.client;
 
-/**
- * Custom exception class to indicate that the requested file was not found in S3.
- */
+/** Custom exception class to indicate that the requested file was not found in S3. */
 public class S3ApiFileNotFoundException extends RuntimeException {
 
   /**
@@ -23,5 +21,4 @@ public class S3ApiFileNotFoundException extends RuntimeException {
   public S3ApiFileNotFoundException(final String message, final Throwable cause) {
     super(message, cause);
   }
-
 }

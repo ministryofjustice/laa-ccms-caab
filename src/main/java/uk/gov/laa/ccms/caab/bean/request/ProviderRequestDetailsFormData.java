@@ -10,8 +10,8 @@ import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
 import uk.gov.laa.ccms.caab.bean.file.FileUploadFormData;
 
 /**
- * Represents the form data for provider request details, including file upload options,
- * dynamic options, and additional information.
+ * Represents the form data for provider request details, including file upload options, dynamic
+ * options, and additional information.
  */
 @Data
 @Slf4j
@@ -38,5 +38,4 @@ public class ProviderRequestDetailsFormData extends FileUploadFormData {
     super();
     this.documentSessionId = UUID.randomUUID();
   }
-
 }

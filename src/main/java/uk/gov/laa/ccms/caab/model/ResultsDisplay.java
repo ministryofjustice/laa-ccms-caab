@@ -31,5 +31,4 @@ public class ResultsDisplay<T> {
   public ResultsDisplay(List<T> content) {
     this.content = content;
   }
-
 }

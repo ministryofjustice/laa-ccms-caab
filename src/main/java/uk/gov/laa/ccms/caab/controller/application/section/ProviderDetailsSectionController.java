@@ -31,9 +31,7 @@ import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
-/**
- * Controller for the application's provider details section.
- */
+/** Controller for the application's provider details section. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -57,7 +55,7 @@ public class ProviderDetailsSectionController {
    */
   @GetMapping("/{caseContext}/sections/provider-details")
   public String applicationSummaryProviderDetails(
-      @SessionAttribute(value = APPLICATION_ID, required = false)  String applicationId,
+      @SessionAttribute(value = APPLICATION_ID, required = false) String applicationId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       @PathVariable final CaseContext caseContext,
@@ -66,21 +64,18 @@ public class ProviderDetailsSectionController {
     if (caseContext.isAmendment()) {
       ApplicationFormData applicationFormData = new ApplicationFormData();
       applicationFormData.setCopyCaseReferenceNumber(activeCase.getCaseReferenceNumber());
-      ClientDetail clientDetail = clientService.getClient(
-              activeCase.getClientReferenceNumber(),
-              user.getLoginId(),
-              user.getUserType()
-      ).block();
+      ClientDetail clientDetail =
+          clientService
+              .getClient(
+                  activeCase.getClientReferenceNumber(), user.getLoginId(), user.getUserType())
+              .block();
 
-      applicationId = applicationService.createApplication(
-              applicationFormData,
-              clientDetail,
-              user
-              ).block();
+      applicationId =
+          applicationService.createApplication(applicationFormData, clientDetail, user).block();
     }
 
     ApplicationFormData applicationFormData =
-            applicationService.getProviderDetailsFormData(applicationId);
+        applicationService.getProviderDetailsFormData(applicationId);
 
     populateDropdowns(applicationFormData, user, model);
     model.addAttribute(ACTIVE_CASE, activeCase);
@@ -98,7 +93,7 @@ public class ProviderDetailsSectionController {
    * @param bindingResult Validation result for the delegated functions form.
    * @param model The model for the view.
    * @return The path to the next step in the application summary edit or the current page based on
-   *         validation.
+   *     validation.
    */
   @PostMapping("/{caseContext}/sections/provider-details")
   public String applicationSummaryProviderDetails(
@@ -132,26 +127,25 @@ public class ProviderDetailsSectionController {
    * @param model The model for the view.
    */
   protected void populateDropdowns(
-      ApplicationFormData applicationFormData,
-      UserDetail user,
-      Model model) {
+      ApplicationFormData applicationFormData, UserDetail user, Model model) {
 
-    ProviderDetail provider = Optional.ofNullable(user.getProvider())
-        .map(providerData -> providerService.getProvider(providerData.getId()).block())
-        .orElse(null);
+    ProviderDetail provider =
+        Optional.ofNullable(user.getProvider())
+            .map(providerData -> providerService.getProvider(providerData.getId()).block())
+            .orElse(null);
 
-    List<ContactDetail> feeEarners = Optional.ofNullable(provider)
-        .map(p -> providerService.getFeeEarnersByOffice(p, applicationFormData.getOfficeId()))
-        .orElse(Collections.emptyList());
+    List<ContactDetail> feeEarners =
+        Optional.ofNullable(provider)
+            .map(p -> providerService.getFeeEarnersByOffice(p, applicationFormData.getOfficeId()))
+            .orElse(Collections.emptyList());
 
-    List<ContactDetail> contactNames = Optional.ofNullable(provider)
-        .map(ProviderDetail::getContactNames)
-        .orElse(Collections.emptyList());
+    List<ContactDetail> contactNames =
+        Optional.ofNullable(provider)
+            .map(ProviderDetail::getContactNames)
+            .orElse(Collections.emptyList());
 
     model.addAttribute("feeEarners", feeEarners);
     model.addAttribute("contactNames", contactNames);
     model.addAttribute(APPLICATION_FORM_DATA, applicationFormData);
-
   }
-
 }

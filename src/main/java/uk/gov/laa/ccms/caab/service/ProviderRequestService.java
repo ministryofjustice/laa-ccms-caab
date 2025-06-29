@@ -12,9 +12,7 @@ import uk.gov.laa.ccms.caab.mapper.context.ProviderRequestMappingContext;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestDetail;
 
-/**
- * Service class to handle Provider requests.
- */
+/** Service class to handle Provider requests. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -23,7 +21,6 @@ public class ProviderRequestService {
   private final SoaApiClient soaApiClient;
 
   private final ProviderRequestsMapper mapper;
-
 
   /**
    * Submits a provider request based on the given form data and user details.
@@ -40,26 +37,25 @@ public class ProviderRequestService {
       final UserDetail user) {
     log.info("POST /provider-requests");
 
-    final ProviderRequestMappingContext mappingContext = ProviderRequestMappingContext.builder()
-        .user(user)
-        .typeData(providerRequestTypeFormData)
-        .detailsData(providerRequestDetailsFormData)
-        .build();
+    final ProviderRequestMappingContext mappingContext =
+        ProviderRequestMappingContext.builder()
+            .user(user)
+            .typeData(providerRequestTypeFormData)
+            .detailsData(providerRequestDetailsFormData)
+            .build();
 
     final ProviderRequestDetail providerRequestDetail =
         mapper.toProviderRequestDetail(mappingContext);
 
     try {
-      return soaApiClient.submitProviderRequest(
-          providerRequestDetail,
-          user.getLoginId(),
-          user.getUserType()).block().getNotificationId();
+      return soaApiClient
+          .submitProviderRequest(providerRequestDetail, user.getLoginId(), user.getUserType())
+          .block()
+          .getNotificationId();
 
     } catch (final Exception e) {
       log.error("ProviderRequestService caught exception", e);
       throw new CaabApplicationException("Failed to submit provider request", e);
     }
   }
-
-
 }

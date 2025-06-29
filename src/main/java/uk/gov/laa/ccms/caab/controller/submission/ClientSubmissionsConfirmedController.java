@@ -20,9 +20,7 @@ import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
-/**
- * Controller for confirmed create client submissions.
- */
+/** Controller for confirmed create client submissions. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -47,22 +45,24 @@ public class ClientSubmissionsConfirmedController {
       @SessionAttribute(APPLICATION_FORM_DATA) final ApplicationFormData applicationFormData,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(CLIENT_REFERENCE) final String clientReference,
-      final HttpSession session) throws ParseException {
+      final HttpSession session)
+      throws ParseException {
 
-    final ClientDetail clientInformation = clientService.getClient(
-        clientReference,
-        user.getLoginId(),
-        user.getUserType()).block();
+    final ClientDetail clientInformation =
+        clientService.getClient(clientReference, user.getLoginId(), user.getUserType()).block();
 
-    return applicationService.createApplication(applicationFormData, clientInformation, user)
-        .doOnSuccess(applicationId -> {
-          log.info("Application details submitted");
-          log.debug("Application details submitted: {}", applicationFormData);
-          session.removeAttribute(APPLICATION_FORM_DATA);
-          session.removeAttribute(CLIENT_REFERENCE);
-          session.setAttribute(APPLICATION_ID, applicationId);
-        })
-        .thenReturn("redirect:/application/sections").block();
+    return applicationService
+        .createApplication(applicationFormData, clientInformation, user)
+        .doOnSuccess(
+            applicationId -> {
+              log.info("Application details submitted");
+              log.debug("Application details submitted: {}", applicationFormData);
+              session.removeAttribute(APPLICATION_FORM_DATA);
+              session.removeAttribute(CLIENT_REFERENCE);
+              session.setAttribute(APPLICATION_ID, applicationId);
+            })
+        .thenReturn("redirect:/application/sections")
+        .block();
   }
 
   /**
@@ -78,6 +78,4 @@ public class ClientSubmissionsConfirmedController {
       case AMENDMENTS -> "redirect:/case/overview";
     };
   }
-
-
 }

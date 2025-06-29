@@ -37,24 +37,19 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @WebAppConfiguration
 public class ClientSearchResultsControllerTest {
 
-  @Mock
-  private ClientService clientService;
+  @Mock private ClientService clientService;
 
-  @Mock
-  private ResultDisplayMapper resultDisplayMapper;
+  @Mock private ResultDisplayMapper resultDisplayMapper;
 
-  @Mock
-  private SearchConstants searchConstants;
+  @Mock private SearchConstants searchConstants;
 
-  @InjectMocks
-  private ClientSearchResultsController clientSearchResultsController;
+  @InjectMocks private ClientSearchResultsController clientSearchResultsController;
 
   private MockMvc mockMvc;
 
   private UserDetail user;
 
-  @Autowired
-  private WebApplicationContext webApplicationContext;
+  @Autowired private WebApplicationContext webApplicationContext;
 
   @BeforeEach
   public void setup() {
@@ -69,12 +64,13 @@ public class ClientSearchResultsControllerTest {
     ClientDetails clientDetails = new ClientDetails();
     clientDetails.setTotalElements(0);
 
-    when(clientService.getClients(any(), any(), any())).thenReturn(
-        Mono.just(clientDetails));
+    when(clientService.getClients(any(), any(), any())).thenReturn(Mono.just(clientDetails));
 
-    this.mockMvc.perform(get("/application/client/results")
-            .sessionAttr("user", user)
-            .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
+    this.mockMvc
+        .perform(
+            get("/application/client/results")
+                .sessionAttr("user", user)
+                .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-client-search-no-results"));
   }
@@ -85,12 +81,13 @@ public class ClientSearchResultsControllerTest {
     clientDetails.setContent(new ArrayList<>());
     clientDetails.setTotalElements(300);
 
-    when(clientService.getClients(any(), any(), any())).thenReturn(
-        Mono.just(clientDetails));
+    when(clientService.getClients(any(), any(), any())).thenReturn(Mono.just(clientDetails));
 
-    this.mockMvc.perform(get("/application/client/results")
-            .sessionAttr("user", user)
-            .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
+    this.mockMvc
+        .perform(
+            get("/application/client/results")
+                .sessionAttr("user", user)
+                .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-client-search-too-many-results"));
   }
@@ -101,21 +98,24 @@ public class ClientSearchResultsControllerTest {
     clientDetails.setContent(new ArrayList<>());
     clientDetails.setTotalElements(100);
 
-    when(clientService.getClients(any(), any(), any())).thenReturn(
-        Mono.just(clientDetails));
+    when(clientService.getClients(any(), any(), any())).thenReturn(Mono.just(clientDetails));
 
-    this.mockMvc.perform(get("/application/client/results")
-            .sessionAttr("user", user)
-            .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
+    this.mockMvc
+        .perform(
+            get("/application/client/results")
+                .sessionAttr("user", user)
+                .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-client-search-results"));
   }
 
   @Test
   public void testClientSearch_Post() throws Exception {
-    this.mockMvc.perform(post("/application/client/results")
-            .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())
-            .sessionAttr("clientSearchResults", new ClientResultsDisplay()))
+    this.mockMvc
+        .perform(
+            post("/application/client/results")
+                .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())
+                .sessionAttr("clientSearchResults", new ClientResultsDisplay()))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/agreement"));
   }
@@ -124,9 +124,11 @@ public class ClientSearchResultsControllerTest {
   public void testClientSearchResults_NullResults() throws Exception {
     when(clientService.getClients(any(), any(), any())).thenReturn(Mono.empty());
 
-    this.mockMvc.perform(get("/application/client/results")
-            .sessionAttr("user", user)
-            .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
+    this.mockMvc
+        .perform(
+            get("/application/client/results")
+                .sessionAttr("user", user)
+                .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-client-search-no-results"));
   }
@@ -137,20 +139,18 @@ public class ClientSearchResultsControllerTest {
     clientDetails.setContent(new ArrayList<>());
     clientDetails.setTotalElements(0);
 
-    when(clientService.getClients(any(), any(), any())).thenReturn(
-        Mono.just(clientDetails));
+    when(clientService.getClients(any(), any(), any())).thenReturn(Mono.just(clientDetails));
 
-    this.mockMvc.perform(get("/application/client/results")
-            .sessionAttr("user", user)
-            .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
+    this.mockMvc
+        .perform(
+            get("/application/client/results")
+                .sessionAttr("user", user)
+                .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-client-search-no-results"));
   }
 
   private UserDetail buildUser() {
-    return new UserDetail()
-        .userId(1)
-        .userType("testUserType")
-        .loginId("testLoginId");
+    return new UserDetail().userId(1).userType("testUserType").loginId("testLoginId");
   }
 }

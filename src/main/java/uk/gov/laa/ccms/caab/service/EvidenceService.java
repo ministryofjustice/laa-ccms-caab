@@ -40,9 +40,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 
-/**
- * Service class to handle Evidence.
- */
+/** Service class to handle Evidence. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -70,12 +68,7 @@ public class EvidenceService {
   public Mono<EvidenceDocumentDetails> getEvidenceDocumentsForApplicationOrOutcome(
       final String applicationOrOutcomeId, final CcmsModule ccmsModule) {
     return caabApiClient.getEvidenceDocuments(
-        applicationOrOutcomeId,
-        null,
-        null,
-        null,
-        ccmsModule.getCode(),
-        Boolean.TRUE);
+        applicationOrOutcomeId, null, null, null, ccmsModule.getCode(), Boolean.TRUE);
   }
 
   /**
@@ -88,12 +81,7 @@ public class EvidenceService {
   public Mono<EvidenceDocumentDetails> getEvidenceDocumentsForCase(
       final String caseReferenceNumber, final CcmsModule ccmsModule) {
     return caabApiClient.getEvidenceDocuments(
-        null,
-        caseReferenceNumber,
-        null,
-        null,
-        ccmsModule.getCode(),
-        Boolean.TRUE);
+        null, caseReferenceNumber, null, null, ccmsModule.getCode(), Boolean.TRUE);
   }
 
   /**
@@ -107,26 +95,27 @@ public class EvidenceService {
   }
 
   /**
-   * Get a combined List of all evidence document types required for the supplied
-   * case reference and provider. This will include OPA, Prior Authority and Case Outcome evidence.
+   * Get a combined List of all evidence document types required for the supplied case reference and
+   * provider. This will include OPA, Prior Authority and Case Outcome evidence.
    *
-   * @param applicationId  - the application id.
+   * @param applicationId - the application id.
    * @param caseReferenceNumber - the case reference number.
    * @param providerId - the provider id.
    * @return List of EvidenceDocumentTypes which are required for the application.
    */
   public Mono<List<EvidenceDocumentTypeLookupValueDetail>> getDocumentsRequired(
-      final String applicationId,
-      final String caseReferenceNumber,
-      final Integer providerId) {
+      final String applicationId, final String caseReferenceNumber, final Integer providerId) {
     return Mono.zip(
             getOpaDocumentsRequired(caseReferenceNumber, providerId),
             getPriorAuthorityDocumentsRequired(applicationId),
             getCaseOutcomeDocumentsRequired(caseReferenceNumber, providerId))
-            .map(combinedResult -> Streams.concat(
-                combinedResult.getT1().stream(),
-                combinedResult.getT2().stream(),
-                combinedResult.getT3().stream()).toList());
+        .map(
+            combinedResult ->
+                Streams.concat(
+                        combinedResult.getT1().stream(),
+                        combinedResult.getT2().stream(),
+                        combinedResult.getT3().stream())
+                    .toList());
   }
 
   /**
@@ -147,16 +136,15 @@ public class EvidenceService {
       final String userId,
       final String userType) {
 
-    final Document document = new Document()
-        .channel(channel)
-        .documentType(documentType)
-        .fileExtension(fileExtension)
-        .text(documentDescription);
+    final Document document =
+        new Document()
+            .channel(channel)
+            .documentType(documentType)
+            .fileExtension(fileExtension)
+            .text(documentDescription);
 
-    return soaApiClient.registerDocument(
-            document,
-            userId,
-            userType)
+    return soaApiClient
+        .registerDocument(document, userId, userType)
         .mapNotNull(ClientTransactionResponse::getReferenceNumber);
   }
 
@@ -168,15 +156,13 @@ public class EvidenceService {
    * @return Mono wrapping the EBS registered document id.
    */
   public Mono<String> addDocument(
-      final EvidenceDocumentDetail evidenceDocumentDetail,
-      final String userId) {
+      final EvidenceDocumentDetail evidenceDocumentDetail, final String userId) {
 
     return caabApiClient.createEvidenceDocument(evidenceDocumentDetail, userId);
   }
 
   public Mono<Void> updateDocument(
-      final EvidenceDocumentDetail evidenceDocumentDetail,
-      final String userId) {
+      final EvidenceDocumentDetail evidenceDocumentDetail, final String userId) {
     return caabApiClient.updateEvidenceDocument(evidenceDocumentDetail, userId);
   }
 
@@ -195,19 +181,19 @@ public class EvidenceService {
     // First ensure that the document exists and is related to the active case.
     // (We don't want to retrieve the document by its id, as that will include the (possibly)
     // 8MB of file data.
-    getEvidenceDocumentsForApplicationOrOutcome(
-            applicationOrOutcomeId,
-            ccmsModule)
+    getEvidenceDocumentsForApplicationOrOutcome(applicationOrOutcomeId, ccmsModule)
         .map(EvidenceDocumentDetails::getContent)
-        .mapNotNull(baseEvidenceDocumentDetails ->
-            baseEvidenceDocumentDetails.stream()
-                .filter(baseEvidenceDocumentDetail -> baseEvidenceDocumentDetail
-                    .getId().equals(documentId))
-                .findFirst()
-                .orElse(null))
+        .mapNotNull(
+            baseEvidenceDocumentDetails ->
+                baseEvidenceDocumentDetails.stream()
+                    .filter(
+                        baseEvidenceDocumentDetail ->
+                            baseEvidenceDocumentDetail.getId().equals(documentId))
+                    .findFirst()
+                    .orElse(null))
         .blockOptional()
-        .orElseThrow(() -> new CaabApplicationException(
-        "Invalid document id: %s".formatted(documentId)));
+        .orElseThrow(
+            () -> new CaabApplicationException("Invalid document id: %s".formatted(documentId)));
 
     caabApiClient.deleteEvidenceDocument(documentId, userId).block();
   }
@@ -218,9 +204,7 @@ public class EvidenceService {
    * @param caseReferenceNumber - the case reference number of the documents to remove.
    * @param userId - the user removing the documents.
    */
-  public Mono<Void> removeDocuments(
-      final String caseReferenceNumber,
-      final String userId) {
+  public Mono<Void> removeDocuments(final String caseReferenceNumber, final String userId) {
 
     return caabApiClient.deleteEvidenceDocuments(
         null,
@@ -233,84 +217,91 @@ public class EvidenceService {
   }
 
   /**
-   * Get a list of OPA Evidence Document Types required for the supplied
-   * application. This method will retrieve the completed means and merits assessments for the
-   * application. The OPA Evidence Document Types will then be filtered to retain only
-   * those which have a matching assessment attribute with value 'true'.
+   * Get a list of OPA Evidence Document Types required for the supplied application. This method
+   * will retrieve the completed means and merits assessments for the application. The OPA Evidence
+   * Document Types will then be filtered to retain only those which have a matching assessment
+   * attribute with value 'true'.
    *
    * @param caseReferenceNumber - the case reference number.
    * @param providerId - the provider id.
    * @return List of OPA EvidenceDocumentTypes which are required for the application.
    */
   protected Mono<List<EvidenceDocumentTypeLookupValueDetail>> getOpaDocumentsRequired(
-      final String caseReferenceNumber,
-      final Integer providerId) {
-    return assessmentService.getAssessments(
+      final String caseReferenceNumber, final Integer providerId) {
+    return assessmentService
+        .getAssessments(
             List.of(MEANS.getName(), MERITS.getName()),
             String.valueOf(providerId),
             caseReferenceNumber,
             AssessmentStatus.COMPLETE.getStatus())
-        .map(assessmentDetails -> assessmentDetails.getContent().stream()
-            .flatMap(this::flattenAttributes)
-            .toList())
-        .flatMap(allAttributes -> ebsApiClient.getEvidenceDocumentTypes(
-                COMMON_VALUE_OPA_EVIDENCE_ITEMS, null)
-            .map(docTypesLookup -> docTypesLookup.getContent().stream()
-                .filter(docType -> isRequiredOpaEvidenceItem(
-                    docType, allAttributes)).toList()));
+        .map(
+            assessmentDetails ->
+                assessmentDetails.getContent().stream().flatMap(this::flattenAttributes).toList())
+        .flatMap(
+            allAttributes ->
+                ebsApiClient
+                    .getEvidenceDocumentTypes(COMMON_VALUE_OPA_EVIDENCE_ITEMS, null)
+                    .map(
+                        docTypesLookup ->
+                            docTypesLookup.getContent().stream()
+                                .filter(
+                                    docType -> isRequiredOpaEvidenceItem(docType, allAttributes))
+                                .toList()));
   }
 
   /**
-   * Get a list of Prior Authority Evidence Document Types required for the supplied
-   * application id. If the application has any associated Prior Authorities, this method
-   * will return the complete list of Prior Authority Evidence Document Types.
+   * Get a list of Prior Authority Evidence Document Types required for the supplied application id.
+   * If the application has any associated Prior Authorities, this method will return the complete
+   * list of Prior Authority Evidence Document Types.
    *
    * @param applicationId - the application id
-   * @return Mono containing a Lookup of Prior Authority EvidenceDocumentTypes
-   *     which are required for the application.
+   * @return Mono containing a Lookup of Prior Authority EvidenceDocumentTypes which are required
+   *     for the application.
    */
   protected Mono<List<EvidenceDocumentTypeLookupValueDetail>> getPriorAuthorityDocumentsRequired(
       final String applicationId) {
 
     // If the application has prior auths, return all evidence of type XXCCMS_PA_EVIDENCE_ITEMS,
     // otherwise return an empty LookupDetail.
-    return caabApiClient.getPriorAuthorities(applicationId)
-        .flatMap(priorAuthorityDetails ->
-            priorAuthorityDetails.isEmpty()
-                ? Mono.just(new EvidenceDocumentTypeLookupDetail()) :
-                ebsApiClient.getEvidenceDocumentTypes(
-                    COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS,
-                    null))
+    return caabApiClient
+        .getPriorAuthorities(applicationId)
+        .flatMap(
+            priorAuthorityDetails ->
+                priorAuthorityDetails.isEmpty()
+                    ? Mono.just(new EvidenceDocumentTypeLookupDetail())
+                    : ebsApiClient.getEvidenceDocumentTypes(
+                        COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS, null))
         .map(EvidenceDocumentTypeLookupDetail::getContent);
   }
 
   /**
-   * Get a list of Case Outcome Evidence Document Types required for the supplied
-   * application. If the application has an outcome, this method
-   * will return the complete list of Case Outcome Evidence Document Types.
+   * Get a list of Case Outcome Evidence Document Types required for the supplied application. If
+   * the application has an outcome, this method will return the complete list of Case Outcome
+   * Evidence Document Types.
    *
    * @param caseReferenceNumber - the case reference number.
    * @param providerId - the provider id.
-   * @return Mono containing a Lookup of Case Outcome EvidenceDocumentTypes
-   *     which are required for the application.
+   * @return Mono containing a Lookup of Case Outcome EvidenceDocumentTypes which are required for
+   *     the application.
    */
   protected Mono<List<EvidenceDocumentTypeLookupValueDetail>> getCaseOutcomeDocumentsRequired(
-      final String caseReferenceNumber,
-      final Integer providerId) {
+      final String caseReferenceNumber, final Integer providerId) {
 
     // If the application has an outcome, return all evidence of type XXCCMS_DOCUMENT_TYPES with
     // code 'OUT_EV'. Otherwise return an empty LookupDetail.
-    return caseOutcomeService.getCaseOutcome(caseReferenceNumber, providerId)
-        .map(caseOutcomeDetail -> ebsApiClient.getEvidenceDocumentTypes(
-            COMMON_VALUE_DOCUMENT_TYPES,
-            COMMON_VALUE_OUTCOME_DOCUMENT_CODE))
+    return caseOutcomeService
+        .getCaseOutcome(caseReferenceNumber, providerId)
+        .map(
+            caseOutcomeDetail ->
+                ebsApiClient.getEvidenceDocumentTypes(
+                    COMMON_VALUE_DOCUMENT_TYPES, COMMON_VALUE_OUTCOME_DOCUMENT_CODE))
         .orElse(Mono.just(new EvidenceDocumentTypeLookupDetail()))
         .map(EvidenceDocumentTypeLookupDetail::getContent);
   }
 
   /**
-   * Determine whether evidence documents are required for the supplied means, merits,
-   * application type and prior authorities.
+   * Determine whether evidence documents are required for the supplied means, merits, application
+   * type and prior authorities.
    *
    * @param meansAssessment - the means assessment.
    * @param meritsAssessment - the merits assessment.
@@ -325,10 +316,7 @@ public class EvidenceService {
       final List<PriorAuthorityDetail> priorAuthorities) {
 
     return EvidenceUtil.isEvidenceRequired(
-        meansAssessment,
-        meritsAssessment,
-        applicationType,
-        priorAuthorities);
+        meansAssessment, meritsAssessment, applicationType, priorAuthorities);
   }
 
   /**
@@ -340,9 +328,7 @@ public class EvidenceService {
    * @return true if all evidence has been provided, false otherwise.
    */
   public boolean isAllEvidenceProvided(
-      final String applicationId,
-      final String caseReferenceNumber,
-      final Integer providerId) {
+      final String applicationId, final String caseReferenceNumber, final Integer providerId) {
 
     // Get the list of required evidence docs for this application.
     final Mono<List<EvidenceDocumentTypeLookupValueDetail>> evidenceRequiredMono =
@@ -352,12 +338,12 @@ public class EvidenceService {
     final Mono<EvidenceDocumentDetails> evidenceUploadedMono =
         getEvidenceDocumentsForCase(caseReferenceNumber, APPLICATION);
 
-    final Tuple2<List<EvidenceDocumentTypeLookupValueDetail>,
-        EvidenceDocumentDetails> combinedResult = Mono.zip(
-            evidenceRequiredMono,
-            evidenceUploadedMono)
-        .blockOptional()
-        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve evidence data"));
+    final Tuple2<List<EvidenceDocumentTypeLookupValueDetail>, EvidenceDocumentDetails>
+        combinedResult =
+            Mono.zip(evidenceRequiredMono, evidenceUploadedMono)
+                .blockOptional()
+                .orElseThrow(
+                    () -> new CaabApplicationException("Failed to retrieve evidence data"));
 
     final List<EvidenceDocumentTypeLookupValueDetail> evidenceRequired = combinedResult.getT1();
     final List<BaseEvidenceDocumentDetail> evidenceProvided = combinedResult.getT2().getContent();
@@ -369,15 +355,19 @@ public class EvidenceService {
   private boolean isRequiredOpaEvidenceItem(
       final EvidenceDocumentTypeLookupValueDetail docType,
       final List<AssessmentAttributeDetail> allAttributes) {
-    return allAttributes.stream().anyMatch(
-        attribute -> attribute.getName().equals(docType.getCode())
-            && Boolean.parseBoolean(attribute.getValue()));
+    return allAttributes.stream()
+        .anyMatch(
+            attribute ->
+                attribute.getName().equals(docType.getCode())
+                    && Boolean.parseBoolean(attribute.getValue()));
   }
 
   private Stream<AssessmentAttributeDetail> flattenAttributes(final AssessmentDetail assessment) {
     return assessment.getEntityTypes().stream()
-        .flatMap(entityType -> entityType.getEntities().stream()
-                .flatMap(entity -> entity.getAttributes().stream()));
+        .flatMap(
+            entityType ->
+                entityType.getEntities().stream()
+                    .flatMap(entity -> entity.getAttributes().stream()));
   }
 
   /**
@@ -396,9 +386,10 @@ public class EvidenceService {
 
     if (evidenceDocumentDetails != null) {
       return Flux.fromIterable(evidenceDocumentDetails.getContent())
-          .flatMap(evidenceDocumentDetail ->
-              uploadAndUpdateDocument(
-                  evidenceDocumentDetail, caseReferenceNumber, notificationId, user))
+          .flatMap(
+              evidenceDocumentDetail ->
+                  uploadAndUpdateDocument(
+                      evidenceDocumentDetail, caseReferenceNumber, notificationId, user))
           .then();
     } else {
       return Mono.empty();
@@ -406,8 +397,8 @@ public class EvidenceService {
   }
 
   /**
-   * Uploads and updates the status of an evidence document for a given case reference.
-   * If the document has already been successfully transferred, no action is performed.
+   * Uploads and updates the status of an evidence document for a given case reference. If the
+   * document has already been successfully transferred, no action is performed.
    *
    * @param evidenceDocument the evidence document to be uploaded and updated
    * @param caseReferenceNumber the reference number of the case to which the document belongs
@@ -438,9 +429,14 @@ public class EvidenceService {
 
     // Proceed to upload and update the document
     return this.getEvidenceDocument(documentId)
-        .flatMap(detailedEvidenceDocument ->
-            uploadDocumentAndUpdateStatus(
-                detailedEvidenceDocument, caseReferenceNumber, notificationId, user, documentId))
+        .flatMap(
+            detailedEvidenceDocument ->
+                uploadDocumentAndUpdateStatus(
+                    detailedEvidenceDocument,
+                    caseReferenceNumber,
+                    notificationId,
+                    user,
+                    documentId))
         .onErrorResume(e -> handleUploadError(e, documentId, user.getLoginId()));
   }
 
@@ -448,9 +444,9 @@ public class EvidenceService {
    * Uploads the document to the SOA API and updates its transfer status to "SUCCESS".
    *
    * @param detailedEvidenceDocument The detailed evidence document with full data.
-   * @param caseReferenceNumber      The case reference number.
-   * @param user                     The user details.
-   * @param documentId               The ID of the document.
+   * @param caseReferenceNumber The case reference number.
+   * @param user The user details.
+   * @param documentId The ID of the document.
    * @return A Mono signaling when the operation has completed.
    */
   protected Mono<Void> uploadDocumentAndUpdateStatus(
@@ -468,35 +464,43 @@ public class EvidenceService {
 
     // Determine the API operation (upload or update) based on if the document is already
     // registered
-    final Mono<ClientTransactionResponse> apiOperation = isDocumentPreviouslyRegisteredInEbs
-        ? soaApiClient.updateDocument(
-            document, notificationId, caseReferenceNumber, user.getLoginId(), user.getUserType())
-        : soaApiClient.uploadDocument(
-            document, notificationId, caseReferenceNumber, user.getLoginId(), user.getUserType());
+    final Mono<ClientTransactionResponse> apiOperation =
+        isDocumentPreviouslyRegisteredInEbs
+            ? soaApiClient.updateDocument(
+                document,
+                notificationId,
+                caseReferenceNumber,
+                user.getLoginId(),
+                user.getUserType())
+            : soaApiClient.uploadDocument(
+                document,
+                notificationId,
+                caseReferenceNumber,
+                user.getLoginId(),
+                user.getUserType());
 
     // Perform the API operation and update the document's transfer status after success
-    return apiOperation.then(updateDocument(
-        new EvidenceDocumentDetail()
-            .id(documentId)
-            .notificationReference(notificationId)
-            .transferStatus("SUCCESS")
-            .transferResponseCode("200")
-            .transferResponseDescription("Successfully uploaded document"),
-        user.getLoginId()));
+    return apiOperation.then(
+        updateDocument(
+            new EvidenceDocumentDetail()
+                .id(documentId)
+                .notificationReference(notificationId)
+                .transferStatus("SUCCESS")
+                .transferResponseCode("200")
+                .transferResponseDescription("Successfully uploaded document"),
+            user.getLoginId()));
   }
 
   /**
    * Handles errors that occur during the upload and updates the document's status to "FAILED".
    *
-   * @param e        The exception that was thrown.
+   * @param e The exception that was thrown.
    * @param documentId The ID of the document.
-   * @param loginId   The login ID of the user.
+   * @param loginId The login ID of the user.
    * @return A Mono signaling when the error handling has completed.
    */
   protected Mono<Void> handleUploadError(
-      final Throwable e,
-      final Integer documentId,
-      final String loginId) {
+      final Throwable e, final Integer documentId, final String loginId) {
     // Log the error that occurred during upload or update
     log.error("Error uploading and updating document", e);
 
@@ -523,32 +527,36 @@ public class EvidenceService {
       for (final BaseEvidenceDocumentDetail evidenceDocumentDetail :
           evidenceDocumentDetails.getContent()) {
 
-        log.debug("Documents ID - " + evidenceDocumentDetail.getId() + ", - DOC_TYPE - "
-            + evidenceDocumentDetail.getDocumentType().getDisplayValue());
+        log.debug(
+            "Documents ID - "
+                + evidenceDocumentDetail.getId()
+                + ", - DOC_TYPE - "
+                + evidenceDocumentDetail.getDocumentType().getDisplayValue());
 
         if (evidenceDocumentDetail.getRegisteredDocumentId() == null) {
 
-          final String registeredDocumentId = registerDocument(
-              evidenceDocumentDetail.getDocumentType().getId(),
-              evidenceDocumentDetail.getFileExtension(),
-              evidenceDocumentDetail.getDescription(),
-              ELECTRONIC.getCode(),
-              user.getLoginId(),
-              user.getUserType())
-              .blockOptional()
-              .orElseThrow(() -> new CaabApplicationException("Failed to register document"));
+          final String registeredDocumentId =
+              registerDocument(
+                      evidenceDocumentDetail.getDocumentType().getId(),
+                      evidenceDocumentDetail.getFileExtension(),
+                      evidenceDocumentDetail.getDescription(),
+                      ELECTRONIC.getCode(),
+                      user.getLoginId(),
+                      user.getUserType())
+                  .blockOptional()
+                  .orElseThrow(() -> new CaabApplicationException("Failed to register document"));
 
           if (registeredDocumentId != null) {
-            //set on the existing object in memory
+            // set on the existing object in memory
             evidenceDocumentDetail.setRegisteredDocumentId(registeredDocumentId);
 
-            //create the patch request
-            final EvidenceDocumentDetail patch = new EvidenceDocumentDetail()
-                .id(evidenceDocumentDetail.getId())
-                .registeredDocumentId(registeredDocumentId);
+            // create the patch request
+            final EvidenceDocumentDetail patch =
+                new EvidenceDocumentDetail()
+                    .id(evidenceDocumentDetail.getId())
+                    .registeredDocumentId(registeredDocumentId);
 
             updateDocument(patch, user.getLoginId()).block();
-
           }
         }
       }

@@ -49,27 +49,25 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @WebAppConfiguration
 class ApplicationTypeControllerTest {
 
-  @Mock
-  private LookupService lookupService;
+  @Mock private LookupService lookupService;
 
-  @Mock
-  private AmendmentService amendmentService;
+  @Mock private AmendmentService amendmentService;
 
-  @Mock
-  private ApplicationTypeValidator applicationTypeValidator;
+  @Mock private ApplicationTypeValidator applicationTypeValidator;
 
-  @InjectMocks
-  private ApplicationTypeController applicationTypeController;
+  @InjectMocks private ApplicationTypeController applicationTypeController;
 
   private MockMvcTester mockMvc;
 
-  @Autowired
-  private WebApplicationContext webApplicationContext;
+  @Autowired private WebApplicationContext webApplicationContext;
 
   @BeforeEach
   void setup() {
-    mockMvc = MockMvcTester.create(standaloneSetup(applicationTypeController)
-        .setConversionService(getConversionService()).build());
+    mockMvc =
+        MockMvcTester.create(
+            standaloneSetup(applicationTypeController)
+                .setConversionService(getConversionService())
+                .build());
   }
 
   @Nested
@@ -81,25 +79,23 @@ class ApplicationTypeControllerTest {
     @DisplayName("Should return view with application types on model")
     void testGetApplicationTypeAddsApplicationTypesToModel(String caseContext) {
       final CommonLookupDetail applicationTypes = new CommonLookupDetail();
-      applicationTypes.addContentItem(
-          new CommonLookupValueDetail().type("Type 1").code("Code 1"));
+      applicationTypes.addContentItem(new CommonLookupValueDetail().type("Type 1").code("Code 1"));
 
-      when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_TYPE)).thenReturn(
-          Mono.just(applicationTypes));
+      when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_TYPE))
+          .thenReturn(Mono.just(applicationTypes));
 
       assertThat(
-          mockMvc.perform(get("/%s/application-type".formatted(caseContext))
-              .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())))
+              mockMvc.perform(
+                  get("/%s/application-type".formatted(caseContext))
+                      .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())))
           .hasStatusOk()
           .hasViewName("application/select-application-type")
           .model()
           .containsEntry(APPLICATION_FORM_DATA, new ApplicationFormData())
           .containsEntry("applicationTypes", applicationTypes.getContent());
 
-      verify(lookupService, times(1))
-          .getCommonValues(COMMON_VALUE_APPLICATION_TYPE);
+      verify(lookupService, times(1)).getCommonValues(COMMON_VALUE_APPLICATION_TYPE);
     }
-
 
     @Test
     @DisplayName("Should handle exceptional funding when application")
@@ -109,8 +105,9 @@ class ApplicationTypeControllerTest {
       applicationFormData.setExceptionalFunding(true);
 
       assertThat(
-          mockMvc.perform(get("/application/application-type")
-              .flashAttr(APPLICATION_FORM_DATA, applicationFormData)))
+              mockMvc.perform(
+                  get("/application/application-type")
+                      .flashAttr(APPLICATION_FORM_DATA, applicationFormData)))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/application/client/search");
 
@@ -121,29 +118,27 @@ class ApplicationTypeControllerTest {
     @DisplayName("Should not handle exceptional funding when amendment")
     void testGetApplicationTypeHandlesExceptionalFundingWhenAmendment() {
       final CommonLookupDetail applicationTypes = new CommonLookupDetail();
-      applicationTypes.addContentItem(
-          new CommonLookupValueDetail().type("Type 1").code("Code 1"));
+      applicationTypes.addContentItem(new CommonLookupValueDetail().type("Type 1").code("Code 1"));
 
-      when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_TYPE)).thenReturn(
-          Mono.just(applicationTypes));
+      when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_TYPE))
+          .thenReturn(Mono.just(applicationTypes));
 
       final ApplicationFormData applicationFormData = new ApplicationFormData();
       applicationFormData.setApplicationTypeCategory("ECF");
       applicationFormData.setExceptionalFunding(true);
 
       assertThat(
-          mockMvc.perform(get("/amendments/application-type")
-              .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())))
+              mockMvc.perform(
+                  get("/amendments/application-type")
+                      .sessionAttr(APPLICATION_FORM_DATA, new ApplicationFormData())))
           .hasStatusOk()
           .hasViewName("application/select-application-type")
           .model()
           .containsEntry(APPLICATION_FORM_DATA, new ApplicationFormData())
           .containsEntry("applicationTypes", applicationTypes.getContent());
 
-      verify(lookupService, times(1))
-          .getCommonValues(COMMON_VALUE_APPLICATION_TYPE);
+      verify(lookupService, times(1)).getCommonValues(COMMON_VALUE_APPLICATION_TYPE);
     }
-
   }
 
   @Nested
@@ -158,24 +153,29 @@ class ApplicationTypeControllerTest {
       final UserDetail userDetail = new UserDetail();
       final ApplicationDetail ebsCase = new ApplicationDetail();
       final CommonLookupDetail applicationTypes = new CommonLookupDetail();
-      applicationTypes.addContentItem(
-          new CommonLookupValueDetail().type("Type 1").code("Code 1"));
+      applicationTypes.addContentItem(new CommonLookupValueDetail().type("Type 1").code("Code 1"));
 
-      when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_TYPE)).thenReturn(
-          Mono.just(applicationTypes));
+      when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_TYPE))
+          .thenReturn(Mono.just(applicationTypes));
 
-      doAnswer(invocation -> {
-        Errors errors = (Errors) invocation.getArguments()[1];
-        errors.rejectValue("applicationTypeCategory", "required.applicationTypeCategory",
-            "Please select an application type.");
-        return null;
-      }).when(applicationTypeValidator).validate(any(), any());
+      doAnswer(
+              invocation -> {
+                Errors errors = (Errors) invocation.getArguments()[1];
+                errors.rejectValue(
+                    "applicationTypeCategory",
+                    "required.applicationTypeCategory",
+                    "Please select an application type.");
+                return null;
+              })
+          .when(applicationTypeValidator)
+          .validate(any(), any());
 
       assertThat(
-          mockMvc.perform(post("/%s/application-type".formatted(caseContext))
-              .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
-              .sessionAttr(USER_DETAILS, userDetail)
-              .sessionAttr(CASE, ebsCase)))
+              mockMvc.perform(
+                  post("/%s/application-type".formatted(caseContext))
+                      .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
+                      .sessionAttr(USER_DETAILS, userDetail)
+                      .sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/select-application-type");
     }
@@ -191,10 +191,11 @@ class ApplicationTypeControllerTest {
       applicationFormData.setApplicationTypeCategory(APP_TYPE_EMERGENCY);
 
       assertThat(
-          mockMvc.perform(post("/%s/application-type".formatted(caseContext))
-              .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
-              .sessionAttr(USER_DETAILS, userDetail)
-              .sessionAttr(CASE, ebsCase)))
+              mockMvc.perform(
+                  post("/%s/application-type".formatted(caseContext))
+                      .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
+                      .sessionAttr(USER_DETAILS, userDetail)
+                      .sessionAttr(CASE, ebsCase)))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/%s/delegated-functions".formatted(caseContext));
 
@@ -211,10 +212,11 @@ class ApplicationTypeControllerTest {
       applicationFormData.setApplicationTypeCategory(APP_TYPE_SUBSTANTIVE);
 
       assertThat(
-          mockMvc.perform(post("/application/application-type")
-              .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
-              .sessionAttr(USER_DETAILS, userDetail)
-              .sessionAttr(CASE, ebsCase)))
+              mockMvc.perform(
+                  post("/application/application-type")
+                      .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
+                      .sessionAttr(USER_DETAILS, userDetail)
+                      .sessionAttr(CASE, ebsCase)))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/application/delegated-functions");
 
@@ -232,16 +234,15 @@ class ApplicationTypeControllerTest {
       applicationFormData.setApplicationTypeCategory(APP_TYPE_SUBSTANTIVE);
 
       assertThat(
-          mockMvc.perform(post("/amendments/application-type")
-              .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
-              .sessionAttr(USER_DETAILS, userDetail)
-              .sessionAttr(CASE, ebsCase)))
+              mockMvc.perform(
+                  post("/amendments/application-type")
+                      .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
+                      .sessionAttr(USER_DETAILS, userDetail)
+                      .sessionAttr(CASE, ebsCase)))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/amendments/create");
 
       verifyNoInteractions(lookupService);
     }
-
   }
-
 }

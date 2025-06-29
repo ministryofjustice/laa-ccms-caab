@@ -2,9 +2,7 @@ package uk.gov.laa.ccms.caab.constants.assessment;
 
 import lombok.Getter;
 
-/**
- * Defines the relationship associated with an assessment entity.
- */
+/** Defines the relationship associated with an assessment entity. */
 @Getter
 public enum AssessmentRelationship {
   OPPONENT("opponentotherparties"),
@@ -20,5 +18,4 @@ public enum AssessmentRelationship {
   AssessmentRelationship(final String relationship) {
     this.relationship = relationship;
   }
-
 }

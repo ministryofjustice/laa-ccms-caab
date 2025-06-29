@@ -18,7 +18,6 @@ public final class NotificationSearchUtil {
   public static final DateTimeFormatter MOJ_DATE_PICKER = DateTimeFormatter.ofPattern("d/M/yyyy");
   public static final DateTimeFormatter ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-
   /**
    * Prepares and adjusts the notification search criteria by setting default date ranges if the
    * notificationFromDate or notificationToDate fields are empty or null. If neither date is set, it
@@ -27,17 +26,19 @@ public final class NotificationSearchUtil {
    * ready to be passed to EBS API.
    *
    * @param criteria the notification search criteria object containing search parameters, including
-   *                 date ranges to be adjusted if necessary
+   *     date ranges to be adjusted if necessary
    * @return the updated NotificationSearchCriteria object with adjusted date fields
    */
-  public static NotificationSearchCriteria
-      prepareNotificationSearchCriteria(NotificationSearchCriteria criteria) {
+  public static NotificationSearchCriteria prepareNotificationSearchCriteria(
+      NotificationSearchCriteria criteria) {
     NotificationSearchCriteria copyCriteria = new NotificationSearchCriteria(criteria);
 
-    boolean fromNotSet = copyCriteria.getNotificationFromDate() == null
-        || copyCriteria.getNotificationFromDate().isBlank();
-    boolean toNotSet = copyCriteria.getNotificationToDate() == null
-        || copyCriteria.getNotificationToDate().isBlank();
+    boolean fromNotSet =
+        copyCriteria.getNotificationFromDate() == null
+            || copyCriteria.getNotificationFromDate().isBlank();
+    boolean toNotSet =
+        copyCriteria.getNotificationToDate() == null
+            || copyCriteria.getNotificationToDate().isBlank();
 
     try {
       // If neither date set
@@ -47,14 +48,14 @@ public final class NotificationSearchUtil {
         copyCriteria.setNotificationToDate(today.format(ISO));
       } else if (fromNotSet) {
         // If TO set but FROM not set => FROM = TO - 3 Years
-        LocalDate notificationToDate = LocalDate.parse(criteria.getNotificationToDate(),
-            MOJ_DATE_PICKER);
+        LocalDate notificationToDate =
+            LocalDate.parse(criteria.getNotificationToDate(), MOJ_DATE_PICKER);
         copyCriteria.setNotificationFromDate(notificationToDate.minusYears(3).format(ISO));
         copyCriteria.setNotificationToDate(notificationToDate.format(ISO));
       } else if (toNotSet) {
         // If FROM set but TO not set => TO = FROM + 3 Years
-        LocalDate notificationFromDate = LocalDate.parse(criteria.getNotificationFromDate(),
-            MOJ_DATE_PICKER);
+        LocalDate notificationFromDate =
+            LocalDate.parse(criteria.getNotificationFromDate(), MOJ_DATE_PICKER);
         LocalDate toDate = notificationFromDate.plusYears(3);
         // If to date is after today, set to today
         if (toDate.isAfter(LocalDate.now())) {
@@ -64,10 +65,10 @@ public final class NotificationSearchUtil {
         copyCriteria.setNotificationToDate(toDate.format(ISO));
       } else {
         // Convert date formats
-        LocalDate notificationToDate = LocalDate.parse(criteria.getNotificationToDate(),
-            MOJ_DATE_PICKER);
-        LocalDate notificationFromDate = LocalDate.parse(criteria.getNotificationFromDate(),
-            MOJ_DATE_PICKER);
+        LocalDate notificationToDate =
+            LocalDate.parse(criteria.getNotificationToDate(), MOJ_DATE_PICKER);
+        LocalDate notificationFromDate =
+            LocalDate.parse(criteria.getNotificationFromDate(), MOJ_DATE_PICKER);
         copyCriteria.setNotificationToDate(notificationToDate.format(ISO));
         copyCriteria.setNotificationFromDate(notificationFromDate.format(ISO));
       }
@@ -80,7 +81,5 @@ public final class NotificationSearchUtil {
     return copyCriteria;
   }
 
-  private NotificationSearchUtil() {
-  }
-
+  private NotificationSearchUtil() {}
 }

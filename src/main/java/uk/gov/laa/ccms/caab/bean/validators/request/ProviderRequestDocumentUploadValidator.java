@@ -8,9 +8,7 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.validators.file.FileUploadValidator;
 
-/**
- * Validate the provider request document details provided by evidence upload flow.
- */
+/** Validate the provider request document details provided by evidence upload flow. */
 @Component
 @Getter
 public class ProviderRequestDocumentUploadValidator extends FileUploadValidator {
@@ -21,9 +19,7 @@ public class ProviderRequestDocumentUploadValidator extends FileUploadValidator 
     super(validExtensions, maxFileSize);
   }
 
-  /**
-   * The error message for the required provider request document details field.
-   */
+  /** The error message for the required provider request document details field. */
   protected static final String DOCUMENT_TYPES_REQUIRED_ERROR =
       "Please select at least one document type";
 
@@ -31,9 +27,8 @@ public class ProviderRequestDocumentUploadValidator extends FileUploadValidator 
    * Determines if the Validator supports the provided class.
    *
    * @param clazz The class to check for support.
-   * @return {@code true} if the class is assignable from
-   *         {@link uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData},
-   *         {@code false} otherwise.
+   * @return {@code true} if the class is assignable from {@link
+   *     uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData}, {@code false} otherwise.
    */
   @Override
   public boolean supports(final Class<?> clazz) {
@@ -41,20 +36,18 @@ public class ProviderRequestDocumentUploadValidator extends FileUploadValidator 
   }
 
   /**
-   * Validates the provider request document details in the
-   * {@link uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData}.
+   * Validates the provider request document details in the {@link
+   * uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData}.
    *
    * @param target The object to be validated.
    * @param errors The Errors object to store validation errors.
    */
   @Override
   public void validate(final Object target, final Errors errors) {
-    final EvidenceUploadFormData evidenceUploadFormData =
-        (EvidenceUploadFormData) target;
+    final EvidenceUploadFormData evidenceUploadFormData = (EvidenceUploadFormData) target;
 
     validateFile(evidenceUploadFormData, errors);
     validateDocumentDescription(evidenceUploadFormData, errors);
     validateDocumentType(evidenceUploadFormData, errors);
   }
-
 }

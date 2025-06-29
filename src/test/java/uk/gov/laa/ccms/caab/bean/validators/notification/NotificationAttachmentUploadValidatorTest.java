@@ -19,9 +19,8 @@ import uk.gov.laa.ccms.caab.constants.SendBy;
 @ExtendWith(SpringExtension.class)
 public class NotificationAttachmentUploadValidatorTest {
 
-  private final NotificationAttachmentUploadValidator validator = new NotificationAttachmentUploadValidator(
-      List.of("pdf", "doc"),
-      "20B");
+  private final NotificationAttachmentUploadValidator validator =
+      new NotificationAttachmentUploadValidator(List.of("pdf", "doc"), "20B");
 
   private NotificationAttachmentUploadFormData notificationAttachmentUploadFormData;
 
@@ -29,10 +28,10 @@ public class NotificationAttachmentUploadValidatorTest {
 
   @BeforeEach
   public void setUp() {
-    notificationAttachmentUploadFormData =
-        new NotificationAttachmentUploadFormData();
-    errors = new BeanPropertyBindingResult(notificationAttachmentUploadFormData,
-        "attachmentUploadFormData");
+    notificationAttachmentUploadFormData = new NotificationAttachmentUploadFormData();
+    errors =
+        new BeanPropertyBindingResult(
+            notificationAttachmentUploadFormData, "attachmentUploadFormData");
   }
 
   @Test
@@ -76,11 +75,9 @@ public class NotificationAttachmentUploadValidatorTest {
   @Test
   public void validate_fileExtension() {
     notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
-    notificationAttachmentUploadFormData.setFile(new MockMultipartFile(
-        "theFile",
-        "originalName.ppp",
-        "contentType",
-        "the file data".getBytes()));
+    notificationAttachmentUploadFormData.setFile(
+        new MockMultipartFile(
+            "theFile", "originalName.ppp", "contentType", "the file data".getBytes()));
 
     validator.validate(notificationAttachmentUploadFormData, errors);
     assertEquals(1, errors.getErrorCount());
@@ -91,11 +88,12 @@ public class NotificationAttachmentUploadValidatorTest {
   @Test
   public void validate_fileSize() {
     notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
-    notificationAttachmentUploadFormData.setFile(new MockMultipartFile(
-        "theFile",
-        "originalName.pdf",
-        "contentType",
-        "file content which is over twenty bytes in length".getBytes()));
+    notificationAttachmentUploadFormData.setFile(
+        new MockMultipartFile(
+            "theFile",
+            "originalName.pdf",
+            "contentType",
+            "file content which is over twenty bytes in length".getBytes()));
 
     validator.validate(notificationAttachmentUploadFormData, errors);
     assertEquals(1, errors.getErrorCount());
@@ -128,11 +126,9 @@ public class NotificationAttachmentUploadValidatorTest {
     formData.setDocumentDescription("doc desc");
     formData.setDocumentType("docType");
     formData.setDocumentTypeDisplayValue("doc type");
-    formData.setFile(new MockMultipartFile(
-        "theFile",
-        "originalName.pdf",
-        "contentType",
-        "the file data".getBytes()));
+    formData.setFile(
+        new MockMultipartFile(
+            "theFile", "originalName.pdf", "contentType", "the file data".getBytes()));
     formData.setProviderId(789);
     formData.setDocumentId(123);
     formData.setSendBy(SendBy.ELECTRONIC);
@@ -140,5 +136,4 @@ public class NotificationAttachmentUploadValidatorTest {
     formData.setNotificationReference("123");
     return formData;
   }
-
 }

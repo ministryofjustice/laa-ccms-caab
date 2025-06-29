@@ -34,8 +34,7 @@ class IndividualDetailsSectionDisplayMapperTest {
 
   IndividualDetailsSectionDisplayMapper mapper = new IndividualDetailsSectionDisplayMapperImpl();
 
-  @Mock
-  LookupService lookupService;
+  @Mock LookupService lookupService;
 
   @BeforeEach
   void beforeEach() {
@@ -51,29 +50,38 @@ class IndividualDetailsSectionDisplayMapperTest {
     individualDetails.setFirstName("First");
     individualDetails.setMiddleNames("Middle");
     individualDetails.setSurname("Last");
-    individualDetails.setDateOfBirth(Date.from(LocalDate.of(2000, 1, 1).atStartOfDay().toInstant(
-        ZoneOffset.UTC)));
+    individualDetails.setDateOfBirth(
+        Date.from(LocalDate.of(2000, 1, 1).atStartOfDay().toInstant(ZoneOffset.UTC)));
     individualDetails.setRelationshipToClient("REL");
     individualDetails.setRelationshipToCase("REL");
     individualDetails.setPublicFundingApplied(true);
     individualDetails.setNationalInsuranceNumber("NI1234567A");
     when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
-        .thenReturn(Mono.just(new CommonLookupDetail()
-            .content(singletonList(new CommonLookupValueDetail()
-                .code("REL").description("Related to client")))));
+        .thenReturn(
+            Mono.just(
+                new CommonLookupDetail()
+                    .content(
+                        singletonList(
+                            new CommonLookupValueDetail()
+                                .code("REL")
+                                .description("Related to client")))));
     final RelationshipToCaseLookupDetail orgRelationshipsDetail =
         new RelationshipToCaseLookupDetail();
-    orgRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail().code("REL")
-        .description("Related to case as organisation"));
+    orgRelationshipsDetail.addContentItem(
+        new RelationshipToCaseLookupValueDetail()
+            .code("REL")
+            .description("Related to case as organisation"));
     final RelationshipToCaseLookupDetail personRelationshipsDetail =
         new RelationshipToCaseLookupDetail();
-    personRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail().code("REL")
-        .description("Related to case as individual"));
-    when(lookupService.getPersonToCaseRelationships()).thenReturn(
-        Mono.just(personRelationshipsDetail));
+    personRelationshipsDetail.addContentItem(
+        new RelationshipToCaseLookupValueDetail()
+            .code("REL")
+            .description("Related to case as individual"));
+    when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(personRelationshipsDetail));
     // When
-    IndividualDetailsSectionDisplay result
-        = mapper.toIndividualDetailsSectionDisplay(individualDetails);
+    IndividualDetailsSectionDisplay result =
+        mapper.toIndividualDetailsSectionDisplay(individualDetails);
     // Then
     IndividualGeneralDetailsSectionDisplay generalDetails = result.generalDetails();
     assertThat(generalDetails).isNotNull();
@@ -107,11 +115,12 @@ class IndividualDetailsSectionDisplayMapperTest {
     individualDetails.setTelephoneMobile("1122334455");
     individualDetails.setEmailAddress("email@address.com");
     individualDetails.setFaxNumber("00000111111");
-    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.empty());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.empty());
     when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.empty());
     // When
-    IndividualDetailsSectionDisplay result
-        = mapper.toIndividualDetailsSectionDisplay(individualDetails);
+    IndividualDetailsSectionDisplay result =
+        mapper.toIndividualDetailsSectionDisplay(individualDetails);
     // Then
     IndividualAddressContactDetailsSectionDisplay addressDetails = result.addressContactDetails();
     assertThat(addressDetails).isNotNull();
@@ -146,11 +155,12 @@ class IndividualDetailsSectionDisplayMapperTest {
     individualDetails.setAssessedIncome(BigDecimal.valueOf(123.45));
     individualDetails.setAssessedAssets(BigDecimal.valueOf(678.90));
     individualDetails.setOtherInformation("Other info");
-    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.empty());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.empty());
     when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.empty());
     // When
-    IndividualDetailsSectionDisplay result
-        = mapper.toIndividualDetailsSectionDisplay(individualDetails);
+    IndividualDetailsSectionDisplay result =
+        mapper.toIndividualDetailsSectionDisplay(individualDetails);
     // Then
     IndividualEmploymentDetailsSectionDisplay employmentDetails = result.employmentDetails();
     assertThat(employmentDetails).isNotNull();

@@ -6,8 +6,8 @@ import uk.gov.laa.ccms.caab.bean.request.ProviderRequestTypeFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**
- * Validator component responsible for validating
- * {@link uk.gov.laa.ccms.caab.bean.request.ProviderRequestTypeFormData} objects.
+ * Validator component responsible for validating {@link
+ * uk.gov.laa.ccms.caab.bean.request.ProviderRequestTypeFormData} objects.
  */
 @Component
 public class ProviderRequestTypesValidator extends AbstractValidator {
@@ -16,9 +16,8 @@ public class ProviderRequestTypesValidator extends AbstractValidator {
    * Determines if the Validator supports the provided class.
    *
    * @param clazz The class to check for support.
-   * @return {@code true} if the class is assignable from
-   *         {@link uk.gov.laa.ccms.caab.bean.request.ProviderRequestTypeFormData},
-   *         {@code false} otherwise.
+   * @return {@code true} if the class is assignable from {@link
+   *     uk.gov.laa.ccms.caab.bean.request.ProviderRequestTypeFormData}, {@code false} otherwise.
    */
   @Override
   public boolean supports(final Class<?> clazz) {
@@ -26,8 +25,8 @@ public class ProviderRequestTypesValidator extends AbstractValidator {
   }
 
   /**
-   * Validates the provider request type details in the
-   * {@link uk.gov.laa.ccms.caab.bean.request.ProviderRequestTypeFormData}.
+   * Validates the provider request type details in the {@link
+   * uk.gov.laa.ccms.caab.bean.request.ProviderRequestTypeFormData}.
    *
    * @param target The object to be validated.
    * @param errors The Errors object to store validation errors.
@@ -37,8 +36,10 @@ public class ProviderRequestTypesValidator extends AbstractValidator {
     final ProviderRequestTypeFormData providerRequestTypeFormData =
         (ProviderRequestTypeFormData) target;
 
-    validateRequiredField("providerRequestType",
-        providerRequestTypeFormData.getProviderRequestType(), "Request type", errors);
+    validateRequiredField(
+        "providerRequestType",
+        providerRequestTypeFormData.getProviderRequestType(),
+        "Request type",
+        errors);
   }
-
 }

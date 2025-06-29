@@ -14,15 +14,15 @@ import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 @ExtendWith(SpringExtension.class)
 class ProviderDetailsValidatorTest {
 
-  @InjectMocks
-  private ProviderDetailsValidator providerDetailsValidator;
+  @InjectMocks private ProviderDetailsValidator providerDetailsValidator;
 
   private ApplicationFormData applicationFormData;
   private Errors errors;
 
   @BeforeEach
   public void setUp() {
-    applicationFormData = new ApplicationFormData(); // Assuming that the default constructor sets all fields to null.
+    applicationFormData =
+        new ApplicationFormData(); // Assuming that the default constructor sets all fields to null.
     errors = new BeanPropertyBindingResult(applicationFormData, "APPLICATION_FORM_DATA");
   }
 
@@ -60,5 +60,4 @@ class ProviderDetailsValidatorTest {
     assertNotNull(errors.getFieldError("contactNameId"));
     assertEquals("required.contactNameId", errors.getFieldError("contactNameId").getCode());
   }
-
 }

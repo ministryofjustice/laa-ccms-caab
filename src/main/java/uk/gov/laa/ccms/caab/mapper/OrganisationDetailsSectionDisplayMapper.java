@@ -26,22 +26,28 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
  *
  * @author Geoff Murley
  */
-@Mapper(componentModel = "spring", uses = {LookupService.class})
+@Mapper(
+    componentModel = "spring",
+    uses = {LookupService.class})
 public abstract class OrganisationDetailsSectionDisplayMapper {
-  @Autowired
-  protected LookupService lookupService;
-
+  @Autowired protected LookupService lookupService;
 
   @Mapping(target = "organisationDetails", source = "opponentDetail")
   @Mapping(target = "addressDetails", source = "opponentDetail")
   public abstract OrganisationDetailsSectionDisplay toOrganisationDetailsSectionDisplay(
       OpponentDetail opponentDetail);
 
-  @Mapping(target = "relationshipToClient", source = "opponentDetail",
+  @Mapping(
+      target = "relationshipToClient",
+      source = "opponentDetail",
       qualifiedByName = "mapRelationshipToClient")
-  @Mapping(target = "relationshipToCase", source = "opponentDetail",
+  @Mapping(
+      target = "relationshipToCase",
+      source = "opponentDetail",
       qualifiedByName = "mapRelationshipToCase")
-  @Mapping(target = "organisationType", source = "opponentDetail",
+  @Mapping(
+      target = "organisationType",
+      source = "opponentDetail",
       qualifiedByName = "mapOrganisationType")
   public abstract OrganisationOrganisationDetailsSectionDisplay toIndividualDetailsSectionDisplay(
       OpponentDetail opponentDetail);
@@ -65,10 +71,11 @@ public abstract class OrganisationDetailsSectionDisplayMapper {
     final Mono<CommonLookupDetail> relationshipsToClientMono =
         lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT);
 
-    return relationshipsToClientMono.blockOptional()
-        .map(x ->
-            OpponentUtil.getRelationshipToClient(opponentDetail, x.getContent()))
-        .map(CommonLookupValueDetail::getDescription).orElse("");
+    return relationshipsToClientMono
+        .blockOptional()
+        .map(x -> OpponentUtil.getRelationshipToClient(opponentDetail, x.getContent()))
+        .map(CommonLookupValueDetail::getDescription)
+        .orElse("");
   }
 
   @Named("mapOrganisationType")
@@ -76,10 +83,11 @@ public abstract class OrganisationDetailsSectionDisplayMapper {
     final Mono<CommonLookupDetail> organisationTypeMono =
         lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES);
 
-    return organisationTypeMono.blockOptional()
-        .map(x ->
-            OpponentUtil.getOrganisationType(opponentDetail, x.getContent()))
-        .map(CommonLookupValueDetail::getDescription).orElse("");
+    return organisationTypeMono
+        .blockOptional()
+        .map(x -> OpponentUtil.getOrganisationType(opponentDetail, x.getContent()))
+        .map(CommonLookupValueDetail::getDescription)
+        .orElse("");
   }
 
   @Named("mapRelationshipToCase")
@@ -88,15 +96,14 @@ public abstract class OrganisationDetailsSectionDisplayMapper {
         lookupService.getOrganisationToCaseRelationships();
 
     return organisationRelationshipsToCaseMono
-        .map(organisationRelationshipsToCase
-            -> OpponentUtil.getRelationshipToCase(opponentDetail,
-            organisationRelationshipsToCase.getContent(), Collections.emptyList()))
+        .map(
+            organisationRelationshipsToCase ->
+                OpponentUtil.getRelationshipToCase(
+                    opponentDetail,
+                    organisationRelationshipsToCase.getContent(),
+                    Collections.emptyList()))
         .map(RelationshipToCaseLookupValueDetail::getDescription)
-        .blockOptional().orElse("");
+        .blockOptional()
+        .orElse("");
   }
-
 }
-
-
-
-

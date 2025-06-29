@@ -4,20 +4,14 @@ import lombok.Builder;
 import lombok.Data;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 
-/**
- * Context for mapping general details submission summary.
- */
+/** Context for mapping general details submission summary. */
 @Data
 @Builder
 public class GeneralDetailsSubmissionSummaryMappingContext {
 
-  /**
-   * The preferred address lookup detail.
-   */
+  /** The preferred address lookup detail. */
   CommonLookupDetail preferredAddress;
 
-  /**
-   * The country lookup detail.
-   */
+  /** The country lookup detail. */
   CommonLookupDetail country;
 }

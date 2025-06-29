@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
-
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.DECLARATION_APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
@@ -94,28 +93,25 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 
-/**
- * Controller for the application sections.
- */
+/** Controller for the application sections. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-
 public class ApplicationSubmissionController {
 
-  //services
+  // services
   private final ApplicationService applicationService;
   private final AssessmentService assessmentService;
   private final LookupService lookupService;
   private final ClientService clientService;
   private final EvidenceService evidenceService;
 
-  //mappers
+  // mappers
   private final ClientDetailMapper clientDetailsMapper;
   private final SubmissionSummaryDisplayMapper submissionSummaryDisplayMapper;
   private final ProceedingAndCostsMapper proceedingAndCostsMapper;
 
-  //validators
+  // validators
   private final DeclarationSubmissionValidator declarationSubmissionValidator;
   private final ProviderDetailsValidator providerDetailsValidator;
   private final CorrespondenceAddressValidator correspondenceAddressValidator;
@@ -155,15 +151,16 @@ public class ApplicationSubmissionController {
       @SessionAttribute(USER_DETAILS) final UserDetail user) {
 
     final ApplicationDetail application =
-        Optional.ofNullable(applicationService.getApplication(
-                String.valueOf(activeCase.getApplicationId())).block())
-            .orElseThrow(() -> new CaabApplicationException(
-                "Failed to retrieve application detail"));
+        Optional.ofNullable(
+                applicationService
+                    .getApplication(String.valueOf(activeCase.getApplicationId()))
+                    .block())
+            .orElseThrow(
+                () -> new CaabApplicationException("Failed to retrieve application detail"));
 
     applicationService.abandonApplication(application, user);
 
     return "redirect:/home";
-
   }
 
   /**
@@ -181,22 +178,25 @@ public class ApplicationSubmissionController {
             applicationService.getMonoCorrespondenceAddressFormData(applicationId),
             applicationService.getApplication(applicationId),
             Mono.fromCallable(() -> applicationService.getOpponents(applicationId))
-                .subscribeOn(Schedulers.boundedElastic())
-        )
-        .flatMap(tuple -> {
-          ApplicationFormData providerDetails = tuple.getT1();
-          AddressFormData generalDetails = tuple.getT2();
-          ApplicationDetail application = tuple.getT3();
-          List<AbstractOpponentFormData> opponents = tuple.getT4();
+                .subscribeOn(Schedulers.boundedElastic()))
+        .flatMap(
+            tuple -> {
+              ApplicationFormData providerDetails = tuple.getT1();
+              AddressFormData generalDetails = tuple.getT2();
+              ApplicationDetail application = tuple.getT3();
+              List<AbstractOpponentFormData> opponents = tuple.getT4();
 
-          boolean hasErrors =
-              processValidations(providerDetails, generalDetails, application, opponents, model);
+              boolean hasErrors =
+                  processValidations(
+                      providerDetails, generalDetails, application, opponents, model);
 
-          return validateProceedings(application.getProceedings(), model)
-              .map(proceedingsFailed -> hasErrors || proceedingsFailed
-                  ? "application/application-validation-error-correction"
-                  : "redirect:/application/summary");
-        });
+              return validateProceedings(application.getProceedings(), model)
+                  .map(
+                      proceedingsFailed ->
+                          hasErrors || proceedingsFailed
+                              ? "application/application-validation-error-correction"
+                              : "redirect:/application/summary");
+            });
   }
 
   private boolean processValidations(
@@ -204,17 +204,16 @@ public class ApplicationSubmissionController {
       AddressFormData generalDetails,
       ApplicationDetail application,
       List<AbstractOpponentFormData> opponents,
-      Model model
-  ) {
+      Model model) {
     boolean hasErrors = false;
 
-    if (validateAndAddErrors(providerDetails, providerDetailsValidator, model,
-        "providerDetailsErrors")) {
+    if (validateAndAddErrors(
+        providerDetails, providerDetailsValidator, model, "providerDetailsErrors")) {
       model.addAttribute("providerDetailsFormData", providerDetails);
       hasErrors = true;
     }
-    if (validateAndAddErrors(generalDetails, correspondenceAddressValidator, model,
-        "generalDetailsErrors")) {
+    if (validateAndAddErrors(
+        generalDetails, correspondenceAddressValidator, model, "generalDetailsErrors")) {
       model.addAttribute("generalDetailsFormData", generalDetails);
       hasErrors = true;
     }
@@ -238,15 +237,13 @@ public class ApplicationSubmissionController {
       final Validator validator,
       final Model model,
       final String errorAttribute) {
-    final BindingResult bindingResult = new BeanPropertyBindingResult(
-        formData, formData.getClass().getSimpleName());
+    final BindingResult bindingResult =
+        new BeanPropertyBindingResult(formData, formData.getClass().getSimpleName());
     validator.validate(formData, bindingResult);
 
     if (bindingResult.hasErrors()) {
-      final List<String> errors = bindingResult.getAllErrors()
-          .stream()
-          .map(ObjectError::getDefaultMessage)
-          .toList();
+      final List<String> errors =
+          bindingResult.getAllErrors().stream().map(ObjectError::getDefaultMessage).toList();
       model.addAttribute(errorAttribute, errors);
       return true;
     }
@@ -269,51 +266,75 @@ public class ApplicationSubmissionController {
     final Set<String> proceedingsErrors = new HashSet<>();
 
     return Flux.fromIterable(proceedings)
-        .flatMap(proceeding -> Optional.ofNullable(proceeding.getTypeOfOrder())
-            .map(StringDisplayValue::getId)
-            .map(lookupService::getOrderTypeDescription)
-            .orElse(Mono.empty())
-            .map(orderTypeDisplayValue ->
-                proceedingAndCostsMapper.toProceedingFlow(proceeding, orderTypeDisplayValue)
-            )
-            .flatMap(proceedingDetailsFormData -> Mono.just(
-                validateAndAddErrors(proceedingDetailsFormData.getMatterTypeDetails(),
-                    matterTypeValidator, model, "proceedingMatterTypeDetails"))
-                .flatMap(isError -> {
-                  if (isError) {
-                    proceedingsErrors.addAll(
-                        getErrorsFromModel(model, "proceedingMatterTypeDetails"));
-                  }
-                  return Mono.just(isError);
-                })
-                .flatMap(isError -> {
-                  if (!isError) {
-                    return Mono.just(validateAndAddErrors(
-                        proceedingDetailsFormData.getProceedingDetails(),
-                        proceedingTypeValidator, model, "proceedingTypeDetails"));
-                  } else {
+        .flatMap(
+            proceeding ->
+                Optional.ofNullable(proceeding.getTypeOfOrder())
+                    .map(StringDisplayValue::getId)
+                    .map(lookupService::getOrderTypeDescription)
+                    .orElse(Mono.empty())
+                    .map(
+                        orderTypeDisplayValue ->
+                            proceedingAndCostsMapper.toProceedingFlow(
+                                proceeding, orderTypeDisplayValue))
+                    .flatMap(
+                        proceedingDetailsFormData ->
+                            Mono.just(
+                                    validateAndAddErrors(
+                                        proceedingDetailsFormData.getMatterTypeDetails(),
+                                        matterTypeValidator,
+                                        model,
+                                        "proceedingMatterTypeDetails"))
+                                .flatMap(
+                                    isError -> {
+                                      if (isError) {
+                                        proceedingsErrors.addAll(
+                                            getErrorsFromModel(
+                                                model, "proceedingMatterTypeDetails"));
+                                      }
+                                      return Mono.just(isError);
+                                    })
+                                .flatMap(
+                                    isError -> {
+                                      if (!isError) {
+                                        return Mono.just(
+                                            validateAndAddErrors(
+                                                proceedingDetailsFormData.getProceedingDetails(),
+                                                proceedingTypeValidator,
+                                                model,
+                                                "proceedingTypeDetails"));
+                                      } else {
+                                        return Mono.just(true);
+                                      }
+                                    })
+                                .flatMap(
+                                    isError -> {
+                                      if (isError) {
+                                        proceedingsErrors.addAll(
+                                            getErrorsFromModel(model, "proceedingTypeDetails"));
+                                      }
+                                      return Mono.just(
+                                          validateAndAddErrors(
+                                              proceedingDetailsFormData,
+                                              furtherDetailsValidator,
+                                              model,
+                                              "proceedingFurtherDetails"));
+                                    })
+                                .doOnNext(
+                                    isError -> {
+                                      if (isError) {
+                                        proceedingsErrors.addAll(
+                                            getErrorsFromModel(model, "proceedingFurtherDetails"));
+                                      }
+                                    })))
+        .then(
+            Mono.defer(
+                () -> {
+                  if (!proceedingsErrors.isEmpty()) {
+                    model.addAttribute("proceedingsErrors", proceedingsErrors);
                     return Mono.just(true);
                   }
-                })
-                .flatMap(isError -> {
-                  if (isError) {
-                    proceedingsErrors.addAll(getErrorsFromModel(model, "proceedingTypeDetails"));
-                  }
-                  return Mono.just(validateAndAddErrors(proceedingDetailsFormData,
-                      furtherDetailsValidator, model, "proceedingFurtherDetails"));
-                })
-                .doOnNext(isError -> {
-                  if (isError) {
-                    proceedingsErrors.addAll(getErrorsFromModel(model, "proceedingFurtherDetails"));
-                  }
-                })))
-        .then(Mono.defer(() -> {
-          if (!proceedingsErrors.isEmpty()) {
-            model.addAttribute("proceedingsErrors", proceedingsErrors);
-            return Mono.just(true);
-          }
-          return Mono.just(false);
-        }));
+                  return Mono.just(false);
+                }));
   }
 
   /**
@@ -324,8 +345,7 @@ public class ApplicationSubmissionController {
    * @return {@code true} if there are validation errors, {@code false} otherwise
    */
   protected boolean validatePriorAuthorities(
-      final List<PriorAuthorityDetail> priorAuthorities,
-      final Model model) {
+      final List<PriorAuthorityDetail> priorAuthorities, final Model model) {
     if (priorAuthorities == null || priorAuthorities.isEmpty()) {
       return false;
     }
@@ -335,13 +355,19 @@ public class ApplicationSubmissionController {
       final PriorAuthorityFlowFormData priorAuthorityFlow =
           proceedingAndCostsMapper.toPriorAuthorityFlowFormData(priorAuthority);
 
-      if (validateAndAddErrors(priorAuthorityFlow.getPriorAuthorityTypeFormData(),
-          priorAuthorityTypeValidator, model, "priorAuthorityType")) {
+      if (validateAndAddErrors(
+          priorAuthorityFlow.getPriorAuthorityTypeFormData(),
+          priorAuthorityTypeValidator,
+          model,
+          "priorAuthorityType")) {
         priorAuthorityErrors.addAll(getErrorsFromModel(model, "priorAuthorityType"));
       }
 
-      if (validateAndAddErrors(priorAuthorityFlow.getPriorAuthorityDetailsFormData(),
-          priorAuthorityDetailsValidator, model, "priorAuthorityDetails")) {
+      if (validateAndAddErrors(
+          priorAuthorityFlow.getPriorAuthorityDetailsFormData(),
+          priorAuthorityDetailsValidator,
+          model,
+          "priorAuthorityDetails")) {
         priorAuthorityErrors.addAll(getErrorsFromModel(model, "priorAuthorityDetails"));
       }
     }
@@ -361,8 +387,7 @@ public class ApplicationSubmissionController {
    * @return {@code true} if there are validation errors, {@code false} otherwise
    */
   protected boolean validateOpponents(
-      final List<AbstractOpponentFormData> opponents,
-      final Model model) {
+      final List<AbstractOpponentFormData> opponents, final Model model) {
     if (opponents == null || opponents.isEmpty()) {
       return false;
     }
@@ -370,13 +395,13 @@ public class ApplicationSubmissionController {
     final Set<String> opponentErrors = new HashSet<>();
     for (final AbstractOpponentFormData opponent : opponents) {
       if (opponent instanceof IndividualOpponentFormData) {
-        if (validateAndAddErrors(opponent,
-            individualOpponentValidator, model, "individualOpponent")) {
+        if (validateAndAddErrors(
+            opponent, individualOpponentValidator, model, "individualOpponent")) {
           opponentErrors.addAll(getErrorsFromModel(model, "individualOpponent"));
         }
       } else if (opponent instanceof OrganisationOpponentFormData) {
-        if (validateAndAddErrors(opponent,
-            organisationOpponentValidator, model, "organisationOpponent")) {
+        if (validateAndAddErrors(
+            opponent, organisationOpponentValidator, model, "organisationOpponent")) {
           opponentErrors.addAll(getErrorsFromModel(model, "organisationOpponent"));
         }
       }
@@ -389,7 +414,6 @@ public class ApplicationSubmissionController {
     return false;
   }
 
-
   /**
    * Retrieves a list of error messages from the model by attribute name.
    *
@@ -400,9 +424,9 @@ public class ApplicationSubmissionController {
   @SuppressWarnings("unchecked")
   protected List<String> getErrorsFromModel(final Model model, final String attributeName) {
     return model.containsAttribute(attributeName)
-        ? (List<String>) model.getAttribute(attributeName) : Collections.emptyList();
+        ? (List<String>) model.getAttribute(attributeName)
+        : Collections.emptyList();
   }
-
 
   /**
    * Returns the user to the application section task page after continue is clicked.
@@ -430,75 +454,75 @@ public class ApplicationSubmissionController {
       final HttpSession session,
       final Model model) {
 
-    //Pre-processing data - application data
+    // Pre-processing data - application data
     final Mono<ApplicationDetail> applicationMono =
         applicationService.getApplication(String.valueOf(activeCase.getApplicationId()));
 
-    //Pre-processing data - means and merits assessment data
+    // Pre-processing data - means and merits assessment data
     final Mono<AssessmentDetails> assessmentDetailsMono =
         assessmentService.getAssessments(
-            List.of(
-                AssessmentRulebase.MEANS.getName(),
-                AssessmentRulebase.MERITS.getName()),
+            List.of(AssessmentRulebase.MEANS.getName(), AssessmentRulebase.MERITS.getName()),
             activeCase.getProviderId().toString(),
             activeCase.getCaseReferenceNumber());
 
-    //Pre-processing data - assessment parent summary lookups
+    // Pre-processing data - assessment parent summary lookups
     final Mono<List<AssessmentSummaryEntityLookupValueDetail>> parentMono =
-        lookupService.getAssessmentSummaryAttributes(PARENT_LOOKUP)
+        lookupService
+            .getAssessmentSummaryAttributes(PARENT_LOOKUP)
             .map(AssessmentSummaryEntityLookupDetail::getContent);
 
-    //Pre-processing data - assessment child summary lookups
+    // Pre-processing data - assessment child summary lookups
     final Mono<List<AssessmentSummaryEntityLookupValueDetail>> childMono =
-        lookupService.getAssessmentSummaryAttributes(CHILD_LOOKUP)
+        lookupService
+            .getAssessmentSummaryAttributes(CHILD_LOOKUP)
             .map(AssessmentSummaryEntityLookupDetail::getContent);
 
-    //Pre-processing data - client data
+    // Pre-processing data - client data
     final Mono<ClientDetailDetails> clientMono =
-        clientService.getClient(
-                activeCase.getClientReferenceNumber(),
-                user.getLoginId(),
-                user.getUserType())
+        clientService
+            .getClient(activeCase.getClientReferenceNumber(), user.getLoginId(), user.getUserType())
             .map(ClientDetail::getDetails);
 
-    //Pre-processing data - proceeding context data
+    // Pre-processing data - proceeding context data
     final Mono<ProceedingSubmissionSummaryMappingContext> proceedingContextMono =
         lookupService.getProceedingSubmissionMappingContext();
 
-    //Pre-processing data - opponent context data
+    // Pre-processing data - opponent context data
     final Mono<OpponentSubmissionSummaryMappingContext> opponentContextMono =
         lookupService.getOpponentSubmissionMappingContext();
 
-    //Pre-processing data - general details context data
+    // Pre-processing data - general details context data
     final Mono<GeneralDetailsSubmissionSummaryMappingContext> generalDetailsContextMono =
         lookupService.getGeneralDetailsSubmissionMappingContext();
 
     final Tuple8<
-        AssessmentDetails,
-        List<AssessmentSummaryEntityLookupValueDetail>,
-        List<AssessmentSummaryEntityLookupValueDetail>,
-        ClientDetailDetails,
-        ApplicationDetail,
-        ProceedingSubmissionSummaryMappingContext,
-        OpponentSubmissionSummaryMappingContext,
-        GeneralDetailsSubmissionSummaryMappingContext> preprocessingData =
-        Mono.zip(
-                assessmentDetailsMono,
-                parentMono,
-                childMono,
-                clientMono,
-                applicationMono,
-                proceedingContextMono,
-                opponentContextMono,
-                generalDetailsContextMono)
-            .blockOptional()
-            .orElseThrow(() -> new CaabApplicationException("Failed to pre-process summary data"));
+            AssessmentDetails,
+            List<AssessmentSummaryEntityLookupValueDetail>,
+            List<AssessmentSummaryEntityLookupValueDetail>,
+            ClientDetailDetails,
+            ApplicationDetail,
+            ProceedingSubmissionSummaryMappingContext,
+            OpponentSubmissionSummaryMappingContext,
+            GeneralDetailsSubmissionSummaryMappingContext>
+        preprocessingData =
+            Mono.zip(
+                    assessmentDetailsMono,
+                    parentMono,
+                    childMono,
+                    clientMono,
+                    applicationMono,
+                    proceedingContextMono,
+                    opponentContextMono,
+                    generalDetailsContextMono)
+                .blockOptional()
+                .orElseThrow(
+                    () -> new CaabApplicationException("Failed to pre-process summary data"));
 
-    final AssessmentDetail meansAssessmentDetail = getAssessment(
-        preprocessingData.getT1(), AssessmentRulebase.MEANS);
+    final AssessmentDetail meansAssessmentDetail =
+        getAssessment(preprocessingData.getT1(), AssessmentRulebase.MEANS);
 
-    final AssessmentDetail meritsAssessmentDetail = getAssessment(
-        preprocessingData.getT1(), AssessmentRulebase.MERITS);
+    final AssessmentDetail meritsAssessmentDetail =
+        getAssessment(preprocessingData.getT1(), AssessmentRulebase.MERITS);
 
     final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups =
         preprocessingData.getT2();
@@ -512,22 +536,24 @@ public class ApplicationSubmissionController {
 
     // Post-processing data - means assessment summary data
     final Mono<List<AssessmentSummaryEntityDisplay>> meansAssessmentSummaryMono =
-        Mono.fromCallable(() ->
-                assessmentService.getAssessmentSummaryToDisplay(
-                    meansAssessmentDetail, parentSummaryLookups, childSummaryLookups))
+        Mono.fromCallable(
+                () ->
+                    assessmentService.getAssessmentSummaryToDisplay(
+                        meansAssessmentDetail, parentSummaryLookups, childSummaryLookups))
             .subscribeOn(Schedulers.boundedElastic());
 
     // Post-processing data - merits assessment summary data
     final Mono<List<AssessmentSummaryEntityDisplay>> meritsAssessmentSummaryMono =
-        Mono.fromCallable(() ->
-                assessmentService.getAssessmentSummaryToDisplay(
-                    meritsAssessmentDetail, parentSummaryLookups, childSummaryLookups))
+        Mono.fromCallable(
+                () ->
+                    assessmentService.getAssessmentSummaryToDisplay(
+                        meritsAssessmentDetail, parentSummaryLookups, childSummaryLookups))
             .subscribeOn(Schedulers.boundedElastic());
 
     // Post-processing data - provider summary data
     final Mono<ProviderSubmissionSummaryDisplay> providerSummaryMono =
-        Mono.fromCallable(() ->
-                submissionSummaryDisplayMapper.toProviderSummaryDisplay(application))
+        Mono.fromCallable(
+                () -> submissionSummaryDisplayMapper.toProviderSummaryDisplay(application))
             .subscribeOn(Schedulers.boundedElastic());
 
     // Post-processing data - client summary data
@@ -536,56 +562,62 @@ public class ApplicationSubmissionController {
 
     // Post-processing data - general details summary data
     final Mono<GeneralDetailsSubmissionSummaryDisplay> generalDetailsSummaryMono =
-        Mono.fromCallable(() ->
-                submissionSummaryDisplayMapper.toGeneralDetailsSummaryDisplay(application,
-                    preprocessingData.getT8()))
+        Mono.fromCallable(
+                () ->
+                    submissionSummaryDisplayMapper.toGeneralDetailsSummaryDisplay(
+                        application, preprocessingData.getT8()))
             .subscribeOn(Schedulers.boundedElastic());
 
     // Post-processing data - proceedings and costs summary data
     final Mono<ProceedingAndCostSubmissionSummaryDisplay> proceedingAndCostSummaryMono =
-        Mono.fromCallable(() ->
-                submissionSummaryDisplayMapper.toProceedingAndCostSummaryDisplay(
-                    application, preprocessingData.getT6()))
+        Mono.fromCallable(
+                () ->
+                    submissionSummaryDisplayMapper.toProceedingAndCostSummaryDisplay(
+                        application, preprocessingData.getT6()))
             .subscribeOn(Schedulers.boundedElastic());
 
     // Post-processing data - opponents and other parties summary data
     final Mono<OpponentsAndOtherPartiesSubmissionSummaryDisplay>
         opponentsAndOtherPartiesSummaryMono =
-        Mono.fromCallable(() ->
-                submissionSummaryDisplayMapper.toOpponentsAndOtherPartiesSummaryDisplay(
-                    application, preprocessingData.getT7()))
-            .subscribeOn(Schedulers.boundedElastic());
+            Mono.fromCallable(
+                    () ->
+                        submissionSummaryDisplayMapper.toOpponentsAndOtherPartiesSummaryDisplay(
+                            application, preprocessingData.getT7()))
+                .subscribeOn(Schedulers.boundedElastic());
 
-    final Tuple7<List<AssessmentSummaryEntityDisplay>,
-        List<AssessmentSummaryEntityDisplay>,
-        HashMap<String, CommonLookupValueDetail>,
-        GeneralDetailsSubmissionSummaryDisplay,
-        ProviderSubmissionSummaryDisplay,
-        ProceedingAndCostSubmissionSummaryDisplay,
-        OpponentsAndOtherPartiesSubmissionSummaryDisplay> postProcessingData =
-        Mono.zip(
-                meansAssessmentSummaryMono,
-                meritsAssessmentSummaryMono,
-                clientSummaryLookupsMono,
-                generalDetailsSummaryMono,
-                providerSummaryMono,
-                proceedingAndCostSummaryMono,
-                opponentsAndOtherPartiesSummaryMono)
-            .blockOptional()
-            .orElseThrow(() -> new CaabApplicationException("Failed to post-process summary data"));
+    final Tuple7<
+            List<AssessmentSummaryEntityDisplay>,
+            List<AssessmentSummaryEntityDisplay>,
+            HashMap<String, CommonLookupValueDetail>,
+            GeneralDetailsSubmissionSummaryDisplay,
+            ProviderSubmissionSummaryDisplay,
+            ProceedingAndCostSubmissionSummaryDisplay,
+            OpponentsAndOtherPartiesSubmissionSummaryDisplay>
+        postProcessingData =
+            Mono.zip(
+                    meansAssessmentSummaryMono,
+                    meritsAssessmentSummaryMono,
+                    clientSummaryLookupsMono,
+                    generalDetailsSummaryMono,
+                    providerSummaryMono,
+                    proceedingAndCostSummaryMono,
+                    opponentsAndOtherPartiesSummaryMono)
+                .blockOptional()
+                .orElseThrow(
+                    () -> new CaabApplicationException("Failed to post-process summary data"));
 
-
-    //create final summary object
-    final SubmissionSummaryDisplay submissionSummary = SubmissionSummaryDisplay.builder()
-        .client(clientFlowFormData)
-        .meansAssessment(postProcessingData.getT1())
-        .meritsAssessment(postProcessingData.getT2())
-        .clientLookups(postProcessingData.getT3())
-        .generalDetails(postProcessingData.getT4())
-        .providerDetails(postProcessingData.getT5())
-        .proceedingsAndCosts(postProcessingData.getT6())
-        .opponentsAndOtherParties(postProcessingData.getT7())
-        .build();
+    // create final summary object
+    final SubmissionSummaryDisplay submissionSummary =
+        SubmissionSummaryDisplay.builder()
+            .client(clientFlowFormData)
+            .meansAssessment(postProcessingData.getT1())
+            .meritsAssessment(postProcessingData.getT2())
+            .clientLookups(postProcessingData.getT3())
+            .generalDetails(postProcessingData.getT4())
+            .providerDetails(postProcessingData.getT5())
+            .proceedingsAndCosts(postProcessingData.getT6())
+            .opponentsAndOtherParties(postProcessingData.getT7())
+            .build();
 
     session.setAttribute(SUBMISSION_SUMMARY, submissionSummary);
     model.addAttribute("submissionSummary", submissionSummary);
@@ -610,7 +642,6 @@ public class ApplicationSubmissionController {
     return "application/sections/application-summary-complete-printable";
   }
 
-
   /**
    * Handles POST requests to submit the application summary form.
    *
@@ -622,10 +653,9 @@ public class ApplicationSubmissionController {
    */
   @PostMapping("/application/summary")
   public String applicationSummaryPost(
-      @SessionAttribute(SUBMISSION_SUMMARY)
-      final SubmissionSummaryDisplay submissionSummary,
+      @SessionAttribute(SUBMISSION_SUMMARY) final SubmissionSummaryDisplay submissionSummary,
       @ModelAttribute("summarySubmissionFormData")
-      final SummarySubmissionFormData summarySubmissionFormData,
+          final SummarySubmissionFormData summarySubmissionFormData,
       final BindingResult bindingResult,
       final Model model) {
 
@@ -647,7 +677,7 @@ public class ApplicationSubmissionController {
   @GetMapping("/application/declaration")
   public String applicationDeclaration(
       @ModelAttribute("summarySubmissionFormData")
-      final SummarySubmissionFormData summarySubmissionFormData,
+          final SummarySubmissionFormData summarySubmissionFormData,
       final Model model) {
 
     return applicationDeclarationDetails(model, summarySubmissionFormData);
@@ -664,7 +694,7 @@ public class ApplicationSubmissionController {
   @PostMapping("/application/declaration")
   public String applicationDeclarationPost(
       @ModelAttribute("summarySubmissionFormData")
-      final SummarySubmissionFormData summarySubmissionFormData,
+          final SummarySubmissionFormData summarySubmissionFormData,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       final BindingResult bindingResult,
@@ -678,24 +708,21 @@ public class ApplicationSubmissionController {
     }
 
     final EvidenceDocumentDetails evidenceDocumentDetails =
-        evidenceService.getEvidenceDocumentsForCase(
-            activeCase.getCaseReferenceNumber(), APPLICATION).block();
+        evidenceService
+            .getEvidenceDocumentsForCase(activeCase.getCaseReferenceNumber(), APPLICATION)
+            .block();
 
-    //register previously uploaded documents
+    // register previously uploaded documents
     evidenceService.registerPreviouslyUploadedDocuments(evidenceDocumentDetails, user);
 
-    evidenceService.uploadAndUpdateDocuments(
-        evidenceDocumentDetails,
-            activeCase.getCaseReferenceNumber(),
-            null,
-            user)
+    evidenceService
+        .uploadAndUpdateDocuments(
+            evidenceDocumentDetails, activeCase.getCaseReferenceNumber(), null, user)
         .block();
 
-
-    //map application to case
+    // map application to case
     final Mono<ApplicationDetail> applicationMono =
-        applicationService.getApplication(
-            String.valueOf(activeCase.getApplicationId()));
+        applicationService.getApplication(String.valueOf(activeCase.getApplicationId()));
 
     final Mono<AssessmentDetails> meansAssessmentsMono =
         assessmentService.getAssessments(
@@ -714,10 +741,13 @@ public class ApplicationSubmissionController {
             activeCase.getCaseReferenceNumber(), APPLICATION);
 
     final Tuple4<ApplicationDetail, AssessmentDetails, AssessmentDetails, EvidenceDocumentDetails>
-        applicationMonos = Mono.zip(
-            applicationMono, meansAssessmentsMono, meritsAssessmentsMono, caseDocsMono)
-            .blockOptional().orElseThrow(() ->
-                new CaabApplicationException("Failed to retrieve application and assessment data"));
+        applicationMonos =
+            Mono.zip(applicationMono, meansAssessmentsMono, meritsAssessmentsMono, caseDocsMono)
+                .blockOptional()
+                .orElseThrow(
+                    () ->
+                        new CaabApplicationException(
+                            "Failed to retrieve application and assessment data"));
 
     final ApplicationDetail application = applicationMonos.getT1();
 
@@ -731,11 +761,7 @@ public class ApplicationSubmissionController {
 
     final CaseTransactionResponse response =
         applicationService.createCase(
-            user,
-            application,
-            meansAssessment,
-            meritsAssessment,
-            caseDocs);
+            user, application, meansAssessment, meritsAssessment, caseDocs);
 
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
 
@@ -750,8 +776,7 @@ public class ApplicationSubmissionController {
    * @return the view to render for the declaration details page
    */
   private String applicationDeclarationDetails(
-      final Model model,
-      final SummarySubmissionFormData summarySubmissionFormData) {
+      final Model model, final SummarySubmissionFormData summarySubmissionFormData) {
     final DeclarationLookupDetail declarations =
         lookupService.getDeclarations(DECLARATION_APPLICATION).block();
     final List<DynamicCheckbox> declarationOptions =
@@ -760,5 +785,4 @@ public class ApplicationSubmissionController {
     model.addAttribute("summarySubmissionFormData", summarySubmissionFormData);
     return "application/sections/application-submit-declaration";
   }
-
 }

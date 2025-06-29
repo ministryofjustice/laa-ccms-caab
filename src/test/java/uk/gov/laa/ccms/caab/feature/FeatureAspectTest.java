@@ -20,14 +20,11 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 public class FeatureAspectTest {
 
-  @Mock
-  private FeatureService featureService;
+  @Mock private FeatureService featureService;
 
-  @Mock
-  private SpelExpressionParser spelExpressionParser;
+  @Mock private SpelExpressionParser spelExpressionParser;
 
-  @InjectMocks
-  private FeatureAspect featureAspect;
+  @InjectMocks private FeatureAspect featureAspect;
 
   @Test
   @DisplayName("checkRequiredFeature join point proceeds when the given feature is enabled")
@@ -73,9 +70,9 @@ public class FeatureAspectTest {
     when(featureService.isEnabled(Feature.AMENDMENTS)).thenReturn(true);
 
     ProceedingJoinPoint proceedingJoinPoint = mock(ProceedingJoinPoint.class);
-    when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{});
+    when(proceedingJoinPoint.getArgs()).thenReturn(new Object[] {});
     MethodSignature signature = mock(MethodSignature.class);
-    when(signature.getParameterNames()).thenReturn(new String[]{});
+    when(signature.getParameterNames()).thenReturn(new String[] {});
     when(proceedingJoinPoint.getSignature()).thenReturn(signature);
 
     Expression expression = mock(Expression.class);
@@ -99,9 +96,9 @@ public class FeatureAspectTest {
     when(featureService.isEnabled(Feature.AMENDMENTS)).thenReturn(true);
 
     ProceedingJoinPoint proceedingJoinPoint = mock(ProceedingJoinPoint.class);
-    when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{});
+    when(proceedingJoinPoint.getArgs()).thenReturn(new Object[] {});
     MethodSignature signature = mock(MethodSignature.class);
-    when(signature.getParameterNames()).thenReturn(new String[]{});
+    when(signature.getParameterNames()).thenReturn(new String[] {});
     when(proceedingJoinPoint.getSignature()).thenReturn(signature);
 
     Expression expression = mock(Expression.class);
@@ -125,9 +122,9 @@ public class FeatureAspectTest {
     when(featureService.isEnabled(Feature.AMENDMENTS)).thenReturn(false);
 
     ProceedingJoinPoint proceedingJoinPoint = mock(ProceedingJoinPoint.class);
-    when(proceedingJoinPoint.getArgs()).thenReturn(new Object[]{});
+    when(proceedingJoinPoint.getArgs()).thenReturn(new Object[] {});
     MethodSignature signature = mock(MethodSignature.class);
-    when(signature.getParameterNames()).thenReturn(new String[]{});
+    when(signature.getParameterNames()).thenReturn(new String[] {});
     when(proceedingJoinPoint.getSignature()).thenReturn(signature);
 
     Expression expression = mock(Expression.class);

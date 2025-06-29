@@ -22,8 +22,8 @@ import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.service.LookupService;
 
 /**
- * Controller for handling equal opportunities monitoring client details selection during the
- * new application process.
+ * Controller for handling equal opportunities monitoring client details selection during the new
+ * application process.
  */
 @Controller
 @RequiredArgsConstructor
@@ -58,8 +58,7 @@ public class ClientEqualOpportunitiesMonitoringDetailsController {
     monitoringDetails.setClientFlowFormAction(clientFlowFormData.getAction());
 
     if (clientFlowFormData.getMonitoringDetails() != null) {
-      model.addAttribute("monitoringDetails",
-          clientFlowFormData.getMonitoringDetails());
+      model.addAttribute("monitoringDetails", clientFlowFormData.getMonitoringDetails());
     }
 
     return "application/client/equal-opportunities-monitoring-client-details";
@@ -78,7 +77,7 @@ public class ClientEqualOpportunitiesMonitoringDetailsController {
   public String clientDetailsEqualOpportunitiesMonitoring(
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @Validated @ModelAttribute("monitoringDetails")
-      ClientFormDataMonitoringDetails monitoringDetails,
+          ClientFormDataMonitoringDetails monitoringDetails,
       BindingResult bindingResult,
       Model model) {
 
@@ -97,10 +96,8 @@ public class ClientEqualOpportunitiesMonitoringDetailsController {
 
   private void populateDropdowns(Model model) {
     new DropdownBuilder(model)
-        .addDropdown("ethnicOrigins",
-            lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN))
-        .addDropdown("disabilities",
-            lookupService.getCommonValues(COMMON_VALUE_DISABILITY))
+        .addDropdown("ethnicOrigins", lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN))
+        .addDropdown("disabilities", lookupService.getCommonValues(COMMON_VALUE_DISABILITY))
         .build();
   }
 }

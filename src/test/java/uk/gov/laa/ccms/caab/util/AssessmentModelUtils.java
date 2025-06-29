@@ -24,11 +24,8 @@ public final class AssessmentModelUtils {
     return new AssessmentDetail()
         .addEntityTypesItem(buildProceedingsEntityTypeDetail())
         .addEntityTypesItem(buildOpponentsEntityTypeDetail())
-        .auditDetail(new AuditDetail()
-            .createdBy("test")
-            .created(date)
-            .lastSavedBy("test")
-            .lastSaved(date));
+        .auditDetail(
+            new AuditDetail().createdBy("test").created(date).lastSavedBy("test").lastSaved(date));
   }
 
   public static AssessmentDetail buildAssessmentDetailMultipleProceedings() {
@@ -40,11 +37,8 @@ public final class AssessmentModelUtils {
     return new AssessmentDetail()
         .addEntityTypesItem(buildProceedingsEntityTypeDetail())
         .addEntityTypesItem(buildOpponentsEntityTypeDetailMultipleOpponents())
-        .auditDetail(new AuditDetail()
-            .createdBy("test")
-            .created(date)
-            .lastSavedBy("test")
-            .lastSaved(date));
+        .auditDetail(
+            new AuditDetail().createdBy("test").created(date).lastSavedBy("test").lastSaved(date));
   }
 
   public static AssessmentEntityTypeDetail buildMeansGlobalEntityTypeDetailWithEvidenceReqd(
@@ -131,45 +125,28 @@ public final class AssessmentModelUtils {
   }
 
   public static AssessmentAttributeDetail buildMatterTypeAttribute() {
-    return new AssessmentAttributeDetail()
-        .name(MATTER_TYPE.name())
-        .value("TEST");
+    return new AssessmentAttributeDetail().name(MATTER_TYPE.name()).value("TEST");
   }
 
   public static AssessmentAttributeDetail buildProceedingNameAttribute() {
-    return new AssessmentAttributeDetail()
-        .name(PROCEEDING_NAME.name())
-        .value("TEST");
+    return new AssessmentAttributeDetail().name(PROCEEDING_NAME.name()).value("TEST");
   }
 
   public static AssessmentAttributeDetail buildClientInvolvementAttribute() {
-    return new AssessmentAttributeDetail()
-        .name(CLIENT_INVOLVEMENT_TYPE.name())
-        .value("TEST");
+    return new AssessmentAttributeDetail().name(CLIENT_INVOLVEMENT_TYPE.name()).value("TEST");
   }
 
-  public static AssessmentAttributeDetail buildRequestedScopeAttribute(
-      final String value) {
-    return new AssessmentAttributeDetail()
-        .name(REQUESTED_SCOPE.name())
-        .value(value);
+  public static AssessmentAttributeDetail buildRequestedScopeAttribute(final String value) {
+    return new AssessmentAttributeDetail().name(REQUESTED_SCOPE.name()).value(value);
   }
 
-  public static AssessmentAttributeDetail buildMeansEvidenceReqdAttribute(
-      final String value) {
-    return new AssessmentAttributeDetail()
-        .name(MEANS_EVIDENCE_REQD.name())
-        .value(value);
+  public static AssessmentAttributeDetail buildMeansEvidenceReqdAttribute(final String value) {
+    return new AssessmentAttributeDetail().name(MEANS_EVIDENCE_REQD.name()).value(value);
   }
 
-  public static AssessmentAttributeDetail buildMeritsEvidenceReqdAttribute(
-      final String value) {
-    return new AssessmentAttributeDetail()
-        .name(MERITS_EVIDENCE_REQD.name())
-        .value(value);
+  public static AssessmentAttributeDetail buildMeritsEvidenceReqdAttribute(final String value) {
+    return new AssessmentAttributeDetail().name(MERITS_EVIDENCE_REQD.name()).value(value);
   }
 
-  private AssessmentModelUtils() {
-  }
-
+  private AssessmentModelUtils() {}
 }

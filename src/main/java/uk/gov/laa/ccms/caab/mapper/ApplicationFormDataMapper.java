@@ -10,19 +10,19 @@ import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.util.DateUtils;
 
 /**
- * Maps between ApplicationFormData and ApplicationType models. Requires the
- * {@link uk.gov.laa.ccms.caab.mapper.IgnoreUnmappedMapperConfig}.
+ * Maps between ApplicationFormData and ApplicationType models. Requires the {@link
+ * uk.gov.laa.ccms.caab.mapper.IgnoreUnmappedMapperConfig}.
  */
 @Mapper(componentModel = "spring", config = IgnoreUnmappedMapperConfig.class)
 public interface ApplicationFormDataMapper {
 
   @Mapping(target = "applicationTypeCategory", source = "id")
   @Mapping(target = "delegatedFunctions", source = "devolvedPowers.used")
-  @Mapping(target = "delegatedFunctionUsedDate",
+  @Mapping(
+      target = "delegatedFunctionUsedDate",
       source = "devolvedPowers.dateUsed",
       qualifiedByName = "mapDevolvedPowersDate")
-  @Mapping(target = "devolvedPowersContractFlag",
-      source = "devolvedPowers.contractFlag")
+  @Mapping(target = "devolvedPowersContractFlag", source = "devolvedPowers.contractFlag")
   ApplicationFormData toApplicationTypeFormData(ApplicationType applicationType);
 
   @Mapping(target = "officeId", source = "office.id")
@@ -46,5 +46,4 @@ public interface ApplicationFormDataMapper {
     }
     return DateUtils.convertToComponentDate(dateUsed);
   }
-
 }

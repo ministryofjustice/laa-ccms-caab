@@ -43,19 +43,15 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @WebAppConfiguration
 class ApplicationSectionsControllerTest {
 
-  @Mock
-  private ApplicationService applicationService;
+  @Mock private ApplicationService applicationService;
 
-  @Mock
-  private ApplicationSectionValidator applicationSectionValidator;
+  @Mock private ApplicationSectionValidator applicationSectionValidator;
 
-  @InjectMocks
-  private ApplicationSectionsController applicationSectionsController;
+  @InjectMocks private ApplicationSectionsController applicationSectionsController;
 
   private MockMvc mockMvc;
 
-  @Autowired
-  private WebApplicationContext webApplicationContext;
+  @Autowired private WebApplicationContext webApplicationContext;
 
   @BeforeEach
   public void setup() {
@@ -67,8 +63,7 @@ class ApplicationSectionsControllerTest {
     final String id = "123";
 
     final ApplicationSectionDisplay applicationSectionDisplay =
-        ApplicationSectionDisplay.builder()
-            .build();
+        ApplicationSectionDisplay.builder().build();
 
     final UserDetail user = new UserDetail();
     user.setLoginId("testLogin");
@@ -77,20 +72,21 @@ class ApplicationSectionsControllerTest {
     final ApplicationDetail application = buildApplicationDetail(1, true, new Date());
 
     when(applicationService.getApplication(anyString())).thenReturn(Mono.just(application));
-    when(applicationService.getApplicationSections(any(ApplicationDetail.class), any(UserDetail.class)))
+    when(applicationService.getApplicationSections(
+            any(ApplicationDetail.class), any(UserDetail.class)))
         .thenReturn(applicationSectionDisplay);
 
-    this.mockMvc.perform(get("/application/sections")
-            .sessionAttr("applicationId", id)
-            .sessionAttr("user", user))
+    this.mockMvc
+        .perform(
+            get("/application/sections").sessionAttr("applicationId", id).sessionAttr("user", user))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/task-page"))
         .andExpect(model().attributeExists("activeCase"))
         .andExpect(model().attribute("summary", applicationSectionDisplay));
 
-    verify(applicationService, times(1)).getApplicationSections(
-        any(ApplicationDetail.class), any(UserDetail.class));
+    verify(applicationService, times(1))
+        .getApplicationSections(any(ApplicationDetail.class), any(UserDetail.class));
   }
 
   @Test
@@ -100,17 +96,24 @@ class ApplicationSectionsControllerTest {
     final Object formData = new Object();
 
     // Simulate validation error using doAnswer
-    doAnswer(invocation -> {
-      final Errors errors = invocation.getArgument(1);
-      errors.reject("provider.required", "You cannot submit this "
-          + "Application until all application sections are marked Completed. Please complete the "
-          + "relevant sections and try again.");
-      return null;
-    }).when(applicationSectionValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.reject(
+                  "provider.required",
+                  "You cannot submit this "
+                      + "Application until all application sections are marked Completed. Please complete the "
+                      + "relevant sections and try again.");
+              return null;
+            })
+        .when(applicationSectionValidator)
+        .validate(any(), any());
 
-    this.mockMvc.perform(post("/application/sections")
-            .sessionAttr(SECTIONS_DATA, sectionData)
-            .flashAttr("formData", formData))
+    this.mockMvc
+        .perform(
+            post("/application/sections")
+                .sessionAttr(SECTIONS_DATA, sectionData)
+                .flashAttr("formData", formData))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/task-page"))
@@ -126,14 +129,13 @@ class ApplicationSectionsControllerTest {
     // Ensure no validation errors
     doAnswer(invocation -> null).when(applicationSectionValidator).validate(any(), any());
 
-    this.mockMvc.perform(post("/application/sections")
-            .sessionAttr(SECTIONS_DATA, sectionData)
-            .flashAttr("formData", formData))
+    this.mockMvc
+        .perform(
+            post("/application/sections")
+                .sessionAttr(SECTIONS_DATA, sectionData)
+                .flashAttr("formData", formData))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/validate"));
   }
-
-
-
 }

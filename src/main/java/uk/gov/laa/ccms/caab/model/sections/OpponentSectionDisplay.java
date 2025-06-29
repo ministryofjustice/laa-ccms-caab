@@ -3,9 +3,7 @@ package uk.gov.laa.ccms.caab.model.sections;
 import lombok.Builder;
 import lombok.Data;
 
-/**
- * Represents the Section display data for an opponent.
- */
+/** Represents the Section display data for an opponent. */
 @Data
 @Builder
 public class OpponentSectionDisplay {
@@ -20,5 +18,4 @@ public class OpponentSectionDisplay {
 
   /** The opponents relationship to the client. */
   private String relationshipToClient;
-
 }

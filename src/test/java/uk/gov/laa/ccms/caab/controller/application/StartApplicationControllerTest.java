@@ -23,20 +23,21 @@ class StartApplicationControllerTest {
 
   private MockMvcTester mockMvc;
 
-  @InjectMocks
-  private StartApplicationController startApplicationController;
+  @InjectMocks private StartApplicationController startApplicationController;
 
   @BeforeEach
   void setup() {
-    mockMvc = MockMvcTester.create(standaloneSetup(startApplicationController)
-        .setConversionService(getConversionService()).build());
+    mockMvc =
+        MockMvcTester.create(
+            standaloneSetup(startApplicationController)
+                .setConversionService(getConversionService())
+                .build());
   }
 
   @Test
   @DisplayName("GET: /application/new should create new application and redirect")
-  void shouldCreateNewApplication()  {
-    assertThat(
-      mockMvc.perform(get("/application/new")))
+  void shouldCreateNewApplication() {
+    assertThat(mockMvc.perform(get("/application/new")))
         .hasStatus3xxRedirection()
         .hasRedirectedUrl("/application/office");
   }
@@ -44,8 +45,7 @@ class StartApplicationControllerTest {
   @Test
   @DisplayName("GET: /amendments/new should create new application and redirect")
   void shouldCreateNewAmendment() {
-    assertThat(
-        mockMvc.perform(get("/amendments/new")))
+    assertThat(mockMvc.perform(get("/amendments/new")))
         .hasStatus3xxRedirection()
         .hasRedirectedUrl("/amendments/application-type");
   }

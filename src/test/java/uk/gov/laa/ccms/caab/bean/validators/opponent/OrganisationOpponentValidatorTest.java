@@ -20,8 +20,7 @@ import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
 @ExtendWith(SpringExtension.class)
 class OrganisationOpponentValidatorTest {
 
-  @InjectMocks
-  private OrganisationOpponentValidator validator;
+  @InjectMocks private OrganisationOpponentValidator validator;
 
   private OrganisationOpponentFormData opponentFormData;
 
@@ -29,8 +28,7 @@ class OrganisationOpponentValidatorTest {
 
   @BeforeEach
   public void setUp() {
-    opponentFormData =
-        new OrganisationOpponentFormData();
+    opponentFormData = new OrganisationOpponentFormData();
     errors = new BeanPropertyBindingResult(opponentFormData, CURRENT_OPPONENT);
   }
 
@@ -62,10 +60,12 @@ class OrganisationOpponentValidatorTest {
     assertTrue(errors.hasErrors());
 
     assertNotNull(errors.getFieldError("relationshipToCase"));
-    assertEquals("required.relationshipToCase", errors.getFieldError("relationshipToCase").getCode());
+    assertEquals(
+        "required.relationshipToCase", errors.getFieldError("relationshipToCase").getCode());
 
     assertNotNull(errors.getFieldError("relationshipToClient"));
-    assertEquals("required.relationshipToCase", errors.getFieldError("relationshipToCase").getCode());
+    assertEquals(
+        "required.relationshipToCase", errors.getFieldError("relationshipToCase").getCode());
 
     assertNotNull(errors.getFieldError("otherInformation"));
     assertEquals("length.exceeds.max", errors.getFieldError("otherInformation").getCode());
@@ -146,18 +146,20 @@ class OrganisationOpponentValidatorTest {
   }
 
   @ParameterizedTest
-  @CsvSource(value = {
-      "null, rel2client, orgname, orgtype, null, null, null, null, null, null, null, null, null, relationshipToCase, required.relationshipToCase",
-      "rel2case, null, orgname, orgtype, null, null, null, null, null, null, null, null, null, relationshipToClient, required.relationshipToClient",
-      "rel2case, rel2client, null, orgtype, null, null, null, null, null, null, null, null, null,organisationName, required.organisationName",
-      "rel2case, rel2client, orgname, null, null, null, null, null, null, null, null, null, null, organisationType, required.organisationType",
-      "rel2case, rel2client, orgname, orgtype, <, addline1, null, null, null, country, null, null, null,houseNameOrNumber, invalid.format",
-      "rel2case, rel2client, orgname, orgtype, housenum, null, null, null, null, country, null, null, null, addressLine1, required.addressLine1",
-      "rel2case, rel2client, orgname, orgtype, null, addline1, null, null, null, null, null, null, null, country, required.country",
-      "rel2case, rel2client, orgname, orgtype, null, addline1, null, null, null, country, <postcode, null, null, postcode, invalid.format",
-      "rel2case, rel2client, orgname, orgtype, null, addline1, null, null, null, country, SE1 1PP, <contact, email@email.com, contactNameRole, invalid.format",
-      "rel2case, rel2client, orgname, orgtype, null, addline1, null, null, null, country, null, contact name, email, emailAddress, invalid.format"
-  }, nullValues = "null")
+  @CsvSource(
+      value = {
+        "null, rel2client, orgname, orgtype, null, null, null, null, null, null, null, null, null, relationshipToCase, required.relationshipToCase",
+        "rel2case, null, orgname, orgtype, null, null, null, null, null, null, null, null, null, relationshipToClient, required.relationshipToClient",
+        "rel2case, rel2client, null, orgtype, null, null, null, null, null, null, null, null, null,organisationName, required.organisationName",
+        "rel2case, rel2client, orgname, null, null, null, null, null, null, null, null, null, null, organisationType, required.organisationType",
+        "rel2case, rel2client, orgname, orgtype, <, addline1, null, null, null, country, null, null, null,houseNameOrNumber, invalid.format",
+        "rel2case, rel2client, orgname, orgtype, housenum, null, null, null, null, country, null, null, null, addressLine1, required.addressLine1",
+        "rel2case, rel2client, orgname, orgtype, null, addline1, null, null, null, null, null, null, null, country, required.country",
+        "rel2case, rel2client, orgname, orgtype, null, addline1, null, null, null, country, <postcode, null, null, postcode, invalid.format",
+        "rel2case, rel2client, orgname, orgtype, null, addline1, null, null, null, country, SE1 1PP, <contact, email@email.com, contactNameRole, invalid.format",
+        "rel2case, rel2client, orgname, orgtype, null, addline1, null, null, null, country, null, contact name, email, emailAddress, invalid.format"
+      },
+      nullValues = "null")
   public void validate_nonSharedOrg_relationshipToCase(
       final String relationshipToCase,
       final String relationshipToClient,
@@ -198,5 +200,4 @@ class OrganisationOpponentValidatorTest {
     assertNotNull(errors.getFieldError(errorFieldName));
     assertEquals(errorCode, errors.getFieldError(errorFieldName).getCode());
   }
-
 }

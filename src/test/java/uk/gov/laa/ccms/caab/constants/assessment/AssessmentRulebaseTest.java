@@ -47,5 +47,4 @@ class AssessmentRulebaseTest {
     assertEquals("BillingAssessment", AssessmentRulebase.BILLING.getDeploymentName());
     assertEquals("PoaAssessment", AssessmentRulebase.POA.getDeploymentName());
   }
-
 }

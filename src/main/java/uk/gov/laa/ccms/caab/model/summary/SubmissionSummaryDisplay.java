@@ -11,64 +11,39 @@ import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryEntityDisplay;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
-/**
- * Represents the submission summary display containing various assessment and detail displays.
- */
+/** Represents the submission summary display containing various assessment and detail displays. */
 @Data
 @Builder
 public class SubmissionSummaryDisplay {
 
-  /**
-   * List of means assessment summary entity displays.
-   */
-  @Builder.Default
-  private List<AssessmentSummaryEntityDisplay> meansAssessment = new ArrayList<>();
+  /** List of means assessment summary entity displays. */
+  @Builder.Default private List<AssessmentSummaryEntityDisplay> meansAssessment = new ArrayList<>();
 
-  /**
-   * List of merits assessment summary entity displays.
-   */
+  /** List of merits assessment summary entity displays. */
   @Builder.Default
   private List<AssessmentSummaryEntityDisplay> meritsAssessment = new ArrayList<>();
 
-  /**
-   * Provider submission summary display.
-   */
+  /** Provider submission summary display. */
   @Builder.Default
-  private ProviderSubmissionSummaryDisplay providerDetails =
-      new ProviderSubmissionSummaryDisplay();
+  private ProviderSubmissionSummaryDisplay providerDetails = new ProviderSubmissionSummaryDisplay();
 
-  /**
-   * Client flow form data.
-   */
-  @Builder.Default
-  private ClientFlowFormData client =
-      new ClientFlowFormData(ACTION_VIEW);
+  /** Client flow form data. */
+  @Builder.Default private ClientFlowFormData client = new ClientFlowFormData(ACTION_VIEW);
 
-  /**
-   * HashMap of client lookup values.
-   */
-  @Builder.Default
-  private HashMap<String, CommonLookupValueDetail> clientLookups =
-      new HashMap<>();
+  /** HashMap of client lookup values. */
+  @Builder.Default private HashMap<String, CommonLookupValueDetail> clientLookups = new HashMap<>();
 
-  /**
-   * General details submission summary display.
-   */
+  /** General details submission summary display. */
   @Builder.Default
   private GeneralDetailsSubmissionSummaryDisplay generalDetails =
       new GeneralDetailsSubmissionSummaryDisplay();
 
-
-  /**
-   * Proceeding and cost submission summary display.
-   */
+  /** Proceeding and cost submission summary display. */
   @Builder.Default
   private ProceedingAndCostSubmissionSummaryDisplay proceedingsAndCosts =
       new ProceedingAndCostSubmissionSummaryDisplay();
 
-  /**
-   * Opponents and other parties submission summary display.
-   */
+  /** Opponents and other parties submission summary display. */
   @Builder.Default
   private OpponentsAndOtherPartiesSubmissionSummaryDisplay opponentsAndOtherParties =
       new OpponentsAndOtherPartiesSubmissionSummaryDisplay();

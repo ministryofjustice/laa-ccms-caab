@@ -22,5 +22,4 @@ public class IndividualGeneralDetailsSectionDisplay {
   private String relationshipToCase;
   private Boolean publicFundingApplied;
   private String nationalInsuranceNumber;
-
 }

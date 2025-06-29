@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.client;
 
-
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -8,9 +7,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import reactor.core.publisher.Mono;
 
-/**
- * Provides error-handling capabilities for the API client interactions.
- */
+/** Provides error-handling capabilities for the API client interactions. */
 @Slf4j
 public abstract class AbstractApiClientErrorHandler {
 
@@ -40,10 +37,8 @@ public abstract class AbstractApiClientErrorHandler {
    * @param <T> the type of the response expected from the operation.
    * @return a Mono error signaling the exception.
    */
-  public <T> Mono<T> handleApiCreateError(
-      final Throwable e, final String resourceType) {
-    final String message = "Failed to create %s".formatted(
-        resourceType);
+  public <T> Mono<T> handleApiCreateError(final Throwable e, final String resourceType) {
+    final String message = "Failed to create %s".formatted(resourceType);
     log.error(message, e);
     return Mono.error(createException(message, e));
   }
@@ -63,10 +58,8 @@ public abstract class AbstractApiClientErrorHandler {
       final String resourceType,
       final String resourceIdType,
       final String resourceId) {
-    final String message = "Failed to delete %s with %s: %s".formatted(
-        resourceType,
-        resourceIdType,
-        resourceId);
+    final String message =
+        "Failed to delete %s with %s: %s".formatted(resourceType, resourceIdType, resourceId);
     log.error(message, e);
     return Mono.error(createException(message, e));
   }
@@ -85,9 +78,8 @@ public abstract class AbstractApiClientErrorHandler {
       final String resourceType,
       final MultiValueMap<String, String> queryParams) {
 
-    final StringBuilder messageBuilder = new StringBuilder(
-        "Failed to delete %s".formatted(
-            resourceType));
+    final StringBuilder messageBuilder =
+        new StringBuilder("Failed to delete %s".formatted(resourceType));
 
     return parameterizedError(e, queryParams, messageBuilder);
   }
@@ -107,10 +99,8 @@ public abstract class AbstractApiClientErrorHandler {
       final String resourceType,
       final String resourceIdType,
       final String resourceId) {
-    final String message = "Failed to update %s with %s: %s".formatted(
-        resourceType,
-        resourceIdType,
-        resourceId);
+    final String message =
+        "Failed to update %s with %s: %s".formatted(resourceType, resourceIdType, resourceId);
     log.error(message, e);
     return Mono.error(createException(message, e));
   }
@@ -125,18 +115,16 @@ public abstract class AbstractApiClientErrorHandler {
    * @param <T> the type of the response expected from the operation.
    * @return a Mono error signaling the exception.
    */
-  public  <T> Mono<T> handleNotFoundError(
+  public <T> Mono<T> handleNotFoundError(
       final ClientResponse clientResponse,
       final String resourceType,
       final String resourceIdType,
       final String resourceId) {
-    final String message = "Not found: %s with %s: %s".formatted(
-        resourceType,
-        resourceIdType,
-        resourceId);
+    final String message =
+        "Not found: %s with %s: %s".formatted(resourceType, resourceIdType, resourceId);
     log.error(message);
-    return Mono.error(createException(message,
-        HttpStatus.resolve(clientResponse.statusCode().value())));
+    return Mono.error(
+        createException(message, HttpStatus.resolve(clientResponse.statusCode().value())));
   }
 
   /**
@@ -149,7 +137,7 @@ public abstract class AbstractApiClientErrorHandler {
    * @param <T> the type of the response expected from the operation.
    * @return a Mono error signaling the exception.
    */
-  public  <T> Mono<T> handleApiRetrieveError(
+  public <T> Mono<T> handleApiRetrieveError(
       final Throwable e,
       final String resourceType,
       final String resourceIdType,
@@ -157,10 +145,8 @@ public abstract class AbstractApiClientErrorHandler {
     if (e instanceof ApiClientException) {
       return Mono.error(e);
     }
-    final String message = "Failed to retrieve %s with %s: %s".formatted(
-        resourceType,
-        resourceIdType,
-        resourceId);
+    final String message =
+        "Failed to retrieve %s with %s: %s".formatted(resourceType, resourceIdType, resourceId);
     log.error(message, e);
     return Mono.error(createException(message, e));
   }
@@ -179,8 +165,8 @@ public abstract class AbstractApiClientErrorHandler {
       final String resourceType,
       final MultiValueMap<String, String> queryParams) {
 
-    final StringBuilder messageBuilder = new StringBuilder(
-        "Failed to retrieve %s".formatted(resourceType));
+    final StringBuilder messageBuilder =
+        new StringBuilder("Failed to retrieve %s".formatted(resourceType));
 
     return parameterizedError(e, queryParams, messageBuilder);
   }
@@ -191,9 +177,11 @@ public abstract class AbstractApiClientErrorHandler {
       final StringBuilder messageBuilder) {
 
     if (queryParams != null && !queryParams.isEmpty()) {
-      final String paramsString = queryParams.entrySet().stream()
-          .flatMap(entry -> entry.getValue().stream().map(value -> entry.getKey() + "=" + value))
-          .collect(Collectors.joining(", "));
+      final String paramsString =
+          queryParams.entrySet().stream()
+              .flatMap(
+                  entry -> entry.getValue().stream().map(value -> entry.getKey() + "=" + value))
+              .collect(Collectors.joining(", "));
       messageBuilder.append(" with parameters: ").append(paramsString);
     }
 
@@ -202,5 +190,4 @@ public abstract class AbstractApiClientErrorHandler {
 
     return Mono.error(createException(message, e));
   }
-
 }

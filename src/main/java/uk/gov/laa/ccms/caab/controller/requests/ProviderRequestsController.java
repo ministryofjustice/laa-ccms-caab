@@ -59,15 +59,11 @@ import uk.gov.laa.ccms.data.model.ProviderRequestTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderRequestTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-/**
- * Controller for handling edits to client basic details during the application summary process.
- */
+/** Controller for handling edits to client basic details during the application summary process. */
 @Controller
 @Slf4j
 @RequiredArgsConstructor
-@SessionAttributes(value = {
-    PROVIDER_REQUEST_FLOW_FORM_DATA
-})
+@SessionAttributes(value = {PROVIDER_REQUEST_FLOW_FORM_DATA})
 public class ProviderRequestsController {
 
   private final LookupService lookupService;
@@ -84,9 +80,6 @@ public class ProviderRequestsController {
 
   private static final String UNRELATED_CASE_REFERENCE = "-1";
 
-
-
-
   /**
    * Creates a new instance of {@link ProviderRequestFlowFormData}.
    *
@@ -97,7 +90,6 @@ public class ProviderRequestsController {
     return new ProviderRequestFlowFormData();
   }
 
-
   /**
    * Handles the GET request for selecting the provider requests type page.
    *
@@ -107,16 +99,15 @@ public class ProviderRequestsController {
   @GetMapping("/provider-requests/types")
   public String getRequestType(
       @ModelAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
-      final ProviderRequestFlowFormData providerRequestFlow,
+          final ProviderRequestFlowFormData providerRequestFlow,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       final Model model) {
 
-    //reset the details data, so new document id and form details are created
+    // reset the details data, so new document id and form details are created
     providerRequestFlow.resetRequestDetailsFormData();
 
     model.addAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow);
-    model.addAttribute("providerRequestTypeDetails",
-        providerRequestFlow.getRequestTypeFormData());
+    model.addAttribute("providerRequestTypeDetails", providerRequestFlow.getRequestTypeFormData());
 
     populateProviderRequestTypes(model, userDetail);
 
@@ -130,15 +121,15 @@ public class ProviderRequestsController {
    * @param providerRequestTypeDetails form data for the provider request type details
    * @param model the model to store attributes for rendering the view
    * @param bindingResult result of binding request type details with potential validation errors
-   * @return the view name for the provider request type form if there are errors,
-   *         otherwise a redirect to the provider request details page
+   * @return the view name for the provider request type form if there are errors, otherwise a
+   *     redirect to the provider request details page
    */
   @PostMapping("/provider-requests/types")
   public String requestTypePost(
       @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
-      final ProviderRequestFlowFormData providerRequestFlow,
+          final ProviderRequestFlowFormData providerRequestFlow,
       @ModelAttribute("providerRequestTypeDetails")
-      final ProviderRequestTypeFormData providerRequestTypeDetails,
+          final ProviderRequestTypeFormData providerRequestTypeDetails,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       final Model model,
       final BindingResult bindingResult) {
@@ -159,30 +150,32 @@ public class ProviderRequestsController {
   }
 
   /**
-   * Populates dropdown options for provider request types form.
-   * also filters based on user function codes
+   * Populates dropdown options for provider request types form. also filters based on user function
+   * codes
    *
    * @param model The model for the view.
    * @param userDetail Logged-in user details.
    */
   protected void populateProviderRequestTypes(final Model model, UserDetail userDetail) {
 
-    List<String> functions = Optional.ofNullable(userDetail.getFunctions())
-        .orElse(Collections.emptyList());
+    List<String> functions =
+        Optional.ofNullable(userDetail.getFunctions()).orElse(Collections.emptyList());
 
-    final List<ProviderRequestTypeLookupValueDetail> providerRequestTypes = Optional.ofNullable(
-            lookupService.getProviderRequestTypes(false, null)
-                .map(ProviderRequestTypeLookupDetail::getContent)
-                .flatMapMany(Flux::fromIterable)
-                .filter(
-                    it -> it.getAccessFunctionCode() == null
-                        || functions.contains(it.getAccessFunctionCode()))
-                .collectList()
-                .block())
-        .orElse(Collections.emptyList());
+    final List<ProviderRequestTypeLookupValueDetail> providerRequestTypes =
+        Optional.ofNullable(
+                lookupService
+                    .getProviderRequestTypes(false, null)
+                    .map(ProviderRequestTypeLookupDetail::getContent)
+                    .flatMapMany(Flux::fromIterable)
+                    .filter(
+                        it ->
+                            it.getAccessFunctionCode() == null
+                                || functions.contains(it.getAccessFunctionCode()))
+                    .collectList()
+                    .block())
+            .orElse(Collections.emptyList());
 
-    model.addAttribute("providerRequestTypes",
-        providerRequestTypes);
+    model.addAttribute("providerRequestTypes", providerRequestTypes);
   }
 
   /**
@@ -195,7 +188,7 @@ public class ProviderRequestsController {
   @GetMapping("/provider-requests/details")
   public String getRequestDetail(
       @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
-      final ProviderRequestFlowFormData providerRequestFlow,
+          final ProviderRequestFlowFormData providerRequestFlow,
       final Model model) {
 
     final ProviderRequestDetailsFormData providerRequestDetailsForm =
@@ -217,17 +210,15 @@ public class ProviderRequestsController {
   public String postRequestDetail(
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
-      final ProviderRequestFlowFormData providerRequestFlow,
+          final ProviderRequestFlowFormData providerRequestFlow,
       @RequestParam final String action,
       @ModelAttribute("providerRequestDetails")
-      final ProviderRequestDetailsFormData providerRequestDetailsForm,
+          final ProviderRequestDetailsFormData providerRequestDetailsForm,
       final Model model,
-      final BindingResult bindingResult
-  ) {
+      final BindingResult bindingResult) {
 
     providerRequestsMapper.toProviderRequestDetailsFormData(
-        providerRequestDetailsForm,
-        providerRequestFlow);
+        providerRequestDetailsForm, providerRequestFlow);
 
     if ("document_upload".equals(action)) {
       providerRequestsDetails(providerRequestFlow, providerRequestDetailsForm, model);
@@ -264,33 +255,35 @@ public class ProviderRequestsController {
         }
       }
 
-      //call soa-api a register the notification request
-      //we need to pass the providerRequestFlow and user details into the service.
-      final String notificationId = providerRequestService.submitProviderRequest(
-          providerRequestFlow.getRequestTypeFormData(),
-          providerRequestDetailsForm,
-          userDetail);
+      // call soa-api a register the notification request
+      // we need to pass the providerRequestFlow and user details into the service.
+      final String notificationId =
+          providerRequestService.submitProviderRequest(
+              providerRequestFlow.getRequestTypeFormData(), providerRequestDetailsForm, userDetail);
 
-      //check if we are not a claim upload enabled request,
+      // check if we are not a claim upload enabled request,
       // if not then we might have documents
       if (!providerRequestDetailsForm.isClaimUploadEnabled()) {
-        //we need the session id, as this is key used to associate the documents with the request
-        final String documentSessionId = providerRequestFlow.getRequestDetailsFormData()
-            .getDocumentSessionId().toString();
+        // we need the session id, as this is key used to associate the documents with the request
+        final String documentSessionId =
+            providerRequestFlow.getRequestDetailsFormData().getDocumentSessionId().toString();
 
-        //return all the documents for the request
+        // return all the documents for the request
         final EvidenceDocumentDetails documents =
-            evidenceService.getEvidenceDocumentsForApplicationOrOutcome(
-                    documentSessionId,
-                    CcmsModule.REQUEST)
+            evidenceService
+                .getEvidenceDocumentsForApplicationOrOutcome(documentSessionId, CcmsModule.REQUEST)
                 .blockOptional()
-                .orElseThrow(() -> new CaabApplicationException(
-                "Invalid document session id: %s".formatted(documentSessionId)));
+                .orElseThrow(
+                    () ->
+                        new CaabApplicationException(
+                            "Invalid document session id: %s".formatted(documentSessionId)));
 
-        //using the list of documents, we need to upload them to ebs through soa.
+        // using the list of documents, we need to upload them to ebs through soa.
         // we also update the status of the documents in the tds to say they have been uploaded
-        evidenceService.uploadAndUpdateDocuments(
-            documents, UNRELATED_CASE_REFERENCE, notificationId, userDetail).block();
+        evidenceService
+            .uploadAndUpdateDocuments(
+                documents, UNRELATED_CASE_REFERENCE, notificationId, userDetail)
+            .block();
       }
       return "redirect:/application/provider-request/confirmed";
     }
@@ -303,8 +296,7 @@ public class ProviderRequestsController {
    * @return the name of the view for uploading provider request documents
    */
   @GetMapping("/provider-requests/documents")
-  public String addDocumentsToRequest(
-      final Model model) {
+  public String addDocumentsToRequest(final Model model) {
 
     model.addAttribute(EVIDENCE_UPLOAD_FORM_DATA, new EvidenceUploadFormData());
 
@@ -319,24 +311,23 @@ public class ProviderRequestsController {
    * @param evidenceUploadFormData The upload form data.
    * @param userDetail The user details.
    * @param bindingResult The binding result for validation.
-   * @param model         The model for the view.
+   * @param model The model for the view.
    * @return The view name for the evidence upload view.
    */
   @PostMapping("/provider-requests/documents")
   public String addDocumentsToRequest(
-      @SessionAttribute(USER_DETAILS)
-      final UserDetail userDetail,
+      @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
-      final ProviderRequestFlowFormData providerRequestFlow,
+          final ProviderRequestFlowFormData providerRequestFlow,
       @ModelAttribute(EVIDENCE_UPLOAD_FORM_DATA)
-      final EvidenceUploadFormData evidenceUploadFormData,
+          final EvidenceUploadFormData evidenceUploadFormData,
       final BindingResult bindingResult,
       final Model model) {
 
-    final String documentSessionId = providerRequestFlow.getRequestDetailsFormData()
-        .getDocumentSessionId().toString();
+    final String documentSessionId =
+        providerRequestFlow.getRequestDetailsFormData().getDocumentSessionId().toString();
 
-    //set the additional details for the evidence upload
+    // set the additional details for the evidence upload
     evidenceUploadFormData.setApplicationOrOutcomeId(documentSessionId);
     evidenceUploadFormData.setCaseReferenceNumber(UNRELATED_CASE_REFERENCE);
     evidenceUploadFormData.setProviderId(userDetail.getProvider().getId());
@@ -369,23 +360,26 @@ public class ProviderRequestsController {
 
     final String fileExtension = getFileExtension(evidenceUploadFormData.getFile());
 
-    //todo if its a case related request we need to register the doc else we dont
+    // todo if its a case related request we need to register the doc else we dont
     // will be done as part of amendments in a later story
     if (false) {
-      final String registeredDocumentId = evidenceService.registerDocument(
-              evidenceUploadFormData.getDocumentType(),
-              fileExtension,
-              evidenceUploadFormData.getDocumentDescription(),
-              ELECTRONIC.getCode(),
-              userDetail.getLoginId(),
-              userDetail.getUserType())
-          .blockOptional()
-          .orElseThrow(() -> new CaabApplicationException("Failed to register document"));
+      final String registeredDocumentId =
+          evidenceService
+              .registerDocument(
+                  evidenceUploadFormData.getDocumentType(),
+                  fileExtension,
+                  evidenceUploadFormData.getDocumentDescription(),
+                  ELECTRONIC.getCode(),
+                  userDetail.getLoginId(),
+                  userDetail.getUserType())
+              .blockOptional()
+              .orElseThrow(() -> new CaabApplicationException("Failed to register document"));
 
       evidenceUploadFormData.setRegisteredDocumentId(registeredDocumentId);
     }
 
-    evidenceService.addDocument(
+    evidenceService
+        .addDocument(
             providerRequestsMapper.toProviderRequestDocumentDetail(evidenceUploadFormData),
             userDetail.getLoginId())
         .blockOptional()
@@ -404,17 +398,16 @@ public class ProviderRequestsController {
   @ExceptionHandler(MaxUploadSizeExceededException.class)
   public String handleUploadFileTooLarge(
       @SessionAttribute(EVIDENCE_UPLOAD_FORM_DATA)
-      final EvidenceUploadFormData evidenceUploadFormData,
+          final EvidenceUploadFormData evidenceUploadFormData,
       final Model model) {
 
     // Manually construct a BindingResult to hold the file size error.
-    final BindingResult bindingResult = new BeanPropertyBindingResult(
-        evidenceUploadFormData, EVIDENCE_UPLOAD_FORM_DATA);
+    final BindingResult bindingResult =
+        new BeanPropertyBindingResult(evidenceUploadFormData, EVIDENCE_UPLOAD_FORM_DATA);
     providerRequestDocumentUploadValidator.rejectFileSize(bindingResult);
 
     model.addAttribute(EVIDENCE_UPLOAD_FORM_DATA, evidenceUploadFormData);
-    model.addAttribute(BindingResult.MODEL_KEY_PREFIX + EVIDENCE_UPLOAD_FORM_DATA,
-        bindingResult);
+    model.addAttribute(BindingResult.MODEL_KEY_PREFIX + EVIDENCE_UPLOAD_FORM_DATA, bindingResult);
 
     populateAddEvidenceModel(model);
     return "requests/provider-request-doc-upload";
@@ -435,13 +428,13 @@ public class ProviderRequestsController {
 
     final String type = providerRequestFlow.getRequestTypeFormData().getProviderRequestType();
 
-    final ProviderRequestTypeLookupValueDetail dynamicForm = Optional.ofNullable(
-            lookupService.getProviderRequestTypes(null, type).block())
-        .map(ProviderRequestTypeLookupDetail::getContent)
-        .orElse(Collections.emptyList())
-        .stream()
-        .findFirst()
-        .orElse(null);
+    final ProviderRequestTypeLookupValueDetail dynamicForm =
+        Optional.ofNullable(lookupService.getProviderRequestTypes(null, type).block())
+            .map(ProviderRequestTypeLookupDetail::getContent)
+            .orElse(Collections.emptyList())
+            .stream()
+            .findFirst()
+            .orElse(null);
 
     if (dynamicForm == null) {
       return "error";
@@ -451,33 +444,32 @@ public class ProviderRequestsController {
 
     providerRequestDetailsForm.setClaimUploadEnabled(
         Boolean.TRUE.equals(dynamicForm.getIsClaimUploadEnabled()));
-    providerRequestDetailsForm.setClaimUploadLabel(
-        dynamicForm.getClaimUploadPrompt());
+    providerRequestDetailsForm.setClaimUploadLabel(dynamicForm.getClaimUploadPrompt());
     providerRequestDetailsForm.setAdditionalInformationLabel(
         dynamicForm.getAdditionalInformationPrompt());
-    //This field is to make the additional information prompt mandatory
+    // This field is to make the additional information prompt mandatory
     providerRequestDetailsForm.setIsAdditionalInformationPromptRequired(
         !dynamicForm.getIsClaimUploadEnabled() && dynamicForm.getDataItems().isEmpty());
 
     if (providerRequestDetailsForm.getDynamicOptions().isEmpty()) {
       providerRequestsMapper.populateProviderRequestDetailsForm(
-          providerRequestDetailsForm,
-          dynamicForm);
+          providerRequestDetailsForm, dynamicForm);
     }
 
-    //if claim upload is not enabled, then evidence upload is available
+    // if claim upload is not enabled, then evidence upload is available
     if (!providerRequestDetailsForm.isClaimUploadEnabled()) {
-      final String documentSessionId = providerRequestFlow.getRequestDetailsFormData()
-          .getDocumentSessionId().toString();
+      final String documentSessionId =
+          providerRequestFlow.getRequestDetailsFormData().getDocumentSessionId().toString();
 
       final List<BaseEvidenceDocumentDetail> documents =
-          evidenceService.getEvidenceDocumentsForApplicationOrOutcome(
-                  documentSessionId,
-                  CcmsModule.REQUEST)
+          evidenceService
+              .getEvidenceDocumentsForApplicationOrOutcome(documentSessionId, CcmsModule.REQUEST)
               .map(EvidenceDocumentDetails::getContent)
               .blockOptional()
-              .orElseThrow(() -> new CaabApplicationException(
-              "Invalid document session id: %s".formatted(documentSessionId)));
+              .orElseThrow(
+                  () ->
+                      new CaabApplicationException(
+                          "Invalid document session id: %s".formatted(documentSessionId)));
 
       model.addAttribute("documentsUploaded", documents);
     } else {
@@ -501,25 +493,26 @@ public class ProviderRequestsController {
    * @param priorAuthorityType the provider request type details for data lookup.
    */
   protected void populateProviderRequestDetailsLookupDropdowns(
-      final Model model,
-      final ProviderRequestTypeLookupValueDetail priorAuthorityType) {
+      final Model model, final ProviderRequestTypeLookupValueDetail priorAuthorityType) {
 
     final List<ProviderRequestDataLookupValueDetail> lookups =
         priorAuthorityType.getDataItems().stream()
-            .filter(dataItem ->
-                REFERENCE_DATA_ITEM_TYPE_LOV.equals(dataItem.getType()))
+            .filter(dataItem -> REFERENCE_DATA_ITEM_TYPE_LOV.equals(dataItem.getType()))
             .toList();
 
     final List<Mono<Void>> listOfMonos = new ArrayList<>();
 
     for (final ProviderRequestDataLookupValueDetail lookup : lookups) {
       final Mono<List<CommonLookupValueDetail>> commonValuesMono =
-          lookupService.getCommonValues(lookup.getLovLookupType())
+          lookupService
+              .getCommonValues(lookup.getLovLookupType())
               .mapNotNull(CommonLookupDetail::getContent);
 
       // Subscribe to the Mono and add the attribute in the subscription
-      final Mono<Void> mono = commonValuesMono.doOnNext(commonValues ->
-          model.addAttribute(lookup.getCode(), commonValues)).then();
+      final Mono<Void> mono =
+          commonValuesMono
+              .doOnNext(commonValues -> model.addAttribute(lookup.getCode(), commonValues))
+              .then();
       listOfMonos.add(mono);
 
       Mono.when(listOfMonos).block();
@@ -534,14 +527,13 @@ public class ProviderRequestsController {
   protected void populateAddEvidenceModel(final Model model) {
     final DropdownBuilder builder = new DropdownBuilder(model);
     builder
-        .addDropdown("documentTypes",
-            lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .addDropdown("documentTypes", lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
         .build();
 
-    model.addAttribute("validExtensions",
+    model.addAttribute(
+        "validExtensions",
         getCommaDelimitedString(providerRequestDocumentUploadValidator.getValidExtensions()));
-    model.addAttribute("maxFileSize",
-        providerRequestDocumentUploadValidator.getMaxFileSize());
+    model.addAttribute("maxFileSize", providerRequestDocumentUploadValidator.getMaxFileSize());
   }
 
   @PostMapping("/application/provider-request/confirmed")
@@ -549,5 +541,4 @@ public class ProviderRequestsController {
     sessionStatus.setComplete();
     return "redirect:/home";
   }
-
 }

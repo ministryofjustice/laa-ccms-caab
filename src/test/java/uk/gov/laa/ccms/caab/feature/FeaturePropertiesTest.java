@@ -21,14 +21,10 @@ public class FeaturePropertiesTest {
 
   @Nested
   @TestPropertySource(
-      properties = {
-          "laa.ccms.features[0].feature=amendments",
-          "laa.ccms.features[0].enabled=true"
-      })
+      properties = {"laa.ccms.features[0].feature=amendments", "laa.ccms.features[0].enabled=true"})
   class FeaturePropertiesSetTrueFlagCorrectly {
 
-    @Autowired
-    private FeatureProperties featureProperties;
+    @Autowired private FeatureProperties featureProperties;
 
     @Test
     @DisplayName("Feature properties correctly set a true value")
@@ -53,8 +49,7 @@ public class FeaturePropertiesTest {
       })
   class FeaturePropertiesSetFalseFlagCorrectly {
 
-    @Autowired
-    private FeatureProperties featureProperties;
+    @Autowired private FeatureProperties featureProperties;
 
     @Test
     @DisplayName("Feature properties correctly set a false value")
@@ -74,8 +69,7 @@ public class FeaturePropertiesTest {
   @Nested
   class FeaturePropertiesHandleMissingProperties {
 
-    @Autowired
-    private FeatureProperties featureProperties;
+    @Autowired private FeatureProperties featureProperties;
 
     @Test
     @DisplayName("Feature properties handle missing properties")

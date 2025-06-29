@@ -7,8 +7,8 @@ import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 
 /**
- * Validator component responsible for validating
- * {@link uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails} objects.
+ * Validator component responsible for validating {@link
+ * uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails} objects.
  */
 @Component
 public class FindAddressValidator extends AbstractClientAddressValidator {
@@ -17,15 +17,13 @@ public class FindAddressValidator extends AbstractClientAddressValidator {
    * Determines if the Validator supports the provided class.
    *
    * @param clazz The class to check for support.
-   * @return {@code true} if the class is assignable from
-   *         {@link uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails},
-   *         {@code false} otherwise.
+   * @return {@code true} if the class is assignable from {@link
+   *     uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails}, {@code false} otherwise.
    */
   @Override
   public boolean supports(final Class<?> clazz) {
     return ClientFormDataAddressDetails.class.isAssignableFrom(clazz);
   }
-
 
   /**
    * Validates the {@link uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails}.
@@ -56,18 +54,17 @@ public class FindAddressValidator extends AbstractClientAddressValidator {
       postcode = addressDetails.getPostcode();
       houseNameNumber = addressDetails.getHouseNameNumber();
     }
-    validateRequiredField("country", country,
-        "Country", errors);
+    validateRequiredField("country", country, "Country", errors);
 
     if (StringUtils.hasText(country) && !"GBR".equals(country)) {
-      errors.rejectValue("country", "required.GBR",
+      errors.rejectValue(
+          "country",
+          "required.GBR",
           "The address lookup system is not available for the country you have "
               + "selected. Please enter the address manually.");
     }
 
-    validateRequiredField("houseNameNumber", houseNameNumber,
-        "House name / number", errors);
+    validateRequiredField("houseNameNumber", houseNameNumber, "House name / number", errors);
     validatePostcodeFormat(country, postcode, errors);
-
   }
 }

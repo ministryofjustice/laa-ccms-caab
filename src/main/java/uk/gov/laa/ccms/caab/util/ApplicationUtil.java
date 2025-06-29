@@ -9,21 +9,19 @@ import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 
-/**
- * Utility class for handling application details and related operations.
- */
+/** Utility class for handling application details and related operations. */
 public final class ApplicationUtil {
 
   /**
    * Gets the application type or amendment type for Assessment input.
    *
    * @param application the application details
-   * @return "APP_TYPE_SUBSTANTIVE" if the application type is "EXCEPTIONAL_CASE_FUNDING",
-   *         otherwise the application type ID
+   * @return "APP_TYPE_SUBSTANTIVE" if the application type is "EXCEPTIONAL_CASE_FUNDING", otherwise
+   *     the application type ID
    */
   public static String getAppAmendTypeAssessmentInput(final ApplicationDetail application) {
-    if (APP_TYPE_EXCEPTIONAL_CASE_FUNDING
-        .equalsIgnoreCase(application.getApplicationType().getId())) {
+    if (APP_TYPE_EXCEPTIONAL_CASE_FUNDING.equalsIgnoreCase(
+        application.getApplicationType().getId())) {
       return APP_TYPE_SUBSTANTIVE;
     } else {
       return application.getApplicationType().getId();
@@ -36,8 +34,7 @@ public final class ApplicationUtil {
    * @param application the application details
    * @return true if the devolved powers contract flag starts with "yes", otherwise false
    */
-  public static boolean getProviderHasContractAssessmentInput(
-      final ApplicationDetail application) {
+  public static boolean getProviderHasContractAssessmentInput(final ApplicationDetail application) {
     final String devolvedPowersContractFlag =
         application.getApplicationType().getDevolvedPowers().getContractFlag();
 
@@ -54,10 +51,8 @@ public final class ApplicationUtil {
    * @return true if the application type is "EXCEPTIONAL_CASE_FUNDING", otherwise false
    */
   public static boolean getEcfFlagAssessmentInput(final ApplicationDetail application) {
-    return APP_TYPE_EXCEPTIONAL_CASE_FUNDING
-        .equalsIgnoreCase(application
-        .getApplicationType()
-        .getId());
+    return APP_TYPE_EXCEPTIONAL_CASE_FUNDING.equalsIgnoreCase(
+        application.getApplicationType().getId());
   }
 
   /**
@@ -85,9 +80,8 @@ public final class ApplicationUtil {
   }
 
   /**
-   * Retrieves the most recent date on which any key data was modified within the given
-   * application. This includes checks across proceedings and opponents involved in the
-   * application.
+   * Retrieves the most recent date on which any key data was modified within the given application.
+   * This includes checks across proceedings and opponents involved in the application.
    *
    * @param application the application to check for recent key data changes
    * @return the most recent date of modification, or null if no modifications have occurred
@@ -97,36 +91,31 @@ public final class ApplicationUtil {
 
     for (final ProceedingDetail proceeding : application.getProceedings()) {
       if (proceeding.getAuditTrail() != null
-          && (latestKeyChange == null || latestKeyChange
-          .before(proceeding.getAuditTrail().getLastSaved()))) {
+          && (latestKeyChange == null
+              || latestKeyChange.before(proceeding.getAuditTrail().getLastSaved()))) {
         latestKeyChange = proceeding.getAuditTrail().getLastSaved();
       }
 
       if (proceeding.getScopeLimitations() != null && !proceeding.getScopeLimitations().isEmpty()) {
         for (final ScopeLimitationDetail scopeLimitation : proceeding.getScopeLimitations()) {
           if (scopeLimitation.getAuditTrail() != null
-              && (latestKeyChange == null || latestKeyChange
-              .before(scopeLimitation.getAuditTrail().getLastSaved()))) {
+              && (latestKeyChange == null
+                  || latestKeyChange.before(scopeLimitation.getAuditTrail().getLastSaved()))) {
             latestKeyChange = scopeLimitation.getAuditTrail().getLastSaved();
           }
         }
       }
-
     }
 
     for (final OpponentDetail opponent : application.getOpponents()) {
       if (opponent.getAuditTrail() != null
-          && (latestKeyChange == null || latestKeyChange
-          .before(opponent.getAuditTrail().getLastSaved()))) {
+          && (latestKeyChange == null
+              || latestKeyChange.before(opponent.getAuditTrail().getLastSaved()))) {
         latestKeyChange = opponent.getAuditTrail().getLastSaved();
       }
     }
     return latestKeyChange;
-
   }
 
-  private ApplicationUtil() {
-  }
-
-
+  private ApplicationUtil() {}
 }

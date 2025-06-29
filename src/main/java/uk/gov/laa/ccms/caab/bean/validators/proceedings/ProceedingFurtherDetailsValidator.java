@@ -6,9 +6,7 @@ import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataFurtherDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
-/**
- * Validator the further details provided by proceeding flow forms.
- */
+/** Validator the further details provided by proceeding flow forms. */
 @Component
 public class ProceedingFurtherDetailsValidator extends AbstractValidator {
 
@@ -16,9 +14,8 @@ public class ProceedingFurtherDetailsValidator extends AbstractValidator {
    * Determines if the Validator supports the provided class.
    *
    * @param clazz The class to check for support.
-   * @return {@code true} if the class is assignable from
-   *         {@link uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData},
-   *         {@code false} otherwise.
+   * @return {@code true} if the class is assignable from {@link
+   *     uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData}, {@code false} otherwise.
    */
   @Override
   public boolean supports(final Class<?> clazz) {
@@ -26,8 +23,8 @@ public class ProceedingFurtherDetailsValidator extends AbstractValidator {
   }
 
   /**
-   * Validates the further details in the
-   * {@link uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData}.
+   * Validates the further details in the {@link
+   * uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData}.
    *
    * @param target The object to be validated.
    * @param errors The Errors object to store validation errors.
@@ -37,15 +34,21 @@ public class ProceedingFurtherDetailsValidator extends AbstractValidator {
     final ProceedingFlowFormData formData = (ProceedingFlowFormData) target;
     final ProceedingFormDataFurtherDetails furtherDetails = formData.getFurtherDetails();
 
-    validateRequiredField("clientInvolvementType", furtherDetails.getClientInvolvementType(),
-        "Client involvement type", errors);
+    validateRequiredField(
+        "clientInvolvementType",
+        furtherDetails.getClientInvolvementType(),
+        "Client involvement type",
+        errors);
 
-    validateRequiredField("levelOfService", furtherDetails.getLevelOfService(),
-        "Form of Civil Legal Service", errors);
+    validateRequiredField(
+        "levelOfService",
+        furtherDetails.getLevelOfService(),
+        "Form of Civil Legal Service",
+        errors);
 
     if (Boolean.TRUE.equals(formData.getProceedingDetails().getOrderTypeRequired())) {
-      validateRequiredField("typeOfOrder", furtherDetails.getTypeOfOrder(),
-          "Type of order", errors);
+      validateRequiredField(
+          "typeOfOrder", furtherDetails.getTypeOfOrder(), "Type of order", errors);
     }
   }
 }

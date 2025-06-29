@@ -21,24 +21,18 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
-/**
- * Controller for handling client summary details during the new application process.
- */
+/** Controller for handling client summary details during the new application process. */
 @Controller
 @Slf4j
 @SessionAttributes({CLIENT_FLOW_FORM_DATA})
 public class ClientSummaryController extends AbstractClientSummaryController {
 
-  /**
-   * Default constructor method implementing the abstract controller's constructor.
-   */
+  /** Default constructor method implementing the abstract controller's constructor. */
   public ClientSummaryController(
       final LookupService lookupService,
       final ClientService clientService,
       final ClientDetailMapper clientDetailsMapper) {
-    super(lookupService,
-        clientService,
-        clientDetailsMapper);
+    super(lookupService, clientService, clientDetailsMapper);
   }
 
   /**
@@ -68,9 +62,7 @@ public class ClientSummaryController extends AbstractClientSummaryController {
       final HttpSession session) {
 
     final ClientTransactionResponse response =
-        clientService.createClient(
-            clientFlowFormData,
-            user).block();
+        clientService.createClient(clientFlowFormData, user).block();
 
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
 

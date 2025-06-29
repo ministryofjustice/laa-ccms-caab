@@ -36,11 +36,9 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ExtendWith(MockitoExtension.class)
 class AmendmentServiceTest {
 
-  @Mock
-  private CaabApiClient caabApiClient;
+  @Mock private CaabApiClient caabApiClient;
 
-  @Mock
-  private ApplicationService applicationService;
+  @Mock private ApplicationService applicationService;
 
   private AmendmentService amendmentService;
 
@@ -67,22 +65,22 @@ class AmendmentServiceTest {
       userDetails.setLoginId("LoginID");
       ApplicationDetail amendment = buildFullApplicationDetail();
 
-      when(applicationService.getTdsApplications(any(), any(), any(), any())).thenReturn(
-          new ApplicationDetails().content(
-              Collections.emptyList()));
+      when(applicationService.getTdsApplications(any(), any(), any(), any()))
+          .thenReturn(new ApplicationDetails().content(Collections.emptyList()));
       when(applicationService.getCase(any(), anyLong(), any())).thenReturn(amendment);
       when(caabApiClient.createApplication(any(), any())).thenReturn(Mono.just("123"));
       // When
-      ApplicationDetail result = amendmentService
-          .createAndSubmitAmendmentForCase(applicationFormData, caseRef, userDetails);
+      ApplicationDetail result =
+          amendmentService.createAndSubmitAmendmentForCase(
+              applicationFormData, caseRef, userDetails);
       // Then
       assertNotNull(result);
       assertThat(result.getAmendment()).isTrue();
-      assertThat(result.getApplicationType().getId()).isEqualTo(
-          APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS);
+      assertThat(result.getApplicationType().getId())
+          .isEqualTo(APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS);
       assertThat(result.getApplicationType().getDevolvedPowers().getUsed()).isTrue();
-      assertThat(result.getApplicationType().getDevolvedPowers().getDateUsed()).isEqualTo(
-          DateUtils.convertToDate("01/01/2025"));
+      assertThat(result.getApplicationType().getDevolvedPowers().getDateUsed())
+          .isEqualTo(DateUtils.convertToDate("01/01/2025"));
     }
 
     @Test
@@ -98,26 +96,28 @@ class AmendmentServiceTest {
       userDetails.setProvider(new BaseProvider().id(1001));
       userDetails.setLoginId("LoginID");
 
-      when(applicationService.getTdsApplications(any(), any(), any(), any())).thenReturn(
-          new ApplicationDetails().content(
-              Collections.singletonList(new BaseApplicationDetail())));
+      when(applicationService.getTdsApplications(any(), any(), any(), any()))
+          .thenReturn(
+              new ApplicationDetails()
+                  .content(Collections.singletonList(new BaseApplicationDetail())));
       // When / Then
-      assertThatThrownBy(() -> {
-        amendmentService
-            .createAndSubmitAmendmentForCase(applicationFormData, caseRef, userDetails);
-      }).isInstanceOf(CaabApplicationException.class)
+      assertThatThrownBy(
+              () -> {
+                amendmentService.createAndSubmitAmendmentForCase(
+                    applicationFormData, caseRef, userDetails);
+              })
+          .isInstanceOf(CaabApplicationException.class)
           .hasMessageContaining("Application already exists for case reference: 12345");
     }
-
   }
 
   @Nested
   @DisplayName("getAmendmentSections() tests")
-  class GetAmendmentSectionsTests{
+  class GetAmendmentSectionsTests {
 
     @Test
     @DisplayName("Should return amendment sections with document upload disabled")
-    void shouldReturnAmendmentSectionsWithDocumentUploadDisabled(){
+    void shouldReturnAmendmentSectionsWithDocumentUploadDisabled() {
       // Given
       ApplicationDetail amendment = buildFullApplicationDetail();
       UserDetail userDetails = new UserDetail().loginId("123");
@@ -127,8 +127,8 @@ class AmendmentServiceTest {
       when(applicationService.getApplicationSections(amendment, userDetails))
           .thenReturn(originalDisplay);
       // When
-      ApplicationSectionDisplay result = amendmentService.getAmendmentSections(amendment,
-          userDetails);
+      ApplicationSectionDisplay result =
+          amendmentService.getAmendmentSections(amendment, userDetails);
       // Then
       assertThat(result).isNotNull();
       assertThat(result.getDocumentUpload()).isNotNull();
@@ -136,22 +136,24 @@ class AmendmentServiceTest {
     }
 
     @Test
-    @DisplayName("Should return amendment sections with document upload enabled "
-        + "when draft prior authority")
-    void shouldReturnAmendmentSectionsWithDocumentUploadEnabledWhenDraftPriorAuthority(){
+    @DisplayName(
+        "Should return amendment sections with document upload enabled "
+            + "when draft prior authority")
+    void shouldReturnAmendmentSectionsWithDocumentUploadEnabledWhenDraftPriorAuthority() {
       // Given
       ApplicationDetail amendment = buildFullApplicationDetail();
       UserDetail userDetails = new UserDetail().loginId("123");
       ApplicationSectionDisplay originalDisplay = expectedApplicationSectionDisplay();
-      originalDisplay.setPriorAuthorities(Collections.singletonList(PriorAuthoritySectionDisplay.builder()
-          .status("Draft").build()));
+      originalDisplay.setPriorAuthorities(
+          Collections.singletonList(
+              PriorAuthoritySectionDisplay.builder().status("Draft").build()));
       amendment.setMeritsAssessmentAmended(false);
       amendment.setMeansAssessmentAmended(false);
       when(applicationService.getApplicationSections(amendment, userDetails))
           .thenReturn(originalDisplay);
       // When
-      ApplicationSectionDisplay result = amendmentService.getAmendmentSections(amendment,
-          userDetails);
+      ApplicationSectionDisplay result =
+          amendmentService.getAmendmentSections(amendment, userDetails);
       // Then
       assertThat(result).isNotNull();
       assertThat(result.getDocumentUpload()).isNotNull();
@@ -159,8 +161,9 @@ class AmendmentServiceTest {
     }
 
     @Test
-    @DisplayName("Should return amendment sections with document upload enabled when merits modified")
-    void shouldReturnAmendmentSectionsWithDocumentUploadEnabledWhenMeritsModified(){
+    @DisplayName(
+        "Should return amendment sections with document upload enabled when merits modified")
+    void shouldReturnAmendmentSectionsWithDocumentUploadEnabledWhenMeritsModified() {
       // Given
       ApplicationDetail amendment = buildFullApplicationDetail();
       UserDetail userDetails = new UserDetail().loginId("123");
@@ -170,8 +173,8 @@ class AmendmentServiceTest {
       when(applicationService.getApplicationSections(amendment, userDetails))
           .thenReturn(originalDisplay);
       // When
-      ApplicationSectionDisplay result = amendmentService.getAmendmentSections(amendment,
-          userDetails);
+      ApplicationSectionDisplay result =
+          amendmentService.getAmendmentSections(amendment, userDetails);
       // Then
       assertThat(result).isNotNull();
       assertThat(result.getDocumentUpload()).isNotNull();
@@ -179,8 +182,9 @@ class AmendmentServiceTest {
     }
 
     @Test
-    @DisplayName("Should return amendment sections with document upload enabled when means modified")
-    void shouldReturnAmendmentSectionsWithDocumentUploadEnabledWhenMeansModified(){
+    @DisplayName(
+        "Should return amendment sections with document upload enabled when means modified")
+    void shouldReturnAmendmentSectionsWithDocumentUploadEnabledWhenMeansModified() {
       // Given
       ApplicationDetail amendment = buildFullApplicationDetail();
       UserDetail userDetails = new UserDetail().loginId("123");
@@ -190,13 +194,12 @@ class AmendmentServiceTest {
       when(applicationService.getApplicationSections(amendment, userDetails))
           .thenReturn(originalDisplay);
       // When
-      ApplicationSectionDisplay result = amendmentService.getAmendmentSections(amendment,
-          userDetails);
+      ApplicationSectionDisplay result =
+          amendmentService.getAmendmentSections(amendment, userDetails);
       // Then
       assertThat(result).isNotNull();
       assertThat(result.getDocumentUpload()).isNotNull();
       assertThat(result.getDocumentUpload().isEnabled()).isTrue();
     }
-
   }
 }
