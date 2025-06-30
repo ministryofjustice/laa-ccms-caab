@@ -37,7 +37,7 @@ public class AddressSearchValidator implements Validator {
     AddressSearchFormData addressSearch = (AddressSearchFormData) target;
     if (!StringUtils.hasText(addressSearch.getUprn())) {
       errors.reject("required.uprn",
-          "Please select an address.");
+          "Please select an address");
     }
   }
 }

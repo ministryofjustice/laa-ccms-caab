@@ -8,7 +8,8 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections/correspondence-address}" class="govuk-back-link"th:text="#{site.cancelAndReturnToAddress}"></a>
+    <a th:href="@{/{caseContext}/sections/correspondence-address(caseContext=${caseContext.getPathValue()})}"
+       class="govuk-back-link"th:text="#{site.cancelAndReturnToAddress}"></a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{'/' + ${formAction}}" th:object="${addressSearch}" method="post">
