@@ -99,6 +99,7 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.data.model.UserDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -798,6 +799,11 @@ public class ApplicationService {
   public ApplicationFormData getApplicationTypeFormData(final String id) {
     return caabApiClient.getApplicationType(id)
         .map(applicationFormDataMapper::toApplicationTypeFormData).block();
+  }
+
+  public void putApplicationTypeFormData(final Integer id, final ApplicationType applicationType,
+                                         final UserDetail user) {
+    caabApiClient.putApplicationType(id, user.getLoginId(), applicationType).block();
   }
 
   public ApplicationFormData getProviderDetailsFormData(final String id) {

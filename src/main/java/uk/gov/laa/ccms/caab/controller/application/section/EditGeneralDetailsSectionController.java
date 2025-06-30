@@ -460,7 +460,7 @@ public class EditGeneralDetailsSectionController {
    * @param activeCase         Active case details from session attribute.
    * @param caseSearchCriteria Search criteria model attribute.
    * @param user               User details from session attribute.
-   * @param currentlinkedCases The current Linked cases for the application.
+   * @param currentLinkedCases The current Linked cases for the application.
    * @param redirectAttributes Redirect attributes.
    * @param bindingResult      Binding result for validation.
    * @param model              Spring MVC model.
@@ -468,15 +468,15 @@ public class EditGeneralDetailsSectionController {
    */
   @PostMapping("/{caseContext}/sections/linked-cases/search")
   public String linkedCasesSearchPost(@PathVariable final CaseContext caseContext,
-                                      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
-                                      @SessionAttribute(USER_DETAILS) final UserDetail user,
-                                      @SessionAttribute(LINKED_CASES)
-                                      final ResultsDisplay<LinkedCaseResultRowDisplay> currentlinkedCases,
-                                      final RedirectAttributes redirectAttributes,
-                                      @Validated @ModelAttribute(CASE_SEARCH_CRITERIA)
-                                      final CaseSearchCriteria caseSearchCriteria,
-                                      final BindingResult bindingResult,
-                                      final Model model) {
+          @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
+          @SessionAttribute(USER_DETAILS) final UserDetail user,
+          @SessionAttribute(LINKED_CASES)
+          final ResultsDisplay<LinkedCaseResultRowDisplay> currentLinkedCases,
+          final RedirectAttributes redirectAttributes,
+          @Validated @ModelAttribute(CASE_SEARCH_CRITERIA)
+          final CaseSearchCriteria caseSearchCriteria,
+          final BindingResult bindingResult,
+          final Model model) {
 
     log.info("Searching for linked-case with id: {} caseContext: {}", caseContext, caseContext);
     searchCriteriaValidator.validate(caseSearchCriteria, bindingResult);
@@ -493,7 +493,7 @@ public class EditGeneralDetailsSectionController {
       //filter out current linked cases and where application id is the same as the current
       //application
       searchResults.removeIf(
-          result -> currentlinkedCases.getContent().stream()
+          result -> currentLinkedCases.getContent().stream()
               .anyMatch(lc -> lc.getLscCaseReference().equals(result.getCaseReferenceNumber()))
               || result.getCaseReferenceNumber().equals(activeCase.getCaseReferenceNumber()));
 

@@ -93,7 +93,7 @@ public class AmendCaseController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       Model model,
-      final HttpSession httpSession) {
+      HttpSession httpSession) {
 
     final ApplicationDetail amendment =
         applicationService.getApplication(String.valueOf(tdsApplication.getId())).block();
@@ -108,6 +108,7 @@ public class AmendCaseController {
     httpSession.setAttribute(APPLICATION_ID, amendment.getId());
     httpSession.setAttribute(ACTIVE_CASE, activeCase);
     httpSession.setAttribute(APPLICATION_COSTS, amendment.getCosts());
+    httpSession.setAttribute("Hello", "World");
 
     model.addAttribute("summary", applicationSectionDisplay);
 
