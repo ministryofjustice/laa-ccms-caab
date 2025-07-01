@@ -36,6 +36,9 @@ public final class ApplicationDetailUtils {
     // Basic fields
     applicationDetail.setId(123);
     applicationDetail.setCaseReferenceNumber("CASE-456");
+    applicationDetail.setCategoryOfLaw(new StringDisplayValue().id("CAT-1").displayValue("CAT-1"));
+    applicationDetail.setMeansAssessmentAmended(false);
+    applicationDetail.setMeritsAssessmentAmended(false);
 
     // Provider Details
     ApplicationProviderDetails providerDetails = new ApplicationProviderDetails();
@@ -44,6 +47,7 @@ public final class ApplicationDetailUtils {
     providerDetails.setFeeEarner(new StringDisplayValue().id("3").displayValue("Fee Earner"));
     providerDetails.setSupervisor(new StringDisplayValue().id("4").displayValue("Supervisor"));
     providerDetails.setProviderCaseReference("PROV-REF-789");
+    providerDetails.setProviderContact(new StringDisplayValue().id("5").displayValue("Provider Contact"));
     applicationDetail.setProviderDetails(providerDetails);
 
     // Client
@@ -120,16 +124,16 @@ public final class ApplicationDetailUtils {
             ProviderSectionDisplay.builder()
                 .providerName("Provider Name")
                 .providerCaseReferenceNumber("PROV-REF-789")
-                .providerContactName("")
+                .providerContactName("Provider Contact")
                 .officeName("Office Name")
                 .feeEarner("Fee Earner")
                 .supervisorName("Supervisor")
-                .status("Started")
+                .status("Complete")
                 .build())
         .generalDetails(
             GeneralDetailsSectionDisplay.builder()
                 .applicationStatus("")
-                .categoryOfLaw("")
+                .categoryOfLaw("CAT-1")
                 .status("Complete")
                 .correspondenceMethod("correspondence method1")
                 .build())
