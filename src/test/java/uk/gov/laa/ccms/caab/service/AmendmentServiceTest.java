@@ -239,7 +239,8 @@ class AmendmentServiceTest {
 
       UserDetail userDetails =
           new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
-      when(applicationService.getCase(any(), anyLong(), any())).thenReturn(buildFullApplicationDetail());
+      when(applicationService.getCase(any(), anyLong(), any())).thenReturn(
+          buildFullApplicationDetail());
       when(soaApiClient.updateCase(any(), any(), any())).thenReturn(
           Mono.just(new CaseTransactionResponse().transactionId("12345")));
       // When
@@ -247,6 +248,7 @@ class AmendmentServiceTest {
           addressFormData,
           caseRef, userDetails);
       // Then
+      verify(caabApiClient, times(1)).createApplication(eq("123"), any(ApplicationDetail.class));
       verify(soaApiClient, times(1)).updateCase(eq("123"), eq("Type"), any());
       assertThat(transactionId).isNotNull();
       assertThat(transactionId).isEqualTo("12345");

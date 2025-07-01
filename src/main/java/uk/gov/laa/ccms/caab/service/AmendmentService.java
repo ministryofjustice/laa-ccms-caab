@@ -163,15 +163,21 @@ public class AmendmentService {
     return amendment;
   }
 
+  /**
+   * Submits a quick amendment to the correspondence address for a given case.
+   * This method creates a quick amendment application, applies the new correspondence address
+   * details, and submits the amendment. Finally, a case is updated which returns the
+   * transaction ID associated with the submission.
+   *
+   * @param editCorrespondenceAddress the data representing the updated correspondence address
+   * @param caseReferenceNumber the unique reference number of the case to which the amendment applies
+   * @param userDetail the details of the user initiating the amendment
+   * @return the transaction ID of the submitted amendment
+   */
   public String submitQuickAmendmentCorrespondenceAddress(
       final AddressFormData editCorrespondenceAddress,
       final String caseReferenceNumber,
       final UserDetail userDetail) {
-    // Check CorrespondenceAddressController:110
-    // Check QuickAmendPollingController::pollQuickAmend
-    // Check QuickAmendPollingController::processAmendmentType
-    // Check CcmsHelper::prepareAmendment
-    // Check SubmitQuickAmendmentInterceptor
     ApplicationDetail amendment = createAmendmentObject(caseReferenceNumber, userDetail);
     amendment.setQuickEditType(FunctionConstants.CASE_CORRESPONDENCE_PREFERENCE);
 
@@ -190,17 +196,28 @@ public class AmendmentService {
     address.setPostcode(editCorrespondenceAddress.getPostcode());
     address.setPreferredAddress(editCorrespondenceAddress.getPreferredAddress());
 
+    return updateCaseWithQuickAmendment(userDetail, amendment);
+  }
+
+  /**
+   * Common update case logic for quick amendments.
+   *
+   * @param userDetail User updating the case.
+   * @param amendment The amendment to be applied to the case.
+   * @return Transaction ID of the updated case.
+   */
+  private String updateCaseWithQuickAmendment(UserDetail userDetail, ApplicationDetail amendment) {
     AmendmentUtil.cleanAppForQuickAmendSubmit(amendment);
 
-    // TODO: Submit application and return transaction ID
+    // Create an application in TDS
+    //caabApiClient.createApplication(userDetail.getLoginId(), amendment);
+
     Mono<CaseTransactionResponse> caseTransactionResponseMono = soaApiClient.updateCase(
         userDetail.getLoginId(), userDetail.getUserType(),
         amendment);
 
     return Objects.requireNonNull(caseTransactionResponseMono.block()).getTransactionId();
   }
-
-
 
 
   /**
