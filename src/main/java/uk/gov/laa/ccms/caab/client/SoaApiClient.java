@@ -104,8 +104,8 @@ public class SoaApiClient {
    * Creates a client based on a given client details.
    *
    * @param clientDetails The client's details.
-   * @param loginId The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
+   * @param loginId       The login identifier for the user.
+   * @param userType      Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientCreated transaction id.
    */
   public Mono<ClientTransactionResponse> postClient(
@@ -155,8 +155,8 @@ public class SoaApiClient {
    * Retrieves the full detail of a single case based on the provided case reference.
    *
    * @param caseReferenceNumber The reference number for the case to fetch.
-   * @param loginId The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
+   * @param loginId             The login identifier for the user.
+   * @param userType            Type of the user (e.g., admin, user).
    * @return A Mono wrapping the CaseDetail.
    */
   public Mono<CaseDetail> getCase(
@@ -177,8 +177,8 @@ public class SoaApiClient {
   /**
    * Creates a new case with the provided case details.
    *
-   * @param loginId the login ID of the user creating the case
-   * @param userType the type of user creating the case
+   * @param loginId    the login ID of the user creating the case
+   * @param userType   the type of user creating the case
    * @param caseDetail the details of the case to be created
    * @return a {@link Mono} emitting the {@link CaseTransactionResponse} for the created case
    */
@@ -194,6 +194,15 @@ public class SoaApiClient {
         .retrieve()
         .bodyToMono(CaseTransactionResponse.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiCreateError(e, "Cases"));
+  }
+
+  public Mono<CaseTransactionResponse> updateCase(
+      final String loginId,
+      final String userType,
+      final Object caseUpdate
+  ) {
+    // TODO: Complete when endpoint has been created from CCCMSPUI-692
+    return Mono.just(new CaseTransactionResponse().transactionId("123"));
   }
 
   /**
@@ -246,10 +255,10 @@ public class SoaApiClient {
    * Searches and retrieves organisation details based on provided search criteria.
    *
    * @param searchCriteria The search criteria to use when fetching organisations.
-   * @param loginId The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
-   * @param page The page number for pagination.
-   * @param size The size or number of records per page.
+   * @param loginId        The login identifier for the user.
+   * @param userType       Type of the user (e.g., admin, user).
+   * @param page           The page number for pagination.
+   * @param size           The size or number of records per page.
    * @return A Mono wrapping the CaseDetails.
    */
   public Mono<OrganisationDetails> getOrganisations(
@@ -282,8 +291,8 @@ public class SoaApiClient {
    * Retrieves an organisation based on provided organisation id.
    *
    * @param organisationId The organisation id.
-   * @param loginId The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
+   * @param loginId        The login identifier for the user.
+   * @param userType       Type of the user (e.g., admin, user).
    * @return A Mono wrapping the CaseDetails.
    */
   public Mono<OrganisationDetail> getOrganisation(
@@ -305,7 +314,7 @@ public class SoaApiClient {
    * Post basic document details to register the document in EBS.
    *
    * @param document The document details to register.
-   * @param loginId The login identifier for the user.
+   * @param loginId  The login identifier for the user.
    * @param userType Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientTransactionResponse with transaction id and reference number.
    */
@@ -318,7 +327,7 @@ public class SoaApiClient {
    * Post a complete document to EBS.
    *
    * @param document The document details to register.
-   * @param loginId The login identifier for the user.
+   * @param loginId  The login identifier for the user.
    * @param userType Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientTransactionResponse with transaction id and reference number.
    */
@@ -351,8 +360,8 @@ public class SoaApiClient {
    * Submits a provider request to the API.
    *
    * @param providerRequest the details of the provider request to be submitted
-   * @param loginId the login ID of the user submitting the request
-   * @param userType the role of the user submitting the request
+   * @param loginId         the login ID of the user submitting the request
+   * @param userType        the role of the user submitting the request
    * @return a {@code Mono} emitting the response of the submitted provider request
    */
   public Mono<ProviderRequestResponse> submitProviderRequest(
@@ -374,7 +383,7 @@ public class SoaApiClient {
    * Update an existing document registered in EBS with complete details including file content.
    *
    * @param document The document details to register.
-   * @param loginId The login identifier for the user.
+   * @param loginId  The login identifier for the user.
    * @param userType Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientTransactionResponse with transaction id and reference number.
    */
@@ -415,8 +424,8 @@ public class SoaApiClient {
    * Downloads notification attachment content from EBS.
    *
    * @param documentId The document identifier for the notification attachment.
-   * @param loginId The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
+   * @param loginId    The login identifier for the user.
+   * @param userType   Type of the user (e.g., admin, user).
    * @return A Mono wrapping the retrieved {@link Document} with file content.
    */
   public Mono<Document> downloadDocument(
@@ -436,8 +445,8 @@ public class SoaApiClient {
    * Downloads the cover sheet for a notification attachment from EBS.
    *
    * @param documentId The document identifier for the notification attachment.
-   * @param loginId The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
+   * @param loginId    The login identifier for the user.
+   * @param userType   Type of the user (e.g., admin, user).
    * @return A Mono wrapping the retrieved {@link CoverSheet} with cover sheet content.
    */
   public Mono<CoverSheet> downloadCoverSheet(
@@ -457,8 +466,8 @@ public class SoaApiClient {
    * Update user profile options in EBS.
    *
    * @param userOptions The user profile options to update.
-   * @param loginId The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
+   * @param loginId     The login identifier for the user.
+   * @param userType    Type of the user (e.g., admin, user).
    * @return A Mono wrapping a {@link ClientTransactionResponse}.
    */
   public Mono<ClientTransactionResponse> updateUserOptions(
@@ -482,8 +491,8 @@ public class SoaApiClient {
    * Update a notification with a response in EBS.
    *
    * @param notification The details of the notification response.
-   * @param loginId The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
+   * @param loginId      The login identifier for the user.
+   * @param userType     Type of the user (e.g., admin, user).
    * @return A Mono wrapping a {@link ClientTransactionResponse}.
    */
   public Mono<ClientTransactionResponse> updateNotification(
