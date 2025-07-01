@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
@@ -17,6 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Scope;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -253,8 +256,28 @@ public class CaseController {
     applicationService.abandonApplication(amendments, user);
 
     httpSession.removeAttribute(APPLICATION_SUMMARY);
+    httpSession.removeAttribute(APPLICATION_ID);
 
     return "redirect:/case/overview";
+  }
+
+  /**
+   * Displays the general details edit page for an amendment case. This method is used to
+   *
+   * @param tdsApplication the application details for the current case, retrieved from the session
+   * @return the view name for editing general details of the case
+   */
+  @GetMapping("/case/amendment/edit-general-details")
+  public String editGeneralDetails(
+      @SessionAttribute(APPLICATION) final ApplicationDetail tdsApplication) {
+    log.info("Editing general details for case id {}", tdsApplication.getId());
+    Assert.notNull(tdsApplication.getApplicationType(), "TDS Application type must not be null");
+
+    if (tdsApplication.getApplicationType().getId().equals(APP_TYPE_EMERGENCY)) {
+      return "redirect:/amendments/edit-delegated-functions";
+    }
+
+    return "redirect:/amendments/sections/linked-cases";
   }
 
   private static List<AvailableAction> getAvailableActions(ApplicationDetail ebsCase,

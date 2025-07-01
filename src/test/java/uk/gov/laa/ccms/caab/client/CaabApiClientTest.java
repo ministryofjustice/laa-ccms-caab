@@ -48,7 +48,7 @@ import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class CaabApiClientTest {
+class CaabApiClientTest {
     
   @Mock
   private WebClient caabApiWebClient;
@@ -1170,6 +1170,56 @@ public class CaabApiClientTest {
     verify(requestBodyMock).contentType(MediaType.APPLICATION_JSON);
     verify(requestBodyMock).bodyValue(patch);
     verify(requestHeadersMock).retrieve();
+  }
+
+
+  @Test
+  void putApplicationTypeSuccess() {
+    final Integer id = 123;
+    final String loginId = "user1";
+    final ApplicationType data = new ApplicationType(); // Replace with actual ApplicationType if needed
+
+    when(caabApiWebClient.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri("/applications/{id}/application-type", id)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(data)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.putApplicationType(id, loginId, data);
+
+    StepVerifier.create(result).verifyComplete();
+
+    verify(requestBodyUriMock).uri("/applications/{id}/application-type", id);
+    verify(requestBodyMock).header("Caab-User-Login-Id", loginId);
+    verify(requestBodyMock).contentType(MediaType.APPLICATION_JSON);
+    verify(requestBodyMock).bodyValue(data);
+    verify(requestHeadersMock).retrieve();
+  }
+
+  @Test
+  void putApplicationTypeError() {
+    final Integer id = 123;
+    final String loginId = "user1";
+    final ApplicationType data = new ApplicationType();
+    final CaabApiClientException exception = new CaabApiClientException("error");
+
+    when(caabApiWebClient.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri("/applications/{id}/application-type", id)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(data)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.error(exception));
+    when(apiClientErrorHandler.handleApiRetrieveError(exception, "application type", "application id", String.valueOf(id)))
+        .thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.putApplicationType(id, loginId, data);
+
+    StepVerifier.create(result).verifyComplete();
+
+    verify(apiClientErrorHandler).handleApiRetrieveError(exception, "application type", "application id", String.valueOf(id));
   }
 
 }

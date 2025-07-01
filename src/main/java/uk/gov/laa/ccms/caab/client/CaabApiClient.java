@@ -239,6 +239,27 @@ public class CaabApiClient {
    * @param id the ID associated with the application
    * @return a Mono containing application's application type
    */
+  public Mono<Void> putApplicationType(final Integer id, final String loginId,
+                                                  final ApplicationType data) {
+    return caabApiWebClient
+        .put()
+        .uri("/applications/{id}/application-type", id)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(data)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler
+            .handleApiRetrieveError(e,
+                RESOURCE_TYPE_APPLICATION_TYPE, "application id", String.valueOf(id)));
+  }
+
+  /**
+   * Retrieves an application's application type using the CAAB API.
+   *
+   * @param id the ID associated with the application
+   * @return a Mono containing application's application type
+   */
   public Mono<ApplicationProviderDetails> getProviderDetails(
       final String id) {
     return caabApiWebClient

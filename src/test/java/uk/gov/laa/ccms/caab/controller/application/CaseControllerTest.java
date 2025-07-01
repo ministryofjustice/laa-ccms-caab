@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
@@ -639,6 +640,46 @@ class CaseControllerTest {
         .failure()
         .hasCauseInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Could not find prior authority with index: 1");
+  }
+
+
+  @Test
+  @DisplayName("editGeneralDetails redirects to delegated functions for emergency app type")
+  void editGeneralDetailsRedirectsToDelegatedFunctionsForEmergency() {
+    ApplicationDetail tdsApplication = new ApplicationDetail();
+    tdsApplication.setId(123);
+    tdsApplication.setApplicationType(new uk.gov.laa.ccms.caab.model.ApplicationType().id(APP_TYPE_EMERGENCY));
+
+    assertThat(mockMvc.perform(get("/case/amendment/edit-general-details")
+        .sessionAttr(APPLICATION, tdsApplication)))
+        .hasStatus3xxRedirection()
+        .hasRedirectedUrl("/amendments/edit-delegated-functions");
+  }
+
+  @Test
+  @DisplayName("editGeneralDetails redirects to linked cases for non-emergency app type")
+  void editGeneralDetailsRedirectsToLinkedCasesForNonEmergency() {
+    ApplicationDetail tdsApplication = new ApplicationDetail();
+    tdsApplication.setId(456);
+    tdsApplication.setApplicationType(new uk.gov.laa.ccms.caab.model.ApplicationType().id("NON_EMERGENCY"));
+
+    assertThat(mockMvc.perform(get("/case/amendment/edit-general-details")
+        .sessionAttr(APPLICATION, tdsApplication)))
+        .hasStatus3xxRedirection()
+        .hasRedirectedUrl("/amendments/sections/linked-cases");
+  }
+
+  @Test
+  @DisplayName("editGeneralDetails throws exception if application type is null")
+  void editGeneralDetailsThrowsIfApplicationTypeNull() {
+    ApplicationDetail tdsApplication = new ApplicationDetail();
+    tdsApplication.setId(789);
+
+    assertThat(mockMvc.perform(get("/case/amendment/edit-general-details")
+        .sessionAttr(APPLICATION, tdsApplication)))
+        .failure()
+        .hasCauseInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("TDS Application type must not be null");
   }
 
   private ApplicationDetail getEbsCase(

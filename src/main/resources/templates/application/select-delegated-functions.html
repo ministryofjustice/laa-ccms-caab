@@ -8,11 +8,17 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:if="${caseContext.isApplication()}" th:href="@{/home}" class="govuk-back-link" th:text="#{site.cancelAndReturnToHome}"/>
-        <a th:if="${caseContext.isAmendment()}" th:href="@{/case/overview}" class="govuk-back-link" th:text="#{site.returnToCaseOverview}"/>
+        <a th:if="${caseContext.isApplication()}" th:href="@{/home}" class="govuk-back-link"
+           th:text="#{site.cancelAndReturnToHome}"/>
+        <a th:if="${caseContext.isAmendment() && edit == null }" th:href="@{/case/overview}" class="govuk-back-link"
+           th:text="#{site.returnToCaseOverview}"/>
+        <a th:if="${caseContext.isAmendment() && edit == true }" th:href="@{/amendments/summary}"
+           class="govuk-back-link" th:text="#{application.evidence.returnToAmendmentsSummary}"/>
     </div>
     <div id="main-content">
-        <form action="#" th:action="@{/{caseContext}/delegated-functions(caseContext=${caseContext.pathValue})}"
+        <form action="#"
+              th:with="actionUrl=${edit == null ? '/'+ caseContext.pathValue + '/delegated-functions': '/amendments/edit-delegated-functions'}"
+              th:action="@{${actionUrl}}"
               th:object="${applicationFormData}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l" th:text="#{application.about}"></span>

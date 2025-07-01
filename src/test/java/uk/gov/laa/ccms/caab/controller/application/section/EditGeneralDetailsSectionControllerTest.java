@@ -448,15 +448,16 @@ class EditGeneralDetailsSectionControllerTest {
   @DisplayName("GET: /application/sections/linked-cases")
   class GetLinkedCasesTests {
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final String applicationId = "123";
       final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases = new ResultsDisplay<>();
 
       when(applicationService.getLinkedCases(applicationId)).thenReturn(linkedCases);
 
-      mockMvc.perform(get("/application/sections/linked-cases")
+      mockMvc.perform(get("/%s/sections/linked-cases".formatted(caseContext))
               .sessionAttr(APPLICATION_ID, applicationId))
           .andDo(print())
           .andExpect(status().isOk())
@@ -471,9 +472,10 @@ class EditGeneralDetailsSectionControllerTest {
   @DisplayName("GET: /application/sections/linked-cases/{linked-case-id}/remove")
   class GetRemoveLinkedCaseTests {
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final Integer linkedCaseId = 1;
       final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
       linkedCase.setId(linkedCaseId);
@@ -482,7 +484,7 @@ class EditGeneralDetailsSectionControllerTest {
       linkedCases.setContent(Collections.singletonList(linkedCase));
 
       mockMvc
-          .perform(get("/application/sections/linked-cases/{linked-case-id}/remove", linkedCaseId)
+          .perform(get("/%s/sections/linked-cases/{linked-case-id}/remove".formatted(caseContext), linkedCaseId)
               .sessionAttr("linkedCases", linkedCases))
           .andDo(print())
           .andExpect(status().isOk())
@@ -491,25 +493,25 @@ class EditGeneralDetailsSectionControllerTest {
     }
   }
 
-
   @Nested
   @DisplayName("POST: /application/sections/linked-cases/{linked-case-id}/remove")
   class PostRemoveLinkedCaseTests {
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final String applicationId = "123";
       final String linkedCaseId = "1";
       final UserDetail user = new UserDetail();
 
       mockMvc
-          .perform(post("/application/sections/linked-cases/{linked-case-id}/remove", linkedCaseId)
+          .perform(post("/%s/sections/linked-cases/{linked-case-id}/remove".formatted(caseContext), linkedCaseId)
               .sessionAttr(APPLICATION_ID, applicationId)
               .sessionAttr(USER_DETAILS, user))
           .andDo(print())
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/sections/linked-cases"));
+          .andExpect(redirectedUrl("/%s/sections/linked-cases".formatted(caseContext)));
 
       verify(applicationService, times(1)).removeLinkedCase(linkedCaseId, user);
     }
@@ -519,9 +521,10 @@ class EditGeneralDetailsSectionControllerTest {
   @DisplayName("GET: /application/sections/linked-cases/{linked-case-id}/confirm")
   class GetConfirmLinkedCaseTests {
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final Integer linkedCaseId = 1;
       final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
       linkedCase.setId(linkedCaseId);
@@ -533,7 +536,7 @@ class EditGeneralDetailsSectionControllerTest {
           Mono.just(mockCommonLookupDetail));
 
       mockMvc
-          .perform(get("/application/sections/linked-cases/{linked-case-id}/confirm", linkedCaseId)
+          .perform(get("/%s/sections/linked-cases/{linked-case-id}/confirm".formatted(caseContext), linkedCaseId)
               .sessionAttr("linkedCases", linkedCases))
           .andDo(print())
           .andExpect(status().isOk())
@@ -543,32 +546,34 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /application/sections/linked-cases/{linked-case-id}/confirm")
+  @DisplayName("POST: /{caseContext}/sections/linked-cases/{linked-case-id}/confirm")
   class PostConfirmLinkedCaseTests {
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final String applicationId = "123";
       final String linkedCaseId = "1";
       final UserDetail user = new UserDetail();
       final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
 
       mockMvc
-          .perform(post("/application/sections/linked-cases/{linked-case-id}/confirm", linkedCaseId)
+          .perform(post("/%s/sections/linked-cases/{linked-case-id}/confirm".formatted(caseContext), linkedCaseId)
               .sessionAttr(APPLICATION_ID, applicationId)
               .sessionAttr(USER_DETAILS, user)
               .flashAttr("linkedCase", linkedCase))
           .andDo(print())
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/sections/linked-cases"));
+          .andExpect(redirectedUrl("/%s/sections/linked-cases".formatted(caseContext)));
 
       verify(applicationService, times(1)).updateLinkedCase(linkedCaseId, linkedCase, user);
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should handle validation errors")
-    void shouldHandleValidationErrors() throws Exception {
+    void shouldHandleValidationErrors(String caseContext) throws Exception {
       final String applicationId = "123";
       final String linkedCaseId = "1";
       final UserDetail user = new UserDetail();
@@ -584,7 +589,7 @@ class EditGeneralDetailsSectionControllerTest {
       }).when(linkedCaseValidator).validate(any(), any());
 
       mockMvc
-          .perform(post("/application/sections/linked-cases/{linked-case-id}/confirm", linkedCaseId)
+          .perform(post("/%s/sections/linked-cases/{linked-case-id}/confirm".formatted(caseContext), linkedCaseId)
               .sessionAttr(APPLICATION_ID, applicationId)
               .sessionAttr(USER_DETAILS, user)
               .flashAttr("linkedCase", linkedCase))
@@ -600,9 +605,10 @@ class EditGeneralDetailsSectionControllerTest {
   @DisplayName("GET: /application/sections/linked-cases/search")
   class GetLinkedCasesSearchTests {
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final ProviderDetail mockProviderDetail = new ProviderDetail();
       final CaseStatusLookupDetail mockCaseStatusValues = new CaseStatusLookupDetail();
 
@@ -611,7 +617,7 @@ class EditGeneralDetailsSectionControllerTest {
       when(providerService.getProvider(any())).thenReturn(Mono.just(mockProviderDetail));
       when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(mockCaseStatusValues));
 
-      mockMvc.perform(get("/application/sections/linked-cases/search")
+      mockMvc.perform(get("/%s/sections/linked-cases/search".formatted(caseContext))
               .sessionAttr(USER_DETAILS, buildUserDetail()))
           .andDo(print())
           .andExpect(status().isOk())
@@ -620,12 +626,13 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /application/sections/linked-cases/search")
+  @DisplayName("POST: /{caseContext}/sections/linked-cases/search")
   class PostLinkedCasesSearchTests {
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should handle validation errors")
-    void shouldHandleValidationErrors() throws Exception {
+    void shouldHandleValidationErrors(String caseContext) throws Exception {
 
       final ProviderDetail mockProviderDetail = new ProviderDetail();
       final CaseStatusLookupDetail mockCaseStatusValues = new CaseStatusLookupDetail();
@@ -642,7 +649,7 @@ class EditGeneralDetailsSectionControllerTest {
         return null;
       }).when(searchCriteriaValidator).validate(any(), any());
 
-      mockMvc.perform(post("/application/sections/linked-cases/search")
+      mockMvc.perform(post("/%s/sections/linked-cases/search".formatted(caseContext))
               .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
               .sessionAttr(USER_DETAILS, buildUserDetail())
               .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
@@ -652,13 +659,14 @@ class EditGeneralDetailsSectionControllerTest {
           .andExpect(view().name("application/sections/application-linked-case-search"));
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should handle no search results")
-    void shouldHandleNoSearchResults() throws Exception {
+    void shouldHandleNoSearchResults(String caseContext) throws Exception {
       final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
       when(applicationService.getCases(any(), any())).thenReturn(Collections.emptyList());
 
-      mockMvc.perform(post("/application/sections/linked-cases/search")
+      mockMvc.perform(post("/%s/sections/linked-cases/search".formatted(caseContext))
               .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
               .sessionAttr(USER_DETAILS, buildUserDetail())
               .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
@@ -667,35 +675,33 @@ class EditGeneralDetailsSectionControllerTest {
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/application-linked-case-search-no-results"));
     }
-    @Test
-    @DisplayName("Should handle too many results")
-    void shouldHandleTooManyResults() throws Exception {
-      // Arrange
-      final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
 
-      // Mock the applicationService to throw TooManyResultsException
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    @DisplayName("Should handle too many results")
+    void shouldHandleTooManyResults(String caseContext) throws Exception {
+      final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
       when(applicationService.getCases(any(), any()))
           .thenThrow(new TooManyResultsException("test"));
 
-      // Act & Assert
-      mockMvc.perform(post("/application/sections/linked-cases/search")
+      mockMvc.perform(post("/%s/sections/linked-cases/search".formatted(caseContext))
               .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
               .sessionAttr(USER_DETAILS, buildUserDetail())
               .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
               .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
           .andDo(print())
           .andExpect(status().isOk())
-          .andExpect(
-              view().name("application/sections/application-linked-case-search-too-many-results"));
+          .andExpect(view().name("application/sections/application-linked-case-search-too-many-results"));
     }
   }
 
   @Nested
-  @DisplayName("GET: /application/sections/linked-cases/search/results")
+  @DisplayName("GET: /{caseContext}/sections/linked-cases/search/results")
   class GetLinkedCasesSearchResultsTests{
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final int page = 0;
       final int size = 10;
       final List<BaseApplicationDetail> caseSearchResults =
@@ -704,7 +710,7 @@ class EditGeneralDetailsSectionControllerTest {
 
       when(applicationMapper.toApplicationDetails(any())).thenReturn(linkedCaseSearchResults);
 
-      mockMvc.perform(get("/application/sections/linked-cases/search/results")
+      mockMvc.perform(get("/%s/sections/linked-cases/search/results".formatted(caseContext))
               .param("page", String.valueOf(page))
               .param("size", String.valueOf(size))
               .flashAttr(CASE_SEARCH_RESULTS, caseSearchResults))
@@ -718,11 +724,12 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /application/sections/linked-cases/{case-reference-id}/add")
+  @DisplayName("GET: /{caseContext}/sections/linked-cases/{case-reference-id}/add")
   class GetAddLinkedCaseTests{
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final String caseReferenceId = "123456789";
       final ApplicationDetails linkedCaseSearchResults = new ApplicationDetails();
       final List<BaseApplicationDetail> applications = new ArrayList<>();
@@ -738,7 +745,7 @@ class EditGeneralDetailsSectionControllerTest {
           Mono.just(mockCommonLookupDetail));
 
       mockMvc
-          .perform(get("/application/sections/linked-cases/{case-reference-id}/add", caseReferenceId)
+          .perform(get("/%s/sections/linked-cases/{case-reference-id}/add".formatted(caseContext), caseReferenceId)
               .sessionAttr(CASE_RESULTS_PAGE, linkedCaseSearchResults))
           .andDo(print())
           .andExpect(status().isOk())
@@ -750,30 +757,32 @@ class EditGeneralDetailsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /application/sections/linked-cases/{case-reference-id}/add")
+  @DisplayName("POST: /{caseContext}/sections/linked-cases/add")
   class PostAddLinkedCaseTests {
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final String applicationId = "app123";
       final UserDetail user = new UserDetail();
       final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
 
-      mockMvc.perform(post("/application/sections/linked-cases/add")
+      mockMvc.perform(post("/%s/sections/linked-cases/add".formatted(caseContext))
               .sessionAttr(APPLICATION_ID, applicationId)
               .sessionAttr(USER_DETAILS, user)
               .flashAttr("currentLinkedCase", linkedCase))
           .andDo(print())
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/sections/linked-cases"));
+          .andExpect(redirectedUrl("/%s/sections/linked-cases".formatted(caseContext)));
 
       verify(linkedCaseValidator, times(1)).validate(eq(linkedCase), any(BindingResult.class));
       verify(applicationService, times(1)).addLinkedCase(eq(applicationId), eq(linkedCase), eq(user));
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should handle validation errors")
-    void shouldHandleValidationErrors() throws Exception {
+    void shouldHandleValidationErrors(String caseContext) throws Exception {
       final String applicationId = "app123";
       final UserDetail user = new UserDetail();
       final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
@@ -789,8 +798,7 @@ class EditGeneralDetailsSectionControllerTest {
       when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(
           Mono.just(mockCommonLookupDetail));
 
-      // When & Then
-      mockMvc.perform(post("/application/sections/linked-cases/add")
+      mockMvc.perform(post("/%s/sections/linked-cases/add".formatted(caseContext))
               .sessionAttr(APPLICATION_ID, applicationId)
               .sessionAttr(USER_DETAILS, user)
               .flashAttr("currentLinkedCase", linkedCase))

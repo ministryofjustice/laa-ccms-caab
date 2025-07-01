@@ -82,6 +82,7 @@ import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
 import uk.gov.laa.ccms.caab.builders.EbsApplicationMappingContextBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
@@ -1782,5 +1783,32 @@ class ApplicationServiceTest {
     assertThat(result).isEqualTo(expected);
   }
 
+  @Test
+  void putApplicationTypeFormDataCallsApiClientWithCorrectParameters() {
+    Integer id = 123;
+    ApplicationType applicationType = new ApplicationType();
+    UserDetail user = new UserDetail().loginId("testUser");
+
+    when(caabApiClient.putApplicationType(id,  "testUser", applicationType))
+        .thenReturn(Mono.empty());
+
+    applicationService.putApplicationTypeFormData(id, applicationType, user);
+
+    verify(caabApiClient).putApplicationType(id,  "testUser", applicationType);
+  }
+
+  @Test
+  void putApplicationTypeFormDataHandlesApiClientException() {
+    Integer id = 123;
+    ApplicationType applicationType = new ApplicationType();
+    UserDetail user = new UserDetail().loginId("testUser");
+
+    when(caabApiClient.putApplicationType(id, "testUser", applicationType))
+        .thenReturn(Mono.error(new CaabApiClientException("API error")));
+
+    assertThrows(CaabApiClientException.class, () ->
+        applicationService.putApplicationTypeFormData(id, applicationType, user)
+    );
+  }
 
 }

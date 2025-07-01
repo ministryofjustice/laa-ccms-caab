@@ -6,14 +6,14 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections/linked-cases}" class="govuk-back-link"
+    <a th:href="@{/{caseContext}/sections/linked-cases(caseContext=${caseContext.getPathValue()})}" class="govuk-back-link"
       th:text="#{application.generalDetails.linkCase.summary.search.goBack}"/>
   </div>
   <div id="main-content">
     <th:block th:replace="~{application/partials/search-fragments :: searchCaseFormFragment(
       caption=#{application.generalDetails.linkCase.summary.search.caption},
       heading=#{application.generalDetails.linkCase.summary.search.title},
-      action=${'/application/sections/linked-cases/search'},
+      action=${'/' + caseContext.getPathValue() + '/sections/linked-cases/search'},
       copyCase=${false})}">
     </th:block>
   </div>
